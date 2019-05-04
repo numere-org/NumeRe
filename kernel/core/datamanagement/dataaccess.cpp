@@ -21,6 +21,72 @@
 #include "../../kernel.hpp"
 #include <vector>
 
+DataAccessParser::DataAccessParser(const string& sCommand)
+{
+    size_t pos = string::npos;
+    isClust = false;
+
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
+    for (size_t i = 0; i < sCommand.length(); i++)
+    {
+        if (pos == string::npos && (sCommand[i] == '_' || isalpha(sCommand[i])))
+            pos = i;
+
+        if (pos != string::npos && sCommand[i] != '_' && sCommand[i] != '~' && !isalnum(sCommand[i]))
+        {
+            if (sCommand[i] == '(')
+            {
+                sDataObject = sCommand.substr(pos, i - pos);
+
+                if (!instance->getData().isCacheElement(sDataObject) && sDataObject != "data" && sDataObject != "string")
+                {
+                    sDataObject.clear();
+                    pos = string::npos;
+                    continue;
+                }
+
+                idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                break;
+            }
+            else if (sCommand[i] == '{')
+            {
+                sDataObject = sCommand.substr(pos, i - pos);
+
+                if (!instance->getData().isCluster(sDataObject))
+                {
+                    sDataObject.clear();
+                    pos = string::npos;
+                    continue;
+                }
+
+                isClust = true;
+                idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                break;
+            }
+            else
+                pos = string::npos;
+        }
+    }
+}
+
+string& DataAccessParser::getDataObject()
+{
+    return sDataObject;
+}
+
+Indices& DataAccessParser::getIndices()
+{
+    return idx;
+}
+
+bool DataAccessParser::isCluster()
+{
+    return isClust;
+}
+
+
+
 
 static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option);
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
@@ -963,41 +1029,16 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     // Search for tables and clusters
-    // TODO: It might be possible, that this implementation finds
-    // the wrong table first (aka a table, which was used as
-    // index vector)
-    if (_data.containsTablesOrClusters(sExpression) && sExpression.substr(0, 5) != "data(")
+    DataAccessParser _accessParser(sExpression);
+
+    if (_accessParser.getDataObject().length())
     {
-        // Search for tables
-        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-        {
-            if (sExpression.find(iter->first + "(") != string::npos
-                    && (!sExpression.find(iter->first + "(")
-                        || checkDelimiter(sExpression.substr(sExpression.find(iter->first + "(") - 1, (iter->first).length() + 2))))
-            {
-                sDataTable = iter->first;
-                break;
-            }
-        }
-
-        // Search for clusters
-        for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
-        {
-            if (sExpression.find(iter->first + "{") != string::npos
-                    && (!sExpression.find(iter->first + "{")
-                        || checkDelimiter(sExpression.substr(sExpression.find(iter->first + "{") - 1, (iter->first).length() + 2))))
-            {
-                sDataTable = iter->first;
-                isCluster = true;
-                break;
-            }
-        }
+        sDataTable = _accessParser.getDataObject();
+        _idx = _accessParser.getIndices();
+        isCluster = _accessParser.isCluster();
     }
-    else if (!_data.isValid())
-		throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sExpression, SyntaxError::invalid_position);
-
-    // Get the indices for the current expression
-    _idx = parser_getIndices(sExpression, _parser, _data, _option);
+    else
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sExpression, SyntaxError::invalid_position);
 
     if (!isValidIndexSet(_idx))
         throw SyntaxError(SyntaxError::INVALID_INDEX, sExpression, SyntaxError::invalid_position);

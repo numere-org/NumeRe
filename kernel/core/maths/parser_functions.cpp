@@ -4965,24 +4965,15 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 	if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
 	{
 		// Get the datagrid from another table
-		Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
+		DataAccessParser _accessParser(sZVals);
+
+		if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sZVals, SyntaxError::invalid_position);
+
+		Indices& _idx = _accessParser.getIndices();
 
 		// identify the table
-		string szDatatable = "data";
-		if (_data.containsTablesOrClusters(sZVals))
-		{
-			_data.setCacheStatus(true);
-			for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-			{
-				if (sZVals.find(iter->first + "(") != string::npos
-						&& (!sZVals.find(iter->first + "(")
-							|| (sZVals.find(iter->first + "(") && checkDelimiter(sZVals.substr(sZVals.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-				{
-					szDatatable = iter->first;
-					break;
-				}
-			}
-		}
+		string& szDatatable = _accessParser.getDataObject();
 
 		// Check the indices
 		if (!isValidIndexSet(_idx))
@@ -5101,22 +5092,13 @@ static vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const str
 	if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
 	{
 		// Get the indices and identify the table name
-		Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
-		string sZDatatable = "data";
+		DataAccessParser _accessParser(sZVals);
 
-		if (_data.containsTablesOrClusters(sZVals))
-		{
-			for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-			{
-				if (sZVals.find(iter->first + "(") != string::npos
-						&& (!sZVals.find(iter->first + "(")
-							|| (sZVals.find(iter->first + "(") && checkDelimiter(sZVals.substr(sZVals.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-				{
-					sZDatatable = iter->first;
-					break;
-				}
-			}
-		}
+		if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sZVals, SyntaxError::invalid_position);
+
+        Indices& _idx = _accessParser.getIndices();
+        string& sZDatatable = _accessParser.getDataObject();
 
 		// Check the indices
 		if (!isValidIndexSet(_idx))

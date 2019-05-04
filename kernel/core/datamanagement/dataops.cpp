@@ -835,35 +835,23 @@ static string getSourceForDataOperation(const string& sExpression, Indices& _idx
     string sSourceForFileOperation = "";
 
     // Try to find the corresponding data table in the set of available ones
-    for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-	{
-	    // If the expression matches the current data table
-		if (sExpression.find(" " + iter->first + "(") != string::npos || sExpression.find(" data(") != string::npos)
-		{
-		    // Get the indices for the current call
-			_idx = parser_getIndices(sExpression, _parser, _data, _option);
+    DataAccessParser _accessParser(sExpression);
 
-			// Store the name of the table
-			if (sExpression.find(" " + iter->first + "(") != string::npos)
-			{
-				_data.setCacheStatus(true);
-				sSourceForFileOperation = iter->first;
-			}
-			else
-				sSourceForFileOperation = "data";
+    if (_accessParser.getDataObject().length())
+    {
+        sSourceForFileOperation = _accessParser.getDataObject();
+        _idx = _accessParser.getIndices();
 
-            // Ensure that the indices are reasonable
-			if (!isValidIndexSet(_idx))
-				return "";
+        if (!isValidIndexSet(_idx) || _accessParser.isCluster())
+            return "";
 
-            // Evaluate the indices
-			if (_idx.row.isOpenEnd())
-				_idx.row.setRange(0, _data.getLines(sSourceForFileOperation, false)-1);
+        // Evaluate the indices
+        if (_idx.row.isOpenEnd())
+            _idx.row.setRange(0, _data.getLines(sSourceForFileOperation, false)-1);
 
-			if (_idx.col.isOpenEnd())
-				_idx.col.setRange(0, _data.getCols(sSourceForFileOperation, false)-1);
-		}
-	}
+        if (_idx.col.isOpenEnd())
+            _idx.col.setRange(0, _data.getCols(sSourceForFileOperation, false)-1);
+    }
 
 	// Return the name of the table
     return sSourceForFileOperation;
@@ -1070,39 +1058,39 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
 	vector<int> vSortIndex;
-	string sCache = sCmd.substr(sCmd.find(' ') + 1);
-	sCache.erase(getMatchingParenthesis(sCache) + 1);
+	DataAccessParser _accessParser(sCmd);
+
+	if (!_accessParser.getDataObject().length())
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
 	// Get the indices
-	Indices _idx = parser_getIndices(sCache, _parser, _data, _option);
+	Indices& _idx = _accessParser.getIndices();
 
 	// Ensure that the indices are reasonable
 	if (!isValidIndexSet(_idx))
 		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back());
 
-	sCache.erase(sCache.find_first_of("({"));
-
 	// If the current cache equals to "string", leave the function at
 	// this point and redirect the control to the string sorting
 	// function
-	if (sCache == "string")
+	if (_accessParser.getDataObject() == "string")
         return sortStrings(sCmd, _idx, _parser, _data);
 
     // If the current cache equals a cluster, leave the function at
 	// this point and redirect the control to the cluster sorting
 	// function
-	if (_data.isCluster(sCache))
-        return sortClusters(sCmd, sCache, _idx, _parser, _data);
+	if (_accessParser.isCluster())
+        return sortClusters(sCmd, _accessParser.getDataObject(), _idx, _parser, _data);
 
 	// Evalulate special index values
 	if (_idx.row.isOpenEnd())
-		_idx.row.setRange(0, _data.getLines(sCache, false)-1);
+		_idx.row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
 	if (_idx.col.isOpenEnd())
-		_idx.col.setRange(0, _data.getCols(sCache, false)-1);
+		_idx.col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = _data.sortElements(sCache, _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), sCmd.substr(5 + sCache.length()));
+	vSortIndex = _data.sortElements(_accessParser.getDataObject(), _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), sCmd.substr(5 + _accessParser.getDataObject().length()));
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())

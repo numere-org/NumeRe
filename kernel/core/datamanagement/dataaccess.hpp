@@ -51,4 +51,21 @@ inline bool isValidIndexSet(const Indices& _idx)
     return _idx.row.isValid() && _idx.col.isValid();
 }
 
+class DataAccessParser
+{
+    private:
+        string sDataObject;
+        Indices idx;
+        bool isClust;
+
+    public:
+        DataAccessParser(const string& sCommand);
+        string& getDataObject();
+        Indices& getIndices();
+        bool isCluster();
+};
+
+
 #endif // DATAACCESS_HPP
+
+

@@ -1928,151 +1928,81 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 			if (nType < -1 || nType > 2)
 				nType = 0;
 
-			if (_sObject.find("string(") != string::npos)
-			{
-				vector<double> vIndices;
+            DataAccessParser _accessParser(_sObject);
 
-				if (_sObject.find(':', _sObject.find("string(") + 7) != string::npos)
-				{
-					string s[3];
-					s[0] = _sObject.substr(_sObject.find("string(") + 6);
-					parser_SplitArgs(s[0], s[1], ':', _option);
-					StripSpaces(s[0]);
-					StripSpaces(s[1]);
-
-					if (s[1].find(',') != string::npos)
-						parser_SplitArgs(s[1], s[2], ',', _option, true);
-
-					if (!s[0].length())
-						vIndices.push_back(1.0);
-					else
-					{
-						_parser.SetExpr(s[0]);
-						vIndices.push_back(_parser.Eval());
-					}
-
-					vIndices.push_back(-1.0);
-
-					if (!s[2].length())
-						vIndices.push_back(1.0);
-					else
-					{
-						_parser.SetExpr(s[2]);
-						vIndices.push_back(_parser.Eval());
-					}
-
-					if (!s[1].length() && nType == -1)
-						vIndices[1] = -1.0;
-					else if (!s[1].length() && nType > 0)
-						vIndices[1] = vIndices.front() + 1;
-					else if (!s[1].length())
-					{
-						vIndices[1] = _data.getStringElements((unsigned int)vIndices.back() - 1);
-
-						if (!vIndices[1])
-							vIndices[1] = vIndices[0];
-					}
-					else
-					{
-						_parser.SetExpr(s[1]);
-						vIndices[1] = _parser.Eval();
-					}
-				}
-				else
-				{
-					string s1 = _sObject.substr(_sObject.find("string(") + 7, getMatchingParenthesis(_sObject.substr(_sObject.find("string(") + 6)) - 1), sCol = "";
-
-					if (s1.find(',') != string::npos)
-						parser_SplitArgs(s1, sCol, ',', _option, true);
-
-					vIndices.push_back(1.0);
-
-					if (isNotEmptyExpression(sCol))
-					{
-						_parser.SetExpr(sCol);
-						vIndices.push_back(_parser.Eval());
-					}
-					else
-						vIndices.push_back(1.0);
-
-					if (isNotEmptyExpression(s1))
-					{
-						_parser.SetExpr(s1);
-						vIndices[0] = _parser.Eval();
-					}
-					else
-						vIndices[0] = _data.getStringElements((unsigned int)vIndices.back() - 1);
-				}
-
-				_parser.SetVectorVar("_~indices[" + replaceToVectorname(_sObject) + "]", vIndices);
-				sLine = sLine.substr(0, n_pos) + "_~indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nPos + 1);
+            if (!_accessParser.getDataObject().length() || !isValidIndexSet(_accessParser.getIndices()))
+            {
+                sLine = sLine.substr(0, n_pos) + "nan" + sLine.substr(nPos + 1);
 				n_pos++;
 				continue;
-			}
-
-			if (_sObject.find("data(") == string::npos && !_data.containsTablesOrClusters(_sObject))
-			{
-				sLine = sLine.substr(0, n_pos) + "nan" + sLine.substr(nPos + 1);
-				n_pos++;
-				continue;
-			}
-
-			Indices _mIndex = parser_getIndices(_sObject, _parser, _data, _option);
-
-			if (!isValidIndexSet(_mIndex))
-			{
-				sLine = sLine.substr(0, n_pos) + "nan" + sLine.substr(nPos + 1);
-				n_pos++;
-				continue;
-			}
+            }
 
 			if (nType > -1)
 			{
-				if (_mIndex.row.isOpenEnd())
+				if (nType == 2 && _accessParser.getIndices().row.isOpenEnd())
 				{
-					if (nType == 2)
-						_mIndex.row.setRange(0, _mIndex.row.front() + 1);
+					_accessParser.getIndices().row.setRange(_accessParser.getIndices().row.front(), _accessParser.getIndices().row.front() + 1);
 				}
-
-				if (_mIndex.col.isOpenEnd())
+				else if (nType == 1 && _accessParser.getIndices().col.isOpenEnd())
 				{
-					if (nType == 1)
-						_mIndex.col.setRange(0, _mIndex.col.front() + 1);
+					_accessParser.getIndices().col.setRange(_accessParser.getIndices().col.front(), _accessParser.getIndices().col.front() + 1);
 				}
+				else if (!nType)
+                {
+                    if (_accessParser.isCluster())
+                    {
+                        if (_accessParser.getIndices().row.isOpenEnd())
+                            _accessParser.getIndices().row.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
 
-				if (_sObject.find("data(") != string::npos)
-				{
-					if (_mIndex.row.isOpenEnd())
-						_mIndex.row.setRange(0, _data.getLines("data", false)-1);
+                        if (_accessParser.getIndices().col.isOpenEnd())
+                            _accessParser.getIndices().col.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
+                    }
+                    else if (_accessParser.getDataObject() == "string")
+                    {
+                        if (_accessParser.getIndices().row.isOpenEnd())
+                        {
+                            if (_accessParser.getIndices().col.size() == 1)
+                            {
+                                if (_data.getStringElements(_accessParser.getIndices().col.front()))
+                                    _accessParser.getIndices().row.setRange(0, _data.getStringElements(_accessParser.getIndices().col.front())-1);
+                                else
+                                    _accessParser.getIndices().row.setRange(0, 0);
+                            }
+                            else
+                            {
+                                if (_data.getStringElements())
+                                    _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
+                                else
+                                    _accessParser.getIndices().row.setRange(0, 0);
+                            }
+                        }
 
-					if (_mIndex.col.isOpenEnd())
-						_mIndex.col.setRange(0, _data.getCols("data", false)-1);
-				}
-				else
-				{
-					for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-					{
-						if (_sObject.find(iter->first + "(") != string::npos
-								&& (!_sObject.find(iter->first + "(")
-									|| (_sObject.find(iter->first + "(") && checkDelimiter(_sObject.substr(_sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-						{
-							if (_mIndex.row.isOpenEnd())
-                                _mIndex.row.setRange(0, _data.getLines(iter->first, false)-1);
+                        if (_accessParser.getIndices().col.isOpenEnd())
+                            _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
+                    }
+                    else
+                    {
+                        if (_accessParser.getIndices().row.isOpenEnd())
+                            _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
 
-                            if (_mIndex.col.isOpenEnd())
-                                _mIndex.col.setRange(0, _data.getCols(iter->first, false)-1);
-						}
-					}
-				}
+                        if (_accessParser.getIndices().col.isOpenEnd())
+                            _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
+                    }
+                }
 			}
+
+			_accessParser.getIndices().row.linearize();
+			_accessParser.getIndices().col.linearize();
+
 			vector<double> vIndices;
-			vIndices.push_back(_mIndex.row.front() + 1);
-			vIndices.push_back(_mIndex.row.back() + 1);
-			vIndices.push_back(_mIndex.col.front() + 1);
-			vIndices.push_back(_mIndex.col.back() + 1);
+			vIndices.push_back(_accessParser.getIndices().row.front() + 1);
+			vIndices.push_back(_accessParser.getIndices().row.last() + 1);
+			vIndices.push_back(_accessParser.getIndices().col.front() + 1);
+			vIndices.push_back(_accessParser.getIndices().col.last() + 1);
 			_parser.SetVectorVar("_~indices[" + replaceToVectorname(_sObject) + "]", vIndices);
 			sLine = sLine.substr(0, n_pos) + "_~indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nPos + 1);
 		}
+
 		n_pos++;
 	}
 
@@ -3691,46 +3621,14 @@ static vector<bool> parser_ApplyElementaryStringOperations(vector<string>& vFina
 // It will store the strings into the data tables
 static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings, Parser& _parser, Datafile& _data, const Settings& _option)
 {
-    string sTableName;
-    bool isCluster = false;
+    // Identify the correct table
+    DataAccessParser _accessParser(sObject);
 
-    // Identify the correct data table
-    if (sObject.substr(sObject.find_first_not_of(" "), 5) == "data(")
-    {
-        sTableName = "data";
-    }
-    else if (_data.containsCacheElements(sObject))
-    {
-        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-        {
-            if (sObject.find(iter->first + "(") != string::npos
-                    && (!sObject.find(iter->first + "(")
-                        || (sObject.find(iter->first + "(") && checkDelimiter(sObject.substr(sObject.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-            {
-                sTableName = iter->first;
-                break;
-            }
-        }
-        _data.setCacheStatus(true);
-    }
-    else
-    {
-        for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
-        {
-            if (sObject.find(iter->first + "{") != string::npos
-                    && (!sObject.find(iter->first + "{")
-                        || (sObject.find(iter->first + "{") && checkDelimiter(sObject.substr(sObject.find(iter->first + "{") - 1, (iter->first).length() + 2)))))
-            {
-                sTableName = iter->first;
-                isCluster = true;
-                break;
-            }
-        }
-    }
+    if (!_accessParser.getDataObject().length())
+        return;
 
-    // Regular index
-    // Get the corresponding indices
-    Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
+    string sTableName = _accessParser.getDataObject();
+    Indices& _idx = _accessParser.getIndices();
 
     // Is the target a headline or is it a regular index?
     if (_idx.row.isString())
@@ -3756,7 +3654,7 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
 
         nCurrentComponent = nStrings;
     }
-    else if (isCluster)
+    else if (_accessParser.isCluster())
     {
         // Write the return values to the cluster with
         // parsing them
@@ -3875,16 +3773,6 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
 static void parser_StoreStringToStringObject(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings, Parser& _parser, Datafile& _data, const Settings& _option)
 {
     Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
-
-    /*if (_idx.row.isOpenEnd() && _idx.col.isOpenEnd())
-    {
-        for (size_t n = nCurrentComponent; n < nStrings; n++)
-        {
-            _data.writeString(removeQuotationMarks(maskControlCharacters(vFinal[n])));
-        }
-
-        return;
-    }*/
 
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0, _idx.row.front()+nStrings-nCurrentComponent-1);

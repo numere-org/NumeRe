@@ -5138,48 +5138,92 @@ static int showDataObject(string& sCmd)
         // a cache as object, passed as parameter
         show_data(_data, _out, _option, _data.matchCache(sCmd), _option.getPrecision(), false, true);
     }
-    else if (_data.containsCacheElements(sCmd) || sCmd.find(" data(") != string::npos)
+    else
     {
-        // A table was passed, using indices to select part of the
-        // table
-        auto mCaches = _data.mCachesMap;
-        mCaches["data"] = -1;
+        DataAccessParser _accessParser(sCmd);
 
-        // Search the correct table
-        for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
+        if (_accessParser.getDataObject().length())
         {
-            if (sCmd.find(iter->first + "(") != string::npos
-                    && (!sCmd.find(iter->first + "(")
-                        || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
+            if (_accessParser.isCluster())
+            {
+                NumeRe::Cluster& cluster = _data.getCluster(_accessParser.getDataObject());
+
+                if (_accessParser.getIndices().row.isOpenEnd())
+                    _accessParser.getIndices().row.setRange(0, cluster.size()-1);
+
+                // Create the target container
+                NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), 1);
+
+                // Copy the data to the new container
+                for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
+                {
+                    if (cluster.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
+                        _stringTable.set(i, 0, cluster.getString(_accessParser.getIndices().row[i]));
+                    else
+                        _stringTable.set(i, 0, toString(cluster.getDouble(_accessParser.getIndices().row[i]), 5));
+                }
+
+                // Redirect control
+                NumeReKernel::showStringTable(_stringTable, _accessParser.getDataObject() + "{}");
+
+                return 1;
+            }
+            else if (_accessParser.getDataObject() == "string")
+            {
+                if (_accessParser.getIndices().row.isOpenEnd())
+                    _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
+
+                if (_accessParser.getIndices().col.isOpenEnd())
+                    _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
+
+                // Create the target container
+                NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size());
+
+                // Copy the data to the new container and add surrounding
+                // quotation marks
+                for (size_t j = 0; j < _accessParser.getIndices().col.size(); j++)
+                {
+                    for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
+                    {
+                        if (_data.getStringElements(_accessParser.getIndices().col[j]) <= _accessParser.getIndices().row[i])
+                            break;
+
+                        _stringTable.set(i, j, "\"" + _data.readString(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j]) + "\"");
+                    }
+                }
+
+                // Redirect control
+                NumeReKernel::showStringTable(_stringTable, "string()");
+            }
+            else
             {
                 Datafile _cache;
-                Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
 
                 // Validize the obtained index sets
-                if (!isValidIndexSet(_idx))
-                    throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, iter->first + "(", iter->first + "()");
+                if (!isValidIndexSet(_accessParser.getIndices()))
+                    throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
 
                 // Copy the target data to a new table
-                if (_idx.row.isOpenEnd())
-                    _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
+                if (_accessParser.getIndices().row.isOpenEnd())
+                    _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
 
-                if (_idx.col.isOpenEnd())
-                    _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
+                if (_accessParser.getIndices().col.isOpenEnd())
+                    _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
 
-                _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
-                _cache.renameCache("cache", "*" + (iter->first), true);
+                _cache.setCacheSize(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
+                _cache.renameCache("cache", "*" + _accessParser.getDataObject(), true);
 
-                for (unsigned int i = 0; i < _idx.row.size(); i++)
+                for (unsigned int i = 0; i < _accessParser.getIndices().row.size(); i++)
                 {
-                    for (unsigned int j = 0; j < _idx.col.size(); j++)
+                    for (unsigned int j = 0; j < _accessParser.getIndices().col.size(); j++)
                     {
                         if (!i)
                         {
-                            _cache.setHeadLineElement(j, "*" + (iter->first), _data.getHeadLineElement(_idx.col[j], iter->first));
+                            _cache.setHeadLineElement(j, "*" + _accessParser.getDataObject(), _data.getHeadLineElement(_accessParser.getIndices().col[j], _accessParser.getDataObject()));
                         }
 
-                        if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                            _cache.writeToCache(i, j, "*" + (iter->first), _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                        if (_data.isValidEntry(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
+                            _cache.writeToCache(i, j, "*" + _accessParser.getDataObject(), _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
                     }
                 }
 
@@ -5187,80 +5231,15 @@ static int showDataObject(string& sCmd)
                     _data.getStringValues(sCmd);
 
                 // Redirect the control
-                show_data(_cache, _out, _option, "*" + (iter->first), _option.getPrecision(), false, true);
+                show_data(_cache, _out, _option, "*" + _accessParser.getDataObject(), _option.getPrecision(), false, true);
                 return 1;
             }
         }
-
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
-    }
-    else if (_data.containsClusters(sCmd))
-    {
-        // Find the correct cluster
-        for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+        else
         {
-            if (sCmd.find(iter->first + "{") != string::npos
-                && (!sCmd.find(iter->first + "{")
-                    || (sCmd.find(iter->first + "{") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "{") - 1, (iter->first).length() + 2)))))
-            {
-                // Get the indices
-                Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
-
-                if (_idx.row.isOpenEnd())
-                    _idx.row.setRange(0, iter->second.size()-1);
-
-                // Create the target container
-                NumeRe::Container<string> _stringTable(_idx.row.size(), 1);
-
-                // Copy the data to the new container
-                for (size_t i = 0; i < _idx.row.size(); i++)
-                {
-                    if (iter->second.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
-                        _stringTable.set(i, 0, iter->second.getString(_idx.row[i]));
-                    else
-                        _stringTable.set(i, 0, toString(iter->second.getDouble(_idx.row[i]), 5));
-                }
-
-                // Redirect control
-                NumeReKernel::showStringTable(_stringTable, iter->first + "{}");
-
-                return 1;
-            }
-        }
-    }
-    else if (sCmd.find(" string(") != string::npos)
-    {
-        // Get the indices
-        Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
-
-        if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getStringElements()-1);
-
-        if (_idx.col.isOpenEnd())
-            _idx.col.setRange(0, _data.getStringCols()-1);
-
-        // Create the target container
-        NumeRe::Container<string> _stringTable(_idx.row.size(), _idx.col.size());
-
-        // Copy the data to the new container and add surrounding
-        // quotation marks
-        for (size_t j = 0; j < _idx.col.size(); j++)
-        {
-            for (size_t i = 0; i < _idx.row.size(); i++)
-            {
-                if (_data.getStringElements(_idx.col[j]) <= _idx.row[i])
-                    break;
-
-                _stringTable.set(i, j, "\"" + _data.readString(_idx.row[i], _idx.col[j]) + "\"");
-            }
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
         }
 
-        // Redirect control
-        NumeReKernel::showStringTable(_stringTable, "string()");
-    }
-    else
-    {
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
     }
 
     return 1;
