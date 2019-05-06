@@ -595,11 +595,11 @@ void StringMemory::getStringValues(string& sLine, unsigned int nPos)
                     // Replace it with standard function signature or its value
                     if (sLine[(iter->first).length()] == '.')
                     {
-                        replaceStringMethod(sLine, 0, (iter->first).length(), iter->second);
+                        replaceStringMethod(sLine, 0, (iter->first).length(), "\"" + iter->second + "\"");
                     }
                     else
                     {
-                        sLine.replace(0,(iter->first).length(), "\"" + iter->second + "\"");
+                        sLine.replace(0, (iter->first).length(), "\"" + iter->second + "\"");
                     }
                 }
 
@@ -612,10 +612,10 @@ void StringMemory::getStringValues(string& sLine, unsigned int nPos)
                 // Replace it with standard function signature or its value
                 if (sLine[__nPos+(iter->first).length()-1] == '.')
                 {
-                    replaceStringMethod(sLine, __nPos-1, (iter->first).length(), iter->second);
+                    replaceStringMethod(sLine, __nPos-1, (iter->first).length(), "\"" + iter->second + "\"");
                 }
                 else
-                    sLine.replace(__nPos-1,(iter->first).length(), "\"" + iter->second + "\"");
+                    sLine.replace(__nPos-1, (iter->first).length(), "\"" + iter->second + "\"");
             }
         }
     }

@@ -313,11 +313,10 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& 
 		// map the results to their assignments
 		for (int i = 0; i < nResults; i++)
 		{
-			if (isnan(v[i]) || intCast(v[i]) <= 0)
-				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-
 			if (isinf(v[i])) // infinity => last possible index
 				v[i] = -1; // only -1 because it will be decremented in the following lines
+			else if (isnan(v[i]) || intCast(v[i]) <= 0)
+				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
 			if (vIndexNumbers[i] > 0)
 				_idx.row.setIndex(vIndexNumbers[i] - 1, intCast(v[i]) - 1);
@@ -357,23 +356,6 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
 	// If the cache is not really a cache
 	if (sCache.find("data") == string::npos && !isCluster && !_data.isCacheElement(sCache))
 		throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
-
-    //if (_idx.row.isOpenEnd())
-    //{
-    //    if (isCluster)
-    //        _idx.row.back() = _data.getCluster(sCache).size();
-    //    else
-    //        _idx.row.back() = _data.getLines(sCache, false);
-    //}
-    //
-    //if (_idx.col.isOpenEnd())
-    //{
-    //    if (isCluster)
-    //        _idx.col.back() = VectorIndex::INVALID;
-    //    else
-    //        _idx.col.back() = _data.getCols(sCache, false);
-    //}
-
 }
 
 // This static function expands the indices into vectors, if the

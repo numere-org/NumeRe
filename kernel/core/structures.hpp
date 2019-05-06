@@ -28,19 +28,26 @@ using namespace std;
 
 long long int intCast(double);
 
+// This class abstracts all the index logics, i.e.
+// the logical differences between single indices
+// and indices described by a vector
 class VectorIndex
 {
     private:
         vector<long long int> vStorage;
         bool expand;
 
+        // This private memnber function calculates the index
+        // corresponding to the selected position n. Otherwise
+        // simply return the nth vector index
         inline long long int getIndex(size_t n) const
         {
+            // If single indices are used, they will be expanded
+            // into virtual vectors
             if (expand)
             {
-                if (vStorage.back() == INVALID && !n)
-                    return vStorage.front();
-
+                // If the second index has not been defined,
+                // we'll expand the index using no end
                 if (vStorage.back() == OPEN_END)
                 {
                     if (vStorage.size() == 2)
@@ -51,6 +58,8 @@ class VectorIndex
                         return vStorage[vStorage.size()-1] + n - (vStorage.size()-1);
                 }
 
+                // Consider the case that the order of the indices
+                // could be inverted
                 if (vStorage.front() <= vStorage.back() && n + vStorage.front() <= vStorage.back())
                     return vStorage.front() + n;
                 else if (vStorage.front() > vStorage.back() && vStorage.front() - n >= vStorage.back()) // >= because vStorage.back() was not decremented first
@@ -70,20 +79,27 @@ class VectorIndex
             STRING = -3
         };
 
+        // Default constructor
         VectorIndex()
         {
             vStorage.assign({INVALID, INVALID});
             expand = true;
         }
 
+        // Copy constructor
         VectorIndex(const VectorIndex& vindex)
         {
             vStorage = vindex.vStorage;
             expand = vindex.expand;
         }
 
+        // Constructor from an array of doubles. The third
+        // argument is used only to avoid misinterpretation of
+        // the compiler
         VectorIndex(const double* indices, int nResults, int unused)
         {
+            // Store the indices and convert them to integers
+            // using the intCast() function
             for (int i = 0; i < nResults; i++)
             {
                 if (!isnan(indices[i]) && !isinf(indices[i]))
@@ -93,18 +109,21 @@ class VectorIndex
             expand = false;
         }
 
+        // Constructor for single indices
         VectorIndex(long long int nStart, long long int nEnd = INVALID)
         {
             vStorage.assign({nStart, nEnd});
             expand = true;
         }
 
+        // Constructor from a STL vector
         VectorIndex(const vector<long long int>& vIndex)
         {
             vStorage = vIndex;
             expand = false;
         }
 
+        // Assignment operator overload for the same type
         VectorIndex& operator=(const VectorIndex& vindex)
         {
             vStorage = vindex.vStorage;
@@ -112,6 +131,7 @@ class VectorIndex
             return *this;
         }
 
+        // Assignment operator overload for STL vectors
         VectorIndex& operator=(const vector<long long int>& vIndex)
         {
             vStorage = vIndex;
@@ -119,20 +139,35 @@ class VectorIndex
             return *this;
         }
 
+        // This member function returns a subset of the
+        // internal stored index just like the substr()
+        // member function. Single indices are not expanded
+        // therefore the storage space used for the newly
+        // created index won't be larger than the current one
         VectorIndex subidx(size_t pos, size_t nLen = string::npos) const
         {
+            // Consider some strange border cases
             if (pos >= size())
                 return VectorIndex();
 
             if (nLen >= size())
                 nLen = size() - pos;
 
+            // Calculate the starting and ending indices for
+            // single indices
             if (expand)
                 return VectorIndex(getIndex(pos), getIndex(pos+nLen));
 
+            // Copy-construct the vector indices otherwise
             return VectorIndex(vector<long long int>(vStorage.begin()+pos, vStorage.begin()+pos+nLen));
         }
 
+        // This member function linearizes the contents
+        // of a vector-described index set. The vectorial
+        // information is lost after using this function and
+        // the index will be described by single indices
+        // constructed from the minimal and maximal index
+        // values
         void linearize()
         {
             if (!expand)
@@ -146,11 +181,18 @@ class VectorIndex
             }
         }
 
+        // Overload for the access operator. Redirects the
+        // control to the private getIndex() member function
         inline long long int operator[](size_t n) const
         {
             return getIndex(n);
         }
 
+        // This member function returns the size of the
+        // indices stored in this class. It will return
+        // either the size of the stored vectorial indices
+        // or the calculated size for expanded single
+        // indices
         size_t size() const
         {
             if (vStorage.size() == 2 && !isValid())
@@ -165,6 +207,11 @@ class VectorIndex
                 return vStorage.size();
         }
 
+        // This member function returns the number of
+        // nodes describing the index set, which is
+        // stored internally. This is used in cases,
+        // where the indices will be interpreted slightly
+        // different than in the usual cases
         size_t numberOfNodes() const
         {
             if (!isValid())
@@ -175,6 +222,8 @@ class VectorIndex
                 return vStorage.size();
         }
 
+        // This member function determines, whether
+        // the single indices are in the correct order
         bool isOrdered() const
         {
             if (isValid())
@@ -183,31 +232,52 @@ class VectorIndex
             return false;
         }
 
+        // This member function determines, whether
+        // the indices are calculated or actual
+        // vectorial indices
         bool isExpanded() const
         {
             return expand;
         }
 
+        // This member function can be used to set the
+        // index at a special position. This will expand
+        // the internal storage and switch from single
+        // indices to vectorial ones automatically
         void setIndex(size_t nthIndex, long long int nVal)
         {
+            // If the size is large enough, simply store
+            // the passed index. Otherwise expand the
+            // index using invalid values and store it
+            // afterwards
             if (nthIndex < vStorage.size())
             {
                 vStorage[nthIndex] = nVal;
             }
             else
             {
+                // increase the size by using invalid values
                 while (vStorage.size() <= nthIndex)
                     vStorage.push_back(INVALID);
 
                 vStorage[nthIndex] = nVal;
 
+                // If the last value is not an open end
+                // value and the size of the internal storage
+                // is larger than two, deactivate the expanding
                 if (vStorage.size() > 2 && vStorage.back() != OPEN_END)
                     expand = false;
             }
         }
 
+        // This member function returns a STL vector, which
+        // will resemble the indices stored internally. This
+        // includes that the single indices are expanded in
+        // the returned vector
         vector<long long int> getVector() const
         {
+            // Expand the single indices stored internally
+            // if needed
             if (expand)
             {
                 vector<long long int> vReturn;
@@ -223,6 +293,8 @@ class VectorIndex
             return vStorage;
         }
 
+        // This function calculates the maximal index value
+        // obtained from the values stored internally
         long long int max() const
         {
             if (expand)
@@ -239,6 +311,8 @@ class VectorIndex
             return nMax;
         }
 
+        // This member function calculates the minimal index
+        // value obtained from the values stored internally
         long long int min() const
         {
             if (expand)
@@ -255,41 +329,58 @@ class VectorIndex
             return nMin;
         }
 
+        // This member function determines, whether the
+        // internal index set is valid
         inline bool isValid() const
         {
             return vStorage.front() != INVALID;
         }
 
+        // This member function determines, whether the
+        // internal index set has an open end
         inline bool isOpenEnd() const
         {
             return vStorage.back() == OPEN_END;
         }
 
+        // This member function determines, whether the
+        // internal index set referres to the table headlines
         inline bool isString() const
         {
             return vStorage.front() == STRING || vStorage.back() == STRING;
         }
 
+        // This member function returns a reference to
+        // the first index value stored internally
         long long int& front()
         {
             return vStorage.front();
         }
 
+        // This member function returns a reference to
+        // the final index value stored internally
         long long int& back()
         {
             return vStorage.back();
         }
 
+        // This member function returns a const reference to
+        // the first index value stored internally
         const long long int& front() const
         {
             return vStorage.front();
         }
 
+        // This member function returns a const reference to
+        // the final index value stored internally
         const long long int& back() const
         {
             return vStorage.back();
         }
 
+        // This member function returns the last index value,
+        // which can be reached by the values stored internally
+        // (this is most probably different from the final value)
         long long int last() const
         {
             if (expand && vStorage.back() == INVALID)
@@ -298,8 +389,14 @@ class VectorIndex
             return vStorage.back();
         }
 
+        // This member function can be used to force the indices
+        // stored internally to be in a defined interval.
+        // If the values are already in a smaller interval,
+        // nothing happens.
         void setRange(long long int nMin, long long int nMax)
         {
+            // Change the order of the minimal and
+            // maximal value, if needed
             if (nMin > nMax)
             {
                 long long int nTemp = nMin;
@@ -307,8 +404,13 @@ class VectorIndex
                 nMax = nTemp;
             }
 
+            // Compare all values to the defined
+            // interval
             for (size_t i = 0; i < vStorage.size(); i++)
             {
+                // Special cases: if the current value
+                // is open end, use the maximal value
+                // passed to this function
                 if (vStorage[i] == OPEN_END)
                 {
                     vStorage[i] = nMax;

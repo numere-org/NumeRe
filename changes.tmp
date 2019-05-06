@@ -60,3 +60,4 @@ Added	One may now activate that NumeRe folds all code during loading files.
 Added	The new string functions for clusters were added: "is_table()" and "is_cluster()". Additionally, the function "locate()" can be used to find a specific string in a whole string array.
 Added	The static code analyzer will no warn about global variables, which are used in procedures. A setting is available to deactivate this behavior.
 Added	A table viewer for clusters and the string()-table was created. It is accessible using commands, the variable viewer and the debugger (for "string()" only if global variables are listed in the debugger).
+Cleaned	The internal indexing algorithms were changed. Therefore, similiar accesses using index vectors are now possible more or less everywhere.

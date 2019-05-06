@@ -257,12 +257,6 @@ static string strfnc_getfolderlist(StringFuncArgs& funcArgs)
 }
 
 // VAL__STR
-// val = to_value(str)
-static string strfnc_to_value(StringFuncArgs& funcArgs)
-{
-	return funcArgs.sArg1;
-}
-
 // val = strlen(str)
 static string strfnc_strlen(StringFuncArgs& funcArgs)
 {
@@ -1818,25 +1812,68 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 	while (sLine.find("to_cmd(", n_pos) != string::npos)
 	{
 		n_pos = sLine.find("to_cmd(", n_pos) + 6;
+
 		if (isInQuotes(sLine, n_pos, true))
 			continue;
+
 		unsigned int nParPos = getMatchingParenthesis(sLine.substr(n_pos));
+
 		if (nParPos == string::npos)
 			throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, n_pos);
-		if (!isInQuotes(sLine, nParPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, 8))))
+
+		if (!isInQuotes(sLine, nParPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 7, 8))))
 		{
 			string sCmdString = sLine.substr(n_pos + 1, nParPos - 1);
 			StripSpaces(sCmdString);
+
 			if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString) || parser_containsStringVectorVars(sCmdString, mStringVectorVars))
 			{
 				StringResult strRes = parser_StringParserCore(sCmdString, "", _data, _parser, _option, mStringVectorVars);
+
 				if (!strRes.vResult.size())
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
 				// use only the first one
 				sCmdString = strRes.vResult[0];
 			}
-			sLine = sLine.substr(0, n_pos - 6) + sCmdString + sLine.substr(n_pos + nParPos + 1);
+
+			sLine = sLine.substr(0, n_pos - 6) + removeQuotationMarks(sCmdString) + sLine.substr(n_pos + nParPos + 1);
 			n_pos -= 5;
+		}
+	}
+
+	n_pos = 0;
+	// val to_value(str)
+	while (sLine.find("to_value(", n_pos) != string::npos)
+	{
+		n_pos = sLine.find("to_value(", n_pos) + 8;
+
+		if (isInQuotes(sLine, n_pos, true))
+			continue;
+
+		unsigned int nParPos = getMatchingParenthesis(sLine.substr(n_pos));
+
+		if (nParPos == string::npos)
+			throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, n_pos);
+
+		if (!isInQuotes(sLine, nParPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 9, 10))))
+		{
+			string sToValue = sLine.substr(n_pos + 1, nParPos - 1);
+			StripSpaces(sToValue);
+
+			if (containsStrings(sToValue) || _data.containsStringVars(sToValue) || parser_containsStringVectorVars(sToValue, mStringVectorVars))
+			{
+				StringResult strRes = parser_StringParserCore(sToValue, "", _data, _parser, _option, mStringVectorVars);
+
+				if (!strRes.vResult.size())
+					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+				// use only the first one
+				sToValue = strRes.vResult[0];
+			}
+
+			sLine = sLine.substr(0, n_pos - 8) + removeQuotationMarks(sToValue) + sLine.substr(n_pos + nParPos + 1);
+			n_pos -= 7;
 		}
 	}
 
@@ -1845,15 +1882,20 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 	while (sLine.find("is_string(", n_pos) != string::npos)
 	{
 		n_pos = sLine.find("is_string(", n_pos);
+
 		if (isInQuotes(sLine, n_pos, true))
 		{
 			n_pos++;
 			continue;
 		}
+
 		unsigned int nPos = n_pos + 9;
+
 		if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
 			throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+
 		nPos += getMatchingParenthesis(sLine.substr(nPos));
+
 		if (!isInQuotes(sLine, nPos, true)
 				&& !isInQuotes(sLine, n_pos, true)
 				&& (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, 11)))
@@ -1955,7 +1997,7 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
                             _accessParser.getIndices().row.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
 
                         if (_accessParser.getIndices().col.isOpenEnd())
-                            _accessParser.getIndices().col.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
+                            _accessParser.getIndices().col.back() = VectorIndex::INVALID;
                     }
                     else if (_accessParser.getDataObject() == "string")
                     {
@@ -2354,7 +2396,6 @@ static map<string, StringFuncHandle> parser_getStringFuncHandles()
 	mHandleTable["ascii"]               = StringFuncHandle(STR, strfnc_ascii, false);
 	mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
 	mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
-	mHandleTable["to_value"]            = StringFuncHandle(STR, strfnc_to_value, false);
 	mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
 	mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
 	mHandleTable["getenvvar"]           = StringFuncHandle(STR, strfnc_getenvvar, false);

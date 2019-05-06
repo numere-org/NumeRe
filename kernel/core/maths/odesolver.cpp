@@ -317,6 +317,7 @@ bool Odesolver::solve(const string& sCmd)
     //cerr << nDimensions << endl;
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0, _idx.row.front() + nSamples);
+
     if (_idx.col.isOpenEnd())
         _idx.col.setRange(0, _idx.col.front() + nDimensions + (long long int)bCalcLyapunov*2);
 
@@ -449,6 +450,7 @@ bool Odesolver::solve(const string& sCmd)
             if (GSL_SUCCESS != gsl_odeiv_evolve_apply(odeEvolve_ly, odeControl_ly, odeStep_ly, &odeSystem_ly, &t2, t1, &h2, y2))
                 break;
         }
+
         if (bCalcLyapunov)
         {
             dist[1] = 0.0;
@@ -479,7 +481,7 @@ bool Odesolver::solve(const string& sCmd)
 
         for (int j = 0; j < nDimensions; j++)
         {
-            if (_idx.col[j+1] != VectorIndex::INVALID)
+            if (_idx.col[j+1] == VectorIndex::INVALID)
                 break;
 
             _odeData->writeToCache(_idx.row[i+1], _idx.col[j+1], sTarget, y[j]);

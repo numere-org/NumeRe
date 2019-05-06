@@ -311,7 +311,7 @@ bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 		make_hline();
 
 		// Write the fitting options table to the terminal screen
-		NumeReKernel::print(getFitOptionsTable(_fControl, fitData, sFuncDisplay, sFittedFunction, sDimsForFitLog, dChisq, paramsMap, nSize, false));
+		NumeReKernel::printPreFmt("|-> " + getFitOptionsTable(_fControl, fitData, sFuncDisplay, sFittedFunction, sDimsForFitLog, dChisq, paramsMap, nSize, false));
 		NumeReKernel::printPreFmt("|\n");
 
 		// Prepare the headline for the fitting parameter table
@@ -822,10 +822,8 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 	if (nColumns == 1 && fitData.bUseErrors && _idx.col.size() < 3)
 		throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
 
-	if (nColumns == 1 && !_idx.col.size())
+	if (nColumns == 1)
 		nDim = 2;
-	else if (nColumns == 1)
-		nDim = _idx.col.size();
 	else if (nColumns == 2)
 	{
 		if (!fitData.bUseErrors)
@@ -911,21 +909,21 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         {
             if (nColumns == 1)
             {
-                if (isValidValue(getDataFromObject(sDataTable, _idx.row[i], _idx.col[0], isCluster)))
+                if (isValidValue(getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster)))
                 {
                     fitData.vx.push_back(_idx.row[i] + 1);
-                    fitData.vy.push_back(getDataFromObject(sDataTable, _idx.row[i], _idx.col[0], isCluster));
+                    fitData.vy.push_back(getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster));
                 }
             }
             else
             {
-                if (_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable))
+                if (_data.isValidEntry(_idx.row[i], _idx.col.front(), sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col.last(), sDataTable))
                 {
-                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
+                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col.front(), sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col.last(), sDataTable) > fitData.dMax))
                         continue;
 
-                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
-                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
+                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col.front(), sDataTable));
+                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col.last(), sDataTable));
                 }
             }
         }
@@ -1015,12 +1013,22 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                 if (nColumns > 3 && k == _idx.row.size() + 2)
                     break;
 
-                if (!_data.isValidEntry(_idx.row[k], _idx.col[1], sDataTable)
-                        || _data.getElement(_idx.row[k], _idx.col[1], sDataTable) < fitData.dMinY
-                        || _data.getElement(_idx.row[k], _idx.col[1], sDataTable) > fitData.dMaxY)
+                if (!_data.isValidEntry(_idx.row[k-2], _idx.col[1], sDataTable)
+                        || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable) < fitData.dMinY
+                        || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable) > fitData.dMaxY)
                     continue;
                 else
+                {
                     vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable));
+
+                    if (fitData.bUseErrors)
+                    {
+                        if (_data.isValidEntry(_idx.row[i], idx.col[k + _idx.row.size()], sDataTable))
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable)));
+                        else
+                            fitData.vy_w.push_back(0.0);
+                    }
+                }
             }
 
             fitData.vz.push_back(vTempZ);
@@ -1299,7 +1307,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
 				if (_option.getSystemPrintStatus())
 					NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
-				return false;
+				throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
 			}
 
 			sFunctionDefString = "Fit(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
@@ -1311,7 +1319,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
 				if (_option.getSystemPrintStatus())
 					NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
-				return false;
+				throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
 			}
 
 			sFunctionDefString = "Fitw(x) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
@@ -1324,7 +1332,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
 			if (_option.getSystemPrintStatus())
 				NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
-			return false;
+			throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
 		}
 
 		sFunctionDefString = "Fit(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
@@ -1336,7 +1344,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
 			if (_option.getSystemPrintStatus())
 				NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
-			return false;
+			throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
 		}
 
 		sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
@@ -1382,6 +1390,7 @@ static void calculateCovarianceData(FittingData& fitData, double dChisq, size_t 
 static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData, const string& sFuncDisplay, const string& sFittedFunction, const string& sDimsForFitLog, double dChisq, const mu::varmap_type& paramsMap, size_t nSize, bool forFitLog)
 {
     string sFitParameterTable;
+    string sPrefix;
 
     if (forFitLog)
     {
@@ -1392,37 +1401,38 @@ static string getFitOptionsTable(Fitcontroller& _fControl, FittingData& fitData,
     else
     {
         sFitParameterTable += _lang.get("PARSERFUNCS_FIT_FUNCTION", sFittedFunction) + "\n";
+        sPrefix = "|-> ";
     }
 
 	if (fitData.bUseErrors)
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_POINTS_W_ERR", toString((int)nSize)) + "\n";
 	else
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_POINTS_WO_ERR", toString((int)nSize)) + "\n";
 
 	if (fitData.bRestrictXVals)
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.dMin, 5), toString(fitData.dMax, 5)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "x", toString(fitData.dMin, 5), toString(fitData.dMax, 5)) + "\n";
 
 	if (fitData.bRestrictYVals)
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(fitData.dMinY, 5), toString(fitData.dMaxY, 5)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_COORD_RESTRICTS", "y", toString(fitData.dMinY, 5), toString(fitData.dMaxY, 5)) + "\n";
 
 	if (fitData.sRestrictions.length())
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", fitData.sRestrictions) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_PARAM_RESTRICTS", fitData.sRestrictions) + "\n";
 
-	sFitParameterTable += _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) + "\n";
-	sFitParameterTable += _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.dPrecision, 5), toString(fitData.nMaxIterations)) + "\n";
-	sFitParameterTable += _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) + "\n";
+	sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_FREEDOMS", toString((int)nSize - paramsMap.size())) + "\n";
+	sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_ALGORITHM_SETTINGS", toString(fitData.dPrecision, 5), toString(fitData.nMaxIterations)) + "\n";
+	sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_ITERATIONS", toString(_fControl.getIterations())) + "\n";
 
 	if (nSize != paramsMap.size() && !(fitData.nFitVars & 2))
 	{
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) + "\n";
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) + "\n";
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) + "\n";
 	}
 	else if (fitData.nFitVars & 2 && nSize != paramsMap.size() )
 	{
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) + "\n";
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) + "\n";
-		sFitParameterTable += _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_CHI2", toString(dChisq, 7)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_RED_CHI2", toString(dChisq / (double) (nSize - paramsMap.size()), 7)) + "\n";
+		sFitParameterTable += sPrefix + _lang.get("PARSERFUNCS_FIT_STD_DEV", toString(sqrt(_fControl.getFitChi() / (double)(nSize - paramsMap.size())), 7)) + "\n";
 	}
 
 	return sFitParameterTable;

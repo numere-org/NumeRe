@@ -51,12 +51,15 @@ inline bool isValidIndexSet(const Indices& _idx)
     return _idx.row.isValid() && _idx.col.isValid();
 }
 
+// This class is defined to abstract the determination
+// of the correct data object and the calculation of
+// the corresponding indices
 class DataAccessParser
 {
     private:
         string sDataObject;
         Indices idx;
-        bool isClust;
+        bool bIsCluster;
 
     public:
         DataAccessParser(const string& sCommand);

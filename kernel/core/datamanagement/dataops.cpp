@@ -1545,7 +1545,8 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 		if (containsStrings(sFileName))
 		{
 			sFileName += " -nq";
-			parser_StringParser(sFileName, sCmd, _data, _parser, _option, true);
+			string sDummy;
+			parser_StringParser(sFileName, sDummy, _data, _parser, _option, true);
 		}
 
 		// If the filename contains a extension, extract it here and declare it as a valid file type

@@ -21,68 +21,97 @@
 #include "../../kernel.hpp"
 #include <vector>
 
+// DataAccessParser constructor. This function will parse the passed
+// command string into the first found data access and determine, whether
+// it is a cluster and calculate the corresponding index set
 DataAccessParser::DataAccessParser(const string& sCommand)
 {
     size_t pos = string::npos;
-    isClust = false;
+    bIsCluster = false;
 
+    // Get a pointer to the current kernel instance
     NumeReKernel* instance = NumeReKernel::getInstance();
 
-    for (size_t i = 0; i < sCommand.length(); i++)
+    // Do only something, if the instance is valid
+    if (instance)
     {
-        if (pos == string::npos && (sCommand[i] == '_' || isalpha(sCommand[i])))
-            pos = i;
-
-        if (pos != string::npos && sCommand[i] != '_' && sCommand[i] != '~' && !isalnum(sCommand[i]))
+        // Examine the whole command line
+        for (size_t i = 0; i < sCommand.length(); i++)
         {
-            if (sCommand[i] == '(')
+            // Is this a possible character start
+            // for a data object identifier?
+            if (pos == string::npos && (sCommand[i] == '_' || isalpha(sCommand[i])))
+                pos = i;
+
+            // Is a possible start character available
+            // and the current character is not part of a
+            // valid object identifier character set?
+            if (pos != string::npos && sCommand[i] != '_' && sCommand[i] != '~' && !isalnum(sCommand[i]))
             {
-                sDataObject = sCommand.substr(pos, i - pos);
-
-                if (!instance->getData().isCacheElement(sDataObject) && sDataObject != "data" && sDataObject != "string")
+                // If the current character is an opening parenthesis
+                // or an opening brace, parse the identified data
+                // access, otherwise simply reset the possible starting
+                // character
+                if (sCommand[i] == '(')
                 {
-                    sDataObject.clear();
-                    pos = string::npos;
-                    continue;
+                    // This is a usual table or a reference to "string()"
+                    sDataObject = sCommand.substr(pos, i - pos);
+
+                    // Ensure that the table exists
+                    if (!instance->getData().isCacheElement(sDataObject) && sDataObject != "data" && sDataObject != "string")
+                    {
+                        sDataObject.clear();
+                        pos = string::npos;
+                        continue;
+                    }
+
+                    // Calculate the indices
+                    idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    break;
                 }
-
-                idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
-                break;
-            }
-            else if (sCommand[i] == '{')
-            {
-                sDataObject = sCommand.substr(pos, i - pos);
-
-                if (!instance->getData().isCluster(sDataObject))
+                else if (sCommand[i] == '{')
                 {
-                    sDataObject.clear();
-                    pos = string::npos;
-                    continue;
-                }
+                    // This is a cluster reference
+                    sDataObject = sCommand.substr(pos, i - pos);
 
-                isClust = true;
-                idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
-                break;
+                    // Ensure that the cluster exists
+                    if (!instance->getData().isCluster(sDataObject))
+                    {
+                        sDataObject.clear();
+                        pos = string::npos;
+                        continue;
+                    }
+
+                    // Calculate the indices and switch the access
+                    // to a cluster access
+                    bIsCluster = true;
+                    idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    break;
+                }
+                else
+                    pos = string::npos;
             }
-            else
-                pos = string::npos;
         }
     }
+
 }
 
+// Returns a reference to the data object identifier
 string& DataAccessParser::getDataObject()
 {
     return sDataObject;
 }
 
+// Returns a reference to the stored indices
 Indices& DataAccessParser::getIndices()
 {
     return idx;
 }
 
+// Determines, whether the data access references a cluster
 bool DataAccessParser::isCluster()
 {
-    return isClust;
+    return bIsCluster;
 }
 
 
@@ -922,6 +951,9 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
     if (_idx.col.isOpenEnd())
         _idx.col.setRange(0, _idx.col.front() + nDesiredCols-1);
 
+    // If the command requires two columns and the column indices contain two
+    // nodes, handle them here. Otherwise use a vectorial access in the lower
+    // section of this conditional statement
     if (nDesiredCols == 2 && _idx.col.numberOfNodes() == 2 && _idx.col.isExpanded()) // Do not expand in this case!
     {
         for (long long int i = 0; i < _idx.row.size(); i++)
