@@ -153,13 +153,15 @@ class VectorIndex
             if (nLen >= size())
                 nLen = size() - pos;
 
+            // Return a single index
+            if (!nLen)
+            {
+                return VectorIndex(getIndex(pos));
+            }
+
             // Calculate the starting and ending indices for
             // single indices
-            if (expand)
-                return VectorIndex(getIndex(pos), getIndex(pos+nLen));
-
-            // Copy-construct the vector indices otherwise
-            return VectorIndex(vector<long long int>(vStorage.begin()+pos, vStorage.begin()+pos+nLen));
+            return VectorIndex(getIndex(pos), getIndex(pos+nLen-1));
         }
 
         // This member function linearizes the contents

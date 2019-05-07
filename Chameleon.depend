@@ -2346,7 +2346,7 @@
 	"../ui/error.hpp"
 	"../settings.hpp"
 
-1556970546 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
+1557212031 d:\cpp\numere-source\trunk\kernel\core\structures.hpp
 	<string>
 	<vector>
 	<cmath>
@@ -9232,7 +9232,7 @@
 	"cluster.hpp"
 	"../ui/error.hpp"
 
-1556983445 source:d:\cpp\numere-source\trunk\kernel\core\maths\fitting.cpp
+1557208308 source:d:\cpp\numere-source\trunk\kernel\core\maths\fitting.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 

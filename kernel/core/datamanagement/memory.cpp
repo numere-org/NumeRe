@@ -3597,7 +3597,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 	{
 		for (long long int i = 0; i < __nOrigLines; i++)
 		{
-			for (long long int j = _vLine.last() + 1; j < __nOrigCols; j++)
+			for (long long int j = _vCol.last() + 1; j < __nOrigCols; j++)
 			{
 				if (_final_cols + j - (_vCol.last() + 1) + _vCol.front() >= nCols)
 				{
@@ -3611,11 +3611,11 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
 				if (isnan(dMemTable[i][j]))
 				{
-					dResampleBuffer[i][_final_cols + j - (_vLine.last() + 1) + _vLine.front()] = NAN;
+					dResampleBuffer[i][_final_cols + j - (_vCol.last() + 1) + _vCol.front()] = NAN;
 				}
 				else
 				{
-					dResampleBuffer[i][_final_cols + j - (_vLine.last() + 1) + _vLine.front()] = dMemTable[i][j];
+					dResampleBuffer[i][_final_cols + j - (_vCol.last() + 1) + _vCol.front()] = dMemTable[i][j];
 				}
 			}
 		}

@@ -1023,7 +1023,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
                     if (fitData.bUseErrors)
                     {
-                        if (_data.isValidEntry(_idx.row[i], idx.col[k + _idx.row.size()], sDataTable))
+                        if (_data.isValidEntry(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable))
                             fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable)));
                         else
                             fitData.vy_w.push_back(0.0);
