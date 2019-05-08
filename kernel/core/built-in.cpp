@@ -3876,7 +3876,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 					throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
 				}
 			}
-			if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
+			else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
 			{
 				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, Cache::ALL))
 				{
