@@ -88,8 +88,6 @@ value_type parser_Not(value_type v)
 
 value_type parser_Ignore(value_type v)
 {
-    if (isinf(v) || isnan(v))
-        return NAN;
     return v;
 }
 

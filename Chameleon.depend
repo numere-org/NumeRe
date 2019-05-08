@@ -3909,7 +3909,7 @@
 1533461617 source:d:\cpp\numere-source\trunk\gui\terminal\states.cpp
 	"gterm.hpp"
 
-1536696861 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
+1557335422 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
 	"TextManager.h"
 	<iostream>
 	<stdlib.h>
@@ -4044,7 +4044,7 @@
 	"fitcontroller.hpp"
 	"../../kernel.hpp"
 
-1541842723 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
+1557335590 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
 1557295183 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
@@ -4263,7 +4263,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1557295184 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1557334748 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -4314,7 +4314,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1557295183 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1557335592 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
@@ -9232,7 +9232,7 @@
 	"cluster.hpp"
 	"../ui/error.hpp"
 
-1557296655 source:d:\cpp\numere-source\trunk\kernel\core\maths\fitting.cpp
+1557299397 source:d:\cpp\numere-source\trunk\kernel\core\maths\fitting.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 

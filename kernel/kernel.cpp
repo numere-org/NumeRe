@@ -296,7 +296,6 @@ void NumeReKernel::defineOperators()
 	_parser.DefinePostfixOprt(_nrT("'mu"), parser_Micro);
 	//_parser.DefinePostfixOprt(_nrT("µ"), parser_Micro);
 	_parser.DefinePostfixOprt(_nrT("'n"), parser_Nano);
-	//_parser.DefinePostfixOprt(_nrT("~"), parser_Ignore);
 
 	// --> Einheitenumrechnungen: Werden aufgerufen durch WERT'EINHEIT <--
 	_parser.DefinePostfixOprt(_nrT("'eV"), parser_ElectronVolt);
@@ -328,6 +327,7 @@ void NumeReKernel::defineOperators()
 
 	// --> Logisches NICHT <--
 	_parser.DefineInfixOprt(_nrT("!"), parser_Not);
+	_parser.DefineInfixOprt(_nrT("+"), parser_Ignore);
 
 	// --> Operatoren <--
 	_parser.DefineOprt(_nrT("%"), parser_Mod, prMUL_DIV, oaLEFT, true);

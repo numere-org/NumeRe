@@ -254,8 +254,8 @@ void TextManager::updateColors(bool isErrorLine /*= false*/)
         sColors = syntax->highlightLine(m_text.back());
 
     // Ensure that the current color line is long enough
-	while (m_color.back().size() < m_text.back().length())
-		m_color.back().push_back(7);
+    if (m_color.back().size() < m_text.back().length())
+        m_color.back().resize(m_text.back().length(), short(7));
 
     // Convert the string characters to the correct color codes
 	for (size_t i = 0; i < sColors.length(); i++)

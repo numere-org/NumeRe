@@ -770,6 +770,14 @@ static string strfnc_textparse(StringFuncArgs& funcArgs)
     string sParsedStrings;
     size_t lastPosition = funcArgs.nArg1 - 1;
 
+    // If the search string starts with whitespaces and the
+    // pattern doesn't start with a percentage sign, search
+    // for the first non-whitespace character
+    if (funcArgs.sArg2.front() != '%' && funcArgs.sArg1.front() == ' ')
+    {
+        lastPosition = funcArgs.sArg1.find_first_not_of(' ');
+    }
+
     // Go through the pattern
     for (size_t i = 0; i < funcArgs.sArg2.length(); i++)
     {
