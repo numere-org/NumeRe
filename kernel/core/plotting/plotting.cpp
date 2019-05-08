@@ -3613,53 +3613,46 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                     _idx = getIndicesForPlotAndFit(sDataPlots.substr(nPos, nPos_1-nPos), sDataTable, nColumns, openEnd, isCluster);
 
                     // fill the open end indices
-                    if (_idx.nI[1] == -1)
-                        _idx.nI[1] = _idx.nI[0]+1;
-
-                    if (_idx.nJ[1] == -1)
-                        _idx.nJ[1] = _idx.nJ[0]+1;
-
-                    if (_idx.nI[1] == -2)
+                    if (_idx.row.isOpenEnd())
                     {
                         if (!isCluster)
-                            _idx.nI[1] = _data.getLines(sDataTable, false);
+                            _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
                         else
-                            _idx.nI[1] = _data.getCluster(sDataTable).size();
+                            _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
                     }
 
-                    if (!isCluster && _idx.nJ[1] == -2)
+                    if (!isCluster && _idx.col.isOpenEnd())
                     {
-                        _idx.nJ[1] = _data.getCols(sDataTable, false);
+                        _idx.col.setRange(0, _data.getCols(sDataTable, false)-1);
                     }
 
                     if (!isCluster)
                     {
-                        if (_idx.nI[1] > _data.getLines(sDataTable, false))
-                            _idx.nI[1] = _data.getLines(sDataTable, false);
+                        if (_idx.row.last() >= _data.getLines(sDataTable, false))
+                            _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
 
-                        if (_idx.nJ[1] > _data.getCols(sDataTable) - 1 && _pInfo.sCommand != "plot3d")
-                            _idx.nJ[1] = _data.getCols(sDataTable) - 1;
+                        if (_idx.col.last() >= _data.getCols(sDataTable) && _pInfo.sCommand != "plot3d")
+                            _idx.col.setRange(0, _data.getCols(sDataTable)-1);
                     }
                     else
                     {
-                        if (_idx.nI[1] > _data.getCluster(sDataTable).size())
-                            _idx.nI[1] = _data.getCluster(sDataTable).size();
+                        if (_idx.row.last() >= _data.getCluster(sDataTable).size())
+                            _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
                     }
 
                     // Validize the indices depending on whether a cluster or
                     // a table is used for the current data access
                     if (isCluster)
                     {
-                        if (!_idx.vI.size() && !_idx.vJ.size() && _idx.nI[0] > _data.getCluster(sDataTable).size())
+                        if (_idx.row.front() >= _data.getCluster(sDataTable).size())
                         {
                             throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
                         }
                     }
                     else
                     {
-                        if (!_idx.vI.size() && !_idx.vJ.size()
-                            && (_idx.nI[0] > _data.getLines(sDataTable, false)
-                                || (_idx.nJ[0] > _data.getCols(sDataTable) - 1 && _pInfo.sCommand != "plot3d")))
+                        if (_idx.row.front() >= _data.getLines(sDataTable, false)
+                            || (_idx.col.front() >= _data.getCols(sDataTable) && _pInfo.sCommand != "plot3d"))
                         {
                             throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
                         }
@@ -3696,7 +3689,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                 nDataDim[i] = 3;
 
                             if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && openEnd)
-                                nDataDim[i] = _data.getCols(sDataTable, false) + _pData.getBoxplot() - _idx.nJ[0];
+                                nDataDim[i] = _data.getCols(sDataTable, false) + _pData.getBoxplot() - _idx.col.front();
 
                             break;
                         default:
@@ -3707,8 +3700,11 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                 else
                                     nDataDim[i] = nColumns;
 
-                                if (_idx.vJ.size() > 6)
-                                    _idx.vJ.erase(_idx.vJ.begin() + 6, _idx.vJ.end());
+                                if (_idx.col.size() > 6)
+                                {
+                                    vector<long long int> vJ = _idx.col.getVector();
+                                    _idx.col = vector<long long int>(vJ.begin() + 6, vJ.end());
+                                }
                             }
                             else
                             {
@@ -3740,45 +3736,47 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 				// Prepare and fill the mglData objects for the current
 				// data access depending on whether single indices or an
 				// index vector is used
-				if (_idx.vI.size())
+				if (_idx.col.numberOfNodes() > 2)
 				{
-				    // A vector index was used. Insert a column index
-				    // if the current plot is a boxplot
+                    // A vector index was used. Insert a column index
+                    // if the current plot is a boxplot
                     if (_pData.getBoxplot())
-					{
-						_idx.vJ.insert(_idx.vJ.begin(), -1);
-					}
+                    {
+                        vector<long long int> vJ = _idx.col.getVector();
+                        vJ.insert(vJ.begin(), -1);
+                        _idx.col = vJ;
+                    }
 
-					// Fill the mglData objects with the data from the
-					// referenced data object
-					for (int q = 0; q < nDataDim[i]; q++)
-					{
-						_mDataPlots[i][q].Create(_idx.vI.size());
+                    // Fill the mglData objects with the data from the
+                    // referenced data object
+                    for (int q = 0; q < nDataDim[i]; q++)
+                    {
+                        _mDataPlots[i][q].Create(_idx.row.size());
 
-						if (_idx.vJ[q] == -1)
-						{
-							for (unsigned int n = 0; n < _idx.vI.size(); n++)
-								_mDataPlots[i][q].a[n] = _idx.vI[n] + 1;
-						}
-						else
-						{
-							for (unsigned int n = 0; n < _idx.vI.size(); n++)
-							{
-								_mDataPlots[i][q].a[n] = validize(getDataFromObject(sDataTable, _idx.vI[n], _idx.vJ[q], isCluster));
+                        if (_idx.col[q] == -1)
+                        {
+                            for (size_t n = 0; n < _idx.row.size(); n++)
+                                _mDataPlots[i][q].a[n] = _idx.row[n] + 1;
+                        }
+                        else
+                        {
+                            for (size_t n = 0; n < _idx.row.size(); n++)
+                            {
+                                _mDataPlots[i][q].a[n] = validize(getDataFromObject(sDataTable, _idx.row[n], _idx.col[q], isCluster));
 
-								if (!isCluster && _pInfo.sCommand == "plot3d" && q < 3 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.vJ[q], sDataTable) - _idx.vI[0]))
+                                if (!isCluster && _pInfo.sCommand == "plot3d" && q < 3 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.col[q], sDataTable) - _idx.row[0]))
                                 {
                                     _mDataPlots[i][q].a[n] = 0.0;
                                 }
-							}
-						}
-					}
+                            }
+                        }
+                    }
 
-					// --> Berechnen der DataRanges <--
-					for (int l = 0; l < (int)_idx.vI.size(); l++)
-					{
-						calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.nI);
-					}
+                    // --> Berechnen der DataRanges <--
+                    for (int l = 0; l < (int)_idx.row.size(); l++)
+                    {
+                        calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.row);
+                    }
 				}
 				else
 				{
@@ -3787,23 +3785,23 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 					for (int q = 0; q < nDataDim[i]; q++)
 					{
 						if (_pInfo.b2D && q == 2)///TEMPORARY
-							_mDataPlots[i][q].Create(_idx.nI[1] - _idx.nI[0], _idx.nI[1] - _idx.nI[0]);
+							_mDataPlots[i][q].Create(_idx.row.size(), _idx.row.size());
 						else
-							_mDataPlots[i][q].Create(_idx.nI[1] - _idx.nI[0]);
+							_mDataPlots[i][q].Create(_idx.row.size());
 					}
 
 					// Fill the mglData objects using the single indices
 					// and the referenced data object
-					for (int l = 0; l < _idx.nI[1] - _idx.nI[0]; l++)
+					for (size_t l = 0; l < _idx.row.size(); l++)
 					{
 					    // Fill the objects depending on the selected columns
-						if (nColumns == 1 && (isCluster || _data.getCols(sDataTable) > _idx.nJ[0]))
+						if (nColumns == 1 && (isCluster || _data.getCols(sDataTable) >= _idx.col.front()))
 						{
 							// These are only y-values. Add index values
 							// as x column
-							_mDataPlots[i][0].a[l] = l + 1 + _idx.nI[0];
+							_mDataPlots[i][0].a[l] = _idx.row[l] + 1;
 
-                            _mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0], isCluster));
+                            _mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.front(), isCluster));
 
 							// Create pseudo error values in this case
 							if (_pData.getxError() && _pData.getyError())
@@ -3811,7 +3809,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 							else if (_pData.getyError() || _pData.getxError())
 								_mDataPlots[i][2].a[l] = 0.0;
 						}
-						else if (!isCluster && _data.getCols(sDataTable) <= _idx.nJ[0] && _pInfo.sCommand != "plot3d")
+						else if (!isCluster && _data.getCols(sDataTable) < _idx.col.front() && _pInfo.sCommand != "plot3d")
 						{
 							// Catch column index errors
 							for (int i = 0; i < nDataPlots; i++)
@@ -3827,34 +3825,34 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 						else if (!isCluster && nDataDim[i] == 2 && nColumns == 2)
 						{
 						    // These are xy data values
-							if ((_data.getCols(sDataTable) > _idx.nJ[0] + 1 && (_idx.nJ[0] < _idx.nJ[1] || openEnd))
-									|| (_data.getCols(sDataTable) > _idx.nJ[1] + 1 && _idx.nJ[0] > _idx.nJ[1]))
+							if ((_data.getCols(sDataTable) >= _idx.col.front()+1 && (_idx.col.isOrdered() || openEnd))
+                                || (_data.getCols(sDataTable) >= _idx.col.back()+1 && !_idx.col.isOrdered()))
 							{
 								// These data columns are in correct order
-                                _mDataPlots[i][0].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0], isCluster));
+                                _mDataPlots[i][0].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.front(), isCluster));
 
 								if (!openEnd)
 								{
-									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[1], isCluster));
+									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.last(), isCluster));
 								}
 								else
 								{
-									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0] + 1, isCluster));
+									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.front() + 1, isCluster));
 								}
 							}
-							else if ((_data.getCols(sDataTable) > _idx.nJ[0] && (_idx.nJ[0] < _idx.nJ[1] || openEnd))
-									 || (_data.getCols(sDataTable) > _idx.nJ[1] && _idx.nJ[0] > _idx.nJ[1]))
+							else if ((_data.getCols(sDataTable) >= _idx.col.front() && (_idx.col.isOrdered() || openEnd))
+									 || (_data.getCols(sDataTable) >= _idx.col.back() && !_idx.col.isOrdered()))
 							{
-								// These data columns are in inverted order
-								_mDataPlots[i][0].a[l] = l + 1 + _idx.nI[0];
+								// These data columns miss a x-column
+								_mDataPlots[i][0].a[l] = _idx.row[l] + 1;
 
-								if (_idx.nJ[0] < _idx.nJ[1] || openEnd)
+								if (_idx.col.isOrdered() || openEnd)
 								{
-									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0], isCluster));
+									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.front(), isCluster));
 								}
-								else if (_idx.nJ[0] > _idx.nJ[1])
+								else if (!_idx.col.isOrdered())
 								{
-									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[1], isCluster));
+									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.last(), isCluster));
 								}
 								else
 									_mDataPlots[i][1].a[l] = NAN;
@@ -3876,118 +3874,70 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 						else if (!isCluster && nDataDim[i] >= 3 && nColumns == 2)
 						{
 							// These are xyz data values
-							if (_idx.nJ[0] < _idx.nJ[1] || openEnd)
-							{
-							    // These columns are in correct order
-								for (int q = 0; q < nDataDim[i] - (_pData.getBoxplot()); q++)
-								{
-								    // Use the data either as data grid or as xyz
-								    // tuple values
-									if (_pInfo.b2D && q == 2)
-									{
-										for (int k = 0; k < _idx.nI[1] - _idx.nI[0]; k++)
-										{
-											if (_data.num(sDataTable, _idx.nI[0], _idx.nI[1]-1, _idx.nJ[0] + 1) <= k)
-											{
-												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = NAN;
-												continue;
-											}
+                            // These columns are in correct order
+                            for (int q = 0; q < nDataDim[i] - (_pData.getBoxplot()); q++)
+                            {
+                                // Use the data either as data grid or as xyz
+                                // tuple values
+                                if (_pInfo.b2D && q == 2)
+                                {
+                                    for (size_t k = 0; k < _idx.row.size(); k++)
+                                    {
+                                        if (_data.num(sDataTable, _idx.row, VectorIndex(_idx.col.front()+1)) <= k)
+                                        {
+                                            _mDataPlots[i][q].a[l + (_idx.row.size())*k] = NAN;
+                                            continue;
+                                        }
 
-											if (_data.getCols(sDataTable) > q + k + _idx.nJ[0] && _data.isValidEntry(l + _idx.nI[0], q + k + _idx.nJ[0], sDataTable) && (_idx.nJ[0] <= _idx.nJ[1] || openEnd))
-											{
-												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], q + k + _idx.nJ[0], isCluster));
-											}
-											else
-												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = NAN;
-										}
-									}
-									else
-									{
-										// --> Vorwaerts zaehlen <--
-										if (!q && (_pData.getBoxplot()))
-										{
-											_mDataPlots[i][q] = l + 1 + _idx.nI[0];
-										}
+                                        if (_data.getCols(sDataTable) > _idx.col[q+k] && _data.isValidEntry(_idx.row[l], _idx.col[q+k], sDataTable))
+                                        {
+                                            _mDataPlots[i][q].a[l + (_idx.row.size())*k] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col[q+k], isCluster));
+                                        }
+                                        else
+                                            _mDataPlots[i][q].a[l + (_idx.row.size())*k] = NAN;
+                                    }
+                                }
+                                else
+                                {
+                                    // --> Vorwaerts zaehlen <--
+                                    if (!q && (_pData.getBoxplot()))
+                                    {
+                                        _mDataPlots[i][q] = _idx.row[l]+1;
+                                    }
 
-										if (_data.getCols(sDataTable) > q + _idx.nJ[0] && _data.isValidEntry(l + _idx.nI[0], q + _idx.nJ[0], sDataTable) && (_idx.nJ[0] <= _idx.nJ[1] || openEnd))
-										{
-											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], q + _idx.nJ[0], isCluster));
-										}
-										else if (q == 2 && _pInfo.sCommand == "plot3d"
-												 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(q + _idx.nJ[0], sDataTable) - _idx.nI[0]))
-											_mDataPlots[i][q].a[l] = 0.0;
-										else
-											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
-									}
-								}
-							}
-							else
-							{
-							    // These columns are in inverted order
-								for (int q = 0; q < nDataDim[i]; q++)
-								{
-									// Use the data either as data grid or as xyz
-								    // tuple values
-									if (_pInfo.b2D && q == 2)
-									{
-										for (int k = 0; k < _idx.nI[1] - _idx.nI[0]; k++)
-										{
-											if (_data.num(sDataTable, _idx.nI[0], _idx.nI[1]-1, _idx.nJ[0] - 1) <= k)
-											{
-												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = NAN;
-												continue;
-											}
-
-											if (_data.getCols(sDataTable) > _idx.nJ[0] && (_idx.nJ[0] - q - k >= _idx.nJ[1] && _idx.nJ[0] - q - k >= 0))
-											{
-												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0] - q - k, isCluster));
-											}
-											else
-												_mDataPlots[i][q].a[l + (_idx.nI[1] - _idx.nI[0])*k] = NAN;
-										}
-									}
-									else
-									{
-										// --> Rueckwaerts zaehlen <--
-										if (!q && (_pData.getBoxplot()))
-										{
-											_mDataPlots[i][q] = l + 1 + _idx.nI[0];
-										}
-
-										if (_data.getCols(sDataTable) > _idx.nJ[0] && _idx.nJ[0] - q >= 0 && _idx.nJ[0] - q >= _idx.nJ[1])
-										{
-											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.nJ[0] - q, isCluster));
-										}
-										else if (q == 2 && _pInfo.sCommand == "plot3d"
-												 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.nJ[0] - q, sDataTable) - _idx.nI[0]))
-											_mDataPlots[i][q].a[l] = 0.0;
-										else
-											_mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
-									}
-								}
-							}
+                                    if (_data.getCols(sDataTable) > _idx.col[q] && _data.isValidEntry(_idx.row[l], _idx.col[q], sDataTable))
+                                    {
+                                        _mDataPlots[i][q + (_pData.getBoxplot())].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col[q], isCluster));
+                                    }
+                                    else if (q == 2 && _pInfo.sCommand == "plot3d"
+                                             && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.col[q], sDataTable) - _idx.row.front()))
+                                        _mDataPlots[i][q].a[l] = 0.0;
+                                    else
+                                        _mDataPlots[i][q + (_pData.getBoxplot())].a[l] = NAN;
+                                }
+                            }
 						}
 						else if (!isCluster)
 						{
 							// These are columns in arbitrary order and an
 							// arbitrary number of columns
-							if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && !_pInfo.b2D && _idx.vJ.size())
+							if ((_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) && !_pInfo.b2D)
 							{
 								bool bBoxplot = _pData.getBoxplot() && !_pData.getBars() && !_pData.getHBars();
 
-								for (int k = 0; k < min(nDataDim[i], (int)_idx.vJ.size()); k++)
+								for (int k = 0; k < min(nDataDim[i], (int)_idx.col.size()); k++)
 								{
 									if (bBoxplot && !k)
 									{
-										_mDataPlots[i][0] = l + 1 + _idx.nI[0];
+										_mDataPlots[i][0] = _idx.row[l] + 1;
 									}
 
-									if (_data.getCols(sDataTable) > _idx.vJ[k])
+									if (_data.getCols(sDataTable) > _idx.col[k])
 									{
-										_mDataPlots[i][k + bBoxplot].a[l] = validize(getDataFromObject(sDataTable, l + _idx.nI[0], _idx.vJ[k], isCluster));
+										_mDataPlots[i][k + bBoxplot].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col[k], isCluster));
 									}
 									else if (_pInfo.sCommand == "plot3d" && k < 3
-											 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.vJ[k], sDataTable) - _idx.nI[0]))
+											 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.col[k], sDataTable) - _idx.row.front()))
 									{
 										_mDataPlots[i][k].a[l] = 0.0;
 									}
@@ -3998,7 +3948,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 						}
 
 						// --> Berechnen der DataRanges <--
-						calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.nI);
+						calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.row);
 					}
 				}
 			}
@@ -4310,7 +4260,7 @@ string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const 
 
 // This member function is used to calculate the data ranges.
 // It is called during filling the data objects.
-void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, long long int i_pos[2])
+void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, const VectorIndex& _vLine)
 {
     // Calculate the ranges for all three spatial directions
 	for (int q = 0; q < 3; q++)
@@ -4433,12 +4383,13 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 				}
 
 				// Calculate the data ranges for three dimensional plots
-				for (int k = 0; k < i_pos[1] - i_pos[0]; k++)
+				for (size_t k = 0; k < _vLine.size(); k++)
 				{
-					if (dDataRanges[q][0] > _mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] || isnan(dDataRanges[q][0]))
-						dDataRanges[q][0] = _mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0]) * k];
-					if (dDataRanges[q][1] < _mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0])*k] || isnan(dDataRanges[q][1]))
-						dDataRanges[q][1] = _mDataPlots[i][q].a[l + (i_pos[1] - i_pos[0]) * k];
+					if (dDataRanges[q][0] > _mDataPlots[i][q].a[l + _vLine.size() * k] || isnan(dDataRanges[q][0]))
+						dDataRanges[q][0] = _mDataPlots[i][q].a[l + _vLine.size() * k];
+
+					if (dDataRanges[q][1] < _mDataPlots[i][q].a[l + _vLine.size() * k] || isnan(dDataRanges[q][1]))
+						dDataRanges[q][1] = _mDataPlots[i][q].a[l + _vLine.size() * k];
 				}
 			}
 			else

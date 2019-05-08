@@ -155,34 +155,30 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
     {
         sTargetName = sCmd.substr(0, sCmd.find('='));
         StripSpaces(sTargetName);
+        size_t parens = sTargetName.find_first_of("({");
 
         if (sTargetName.substr(0, 5) == "data(")
             throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetName, sTargetName);
 
-        if (sTargetName.find_first_of("({") == string::npos)
+        if (parens == string::npos)
             throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, sTargetName, sTargetName);
 
         // Distinguish between tables and clusters
-        if (sTargetName.find("(") != string::npos && !_data.isCacheElement(sTargetName))
+        if (sTargetName[parens] == '(')
         {
             // Create a new table
-            _data.addCache(sTargetName.substr(0,sTargetName.find('(')), _option);
+            if (!_data.isCacheElement(sTargetName))
+                _data.addCache(sTargetName.substr(0, parens), _option);
 
             if (sTargetName.substr(sTargetName.find('('),2) == "()")
                 bAllowMatrixClearing = true;
         }
-        else if (sTargetName.find("{") != string::npos && !_data.isCluster(sTargetName))
+        else if (sTargetName[parens] == '{')
         {
             // Create a new cluster
-            _data.newCluster(sTargetName);
-            isCluster = true;
+            if (!_data.isCluster(sTargetName))
+                _data.newCluster(sTargetName);
 
-            if (sTargetName.substr(sTargetName.find('{'),2) == "{}")
-                bAllowMatrixClearing = true;
-        }
-        else if (sTargetName.find("{") != string::npos)
-        {
-            // Cluster exists already - only mark the target as cluster
             isCluster = true;
 
             if (sTargetName.substr(sTargetName.find('{'),2) == "{}")
@@ -196,30 +192,13 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
 
         sCmd.erase(0, sCmd.find('=')+1);
 
-        if (!_idx.vI.size())
-        {
-            if (_idx.nI[1] == -1)
-                _idx.nI[1] = _idx.nI[0];
-
-            if (_idx.nJ[1] == -1)
-                _idx.nJ[1] = _idx.nJ[0];
-
-            if (_idx.nI[1] != -2)
-                _idx.nI[1]++;
-
-            if (_idx.nJ[1] != -2)
-                _idx.nJ[1]++;
-        }
-
         sTargetName.erase(sTargetName.find_first_of("({"));
     }
     else
     {
         sTargetName = "matrix";
-        _idx.nI[0] = 0;
-        _idx.nJ[0] = 0;
-        _idx.nJ[1] = -2;
-        _idx.nI[1] = -2;
+        _idx.row = VectorIndex(0LL, VectorIndex::OPEN_END);
+        _idx.col = VectorIndex(0LL, VectorIndex::OPEN_END);
 
         if (!_data.isCacheElement("matrix("))
         {
@@ -241,17 +220,17 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
             _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false) - 1, 0, _data.getCols(sTargetName, false) - 1);
 
         // Prepare the target size
-        _data.setCacheSize(_idx.nI[0]+_mResult.size(), _idx.nJ[0]+_mResult[0].size(), sTargetName);
+        _data.setCacheSize(_idx.row.front()+_mResult.size(), _idx.col.front()+_mResult[0].size(), sTargetName);
 
         // Write the contents to the table
         for (unsigned int i = 0; i < _mResult.size(); i++)
         {
-            if (_idx.nI[1] == -2 || _idx.nI[1] - _idx.nI[1] > i)
+            if (_idx.row[i] != VectorIndex::INVALID)
             {
                 for (unsigned int j = 0; j < _mResult[0].size(); j++)
                 {
-                    if (_idx.nJ[1] == -2 || _idx.nJ[1] - _idx.nJ[0] > j)
-                        _data.writeToCache((long long int)i+_idx.nI[0], (long long int)j+_idx.nJ[0], sTargetName, _mResult[i][j]);
+                    if (_idx.col[j] != VectorIndex::INVALID)
+                        _data.writeToCache(_idx.row[i], _idx.col[j], sTargetName, _mResult[i][j]);
                     else
                         break;
                 }
@@ -274,10 +253,10 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
             // Assign the first line
             for (size_t i = 0; i < _mResult[0].size(); i++)
             {
-                if (_idx.nI[1] != -2 && _idx.nI[0]+i > _idx.nI[1])
+                if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                cluster.setDouble(_idx.nI[0]+i, _mResult[0][i]);
+                cluster.setDouble(_idx.row[i], _mResult[0][i]);
             }
         }
         else
@@ -285,10 +264,10 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
             // Assign the first column
             for (size_t i = 0; i < _mResult.size(); i++)
             {
-                if (_idx.nI[1] != -2 && _idx.nI[0]+i > _idx.nI[1])
+                if (_idx.row[i] == VectorIndex::INVALID)
                     break;
 
-                cluster.setDouble(_idx.nI[0]+i, _mResult[i][0]);
+                cluster.setDouble(_idx.row[i], _mResult[i][0]);
             }
         }
     }
@@ -1000,11 +979,8 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option));
 
         // Evaluate the indices
-        if (!vIndices[vIndices.size()-1].vI.size())
-        {
-            if (!parser_evalIndices("data", vIndices[vIndices.size()-1], _data))
-                throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, nPos);
-        }
+        if (!parser_evalIndices("data", vIndices[vIndices.size()-1], _data))
+            throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, nPos);
 
         // Store the name of the current data object
         vMatrixNames.push_back("data");
@@ -1038,11 +1014,8 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option));
 
             // Evaluate the indices
-            if (!vIndices[vIndices.size()-1].vI.size())
-            {
-                if (!parser_evalIndices(iter->first, vIndices[vIndices.size()-1], _data))
-                    throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, nPos);
-            }
+            if (!parser_evalIndices(iter->first, vIndices[vIndices.size()-1], _data))
+                throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, nPos);
 
             // Store the name of the current data object
             vMatrixNames.push_back(iter->first);
@@ -1077,19 +1050,16 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             // Get the indices
             Indices _idx = parser_getIndices(__sCmd.substr(nPos), _parser, _data, _option);
 
-            if (_idx.nI[1] == -1)
-                _idx.nI[1] = _idx.nI[0]+1;
-
-            if (_idx.nI[1] == -2)
-                _idx.nI[1] = iter->second.size();
+            if (_idx.row.isOpenEnd())
+                _idx.row.setRange(0, iter->second.size()-1);
 
             // Prepare a target matrix
-            Matrix _mClusterMatrix = parser_ZeroesMatrix(_idx.nI[1] - _idx.nI[0], 1);
+            Matrix _mClusterMatrix = parser_ZeroesMatrix(_idx.row.size(), 1);
 
             // Write the contents to the matrix
-            for (size_t i = 0; i < _idx.nI[1] - _idx.nI[0]; i++)
+            for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                _mClusterMatrix[i][0] = iter->second.getDouble(i+_idx.nI[0]);
+                _mClusterMatrix[i][0] = iter->second.getDouble(_idx.row[i]);
             }
 
             // Declare the cluster as a returned matrix (simplifies the
@@ -1135,32 +1105,9 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
                     unsigned int nthMatrix = StrToInt(sElement.substr(sElement.find('[')+1, sElement.find(']')-1-sElement.find('[')));
 
                     // Get the matrix elements
-                    if (!vIndices[nthMatrix].vI.size())
+                    for (unsigned int i = 0; i < vIndices[nthMatrix].row.size(); i++)
                     {
-                        for (unsigned int i = vIndices[nthMatrix].nI[0]; i <= vIndices[nthMatrix].nI[1]; i++)
-                        {
-                            if (vIndices[nthMatrix].nJ[0] > vIndices[nthMatrix].nJ[1])
-                                vLine.push_back(vMissingValues[nthMatrix]);
-                            else
-                            {
-                                for (long long int k = vIndices[nthMatrix].nJ[0]; k <= vIndices[nthMatrix].nJ[1]; k++)
-                                {
-                                    if (_data.isValidEntry(vIndices[nthMatrix].nI[0]+i, k, vMatrixNames[nthMatrix]))
-                                        vLine.push_back(_data.getElement(vIndices[nthMatrix].nI[0]+i, k, vMatrixNames[nthMatrix]));
-                                    else
-                                        vLine.push_back(NAN);
-                                }
-                            }
-                            _mRight.push_back(vLine);
-                            vLine.clear();
-                        }
-                    }
-                    else
-                    {
-                        for (unsigned int i = 0; i < vIndices[nthMatrix].vI.size(); i++)
-                        {
-                            _mRight.push_back(_data.getElement(vector<long long int>(1,vIndices[nthMatrix].vI[i]), vIndices[nthMatrix].vJ, vMatrixNames[nthMatrix]));
-                        }
+                        _mRight.push_back(_data.getElement(VectorIndex(vIndices[nthMatrix].row[i]), vIndices[nthMatrix].col, vMatrixNames[nthMatrix]));
                     }
                 }
                 else
@@ -1185,33 +1132,9 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
                     unsigned int nthMatrix = StrToInt(sElement.substr(sElement.find('[')+1, sElement.find(']')-1-sElement.find('[')));
 
                     // Get the matrix elements
-                    if (!vIndices[nthMatrix].vI.size())
+                    for (unsigned int i = 0; i < vIndices[nthMatrix].row.size(); i++)
                     {
-                        for (unsigned int i = vIndices[nthMatrix].nI[0]; i <= vIndices[nthMatrix].nI[1]; i++)
-                        {
-                            if (vIndices[nthMatrix].nJ[0] > vIndices[nthMatrix].nJ[1])
-                                vLine.push_back(vMissingValues[nthMatrix]);
-                            else
-                            {
-                                for (long long int k = vIndices[nthMatrix].nJ[0]; k <= vIndices[nthMatrix].nJ[1]; k++)
-                                {
-                                    if (_data.isValidEntry(vIndices[nthMatrix].nI[0]+i, k, vMatrixNames[nthMatrix]))
-                                        vLine.push_back(_data.getElement(vIndices[nthMatrix].nI[0]+i, k, vMatrixNames[nthMatrix]));
-                                    else
-                                        vLine.push_back(NAN);
-                                }
-                            }
-                            //cerr << vLine.size() << endl;
-                            _mLeft.push_back(vLine);
-                            vLine.clear();
-                        }
-                    }
-                    else
-                    {
-                        for (unsigned int i = 0; i < vIndices[nthMatrix].vI.size(); i++)
-                        {
-                            _mLeft.push_back(_data.getElement(vector<long long int>(1,vIndices[nthMatrix].vI[i]), vIndices[nthMatrix].vJ, vMatrixNames[nthMatrix]));
-                        }
+                        _mLeft.push_back(_data.getElement(VectorIndex(vIndices[nthMatrix].row[i]), vIndices[nthMatrix].col, vMatrixNames[nthMatrix]));
                     }
                 }
                 else
@@ -1244,16 +1167,8 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             continue;
 
         // Get the column count from the dimensions of the indices
-        if (vIndices[i].vI.size())
-        {
-            if (vIndices[i].vJ.size() > nColCount)
-                nColCount = vIndices[i].vJ.size();
-        }
-        else
-        {
-            if (vIndices[i].nJ[1]-vIndices[i].nJ[0]+1 > nColCount)
-                nColCount = vIndices[i].nJ[1]-vIndices[i].nJ[0]+1;
-        }
+        if (vIndices[i].col.size() > nColCount)
+            nColCount = vIndices[i].col.size();
     }
 
     // Examine now the return values available in the expression
@@ -1273,25 +1188,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             vMatrixVector.clear();
 
         // Get the values using the incdices
-        if (vIndices[j].vI.size())
-        {
-            vMatrixVector = _data.getElement(vIndices[j].vI, vector<long long int>(1,vIndices[j].vJ[0]), vMatrixNames[j]);
-        }
-        else
-        {
-            if (vIndices[j].nJ[0] > vIndices[j].nJ[1] && vIndices[j].nJ[0] > 0 && vIndices[j].nJ[1] > 0)
-                vMatrixVector.push_back(vMissingValues[j]);
-            else
-            {
-                for (long long int k = vIndices[j].nI[0]; k <= vIndices[j].nI[1]; k++)
-                {
-                    if (_data.isValidEntry(k, vIndices[j].nJ[0], vMatrixNames[j]))
-                        vMatrixVector.push_back(_data.getElement(k, vIndices[j].nJ[0], vMatrixNames[j]));
-                    else
-                        vMatrixVector.push_back(NAN);
-                }
-            }
-        }
+        vMatrixVector = _data.getElement(vIndices[j].row, VectorIndex(vIndices[j].col.front()), vMatrixNames[j]);
 
         // Declare the corresponding vector variable
         if (sCmd.find("_~matrix["+toString((int)j)+"]") != string::npos)
@@ -1360,36 +1257,12 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             if (vMatrixVector.size())
                 vMatrixVector.clear();
 
-            if (vIndices[j].vI.size())
-            {
-                if (vIndices[j].vJ.size() <= i && (vIndices[j].vJ.size() > 1 || vIndices[j].vI.size() > 1))
-                    vMatrixVector.push_back(vMissingValues[j]);
-                else if (vIndices[j].vI.size() >= 1 && vIndices[j].vJ.size() == 1)
-                    continue;
-                else
-                {
-                    vMatrixVector = _data.getElement(vIndices[j].vI, vector<long long int>(1, vIndices[j].vJ[i]), vMatrixNames[j]);
-                }
-            }
+            if (vIndices[j].col.size() <= i && (vIndices[j].col.size() > 1 || vIndices[j].row.size() > 1))
+                vMatrixVector.push_back(vMissingValues[j]);
+            else if (vIndices[j].row.size() >= 1 && vIndices[j].col.size() == 1)
+                continue;
             else
-            {
-                if (vIndices[j].nJ[0]+i > vIndices[j].nJ[1] && (vIndices[j].nJ[1]-vIndices[j].nJ[0] > 1 || vIndices[j].nI[1]-vIndices[j].nI[0] > 1))
-                    vMatrixVector.push_back(vMissingValues[j]);
-                else if (vIndices[j].nJ[1]-vIndices[j].nJ[0] <= 1 && vIndices[j].nI[1]-vIndices[j].nI[0] >= 0)
-                {
-                    continue;
-                }
-                else
-                {
-                    for (long long int k = vIndices[j].nI[0]; k <= vIndices[j].nI[1]; k++)
-                    {
-                        if (_data.isValidEntry(k, vIndices[j].nJ[0]+i, vMatrixNames[j]))
-                            vMatrixVector.push_back(_data.getElement(k, vIndices[j].nJ[0]+i, vMatrixNames[j]));
-                        else
-                            vMatrixVector.push_back(NAN);
-                    }
-                }
-            }
+                vMatrixVector = _data.getElement(vIndices[j].row, VectorIndex(vIndices[j].col[i]), vMatrixNames[j]);
 
             if (sCmd.find("_~matrix["+toString((int)j)+"]") != string::npos)
                 _parser.SetVectorVar("_~matrix["+toString((int)j)+"]", vMatrixVector);
@@ -2841,52 +2714,25 @@ static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Pa
     Matrix _mReturn;
     Indices _idx = parser_getIndices(sExpr, _mMatrix, _parser, _data, _option);
 
+    if (_idx.row.isOpenEnd())
+        _idx.row.setRange(0, _mMatrix.size()-1);
 
-    if (_idx.vI.size() && _idx.vJ.size())
+    if (_idx.col.isOpenEnd())
+        _idx.col.setRange(0, _mMatrix[0].size()-1);
+
+    _mReturn = parser_ZeroesMatrix(_idx.row.size(), _idx.col.size());
+
+    for (unsigned int i = 0; i < _idx.row.size(); i++)
     {
-        _mReturn = parser_ZeroesMatrix(_idx.vI.size(), _idx.vJ.size());
-        for (unsigned int i = 0; i < _idx.vI.size(); i++)
+        for (unsigned int j = 0; j < _idx.col.size(); j++)
         {
-            for (unsigned int j = 0; j < _idx.vJ.size(); j++)
-            {
-                if (_idx.vI[i] >= _mMatrix.size() || _idx.vJ[j] >= _mMatrix[0].size())
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
-                _mReturn[i][j] = _mMatrix[_idx.vI[i]][_idx.vJ[j]];
-            }
+            if (_idx.row[i] >= _mMatrix.size() || _idx.col[j] >= _mMatrix[0].size())
+                throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
+
+            _mReturn[i][j] = _mMatrix[_idx.row[i]][_idx.col[j]];
         }
     }
-    else
-    {
-        if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
 
-        if (_idx.nI[1] == -1)
-            _idx.nI[1] = _idx.nI[0]+1;
-        else if (_idx.nI[1] == -2)
-            _idx.nI[1] = _mMatrix.size();
-        else
-            _idx.nI[1]++;
-
-        if (_idx.nJ[1] == -1)
-            _idx.nJ[1] = _idx.nJ[0]+1;
-        else if (_idx.nJ[1] == -2)
-            _idx.nJ[1] = _mMatrix[0].size();
-        else
-            _idx.nJ[1]++;
-
-        if (_idx.nI[0] > _mMatrix.size() || _idx.nI[1] > _mMatrix.size() || _idx.nJ[0] > _mMatrix[0].size() || _idx.nJ[1] > _mMatrix[0].size())
-            throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
-
-        _mReturn = parser_ZeroesMatrix(_idx.nI[1]-_idx.nI[0], _idx.nJ[1]-_idx.nJ[0]);
-
-        for (unsigned int i = 0; i < _idx.nI[1]-_idx.nI[0]; i++)
-        {
-            for (unsigned int j = 0; j < _idx.nJ[1]-_idx.nJ[0]; j++)
-            {
-                _mReturn[i][j] = _mMatrix[i+_idx.nI[0]][j+_idx.nJ[0]];
-            }
-        }
-    }
     return _mReturn;
 }
 
@@ -3150,50 +2996,53 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
     int nParenthesis = 0;
     value_type* v = 0;
     int nResults = 0;
-    for (int i = 0; i < 2; i++)
-    {
-        _idx.nI[i] = -1;
-        _idx.nJ[i] = -1;
-    }
-    //cerr << sCmd << endl;
+
     if (sCmd.find('(') == string::npos)
         return _idx;
+
     nPos = sCmd.find('(');
+
     for (unsigned int n = nPos; n < sCmd.length(); n++)
     {
         if (sCmd[n] == '(')
             nParenthesis++;
+
         if (sCmd[n] == ')')
             nParenthesis--;
+
         if (!nParenthesis)
         {
             sArgument = sCmd.substr(nPos+1, n-nPos-1);
             break;
         }
     }
+
     StripSpaces(sArgument);
+
     if (sArgument.find("data(") != string::npos || _data.containsTablesOrClusters(sArgument))
         getDataElements(sArgument, _parser, _data, _option);
+
     // --> Kurzschreibweise!
     if (!sArgument.length())
     {
-        _idx.nI[0] = 0;
-        _idx.nJ[0] = 0;
-        _idx.nI[1] = -2;
-        _idx.nJ[1] = -2;
+        _idx.row = VectorIndex(0LL, _mMatrix.size());
+        _idx.col = VectorIndex(0LL, _mMatrix[0].size());
         return _idx;
     }
-    //cerr << sArgument << endl;
+
     if (sArgument.find(',') != string::npos)
     {
         nParenthesis = 0;
         nPos = 0;
+
         for (unsigned int n = 0; n < sArgument.length(); n++)
         {
             if (sArgument[n] == '(' || sArgument[n] == '{')
                 nParenthesis++;
+
             if (sArgument[n] == ')' || sArgument[n] == '}')
                 nParenthesis--;
+
             if (sArgument[n] == ':' && !nParenthesis)
             {
                 if (!nPos)
@@ -3211,8 +3060,10 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
                 {
                     sJ[0] = sArgument.substr(nPos, n-nPos);
                 }
+
                 nPos = n+1;
             }
+
             if (sArgument[n] == ',' && !nParenthesis)
             {
                 if (!nPos)
@@ -3229,9 +3080,11 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
                     else
                         sI[1] = sArgument.substr(nPos, n - nPos);
                 }
+
                 nPos = n+1;
             }
         }
+
         if (sJ[0] == "<<NONE>>")
         {
             if (nPos < sArgument.length())
@@ -3249,25 +3102,26 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
         {
             _parser.SetExpr(sI[0]);
             v = _parser.Eval(nResults);
+
             if (nResults > 1)
             {
-                for (int n = 0; n < nResults; n++)
-                    _idx.vI.push_back((int)v[n]-1);
+                _idx.row = VectorIndex(v, nResults, 0);
             }
             else
-                _idx.nI[0] = (int)v[0]-1;
+                _idx.row.front() = intCast(v[0])-1;
         }
+
         if (sJ[0] != "<<NONE>>" && sJ[1] == "<<NONE>>")
         {
             _parser.SetExpr(sJ[0]);
             v = _parser.Eval(nResults);
+
             if (nResults > 1)
             {
-                for (int n = 0; n < nResults; n++)
-                    _idx.vJ.push_back((int)v[n]-1);
+                _idx.col = VectorIndex(v, nResults, 0);
             }
             else
-                _idx.nJ[0] = (int)v[0]-1;
+                _idx.col.front() = intCast(v[0])-1;
         }
 
         for (int n = 0; n < 2; n++)
@@ -3275,74 +3129,37 @@ Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _p
             if (sI[n] == "<<EMPTY>>")
             {
                 if (n)
-                    _idx.nI[n] = -2;
+                    _idx.row.setRange(0, _mMatrix.size()-1);
                 else
-                    _idx.nI[0] = 0;
+                    _idx.row.front() = 0;
             }
             else if (sI[n] != "<<NONE>>")
             {
-                if (_idx.vI.size())
-                    continue;
                 _parser.SetExpr(sI[n]);
-                _idx.nI[n] = (int)_parser.Eval()-1;
+                _idx.row.setIndex(n, intCast(_parser.Eval())-1);
+
                 if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
             }
+
             if (sJ[n] == "<<EMPTY>>")
             {
                 if (n)
-                    _idx.nJ[n] = -2;
+                    _idx.col.setRange(0, _mMatrix[0].size()-1);
                 else
-                    _idx.nJ[0] = 0;
+                    _idx.col.front() = 0;
             }
             else if (sJ[n] != "<<NONE>>")
             {
-                if (_idx.vJ.size())
-                    continue;
                 _parser.SetExpr(sJ[n]);
-                _idx.nJ[n] = (int)_parser.Eval()-1;
+                _idx.col.setIndex(n, intCast(_parser.Eval())-1);
+
                 if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
             }
         }
-        if (_idx.vI.size() || _idx.vJ.size())
-        {
-            if (!_idx.vI.size())
-            {
-                if (_idx.nI[0] == -1)
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
-                if (_idx.nI[1] == -2)
-                {
-                    for (long long int i = _idx.nI[0]; i < (long long int)_mMatrix.size(); i++)
-                        _idx.vI.push_back(i);
-                }
-                else if (_idx.nI[1] == -1)
-                    _idx.vI.push_back(_idx.nI[0]);
-                else
-                {
-                    for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-                        _idx.vI.push_back(i);
-                }
-            }
-            if (!_idx.vJ.size())
-            {
-                if (_idx.nJ[0] == -1)
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
-                if (_idx.nJ[1] == -2)
-                {
-                    for (long long int j = _idx.nJ[0]; j < (long long int)_mMatrix[0].size(); j++)
-                        _idx.vJ.push_back(j);
-                }
-                else if (_idx.nJ[1] == -1)
-                    _idx.vJ.push_back(_idx.nJ[0]);
-                else
-                {
-                    for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-                        _idx.vJ.push_back(j);
-                }
-            }
-        }
     }
+
     return _idx;
 }
 
@@ -3382,32 +3199,10 @@ static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector
         vector<double> v;
 
         // Get the values using the indices
-        if (vIndices[j].vI.size())
-        {
-            if (vIndices[j].vI.size() > vIndices[j].vJ.size())
-                v = _data.getElement(vIndices[j].vI, vector<long long int>(1, vIndices[j].vJ[0]), vMatrixNames[j]);
-            else
-                v = _data.getElement(vector<long long int>(1, vIndices[j].vI[0]), vIndices[j].vJ, vMatrixNames[j]);
-        }
+        if (vIndices[j].row.size() > vIndices[j].col.size())
+            v = _data.getElement(vIndices[j].row, VectorIndex(vIndices[j].col[0]), vMatrixNames[j]);
         else
-        {
-            if (vIndices[j].nJ[1] - vIndices[j].nJ[0] < vIndices[j].nI[1] - vIndices[j].nI[0] || vIndices[j].nJ[1] == -1)
-            {
-                for (long long int k = vIndices[j].nI[0]; k <= vIndices[j].nI[1]; k++)
-                {
-                    if (_data.isValidEntry(k, vIndices[j].nJ[0], vMatrixNames[j]))
-                        v.push_back(_data.getElement(k, vIndices[j].nJ[0], vMatrixNames[j]));
-                }
-            }
-            else
-            {
-                for (long long int k = vIndices[j].nJ[0]; k <= vIndices[j].nJ[1]; k++)
-                {
-                    if (_data.isValidEntry(vIndices[j].nI[0], k, vMatrixNames[j]))
-                        v.push_back(_data.getElement(vIndices[j].nI[0], k, vMatrixNames[j]));
-                }
-            }
-        }
+            v = _data.getElement(VectorIndex(vIndices[j].row[0]), vIndices[j].col, vMatrixNames[j]);
 
         // Declare the corresponding vector variable
         if (_sCmd.find("_~matrix["+toString((int)j)+"]") != string::npos)

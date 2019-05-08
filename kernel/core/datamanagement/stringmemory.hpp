@@ -60,9 +60,13 @@ class StringMemory
     public:
 		bool writeString(const string& _sString, unsigned int _nthString = string::npos, unsigned int nCol = 0);
 		string readString(unsigned int _nthString = string::npos, unsigned int nCol = 0);
+
 		string maxString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
+		string maxString(VectorIndex _vLine, VectorIndex _vCol);
 		string minString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
+		string minString(VectorIndex _vLine, VectorIndex _vCol);
 		string sumString(unsigned int i1 = 0, unsigned int i2 = string::npos, unsigned int nCol = 0);
+		string sumString(VectorIndex _vLine, VectorIndex _vCol);
 
 		// Returns the number of stored elements in either a
 		// specific column or the maximal line count of the

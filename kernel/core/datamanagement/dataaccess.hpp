@@ -48,7 +48,27 @@ int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const 
 
 inline bool isValidIndexSet(const Indices& _idx)
 {
-    return (_idx.nI[0] != -1 || _idx.vI.size()) && (_idx.nJ[0] != -1 || _idx.vJ.size());
+    return _idx.row.isValid() && _idx.col.isValid();
 }
 
+// This class is defined to abstract the determination
+// of the correct data object and the calculation of
+// the corresponding indices
+class DataAccessParser
+{
+    private:
+        string sDataObject;
+        Indices idx;
+        bool bIsCluster;
+
+    public:
+        DataAccessParser(const string& sCommand);
+        string& getDataObject();
+        Indices& getIndices();
+        bool isCluster();
+};
+
+
 #endif // DATAACCESS_HPP
+
+

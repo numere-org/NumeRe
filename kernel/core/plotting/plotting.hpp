@@ -76,7 +76,7 @@ class Plot
         void evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2]);
         void createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data, const Settings& _option);
         string constructDataLegendElement(Parser& _parser, Datafile& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName);
-        void calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, long long i_pos[2]);
+        void calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, const VectorIndex& _vLine);
         size_t countValidElements(const mglData& _mData);
         void separateLegends();
         void prepareMemory(PlotData& _pData, const string& sFunc, int nFunctions);

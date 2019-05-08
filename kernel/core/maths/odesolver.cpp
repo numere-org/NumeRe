@@ -194,12 +194,10 @@ bool Odesolver::solve(const string& sCmd)
         _odeData->addCache(sTarget, *_odeSettings);
 
     _idx = parser_getIndices(sTarget, *_odeParser, *_odeData, *_odeSettings);
-    if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+
+    if (!isValidIndexSet(_idx))
         return false;
-    if (_idx.nI[1] == -1)
-        _idx.nI[1] = _idx.nI[0]+1;
-    if (_idx.nJ[1] == -1)
-        _idx.nJ[1] = _idx.nJ[0]+1;
+
     sTarget.erase(sTarget.find('('));
 
     if (!_odeFunctions->call(sParams))
@@ -317,20 +315,17 @@ bool Odesolver::solve(const string& sCmd)
 
     //cerr << sFunc << endl;
     //cerr << nDimensions << endl;
-    if (_idx.nI[1] == -2)
-        _idx.nI[1] = _idx.nI[0] + nSamples+1;
-    if (_idx.nJ[1] == -2)
-        _idx.nJ[1] = _idx.nJ[0] + nDimensions+1+(long long int)bCalcLyapunov*2;
+    if (_idx.row.isOpenEnd())
+        _idx.row.setRange(0, _idx.row.front() + nSamples);
+
+    if (_idx.col.isOpenEnd())
+        _idx.col.setRange(0, _idx.col.front() + nDimensions + (long long int)bCalcLyapunov*2);
 
     if (bAllowCacheClearance)
     {
         _odeData->deleteBulk(sTarget, 0, _odeData->getLines(sTarget, false) - 1, 0, nDimensions+(long long int)bCalcLyapunov*2);
     }
 
-    /*cerr << _idx.nI[0] << endl
-         << _idx.nI[1] << endl
-         << _idx.nJ[0] << endl
-         << _idx.nJ[1] << endl;*/
     y = new double[nDimensions];
     if (bCalcLyapunov)
         y2 = new double[nDimensions];
@@ -382,22 +377,28 @@ bool Odesolver::solve(const string& sCmd)
     }
 
     NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ..."));
-    if (bAllowCacheClearance || !_idx.nI[0])
-        _odeData->setHeadLineElement(_idx.nJ[0], sTarget, "x");
-    _odeData->writeToCache(_idx.nI[0], _idx.nJ[0], sTarget, t);
+    if (bAllowCacheClearance || !_idx.row.front())
+        _odeData->setHeadLineElement(_idx.col.front(), sTarget, "x");
+
+    _odeData->writeToCache(_idx.row.front(), _idx.col.front(), sTarget, t);
+
     for (int j = 0; j < nDimensions; j++)
     {
-        if (_idx.nJ[1] <= j+1+_idx.nJ[0])
+        if (_idx.col[j+1] == VectorIndex::INVALID)
             break;
-        if (bAllowCacheClearance || !_idx.nI[0])
-            _odeData->setHeadLineElement(_idx.nJ[0]+1+j, sTarget, "y"+toString(j+1));
-        _odeData->writeToCache(_idx.nI[0], j+1+_idx.nJ[0], sTarget, y[j]);
+
+        if (bAllowCacheClearance || !_idx.row.front())
+            _odeData->setHeadLineElement(_idx.col[1+j], sTarget, "y"+toString(j+1));
+
+        _odeData->writeToCache(_idx.row.front(), _idx.col[j+1], sTarget, y[j]);
     }
-    if (bCalcLyapunov && (bAllowCacheClearance || !_idx.nI[0]) && _idx.nJ[1] > nDimensions + 2 + _idx.nJ[0])
+
+    if (bCalcLyapunov && (bAllowCacheClearance || !_idx.row.front()) && _idx.col[nDimensions+2] != VectorIndex::INVALID)
     {
-        _odeData->setHeadLineElement(_idx.nJ[0]+1+nDimensions, sTarget, "x_lypnv");
-        _odeData->setHeadLineElement(_idx.nJ[0]+2+nDimensions, sTarget, "lyapunov");
+        _odeData->setHeadLineElement(_idx.col[1+nDimensions], sTarget, "x_lypnv");
+        _odeData->setHeadLineElement(_idx.col[2+nDimensions], sTarget, "lyapunov");
     }
+
     // integrieren
     for (int i = 0; i < nSamples; i++)
     {
@@ -430,20 +431,26 @@ bool Odesolver::solve(const string& sCmd)
 
             throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
         }
-        if (_idx.nI[1]-_idx.nI[0] <= i+1)
+
+        if (_idx.row.size() <= i+1)
             break;
+
         t1 += dt;
+
         while (t < t1)
         {
             if (GSL_SUCCESS != gsl_odeiv_evolve_apply(odeEvolve, odeControl, odeStep, &odeSystem, &t, t1, &h, y))
                 break;
         }
+
         h2 = dRelTolerance;
+
         while (t2 < t1 && bCalcLyapunov)
         {
             if (GSL_SUCCESS != gsl_odeiv_evolve_apply(odeEvolve_ly, odeControl_ly, odeStep_ly, &odeSystem_ly, &t2, t1, &h2, y2))
                 break;
         }
+
         if (bCalcLyapunov)
         {
             dist[1] = 0.0;
@@ -455,26 +462,32 @@ bool Odesolver::solve(const string& sCmd)
             lyapu[1] = log(dist[1]/dist[0])/dt;
             lyapu[0] = (i*lyapu[0] + lyapu[1])/(double)(i+1);
 
-            if (!((i+1) % nLyapuSamples) && _idx.nJ[1] > nDimensions + 2 + _idx.nJ[0])
+            if (!((i+1) % nLyapuSamples) && _idx.col[nDimensions + 2] != VectorIndex::INVALID)
             {
-                _odeData->writeToCache((i+1)/nLyapuSamples-1, nDimensions+1+_idx.nJ[0], sTarget, t1);
-                _odeData->writeToCache((i+1)/nLyapuSamples-1, nDimensions+2+_idx.nJ[0], sTarget, lyapu[0]);
+                _odeData->writeToCache((i+1)/nLyapuSamples-1, _idx.col[nDimensions+1], sTarget, t1);
+                _odeData->writeToCache((i+1)/nLyapuSamples-1, _idx.col[nDimensions+2], sTarget, lyapu[0]);
             }
+
             for (int n = 0; n < nDimensions; n++)
             {
                 y2[n] = y[n] + (y2[n]-y[n])*dist[0]/dist[1];
             }
+
             gsl_odeiv_evolve_reset(odeEvolve_ly);
             gsl_odeiv_step_reset(odeStep_ly);
         }
-        _odeData->writeToCache(i+_idx.nI[0]+1, _idx.nJ[0], sTarget, t);
+
+        _odeData->writeToCache(_idx.row[i+1], _idx.col[0], sTarget, t);
+
         for (int j = 0; j < nDimensions; j++)
         {
-            if (_idx.nJ[1] <= j+1+_idx.nJ[0])
+            if (_idx.col[j+1] == VectorIndex::INVALID)
                 break;
-            _odeData->writeToCache(i+_idx.nI[0]+1, j+1+_idx.nJ[0], sTarget, y[j]);
+
+            _odeData->writeToCache(_idx.row[i+1], _idx.col[j+1], sTarget, y[j]);
         }
     }
+
     gsl_odeiv_evolve_free(odeEvolve);
     gsl_odeiv_control_free(odeControl);
     gsl_odeiv_step_free(odeStep);
@@ -492,8 +505,10 @@ bool Odesolver::solve(const string& sCmd)
 
     if (y)
         delete[] y;
+
     if (y2)
         delete[] y2;
+
     NumeReKernel::printPreFmt(" " + _lang.get("COMMON_SUCCESS") + ".\n");
     return true;
 }

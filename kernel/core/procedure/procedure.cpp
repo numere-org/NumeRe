@@ -399,14 +399,8 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
 
-            if (!bWriteToCluster && _idx.nI[1] == -2 && _idx.nJ[1] == -2)
+            if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                 throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
-
-            if (_idx.nI[1] == -1)
-                _idx.nI[1] = _idx.nI[0];
-
-            if (_idx.nJ[1] == -1)
-                _idx.nJ[1] = _idx.nJ[0];
 
             sCache.erase(sCache.find_first_of("({"));
             StripSpaces(sCache);

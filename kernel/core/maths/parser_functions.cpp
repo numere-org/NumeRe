@@ -182,134 +182,72 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
 		Indices _idx = parser_getIndices(sInt_Line[3], _parser, _data, _option);
 
 		// Calculate the integral of the data set
-		if (_idx.vI.size())
-		{
-		    // The indices are vectors
-		    //
-            // If it is a single column or row, then we simply
-            // summarize its contents, otherwise we calculate the
-            // integral with the trapezoidal method
-			if (_idx.vI.size() == 1 || _idx.vJ.size() == 1)
-				vResult.push_back(_data.sum(sDatatable, _idx.vI, _idx.vJ));
-			else
-			{
-				Datafile _cache;
+        parser_evalIndices(sDatatable, _idx, _data);
 
-				// Copy the data
-				for (unsigned int i = 0; i < _idx.vI.size(); i++)
-				{
-					_cache.writeToCache(i, 0, "cache", _data.getElement(_idx.vI[i], _idx.vJ[0], sDatatable));
-					_cache.writeToCache(i, 1, "cache", _data.getElement(_idx.vI[i], _idx.vJ[1], sDatatable));
-				}
+        // The indices are vectors
+        //
+        // If it is a single column or row, then we simply
+        // summarize its contents, otherwise we calculate the
+        // integral with the trapezoidal method
+        if (_idx.row.size() == 1 || _idx.col.size() == 1)
+            vResult.push_back(_data.sum(sDatatable, _idx.row, _idx.col));
+        else
+        {
+            Datafile _cache;
 
-				// Sort the data
-				_cache.sortElements("cache -sort c=1[2]");
-				double dResult = 0.0;
-				long long int j = 1;
+            // Copy the data
+            for (size_t i = 0; i < _idx.row.size(); i++)
+            {
+                _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+                _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            }
 
-				// Calculate the integral by jumping over NaNs
-				for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++) //nan-suche
-				{
-					j = 1;
-					if (!_cache.isValidEntry(i, 1, "cache"))
-						continue;
-					while (!_cache.isValidEntry(i + j, 1, "cache") && i + j < _cache.getLines("cache", false) - 1)
-						j++;
-					if (!_cache.isValidEntry(i + j, 0, "cache") || !_cache.isValidEntry(i + j, 1, "cache"))
-						break;
-					if (sInt_Line[0].length() && parser_iVars.vValue[0][1] > _cache.getElement(i, 0, "cache"))
-						continue;
-					if (sInt_Line[0].length() && parser_iVars.vValue[0][2] < _cache.getElement(i + j, 0, "cache"))
-						break;
+            // Sort the data
+            _cache.sortElements("cache -sort c=1[2]");
+            double dResult = 0.0;
+            long long int j = 1;
 
-                    // Calculate either the integral, its samples or the corresponding x values
-					if (!bReturnFunctionPoints && !bCalcXvals)
-						dResult += (_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache"));
-					else if (bReturnFunctionPoints && !bCalcXvals)
-					{
-						if (vResult.size())
-							vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")) + vResult.back());
-						else
-							vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")));
-					}
-					else
-					{
-						vResult.push_back(_cache.getElement(i + j, 0, "cache"));
-					}
-				}
+            // Calculate the integral by jumping over NaNs
+            for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++) //nan-suche
+            {
+                j = 1;
 
-				// If the integral was calculated, then there is a
-				// single result, which hasn't been stored yet
-				if (!bReturnFunctionPoints && !bCalcXvals)
-					vResult.push_back(dResult);
-			}
-		}
-		else
-		{
-		    // The indices are regular
-		    //
-            // If it is a single column or row, then we simply
-            // summarize its contents, otherwise we calculate the
-            // integral with the trapezoidal method
-			if (_idx.nI[1] == -1 || _idx.nJ[1] == -1)
-			{
-				parser_evalIndices(sDatatable, _idx, _data);
-				vResult.push_back(_data.sum(sDatatable, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]));
-			}
-			else
-			{
-				parser_evalIndices(sDatatable, _idx, _data);
-				Datafile _cache;
+                if (!_cache.isValidEntry(i, 1, "cache"))
+                    continue;
 
-				// Copy the data
-				for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-				{
-					_cache.writeToCache(i - _idx.nI[0], 0, "cache", _data.getElement(i, _idx.nJ[0], sDatatable));
-					_cache.writeToCache(i - _idx.nI[0], 1, "cache", _data.getElement(i, _idx.nJ[1], sDatatable));
-				}
+                while (!_cache.isValidEntry(i + j, 1, "cache") && i + j < _cache.getLines("cache", false) - 1)
+                    j++;
 
-				// Sort the data
-				_cache.sortElements("cache -sort c=1[2]");
-				double dResult = 0.0;
-				long long int j = 1;
+                if (!_cache.isValidEntry(i + j, 0, "cache") || !_cache.isValidEntry(i + j, 1, "cache"))
+                    break;
 
-				// Calculate the integral by jumping over NaNs
-				for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++) //nan-suche
-				{
-					j = 1;
-					if (!_cache.isValidEntry(i, 1, "cache"))
-						continue;
-					while (!_cache.isValidEntry(i + j, 1, "cache") && i + j < _cache.getLines("cache", false) - 1)
-						j++;
-					if (!_cache.isValidEntry(i + j, 0, "cache") || !_cache.isValidEntry(i + j, 1, "cache"))
-						break;
-					if (sInt_Line[0].length() && parser_iVars.vValue[0][1] > _cache.getElement(i, 0, "cache"))
-						continue;
-					if (sInt_Line[0].length() && parser_iVars.vValue[0][2] < _cache.getElement(i + j, 0, "cache"))
-						break;
+                if (sInt_Line[0].length() && parser_iVars.vValue[0][1] > _cache.getElement(i, 0, "cache"))
+                    continue;
 
-                    // Calculate either the integral, its samples or the corresponding x values
-					if (!bReturnFunctionPoints && !bCalcXvals)
-						dResult += (_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache"));
-					else if (bReturnFunctionPoints && !bCalcXvals)
-					{
-						if (vResult.size())
-							vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")) + vResult.back());
-						else
-							vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")));
-					}
-					else
-					{
-						vResult.push_back(_cache.getElement(i + j, 0, "cache"));
-					}
-				}
+                if (sInt_Line[0].length() && parser_iVars.vValue[0][2] < _cache.getElement(i + j, 0, "cache"))
+                    break;
 
-				// If the integral was calculated, then there is a
-				// single result, which hasn't been stored yet
-				if (!bReturnFunctionPoints)
-					vResult.push_back(dResult);
-			}
-		}
+                // Calculate either the integral, its samples or the corresponding x values
+                if (!bReturnFunctionPoints && !bCalcXvals)
+                    dResult += (_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache"));
+                else if (bReturnFunctionPoints && !bCalcXvals)
+                {
+                    if (vResult.size())
+                        vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")) + vResult.back());
+                    else
+                        vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")));
+                }
+                else
+                {
+                    vResult.push_back(_cache.getElement(i + j, 0, "cache"));
+                }
+            }
+
+            // If the integral was calculated, then there is a
+            // single result, which hasn't been stored yet
+            if (!bReturnFunctionPoints && !bCalcXvals)
+                vResult.push_back(dResult);
+        }
 
 		// Return the result of the integral
 		return vResult;
@@ -1861,153 +1799,82 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
+        if (_idx.row.isOpenEnd())
+            _idx.row.setRange(0, _data.getLines(sExpr, false)-1);
+
+        if (_idx.col.isOpenEnd())
+            _idx.col.setRange(0, _idx.col.front()+1);
+
         // Copy the data contents, sort the values
         // and calculate the derivative
-		if (!_idx.vI.size())
-		{
-		    // Regular indices
-			if (_idx.nI[1] == -2)
-				_idx.nI[1] = _data.getLines(sExpr, false) - 1;
-			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _idx.nJ[0] + 1;
 
-            // Depending on the number of selected columns, we either
-            // have to sort the data or we assume that the difference
-            // between two values is 1
-			if (_idx.nJ[1] == -1)
-			{
-			    // No sorting, difference is 1
-			    //
-			    // Jump over NaNs and get the difference of the neighbouring
-			    // values, which is identical to the derivative in this case
-				for (long long int i = _idx.nI[0]; i <= _idx.nI[1] - 1; i++)
-				{
-					if (_data.isValidEntry(i, _idx.nJ[0], sExpr)
-							&& _data.isValidEntry(i + 1, _idx.nJ[0], sExpr))
-						vResult.push_back(_data.getElement(i + 1, _idx.nJ[0], sExpr) - _data.getElement(i, _idx.nJ[0], sExpr));
-					else
-						vResult.push_back(NAN);
-				}
-			}
-			else
-			{
-			    // We have to sort, because the difference is passed
-			    // explicitly
-			    //
-			    // Copy the data first and sort afterwards
-				Datafile _cache;
-				for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-				{
-					_cache.writeToCache(i - _idx.nI[0], 0, "cache", _data.getElement(i, _idx.nJ[0], sExpr));
-					_cache.writeToCache(i - _idx.nI[0], 1, "cache", _data.getElement(i, _idx.nJ[1], sExpr));
-				}
-				_cache.sortElements("cache -sort c=1[2]");
+        // Vectors as indices
+        //
+        // Depending on the number of selected columns, we either
+        // have to sort the data or we assume that the difference
+        // between two values is 1
+        if (_idx.col.size() == 1)
+        {
+            // No sorting, difference is 1
+            //
+            // Jump over NaNs and get the difference of the neighbouring
+            // values, which is identical to the derivative in this case
+            for (long long int i = 0; i < _idx.row.size() - 1; i++)
+            {
+                if (_data.isValidEntry(_idx.row[i], _idx.col.front(), sExpr)
+                        && _data.isValidEntry(_idx.row[i + 1], _idx.col.front(), sExpr))
+                    vResult.push_back(_data.getElement(_idx.row[i + 1], _idx.col.front(), sExpr) - _data.getElement(_idx.row[i], _idx.col.front(), sExpr));
+                else
+                    vResult.push_back(NAN);
+            }
+        }
+        else
+        {
+            // We have to sort, because the difference is passed
+            // explicitly
+            //
+            // Copy the data first and sort afterwards
+            Datafile _cache;
+            for (size_t i = 0; i < _idx.row.size(); i++)
+            {
+                _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sExpr));
+                _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sExpr));
+            }
+            _cache.sortElements("cache -sort c=1[2]");
 
-				// Shall the x values be calculated?
-				if (matchParams(sCmd, "xvals"))
-				{
-				    // The x values are approximated to be in the
-				    // middle of the two samplex
-					for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
-					{
-						if (_cache.isValidEntry(i, 0, "cache")
-								&& _cache.isValidEntry(i + 1, 0, "cache")
-								&& _cache.isValidEntry(i, 1, "cache")
-								&& _cache.isValidEntry(i + 1, 1, "cache"))
-							vResult.push_back((_cache.getElement(i + 1, 0, "cache") + _cache.getElement(i, 0, "cache")) / 2);
-						else
-							vResult.push_back(NAN);
-					}
-				}
-				else
-				{
-				    // We calculate the derivative of the data
-				    // by approximating it linearily
-					for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
-					{
-						if (_cache.isValidEntry(i, 0, "cache")
-								&& _cache.isValidEntry(i + 1, 0, "cache")
-								&& _cache.isValidEntry(i, 1, "cache")
-								&& _cache.isValidEntry(i + 1, 1, "cache"))
-							vResult.push_back((_cache.getElement(i + 1, 1, "cache") - _cache.getElement(i, 1, "cache"))
-											  / (_cache.getElement(i + 1, 0, "cache") - _cache.getElement(i, 0, "cache")));
-						else
-							vResult.push_back(NAN);
-					}
-				}
-			}
-		}
-		else
-		{
-			// Vectors as indices
-			//
-			// Depending on the number of selected columns, we either
-            // have to sort the data or we assume that the difference
-            // between two values is 1
-			if (_idx.vJ.size() == 1)
-			{
-				// No sorting, difference is 1
-			    //
-			    // Jump over NaNs and get the difference of the neighbouring
-			    // values, which is identical to the derivative in this case
-				for (long long int i = 0; i < _idx.vI.size() - 1; i++)
-				{
-					if (_data.isValidEntry(_idx.vI[i], _idx.vJ[0], sExpr)
-							&& _data.isValidEntry(_idx.vI[i + 1], _idx.vJ[0], sExpr))
-						vResult.push_back(_data.getElement(_idx.vI[i + 1], _idx.vJ[0], sExpr) - _data.getElement(_idx.vI[i], _idx.vJ[0], sExpr));
-					else
-						vResult.push_back(NAN);
-				}
-			}
-			else
-			{
-				// We have to sort, because the difference is passed
-			    // explicitly
-			    //
-			    // Copy the data first and sort afterwards
-				Datafile _cache;
-				for (long long int i = 0; i < _idx.vI.size(); i++)
-				{
-					_cache.writeToCache(i, 0, "cache", _data.getElement(_idx.vI[i], _idx.vJ[0], sExpr));
-					_cache.writeToCache(i, 1, "cache", _data.getElement(_idx.vI[i], _idx.vJ[1], sExpr));
-				}
-				_cache.sortElements("cache -sort c=1[2]");
-
-				// Shall the x values be calculated?
-				if (matchParams(sCmd, "xvals"))
-				{
-					// The x values are approximated to be in the
-				    // middle of the two samplex
-					for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
-					{
-						if (_cache.isValidEntry(i, 0, "cache")
-								&& _cache.isValidEntry(i + 1, 0, "cache")
-								&& _cache.isValidEntry(i, 1, "cache")
-								&& _cache.isValidEntry(i + 1, 1, "cache"))
-							vResult.push_back((_cache.getElement(i + 1, 0, "cache") + _cache.getElement(i, 0, "cache")) / 2);
-						else
-							vResult.push_back(NAN);
-					}
-				}
-				else
-				{
-					// We calculate the derivative of the data
-				    // by approximating it linearily
-					for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
-					{
-						if (_cache.isValidEntry(i, 0, "cache")
-								&& _cache.isValidEntry(i + 1, 0, "cache")
-								&& _cache.isValidEntry(i, 1, "cache")
-								&& _cache.isValidEntry(i + 1, 1, "cache"))
-							vResult.push_back((_cache.getElement(i + 1, 1, "cache") - _cache.getElement(i, 1, "cache"))
-											  / (_cache.getElement(i + 1, 0, "cache") - _cache.getElement(i, 0, "cache")));
-						else
-							vResult.push_back(NAN);
-					}
-				}
-			}
-		}
-
+            // Shall the x values be calculated?
+            if (matchParams(sCmd, "xvals"))
+            {
+                // The x values are approximated to be in the
+                // middle of the two samplex
+                for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
+                {
+                    if (_cache.isValidEntry(i, 0, "cache")
+                            && _cache.isValidEntry(i + 1, 0, "cache")
+                            && _cache.isValidEntry(i, 1, "cache")
+                            && _cache.isValidEntry(i + 1, 1, "cache"))
+                        vResult.push_back((_cache.getElement(i + 1, 0, "cache") + _cache.getElement(i, 0, "cache")) / 2);
+                    else
+                        vResult.push_back(NAN);
+                }
+            }
+            else
+            {
+                // We calculate the derivative of the data
+                // by approximating it linearily
+                for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
+                {
+                    if (_cache.isValidEntry(i, 0, "cache")
+                            && _cache.isValidEntry(i + 1, 0, "cache")
+                            && _cache.isValidEntry(i, 1, "cache")
+                            && _cache.isValidEntry(i + 1, 1, "cache"))
+                        vResult.push_back((_cache.getElement(i + 1, 1, "cache") - _cache.getElement(i, 1, "cache"))
+                                          / (_cache.getElement(i + 1, 0, "cache") - _cache.getElement(i, 0, "cache")));
+                    else
+                        vResult.push_back(NAN);
+                }
+            }
+        }
 	}
 	else
 	{
@@ -4527,24 +4394,24 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 	}
 
 
-	if (_idx.nJ[1] == -2)
-		_idx.nJ[1] = _idx.nJ[0] + 3;
+	if (_idx.col.isOpenEnd())
+		_idx.col.setRange(0, _idx.col.front() + 3);
 
 	if (!bInverseTrafo)
 	{
-		if (_idx.nI[1] == -2)
-			_idx.nI[1] = _idx.nI[0] + (int)round(_fftData.GetNx() / 2.0) + 1;
+		if (_idx.row.isOpenEnd())
+			_idx.row.setRange(0, _idx.row.front() + (int)round(_fftData.GetNx() / 2.0) + 1);
 
 		for (long long int i = 0; i < (int)round(_fftData.GetNx() / 2.0) + 1; i++)
 		{
-			if (i > _idx.nI[1] - _idx.nI[0])
+			if (i > _idx.row.size())
 				break;
 
-			_data.writeToCache(i + _idx.nI[0], _idx.nJ[0], sTargetTable, 2.0 * (double)(i)*dNyquistFrequency / (double)(_fftData.GetNx()));
+			_data.writeToCache(_idx.row[i], _idx.col.front(), sTargetTable, 2.0 * (double)(i)*dNyquistFrequency / (double)(_fftData.GetNx()));
 
 			if (!bComplex)
 			{
-				_data.writeToCache(i + _idx.nI[0], _idx.nJ[0] + 1, sTargetTable, hypot(_fftData.a[i].real(), _fftData.a[i].imag()));
+				_data.writeToCache(_idx.row[i], _idx.col[1], sTargetTable, hypot(_fftData.a[i].real(), _fftData.a[i].imag()));
 
 				if (i > 2 && (fabs(atan2(_fftData.a[i].imag(), _fftData.a[i].real()) - atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real())) >= M_PI)
 						&& ((atan2(_fftData.a[i].imag(), _fftData.a[i].real()) - atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real())) * (atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real()) - atan2(_fftData.a[i - 2].imag(), _fftData.a[i - 2].real())) < 0))
@@ -4555,51 +4422,52 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 						dPhaseOffset += 2 * M_PI;
 				}
 
-				_data.writeToCache(i + _idx.nI[0], _idx.nJ[0] + 2, sTargetTable, atan2(_fftData.a[i].imag(), _fftData.a[i].real()) + dPhaseOffset);
+				_data.writeToCache(_idx.row[i], _idx.col[2], sTargetTable, atan2(_fftData.a[i].imag(), _fftData.a[i].real()) + dPhaseOffset);
 			}
 			else
 			{
-				_data.writeToCache(i, _idx.nJ[0] + 1, sTargetTable, _fftData.a[i].real());
-				_data.writeToCache(i, _idx.nJ[0] + 2, sTargetTable, _fftData.a[i].imag());
+				_data.writeToCache(i, _idx.col[1], sTargetTable, _fftData.a[i].real());
+				_data.writeToCache(i, _idx.col[2], sTargetTable, _fftData.a[i].imag());
 			}
 		}
 
 		_data.setCacheStatus(true);
-		_data.setHeadLineElement(_idx.nJ[0], sTargetTable, _lang.get("COMMON_FREQUENCY") + "_[Hz]");
+		_data.setHeadLineElement(_idx.col.front(), sTargetTable, _lang.get("COMMON_FREQUENCY") + "_[Hz]");
 
 		if (!bComplex)
 		{
-			_data.setHeadLineElement(_idx.nJ[0] + 1, sTargetTable, _lang.get("COMMON_AMPLITUDE"));
-			_data.setHeadLineElement(_idx.nJ[0] + 2, sTargetTable, _lang.get("COMMON_PHASE") + "_[rad]");
+			_data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_AMPLITUDE"));
+			_data.setHeadLineElement(_idx.col[2], sTargetTable, _lang.get("COMMON_PHASE") + "_[rad]");
 		}
 		else
 		{
-			_data.setHeadLineElement(_idx.nJ[0] + 1, sTargetTable, "Re(" + _lang.get("COMMON_AMPLITUDE") + ")");
-			_data.setHeadLineElement(_idx.nJ[0] + 2, sTargetTable, "Im(" + _lang.get("COMMON_AMPLITUDE") + ")");
+			_data.setHeadLineElement(_idx.col[1], sTargetTable, "Re(" + _lang.get("COMMON_AMPLITUDE") + ")");
+			_data.setHeadLineElement(_idx.col[2], sTargetTable, "Im(" + _lang.get("COMMON_AMPLITUDE") + ")");
 		}
 	}
 	else
 	{
-		if (_idx.nI[1] == -2)
-			_idx.nI[1] = _idx.nI[0] + _fftData.GetNx();
+		if (_idx.row.isOpenEnd())
+			_idx.row.setRange(0, _idx.row.front() + _fftData.GetNx());
+
 		for (long long int i = 0; i < _fftData.GetNx(); i++)
 		{
-			if (i > _idx.nI[1] - _idx.nI[0])
+			if (i > _idx.row.size())
 				break;
-			_data.writeToCache(i + _idx.nI[0], _idx.nJ[0], sTargetTable, (double)(i)*dTimeInterval / (double)(_fftData.GetNx() - 1));
-			_data.writeToCache(i + _idx.nI[0], _idx.nJ[0] + 1, sTargetTable, _fftData.a[i].real());
-			_data.writeToCache(i + _idx.nI[0], _idx.nJ[0] + 2, sTargetTable, _fftData.a[i].imag());
+
+			_data.writeToCache(_idx.row[i], _idx.col[0], sTargetTable, (double)(i)*dTimeInterval / (double)(_fftData.GetNx() - 1));
+			_data.writeToCache(_idx.row[i], _idx.col[1], sTargetTable, _fftData.a[i].real());
+			_data.writeToCache(_idx.row[i], _idx.col[2], sTargetTable, _fftData.a[i].imag());
 		}
 
-		_data.setCacheStatus(true);
-		_data.setHeadLineElement(_idx.nJ[0], sTargetTable, _lang.get("COMMON_TIME") + "_[s]");
-		_data.setHeadLineElement(_idx.nJ[0] + 1, sTargetTable, "Re(" + _lang.get("COMMON_SIGNAL") + ")");
-		_data.setHeadLineElement(_idx.nJ[0] + 2, sTargetTable, "Im(" + _lang.get("COMMON_SIGNAL") + ")");
+		_data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME") + "_[s]");
+		_data.setHeadLineElement(_idx.col[1], sTargetTable, "Re(" + _lang.get("COMMON_SIGNAL") + ")");
+		_data.setHeadLineElement(_idx.col[2], sTargetTable, "Im(" + _lang.get("COMMON_SIGNAL") + ")");
 	}
+
 	if (_option.getSystemPrintStatus())
 		NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
 
-	_data.setCacheStatus(false);
 	return true;
 }
 
@@ -4697,35 +4565,41 @@ bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settin
 	{
 		NumeRe::Table tWaveletData = decodeWaveletData(vWaveletData, vAxisData);
 
-		if (_idx.nJ[1] == -2)
-			_idx.nJ[1] = _idx.nJ[0] + tWaveletData.getCols() - 1;
+		if (_idx.col.isOpenEnd())
+			_idx.col.setRange(0, _idx.col.front() + tWaveletData.getCols()-1);
 
-		if (_idx.nI[1] == -2)
-			_idx.nI[1] = _idx.nI[0] + tWaveletData.getLines() - 1;
+		if (_idx.row.isOpenEnd())
+			_idx.row.setRange(0, _idx.row.front() + tWaveletData.getLines()-1);
 
 		for (size_t i = 0; i < tWaveletData.getLines(); i++)
 		{
-			if (i + _idx.nI[0] > _idx.nI[1])
+			if (_idx.row[i] == VectorIndex::INVALID)
 				break;
+
 			for (size_t j = 0; j < tWaveletData.getCols(); j++)
 			{
 				// write the headlines
 				if (!i)
 				{
 					string sHeadline = "";
+
 					if (!j)
 						sHeadline = _lang.get("COMMON_TIME");
 					else if (j == 1)
 						sHeadline = _lang.get("COMMON_LEVEL");
 					else
 						sHeadline = _lang.get("COMMON_COEFFICIENT");
-					_data.setHeadLineElement(j + _idx.nJ[0], sTargetTable, sHeadline);
+
+					_data.setHeadLineElement(_idx.col[j], sTargetTable, sHeadline);
 				}
-				if (j + _idx.nJ[0] > _idx.nJ[1])
+
+				if (_idx.col[j] == VectorIndex::INVALID)
 					break;
-				_data.writeToCache(i + _idx.nI[0], j + _idx.nJ[0], sTargetTable, tWaveletData.getValue(i, j));
+
+				_data.writeToCache(_idx.row[i], _idx.col[j], sTargetTable, tWaveletData.getValue(i, j));
 			}
 		}
+
 		if (_option.getSystemPrintStatus())
 			NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
 
@@ -4733,30 +4607,34 @@ bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settin
 	}
 
 	// write the output as usual data rows
-	if (_idx.nJ[1] == -2)
-		_idx.nJ[1] = _idx.nJ[0] + 2;
+	if (_idx.col.isOpenEnd())
+		_idx.col.setRange(0, _idx.col.front() + 2);
 
-	if (_idx.nI[1] == -2)
-		_idx.nI[1] = _idx.nI[0] + vWaveletData.size();
+	if (_idx.row.isOpenEnd())
+		_idx.row.setRange(0,  _idx.row.front() + vWaveletData.size()-1);
+
 	for (long long int i = 0; i < vWaveletData.size(); i++)
 	{
-		if (i > _idx.nI[1] - _idx.nI[0])
+		if (_idx.row[i] == VectorIndex::INVALID)
 			break;
-		_data.writeToCache(i + _idx.nI[0], _idx.nJ[0], sTargetTable, (double)(i));
-		_data.writeToCache(i, _idx.nJ[0] + 1, sTargetTable, vWaveletData[i]);
+
+		_data.writeToCache(_idx.row[i], _idx.col[0], sTargetTable, (double)(i));
+		_data.writeToCache(_idx.row[i], _idx.col[1], sTargetTable, vWaveletData[i]);
 	}
 
 	_data.setCacheStatus(true);
+
 	if (!bInverseTrafo)
 	{
-		_data.setHeadLineElement(_idx.nJ[0], sTargetTable, _lang.get("COMMON_COEFFICIENT"));
-		_data.setHeadLineElement(_idx.nJ[0] + 1, sTargetTable, _lang.get("COMMON_AMPLITUDE"));
+		_data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_COEFFICIENT"));
+		_data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_AMPLITUDE"));
 	}
 	else
 	{
-		_data.setHeadLineElement(_idx.nJ[0], sTargetTable, _lang.get("COMMON_TIME"));
-		_data.setHeadLineElement(_idx.nJ[0] + 1, sTargetTable, _lang.get("COMMON_SIGNAL"));
+		_data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME"));
+		_data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_SIGNAL"));
 	}
+
 	if (_option.getSystemPrintStatus())
 		NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
 
@@ -4963,7 +4841,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 	string sYVals = "";
 	string sZVals = "";
 
-	Indices _idx;
+	Indices _iTargetIndex;
 
 	bool bTranspose = false;
 
@@ -5040,7 +4918,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 	}
 
 	// search for explicit "target" options and select the target cache
-	sTargetCache = parser_evalTargetExpression(sCmd, sTargetCache, _idx, _parser, _data, _option);
+	sTargetCache = parser_evalTargetExpression(sCmd, sTargetCache, _iTargetIndex, _parser, _data, _option);
 
 	// read the transpose option
 	if (matchParams(sCmd, "transpose"))
@@ -5087,120 +4965,63 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 	if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
 	{
 		// Get the datagrid from another table
-		Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
+		DataAccessParser _accessParser(sZVals);
+
+		if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sZVals, SyntaxError::invalid_position);
+
+		Indices& _idx = _accessParser.getIndices();
 
 		// identify the table
-		string szDatatable = "data";
-		if (_data.containsTablesOrClusters(sZVals))
-		{
-			_data.setCacheStatus(true);
-			for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-			{
-				if (sZVals.find(iter->first + "(") != string::npos
-						&& (!sZVals.find(iter->first + "(")
-							|| (sZVals.find(iter->first + "(") && checkDelimiter(sZVals.substr(sZVals.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-				{
-					szDatatable = iter->first;
-					break;
-				}
-			}
-		}
+		string& szDatatable = _accessParser.getDataObject();
 
 		// Check the indices
 		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
-		// The indices are numbers
-		if (!_idx.vI.size())
-		{
-			if (_idx.nI[1] == -1)
-				_idx.nI[1] = _idx.nI[0];
-			if (_idx.nJ[1] == -1)
-				_idx.nJ[1] = _idx.nJ[0];
-			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _data.getCols(szDatatable) - 1;
+        // the indices are vectors
+        vector<double> vVector;
 
-			parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+        if (_idx.col.isOpenEnd())
+            _idx.col.setRange(0, _data.getCols(szDatatable)-1);
 
-			if (_idx.nI[1] == -2)
-			{
-				_idx.nI[1] = _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.nJ[0], szDatatable) - 1;
-				for (long long int j = _idx.nJ[0] + 1; j <= _idx.nJ[1]; j++)
-				{
-					if (_data.getLines(szDatatable, true) - _data.getAppendedZeroes(j, szDatatable) - 1 > _idx.nI[1])
-						_idx.nI[1] = _data.getLines(szDatatable, true) - _data.getAppendedZeroes(j, szDatatable) - 1;
-				}
-			}
+        if (_idx.row.isOpenEnd())
+        {
+            _idx.row.setRange(0, _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), szDatatable) - 1);
 
-			parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
+            for (size_t j = 1; j < _idx.col.size(); j++)
+            {
+                if (_data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable) > _idx.row.back())
+                    _idx.row.setRange(0, _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable) - 1);
+            }
+        }
 
-			// Get the data from the table. Choose the order of reading depending on the "transpose" command line option
-			vector<double> vVector;
-			if (!bTranspose)
-			{
-				for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-				{
-					for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-					{
-						vVector.push_back(_data.getElement(i, j, szDatatable));
-					}
-					vZVals.push_back(vVector);
-					vVector.clear();
-				}
-			}
-			else
-			{
-				for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-				{
-					for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-					{
-						vVector.push_back(_data.getElement(i, j, szDatatable));
-					}
-					vZVals.push_back(vVector);
-					vVector.clear();
-				}
-			}
+        // Get the data. Choose the order of reading depending on the "transpose" command line option
+        if (!bTranspose)
+        {
+            for (size_t i = 0; i < _idx.row.size(); i++)
+            {
+                vVector = _data.getElement(VectorIndex(_idx.row[i]), _idx.col, szDatatable);
+                vZVals.push_back(vVector);
+                vVector.clear();
+            }
+        }
+        else
+        {
+            for (size_t j = 0; j < _idx.col.size(); j++)
+            {
+                vVector = _data.getElement(_idx.row, VectorIndex(_idx.col[j]), szDatatable);
+                vZVals.push_back(vVector);
+                vVector.clear();
+            }
+        }
 
-			// Check the content of the z matrix
-			if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
-				throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
+        // Check the content of the z matrix
+        if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
+            throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
 
-			// Expand the z vector into a matrix for the datagrid if necessary
-			parser_expandVectorToDatagrid(vXVals, vYVals, vZVals, vSamples[bTranspose], vSamples[1 - bTranspose]);
-		}
-		else
-		{
-			// the indices are vectors
-			vector<double> vVector;
-
-			// Get the data. Choose the order of reading depending on the "transpose" command line option
-			if (!bTranspose)
-			{
-				for (size_t i = 0; i < _idx.vI.size(); i++)
-				{
-					vVector = _data.getElement(vector<long long int>(1, _idx.vI[i]), _idx.vJ, szDatatable);
-					vZVals.push_back(vVector);
-					vVector.clear();
-				}
-			}
-			else
-			{
-				for (size_t j = 0; j < _idx.vJ.size(); j++)
-				{
-					vVector = _data.getElement(_idx.vI, vector<long long int>(1, _idx.vJ[j]), szDatatable);
-					vZVals.push_back(vVector);
-					vVector.clear();
-				}
-			}
-
-			// Check the content of the z matrix
-			if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
-				throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
-
-			// Expand the z vector into a matrix for the datagrid if necessary
-			parser_expandVectorToDatagrid(vXVals, vYVals, vZVals, vSamples[bTranspose], vSamples[1 - bTranspose]);
-		}
-		_data.setCacheStatus(false);
+        // Expand the z vector into a matrix for the datagrid if necessary
+        parser_expandVectorToDatagrid(vXVals, vYVals, vZVals, vSamples[bTranspose], vSamples[1 - bTranspose]);
 	}
 	else
 	{
@@ -5222,35 +5043,40 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 	}
 
 	// Store the results in the target cache
-	if (_idx.nI[1] == -2 || _idx.nI[1] == -1)
-		_idx.nI[1] = _idx.nI[0] + vXVals.size();
-	if (_idx.nJ[1] == -2 || _idx.nJ[1] == -1)
-		_idx.nJ[1] = _idx.nJ[0] + vYVals.size() + 2;
+	if (_iTargetIndex.row.isOpenEnd())
+		_iTargetIndex.row.setRange(0, _iTargetIndex.row.front() + vXVals.size() - 1);
+	if (_iTargetIndex.col.isOpenEnd())
+		_iTargetIndex.col.setRange(0, _iTargetIndex.col.front() + vYVals.size() + 1);
 
 	_data.setCacheStatus(true);
 
 	// Write the x axis
-	for (unsigned int i = 0; i < vXVals.size(); i++)
-		_data.writeToCache(i, _idx.nJ[0], sTargetCache, vXVals[i]);
-	_data.setHeadLineElement(_idx.nJ[0], sTargetCache, "x");
+	for (size_t i = 0; i < vXVals.size(); i++)
+		_data.writeToCache(i, _iTargetIndex.col[0], sTargetCache, vXVals[i]);
+
+	_data.setHeadLineElement(_iTargetIndex.col[0], sTargetCache, "x");
 
 	// Write the y axis
-	for (unsigned int i = 0; i < vYVals.size(); i++)
-		_data.writeToCache(i, _idx.nJ[0] + 1, sTargetCache, vYVals[i]);
-	_data.setHeadLineElement(_idx.nJ[0] + 1, sTargetCache, "y");
+	for (size_t i = 0; i < vYVals.size(); i++)
+		_data.writeToCache(i, _iTargetIndex.col[1], sTargetCache, vYVals[i]);
+
+	_data.setHeadLineElement(_iTargetIndex.col[1], sTargetCache, "y");
 
 	// Write the z matrix
-	for (unsigned int i = 0; i < vZVals.size(); i++)
+	for (size_t i = 0; i < vZVals.size(); i++)
 	{
-		if (i + _idx.nI[0] >= _idx.nI[1])
+		if (_iTargetIndex.row[i] == VectorIndex::INVALID)
 			break;
-		for (unsigned int j = 0; j < vZVals[i].size(); j++)
+
+		for (size_t j = 0; j < vZVals[i].size(); j++)
 		{
-			if (j + 2 + _idx.nJ[0] >= _idx.nJ[1])
+			if (_iTargetIndex.col[j+2] == VectorIndex::INVALID)
 				break;
-			_data.writeToCache(_idx.nI[0] + i, _idx.nJ[0] + 2 + j, sTargetCache, vZVals[i][j]);
+
+			_data.writeToCache(_iTargetIndex.row[i], _iTargetIndex.col[j+2], sTargetCache, vZVals[i][j]);
+
 			if (!i)
-				_data.setHeadLineElement(_idx.nJ[0] + 2 + j, sTargetCache, "z[" + toString((int)j + 1) + "]");
+				_data.setHeadLineElement(_iTargetIndex.col[j+2], sTargetCache, "z[" + toString((int)j + 1) + "]");
 		}
 	}
 	_data.setCacheStatus(false);
@@ -5266,72 +5092,51 @@ static vector<size_t> parser_getSamplesForDatagrid(const string& sCmd, const str
 	if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
 	{
 		// Get the indices and identify the table name
-		Indices _idx = parser_getIndices(sZVals, _parser, _data, _option);
-		string sZDatatable = "data";
-		if (_data.containsTablesOrClusters(sZVals))
-		{
-			for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-			{
-				if (sZVals.find(iter->first + "(") != string::npos
-						&& (!sZVals.find(iter->first + "(")
-							|| (sZVals.find(iter->first + "(") && checkDelimiter(sZVals.substr(sZVals.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-				{
-					sZDatatable = iter->first;
-					break;
-				}
-			}
-		}
+		DataAccessParser _accessParser(sZVals);
+
+		if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sZVals, SyntaxError::invalid_position);
+
+        Indices& _idx = _accessParser.getIndices();
+        string& sZDatatable = _accessParser.getDataObject();
+
 		// Check the indices
 		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-		if (!_idx.vI.size())
-		{
-			// The indices are numbers
-			if (_idx.nI[1] == -1)
-				_idx.nI[1] = _idx.nI[0];
-			if (_idx.nJ[1] == -1)
-				_idx.nJ[1] = _idx.nJ[0];
-			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _data.getCols(sZDatatable) - 1;
 
-			parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+        // The indices are vectors
+        if (_idx.col.isOpenEnd())
+            _idx.col.setRange(0, _data.getCols(sZDatatable)-1);
 
-			if (_idx.nI[1] == -2)
-			{
-				_idx.nI[1] = _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.nJ[0], sZDatatable) - 1;
-				for (long long int j = _idx.nJ[0] + 1; j <= _idx.nJ[1]; j++)
-				{
-					if (_data.getLines(sZDatatable, true) - _data.getAppendedZeroes(j, sZDatatable) - 1 > _idx.nI[1])
-						_idx.nI[1] = _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(j, sZDatatable) - 1;
-				}
-			}
+        if (_idx.row.isOpenEnd())
+        {
+            _idx.row.setRange(0, _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sZDatatable) - 1);
 
-			parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
+            for (size_t j = 1; j < _idx.col.size(); j++)
+            {
+                if (_data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable) > _idx.row.back())
+                    _idx.row.setRange(0, _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable) - 1);
+            }
+        }
 
-			vSamples.push_back(_idx.nI[1] - _idx.nI[0] + 1);
-			vSamples.push_back(_idx.nJ[1] - _idx.nJ[0] + 1);
-		}
-		else
-		{
-			// The indices are vectors
-			vSamples.push_back(_idx.vI.size());
-			vSamples.push_back(_idx.vJ.size());
-		}
+        vSamples.push_back(_idx.row.size());
+        vSamples.push_back(_idx.col.size());
 
 		// Check for singletons
 		if (vSamples[0] < 2 && vSamples[1] >= 2)
 			vSamples[0] = vSamples[1];
 		else if (vSamples[1] < 2 && vSamples[0] >= 2)
 			vSamples[1] = vSamples[0];
-
 	}
 	else
 	{
 		vSamples.push_back(nSamples);
 		vSamples.push_back(nSamples);
 	}
+
 	if (vSamples.size() < 2 || vSamples[0] < 2 || vSamples[1] < 2)
 		throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
+
 	return vSamples;
 }
 
@@ -5348,9 +5153,9 @@ static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string
 
 		// Identify the table
 		string sDatatable = "data";
+
 		if (_data.containsTablesOrClusters(sVectorVals))
 		{
-			_data.setCacheStatus(true);
 			for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
 			{
 				if (sVectorVals.find(iter->first + "(") != string::npos
@@ -5366,63 +5171,31 @@ static vector<double> parser_extractVectorForDatagrid(const string& sCmd, string
 		// Check the indices
 		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-		if (!_idx.vI.size())
-		{
-			// The indices are numbers
-			if (_idx.nI[1] == -1)
-				_idx.nI[1] = _idx.nI[0];
-			if (_idx.nJ[1] == -1)
-				_idx.nJ[1] = _idx.nJ[0];
-			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _data.getCols(sDatatable) - 1;
-			if (_idx.nI[1] == -2 && _idx.nJ[1] != _idx.nJ[0])
-				throw SyntaxError(SyntaxError::NO_MATRIX, sCmd, SyntaxError::invalid_position);
-			if (_idx.nI[1] == -2)
-				_idx.nI[1] = _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.nJ[0], sDatatable) - 1;
 
-			parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-			parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+        // The indices are vectors
+        if (_idx.col.isOpenEnd())
+            _idx.col.setRange(0, _data.getCols(sDatatable)-1);
 
-			// Only if the z values are also a table read the vector from the table
-			if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
-			{
-				for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-				{
-					for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-					{
-						vVectorVals.push_back(_data.getElement(i, j, sDatatable));
-					}
-				}
-			}
-			else
-			{
-				// Otherwise use minimal and maximal values
-				double dMin = _data.min(sDatatable, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
-				double dMax = _data.max(sDatatable, _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1]);
+        if (_idx.row.isOpenEnd() && _idx.col.size() > 1)
+            throw SyntaxError(SyntaxError::NO_MATRIX, sCmd, SyntaxError::invalid_position);
 
-				for (unsigned int i = 0; i < nSamples; i++)
-					vVectorVals.push_back((dMax - dMin) / double(nSamples - 1)*i + dMin);
-			}
-		}
-		else
-		{
-			// The indices are vectors
-			if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
-			{
-				// Only if the z values are also a table read the vector from the table
-				vVectorVals = _data.getElement(_idx.vI, _idx.vJ, sDatatable);
-			}
-			else
-			{
-				// Otherwise use minimal and maximal values
-				double dMin = _data.min(sDatatable, _idx.vI, _idx.vJ);
-				double dMax = _data.max(sDatatable, _idx.vI, _idx.vJ);
+        if (_idx.row.isOpenEnd())
+            _idx.row.setRange(0, _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sDatatable)-1);
 
-				for (unsigned int i = 0; i < nSamples; i++)
-					vVectorVals.push_back((dMax - dMin) / double(nSamples - 1)*i + dMin);
-			}
-		}
-		_data.setCacheStatus(false);
+        if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
+        {
+            // Only if the z values are also a table read the vector from the table
+            vVectorVals = _data.getElement(_idx.row, _idx.col, sDatatable);
+        }
+        else
+        {
+            // Otherwise use minimal and maximal values
+            double dMin = _data.min(sDatatable, _idx.row, _idx.col);
+            double dMax = _data.max(sDatatable, _idx.row, _idx.col);
+
+            for (unsigned int i = 0; i < nSamples; i++)
+                vVectorVals.push_back((dMax - dMin) / double(nSamples - 1)*i + dMin);
+        }
 	}
 	else if (sVectorVals.find(':') != string::npos)
 	{
@@ -5553,7 +5326,7 @@ string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, I
 		sTargetTable.erase(sTargetTable.find('('));
 
 		// check the indices
-		if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
 		// remove the target option and its value from the command line
@@ -5563,17 +5336,16 @@ string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, I
 	else if (sDefaultTarget.length())
 	{
 		// If not found, create a default index set
-		_idx.nI[0] = 0;
-		_idx.nI[1] = -2;
-		_idx.nJ[0] = 0;
+		_idx.row = VectorIndex(0LL, VectorIndex::OPEN_END);
+		_idx.col.front() = 0;
 
 		// Create cache, if needed. Otherwise get first empty column
 		if (_data.isCacheElement(sDefaultTarget + "()"))
-			_idx.nJ[0] += _data.getCols(sDefaultTarget, false);
+			_idx.col.front() += _data.getCols(sDefaultTarget, false);
 		else
 			_data.addCache(sDefaultTarget, _option);
 
-		_idx.nJ[1] = -2;
+		_idx.col.back() = VectorIndex::OPEN_END;
 		sTargetTable = sDefaultTarget;
 	}
 
@@ -5585,21 +5357,15 @@ string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, I
 bool parser_evalIndices(const string& sCache, Indices& _idx, Datafile& _data)
 {
 	// Check the initial indices
-	if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+	if (!isValidIndexSet(_idx))
 		return false;
 
 	// Evaluate the case for an open end index
-	if (_idx.nI[1] == -2)
-		_idx.nI[1] = _data.getLines(sCache.substr(0, sCache.find('(')), false) - 1;
+	if (_idx.row.isOpenEnd())
+		_idx.row.setRange(0, _data.getLines(sCache.substr(0, sCache.find('(')), false)-1);
 
-	if (_idx.nJ[1] == -2)
-		_idx.nJ[1] = _data.getCols(sCache.substr(0, sCache.find('('))) - 1;
-
-	// Evaluate the case for a missing index
-	if (_idx.nI[1] == -1)
-		_idx.nI[1] = _idx.nI[0];
-	if (_idx.nJ[1] == -1)
-		_idx.nJ[1] = _idx.nJ[0];
+	if (_idx.col.isOpenEnd())
+		_idx.col.setRange(0, _data.getCols(sCache.substr(0, sCache.find('(')), false)-1);
 
 	// Signal success
 	return true;
@@ -5867,59 +5633,27 @@ bool parser_writeAudio(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	_idx = parser_getIndices(sCmd, _parser, _data, _option);
 	sDataset = sCmd.substr(0, sCmd.find('('));
 	StripSpaces(sDataset);
-	if (_idx.vI.size() || _idx.vJ.size())
-	{
-		if (_idx.vJ.size() > 2)
-			return false;
-		if (fabs(_data.max(sDataset, _idx.vI, _idx.vJ)) > fabs(_data.min(sDataset, _idx.vI, _idx.vJ)))
-			dMax = fabs(_data.max(sDataset, _idx.vI, _idx.vJ));
-		else
-			dMax = fabs(_data.min(sDataset, _idx.vI, _idx.vJ));
-		_mDataSet.push_back(_data.getElement(_idx.vI, vector<long long int>(_idx.vJ[0]), sDataset));
-		if (_idx.vJ.size() == 2)
-			_mDataSet.push_back(_data.getElement(_idx.vI, vector<long long int>(_idx.vJ[1]), sDataset));
-		_mDataSet = parser_transposeMatrix(_mDataSet);
-	}
-	else
-	{
-		if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-			return false;
-		if (_idx.nI[1] == -1)
-			_idx.nI[1] = _idx.nI[0];
-		else if (_idx.nI[1] == -2)
-			_idx.nI[1] = _data.getLines(sDataset, false) - 1;
-		if (_idx.nJ[1] == -1)
-			_idx.nJ[1] = _idx.nJ[0];
-		else if (_idx.nJ[1] == -2)
-		{
-			_idx.nJ[1] = _idx.nJ[0] + 1;
-		}
-		if (_data.getCols(sDataset, false) <= _idx.nJ[1])
-			_idx.nJ[1] = _idx.nJ[0];
-		_mDataSet = parser_ZeroesMatrix(_idx.nI[1] - _idx.nI[0] + 1, (_idx.nJ[1] != _idx.nJ[0] ? 2 : 1));
-		double dMaxCol[2] = {0.0, 0.0};
-		if (_idx.nJ[1] != _idx.nJ[0])
-		{
-			if (fabs(_data.max(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[1], -1)) > fabs(_data.min(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[1], -1)))
-				dMaxCol[1] = fabs(_data.max(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[1], -1));
-			else
-				dMaxCol[1] = fabs(_data.min(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[1], -1));
-			for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-				_mDataSet[i - _idx.nI[0]][1] = _data.getElement(i, _idx.nJ[1], sDataset);
-		}
-		if (fabs(_data.max(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[0], -1)) > fabs(_data.min(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[0], -1)))
-			dMaxCol[1] = fabs(_data.max(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[0], -1));
-		else
-			dMaxCol[1] = fabs(_data.min(sDataset, _idx.nI[0], _idx.nI[1], _idx.nJ[0], -1));
-		for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-			_mDataSet[i - _idx.nI[0]][0] = _data.getElement(i, _idx.nJ[0], sDataset);
 
-		if (dMaxCol[0] > dMaxCol[1])
-			dMax = dMaxCol[0];
-		else
-			dMax = dMaxCol[1];
+    if (_idx.row.isOpenEnd())
+        _idx.row.setRange(0, _data.getLines(sDataset, false)-1);
 
-	}
+    if (_idx.col.isOpenEnd())
+        _idx.col.setRange(0, _idx.col.front() + 1);
+
+    if (_idx.col.size() > 2)
+        return false;
+
+    if (fabs(_data.max(sDataset, _idx.row, _idx.col)) > fabs(_data.min(sDataset, _idx.row, _idx.col)))
+        dMax = fabs(_data.max(sDataset, _idx.row, _idx.col));
+    else
+        dMax = fabs(_data.min(sDataset, _idx.row, _idx.col));
+
+    _mDataSet.push_back(_data.getElement(_idx.row, VectorIndex(_idx.col[0]), sDataset));
+
+    if (_idx.col.size() == 2)
+        _mDataSet.push_back(_data.getElement(_idx.row, VectorIndex(_idx.col[1]), sDataset));
+
+    _mDataSet = parser_transposeMatrix(_mDataSet);
 
 	for (unsigned int i = 0; i < _mDataSet.size(); i++)
 	{
@@ -6156,6 +5890,7 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 		if (nSamples < 0)
 			nSamples = 0;
 	}
+
 	if (matchParams(sCmd, "target", '='))
 	{
 		sTargetCache = getArgAtPos(sCmd, matchParams(sCmd, "target", '=') + 6);
@@ -6169,22 +5904,21 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 		if (sTargetCache == "data")
 			throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
 
-		if (_target.nI[0] == -1 || _target.nJ[0] == -1)
+		if (!isValidIndexSet(_target))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 	}
 	else
 	{
-		_target.nI[0] = 0;
-		_target.nI[1] = -2;
-		_target.nJ[0] = 0;
+		_target.row = VectorIndex(0LL, VectorIndex::OPEN_END);
+		_target.col.front() = 0;
 
 		if (_data.isCacheElement("stfdat()"))
-			_target.nJ[0] += _data.getCols("stfdat", false);
+			_target.col.front() += _data.getCols("stfdat", false);
         else
             _data.addCache("stfdat()", _option);
 
 		sTargetCache = "stfdat";
-		_target.nJ[1] = -2;
+		_target.col.back() = VectorIndex::OPEN_END;
 	}
 
 
@@ -6225,31 +5959,38 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 
 	// Zielcache befuellen entsprechend der Fourier-Algorithmik
 
-	if (_target.nI[1] == -2 || _target.nI[1] == -1)
-		_target.nI[1] = _target.nI[0] + _result.GetNx();//?
-	if (_target.nJ[1] == -2 || _target.nJ[1] == -1)
-		_target.nJ[1] = _target.nJ[0] + _result.GetNy() + 2; //?
+	if (_target.row.isOpenEnd())
+		_target.row.setRange(0, _target.row.front() + _result.GetNx() - 1);//?
+
+	if (_target.col.isOpenEnd())
+		_target.col.setRange(0, _target.col.front() + _result.GetNy() + 1); //?
 
 	// UPDATE DATA ELEMENTS
 	for (int i = 0; i < _result.GetNx(); i++)
-		_data.writeToCache(i, _target.nJ[0], sTargetCache, dXmin + i * dSampleSize);
-	_data.setHeadLineElement(_target.nJ[0], sTargetCache, sDataset);
+		_data.writeToCache(i, _target.col.front(), sTargetCache, dXmin + i * dSampleSize);
+
+	_data.setHeadLineElement(_target.col.front(), sTargetCache, sDataset);
 	dSampleSize = 2 * (dFmax - dFmin) / ((double)_result.GetNy() - 1.0);
+
 	for (int i = 0; i < _result.GetNy() / 2; i++)
-		_data.writeToCache(i, _target.nJ[0] + 1, sTargetCache, dFmin + i * dSampleSize); // Fourier f Hier ist was falsch
-	_data.setHeadLineElement(_target.nJ[0] + 1, sTargetCache, "f [Hz]");
+		_data.writeToCache(i, _target.col[1], sTargetCache, dFmin + i * dSampleSize); // Fourier f Hier ist was falsch
+
+	_data.setHeadLineElement(_target.col[1], sTargetCache, "f [Hz]");
 
 	for (int i = 0; i < _result.GetNx(); i++)
 	{
-		if (i + _target.nI[0] >= _target.nI[1])
+		if (_target.row[i] == VectorIndex::INVALID)
 			break;
+
 		for (int j = 0; j < _result.GetNy() / 2; j++)
 		{
-			if (j + 2 + _target.nJ[0] >= _target.nJ[1])
+			if (_target.col[j+2] == VectorIndex::INVALID)
 				break;
-			_data.writeToCache(_target.nI[0] + i, _target.nJ[0] + 2 + j, sTargetCache, _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
+
+			_data.writeToCache(_target.row[i], _target.col[j+2], sTargetCache, _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
+
 			if (!i)
-				_data.setHeadLineElement(_target.nJ[0] + 2 + j, sTargetCache, "A[" + toString((int)j + 1) + "]");
+				_data.setHeadLineElement(_target.col[j+2], sTargetCache, "A[" + toString((int)j + 1) + "]");
 		}
 	}
 
@@ -6336,3 +6077,5 @@ bool parser_spline(string& sCmd, Parser& _parser, Datafile& _data, Define& _func
 
 	return true;
 }
+
+

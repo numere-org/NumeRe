@@ -2408,53 +2408,31 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 							_data.setCacheStatus(true);
 						if (!isValidIndexSet(_idx))
 							throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-						if (!_idx.vI.size())
-						{
-							if (_idx.nI[1] == -1)
-								_idx.nI[1] = _idx.nI[0];
-							else if (_idx.nI[1] == -2)
-								_idx.nI[1] = _data.getLines(iter->first, false) - 1;
-							if (_idx.nJ[1] == -1)
-								_idx.nJ[1] = _idx.nJ[0];
-							else if (_idx.nJ[1] == -2)
-								_idx.nJ[1] = _data.getCols(iter->first) - 1;
-							parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-							parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
-							//NumeReKernel::print(_idx.nI[0] + " " + _idx.nI[1] );
-							//NumeReKernel::print(_idx.nJ[0] + " " + _idx.nJ[1] );
 
-							_cache.setCacheSize(_idx.nI[1] - _idx.nI[0] + 1, _idx.nJ[1] - _idx.nJ[0] + 1, "cache");
-							for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-							{
-								for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-								{
-									if (i == _idx.nI[0])
-									{
-										_cache.setHeadLineElement(j - _idx.nJ[0], "cache", _data.getHeadLineElement(j, iter->first));
-									}
-									if (_data.isValidEntry(i, j, iter->first))
-										_cache.writeToCache(i - _idx.nI[0], j - _idx.nJ[0], "cache", _data.getElement(i, j, iter->first));
-								}
-							}
-						}
-						else
-						{
-							_cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
-							for (unsigned int i = 0; i < _idx.vI.size(); i++)
-							{
-								for (unsigned int j = 0; j < _idx.vJ.size(); j++)
-								{
-									if (!i)
-									{
-										_cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.vJ[j], iter->first));
-									}
-									if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
-										_cache.writeToCache(i, j, "cache", _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
-								}
-							}
-						}
+                        if (_idx.row.isOpenEnd())
+                            _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
+
+                        if (_idx.col.isOpenEnd())
+                            _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
+
+                        _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
+
+                        for (size_t i = 0; i < _idx.row.size(); i++)
+                        {
+                            for (size_t j = 0; j < _idx.col.size(); j++)
+                            {
+                                if (!i)
+                                {
+                                    _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], iter->first));
+                                }
+                                if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
+                                    _cache.writeToCache(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                            }
+                        }
+
 						if (_data.containsStringVars(sCmd))
 							_data.getStringValues(sCmd);
+
 						if (matchParams(sCmd, "export", '='))
 							addArgumentQuotes(sCmd, "export");
 
@@ -2517,61 +2495,36 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						if (sCmd.find("()") != string::npos)
 							sCmd.replace(sCmd.find("()"), 2, "(:,:)");
 						_idx = parser_getIndices(sCmd, _parser, _data, _option);
+
 						if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
 							_data.setCacheStatus(true);
-						if ((_idx.nI[0] == -1 && !_idx.vI.size())
-								|| (_idx.nJ[0] == -1 && !_idx.vJ.size()))
-							//throw CANNOT_SAVE_FILE;
+						if (!isValidIndexSet(_idx))
 							throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
-						if (!_idx.vI.size())
-						{
-							if (_idx.nI[1] == -1)
-								_idx.nI[1] = _idx.nI[0];
-							else if (_idx.nI[1] == -2)
-								_idx.nI[1] = _data.getLines(iter->first, false) - 1;
-							if (_idx.nJ[1] == -1)
-								_idx.nJ[1] = _idx.nJ[0];
-							else if (_idx.nJ[1] == -2)
-								_idx.nJ[1] = _data.getCols(iter->first) - 1;
-							parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-							parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
-							//NumeReKernel::print(_idx.nI[0] + " " + _idx.nI[1] );
-							//NumeReKernel::print(_idx.nJ[0] + " " + _idx.nJ[1] );
 
-							_cache.setCacheSize(_idx.nI[1] - _idx.nI[0] + 1, _idx.nJ[1] - _idx.nJ[0] + 1, "cache");
-							if (iter->first != "cache")
-								_cache.renameCache("cache", (iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first)), true);
-							for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-							{
-								for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-								{
-									if (i == _idx.nI[0])
-									{
-										_cache.setHeadLineElement(j - _idx.nJ[0], iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getHeadLineElement(j, iter->first));
-									}
-									if (_data.isValidEntry(i, j, iter->first))
-										_cache.writeToCache(i - _idx.nI[0], j - _idx.nJ[0], iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getElement(i, j, iter->first));
-								}
-							}
-						}
-						else
-						{
-							_cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
-							if (iter->first != "cache")
-								_cache.renameCache("cache", (iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first)), true);
-							for (unsigned int i = 0; i < _idx.vI.size(); i++)
-							{
-								for (unsigned int j = 0; j < _idx.vJ.size(); j++)
-								{
-									if (!i)
-									{
-										_cache.setHeadLineElement(j, iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
-									}
-									if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
-										_cache.writeToCache(i, j, iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
-								}
-							}
-						}
+                        if (_idx.row.isOpenEnd())
+                            _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
+
+                        if (_idx.col.isOpenEnd())
+                            _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
+
+                        _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
+
+                        if (iter->first != "cache")
+                            _cache.renameCache("cache", (iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first)), true);
+
+                        for (size_t i = 0; i < _idx.row.size(); i++)
+                        {
+                            for (size_t j = 0; j < _idx.col.size(); j++)
+                            {
+                                if (!i)
+                                {
+                                    _cache.setHeadLineElement(j, iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getHeadLineElement(_idx.col[j], iter->first));
+                                }
+                                if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
+                                    _cache.writeToCache(i, j, iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                            }
+                        }
+
 						if (_data.containsStringVars(sCmd))
 							_data.getStringValues(sCmd);
 						if (matchParams(sCmd, "file", '='))
@@ -3405,71 +3358,62 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			//NumeReKernel::print(sArgument );
 			_idx = parser_getIndices(sArgument, _parser, _data, _option);
-			if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-				//throw INVALID_INDEX;
+
+			if (!isValidIndexSet(_idx))
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument);
-			if (_idx.nI[1] == -2)
-				_idx.nI[1] = _data.getLines(sArgument.substr(0, sArgument.find('(')), false) - 1;
-			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _data.getCols(sArgument.substr(0, sArgument.find('('))) - 1;
+
+			if (_idx.row.isOpenEnd())
+				_idx.row.setRange(0, _data.getLines(sArgument.substr(0, sArgument.find('(')), false)-1);
+
+			if (_idx.col.isOpenEnd())
+				_idx.col.setRange(0, _data.getCols(sArgument.substr(0, sArgument.find('(')))-1);
+
 			if (matchParams(sCmd, "grid"))
 			{
-				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::GRID))
+				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::GRID))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
-					//NumeReKernel::print(LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich geglättet.", _option) );
 				}
 				else
 				{
-					//throw CANNOT_SMOOTH_CACHE;
 					throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
-					//NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
 				}
 			}
 			else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
 			{
-				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::ALL))
+				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::ALL))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
-					//NumeReKernel::print(LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich geglättet.", _option) );
 				}
 				else
 				{
-					//throw CANNOT_SMOOTH_CACHE;
 					throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
-					//NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
 				}
 			}
 			else if (matchParams(sCmd, "lines"))
 			{
-				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::LINES))
+				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::LINES))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_LINES")), _option) );
-					//NumeReKernel::print(LineBreak("|-> Zeile(n) wurden erfolgreich geglättet.", _option) );
 				}
 				else
 				{
-					//throw CANNOT_SMOOTH_CACHE;
 					throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
-					//NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
 				}
 			}
 			else if (matchParams(sCmd, "cols"))
 			{
-				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::COLS))
+				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::COLS))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_COLS")), _option) );
-					//NumeReKernel::print(LineBreak("|-> Spalte(n) wurden erfolgreich geglättet.", _option) );
 				}
 				else
 				{
-					//throw CANNOT_SMOOTH_CACHE;
 					throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
-					//NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
 				}
 			}
 			return 1;
@@ -3536,55 +3480,33 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						Datafile _cache;
 						_cache.setCacheStatus(true);
 						_idx = parser_getIndices(sCmd, _parser, _data, _option);
+
 						if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
 							_data.setCacheStatus(true);
+
 						if (!isValidIndexSet(_idx))
 							throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, iter->first + "(", iter->first);
-						if (!_idx.vI.size())
-						{
-							if (_idx.nI[1] == -1)
-								_idx.nI[1] = _idx.nI[0];
-							else if (_idx.nI[1] == -2)
-								_idx.nI[1] = _data.getLines(iter->first, false) - 1;
-							if (_idx.nJ[1] == -1)
-								_idx.nJ[1] = _idx.nJ[0];
-							else if (_idx.nJ[1] == -2)
-								_idx.nJ[1] = _data.getCols(iter->first) - 1;
-							parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-							parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
-							//NumeReKernel::print(_idx.nI[0] + " " + _idx.nI[1] );
-							//NumeReKernel::print(_idx.nJ[0] + " " + _idx.nJ[1] );
 
-							_cache.setCacheSize(_idx.nI[1] - _idx.nI[0] + 1, _idx.nJ[1] - _idx.nJ[0] + 1, "cache");
-							for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-							{
-								for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-								{
-									if (i == _idx.nI[0])
-									{
-										_cache.setHeadLineElement(j - _idx.nJ[0], "cache", _data.getHeadLineElement(j, iter->first));
-									}
-									if (_data.isValidEntry(i, j, iter->first))
-										_cache.writeToCache(i - _idx.nI[0], j - _idx.nJ[0], "cache", _data.getElement(i, j, iter->first));
-								}
-							}
-						}
-						else
-						{
-							_cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
-							for (unsigned int i = 0; i < _idx.vI.size(); i++)
-							{
-								for (unsigned int j = 0; j < _idx.vJ.size(); j++)
-								{
-									if (!i)
-									{
-										_cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.vJ[j], iter->first));
-									}
-									if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
-										_cache.writeToCache(i, j, "cache", _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
-								}
-							}
-						}
+                        if (_idx.row.isOpenEnd())
+                            _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
+
+                        if (_idx.col.isOpenEnd())
+                            _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
+
+                        _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
+
+                        for (unsigned int i = 0; i < _idx.row.size(); i++)
+                        {
+                            for (unsigned int j = 0; j < _idx.col.size(); j++)
+                            {
+                                if (!i)
+                                {
+                                    _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], iter->first));
+                                }
+                                if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
+                                    _cache.writeToCache(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                            }
+                        }
 
 						if (_data.containsStringVars(sCmd))
 							_data.getStringValues(sCmd);
@@ -3745,19 +3667,22 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 
 
 			_idx = parser_getIndices(sArgument, _parser, _data, _option);
-			if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+
+			if (!isValidIndexSet(_idx))
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
-			if (_idx.nI[1] == -2)
-				_idx.nI[1] = _data.getLines(sArgument.substr(0, sArgument.find('(')), false) - 1;
-			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _data.getCols(sArgument.substr(0, sArgument.find('('))) - 1;
+
+			if (_idx.row.isOpenEnd())
+				_idx.row.setRange(0, _data.getLines(sArgument.substr(0, sArgument.find('(')), false)-1);
+
+			if (_idx.col.isOpenEnd())
+				_idx.col.setRange(0, _data.getCols(sArgument.substr(0, sArgument.find('(')))-1);
+
 			if (matchParams(sCmd, "grid"))
 			{
-				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::GRID))
+				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::GRID))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
-					//NumeReKernel::print(LineBreak("|-> Resampling von \""+sArgument.substr(0,sArgument.find('('))+"\" wurde erfolgreich abgeschlossen.", _option) );
 				}
 				else
 				{
@@ -3766,11 +3691,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
 			{
-				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::ALL))
+				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::ALL))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
-					//NumeReKernel::print(LineBreak("|-> Resampling von \""+sArgument.substr(0,sArgument.find('('))+"\" wurde erfolgreich abgeschlossen.", _option) );
 				}
 				else
 				{
@@ -3779,11 +3703,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "cols"))
 			{
-				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::COLS))
+				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::COLS))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_COLS")), _option) );
-					//NumeReKernel::print(LineBreak("|-> Resampling der Spalte(n) wurde erfolgreich abgeschlossen.", _option) );
 				}
 				else
 				{
@@ -3792,11 +3715,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "lines"))
 			{
-				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], nArgument, Cache::LINES))
+				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::LINES))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) );
-					//NumeReKernel::print(LineBreak("|-> Resampling der Zeile(n) wurde erfolgreich abgeschlossen.", _option) );
 				}
 				else
 				{
@@ -3932,66 +3854,62 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                 NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 
 			_idx = parser_getIndices(sArgument, _parser, _data, _option);
-			if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
+
+			if (!isValidIndexSet(_idx))
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
-			if (_idx.nI[1] == -2)
-				_idx.nI[1] = _data.getLines(sArgument.substr(0, sArgument.find('(')), false);
-			if (_idx.nJ[1] == -2)
-				_idx.nJ[1] = _data.getCols(sArgument.substr(0, sArgument.find('(')));
+
+			if (_idx.row.isOpenEnd())
+				_idx.row.setRange(0, _data.getLines(sArgument.substr(0, sArgument.find('(')), false)-1);
+
+			if (_idx.col.isOpenEnd())
+				_idx.col.setRange(0, _data.getCols(sArgument.substr(0, sArgument.find('(')))-1);
+
 			if (matchParams(sCmd, "grid"))
 			{
-				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::GRID))
+				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, Cache::GRID))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
-					//NumeReKernel::print(LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich retuschiert.", _option) );
 				}
 				else
 				{
 					throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-					//NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
 				}
 			}
-			if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
+			else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
 			{
-				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::ALL))
+				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, Cache::ALL))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
-					//NumeReKernel::print(LineBreak("|-> \"" +sArgument.substr(0,sArgument.find('('))+ "\" wurde erfolgreich retuschiert.", _option) );
 				}
 				else
 				{
 					throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-					//NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
 				}
 			}
 			else if (matchParams(sCmd, "lines"))
 			{
-				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::LINES))
+				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, Cache::LINES))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_LINES")), _option) );
-					//NumeReKernel::print(LineBreak("|-> Zeile(n) wurden erfolgreich retuschiert.", _option) );
 				}
 				else
 				{
 					throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-					//NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
 				}
 			}
 			else if (matchParams(sCmd, "cols"))
 			{
-				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.nI[0], _idx.nI[1], _idx.nJ[0], _idx.nJ[1], Cache::COLS))
+				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, Cache::COLS))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
-					//NumeReKernel::print(LineBreak("|-> Spalte(n) wurden erfolgreich retuschiert.", _option) );
 				}
 				else
 				{
 					throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-					//NumeReKernel::print(LineBreak("|-> FEHLER: Die Spalte(n) konnte(n) nicht geglättet werden! Siehe \"help -smooth\" für weitere Details.", _option) );
 				}
 			}
 			return 1;
@@ -4755,68 +4673,43 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						if (sCmd.find("()") != string::npos)
 							sCmd.replace(sCmd.find("()"), 2, "(:,:)");
 						_idx = parser_getIndices(sCmd, _parser, _data, _option);
+
 						if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
 							_data.setCacheStatus(true);
-						if ((_idx.nI[0] == -1 && !_idx.vI.size())
-								|| (_idx.nJ[0] == -1 && !_idx.vJ.size()))
+
+						if (!isValidIndexSet(_idx))
 							throw SyntaxError(SyntaxError::CANNOT_EXPORT_DATA, sCmd, iter->first + "(", iter->first);
-						if (!_idx.vI.size())
-						{
-							if (_idx.nI[1] == -1)
-								_idx.nI[1] = _idx.nI[0];
-							else if (_idx.nI[1] == -2)
-								_idx.nI[1] = _data.getLines(iter->first, false) - 1;
-							if (_idx.nJ[1] == -1)
-								_idx.nJ[1] = _idx.nJ[0];
-							else if (_idx.nJ[1] == -2)
-								_idx.nJ[1] = _data.getCols(iter->first) - 1;
-							parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-							parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
-							//NumeReKernel::print(_idx.nI[0] + " " + _idx.nI[1] );
-							//NumeReKernel::print(_idx.nJ[0] + " " + _idx.nJ[1] );
 
-							_cache.setCacheSize(_idx.nI[1] - _idx.nI[0] + 1, _idx.nJ[1] - _idx.nJ[0] + 1, "cache");
-							if (iter->first != "cache" && iter->first != "data")
-								_cache.renameCache("cache", iter->first, true);
-							if (iter->first == "data")
-								_cache.renameCache("cache", "copy_of_data", true);
-							for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-							{
-								for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-								{
-									if (i == _idx.nI[0])
-									{
-										_cache.setHeadLineElement(j - _idx.nJ[0], (iter->first == "data" ? "copy_of_data" : iter->first), _data.getHeadLineElement(j, iter->first));
-									}
-									if (_data.isValidEntry(i, j, iter->first))
-										_cache.writeToCache(i - _idx.nI[0], j - _idx.nJ[0], (iter->first == "data" ? "copy_of_data" : iter->first), _data.getElement(i, j, iter->first));
-								}
-							}
-						}
-						else
-						{
-							_cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
-							if (iter->first != "cache" && iter->first != "data")
-								_cache.renameCache("cache", iter->first, true);
-							if (iter->first == "data")
-								_cache.renameCache("cache", "copy_of_data", true);
-							for (unsigned int i = 0; i < _idx.vI.size(); i++)
-							{
-								for (unsigned int j = 0; j < _idx.vJ.size(); j++)
-								{
-									if (!i)
-									{
-										_cache.setHeadLineElement(j, (iter->first == "data" ? "copy_of_data" : iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
-									}
-									if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
-										_cache.writeToCache(i, j, (iter->first == "data" ? "copy_of_data" : iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
-								}
-							}
-						}
+                        if (_idx.row.isOpenEnd())
+                            _idx.row.setRange(0, _data.getLines(iter->first)-1);
 
+                        if (_idx.col.isOpenEnd())
+                            _idx.col.setRange(0, _data.getCols(iter->first)-1);
+
+                        _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
+
+                        if (iter->first != "cache" && iter->first != "data")
+                            _cache.renameCache("cache", iter->first, true);
+
+                        if (iter->first == "data")
+                            _cache.renameCache("cache", "copy_of_data", true);
+
+                        for (unsigned int i = 0; i < _idx.row.size(); i++)
+                        {
+                            for (unsigned int j = 0; j < _idx.col.size(); j++)
+                            {
+                                if (!i)
+                                {
+                                    _cache.setHeadLineElement(j, (iter->first == "data" ? "copy_of_data" : iter->first), _data.getHeadLineElement(_idx.col[j], iter->first));
+                                }
+                                if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
+                                    _cache.writeToCache(i, j, (iter->first == "data" ? "copy_of_data" : iter->first), _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                            }
+                        }
 
 						if (_data.containsStringVars(sCmd))
 							_data.getStringValues(sCmd);
+
 						if (matchParams(sCmd, "file", '='))
 							addArgumentQuotes(sCmd, "file");
 
@@ -5245,77 +5138,92 @@ static int showDataObject(string& sCmd)
         // a cache as object, passed as parameter
         show_data(_data, _out, _option, _data.matchCache(sCmd), _option.getPrecision(), false, true);
     }
-    else if (_data.containsCacheElements(sCmd) || sCmd.find(" data(") != string::npos)
+    else
     {
-        // A table was passed, using indices to select part of the
-        // table
-        auto mCaches = _data.mCachesMap;
-        mCaches["data"] = -1;
+        DataAccessParser _accessParser(sCmd);
 
-        // Search the correct table
-        for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
+        if (_accessParser.getDataObject().length())
         {
-            if (sCmd.find(iter->first + "(") != string::npos
-                    && (!sCmd.find(iter->first + "(")
-                        || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
+            if (_accessParser.isCluster())
             {
-                Datafile _cache;
-                Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
+                NumeRe::Cluster& cluster = _data.getCluster(_accessParser.getDataObject());
 
-                // Validize the obtained index sets
-                if (!isValidIndexSet(_idx))
-                    throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, iter->first + "(", iter->first + "()");
+                if (_accessParser.getIndices().row.isOpenEnd())
+                    _accessParser.getIndices().row.setRange(0, cluster.size()-1);
 
-                // Copy the target data to a new table
-                if (!_idx.vI.size())
+                // Create the target container
+                NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), 1);
+
+                // Copy the data to the new container
+                for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
                 {
-                    if (_idx.nI[1] == -1)
-                        _idx.nI[1] = _idx.nI[0];
-                    else if (_idx.nI[1] == -2)
-                        _idx.nI[1] = _data.getLines(iter->first, false) - 1;
+                    if (cluster.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
+                        _stringTable.set(i, 0, cluster.getString(_accessParser.getIndices().row[i]));
+                    else
+                        _stringTable.set(i, 0, toString(cluster.getDouble(_accessParser.getIndices().row[i]), 5));
+                }
 
-                    if (_idx.nJ[1] == -1)
-                        _idx.nJ[1] = _idx.nJ[0];
-                    else if (_idx.nJ[1] == -2)
-                        _idx.nJ[1] = _data.getCols(iter->first) - 1;
+                // Redirect control
+                NumeReKernel::showStringTable(_stringTable, _accessParser.getDataObject() + "{}");
 
-                    parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-                    parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
+                return 1;
+            }
+            else if (_accessParser.getDataObject() == "string")
+            {
+                if (_accessParser.getIndices().row.isOpenEnd())
+                    _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
 
-                    _cache.setCacheSize(_idx.nI[1] - _idx.nI[0] + 1, _idx.nJ[1] - _idx.nJ[0] + 1, "cache");
-                    _cache.renameCache("cache", "*" + (iter->first), true);
+                if (_accessParser.getIndices().col.isOpenEnd())
+                    _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
 
-                    for (unsigned int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
+                // Create the target container
+                NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size());
+
+                // Copy the data to the new container and add surrounding
+                // quotation marks
+                for (size_t j = 0; j < _accessParser.getIndices().col.size(); j++)
+                {
+                    for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
                     {
-                        for (unsigned int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-                        {
-                            if (i == _idx.nI[0])
-                            {
-                                _cache.setHeadLineElement(j - _idx.nJ[0], "*" + (iter->first), _data.getHeadLineElement(j, iter->first));
-                            }
+                        if (_data.getStringElements(_accessParser.getIndices().col[j]) <= _accessParser.getIndices().row[i])
+                            break;
 
-                            if (_data.isValidEntry(i, j, iter->first))
-                                _cache.writeToCache(i - _idx.nI[0], j - _idx.nJ[0], "*" + (iter->first), _data.getElement(i, j, iter->first));
-                        }
+                        _stringTable.set(i, j, "\"" + _data.readString(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j]) + "\"");
                     }
                 }
-                else
+
+                // Redirect control
+                NumeReKernel::showStringTable(_stringTable, "string()");
+            }
+            else
+            {
+                Datafile _cache;
+
+                // Validize the obtained index sets
+                if (!isValidIndexSet(_accessParser.getIndices()))
+                    throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
+
+                // Copy the target data to a new table
+                if (_accessParser.getIndices().row.isOpenEnd())
+                    _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
+
+                if (_accessParser.getIndices().col.isOpenEnd())
+                    _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
+
+                _cache.setCacheSize(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
+                _cache.renameCache("cache", "*" + _accessParser.getDataObject(), true);
+
+                for (unsigned int i = 0; i < _accessParser.getIndices().row.size(); i++)
                 {
-                    _cache.setCacheSize(_idx.vI.size(), _idx.vJ.size(), "cache");
-                    _cache.renameCache("cache", "*" + (iter->first), true);
-
-                    for (unsigned int i = 0; i < _idx.vI.size(); i++)
+                    for (unsigned int j = 0; j < _accessParser.getIndices().col.size(); j++)
                     {
-                        for (unsigned int j = 0; j < _idx.vJ.size(); j++)
+                        if (!i)
                         {
-                            if (!i)
-                            {
-                                _cache.setHeadLineElement(j, "*" + (iter->first), _data.getHeadLineElement(_idx.vJ[j], iter->first));
-                            }
-
-                            if (_data.isValidEntry(_idx.vI[i], _idx.vJ[j], iter->first))
-                                _cache.writeToCache(i, j, "*" + (iter->first), _data.getElement(_idx.vI[i], _idx.vJ[j], iter->first));
+                            _cache.setHeadLineElement(j, "*" + _accessParser.getDataObject(), _data.getHeadLineElement(_accessParser.getIndices().col[j], _accessParser.getDataObject()));
                         }
+
+                        if (_data.isValidEntry(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
+                            _cache.writeToCache(i, j, "*" + _accessParser.getDataObject(), _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
                     }
                 }
 
@@ -5323,86 +5231,15 @@ static int showDataObject(string& sCmd)
                     _data.getStringValues(sCmd);
 
                 // Redirect the control
-                show_data(_cache, _out, _option, "*" + (iter->first), _option.getPrecision(), false, true);
+                show_data(_cache, _out, _option, "*" + _accessParser.getDataObject(), _option.getPrecision(), false, true);
                 return 1;
             }
         }
-
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
-    }
-    else if (_data.containsClusters(sCmd))
-    {
-        // Find the correct cluster
-        for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+        else
         {
-            if (sCmd.find(iter->first + "{") != string::npos
-                && (!sCmd.find(iter->first + "{")
-                    || (sCmd.find(iter->first + "{") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "{") - 1, (iter->first).length() + 2)))))
-            {
-                // Get the indices
-                Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
-
-                if (_idx.nI[1] == -1)
-                    _idx.nI[1] = _idx.nI[0];
-                else if (_idx.nI[1] == -2)
-                    _idx.nI[1] = iter->second.size();
-
-                // Create the target container
-                NumeRe::Container<string> _stringTable(_idx.nI[1] - _idx.nI[0], 1);
-
-                // Copy the data to the new container
-                for (size_t i = 0; i < _idx.nI[1]-_idx.nI[0]; i++)
-                {
-                    if (iter->second.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
-                        _stringTable.set(i, 0, iter->second.getString(i));
-                    else
-                        _stringTable.set(i, 0, toString(iter->second.getDouble(i), 5));
-                }
-
-                // Redirect control
-                NumeReKernel::showStringTable(_stringTable, iter->first + "{}");
-
-                return 1;
-            }
-        }
-    }
-    else if (sCmd.find(" string(") != string::npos)
-    {
-        // Get the indices
-        Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
-
-        if (_idx.nI[1] == -1)
-            _idx.nI[1] = _idx.nI[0];
-        else if (_idx.nI[1] == -2)
-            _idx.nI[1] = _data.getStringElements();
-
-        if (_idx.nJ[1] == -1)
-            _idx.nJ[1] = _idx.nJ[0];
-        else if (_idx.nJ[1] == -2)
-            _idx.nJ[1] = _data.getStringCols();
-
-        // Create the target container
-        NumeRe::Container<string> _stringTable(_idx.nI[1] - _idx.nI[0], _idx.nJ[1] - _idx.nJ[0]);
-
-        // Copy the data to the new container and add surrounding
-        // quotation marks
-        for (size_t j = 0; j < _idx.nJ[1] - _idx.nJ[0]; j++)
-        {
-            for (size_t i = 0; i < _idx.nI[1] - _idx.nI[0]; i++)
-            {
-                if (_data.getStringElements(_idx.nJ[0]+j) <= i + _idx.nI[0])
-                    break;
-
-                _stringTable.set(i, j, "\"" + _data.readString(_idx.nI[0]+i, _idx.nJ[0]+j) + "\"");
-            }
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
         }
 
-        // Redirect control
-        NumeReKernel::showStringTable(_stringTable, "string()");
-    }
-    else
-    {
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
     }
 
     return 1;

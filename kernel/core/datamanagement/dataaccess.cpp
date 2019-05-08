@@ -21,6 +21,101 @@
 #include "../../kernel.hpp"
 #include <vector>
 
+// DataAccessParser constructor. This function will parse the passed
+// command string into the first found data access and determine, whether
+// it is a cluster and calculate the corresponding index set
+DataAccessParser::DataAccessParser(const string& sCommand)
+{
+    size_t pos = string::npos;
+    bIsCluster = false;
+
+    // Get a pointer to the current kernel instance
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
+    // Do only something, if the instance is valid
+    if (instance)
+    {
+        // Examine the whole command line
+        for (size_t i = 0; i < sCommand.length(); i++)
+        {
+            // Is this a possible character start
+            // for a data object identifier?
+            if (pos == string::npos && (sCommand[i] == '_' || isalpha(sCommand[i])))
+                pos = i;
+
+            // Is a possible start character available
+            // and the current character is not part of a
+            // valid object identifier character set?
+            if (pos != string::npos && sCommand[i] != '_' && sCommand[i] != '~' && !isalnum(sCommand[i]))
+            {
+                // If the current character is an opening parenthesis
+                // or an opening brace, parse the identified data
+                // access, otherwise simply reset the possible starting
+                // character
+                if (sCommand[i] == '(')
+                {
+                    // This is a usual table or a reference to "string()"
+                    sDataObject = sCommand.substr(pos, i - pos);
+
+                    // Ensure that the table exists
+                    if (!instance->getData().isCacheElement(sDataObject) && sDataObject != "data" && sDataObject != "string")
+                    {
+                        sDataObject.clear();
+                        pos = string::npos;
+                        continue;
+                    }
+
+                    // Calculate the indices
+                    idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    break;
+                }
+                else if (sCommand[i] == '{')
+                {
+                    // This is a cluster reference
+                    sDataObject = sCommand.substr(pos, i - pos);
+
+                    // Ensure that the cluster exists
+                    if (!instance->getData().isCluster(sDataObject))
+                    {
+                        sDataObject.clear();
+                        pos = string::npos;
+                        continue;
+                    }
+
+                    // Calculate the indices and switch the access
+                    // to a cluster access
+                    bIsCluster = true;
+                    idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    break;
+                }
+                else
+                    pos = string::npos;
+            }
+        }
+    }
+
+}
+
+// Returns a reference to the data object identifier
+string& DataAccessParser::getDataObject()
+{
+    return sDataObject;
+}
+
+// Returns a reference to the stored indices
+Indices& DataAccessParser::getIndices()
+{
+    return idx;
+}
+
+// Determines, whether the data access references a cluster
+bool DataAccessParser::isCluster()
+{
+    return bIsCluster;
+}
+
+
+
 
 static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option);
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
@@ -307,31 +402,26 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
 
-		if (!isCluster && _idx.nI[1] == -2 && _idx.nJ[1] == -2)
+		if (!isCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
 			throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
 
 		// evaluate the indices regarding the possible combinations:
 		// -1: no index
 		// -2: larges possible index
 		// -3: string access in the current dimension
-		if (_idx.nI[1] == -1)
-			_idx.nI[1] = _idx.nI[0];
 
-		if (_idx.nJ[1] == -1)
-			_idx.nJ[1] = _idx.nJ[0];
+		if (!isCluster && _idx.col.isOpenEnd())
+			_idx.col.setRange(0, _data.getCols(sEntityName, false)-1);
 
-		if (!isCluster && _idx.nJ[1] == -2)
-			_idx.nJ[1] = _data.getCols(sEntityName, false) - 1;
+		if (!isCluster && _idx.row.isOpenEnd())
+			_idx.row.setRange(0, _data.getLines(sEntityName, true) - _data.getAppendedZeroes(_idx.col.front(), sEntityName)-1);
+		else if (isCluster && _idx.row.isOpenEnd())
+            _idx.row.setRange(0, _data.getCluster(sEntityName).size()-1);
 
-		if (!isCluster && _idx.nI[1] == -2)
-			_idx.nI[1] = _data.getLines(sEntityName, true) - _data.getAppendedZeroes(_idx.nJ[0], sEntityName) - 1;
-		else if (isCluster && _idx.nI[1] == -2)
-            _idx.nI[1] = _data.getCluster(sEntityName).size() - 1;
-
-		if (_idx.nI[0] == -3)
+		if (_idx.row.isString())
 			bWriteStrings = true;
 
-		if (_idx.nJ[0] == -3)
+		if (_idx.col.isString())
 			bWriteFileName = true;
 
 		// Handle the filename and headline access different from the usual data access
@@ -343,20 +433,11 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 		else if (bWriteStrings)
 		{
 			// Get the headlines
-			if (_idx.vJ.size())
-			{
-				for (size_t j = 0; j < _idx.vJ.size(); j++)
-				{
-					sEntityStringReplacement += "\"" + _data.getHeadLineElement(_idx.vJ[j], sEntityName) + "\", ";
-				}
-			}
-			else
-			{
-				for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-				{
-					sEntityStringReplacement += "\"" + _data.getHeadLineElement(j, sEntityName) + "\", ";
-				}
-			}
+            for (size_t j = 0; j < _idx.col.size(); j++)
+            {
+                sEntityStringReplacement += "\"" + _data.getHeadLineElement(_idx.col[j], sEntityName) + "\", ";
+            }
+
 			if (sEntityStringReplacement.length())
 				sEntityStringReplacement.erase(sEntityStringReplacement.rfind(','));
 		}
@@ -364,24 +445,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 		{
 			// This is a usual data access
 			// create a vector containing the data
-			if (_idx.vI.size() && _idx.vJ.size())
-			{
-				vEntityContents = _data.getElement(_idx.vI, _idx.vJ, sEntityName);
-			}
-			else
-			{
-				parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
-				parser_CheckIndices(_idx.nJ[0], _idx.nJ[1]);
-
-				// In theory, this will also handle matrix accesses by unrolling the matrix into a logical array
-				for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-				{
-					for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-					{
-						vEntityContents.push_back(_data.getElement(i, j, sEntityName));
-					}
-				}
-			}
+            vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
 		}
 		else if (isCluster)
 		{
@@ -394,16 +458,8 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 		    if (cluster.isDouble())
             {
                 // Create the vector using the indices
-                if (_idx.vI.size())
-                {
-                    for (size_t i = 0; i < _idx.vI.size(); i++)
-                        vEntityContents.push_back(cluster.getDouble(_idx.vI[i]));
-                }
-                else
-                {
-                    for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-                        vEntityContents.push_back(cluster.getDouble(i));
-                }
+                for (size_t i = 0; i < _idx.row.size(); i++)
+                    vEntityContents.push_back(cluster.getDouble(_idx.row[i]));
             }
             else
             {
@@ -411,25 +467,12 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 
                 // Create the string vector representation
                 // using the calculated indices
-                if (_idx.vI.size())
+                for (size_t i = 0; i < _idx.row.size(); i++)
                 {
-                    for (size_t i = 0; i < _idx.vI.size(); i++)
-                    {
-                        if (cluster.getType(_idx.vI[i]) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-                            sEntityStringReplacement += toCmdString(cluster.getDouble(_idx.vI[i])) + ",";
-                        else
-                            sEntityStringReplacement += cluster.getString(_idx.vI[i]) + ",";
-                    }
-                }
-                else
-                {
-                    for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-                    {
-                        if (cluster.getType(i) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-                            sEntityStringReplacement += toCmdString(cluster.getDouble(i)) + ",";
-                        else
-                            sEntityStringReplacement += cluster.getString(i) + ",";
-                    }
+                    if (cluster.getType(_idx.row[i]) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                        sEntityStringReplacement += toCmdString(cluster.getDouble(_idx.row[i])) + ",";
+                    else
+                        sEntityStringReplacement += cluster.getString(_idx.row[i]) + ",";
                 }
 
                 sEntityStringReplacement.back() = '}';
@@ -493,47 +536,23 @@ static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _
 		// check the indices
 		if (!isValidIndexSet(_idx))
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
-		if (!isCluster && _idx.nI[1] == -2 && _idx.nJ[1] == -2)
+
+		if (!isCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
 			throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
 
 		// Evaluate the indices
-		if (_idx.nI[1] == -1)
-			_idx.nI[1] = _idx.nI[0];
+		if (_idx.row.isOpenEnd())
+			_idx.row.setRange(0, isCluster ? _data.getCluster(_access.sCacheName).size()-1 : _data.getLines(_access.sCacheName, false)-1);
 
-		if (_idx.nJ[1] == -1)
-			_idx.nJ[1] = _idx.nJ[0];
-
-		if (_idx.nI[1] == -2)
-        {
-			_idx.nI[1] = isCluster ? _data.getCluster(_access.sCacheName).size() - 1 : _data.getLines(_access.sCacheName, false) - 1;
-        }
-
-		if (_idx.nJ[1] == -2)
-			_idx.nJ[1] = isCluster ? 1 : _data.getCols(_access.sCacheName, false) - 1;
-
-		vector<long long int> vLine;
-		vector<long long int> vCol;
-
-		// Fill the vectors (either with the already available vectors or by constructing the index vectors)
-		if (_idx.vI.size() && _idx.vJ.size())
-		{
-			vLine = _idx.vI;
-			vCol = _idx.vJ;
-		}
-		else
-		{
-			for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-				vLine.push_back(i);
-
-			for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-				vCol.push_back(j);
-		}
+		if (_idx.col.isOpenEnd())
+			_idx.col.setRange(0, isCluster ? 0 : _data.getCols(_access.sCacheName, false)-1);
 
 		// Get new data (Parser::GetVectorVar returns a pointer to the vector var) and update the stored elements in the internal representation
 		if (isCluster)
-            _data.getCluster(_access.sCacheName).insertDataInArray(_parser.GetVectorVar(_access.sVectorName), vLine);
+            _data.getCluster(_access.sCacheName).insertDataInArray(_parser.GetVectorVar(_access.sVectorName), _idx.row);
         else
-            _data.copyElementsInto(_parser.GetVectorVar(_access.sVectorName), vLine, vCol, _access.sCacheName);
+            _data.copyElementsInto(_parser.GetVectorVar(_access.sVectorName), _idx.row, _idx.col, _access.sCacheName);
+
 		_parser.UpdateVectorVar(_access.sVectorName);
 	}
 
@@ -558,23 +577,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 {
 	sLine = " " + sLine + " ";
 
-	vector<long long int> vLine;
-	vector<long long int> vCol;
 	size_t nPos = 0;
-
-	// Fill the vectors with the needed index values
-	if (_idx.vI.size() && _idx.vJ.size())
-	{
-		vLine = _idx.vI;
-		vCol = _idx.vJ;
-	}
-	else
-	{
-		for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-			vLine.push_back(i);
-		for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-			vCol.push_back(j);
-	}
 
 	// As long as the entity occurs
 	while ((nPos = sLine.find(sEntityOccurence, nPos)) != string::npos)
@@ -607,91 +610,91 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("std(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).std(vLine) : _data.std(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).std(_idx.row) : _data.std(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "avg(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("avg(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).avg(vLine) : _data.avg(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).avg(_idx.row) : _data.avg(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "max(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("max(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).max(vLine) : _data.max(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).max(_idx.row) : _data.max(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "min(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("min(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).min(vLine) : _data.min(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).min(_idx.row) : _data.min(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "prd(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("prd(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).prd(vLine) : _data.prd(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).prd(_idx.row) : _data.prd(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "sum(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("sum(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).sum(vLine) : _data.sum(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).sum(_idx.row) : _data.sum(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "num(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("num(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).num(vLine) : _data.num(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).num(_idx.row) : _data.num(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "and(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("and(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).and_func(vLine) : _data.and_func(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).and_func(_idx.row) : _data.and_func(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "xor(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("xor(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).xor_func(vLine) : _data.xor_func(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).xor_func(_idx.row) : _data.xor_func(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "or(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("or(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).or_func(vLine) : _data.or_func(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).or_func(_idx.row) : _data.or_func(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "cnt(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("cnt(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).cnt(vLine) : _data.cnt(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).cnt(_idx.row) : _data.cnt(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "med(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("med(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).med(vLine) : _data.med(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).med(_idx.row) : _data.med(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "norm(")
 			{
 				_parser.DisableAccessCaching();
 				sLine = sLine.substr(0, sLine.rfind("norm(", sLine.find(sEntityOccurence)))
-						+ toCmdString(isCluster ? _data.getCluster(sEntityName).norm(vLine) : _data.norm(sEntityName, vLine, vCol))
+						+ toCmdString(isCluster ? _data.getCluster(sEntityName).norm(_idx.row) : _data.norm(sEntityName, _idx.row, _idx.col))
 						+ sLine.substr(sLine.find(')', sLine.find(sEntityOccurence) + sEntityOccurence.length()) + 1);
 			}
 			else if (sLeft == "cmp(")
@@ -719,7 +722,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				nType = intCast(_parser.Eval());
 				sLine = sLine.replace(sLine.rfind("cmp(", sLine.find(sEntityOccurence)),
 									  getMatchingParenthesis(sLine.substr(sLine.rfind("cmp(", sLine.find(sEntityOccurence)) + 3)) + 4,
-									  toCmdString(isCluster ? _data.getCluster(sEntityName).cmp(vLine, dRef, nType) : _data.cmp(sEntityName, vLine, vCol, dRef, nType)));
+									  toCmdString(isCluster ? _data.getCluster(sEntityName).cmp(_idx.row, dRef, nType) : _data.cmp(sEntityName, _idx.row, _idx.col, dRef, nType)));
 			}
 			else if (sLeft == "pct(")
 			{
@@ -738,7 +741,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				dPct = _parser.Eval();
 				sLine = sLine.replace(sLine.rfind("pct(", sLine.find(sEntityOccurence)),
 									  getMatchingParenthesis(sLine.substr(sLine.rfind("pct(", sLine.find(sEntityOccurence)) + 3)) + 4,
-									  toCmdString(isCluster ? _data.getCluster(sEntityName).pct(vLine, dPct) : _data.pct(sEntityName, vLine, vCol, dPct)));
+									  toCmdString(isCluster ? _data.getCluster(sEntityName).pct(_idx.row, dPct) : _data.pct(sEntityName, _idx.row, _idx.col, dPct)));
 			}
 			else //Fallback
 				sLine.replace(nPos, sEntityOccurence.length(), sEntityReplacement);
@@ -935,73 +938,54 @@ static string getLastToken(const string& sLine)
 }
 
 
-// this function is for extracting the data out of the data object and storing it to a continous block of memory
-// used for example for the FFT, the FWT and the fitting algorithm
+// this function is for extracting the desired number of columns of the data out of the data object
+// and storing it to a continous block of memory used for example for
+// regularize, spline, pulse, stfa
 bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Datafile& _cache, int nDesiredCols, bool bSort)
 {
 	// write the data
 	// the first case uses vector indices
-	if (_idx.vI.size() || _idx.vJ.size())
-	{
-		for (long long int i = 0; i < _idx.vI.size(); i++)
-		{
-			for (long long int j = 0; j < _idx.vJ.size(); j++)
-			{
-				_cache.writeToCache(i, j, "cache", _data.getElement(_idx.vI[i], _idx.vJ[j], sTableName));
-				if (!i)
-					_cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.vJ[j], sTableName));
-			}
-		}
-	}
-	else // this is for the case of a continous block of data
-	{
-		// Check the indices
-		if (_idx.nI[0] == -1 || _idx.nJ[0] == -1)
-			throw SyntaxError(SyntaxError::INVALID_INDEX, sTableName, sTableName);
+    if (_idx.row.isOpenEnd())
+        _idx.row.setRange(0, _data.getLines(sTableName, false)-1);
 
-		// Evaluate the indices
-		if (_idx.nI[1] == -1)
-			_idx.nI[1] = _idx.nI[0];
-		else if (_idx.nI[1] == -2)
-			_idx.nI[1] = _data.getLines(sTableName, false) - 1;
-		if (_idx.nJ[1] == -1)
-			_idx.nJ[1] = _idx.nJ[0];
-		else if (_idx.nJ[1] == -2)
-		{
-			_idx.nJ[1] = _idx.nJ[0] + nDesiredCols - 1;
-		}
-		if (_data.getCols(sTableName, false) <= _idx.nJ[1])
-			throw SyntaxError(SyntaxError::INVALID_INDEX, sTableName, sTableName);
+    if (_idx.col.isOpenEnd())
+        _idx.col.setRange(0, _idx.col.front() + nDesiredCols-1);
 
-		// Write the data
-		for (long long int i = 0; i <= _idx.nI[1] - _idx.nI[0]; i++)
-		{
-			if (nDesiredCols == 2)
-			{
-				_cache.writeToCache(i, 0, "cache", _data.getElement(_idx.nI[0] + i, _idx.nJ[0], sTableName));
-				_cache.writeToCache(i, 1, "cache", _data.getElement(_idx.nI[0] + i, _idx.nJ[1], sTableName));
-				if (!i)
-				{
-					_cache.setHeadLineElement(0, "cache", _data.getHeadLineElement(_idx.nJ[0], sTableName));
-					_cache.setHeadLineElement(1, "cache", _data.getHeadLineElement(_idx.nJ[1], sTableName));
-				}
-			}
-			else
-			{
-				for (long long int j = 0; j <= _idx.nJ[1] - _idx.nJ[0]; j++)
-				{
-					_cache.writeToCache(i, j, "cache", _data.getElement(_idx.nI[0] + i, _idx.nJ[0] + j, sTableName));
-					if (!i)
-						_cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.nJ[0] + j, sTableName));
-				}
-			}
-		}
-	}
+    // If the command requires two columns and the column indices contain two
+    // nodes, handle them here. Otherwise use a vectorial access in the lower
+    // section of this conditional statement
+    if (nDesiredCols == 2 && _idx.col.numberOfNodes() == 2 && _idx.col.isExpanded()) // Do not expand in this case!
+    {
+        for (long long int i = 0; i < _idx.row.size(); i++)
+        {
+            _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
+            _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col.last(), sTableName));
+
+            if (!i)
+            {
+                _cache.setHeadLineElement(0, "cache", _data.getHeadLineElement(_idx.col.front(), sTableName));
+                _cache.setHeadLineElement(1, "cache", _data.getHeadLineElement(_idx.col.last(), sTableName));
+            }
+        }
+    }
+    else
+    {
+        for (long long int i = 0; i < _idx.row.size(); i++)
+        {
+            for (long long int j = 0; j < _idx.col.size(); j++)
+            {
+                _cache.writeToCache(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], sTableName));
+
+                if (!i)
+                    _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], sTableName));
+            }
+        }
+    }
+
 	// sort, if sorting is activated
 	if (bSort)
-	{
 		_cache.sortElements("cache -sort c=1[2:]");
-	}
+
 	return true;
 }
 
@@ -1021,10 +1005,8 @@ NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser,
     int nDim = evalColumnIndicesAndGetDimension(_data, _parser, sDatatable, sDataExpression, _idx, nColumns, isCluster, _option);
 
 	// Validate, if the line indices have a reasonable large difference
-	if (abs(_idx.nI[0] - _idx.nI[1]) <= 1 && _idx.vI.size() <= 1)
+	if (_idx.row.size() <= 1)
 		throw SyntaxError(SyntaxError::TOO_FEW_LINES, sDataExpression, SyntaxError::invalid_position);
-
-	parser_CheckIndices(_idx.nI[0], _idx.nI[1]);
 
     // copy the data and extract the table
     return copyAndExtract(_data, sDatatable, _idx, nDim);
@@ -1037,17 +1019,12 @@ static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, co
     int nDim = 0;
 
     // Ensure consistent indices
-    if (_idx.nI[1] > _data.getLines(sDatatable, false) || _idx.nI[1] == -2)
-        _idx.nI[1] = _data.getLines(sDatatable, false);
-
-	if (_idx.nJ[1] > _data.getCols(sDatatable) - 1 || _idx.nJ[1] == -2)
-		_idx.nJ[1] = _data.getCols(sDatatable) - 1;
+    _idx.row.setRange(0, _data.getLines(sDatatable, false)-1);
+    _idx.col.setRange(0, _data.getCols(sDatatable)-1);
 
     // Validate the calculated indices
-	if (!_idx.vI.size()
-        && !_idx.vJ.size()
-        && (_idx.nI[0] > _data.getLines(sDatatable, false)
-            || _idx.nJ[0] > _data.getCols(sDatatable) - 1))
+	if (_idx.row.front() > _data.getLines(sDatatable, false)
+            || _idx.col.front() > _data.getCols(sDatatable) - 1)
 	{
 		throw SyntaxError(SyntaxError::INVALID_INDEX, sDataExpression, SyntaxError::invalid_position);
 	}
@@ -1057,10 +1034,10 @@ static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, co
 	 */
 	nDim = 0;
 
-	if ((nColumns == 1 && _idx.vJ.size() < 2) || isCluster)
+	if ((nColumns == 1 && _idx.col.size() < 2) || isCluster)
 		throw SyntaxError(SyntaxError::TOO_FEW_COLS, sDataExpression, SyntaxError::invalid_position);
 	else if (nColumns == 1)
-		nDim = _idx.vJ.size();
+		nDim = _idx.col.size();
 	else
 	{
 		nDim = nColumns;
@@ -1084,41 +1061,16 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     // Search for tables and clusters
-    // TODO: It might be possible, that this implementation finds
-    // the wrong table first (aka a table, which was used as
-    // index vector)
-    if (_data.containsTablesOrClusters(sExpression) && sExpression.substr(0, 5) != "data(")
+    DataAccessParser _accessParser(sExpression);
+
+    if (_accessParser.getDataObject().length())
     {
-        // Search for tables
-        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-        {
-            if (sExpression.find(iter->first + "(") != string::npos
-                    && (!sExpression.find(iter->first + "(")
-                        || checkDelimiter(sExpression.substr(sExpression.find(iter->first + "(") - 1, (iter->first).length() + 2))))
-            {
-                sDataTable = iter->first;
-                break;
-            }
-        }
-
-        // Search for clusters
-        for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
-        {
-            if (sExpression.find(iter->first + "{") != string::npos
-                    && (!sExpression.find(iter->first + "{")
-                        || checkDelimiter(sExpression.substr(sExpression.find(iter->first + "{") - 1, (iter->first).length() + 2))))
-            {
-                sDataTable = iter->first;
-                isCluster = true;
-                break;
-            }
-        }
+        sDataTable = _accessParser.getDataObject();
+        _idx = _accessParser.getIndices();
+        isCluster = _accessParser.isCluster();
     }
-    else if (!_data.isValid())
-		throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sExpression, SyntaxError::invalid_position);
-
-    // Get the indices for the current expression
-    _idx = parser_getIndices(sExpression, _parser, _data, _option);
+    else
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sExpression, SyntaxError::invalid_position);
 
     if (!isValidIndexSet(_idx))
         throw SyntaxError(SyntaxError::INVALID_INDEX, sExpression, SyntaxError::invalid_position);
@@ -1126,12 +1078,12 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
     // Determine the number of passed columns and
     // whether the user left an open end in the column
     // index list
-    if (_idx.vJ.size())
-        nColumns = _idx.vJ.size();
+    if (_idx.col.numberOfNodes() > 2)
+        nColumns = _idx.col.numberOfNodes();
     else
     {
-        nColumns = (_idx.nJ[1] == -1) ? 1 : 2;
-        openEnd = (_idx.nJ[1] == -2);
+        nColumns = _idx.col.numberOfNodes();
+        openEnd = _idx.col.isOpenEnd();
 
         if (isCluster)
             nColumns = 1;
@@ -1145,39 +1097,24 @@ static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, c
 {
     Cache _cache;
     // Copy the contents of the data into the local cache object
-	if (!_idx.vI.size())
-	{
-	    // The indices are casual
-		if (nDim == 2)
-		{
-			for (int i = 0; i <= abs(_idx.nI[0] - _idx.nI[1]); i++)
-			{
-				_cache.writeToCache(i, 0, "cache", _data.getElement(i + _idx.nI[0], _idx.nJ[0], sDatatable));
-				_cache.writeToCache(i, 1, "cache", _data.getElement(i + _idx.nI[0], _idx.nJ[1], sDatatable));
-			}
-		}
-	}
-	else
-	{
-	    // The indices are vectors
-		if (nDim == 2)
-		{
-			for (size_t i = 0; i < _idx.vI.size(); i++)
-			{
-				_cache.writeToCache(i, 0, "cache", _data.getElement(_idx.vI[i], _idx.vJ[0], sDatatable));
-				_cache.writeToCache(i, 1, "cache", _data.getElement(_idx.vI[i], _idx.vJ[1], sDatatable));
-			}
-		}
-		else if (nDim == 3)
-		{
-			for (size_t i = 0; i < _idx.vI.size(); i++)
-			{
-				_cache.writeToCache(i, 0, "cache", _data.getElement(_idx.vI[i], _idx.vJ[0], sDatatable));
-				_cache.writeToCache(i, 1, "cache", _data.getElement(_idx.vI[i], _idx.vJ[1], sDatatable));
-				_cache.writeToCache(i, 2, "cache", _data.getElement(_idx.vI[i], _idx.vJ[2], sDatatable));
-			}
-		}
-	}
+    // The indices are vectors
+    if (nDim == 2)
+    {
+        for (size_t i = 0; i < _idx.row.size(); i++)
+        {
+            _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+        }
+    }
+    else if (nDim == 3)
+    {
+        for (size_t i = 0; i < _idx.row.size(); i++)
+        {
+            _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            _cache.writeToCache(i, 2, "cache", _data.getElement(_idx.row[i], _idx.col[2], sDatatable));
+        }
+    }
 
 	// Sort the elements
 	_cache.sortElements("cache -sort c=1[2:]");
@@ -1269,6 +1206,10 @@ double getDataFromObject(const string& sObject, long long int i, long long int j
 {
     // Get a reference to the datafile object
     Datafile& _data = NumeReKernel::getInstance()->getData();
+
+    // Fallback to ensure that valid indices are read
+    if (i < 0 || j < 0)
+        return NAN;
 
     // return the data depending on the passed isCluster
     // boolean, the object name and its indices

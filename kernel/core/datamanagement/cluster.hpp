@@ -151,7 +151,6 @@ namespace NumeRe
             void assign(const vector<double>& vVals);
             void assign(const vector<string>& vStrings);
             void assignVectorResults(Indices _idx, int nNum, double* data);
-            void assignIndexResults(Indices _idx, int nNum, double* data);
             virtual int compare(int i, int j, int col) override;
             virtual bool isValue(int line, int col) override;
             void reorderElements(vector<int> vIndex, int i1, int i2);
@@ -210,7 +209,7 @@ namespace NumeRe
             double getDouble(size_t i) const;
             void setDouble(size_t i, double value);
             vector<double> getDoubleArray() const;
-            void insertDataInArray(vector<double>* vTarget, vector<long long int> vLine);
+            void insertDataInArray(vector<double>* vTarget, const VectorIndex& vLine);
             void setDoubleArray(const vector<double>& vVals);
             void setDoubleArray(int nNum, double* data);
             void assignResults(Indices _idx, int nNum, double* data);
@@ -225,26 +224,26 @@ namespace NumeRe
 
             vector<int> sortElements(long long int i1, long long int i2, const string& sSortingExpression);
             void deleteItems(long long int i1, long long int i2);
-            void deleteItems(const vector<long long int>& vLines);
+            void deleteItems(const VectorIndex& vLines);
 
-            double std(const vector<long long int>& _vLine);
-            double avg(const vector<long long int>& _vLine);
-            double max(const vector<long long int>& _vLine);
-            string strmax(const vector<long long int>& _vLine);
-            double min(const vector<long long int>& _vLine);
-            string strmin(const vector<long long int>& _vLine);
-            double prd(const vector<long long int>& _vLine);
-            double sum(const vector<long long int>& _vLine);
-            string strsum(const vector<long long int>& _vLine);
-            double num(const vector<long long int>& _vLine);
-            double and_func(const vector<long long int>& _vLine);
-            double or_func(const vector<long long int>& _vLine);
-            double xor_func(const vector<long long int>& _vLine);
-            double cnt(const vector<long long int>& _vLine);
-            double norm(const vector<long long int>& _vLine);
-            double cmp(const vector<long long int>& _vLine, double dRef, int nType);
-            double med(const vector<long long int>& _vLine);
-            double pct(const vector<long long int>& _vLine, double dPct);
+            double std(const VectorIndex& _vLine);
+            double avg(const VectorIndex& _vLine);
+            double max(const VectorIndex& _vLine);
+            string strmax(const VectorIndex& _vLine);
+            double min(const VectorIndex& _vLine);
+            string strmin(const VectorIndex& _vLine);
+            double prd(const VectorIndex& _vLine);
+            double sum(const VectorIndex& _vLine);
+            string strsum(const VectorIndex& _vLine);
+            double num(const VectorIndex& _vLine);
+            double and_func(const VectorIndex& _vLine);
+            double or_func(const VectorIndex& _vLine);
+            double xor_func(const VectorIndex& _vLine);
+            double cnt(const VectorIndex& _vLine);
+            double norm(const VectorIndex& _vLine);
+            double cmp(const VectorIndex& _vLine, double dRef, int nType);
+            double med(const VectorIndex& _vLine);
+            double pct(const VectorIndex& _vLine, double dPct);
 
     };
 

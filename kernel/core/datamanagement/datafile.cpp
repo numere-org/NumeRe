@@ -3529,7 +3529,7 @@ double Datafile::getElement(long long int _nLine, long long int _nCol, const str
         return NAN;
 }
 
-vector<double> Datafile::getElement(const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const
+vector<double> Datafile::getElement(const VectorIndex& _vLine, const VectorIndex& _vCol, const string& sCache) const
 {
     //cerr << _vLine.size() << " " << _vCol.size() << " " << sCache << endl;
 
@@ -3559,7 +3559,7 @@ vector<double> Datafile::getElement(const vector<long long int>& _vLine, const v
     return vReturn;
 }
 
-void Datafile::copyElementsInto(vector<double>* vTarget, const vector<long long int>& _vLine, const vector<long long int>& _vCol, const string& sCache) const
+void Datafile::copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const string& sCache) const
 {
     if (vTarget == nullptr)
         return;
@@ -3689,7 +3689,7 @@ string Datafile::getHeadLineElement(long long int _i, const string& sCache) cons
 		return sHeadLine[_i];
 }
 
-vector<string> Datafile::getHeadLineElement(vector<long long int> _vCol, const string& sCache) const
+vector<string> Datafile::getHeadLineElement(const VectorIndex& _vCol, const string& sCache) const
 {
     if (sCache != "data")
         return Cache::getCacheHeadLineElement(_vCol, sCache);
@@ -4431,7 +4431,7 @@ double Datafile::std(const string& sCache, long long int i1, long long int i2, l
     return dStd;
 }
 
-double Datafile::std(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::std(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::std(sCache, _vLine, _vCol);
@@ -4508,7 +4508,7 @@ double Datafile::avg(const string& sCache, long long int i1, long long int i2, l
     return dMean;
 }
 
-double Datafile::avg(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::avg(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::avg(sCache, _vLine, _vCol);
@@ -4584,7 +4584,7 @@ double Datafile::max(const string& sCache, long long int i1, long long int i2, l
     return dMax;
 }
 
-double Datafile::max(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::max(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::max(sCache, _vLine, _vCol);
@@ -4659,7 +4659,7 @@ double Datafile::min(const string& sCache, long long int i1, long long int i2, l
     return dMin;
 }
 
-double Datafile::min(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::min(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::min(sCache, _vLine, _vCol);
@@ -4730,7 +4730,7 @@ double Datafile::prd(const string& sCache, long long int i1, long long int i2, l
 
 }
 
-double Datafile::prd(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::prd(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::prd(sCache, _vLine, _vCol);
@@ -4797,7 +4797,7 @@ double Datafile::sum(const string& sCache, long long int i1, long long int i2, l
     return dSum;
 }
 
-double Datafile::sum(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::sum(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::sum(sCache, _vLine, _vCol);
@@ -4819,7 +4819,7 @@ double Datafile::sum(const string& sCache, const vector<long long int>& _vLine, 
     return dSum;
 }
 
-double Datafile::num(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::num(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::num(sCache, _vLine, _vCol);
@@ -4934,7 +4934,7 @@ double Datafile::and_func(const string& sCache, long long int i1, long long int 
     return 1.0;
 }
 
-double Datafile::and_func(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::and_func(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::and_func(sCache, _vLine, _vCol);
@@ -5003,7 +5003,7 @@ double Datafile::or_func(const string& sCache, long long int i1, long long int i
     return 0.0;
 }
 
-double Datafile::or_func(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::or_func(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::or_func(sCache, _vLine, _vCol);
@@ -5074,7 +5074,7 @@ double Datafile::xor_func(const string& sCache, long long int i1, long long int 
     return 0.0;
 }
 
-double Datafile::xor_func(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::xor_func(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::xor_func(sCache, _vLine, _vCol);
@@ -5143,7 +5143,7 @@ double Datafile::cnt(const string& sCache, long long int i1, long long int i2, l
     return (double)((i2-i1+1)*(j2-j1+1));
 }
 
-double Datafile::cnt(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::cnt(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::cnt(sCache, _vLine, _vCol);
@@ -5212,7 +5212,7 @@ double Datafile::norm(const string& sCache, long long int i1, long long int i2, 
     return sqrt(dNorm);
 }
 
-double Datafile::norm(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::norm(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::norm(sCache, _vLine, _vCol);
@@ -5324,7 +5324,7 @@ double Datafile::cmp(const string& sCache, long long int i1, long long int i2, l
         return nKeep+1;
 }
 
-double Datafile::cmp(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol, double dRef, int nType)
+double Datafile::cmp(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int nType)
 {
     if (sCache != "data")
         return Cache::cmp(sCache, _vLine, _vCol, dRef, nType);
@@ -5456,7 +5456,7 @@ double Datafile::med(const string& sCache, long long int i1, long long int i2, l
     }
 }
 
-double Datafile::med(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol)
+double Datafile::med(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
         return Cache::med(sCache, _vLine, _vCol);
@@ -5572,7 +5572,7 @@ double Datafile::pct(const string& sCache, long long int i1, long long int i2, l
         + ((_cache.getCacheLines(0,false)-1)*dPct-floor((_cache.getCacheLines(0,false)-1)*dPct))*_cache.getElement(floor((_cache.getCacheLines(0,false)-1)*dPct)+1,0,"cache");
 }
 
-double Datafile::pct(const string& sCache, const vector<long long int>& _vLine, const vector<long long int>& _vCol, double dPct)
+double Datafile::pct(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct)
 {
     if (sCache != "data")
         return Cache::pct(sCache, _vLine, _vCol, dPct);

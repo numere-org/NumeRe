@@ -83,10 +83,8 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 	// This is the handler for the abbreviation TABLE() == TABLE(:,:)
 	if (!sArgument.length())
 	{
-		_idx.nI[0] = 0;
-		_idx.nJ[0] = 0;
-		_idx.nI[1] = -2;
-		_idx.nJ[1] = -2;
+		_idx.row = VectorIndex(0LL, VectorIndex::OPEN_END);
+		_idx.col = VectorIndex(0LL, VectorIndex::OPEN_END);
 		return _idx;
 	}
 
@@ -126,7 +124,7 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, Datafile& _
         handleCasualIndices(_parser, _idx, vLines, vCols, sCmd);
     }
 
-	if (_idx.vI.size() || _idx.vJ.size())
+	if (_idx.row.numberOfNodes() > 2 || _idx.col.numberOfNodes() > 2)
 	{
 		// Expand the casual indices to vectors if needed
 		expandIndexVectors(_idx, _data, sCmd);
@@ -195,7 +193,9 @@ static void handleIndexVectors(Parser& _parser, Indices& _idx, vector<string>& v
 	if (vLines[0] != "<<NONE>>" && vLines[1] == "<<NONE>>")
 	{
 		if (vLines[0] == "#")
-			_idx.nI[0] = -3;
+			_idx.row.front() = VectorIndex::STRING;
+        else if (vLines[0] == "<<EMPTY>>")
+            _idx.row.front() = 0;
 		else
 		{
 			_parser.SetExpr(vLines[0]);
@@ -204,14 +204,10 @@ static void handleIndexVectors(Parser& _parser, Indices& _idx, vector<string>& v
 			if (nResults > 1)
 			{
 				// vector
-				for (int n = 0; n < nResults; n++)
-				{
-					if (!isnan(v[n]) && !isinf(v[n]))
-						_idx.vI.push_back(intCast(v[n]) - 1);
-				}
+				_idx.row = VectorIndex(v, nResults, 0);
 			}
 			else // single index
-				_idx.nI[0] = intCast(v[0]) - 1;
+				_idx.row.front() = intCast(v[0]) - 1;
 		}
 	}
 
@@ -219,9 +215,9 @@ static void handleIndexVectors(Parser& _parser, Indices& _idx, vector<string>& v
 	if (vCols[0] != "<<NONE>>" && vCols[1] == "<<NONE>>")
 	{
 		if (vCols[0] == "#")
-			_idx.nJ[0] = -3;
+			_idx.col.front() = VectorIndex::STRING;
         else if (vCols[0] == "<<EMPTY>>")
-            _idx.nJ[0] = 0;
+            _idx.col.front() = 0;
 		else
 		{
 			_parser.SetExpr(vCols[0]);
@@ -230,14 +226,10 @@ static void handleIndexVectors(Parser& _parser, Indices& _idx, vector<string>& v
 			if (nResults > 1)
 			{
 				// vector
-				for (int n = 0; n < nResults; n++)
-				{
-					if (!isnan(v[n]) && !isinf(v[n]))
-						_idx.vJ.push_back(intCast(v[n]) - 1);
-				}
+				_idx.col = VectorIndex(v, nResults, 0);
 			}
 			else // single index
-				_idx.nJ[0] = intCast(v[0]) - 1;
+				_idx.col.front() = intCast(v[0]) - 1;
 		}
 	}
 }
@@ -252,68 +244,67 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& 
 
 	// Go through all indices and connect them to one single equation
 	// store the assignment of the indices
-	for (size_t n = 0; n < vLines.size(); n++)
-	{
-		if (vLines[n] == "<<EMPTY>>")
-		{
-			if (n)
-				_idx.nI[n == 1] = -2; //special one: last possible index
-			else
-				_idx.nI[0] = 0;
-		}
-		else if (vLines[n] != "<<NONE>>")
-		{
-			if (!_idx.vI.size() && _idx.nI[0] != -3)
-			{
-				// connect the indices
-				if (sIndexExpressions.length())
-					sIndexExpressions += ",";
+	if (!_idx.row.isValid())
+    {
+        for (size_t n = 0; n < vLines.size(); n++)
+        {
+            if (vLines[n] == "<<EMPTY>>")
+            {
+                if (n)
+                    _idx.row.setIndex(n, VectorIndex::OPEN_END); //special one: last possible index
+                else
+                    _idx.row.front() = 0;
+            }
+            else if (vLines[n] != "<<NONE>>")
+            {
+                if (_idx.row.front() != VectorIndex::STRING)
+                {
+                    // connect the indices
+                    if (sIndexExpressions.length())
+                        sIndexExpressions += ",";
 
-				sIndexExpressions += vLines[n];
-				// Store the assignment (lines are positive)
-				vIndexNumbers.push_back((n + 1));
-			}
-		}
-	}
+                    sIndexExpressions += vLines[n];
+                    // Store the assignment (lines are positive)
+                    vIndexNumbers.push_back((n + 1));
+                }
+            }
+        }
+    }
 
 	// Go through the column indices separately,
 	// because they might be more than two
-	for (size_t n = 0; n < vCols.size(); n++)
-	{
-		if (vCols[n] == "<<EMPTY>>")
-		{
-			if (n == 1)
-				_idx.nJ[n] = -2; // special one: last possible index
-			else
-				_idx.nJ[0] = 0;
-		}
-		else if (vCols[n] != "<<NONE>>")
-		{
-			if (!_idx.vJ.size() && _idx.nJ[0] != -3)
-			{
-				// connect the indices
-				if (sIndexExpressions.length())
-					sIndexExpressions += ",";
+	if (!_idx.col.isValid())
+    {
+        for (size_t n = 0; n < vCols.size(); n++)
+        {
+            if (vCols[n] == "<<EMPTY>>")
+            {
+                if (n)
+                    _idx.col.setIndex(n, VectorIndex::OPEN_END); // special one: last possible index
+                else
+                    _idx.col.front() = 0;
+            }
+            else if (vCols[n] != "<<NONE>>")
+            {
+                if (_idx.col.front() != VectorIndex::STRING)
+                {
+                    // connect the indices
+                    if (sIndexExpressions.length())
+                        sIndexExpressions += ",";
 
-				sIndexExpressions += vCols[n];
-				// store the assignments (columns are negative)
-				vIndexNumbers.push_back(-(n + 1));
-			}
-		}
-	}
+                    sIndexExpressions += vCols[n];
+                    // store the assignments (columns are negative)
+                    vIndexNumbers.push_back(-(n + 1));
+                }
+            }
+        }
+    }
 
 	// If the index expression list has a length, evaluate it
 	if (sIndexExpressions.length())
 	{
 		_parser.SetExpr(sIndexExpressions);
 		v = _parser.Eval(nResults);
-
-		// Create the necessary column vector fields,
-        // if more than two column indices are available
-		if (vCols.size() > 2)
-        {
-            _idx.vJ.assign(vCols.size(), -1);
-        }
 
 		// check whether the number of the results is matching
 		if ((size_t)nResults != vIndexNumbers.size())
@@ -322,20 +313,15 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& 
 		// map the results to their assignments
 		for (int i = 0; i < nResults; i++)
 		{
-			if (isnan(v[i]) || intCast(v[i]) <= 0)
-				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-
 			if (isinf(v[i])) // infinity => last possible index
 				v[i] = -1; // only -1 because it will be decremented in the following lines
+			else if (isnan(v[i]) || intCast(v[i]) <= 0)
+				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
 			if (vIndexNumbers[i] > 0)
-				_idx.nI[vIndexNumbers[i] - 1] = intCast(v[i]) - 1;
-            else if (vCols.size() > 2)
-            {
-                _idx.vJ[abs(vIndexNumbers[i]) - 1] = intCast(v[i]) - 1;
-            }
+				_idx.row.setIndex(vIndexNumbers[i] - 1, intCast(v[i]) - 1);
 			else
-				_idx.nJ[abs(vIndexNumbers[i]) - 1] = intCast(v[i]) - 1;
+                _idx.col.setIndex(abs(vIndexNumbers[i]) - 1, intCast(v[i]) - 1);
 		}
 	}
 }
@@ -345,7 +331,8 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
 {
 	// Get the cache name from the command string
 	// should now only contain the name of the table
-	string sCache = sCmd.substr(0, sCmd.find('('));
+	string sCache = sCmd.substr(0, sCmd.find_first_of("({"));
+	bool isCluster = sCmd[sCmd.find_first_of("({")] == '{';
 
 	// remove leading whitespaces
 	if (sCache.find(' ') != string::npos)
@@ -356,8 +343,7 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
 		throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
 
     // Ensure that the indices are valid
-    if ((!_idx.vI.size() && _idx.nI[0] == -1)
-        || (!_idx.vJ.size() && _idx.nJ[0] == -1))
+    if (!_idx.row.isValid() || !_idx.col.isValid())
         throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
     // Is it the "string" object?
@@ -368,90 +354,23 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
     }
 
 	// If the cache is not really a cache
-	if (sCache.find("data") == string::npos && !_data.isCacheElement(sCache))
+	if (sCache.find("data") == string::npos && !isCluster && !_data.isCacheElement(sCache))
 		throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
-
-	// Expand the line indices
-	if (!_idx.vI.size())
-	{
-		// Handle special cases
-		if (_idx.nI[1] == -2 && _idx.nI[0] != -3)
-		{
-			for (long long int i = _idx.nI[0]; i < _data.getLines(sCache, false); i++)
-				_idx.vI.push_back(i);
-		}
-		else if (_idx.nI[1] == -1)
-			_idx.vI.push_back(_idx.nI[0]);
-		else if (_idx.nI[0] != -3)
-		{
-			// Just fill the vector with every value from the first to the last index
-			for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-				_idx.vI.push_back(i);
-		}
-	}
-
-	// Expand the column indices
-	if (!_idx.vJ.size())
-	{
-		// Handle special cases
-		if (_idx.nJ[1] == -2 && _idx.nJ[0] != -3)
-		{
-			for (long long int j = _idx.nJ[0]; j < _data.getCols(sCache); j++)
-				_idx.vJ.push_back(j);
-		}
-		else if (_idx.nJ[1] == -1)
-			_idx.vJ.push_back(_idx.nJ[0]);
-		else if (_idx.nJ[0] != -3)
-		{
-			// Just fill the vector with every value from the first to the last index
-			for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-				_idx.vJ.push_back(j);
-		}
-	}
-
 }
 
 // This static function expands the indices into vectors, if the
 // the current object is the string object
 static void expandStringIndexVectors(Indices& _idx, Datafile& _data)
 {
-	// Expand the line indices
-	if (!_idx.vI.size())
-	{
-		// Handle special cases
-		if (_idx.nI[1] == -2 && _idx.nI[0] != -3)
-		{
-			for (long long int i = _idx.nI[0]; i < _data.getStringElements(); i++)
-				_idx.vI.push_back(i);
-		}
-		else if (_idx.nI[1] == -1)
-			_idx.vI.push_back(_idx.nI[0]);
-		else if (_idx.nI[0] != -3)
-		{
-			// Just fill the vector with every value from the first to the last index
-			for (long long int i = _idx.nI[0]; i <= _idx.nI[1]; i++)
-				_idx.vI.push_back(i);
-		}
-	}
+    if (_idx.row.isOpenEnd())
+    {
+        _idx.row.setRange(0, _data.getStringElements()-1);
+    }
 
-	// Expand the column indices
-	if (!_idx.vJ.size())
-	{
-		// Handle special cases
-		if (_idx.nJ[1] == -2 && _idx.nJ[0] != -3)
-		{
-			for (long long int j = _idx.nJ[0]; j < _data.getStringCols(); j++)
-				_idx.vJ.push_back(j);
-		}
-		else if (_idx.nJ[1] == -1)
-			_idx.vJ.push_back(_idx.nJ[0]);
-		else if (_idx.nJ[0] != -3)
-		{
-			// Just fill the vector with every value from the first to the last index
-			for (long long int j = _idx.nJ[0]; j <= _idx.nJ[1]; j++)
-				_idx.vJ.push_back(j);
-		}
-	}
+    if (_idx.col.isOpenEnd())
+    {
+        _idx.col.setRange(0, _data.getStringCols()-1);
+    }
 }
 
 // This function will ensure that at least one of the indices contains a vector
