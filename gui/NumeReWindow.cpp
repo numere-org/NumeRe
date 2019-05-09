@@ -111,6 +111,8 @@
 
 const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
 std::string replacePathSeparator(const std::string&);
+string toString(const vector<int>& vVector);
+vector<int> toVector(string sString);
 string removeQuotationMarks(const string& sString)
 {
 	if (sString.find('"') == string::npos || sString.front() != '"' || sString.back() != '"')
@@ -640,6 +642,9 @@ void NumeReWindow::InitializeProgramOptions()
 		bool saveSession = (m_config->Read("Miscellaneous/SaveSession", "false") == "true");
 		m_options->SetSaveSession(saveSession);
 
+		bool saveBookmarksInSession = (m_config->Read("Miscellaneous/SaveBookmarksInSession", "false") == "true");
+		m_options->SetSaveBookmarksInSession(saveBookmarksInSession);
+
 		bool formatBeforeSaving = (m_config->Read("Miscellaneous/FormatBeforeSaving", "false") == "true");
 		m_options->SetFormatBeforeSaving(formatBeforeSaving);
 
@@ -711,6 +716,7 @@ void NumeReWindow::InitializeProgramOptions()
 		m_config->Write("Miscellaneous/PrintInColor", "false");
 		m_config->Write("Miscellaneous/PrintLineNumbers", "false");
 		m_config->Write("Miscellaneous/SaveSession", "false");
+		m_config->Write("Miscellaneous/SaveBookmarksInSession", "false");
 		m_config->Write("Miscellaneous/FormatBeforeSaving", "false");
 		m_config->Write("Miscellaneous/KeepBackups", "false");
 		m_options->writeColoursToConfig(m_config);
@@ -745,6 +751,7 @@ void NumeReWindow::prepareSession()
 	    int nId = 0;
         int nLine = 0;
         int nSetting = 0;
+        string sBookmarks;
 	    bool modifiedFile = false;
         if_session.open((getProgramFolder().ToStdString()+"\\numere.session").c_str());
 
@@ -790,20 +797,31 @@ void NumeReWindow::prepareSession()
                     modifiedFile = false;
 
                 // create filename and current line
-                sFileName = sLine.substr(0,sLine.find('\t'));
+                sFileName = sLine.substr(0, sLine.find('\t'));
 
                 // erase until id
-                sLine.erase(0,sLine.find('\t')+1);
-                nId = StrToInt(sLine.substr(0,sLine.find('\t')));
+                sLine.erase(0, sLine.find('\t')+1);
+                nId = StrToInt(sLine.substr(0, sLine.find('\t')));
 
                 // erase until position
-                sLine.erase(0,sLine.find('\t')+1);
-                nLine = StrToInt(sLine.substr(0,sLine.find('\t')));
+                sLine.erase(0, sLine.find('\t')+1);
+                nLine = StrToInt(sLine.substr(0, sLine.find('\t')));
 
+                // Search for settings
                 if (sLine.find('\t') != string::npos)
                 {
-                    nSetting = StrToInt(sLine.substr(sLine.rfind('\t')+1));
+                    // erase until setting
+                    sLine.erase(0, sLine.find('\t')+1);
+                    nSetting = StrToInt(sLine.substr(0, sLine.find('\t')));
                 }
+                else
+                    nSetting = 0;
+
+                // Search for bookmarks
+                if (sLine.find('\t') != string::npos && m_options->GetSaveBookmarksInSession())
+                    sBookmarks = sLine.substr(sLine.rfind('\t')+1);
+                else
+                    sBookmarks.clear();
 
                 // create the files
                 //
@@ -828,6 +846,7 @@ void NumeReWindow::prepareSession()
                     m_currentEd->GotoPos(nLine);
                     m_currentEd->ToggleSettings(nSetting);
                     m_currentEd->EnsureVisible(m_currentEd->LineFromPosition(nLine));
+                    m_currentEd->setBookmarks(toVector(sBookmarks));
                 }
                 else
                 {
@@ -2754,27 +2773,32 @@ bool NumeReWindow::CloseAllFiles()
 	int cnt = m_book->GetPageCount();
 	ofstream of_session;
 	NumeReEditor* edit;
-	string sSession = "# numere.session: Session save file. Do not edit!\n# ACTIVEFILE\tFILEID\nACTIVEFILEID\t" + toString(m_book->GetSelection()) + "\n# FILENAME\t\tFILEID\t\tCHARPOSITION\t\tSETTING\n";
+	string sSession = "# numere.session: Session save file. Do not edit!\n# ACTIVEFILE\tFILEID\nACTIVEFILEID\t" + toString(m_book->GetSelection()) + "\n# FILENAME\t\tFILEID\t\tCHARPOSITION\t\tSETTING\t\tBOOKMARKS\n";
 
 	for (int i = 0; i < cnt; i++)
 	{
         edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+
         if (edit->defaultPage)
             continue;
+
         // gives the user a chance to save if the file has been modified
         int nReturn = HandleModifiedFile(i, MODIFIEDFILE_CLOSE);
+
         if (nReturn == wxCANCEL)
             return false;
 
         if (edit->Modified())
             sSession += "*";
+
         if (edit->GetFileNameAndPath().length())
-            sSession += edit->GetFileNameAndPath().ToStdString() + "\t" + toString(i) + "\t" + toString(edit->GetCurrentPos()) + "\t" + toString(edit->getSettings()) + "\n";
+            sSession += edit->GetFileNameAndPath().ToStdString() + "\t" + toString(i) + "\t" + toString(edit->GetCurrentPos()) + "\t" + toString(edit->getSettings()) + (m_options->GetSaveBookmarksInSession() ? "\t" + toString(edit->getBookmarks()) + "\n" : "\n");
         else
         {
             sSession += "<NEWFILE>\t" +toString(i) + "\t" + toString(edit->GetCurrentPos()) + "\n";
         }
 	}
+
 	for (int i = 0; i < cnt; i++)
 	{
 		CloseFile(-1, false);
@@ -2783,12 +2807,15 @@ bool NumeReWindow::CloseAllFiles()
 	if (m_appClosing && !m_sessionSaved && m_options->GetSaveSession())
 	{
         of_session.open((getProgramFolder().ToStdString()+"/numere.session").c_str(), ios_base::out | ios_base::trunc);
+
         if (of_session.is_open())
         {
             of_session << sSession;
         }
+
         m_sessionSaved = true;
 	}
+
 	PageHasChanged();
 
 	return true;
@@ -4096,6 +4123,9 @@ void NumeReWindow::EvaluateOptions()
 
 	bool saveSession = m_options->GetSaveSession();
 	m_config->Write("Miscellaneous/SaveSession", saveSession ? "true" : "false");
+
+	bool saveBookmarksInSession = m_options->GetSaveBookmarksInSession();
+	m_config->Write("Miscellaneous/SaveBookmarksInSession", saveBookmarksInSession ? "true" : "false");
 
 	bool formatBeforeSaving = m_options->GetFormatBeforeSaving();
 	m_config->Write("Miscellaneous/FormatBeforeSaving", formatBeforeSaving ? "true" : "false");

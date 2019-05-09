@@ -3173,6 +3173,34 @@ void NumeReEditor::JumpToBookmark(bool down)
 		this->GotoLine(nMarker);
 }
 
+// This member function returns a vector containing the list
+// of available bookmarks in the current file
+vector<int> NumeReEditor::getBookmarks()
+{
+    vector<int> vBookmarks;
+
+    for (int i = 0; i < GetLineCount(); i++)
+    {
+        if (MarkerOnLine(i, MARKER_BOOKMARK))
+            vBookmarks.push_back(i);
+    }
+
+    return vBookmarks;
+}
+
+// This member function overrides all bookmarks in the current
+// file with the passed list of bookmarks
+void NumeReEditor::setBookmarks(const vector<int>& vBookmarks)
+{
+    MarkerDeleteAll(MARKER_BOOKMARK);
+
+    for (size_t i = 0; i < vBookmarks.size(); i++)
+    {
+        MarkerAdd(vBookmarks[i], MARKER_BOOKMARK);
+    }
+}
+
+
 void NumeReEditor::removeWhiteSpaces(int nType)
 {
 	int nFirstline = 0;

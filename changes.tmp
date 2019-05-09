@@ -63,3 +63,4 @@ Added	A table viewer for clusters and the string()-table was created. It is acce
 Cleaned	The internal indexing algorithms were changed. Therefore, similiar accesses using index vectors are now possible more or less everywhere.
 Fixed	Resolved an issue with the "to_value()" conversion function.
 Fixed	Resolved an issue with the "textparse()" function
+Added	Bookmarks may now be saved upon application shutdown and will be restored in the next session.

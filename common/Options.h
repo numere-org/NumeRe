@@ -58,6 +58,7 @@ class Options
 		void SetShowCompileCommands(bool showCommands);
 		void SetLineNumberPrinting(bool printLineNumbers);
 		void SetSaveSession(bool saveSession) {m_saveSession = saveSession;}
+		void SetSaveBookmarksInSession(bool save) {m_saveBookmarksInSession = save;}
 		void SetFormatBeforeSaving(bool formatBeforeSave) {m_formatBeforeSaving = formatBeforeSave;}
 		void SetTerminalHistorySize(int size);
 		void SetMingwBinPaths(wxArrayString paths);
@@ -89,6 +90,7 @@ class Options
 		bool GetCombineWatchWindow() { return m_combineWatchWindow; }
 		bool GetShowCompileCommands() { return m_showCompileCommands; }
 		bool GetSaveSession() {return m_saveSession;}
+		bool GetSaveBookmarksInSession() {return m_saveBookmarksInSession;}
 		bool GetFormatBeforeSaving() {return m_formatBeforeSaving;}
 		bool GetKeepBackupFile() {return m_keepBackupFile;}
 		int GetTerminalHistorySize() { return m_terminalSize; }
@@ -212,6 +214,7 @@ class Options
 		bool m_combineWatchWindow;
 		bool m_showCompileCommands;
 		bool m_saveSession;
+		bool m_saveBookmarksInSession;
 		bool m_formatBeforeSaving;
 		bool m_keepBackupFile;
 		bool m_foldDuringLoading;

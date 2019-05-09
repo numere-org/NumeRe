@@ -297,6 +297,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		 *
 		 */
 		void JumpToBookmark(bool down = true);
+		vector<int> getBookmarks();
+		void setBookmarks(const vector<int>& vBookmarks);
 		/** \brief Removes whitespaces depending on the passed type
 		 *
 		 * nType defines the type of whitespaces to be removed. This is either front, back

@@ -123,6 +123,8 @@ string toString(bool bBoolean);
  *
  */
 string toHexString(int nNumber);
+string toString(const vector<int>& vVector);
+vector<int> toVector(string sString);
 
 /** \brief Removes vowels and umlauts from strings
  *
@@ -131,6 +133,8 @@ string toHexString(int nNumber);
  *
  */
 string condenseText(const string& sText);
+
+
 
 long long int intCast(double number);
 string wcstombs(const wstring& wStr);

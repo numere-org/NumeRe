@@ -2080,14 +2080,14 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\fswatcher.h
 	"wx/defs.h"
 
-1556354911 source:d:\cpp\numere-source\trunk\common\options.cpp
+1557380458 source:d:\cpp\numere-source\trunk\common\options.cpp
 	"Options.h"
 	<wx/filename.h>
 	<wx/arrstr.h>
 	<wx/dir.h>
 	"debug.h"
 
-1556354911 d:\cpp\numere-source\trunk\common\options.h
+1557380444 d:\cpp\numere-source\trunk\common\options.h
 	<wx/wx.h>
 	<wx/validate.h>
 	<wx/valgen.h>
@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1556354909 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1557380025 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	"../terminal/wxterm.h"
 	"../../common/datastructures.h"
 	"../../kernel/syntax.hpp"
@@ -2330,7 +2330,7 @@
 	<windows.h>
 	<vector>
 
-1555681922 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
+1557381039 d:\cpp\numere-source\trunk\kernel\core\utils\tools.hpp
 	<iostream>
 	<iomanip>
 	<sstream>
@@ -2960,7 +2960,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1556354910 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1557380722 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3092,7 +3092,7 @@
 
 1490791550 d:\cpp\numere-source\trunk\common\fixvsbug.h
 
-1556354910 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
+1557380650 d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.h
 	"wx/notebook.h"
 	"wx/spinctrl.h"
 	<wx/clrpicker.h>
@@ -3346,7 +3346,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1556354909 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1557380302 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3715,7 +3715,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1556354910 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1557382280 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4288,7 +4288,7 @@
 	<cstddef>
 	<cstdarg>
 
-1555682199 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1557381960 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
 	<cstdlib>

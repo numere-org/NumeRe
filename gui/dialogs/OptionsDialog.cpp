@@ -386,6 +386,7 @@ void OptionsDialog::CreateMiscPage()
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_STARTING"));
 
     m_saveSession = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVE_SESSION"));
+    m_saveBookmarksInSession = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SAVE_BOOKMARKS_IN_SESSION"));
     m_showGreeting = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_GREETING"));
     m_ShowHints = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HINTS"));
 
@@ -705,6 +706,7 @@ bool OptionsDialog::EvaluateOptions()
     m_options->SetShowToolbarText(m_showToolbarText->IsChecked());
     m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
     m_options->SetSaveSession(m_saveSession->IsChecked());
+    m_options->SetSaveBookmarksInSession(m_saveBookmarksInSession->IsChecked());
     m_options->SetFormatBeforeSaving(m_formatBeforeSaving->IsChecked());
     m_options->SetEditorFont(m_fontPicker->GetSelectedFont());
     m_options->SetKeepBackupFile(m_keepBackupFiles->IsChecked());
@@ -753,6 +755,7 @@ void OptionsDialog::InitializeDialog()
 	m_showToolbarText->SetValue(m_options->GetShowToolbarText());
 	m_cbPrintLineNumbers->SetValue(m_options->GetLineNumberPrinting());
     m_saveSession->SetValue(m_options->GetSaveSession());
+    m_saveBookmarksInSession->SetValue(m_options->GetSaveBookmarksInSession());
     m_formatBeforeSaving->SetValue(m_options->GetFormatBeforeSaving());
 
     m_compactTables->SetValue(_option->getbCompact());

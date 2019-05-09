@@ -188,6 +188,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_cbPrintLineNumbers;
         wxCheckBox* m_showToolbarText;
         wxCheckBox* m_saveSession;
+        wxCheckBox* m_saveBookmarksInSession;
         wxSpinCtrl* m_termHistory;
         wxSpinCtrl* m_caretBlinkTime;
         wxCheckBox* m_useExecuteCommand;

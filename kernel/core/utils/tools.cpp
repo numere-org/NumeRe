@@ -125,6 +125,48 @@ string toHexString(int nNumber)
 	return "0x" + Temp.str();
 }
 
+// This function converts a std::vector into a std::string,
+// where the components are translated into "{x,y,z...}"
+string toString(const vector<int>& vVector)
+{
+    string sString;
+
+    for (size_t i = 0; i < vVector.size(); i++)
+    {
+        sString += toString(vVector[i]) + ",";
+    }
+
+    if (!sString.size())
+        return "{}";
+
+    sString.back() = '}';
+
+    return "{" + sString;
+}
+
+// This function converts a std::string into a std::vector,
+// where the string shall be passed as "{x,y,z,...}"
+vector<int> toVector(string sString)
+{
+    vector<int> vVector;
+
+    if (sString == "{}" || !sString.length())
+        return vVector;
+
+    if (sString.front() == '{' && sString.back() == '}')
+    {
+        sString.front() = ' ';
+        sString.back() = ' ';
+    }
+
+    while (sString.length())
+    {
+        vVector.push_back(StrToInt(getNextArgument(sString, true)));
+    }
+
+    return vVector;
+}
+
 // Removes vowels and umlauts from the passed string
 string condenseText(const string& sText)
 {
