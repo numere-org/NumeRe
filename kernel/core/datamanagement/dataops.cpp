@@ -948,7 +948,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
             if (!bTranspose)
             {
                 // Write the headlines
-                if (!_iTargetIndex.row[i] && _data.getHeadLineElement(_iTargetIndex.col[j], sTarget).substr(0, 5) == "Spalte")
+                if (!_iTargetIndex.row[i] && _data.getHeadLineElement(_iTargetIndex.col[j], sTarget).substr(0, 6) == "Spalte")
                 {
                     _data.setHeadLineElement(_iTargetIndex.col[j], sTarget, _cache.getHeadLineElement(j, "cache"));
                 }

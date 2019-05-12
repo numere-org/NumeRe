@@ -2450,7 +2450,9 @@ void parser_VectorToExpr(string& sLine, const Settings& _option)
 
             sBuffer += sTemp + ",";
         }
+
         sLine = sBuffer.substr(0, sBuffer.length()-1);
+        sTemp = sLine;
     }
 
 	// Reset the positions

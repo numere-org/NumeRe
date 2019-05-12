@@ -1179,6 +1179,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 	StringResult strRes;
 
 	string sObject;
+	bool bObjectContainsTablesOrClusters = false;
 
 	// Identify target vectors and parse this as a list
 	size_t eq_pos = sLine.find('=');
@@ -1312,15 +1313,11 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
 				// Apply the string parser on the current argument and store its
 				// results in a common vector
-				if (sLine.length() || sRecursion.find('=') != string::npos)
-				{
-					StringResult _res = parser_StringParserCore(sRecursion, "", _data, _parser, _option, mStringVectorVars);
-					for (size_t n = 0; n < _res.vResult.size(); n++)
-						vResult.push_back(_res.vResult[n]);
-				}
-				else if (sRecursion.find('=') == string::npos)
-					vResult.push_back(sRecursion);
-			}
+                StringResult _res = parser_StringParserCore(sRecursion, "", _data, _parser, _option, mStringVectorVars);
+
+                for (size_t n = 0; n < _res.vResult.size(); n++)
+                    vResult.push_back(_res.vResult[n]);
+            }
 
 			// Create a new string vector variable from the results
 			sLine = parser_CreateStringVectorVar(vResult, mStringVectorVars);
@@ -1366,17 +1363,20 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 			sLine.erase(0, eq_pos + 1);
 		}
 	}
+    else if (!sObject.length() && sCache.length())
+    {
+        sObject = sCache;
+    }
+
+    if (_data.containsTablesOrClusters(sObject))
+        bObjectContainsTablesOrClusters = true;
 
 	// Get the contents of "string()", "data()" and the other caches
 	sLine = parser_GetDataForString(sLine, _data, _parser, _option, mStringVectorVars, n_pos);
 
 	// If the line now doesn't contain any strings, return with the onlyLogicals flag set
-	if (!containsStrings(sLine) && !_data.containsStringVars(sLine) && !parser_containsStringVectorVars(sLine, mStringVectorVars))
+	if (!containsStrings(sLine) && !_data.containsStringVars(sLine) && !parser_containsStringVectorVars(sLine, mStringVectorVars) && !bObjectContainsTablesOrClusters)
 	{
-	    // Get the correct target object
-		if (sObject.length() && !sCache.length())
-			sCache = sObject;
-
         // Ensure that there's no false positive
 		if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
 			throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
@@ -1434,13 +1434,16 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 				{
 					if (sLine[j] == '"')
 						throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
 					if ((sLine[j] == '(' || sLine[j] == '{') && getMatchingParenthesis(sLine.substr(j)) != string::npos)
 						j += getMatchingParenthesis(sLine.substr(j));
+
 					if (sLine[j] == ' ' || sLine[j] == '+')
 					{
 						i = j;
 						break;
 					}
+
 					if (j + 1 == sLine.length())
 					{
 						i = j;
@@ -1475,6 +1478,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
 							if (!strvar.length())
 								throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
 							sLine = sLine.substr(0, i + 1) + strvar + sLine.substr(nPos);
 						}
 					}
@@ -1488,6 +1492,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
 							if (!strvar.length())
 								throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
 							sLine = sLine.substr(0, i) + strvar + sLine.substr(nPos + 1);
 						}
 					}
@@ -1540,17 +1545,14 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
 	// Strip all whitespaces and ensure, that there's something left
 	StripSpaces(sLine);
+
 	if (!sLine.length())
 		return StringResult("");
 
     // If the current line doesn't contain any further string literals or return values
     // return it
-	if (sLine.find('"') == string::npos && sLine.find('#') == string::npos && !parser_containsStringVectorVars(sLine, mStringVectorVars))
+	if (sLine.find('"') == string::npos && sLine.find('#') == string::npos && !parser_containsStringVectorVars(sLine, mStringVectorVars) && !bObjectContainsTablesOrClusters)
 	{
-	    // Use the correct target
-		if (sObject.length() && !sCache.length())
-			sCache = sObject;
-
         // Ensure that this is no false positive
 		if (sLine.find("string(") != string::npos || _data.containsStringVars(sLine))
 			throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
@@ -1561,6 +1563,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
 	// Extract the object, if not already done
 	eq_pos = sLine.find('=');
+
 	if (!sObject.length()
 			&& eq_pos != string::npos
 			&& !isInQuotes(sLine, eq_pos)
@@ -1569,11 +1572,6 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 		sObject = sLine.substr(0, eq_pos);
 		sLine = sLine.substr(eq_pos + 1);
 	}
-
-	if (!sObject.length() && sCache.length())
-    {
-        sObject = sCache;
-    }
 
 	// Apply the "#" parser to the string
 	sLine = parser_NumToString(sLine, _data, _parser, _option, mStringVectorVars);
@@ -3597,6 +3595,7 @@ static string parser_NumToString(const string& sLine, Datafile& _data, Parser& _
 		sLineToParsed = sLineToParsedTemp;
 	else
 		sLineToParsed = sLine;
+
 	return sLineToParsed;
 }
 
