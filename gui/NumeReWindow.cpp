@@ -3367,6 +3367,9 @@ void NumeReWindow::Ready()
     if (m_statusBar)
         m_statusBar->Ready();
 
+    if (m_debugViewer)
+        m_debugViewer->OnExecutionFinished();
+
     wxToolBar* tb = GetToolBar();
     tb->EnableTool(ID_MENU_EXECUTE, true);
     tb->EnableTool(ID_MENU_STOP_EXECUTION, false);

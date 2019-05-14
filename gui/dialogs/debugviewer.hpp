@@ -34,6 +34,7 @@ class DebugViewer : public ViewerFrame
     private:
         VariableViewer* m_varViewer;
         wxTextCtrl* m_expression;
+        wxTextCtrl* m_lineNumber;
         wxTextCtrl* m_errorMessage;
         wxListCtrl* m_stacktrace;
         wxTerm* m_terminal;
@@ -50,6 +51,8 @@ class DebugViewer : public ViewerFrame
         void OnStackItemActivate(wxListEvent& event);
         void OnMenuEvent(wxCommandEvent& event);
 
+        void EnableDebugger(bool enable);
+
     public:
         DebugViewer(wxWindow* parent, Options* _options, const wxString& title = "NumeRe: Debugger");
 
@@ -57,6 +60,7 @@ class DebugViewer : public ViewerFrame
         void setTerminal(wxTerm* term) {m_terminal = term;}
         void setDebugInfo(const wxString& title, const vector<string>& vStack);
         void OnClose(wxCloseEvent& event);
+        void OnExecutionFinished();
 
     DECLARE_EVENT_TABLE();
 };

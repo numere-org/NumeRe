@@ -2864,6 +2864,10 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
 		}
 		return nArg.size();
 	}
+	else if (_data.containsTablesOrClusters(sFuncArgument))
+    {
+        getDataElements(sFuncArgument, _parser, _data, _option, false);
+    }
 
 	// Set the expression and evaluate it
 	_parser.SetExpr(sFuncArgument);
@@ -2895,6 +2899,10 @@ static size_t parser_StringFuncArgParser(Datafile& _data, Parser& _parser, const
         bLogicalOnly = strRes.bOnlyLogicals;
 		return strRes.vResult.size();
 	}
+	else if (_data.containsTablesOrClusters(sFuncArgument))
+    {
+        getDataElements(sFuncArgument, _parser, _data, _option, false);
+    }
 
 	// Expand the passed argument, if needed and
 	// distribute it to the components of the argument vector

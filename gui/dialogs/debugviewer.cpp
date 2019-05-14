@@ -68,12 +68,16 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
 
     // Create the expression and the error message
     // text contrls
+    m_lineNumber = new wxTextCtrl(exprBox->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(70, -1), wxTE_READONLY | wxTE_RICH | wxTE_MULTILINE | wxTE_RIGHT);
     m_expression = new wxTextCtrl(exprBox->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_RICH | wxTE_MULTILINE);
     m_errorMessage = new wxTextCtrl(errorBox->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
 
     // Change font and colour of the two text controls
     wxFont font;
     font.SetNativeFontInfoUserDesc("consolas 10");
+
+    m_lineNumber->SetFont(font);
+    m_lineNumber->SetBackgroundColour(wxColour(220, 220, 220));
     m_expression->SetFont(font);
     m_expression->SetBackgroundColour(*wxWHITE);
     m_errorMessage->SetForegroundColour(*wxRED);
@@ -88,6 +92,7 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
 
     if (!m_options->GetShowLinesInStackTrace())
         m_stacktrace->SetColumnWidth(nLineColumn, 0);
+
     if (!m_options->GetShowModulesInStackTrace())
         m_stacktrace->SetColumnWidth(nModuleColumn, 0);
 
@@ -96,6 +101,7 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
     m_varViewer->setDebuggerMode(true);
 
     // Add the GUI elements to the static box sizers
+    exprBox->Add(m_lineNumber, 0, wxALIGN_CENTER_HORIZONTAL | wxALL | wxEXPAND);
     exprBox->Add(m_expression, 1, wxALIGN_CENTER_HORIZONTAL | wxALL | wxEXPAND);
     errorBox->Add(m_errorMessage, 1, wxALIGN_CENTER_HORIZONTAL | wxALL | wxEXPAND);
     stackBox->Add(m_stacktrace, 1, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxALL);
@@ -155,9 +161,13 @@ void DebugViewer::setExpression(const string& sLineNumber, const string& sExpres
 {
     string sColours = m_terminal->getSyntax()->highlightLine("|<- " + sExpression).substr(4);
 
+    m_lineNumber->Clear();
+    m_lineNumber->SetDefaultStyle(wxTextAttr(wxColour(64, 64, 64)));
+    m_lineNumber->AppendText("@ " + sLineNumber);
+    m_lineNumber->SetDefaultStyle(wxTextAttr(wxColour(220, 220, 220)));
+    m_lineNumber->AppendText("_");
+
     m_expression->Clear();
-    m_expression->SetDefaultStyle(wxTextAttr(wxColour(128, 128, 128)));
-    m_expression->AppendText("@("+sLineNumber+") |  ");
 
     for (size_t i = 0; i < sColours.length(); i++)
     {
@@ -312,6 +322,17 @@ void DebugViewer::OnMenuEvent(wxCommandEvent& event)
     }
 }
 
+void DebugViewer::EnableDebugger(bool enable)
+{
+    wxToolBar* tb = GetToolBar();
+
+    tb->EnableTool(ID_DEBUG_CONTINUE, enable);
+    tb->EnableTool(ID_DEBUG_CANCEL, enable);
+    tb->EnableTool(ID_DEBUG_STEP, enable);
+    tb->EnableTool(ID_DEBUG_STEPOVER, enable);
+    tb->EnableTool(ID_DEBUG_LEAVE, enable);
+}
+
 // This member function should be called after the user modified
 // the application settings. It will propagate the necessary application
 // settings into the debugger
@@ -342,6 +363,7 @@ void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vSta
     this->SetTitle(title);
     b_transferredControl = true;
 
+    EnableDebugger(true);
     GetStatusBar()->SetStatusText(_guilang.get("DBG_STOPPED"), 1);
 
     // Remove all previous stack items
@@ -389,6 +411,12 @@ void DebugViewer::OnClose(wxCloseEvent& event)
 
     this->Hide();
     event.Veto();
+}
+
+void DebugViewer::OnExecutionFinished()
+{
+    EnableDebugger(false);
+    GetStatusBar()->SetStatusText(_guilang.get("DBG_FINISHED"), 1);
 }
 
 
