@@ -64,3 +64,4 @@ Cleaned	The internal indexing algorithms were changed. Therefore, similiar acces
 Fixed	Resolved an issue with the "to_value()" conversion function.
 Fixed	Resolved an issue with the "textparse()" function
 Added	Bookmarks may now be saved upon application shutdown and will be restored in the next session.
+Fixed	Resolved the random error issue in string expressions and improved the performance of string expressions.

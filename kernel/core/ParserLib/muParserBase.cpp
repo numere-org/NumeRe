@@ -1154,6 +1154,11 @@ namespace mu
 
 	const std::map<std::string, std::vector<double> >& ParserBase::GetVectors() const
 	{
+	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+        {
+            iter->second[0] = *(m_VarDef.find(iter->first)->second);
+        }
+
 	    return mVectorVars;
 	}
 
@@ -2062,7 +2067,11 @@ namespace mu
 					if (mVectorVars.size())
 					{
 						if (mVectorVars.find(opt.GetAsString()) != mVectorVars.end())
+                        {
+                            mVectorVars[opt.GetAsString()][0] = *opt.GetVar();
 							break;
+                        }
+
 						std::vector<double> vVar;
 						vVar.push_back(*(opt.GetVar()));
 						SetVectorVar(opt.GetAsString(), vVar, true);
@@ -3244,8 +3253,10 @@ namespace mu
 	{
 		if (!dVectorVars)
 			return;
+
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return;
+
 		*(GetVar().find(sVarName)->second) = mVectorVars[sVarName][0];
 		return;
 	}

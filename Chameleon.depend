@@ -7355,7 +7355,7 @@
 1530082139 c:\cpp\numere-source\trunk\gui\dialogs\addvariablewatch.h
 	"wx/wx.h"
 
-1557393575 source:c:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp
+1557823292 source:c:\cpp\numere-source\trunk\gui\dialogs\debugviewer.cpp
 	"debugviewer.hpp"
 	<wx/statbox.h>
 	"../../kernel/core/ui/language.hpp"
@@ -8568,7 +8568,7 @@
 	<algorithm>
 	<numeric>
 
-1552303168 source:c:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
+1557915380 source:c:\cpp\numere-source\trunk\kernel\core\parserlib\muparserbase.cpp
 	"muParserBase.h"
 	"muParserTemplateMagic.h"
 	"../../kernel.hpp"
@@ -8730,7 +8730,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1557820082 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1558084558 source:c:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -8781,7 +8781,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1557391249 source:c:\cpp\numere-source\trunk\kernel\kernel.cpp
+1557916136 source:c:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"

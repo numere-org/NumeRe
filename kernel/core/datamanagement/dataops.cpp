@@ -1328,6 +1328,9 @@ bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sFileName);
 	}
 
+	// Get a reference to the special cluster
+	NumeRe::Cluster& readFileCluster = _data.newCluster("_~~READFILECLUSTER");
+
 	// Read the complete file, where each line is a separate string expression
 	while (!fFile.eof())
 	{
@@ -1363,13 +1366,18 @@ bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 				sInput.insert(i, 1, '\\');
 		}
 
+		// Append the parsed string to the cluster
+		readFileCluster.push_back(sInput);
+
 		// Append a comma after each string expression
-		sCmd += sInput + ",";
+		//sCmd += sInput + ",";
 	}
 
 	// Remove the last comma
-	if (sCmd.length())
-		sCmd.pop_back();
+//	if (sCmd.length())
+//		sCmd.pop_back();
+    if (readFileCluster.size())
+        sCmd = "_~~READFILECLUSTER{}";
 	else
 		sCmd = "\"\"";
 
