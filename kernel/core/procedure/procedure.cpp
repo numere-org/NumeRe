@@ -894,32 +894,13 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
         {
             if (sCurrentCommand == "namespace" && !getLoop())
             {
-                sProcCommandLine = sProcCommandLine.substr(sProcCommandLine.find("namespace") + 9);
-                StripSpaces(sProcCommandLine);
+                sNameSpace = decodeNameSpace(sProcCommandLine, sThisNameSpace);
+
+                if (sNameSpace.length())
+                    sNameSpace += "~";
 
                 if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                     nByteCode |= ProcedureCommandLine::BYTECODE_NAMESPACE;
-
-                if (sProcCommandLine.length())
-                {
-                    if (sProcCommandLine.find(' ') != string::npos)
-                        sProcCommandLine = sProcCommandLine.substr(0, sProcCommandLine.find(' '));
-
-                    if (sProcCommandLine.substr(0, 5) == "this~" || sProcCommandLine == "this")
-                        sProcCommandLine.replace(0, 4, sThisNameSpace);
-
-                    if (sProcCommandLine != "main")
-                    {
-                        sNameSpace = sProcCommandLine;
-
-                        if (sNameSpace[sNameSpace.length() - 1] != '~')
-                            sNameSpace += "~";
-                    }
-                    else
-                        sNameSpace = "";
-                }
-                else
-                    sNameSpace = "";
 
                 sProcCommandLine = "";
                 continue;

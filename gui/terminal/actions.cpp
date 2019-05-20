@@ -154,7 +154,7 @@ void GenericTerminal::lf()
 {
 	tm.newLine();
 
-	if (termCursor.y < scroll_bot)
+	if (termCursor.y < (size_t)scroll_bot)
 	{
 		move_cursor(termCursor.x, termCursor.y + 1);
 	}
@@ -314,7 +314,7 @@ bool GenericTerminal::cursor_left()
 // Moves the cursor to the right
 bool GenericTerminal::cursor_right()
 {
-	if (termCursor.x + 1 >= width || !tm.IsEditable(termCursor.y, termCursor.x + 1))
+	if (termCursor.x + 1 >= (size_t)width || !tm.IsEditable(termCursor.y, termCursor.x + 1))
 		return false;
 
 	termCursor++;
@@ -402,7 +402,7 @@ bool GenericTerminal::home()
 		n--;
 
     // Don't do anything, if the cursor is already there
-	if (n == termCursor.x)
+	if (n == (int)termCursor.x)
 		return false;
 
     // Move the cursor
@@ -413,7 +413,7 @@ bool GenericTerminal::home()
 // Moves the cursor to the rightmost position in the current line
 bool GenericTerminal::end()
 {
-	int n = termCursor.x;
+	size_t n = termCursor.x;
 
 	// Search the first not editable character from the left
 	while (tm.IsEditable(termCursor.y, n + 1))

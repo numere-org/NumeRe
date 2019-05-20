@@ -5918,47 +5918,46 @@ wxString NumeReEditor::FindMarkedProcedure(int charpos, bool ignoreDefinitions)
 wxString NumeReEditor::FindNameSpaceOfProcedure(int charpos)
 {
 	wxString sNameSpace = "this";
+
 	if (m_fileType == FILE_NPRC)
 	{
 		int minpos = 0;
 		int maxpos = charpos;
 		int nextpos = 0;
+
 		while (minpos < charpos
 				&& nextpos < charpos
 				&& (nextpos = FindText(nextpos, maxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD)) != -1)
 		{
 			if (nextpos == -1)
 				break;
+
 			nextpos++;
+
 			if (this->GetStyleAt(nextpos) == wxSTC_NSCR_COMMAND)
 				minpos = nextpos;
 		}
+
 		if (FindText(minpos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
 		{
 			while (minpos < charpos && FindText(minpos, maxpos, "namespace", wxSTC_FIND_WHOLEWORD | wxSTC_FIND_MATCHCASE) != -1)
 			{
 				int nCurrentPos = FindText(minpos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
+
 				while (this->GetStyleAt(nCurrentPos) != wxSTC_NPRC_COMMAND && FindText(nCurrentPos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) != -1)
 					nCurrentPos = FindText(nCurrentPos, maxpos, "namespace", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
+
 				if (this->GetStyleAt(nCurrentPos) == wxSTC_NPRC_COMMAND)
 					minpos = nCurrentPos;
 				else
 					break;
 			}
-			string currentNamespace = GetLine(LineFromPosition(minpos)).ToStdString();
-			if (currentNamespace.find("namespace") != string::npos)
-			{
-				currentNamespace.erase(0, currentNamespace.find("namespace") + 9);
-				while (currentNamespace.back() == '\r' || currentNamespace.back() == '\n')
-					currentNamespace.pop_back();
-				StripSpaces(currentNamespace);
-				while (currentNamespace.back() == '~')
-					currentNamespace.pop_back();
 
-				sNameSpace = currentNamespace;
-			}
-		}
+			// Decode the namespace contained in the current line but remain "this~" untouched
+			sNameSpace = decodeNameSpace(GetLine(LineFromPosition(minpos)).ToStdString(), "this");
+        }
 	}
+
 	return sNameSpace;
 }
 

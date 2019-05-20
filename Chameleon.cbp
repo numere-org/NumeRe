@@ -42,6 +42,7 @@
 				<Linker>
 					<Add library="wxmsw30u_stc" />
 					<Add library="wxscintilla" />
+					<Add library="wxmsw30u_propgrid" />
 					<Add library="wxmsw30u_media" />
 					<Add library="wxmsw30u_adv" />
 					<Add library="wxmsw30u_gl" />
@@ -188,6 +189,7 @@
 					<Add option="-s" />
 					<Add library="wxmsw30u_stc" />
 					<Add library="wxscintilla" />
+					<Add library="wxmsw30u_propgrid" />
 					<Add library="wxmsw30u_media" />
 					<Add library="wxmsw30u_adv" />
 					<Add library="wxmsw30u_gl" />
@@ -240,6 +242,7 @@
 				<Linker>
 					<Add library="wxmsw30u_stc" />
 					<Add library="wxscintilla" />
+					<Add library="wxmsw30u_propgrid" />
 					<Add library="wxmsw30u_media" />
 					<Add library="wxmsw30u_adv" />
 					<Add library="wxmsw30u_gl" />
@@ -331,8 +334,12 @@
 		<Unit filename="gui/dialogs/fndrpldialog.hpp" />
 		<Unit filename="gui/dialogs/grouppanel.cpp" />
 		<Unit filename="gui/dialogs/grouppanel.hpp" />
+		<Unit filename="gui/dialogs/packagedialog.cpp" />
+		<Unit filename="gui/dialogs/packagedialog.hpp" />
 		<Unit filename="gui/dialogs/renamesymbolsdialog.cpp" />
 		<Unit filename="gui/dialogs/renamesymbolsdialog.hpp" />
+		<Unit filename="gui/dialogs/textoutputdialog.cpp" />
+		<Unit filename="gui/dialogs/textoutputdialog.hpp" />
 		<Unit filename="gui/dialogs/tipdialog.cpp" />
 		<Unit filename="gui/dialogs/tipdialog.hpp" />
 		<Unit filename="gui/dialogs/treelistctrl.cpp" />
@@ -489,6 +496,8 @@
 		<Unit filename="kernel/core/plugin_random.cpp" />
 		<Unit filename="kernel/core/plugin_statistics.cpp" />
 		<Unit filename="kernel/core/plugins.hpp" />
+		<Unit filename="kernel/core/procedure/dependency.cpp" />
+		<Unit filename="kernel/core/procedure/dependency.hpp" />
 		<Unit filename="kernel/core/procedure/flowctrl.cpp" />
 		<Unit filename="kernel/core/procedure/flowctrl.hpp" />
 		<Unit filename="kernel/core/procedure/procedure.cpp" />

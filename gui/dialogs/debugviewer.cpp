@@ -239,7 +239,7 @@ void DebugViewer::getInformationByStackId(size_t id)
     // trace list control
     for (int i = 0; i < m_stacktrace->GetItemCount(); i++)
     {
-        if (m_stacktrace->GetItemCount() - 1 - i == id)
+        if (m_stacktrace->GetItemCount() - 1 - i == (int)id)
             m_stacktrace->SetItemText(i, "->");
         else
             m_stacktrace->SetItemText(i, "");

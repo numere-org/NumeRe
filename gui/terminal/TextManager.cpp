@@ -206,8 +206,9 @@ LogicalCursor TextManager::getCurrentLogicalPos()
 string TextManager::getRenderedString(size_t viewLine)
 {
     // Return an empty line, if the line is not valid
-	if (viewLine + m_topLine - m_numLinesScrolledUp >= m_renderedBlock.size() || viewLine > m_viewportHeight)
+	if (viewLine + m_topLine - m_numLinesScrolledUp >= m_renderedBlock.size() || viewLine > (size_t)m_viewportHeight)
 		return "";
+
 	return m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].sLine;
 }
 
@@ -215,7 +216,7 @@ string TextManager::getRenderedString(size_t viewLine)
 vector<unsigned short> TextManager::getRenderedColors(size_t viewLine)
 {
     // Return an empty vector, if the line is not valid
-	if (viewLine + m_topLine - m_numLinesScrolledUp >= m_renderedBlock.size() || viewLine > m_viewportHeight)
+	if (viewLine + m_topLine - m_numLinesScrolledUp >= m_renderedBlock.size() || viewLine > (size_t)m_viewportHeight)
 		return vector<unsigned short>();
 
     // Copy the current color line
@@ -352,7 +353,7 @@ size_t TextManager::findNextLinebreak(const string& currentLine, size_t currentL
     static string sValidLinebreaks = "+- ,;.*/<>=!";
 
     // Find the next possible break position
-    for (int i = currentLinebreak + m_viewportWidth - 1 - m_indentDepth * (bool)currentLinebreak; i >= currentLinebreak; i--)
+    for (int i = currentLinebreak + m_viewportWidth - 1 - m_indentDepth * (bool)currentLinebreak; i >= (int)currentLinebreak; i--)
     {
         // If the current character marks a valid line break position,
         // return the character after it
@@ -395,7 +396,7 @@ void TextManager::newLine()
 	m_userText.push_back(vector<short>(1, EDITABLE_TEXT));
 
 	// Ensure that the buffer is not larger than the desired history length
-	while (m_text.size() > m_maxHeight)
+	while (m_text.size() > (size_t)m_maxHeight)
 	{
 		m_text.pop_front();
 		m_color.pop_front();
@@ -828,7 +829,8 @@ string TextManager::GetInputHistory(bool vcursorup)
 	    // scroll up
 	    // decrement the virtual cursor
 		m_virtualCursor--;
-		if (m_virtualCursor >= m_userText.size())
+
+		if (m_virtualCursor >= (int)m_userText.size())
             m_virtualCursor = m_userText.size() - 1;
 
 		// While the virtual cursor is non-zero
@@ -860,7 +862,7 @@ string TextManager::GetInputHistory(bool vcursorup)
 	else
 	{
 	    // Return an empty string, if the virtual cursor is the lowest possible line
-		if (m_virtualCursor + 1 >= m_text.size())
+		if (m_virtualCursor + 1 >= (int)m_text.size())
 			return "";
 
         // increment the virtual cursor
@@ -890,7 +892,7 @@ string TextManager::GetInputHistory(bool vcursorup)
 		}
 
 		// Return an empty string, if the virtual cursor is the lowest possible line
-		if (m_virtualCursor + 1 >= m_text.size())
+		if (m_virtualCursor + 1 >= (int)m_text.size())
 			return "";
 	}
 

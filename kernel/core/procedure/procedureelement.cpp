@@ -18,10 +18,12 @@
 
 #include "procedureelement.hpp"
 #include "../utils/tools.hpp"
+#include "dependency.hpp"
 
 // Procedure element constructor. This class is always heap allocated.
-ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, const string& sFolderPath)
+ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, const string& sFilePath) : sFileName(sFilePath), m_dependencies(nullptr)
 {
+    string sFolderPath = sFileName.substr(0, sFileName.rfind('/'));
     string sProcCommandLine;
     string sCurrentCommand;
     string sCurrentLineCache;
@@ -249,6 +251,13 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
     }
 }
 
+// Destructor. Cleares the dependency list
+ProcedureElement::~ProcedureElement()
+{
+    if (m_dependencies)
+        delete m_dependencies;
+}
+
 // This member function does the hard work on cleaning the current
 // procedure command line. This includes removing tabulators, definition
 // operators and replacing the "<this>" path placeholder.
@@ -379,5 +388,15 @@ void ProcedureElement::setByteCode(int _nByteCode, int nCurrentLine)
     }
 }
 
+// This member function returns the first-level dependencies
+// of the current procedure file. The dependencies are only
+// calculated once and refreshed, if the current procedure
+// has been saved
+Dependencies* ProcedureElement::getDependencies()
+{
+    if (!m_dependencies)
+        m_dependencies = new Dependencies(this);
 
+    return m_dependencies;
+}
 

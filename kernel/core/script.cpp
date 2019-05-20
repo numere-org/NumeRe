@@ -470,7 +470,7 @@ string Script::extractDocumentationIndex(string& sScriptCommand)
     StripSpaces(sHelpID);
 
     // Ensure that the article ID start with the plugin prefix
-    if (sHelpID.substr(0,5) != "plgn_")
+    if (sHelpID.substr(0, 5) != "plgn_" && sHelpID.substr(0, 4) != "pkg_")
     {
         sScriptCommand.insert(sScriptCommand.find(sHelpID, sScriptCommand.find("id=")+3), "plgn_");
         sHelpID = "plgn_" + sHelpID;
@@ -523,11 +523,12 @@ void Script::writeDocumentationArticle(string& sScriptCommand)
             // Ensure that the article ID starts with the correct prefix
             if (sScriptCommand.length() > 10 && sScriptCommand.find("<article") != string::npos)
             {
-                if (getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3).substr(0,5) != "plgn_"
-                    && "plgn_"+getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3) == sHelpID)
-                {
+                string sArticleID = getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3);
+
+                if (sArticleID.substr(0, 5) != "plgn_" && "plgn_"+sArticleID == sHelpID)
                     sScriptCommand.insert(sScriptCommand.find(getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3)), "plgn_");
-                }
+                else if (sArticleID.substr(0, 4) != "pkg_" && "pkg_"+sArticleID == sHelpID)
+                    sScriptCommand.insert(sScriptCommand.find(getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3)), "pkg_");
             }
 
             if (sScriptCommand.length() > 10)
@@ -549,11 +550,12 @@ void Script::writeDocumentationArticle(string& sScriptCommand)
                 {
                     if (sTemp.length() > 10 && sTemp.find("<article") != string::npos)
                     {
-                        if (getArgAtPos(sTemp, sTemp.find("id=")+3).substr(0,5) != "plgn_"
-                            && "plgn_"+getArgAtPos(sTemp, sTemp.find("id=")+3) == sHelpID)
-                        {
+                        string sArticleID = getArgAtPos(sTemp, sTemp.find("id=")+3);
+
+                        if (sArticleID.substr(0, 5) != "plgn_" && "plgn_"+sArticleID == sHelpID)
                             sTemp.insert(sTemp.find(getArgAtPos(sTemp, sTemp.find("id=")+3)), "plgn_");
-                        }
+                        else if (sArticleID.substr(0, 4) != "pkg_" && "pkg_"+sArticleID == sHelpID)
+                            sTemp.insert(sTemp.find(getArgAtPos(sTemp, sTemp.find("id=")+3)), "pkg_");
                     }
 
                     // Write the current line
@@ -579,7 +581,7 @@ void Script::writeDocumentationArticle(string& sScriptCommand)
 
 // This member function evaluates the flags from the installation
 // information string and also removes unnecessary comments
-void Script::evaluateInstallInformation(bool bFirstPassedInstallCommand)
+void Script::evaluateInstallInformation(bool& bFirstPassedInstallCommand)
 {
     if (sInstallInfoString.length() && !bFirstPassedInstallCommand)
         sInstallInfoString = "";
@@ -627,6 +629,8 @@ void Script::evaluateInstallInformation(bool bFirstPassedInstallCommand)
 
         if (!bDISABLE_SCREEN_OUTPUT)
             NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_START_INSTALL")) + " ...");
+
+        bFirstPassedInstallCommand = false;
     }
 
     // Write the installation information string to the

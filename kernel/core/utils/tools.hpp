@@ -179,6 +179,7 @@ vector<string> getDBFileContent(const string& sFilename, Settings& _option);
 vector<vector<string> > getDataBase(const string& sDatabaseFileName, Settings& _option);
 string generateCacheName(const string& sFilename, Settings& _option);
 string getFileInfo(const string& sFilename);
+string decodeNameSpace(string sCommandLine, const string& sThisNameSpace);
 
 // This inline function checks, if the passed value is finite and
 // not a NAN value

@@ -67,7 +67,7 @@ class Script : public FileSystem
         bool handleInstallInformation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
         string extractDocumentationIndex(string& sScriptCommand);
         void writeDocumentationArticle(string& sScriptCommand);
-        void evaluateInstallInformation(bool bFirstPassedInstallCommand);
+        void evaluateInstallInformation(bool& bFirstPassedInstallCommand);
         string getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand);
         string getNextScriptCommandFromInclude();
         string handleIncludeSyntax(string& sScriptCommand);
