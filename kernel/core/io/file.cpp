@@ -1014,6 +1014,282 @@ namespace NumeRe
     }
 
 
+
+
+    OpenDocumentSpreadSheet::OpenDocumentSpreadSheet(const string& filename) : GenericFile(filename, ios::in)
+    {
+        //
+    }
+
+    OpenDocumentSpreadSheet::~OpenDocumentSpreadSheet()
+    {
+        //
+    }
+
+    void OpenDocumentSpreadSheet::readFile()
+    {
+        string sODS = "";
+        string sODS_substr = "";
+        vector<string> vTables;
+        vector<string> vMatrix;
+        long long int nCommentLines = 0;
+        long long int nMaxCols = 0;
+
+        sODS = getZipFileItem("content.xml");
+
+        if (!sODS.length())
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        sODS.erase(0,sODS.find("<office:spreadsheet>"));
+
+        if (!sODS.length())
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        sODS.erase(0,sODS.find("<table:table "));
+
+        while (sODS.size() && sODS.find("<table:table ") != string::npos && sODS.find("</table:table>") != string::npos)
+        {
+            vTables.push_back(sODS.substr(sODS.find("<table:table "), sODS.find("</table:table>")+14-sODS.find("<table:table ")));
+            sODS.erase(sODS.find("<table:table "), sODS.find("</table:table>")+14-sODS.find("<table:table "));
+        }
+
+        if (!vTables.size())
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        for (unsigned int i = 0; i < vTables.size(); i++)
+        {
+            unsigned int nPos = 0;
+            unsigned int nCount = 0;
+            long long int _nCols = 0;
+            string sLine = "";
+
+            while (vTables[i].find("<table:table-row ", nPos) != string::npos && vTables[i].find("</table:table-row>", nPos) != string::npos)
+            {
+                nPos = vTables[i].find("<table:table-row ", nPos);
+                sLine = vTables[i].substr(nPos, vTables[i].find("</table:table-row>", nPos)+18-nPos);
+                sLine = expandLine(sLine);
+
+                if (sLine.length())
+                {
+                    if (!i)
+                        vMatrix.push_back(sLine);
+                    else
+                    {
+                        if (vMatrix.size() <= nCount)
+                        {
+                            vMatrix.push_back("<>");
+
+                            for (long long int n = 1; n < nMaxCols; n++)
+                                vMatrix[nCount] += "<>";
+
+                            vMatrix[nCount] += sLine;
+                        }
+                        else
+                            vMatrix[nCount] += sLine;
+
+                        nCount++;
+                    }
+                }
+
+                nPos++;
+            }
+
+            for (unsigned int j = 0; j < vMatrix.size(); j++)
+            {
+                _nCols = 0;
+
+                for (unsigned int n = 0; n < vMatrix[j].length(); n++)
+                {
+                    if (vMatrix[j][n] == '<')
+                        _nCols++;
+                }
+
+                if (_nCols > nMaxCols)
+                    nMaxCols = _nCols;
+            }
+
+            for (unsigned int j = 0; j < vMatrix.size(); j++)
+            {
+                _nCols = 0;
+
+                for (unsigned int n = 0; n < vMatrix[j].length(); n++)
+                {
+                    if (vMatrix[j][n] == '<')
+                        _nCols++;
+                }
+
+                if (_nCols < nMaxCols)
+                {
+                    for (long long int k = _nCols; k < nMaxCols; k++)
+                        vMatrix[j] += "<>";
+                }
+            }
+        }
+
+        for (unsigned int i = 0; i < vMatrix.size(); i++)
+        {
+            while (vMatrix[i].find(' ') != string::npos)
+                vMatrix[i].replace(vMatrix[i].find(' '), 1, "_");
+        }
+
+        if (!vMatrix.size() || !nMaxCols)
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        for (unsigned int i = 0; i < vMatrix.size(); i++)
+        {
+            bool bBreak = false;
+
+            for (unsigned int j = 0; j < vMatrix[i].length(); j++)
+            {
+                if (vMatrix[i][j] == '<' && vMatrix[i][j+1] != '>')
+                {
+                    if (isNumeric(vMatrix[i].substr(j+1, vMatrix[i].find('>',j)-j-1)))
+                    {
+                        bBreak = true;
+                        break;
+                    }
+                }
+
+                if (j == vMatrix[i].length()-1)
+                    nCommentLines++;
+            }
+
+            if (bBreak)
+                break;
+        }
+
+        // Allokation
+        nRows = vMatrix.size() - nCommentLines;
+        nCols = nMaxCols;
+        createStorage();
+
+        // Interpretation
+        unsigned int nPos = 0;
+
+        for (long long int i = 0; i < nCommentLines; i++)
+        {
+            nPos = 0;
+
+            for (long long int j = 0; j < nCols; j++)
+            {
+                nPos = vMatrix[i].find('<', nPos);
+                string sEntry = vMatrix[i].substr(nPos,vMatrix[i].find('>', nPos)+1-nPos);
+                nPos++;
+
+                if (sEntry == "<>")
+                    continue;
+
+                sEntry.erase(0,1);
+                sEntry.pop_back();
+
+                if (!fileTableHeads[j].length())
+                    fileTableHeads[j] = sEntry;
+                else if (fileTableHeads[j] != sEntry)
+                    fileTableHeads[j] += "\\n" + sEntry;
+            }
+        }
+
+        for (long long int i = 0; i < nRows; i++)
+        {
+            nPos = 0;
+
+            for (long long int j = 0; j < nCols; j++)
+            {
+                nPos = vMatrix[i+nCommentLines].find('<', nPos);
+                string sEntry = vMatrix[i+nCommentLines].substr(nPos,vMatrix[i+nCommentLines].find('>', nPos)+1-nPos);
+                nPos++;
+
+                if (sEntry == "<>")
+                    continue;
+
+                sEntry.erase(0,1);
+                sEntry.pop_back();
+
+                if (isNumeric(sEntry))
+                {
+                    if (sEntry.find_first_not_of('-') == string::npos)
+                        continue;
+
+                    fileData[i][j] = StrToDb(sEntry);
+                }
+                else if (!fileTableHeads[j].length())
+                    fileTableHeads[j] = sEntry;
+                else if (fileTableHeads[j] != sEntry)
+                    fileTableHeads[j] += "\\n" + sEntry;
+            }
+        }
+    }
+
+    string OpenDocumentSpreadSheet::expandLine(const string& sLine)
+    {
+        string sExpandedLine = "";
+
+        for (unsigned int i = 0; i < sLine.length(); i++)
+        {
+            if (sLine.substr(i,17) == "<table:table-cell")
+            {
+                if (sLine[sLine.find('>',i)-1] != '/')
+                {
+                    // --> Value-reader
+                    string sCellEntry = sLine.substr(i, sLine.find("</table:table-cell>", i)-i);
+
+                    if (sCellEntry.find("office:value-type=") != string::npos && getArgAtPos(sCellEntry, sCellEntry.find("office:value-type=")+18) == "float")
+                        sExpandedLine += "<" + getArgAtPos(sCellEntry, sCellEntry.find("office:value=")+13) + ">";
+                    else if (sCellEntry.find("<text:p>") != string::npos)
+                        sExpandedLine += "<" + sCellEntry.substr(sCellEntry.find("<text:p>")+8, sCellEntry.find("</text:p>")-sCellEntry.find("<text:p>")-8) + ">";
+                }
+                else
+                {
+                    if (sLine.find("<table:table-cell", i+1) == string::npos && sLine.find("<table:covered-table-cell", i+1) == string::npos)
+                        break;
+
+                    if (sLine.substr(i, sLine.find('>',i)+1-i).find("table:number-columns-repeated=") != string::npos)
+                    {
+                        string sTemp = getArgAtPos(sLine, sLine.find("table:number-columns-repeated=", i)+30);
+
+                        if (sTemp.front() == '"')
+                            sTemp.erase(0, 1);
+
+                        if (sTemp.back() == '"')
+                            sTemp.pop_back();
+
+                        for (int j = 0; j < StrToInt(sTemp); j++)
+                            sExpandedLine += "<>";
+                    }
+                    else
+                        sExpandedLine += "<>";
+                }
+            }
+            else if (sLine.substr(i,25) == "<table:covered-table-cell")
+            {
+                string sTemp = getArgAtPos(sLine, sLine.find("table:number-columns-repeated=", i)+30);
+
+                if (sTemp.front() == '"')
+                    sTemp.erase(0, 1);
+
+                if (sTemp.back() == '"')
+                    sTemp.pop_back();
+
+                for (int j = 0; j < StrToInt(sTemp); j++)
+                    sExpandedLine += "<>";
+            }
+        }
+
+        if (sExpandedLine.length())
+        {
+            while (sExpandedLine.substr(sExpandedLine.length()-2) == "<>")
+            {
+                sExpandedLine.erase(sExpandedLine.length()-2);
+
+                if (!sExpandedLine.length() || sExpandedLine.length() < 2)
+                    break;
+            }
+        }
+
+        return sExpandedLine;
+    }
+
+
     //
 }
 

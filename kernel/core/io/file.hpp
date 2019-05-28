@@ -24,6 +24,9 @@
 #include <cmath>
 #include <vector>
 
+#include "../utils/zip++.hpp"
+#include "../ui/error.hpp"
+
 namespace NumeRe
 {
     template <class DATATYPE>
@@ -105,6 +108,24 @@ namespace NumeRe
                 delete[] buffer;
 
                 return sBuffer;
+            }
+
+            std::string getZipFileItem(const std::string& filename)
+            {
+                Zipfile* _zip = new Zipfile();
+
+                if (!_zip->open(sFileName))
+                {
+                    _zip->close();
+                    delete _zip;
+                    throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, sFileName, SyntaxError::invalid_position, sFileName);
+                }
+
+                std::string sFileItem = _zip->getZipItem(filename);
+                _zip->close();
+                delete _zip;
+
+                return sFileItem;
             }
 
             DATATYPE* readDataBlock(long long int& size)
@@ -296,6 +317,43 @@ namespace NumeRe
 
                 for (long long int i = 0; i < nElements; i++)
                     to[i] = from[i];
+            }
+
+            bool isNumeric(const std::string& sString)
+            {
+                if (!sString.length())
+                    return false;
+
+                for (unsigned int i = 0; i < sString.length(); i++)
+                {
+                    if ((sString[i] >= '0' && sString[i] <= '9')
+                        || sString[i] == 'e'
+                        || sString[i] == 'E'
+                        || sString[i] == '-'
+                        || sString[i] == '+'
+                        || sString[i] == '.'
+                        || sString[i] == ','
+                        || sString[i] == '\t'
+                        || sString[i] == '%'
+                        || sString[i] == ' ')
+                        continue;
+                    else if (sString.substr(i, 3) == "nan"
+                        || sString.substr(i, 3) == "NaN"
+                        || sString.substr(i, 3) == "NAN"
+                        || sString.substr(i, 3) == "inf"
+                        || sString.substr(i, 3) == "INF"
+                        )
+                    {
+                        i += 2;
+                        continue;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
         public:
@@ -543,6 +601,28 @@ namespace NumeRe
         public:
             JcampDX(const std::string& filename);
             virtual ~JcampDX();
+
+            virtual void read() override
+            {
+                readFile();
+            }
+
+            virtual void write() override
+            {
+                // do nothing
+            }
+    };
+
+
+    class OpenDocumentSpreadSheet : public GenericFile<double>
+    {
+        private:
+            void readFile();
+            std::string expandLine(const std::string& sLine);
+
+        public:
+            OpenDocumentSpreadSheet(const std::string& filename);
+            ~OpenDocumentSpreadSheet();
 
             virtual void read() override
             {
