@@ -244,6 +244,16 @@ class NumeReKernel
             return _script;
         }
 
+        Procedure& getProcedureInterpreter()
+        {
+            return _procedure;
+        }
+
+        ProcedureLibrary& getProcedureLibrary()
+        {
+            return ProcLibrary;
+        }
+
         NumeReDebugger& getDebugger()
         {
             return _debugger;

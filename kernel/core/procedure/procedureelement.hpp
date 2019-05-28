@@ -26,6 +26,8 @@
 
 using namespace std;
 
+class Dependencies;
+
 // This class contains the pre-parsed contents of a single
 // procedure file
 class ProcedureElement
@@ -33,19 +35,27 @@ class ProcedureElement
     private:
         map<int, ProcedureCommandLine> mProcedureContents;
         map<string, int> mProcedureList;
+        string sFileName;
+        Dependencies* m_dependencies;
 
-        void cleanCurrentLine(string& sProcCommandLine, const string& sCurrentCommand, const string& sFolderPath);
+        void cleanCurrentLine(string& sProcCommandLine, const string& sCurrentCommand, const string& sFilePath);
 
     public:
         ProcedureElement(const vector<string>& vProcedureContents, const string& sFolderPath);
+        ~ProcedureElement();
 
         pair<int, ProcedureCommandLine> getFirstLine();
         pair<int, ProcedureCommandLine> getCurrentLine(int currentLine);
         pair<int, ProcedureCommandLine> getNextLine(int currentline);
         int gotoProcedure(const string& sProcedureName);
+        string getFileName() const
+        {
+            return sFileName;
+        }
 
         bool isLastLine(int currentline);
         void setByteCode(int _nByteCode, int nCurrentLine);
+        Dependencies* getDependencies();
 };
 
 #endif // PROCEDUREELEMENT_HPP

@@ -42,7 +42,7 @@ class GroupPanel : public wxScrolledWindow
         wxTextCtrl* CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString, int nStyle = 0);
         wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description);
         wxSpinCtrl* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial);
-        wxListView* CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle = wxLC_REPORT);
+        wxListView* CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle = wxLC_REPORT, wxSize size = wxDefaultSize);
 
 };
 

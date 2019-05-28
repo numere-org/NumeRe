@@ -80,12 +80,16 @@
 //#include "dialogs/VariableWatchPanel.h"
 #include "dialogs/AboutChameleonDialog.h"
 #include "dialogs/debugviewer.hpp"
+#include "dialogs/textoutputdialog.hpp"
+#include "dialogs/packagedialog.hpp"
+#include "dialogs/dependencydialog.hpp"
 
 #include "terminal/wxssh.h"
 #include "terminal/networking.h"
 
 #include "../kernel/core/version.h"
 #include "../kernel/core/utils/tools.hpp"
+#include "../kernel/core/procedure/dependency.hpp"
 
 #include "../common/debug.h"
 #include "../common/fixvsbug.h"
@@ -1050,8 +1054,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_WRAPEOL);
             t->ToggleTool(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
-            wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
-            tools->Check(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+            m_menuItems[ID_MENU_LINEWRAP]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
             break;
         }
         case ID_MENU_DISPCTRLCHARS:
@@ -1069,8 +1072,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_USEANALYZER);
             t->ToggleTool(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
-            wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
-            tools->Check(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+            m_menuItems[ID_MENU_USEANALYZER]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
             break;
         }
         case ID_MENU_INDENTONTYPE:
@@ -1078,17 +1080,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
             t->ToggleTool(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
-            wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
-            tools->Check(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+            m_menuItems[ID_MENU_INDENTONTYPE]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
             break;
         }
         case ID_MENU_USESECTIONS:
         {
-            //wxToolBar* t = GetToolBar();
             m_currentEd->ToggleSettings(NumeReEditor::SETTING_USESECTIONS);
-            //t->ToggleTool(ID_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
-            wxMenu* tools = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
-            tools->Check(ID_MENU_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+            m_menuItems[ID_MENU_USESECTIONS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
             break;
         }
         case ID_MENU_AUTOFORMAT:
@@ -1409,8 +1407,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_terminal->setKernelSettings(_option);
             wxToolBar* tb = GetToolBar();
             tb->ToggleTool(ID_MENU_TOGGLE_DEBUGGER, _option.getUseDebugger());
-            wxMenu* view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
-            view->Check(ID_MENU_TOGGLE_DEBUGGER, _option.getUseDebugger());
+            m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(_option.getUseDebugger());
             break;
 		}
 		case ID_MENU_RENAME_SYMBOL:
@@ -1421,6 +1418,16 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 		case ID_MENU_ABSTRAHIZE_SECTION:
         {
             m_currentEd->OnAbstrahizeSectionFromMenu();
+            break;
+        }
+        case ID_MENU_SHOW_DEPENDENCY_REPORT:
+        {
+            OnCalculateDependencies();
+            break;
+        }
+        case ID_MENU_CREATE_PACKAGE:
+        {
+            OnCreatePackage();
             break;
         }
 
@@ -2625,15 +2632,12 @@ void NumeReWindow::PageHasChanged (int pageNr)
 
 	if (m_currentEd != nullptr)
 	{
-        wxMenu* view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_VIEW")));
-        view->Check(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
-        view->Check(ID_MENU_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
-        view->Check(ID_MENU_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
-        view->Check(ID_MENU_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
-
-        view = GetMenuBar()->GetMenu(GetMenuBar()->FindMenu(_guilang.get("GUI_MENU_TOOLS")));
-        view->Check(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
-        view->Check(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+	    m_menuItems[ID_MENU_LINEWRAP]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+	    m_menuItems[ID_MENU_DISPCTRLCHARS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
+	    m_menuItems[ID_MENU_USETXTADV]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
+	    m_menuItems[ID_MENU_USESECTIONS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+	    m_menuItems[ID_MENU_USEANALYZER]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+	    m_menuItems[ID_MENU_INDENTONTYPE]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
 
         m_currentEd->Refresh();
 
@@ -3652,6 +3656,63 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 	return true;
 }
 
+
+vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFileName, const string& sDefaultPath)
+{
+    ifstream fProc;
+    string sNameSpace;
+    string sLine;
+    vector<string> vProc;
+    bool foundMainProcedure = false;
+
+    if (sProcFileName.find(sDefaultPath) != string::npos)
+    {
+        sNameSpace = sProcFileName.substr(0, sProcFileName.rfind('/')+1);
+        sNameSpace.erase(sNameSpace.find(sDefaultPath), sDefaultPath.length());
+
+        while (sNameSpace.front() == '/')
+            sNameSpace.erase(0, 1);
+
+        while (sNameSpace.find('/') != string::npos)
+            sNameSpace[sNameSpace.find('/')] = '~';
+    }
+
+    fProc.open(sProcFileName.c_str());
+
+    if (!fProc.good())
+        return vProc;
+
+    while (!fProc.eof())
+    {
+        getline(fProc, sLine);
+
+        if (sLine.find_first_not_of(" \t") != string::npos && sLine.substr(sLine.find_first_not_of(" \t"), 10) == "procedure ")
+        {
+            string sProcName = sLine.substr(sLine.find('$'), sLine.find('(') - sLine.find('$'));
+
+            if ("$" + sProcFileName.substr(sProcFileName.rfind('/')+1) == sProcName + ".nprc")
+            {
+                sLine.insert(sLine.find('$')+1, sNameSpace);
+                foundMainProcedure = true;
+            }
+            else
+            {
+                if (!foundMainProcedure)
+                {
+                    sLine.insert(sLine.find('$')+1, "unknownfile~");
+                    wxMessageBox(_guilang.get("GUI_PKGDLG_MISSING_MAINPROCEDURE", sProcName), _guilang.get("GUI_PKGDLG_MISSING_MAINPROCEDURE_HEAD"), wxOK | wxCENTRE | wxICON_WARNING, this);
+                }
+                else
+                    sLine.insert(sLine.find('$')+1, "thisfile~");
+            }
+        }
+
+        vProc.push_back(sLine);
+    }
+
+    return vProc;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private ConstructFilterString
 ///  Puts together the filter that defines what files are shown in a file dialog
@@ -4250,27 +4311,11 @@ void NumeReWindow::UpdateMenuBar()
 	menuView->Append(ID_MENU_UNFOLD_ALL, _guilang.get("GUI_MENU_UNFOLDALL"), _guilang.get("GUI_MENU_UNFOLDALL_TTP"));
 	menuView->Append(ID_MENU_UNHIDE_ALL, _guilang.get("GUI_MENU_UNHIDEALL"), _guilang.get("GUI_MENU_UNHIDEALL_TTP"));
 	menuView->AppendSeparator();
-	menuView->Append(ID_MENU_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), true);
-	menuView->Append(ID_MENU_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), true);
-	menuView->Append(ID_MENU_USETXTADV, _guilang.get("GUI_MENU_USETXTADV"), _guilang.get("GUI_MENU_USETXTADV_TTP"), true);
-	menuView->Append(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), true);
-	menuView->Check(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, m_multiRowState);
-	menuView->Append(ID_MENU_USESECTIONS, _guilang.get("GUI_MENU_USESECTIONS"), _guilang.get("GUI_MENU_USESECTIONS_TTP"), true);
-
-	if (m_currentEd)
-	{
-        menuView->Check(ID_MENU_LINEWRAP, m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
-        menuView->Check(ID_MENU_DISPCTRLCHARS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
-        menuView->Check(ID_MENU_USETXTADV, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
-        menuView->Check(ID_MENU_USESECTIONS, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
-    }
-    else
-    {
-        menuView->Check(ID_MENU_LINEWRAP, false);
-        menuView->Check(ID_MENU_DISPCTRLCHARS, false);
-        menuView->Check(ID_MENU_USETXTADV, false);
-        menuView->Check(ID_MENU_USESECTIONS, false);
-    }
+	m_menuItems[ID_MENU_LINEWRAP] = menuView->Append(ID_MENU_LINEWRAP, _guilang.get("GUI_MENU_LINEWRAP"), _guilang.get("GUI_MENU_LINEWRAP_TTP"), wxITEM_CHECK);
+	m_menuItems[ID_MENU_DISPCTRLCHARS] = menuView->Append(ID_MENU_DISPCTRLCHARS, _guilang.get("GUI_MENU_DISPCTRLCHARS"), _guilang.get("GUI_MENU_DISPCTRLCHARS_TTP"), wxITEM_CHECK);
+	m_menuItems[ID_MENU_USETXTADV] = menuView->Append(ID_MENU_USETXTADV, _guilang.get("GUI_MENU_USETXTADV"), _guilang.get("GUI_MENU_USETXTADV_TTP"), wxITEM_CHECK);
+	m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW] = menuView->Append(ID_MENU_TOGGLE_NOTEBOOK_MULTIROW, _guilang.get("GUI_MENU_MULTIROW"), _guilang.get("GUI_MENU_MULTIROW_TTP"), wxITEM_CHECK);
+	m_menuItems[ID_MENU_USESECTIONS] = menuView->Append(ID_MENU_USESECTIONS, _guilang.get("GUI_MENU_USESECTIONS"), _guilang.get("GUI_MENU_USESECTIONS_TTP"), wxITEM_CHECK);
 
 	menuBar->Append(menuView, _guilang.get("GUI_MENU_VIEW"));
 
@@ -4282,7 +4327,7 @@ void NumeReWindow::UpdateMenuBar()
 
 	wxMenu* menuFormat = new wxMenu();
 	menuFormat->Append(ID_MENU_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
-	menuFormat->Append(ID_MENU_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), true);
+	m_menuItems[ID_MENU_INDENTONTYPE] = menuFormat->Append(ID_MENU_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), wxITEM_CHECK);
 	menuFormat->Append(ID_MENU_AUTOFORMAT, _guilang.get("GUI_MENU_AUTOFORMAT"), _guilang.get("GUI_MENU_AUTOFORMAT_TTP"));
 
 	wxMenu* menuLaTeX = new wxMenu();
@@ -4293,6 +4338,12 @@ void NumeReWindow::UpdateMenuBar()
 	wxMenu* menuRefactoring = new wxMenu();
 	menuRefactoring->Append(ID_MENU_RENAME_SYMBOL, _guilang.get("GUI_MENU_RENAME_SYMBOL"), _guilang.get("GUI_MENU_RENAME_SYMBOL_TTP"));
 	menuRefactoring->Append(ID_MENU_ABSTRAHIZE_SECTION, _guilang.get("GUI_MENU_ABSTRAHIZE_SECTION"), _guilang.get("GUI_MENU_ABSTRAHIZE_SECTION_TTP"));
+
+	wxMenu* menuAnalyzer = new wxMenu();
+	m_menuItems[ID_MENU_USEANALYZER] = menuAnalyzer->Append(ID_MENU_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), wxITEM_CHECK);
+    menuAnalyzer->Append(ID_MENU_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
+    menuAnalyzer->Append(ID_MENU_SHOW_DEPENDENCY_REPORT, _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT"), _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT_TTP"));
+
 
 	wxMenu* menuTools = new wxMenu();
 
@@ -4309,20 +4360,10 @@ void NumeReWindow::UpdateMenuBar()
 	menuTools->Append(ID_MENU_SORT_SELECTION_DESC, _guilang.get("GUI_MENU_SORT_DESC"), _guilang.get("GUI_MENU_SORT_DESC_TTP"));
 	menuTools->AppendSeparator();
 	menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
-	menuTools->Append(ID_MENU_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), true);
-    if (m_currentEd)
-	{
-        menuTools->Check(ID_MENU_INDENTONTYPE, m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
-        menuTools->Check(ID_MENU_USEANALYZER, m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
-    }
-    else
-    {
-        menuTools->Check(ID_MENU_INDENTONTYPE, false);
-        menuTools->Check(ID_MENU_USEANALYZER, false);
-    }
-    menuTools->Append(ID_MENU_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
-	menuTools->Append(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), true);
-	menuTools->Check(ID_MENU_TOGGLE_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
+    menuTools->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
+    menuTools->AppendSeparator();
+    menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_ANALYSIS"), menuAnalyzer);
+	m_menuItems[ID_MENU_TOGGLE_DEBUGGER] = menuTools->Append(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), wxITEM_CHECK);
 
 	menuBar->Append(menuTools, _guilang.get("GUI_MENU_TOOLS"));
 
@@ -4331,6 +4372,29 @@ void NumeReWindow::UpdateMenuBar()
 	helpMenu->Append(ID_MENU_ABOUT, _guilang.get("GUI_MENU_ABOUT"), _guilang.get("GUI_MENU_ABOUT_TTP"));
 
 	menuBar->Append(helpMenu, _guilang.get("GUI_MENU_HELP"));
+
+    if (m_currentEd)
+	{
+	    m_menuItems[ID_MENU_LINEWRAP]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_WRAPEOL));
+	    m_menuItems[ID_MENU_DISPCTRLCHARS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_DISPCTRLCHARS));
+	    m_menuItems[ID_MENU_USETXTADV]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USETXTADV));
+	    m_menuItems[ID_MENU_USESECTIONS]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USESECTIONS));
+	    m_menuItems[ID_MENU_INDENTONTYPE]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE));
+	    m_menuItems[ID_MENU_USEANALYZER]->Check(m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER));
+    }
+    else
+    {
+        m_menuItems[ID_MENU_LINEWRAP]->Check(false);
+	    m_menuItems[ID_MENU_DISPCTRLCHARS]->Check(false);
+	    m_menuItems[ID_MENU_USETXTADV]->Check(false);
+	    m_menuItems[ID_MENU_USESECTIONS]->Check(false);
+        m_menuItems[ID_MENU_INDENTONTYPE]->Check(false);
+	    m_menuItems[ID_MENU_USEANALYZER]->Check(false);
+    }
+
+    m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW]->Check(m_multiRowState);
+    m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(m_terminal->getKernelSettings().getUseDebugger());
+
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -5928,6 +5992,63 @@ void NumeReWindow::OnExecuteFile(const string& sFileName)
     }
     showConsole();
     m_terminal->pass_command(command);
+}
+
+void NumeReWindow::OnCalculateDependencies()
+{
+    if (m_currentEd->getFileType() != FILE_NPRC)
+        return;
+
+    ProcedureLibrary& procLib = m_terminal->getKernel().getProcedureLibrary();
+
+    DependencyDialog dlg(this, wxID_ANY, _guilang.get("GUI_DEPDLG_HEAD", m_currentEd->GetFilenameString().ToStdString()), m_currentEd->GetFileNameAndPath().ToStdString(), procLib);
+
+    dlg.ShowModal();
+}
+
+
+void NumeReWindow::OnCreatePackage()
+{
+    if (m_currentEd->getFileType() != FILE_NPRC)
+        return;
+
+    PackageDialog dlg(this, m_terminal, m_iconManager);
+    dlg.setMainFile(m_currentEd->GetFileNameAndPath());
+
+    if (dlg.ShowModal() == wxID_OK)
+    {
+        wxString installinfo = dlg.getInstallInfo();
+        wxString identifier = (dlg.isPlugin() ? "plgn_" : "pkg_") + dlg.getPackageIdentifier();
+        wxArrayString procedures = dlg.getProcedures();
+        string sProcPath = m_terminal->getPathSettings()[PROCPATH];
+
+        NewFile(FILE_NSCR, identifier);
+
+        m_currentEd->AddText("<install>\n" + installinfo + "\n");
+
+        for (size_t i = 0; i < procedures.size(); i++)
+        {
+            vector<string> procContents = getProcedureFileForInstaller(procedures[i].ToStdString(), sProcPath);
+
+            for (size_t j = 0; j < procContents.size(); j++)
+            {
+                if (procContents[j].length() && procContents[j].find_first_not_of(" \t") != string::npos)
+                    m_currentEd->AddText("\t" + procContents[j] + "\n");
+            }
+
+            m_currentEd->AddText("\n");
+        }
+
+        if (dlg.includeDocs())
+        {
+            m_currentEd->AddText("\t<helpindex>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" idxkey=\"" + dlg.getPackageIdentifier()
+                                 + "\" />\n\t\t\t<keywords>\n\t\t\t\t<keyword>" + dlg.getPackageIdentifier() + "</keyword>\n\t\t\t</keywords>\n\t\t</article>\n\t</helpindex>\n\n");
+            m_currentEd->AddText("\t<helpfile>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" />\n\t\t\t(...)\n\t\t</article>\n\t</helpfile>\n\n");
+        }
+
+        m_currentEd->AddText("\treturn;\n<endinstall>\n");
+        m_currentEd->AddText("\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\n");
+    }
 }
 
 void NumeReWindow::OnCopy()

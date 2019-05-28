@@ -155,10 +155,10 @@ wxSpinCtrl* GroupPanel::CreateSpinControl(wxWindow* parent, wxSizer* sizer, cons
 
 // This member function creates the
 // layout for a listview control
-wxListView* GroupPanel::CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle /*= wxLC_REPORT*/)
+wxListView* GroupPanel::CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle /*= wxLC_REPORT*/, wxSize size /*= wxDefaultSize*/)
 {
     // Create the listview and assign it to the passed sizer
-    wxListView* listView = new wxListView(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, nStyle);
+    wxListView* listView = new wxListView(parent, wxID_ANY, wxDefaultPosition, size, nStyle);
     sizer->Add(listView, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND | wxFIXED_MINSIZE, ELEMENT_BORDER);
 
     return listView;

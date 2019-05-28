@@ -32,7 +32,7 @@ ProcedureElement* ProcedureLibrary::constructProcedureElement(const string& sPro
 {
     if (fileExists(sProcedureFileName))
     {
-        ProcedureElement* element = new ProcedureElement(getFileContents(sProcedureFileName), sProcedureFileName.substr(0, sProcedureFileName.rfind('/')));
+        ProcedureElement* element = new ProcedureElement(getFileContents(sProcedureFileName), sProcedureFileName);
         return element;
     }
     return nullptr;

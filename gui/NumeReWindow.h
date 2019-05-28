@@ -251,6 +251,8 @@ class NumeReWindow : public wxFrame
         void OnSaveSourceFile( int id );
         void OnOpenSourceFile( int id );
         void OnExecuteFile(const string& sFileName);
+        void OnCalculateDependencies();
+        void OnCreatePackage();
 
         void OnClose(wxCloseEvent& event);
         void Test(wxCommandEvent& event);
@@ -313,6 +315,7 @@ class NumeReWindow : public wxFrame
         void LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid);
 
 
+        vector<string> getProcedureFileForInstaller(const string& sProcFileName, const string& sDefaultPath);
         wxString ConstructFilterString(FileFilterType filterType);
         int FindString(const wxString &findString, int start_pos = -1, int flags = -1, bool highlight = TRUE);
         int ReplaceAllStrings(const wxString &findString, const wxString &replaceString, int flags = -1);
@@ -460,6 +463,7 @@ class NumeReWindow : public wxFrame
         bool m_currentlyDebugging;
         bool m_multiRowState;
         bool m_loadingFilesDuringStartup;
+        map<int, wxMenuItem*> m_menuItems;
 
 
         wxString m_filterNSCRFiles;

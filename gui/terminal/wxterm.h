@@ -180,6 +180,10 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		NumeRe::Table getTable(const string& sTableName);
 		NumeRe::Container<string> getStringTable(const string& sStringTableName);
 		Settings getKernelSettings();
+		NumeReKernel& getKernel()
+		{
+		    return _kernel;
+		}
 		void setKernelSettings(const Settings&);
 		void EndKernelTask();
 		void CancelCalculation();

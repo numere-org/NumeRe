@@ -3415,6 +3415,32 @@ string getFileInfo(const string& sFileName)
 	return sFileInfo;
 }
 
+string decodeNameSpace(string sCommandLine, const string& sThisNameSpace)
+{
+    string sNameSpace = "";
+
+    if (sCommandLine.find("namespace") != string::npos)
+    {
+        sCommandLine.erase(0, sCommandLine.find("namespace") + 9);
+
+        while (sCommandLine.back() == '\r' || sCommandLine.back() == '\n')
+            sCommandLine.pop_back();
+
+        StripSpaces(sCommandLine);
+
+        if (sCommandLine.substr(0, 5) == "this~" || sCommandLine == "this")
+            sCommandLine.replace(0, 4, sThisNameSpace);
+
+        while (sCommandLine.back() == '~')
+            sCommandLine.pop_back();
+
+        if (sCommandLine != "main")
+            sNameSpace = sCommandLine;
+    }
+
+    return sNameSpace;
+}
+
 // This function is used to validate the number of parentheses, i.e. whether there's
 // a closing parenthesis for each opened parenthesis
 bool validateParenthesisNumber(const string& sCmd)
