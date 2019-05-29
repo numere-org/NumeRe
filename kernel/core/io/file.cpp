@@ -19,6 +19,7 @@
 #include "file.hpp"
 #include "../utils/tools.hpp"
 #include "../utils/BasicExcel.hpp"
+#include "../utils/tinyxml2.h"
 #include "../version.h"
 
 namespace NumeRe
@@ -1534,6 +1535,237 @@ namespace NumeRe
         _excel.SaveAs(sFileName.c_str());
     }
 
+
+
+
+    XLSXSpreadSheet::XLSXSpreadSheet(const string& filename) : GenericFile(filename)
+    {
+        //
+    }
+
+    XLSXSpreadSheet::~XLSXSpreadSheet()
+    {
+        //
+    }
+
+    void XLSXSpreadSheet::readFile()
+    {
+        unsigned int nSheets = 0;
+        long long int nExcelLines = 0;
+        long long int nExcelCols = 0;
+        long long int nOffset = 0;
+        int nLine = 0, nCol = 0;
+        int nLinemin = 0, nLinemax = 0;
+        int nColmin = 0, nColmax = 0;
+        bool bBreakSignal = false;
+
+        vector<long long int> vCommentLines;
+        string sEntry;
+        string sSheetContent;
+        string sStringsContent;
+        string sCellLocation;
+
+        tinyxml2::XMLDocument _workbook;
+        tinyxml2::XMLDocument _sheet;
+        tinyxml2::XMLDocument _strings;
+        tinyxml2::XMLNode* _node;
+        tinyxml2::XMLElement* _element;
+        tinyxml2::XMLElement* _stringelement;
+
+        sEntry = getZipFileItem("xl/workbook.xml");
+
+        if (!sEntry.length())
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        // Get the number of sheets
+        _workbook.Parse(sEntry.c_str());
+
+        if (_workbook.ErrorID())
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        _node = _workbook.FirstChildElement()->FirstChildElement("sheets")->FirstChild();
+
+        if (_node)
+            nSheets++;
+
+        while ((_node = _node->NextSibling()))
+            nSheets++;
+
+        if (!nSheets)
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        // Walk through the sheets and extract the dimension info
+        for (unsigned int i = 0; i < nSheets; i++)
+        {
+            sSheetContent = getZipFileItem("xl/worksheets/sheet"+toString(i+1)+".xml");
+
+            if (!sSheetContent.length())
+                throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+            _sheet.Parse(sSheetContent.c_str());
+
+            if (_sheet.ErrorID())
+                throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+            _element = _sheet.FirstChildElement()->FirstChildElement("dimension");
+            sCellLocation = _element->Attribute("ref");
+            int nLinemin = 0, nLinemax = 0;
+            int nColmin = 0, nColmax = 0;
+
+            // Take care of comment lines => todo
+            evalIndices(sCellLocation.substr(0, sCellLocation.find(':')), nLinemin, nColmin);
+            evalIndices(sCellLocation.substr(sCellLocation.find(':') + 1), nLinemax, nColmax);
+
+            vCommentLines.push_back(0);
+            _node = _sheet.FirstChildElement()->FirstChildElement("sheetData")->FirstChild();
+
+            if (!_node)
+                continue;
+
+            do
+            {
+                _element = _node->ToElement()->FirstChildElement("c");
+
+                do
+                {
+                    if (_element->Attribute("t"))
+                    {
+                        if (_element->Attribute("t") != string("s"))
+                        {
+                            bBreakSignal = true;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        bBreakSignal = true;
+                        break;
+                    }
+                }
+                while ((_element = _element->NextSiblingElement()));
+
+                if (!bBreakSignal)
+                    vCommentLines[i]++;
+                else
+                    break;
+            }
+            while ((_node = _node->NextSibling()));
+
+            bBreakSignal = false;
+
+            if (nExcelLines < nLinemax-nLinemin+1-vCommentLines[i])
+                nExcelLines = nLinemax-nLinemin+1-vCommentLines[i];
+
+            nExcelCols += nColmax-nColmin+1;
+        }
+
+        nRows = nExcelLines;
+        nCols = nExcelCols;
+
+        // Allocate the memory
+        createStorage();
+
+        // Walk through the sheets and extract the contents to memory
+        sStringsContent = getZipFileItem("xl/sharedStrings.xml");
+        _strings.Parse(sStringsContent.c_str());
+
+        for (unsigned int i = 0; i < nSheets; i++)
+        {
+            sSheetContent = getZipFileItem("xl/worksheets/sheet"+toString(i+1)+".xml");
+            _sheet.Parse(sSheetContent.c_str());
+            _node = _sheet.FirstChildElement()->FirstChildElement("sheetData")->FirstChild();
+            _element = _sheet.FirstChildElement()->FirstChildElement("dimension");
+
+            if (!_node)
+                continue;
+
+            sCellLocation = _element->Attribute("ref");
+            evalIndices(sCellLocation.substr(0, sCellLocation.find(':')), nLinemin, nColmin);
+            evalIndices(sCellLocation.substr(sCellLocation.find(':')+1), nLinemax, nColmax);
+
+            do
+            {
+                _element = _node->ToElement()->FirstChildElement("c");
+
+                if (!_element)
+                    continue;
+
+                do
+                {
+                    sCellLocation = _element->Attribute("r");
+                    evalIndices(sCellLocation, nLine, nCol);
+                    nCol -= nColmin;
+                    nLine -= nLinemin;
+
+                    if (nCol+nOffset >= nCols || nLine-vCommentLines[i] >= nRows)
+                        continue;
+
+                    if (_element->Attribute("t"))
+                    {
+                        if (_element->Attribute("t") == string("s"))
+                        {
+                            //Handle text
+                            int nPos = 0;
+                            _element->FirstChildElement("v")->QueryIntText(&nPos);
+                            _stringelement = _strings.FirstChildElement()->FirstChildElement("si");
+
+                            for (int k = 1; k <= nPos; k++)
+                            {
+                                _stringelement = _stringelement->NextSiblingElement();
+                            }
+
+                            if (_stringelement->FirstChildElement()->FirstChild())
+                                sEntry = _stringelement->FirstChildElement()->FirstChild()->ToText()->Value();
+                            else
+                                sEntry.clear();
+
+                            if (sEntry.length())
+                            {
+                                if (!fileTableHeads[nCol+nOffset].length())
+                                    fileTableHeads[nCol+nOffset] = sEntry;
+                                else if (fileTableHeads[nCol+nOffset] != sEntry)
+                                    fileTableHeads[nCol+nOffset] += "\\n" + sEntry;
+                            }
+
+                            continue;
+                        }
+                    }
+
+                    if (_element->FirstChildElement("v"))
+                        _element->FirstChildElement("v")->QueryDoubleText(&fileData[nLine-vCommentLines[i]][nCol+nOffset]);
+                }
+                while ((_element = _element->NextSiblingElement()));
+            }
+            while ((_node = _node->NextSibling()));
+
+            nOffset += nColmax-nColmin+1;
+        }
+    }
+
+    void XLSXSpreadSheet::evalIndices(const string& _sIndices, int& nLine, int& nCol)
+    {
+        //A1 -> IV65536
+        string sIndices = toUpperCase(_sIndices);
+
+        for (size_t i = 0; i < sIndices.length(); i++)
+        {
+            if (!isalpha(sIndices[i]))
+            {
+                nLine = StrToInt(sIndices.substr(i))-1;
+
+                if (i == 2)
+                {
+                    nCol = (sIndices[0]-'A'+1)*26+sIndices[1]-'A';
+                }
+                else if (i == 1)
+                {
+                    nCol = sIndices[0]-'A';
+                }
+
+                break;
+            }
+        }
+    }
 
     //
 }

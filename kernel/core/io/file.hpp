@@ -681,6 +681,28 @@ namespace NumeRe
                 writeFile();
             }
     };
+
+
+    class XLSXSpreadSheet : public GenericFile<double>
+    {
+        private:
+            void readFile();
+            void evalIndices(const std::string& sIndices, int& nLine, int& nCol);
+
+        public:
+            XLSXSpreadSheet(const std::string& filename);
+            virtual ~XLSXSpreadSheet();
+
+            virtual void read() override
+            {
+                readFile();
+            }
+
+            virtual void write() override
+            {
+                // do nothing
+            }
+    };
 }
 
 
