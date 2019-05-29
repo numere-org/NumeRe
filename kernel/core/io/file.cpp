@@ -18,6 +18,7 @@
 
 #include "file.hpp"
 #include "../utils/tools.hpp"
+#include "../utils/BasicExcel.hpp"
 #include "../version.h"
 
 namespace NumeRe
@@ -25,7 +26,7 @@ namespace NumeRe
     using namespace std;
 
     NumeReDataFile::NumeReDataFile(const string& filename)
-        : GenericFile(filename, ios::binary | ios::in | ios::out),
+        : GenericFile(filename),
         isLegacy(false), timeStamp(0), versionMajor(0), versionMinor(0),
         versionBuild(0)
     {
@@ -58,6 +59,7 @@ namespace NumeRe
 
         writeNumField(fileVersionMajor);
         writeNumField(fileVersionMinor);
+        writeStringField(getTableName());
         writeStringField(sComment);
         writeDataBlock(nullptr, 0);
         writeDataBlock(nullptr, 0);
@@ -82,6 +84,8 @@ namespace NumeRe
 
     void NumeReDataFile::writeFile()
     {
+        open(ios::binary | ios::out | ios::trunc);
+
         writeHeader();
         writeStringBlock(fileTableHeads, nCols);
         writeDataArray(fileData, nRows, nCols);
@@ -110,6 +114,7 @@ namespace NumeRe
         if (fileVerMajor > fileVersionMajor)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        sTableName = readStringField();
         sComment = readStringField();
 
         long long int size;
@@ -137,6 +142,8 @@ namespace NumeRe
 
     void NumeReDataFile::readFile()
     {
+        open(ios::binary | ios::in);
+
         readHeader();
 
         if (isLegacy)
@@ -208,7 +215,7 @@ namespace NumeRe
 
 
 
-    CassyLabx::CassyLabx(const string& filename) : GenericFile(filename, ios::in)
+    CassyLabx::CassyLabx(const string& filename) : GenericFile(filename)
     {
         //
     }
@@ -220,6 +227,8 @@ namespace NumeRe
 
     void CassyLabx::readFile()
     {
+        open(ios::in);
+
         string sLabx = "";
         string sLabx_substr = "";
         string* sCols = 0;
@@ -353,7 +362,7 @@ namespace NumeRe
 
 
 
-    CommaSeparatedValues::CommaSeparatedValues(const string& filename) : GenericFile(filename, ios::in | ios::out)
+    CommaSeparatedValues::CommaSeparatedValues(const string& filename) : GenericFile(filename)
     {
         //
     }
@@ -366,6 +375,8 @@ namespace NumeRe
 
     void CommaSeparatedValues::readFile()
     {
+        open(ios::in);
+
 		char cSep = 0;
 
 		// --> Benoetigte temporaere Variablen initialisieren <--
@@ -516,6 +527,8 @@ namespace NumeRe
 
     void CommaSeparatedValues::writeFile()
     {
+        open(ios::out | ios::trunc);
+
         for (long long int j = 0; j < nCols; j++)
         {
             fFileStream << fileTableHeads[j] + ",";
@@ -667,7 +680,7 @@ namespace NumeRe
 
 
 
-    JcampDX::JcampDX(const string& filename) : GenericFile(filename, ios::in)
+    JcampDX::JcampDX(const string& filename) : GenericFile(filename)
     {
         //
     }
@@ -679,6 +692,8 @@ namespace NumeRe
 
     void JcampDX::readFile()
     {
+        open(ios::in);
+
 		vector<long long int> vComment;
 		vector<long long int> vCols;
 		vector<double> vLine;
@@ -1016,7 +1031,7 @@ namespace NumeRe
 
 
 
-    OpenDocumentSpreadSheet::OpenDocumentSpreadSheet(const string& filename) : GenericFile(filename, ios::in)
+    OpenDocumentSpreadSheet::OpenDocumentSpreadSheet(const string& filename) : GenericFile(filename)
     {
         //
     }
@@ -1287,6 +1302,236 @@ namespace NumeRe
         }
 
         return sExpandedLine;
+    }
+
+
+
+
+
+    XLSSpreadSheet::XLSSpreadSheet(const string& filename) : GenericFile(filename)
+    {
+        //
+    }
+
+    XLSSpreadSheet::~XLSSpreadSheet()
+    {
+        //
+    }
+
+    void XLSSpreadSheet::readFile()
+    {
+        YExcel::BasicExcel _excel;
+        YExcel::BasicExcelWorksheet* _sheet;
+        YExcel::BasicExcelCell* _cell;
+        unsigned int nSheets = 0;
+        long long int nExcelLines = 0;
+        long long int nExcelCols = 0;
+        long long int nOffset = 0;
+        long long int nCommentLines = 0;
+        vector<long long int> vCommentLines;
+        bool bBreakSignal = false;
+        string sEntry;
+
+        if (!_excel.Load(sFileName.c_str()))
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        // get the total number
+        nSheets = _excel.GetTotalWorkSheets();
+
+        if (!nSheets)
+            return;
+
+        // get the total size
+        for (unsigned int n = 0; n < nSheets; n++)
+        {
+            _sheet = _excel.GetWorksheet(n);
+            bBreakSignal = false;
+            nCommentLines = 0;
+
+            for (unsigned int i = 0; i < _sheet->GetTotalRows(); i++)
+            {
+                for (unsigned int j = 0; j < _sheet->GetTotalCols(); j++)
+                {
+                    if (_sheet->Cell(i,j)->Type() != YExcel::BasicExcelCell::STRING
+                        && _sheet->Cell(i,j)->Type() != YExcel::BasicExcelCell::WSTRING
+                        && _sheet->Cell(i,j)->Type() != YExcel::BasicExcelCell::UNDEFINED)
+                    {
+                        bBreakSignal = true;
+                        break;
+                    }
+                }
+
+                if (bBreakSignal)
+                    break;
+
+                nCommentLines++;
+            }
+
+            vCommentLines.push_back(nCommentLines);
+
+            if (nExcelLines < _sheet->GetTotalRows()-nCommentLines)
+                nExcelLines = _sheet->GetTotalRows()-nCommentLines;
+
+            nExcelCols += _sheet->GetTotalCols();
+        }
+
+        // create data
+        nRows = nExcelLines;
+        nCols = nExcelCols;
+        createStorage();
+
+        // copy data/strings
+        for (unsigned int n = 0; n < nSheets; n++)
+        {
+            _sheet = _excel.GetWorksheet(n);
+            nExcelCols = _sheet->GetTotalCols();
+            nExcelLines = _sheet->GetTotalRows();
+
+            for (long long int i = 0; i < vCommentLines[n]; i++)
+            {
+                if (i >= nExcelLines)
+                    break;
+
+                for (long long int j = 0; j < nExcelCols; j++)
+                {
+                    if (j+nOffset >= nCols)
+                        break;
+
+                    _cell = _sheet->Cell(i,j);
+
+                    if (_cell->Type() == YExcel::BasicExcelCell::STRING)
+                        sEntry = _cell->GetString();
+                    else if (_cell->Type() == YExcel::BasicExcelCell::WSTRING)
+                        sEntry = wcstombs(_cell->GetWString());
+                    else
+                        continue;
+
+                    while (sEntry.find('\n') != string::npos)
+                        sEntry.replace(sEntry.find('\n'), 1, "\\n");
+
+                    while (sEntry.find((char)10) != string::npos)
+                        sEntry.replace(sEntry.find((char)10), 1, "\\n");
+
+                    if (!fileTableHeads[j+nOffset].length())
+                        fileTableHeads[j+nOffset] = sEntry;
+                    else if (fileTableHeads[j+nOffset] != sEntry)
+                        fileTableHeads[j+nOffset] += "\\n" + sEntry;
+                }
+            }
+
+            nOffset += nExcelCols;
+        }
+
+        nOffset = 0;
+
+        for (unsigned int n = 0; n < nSheets; n++)
+        {
+            _sheet = _excel.GetWorksheet(n);
+            nExcelCols = _sheet->GetTotalCols();
+            nExcelLines = _sheet->GetTotalRows();
+
+            for (long long int i = vCommentLines[n]; i < nExcelLines; i++)
+            {
+                if (i - vCommentLines[n] >= nRows)
+                    break;
+
+                for (long long int j = 0; j < nExcelCols; j++)
+                {
+                    if (j >= nCols)
+                        break;
+
+                    _cell = _sheet->Cell(i,j);
+                    sEntry.clear();
+
+                    switch (_cell->Type())
+                    {
+                        case YExcel::BasicExcelCell::UNDEFINED:
+                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
+                            break;
+                        case YExcel::BasicExcelCell::INT:
+                            fileData[i-vCommentLines[n]][j+nOffset] = (double)_cell->GetInteger();
+                            break;
+                        case YExcel::BasicExcelCell::DOUBLE:
+                            fileData[i-vCommentLines[n]][j+nOffset] = _cell->GetDouble();
+                            break;
+                        case YExcel::BasicExcelCell::STRING:
+                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
+                            sEntry = _cell->GetString();
+                            break;
+                        case YExcel::BasicExcelCell::WSTRING:
+                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
+                            sEntry = wcstombs(_cell->GetWString());
+                            break;
+                        default:
+                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
+                    }
+
+                    if (sEntry.length())
+                    {
+                        if (!fileTableHeads[j+nOffset].length())
+                            fileTableHeads[j+nOffset] = sEntry;
+                        else if (fileTableHeads[j+nOffset] != sEntry)
+                            fileTableHeads[j+nOffset] += "\\n" + sEntry;
+                    }
+                }
+            }
+
+            nOffset += nExcelCols;
+        }
+    }
+
+    void XLSSpreadSheet::writeFile()
+    {
+        YExcel::BasicExcel _excel;
+        YExcel::BasicExcelWorksheet* _sheet;
+        YExcel::BasicExcelCell* _cell;
+
+        string sHeadLine;
+        string sSheetName = getTableName();
+
+        // Create a new sheet
+        _excel.New(1);
+
+        // Rename it so that it fits the cache name
+        _excel.RenameWorksheet(0u, sSheetName.c_str());
+
+        // Get a pointer to this sheet
+        _sheet = _excel.GetWorksheet(0u);
+
+        // Write the headlines in the first row
+        for (long long int j = 0; j < nCols; j++)
+        {
+            // Get the current cell and the headline string
+            _cell = _sheet->Cell(0u, j);
+            sHeadLine = fileTableHeads[j];
+
+            // Replace newlines with the corresponding character code
+            while (sHeadLine.find("\\n") != string::npos)
+                sHeadLine.replace(sHeadLine.find("\\n"), 2, 1, (char)10);
+
+            // Write the headline
+            _cell->SetString(sHeadLine.c_str());
+        }
+
+        // Now write the actual table
+        for (long long int i = 0; i < nRows; i++)
+        {
+            for (long long int j = 0; j < nCols; j++)
+            {
+                // Get the current cell (skip over the first row, because it contains the headline)
+                _cell = _sheet->Cell(1 + i, j);
+
+                // Write the cell contents, if the data table contains valid data
+                // otherwise clear the cell
+                if (!isnan(fileData[i][j]))
+                    _cell->SetDouble(fileData[i][j]);
+                else
+                    _cell->EraseContents();
+            }
+        }
+
+        // Save the excel file with the target filename
+        _excel.SaveAs(sFileName.c_str());
     }
 
 

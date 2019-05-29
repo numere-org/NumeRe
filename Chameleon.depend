@@ -9367,3 +9367,17 @@
 	"../../kernel/core/procedure/procedurelibrary.hpp"
 	"../../kernel/core/procedure/dependency.hpp"
 
+1559027949 source:d:\cpp\numere-source\trunk\kernel\core\io\file.cpp
+	"file.hpp"
+	"../utils/tools.hpp"
+	"../utils/BasicExcel.hpp"
+	"../version.h"
+
+1559028179 d:\cpp\numere-source\trunk\kernel\core\io\file.hpp
+	<string>
+	<fstream>
+	<cmath>
+	<vector>
+	"../utils/zip++.hpp"
+	"../ui/error.hpp"
+

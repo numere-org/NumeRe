@@ -26,16 +26,18 @@
 
 #include "../utils/zip++.hpp"
 #include "../ui/error.hpp"
+#include "../filesystem.hpp"
 
 namespace NumeRe
 {
     template <class DATATYPE>
-    class GenericFile
+    class GenericFile : public FileSystem
     {
         protected:
             std::fstream fFileStream;
             std::string sFileExtension;
             std::string sFileName;
+            std::string sTableName;
             long long int nRows;
             long long int nCols;
 
@@ -44,6 +46,19 @@ namespace NumeRe
 
             DATATYPE** fileData;
             std::string* fileTableHeads;
+
+            void open(std::ios::openmode mode)
+            {
+                if (fFileStream.is_open())
+                    fFileStream.close();
+
+                fFileStream.open(sFileName.c_str(), mode);
+
+                if (!fFileStream.good())
+                    throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+                openMode = mode;
+            }
 
             void stripTrailingSpaces(std::string& _sToStrip)
             {
@@ -357,17 +372,12 @@ namespace NumeRe
             }
 
         public:
-            GenericFile(const std::string& fileName, std::ios::openmode mode): nRows(0), nCols(0), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
+            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
             {
                 sFileName = fileName;
-
-                if (fileName.rfind('.') != std::string::npos && fileName.rfind('/') != std::string::npos && fileName.rfind('.') > fileName.rfind('/'))
-                    sFileExtension = fileName.substr(fileName.rfind('.'));
-
-                fFileStream.open(sFileName.c_str(), mode);
-                openMode = mode;
+                sFileExtension = getFileParts(fileName).back();
             }
-            GenericFile(const GenericFile& file) : GenericFile(file.sFileName, file.openMode)
+            GenericFile(const GenericFile& file) : GenericFile(file.sFileName)
             {
                 nRows = file.nRows;
                 nCols = file.nCols;
@@ -404,6 +414,15 @@ namespace NumeRe
             std::string getFileName()
             {
                 return sFileName;
+            }
+            std::string getTableName()
+            {
+                if (!sTableName.length())
+                {
+                    sTableName = getFileParts(sFileName)[2];
+                }
+
+                return sTableName;
             }
             long long int getRows()
             {
@@ -447,6 +466,11 @@ namespace NumeRe
 
                 nRows = rows;
                 nCols = cols;
+            }
+
+            void setTableName(const std::string& name)
+            {
+                sTableName = name;
             }
 
             // use external data == no
@@ -525,6 +549,7 @@ namespace NumeRe
 
             void readFileInformation()
             {
+                open(std::ios::in | std::ios::binary);
                 readHeader();
             }
             time_t getTimeStamp()
@@ -622,7 +647,7 @@ namespace NumeRe
 
         public:
             OpenDocumentSpreadSheet(const std::string& filename);
-            ~OpenDocumentSpreadSheet();
+            virtual ~OpenDocumentSpreadSheet();
 
             virtual void read() override
             {
@@ -632,6 +657,28 @@ namespace NumeRe
             virtual void write() override
             {
                 // do nothing
+            }
+    };
+
+
+    class XLSSpreadSheet : public GenericFile<double>
+    {
+        private:
+            void readFile();
+            void writeFile();
+
+        public:
+            XLSSpreadSheet(const std::string& filename);
+            virtual ~XLSSpreadSheet();
+
+            virtual void read() override
+            {
+                readFile();
+            }
+
+            virtual void write() override
+            {
+                writeFile();
             }
     };
 }
