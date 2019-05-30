@@ -20,11 +20,553 @@
 #include "../utils/tools.hpp"
 #include "../utils/BasicExcel.hpp"
 #include "../utils/tinyxml2.h"
+#include "../ui/language.hpp"
 #include "../version.h"
+
+extern Language _lang;
 
 namespace NumeRe
 {
     using namespace std;
+
+    TextDataFile::TextDataFile(const string& filename) : GenericFile(filename)
+    {
+        //
+    }
+
+    TextDataFile::~TextDataFile()
+    {
+        //
+    }
+
+    void TextDataFile::readFile()
+    {
+        open(ios::in);
+
+		// --> Benoetigte temporaere Variablen initialisieren <--
+		string s = "";
+		long long int nLine = 0;
+		long long int nCol = 0;
+		long long int nComment = 0;
+
+		vector<string> vFileContents = readTextFile(true);
+
+		if (!vFileContents.size())
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+		for (size_t i = 0; i < vFileContents.size(); i++)
+        {
+            if (!isNumeric(vFileContents[i]))
+                replaceTabSign(vFileContents[i], true);
+            else
+            {
+                replaceTabSign(vFileContents[i]);
+                stripTrailingSpaces(vFileContents[i]);
+            }
+        }
+
+		// --> Kommentare muessen auch noch escaped werden... <--
+		for (size_t i = 0; i < vFileContents.size(); i++)
+		{
+			if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))	// ist das erste Zeichen ein #?
+			{
+				nComment++;			// Kommentarzeilen zaehlen
+				continue; 			// Dann ist das wohl ein Kommentar -> Ueberspringen
+			}
+			else if (!nCol)			// Suche so lange, bis du eine Zeile findest, die nicht kommentiert wurde
+			{						// Sobald die Spaltenzahl einmal bestimmt wurde, braucht das hier nicht mehr durchgefuehrt werden
+				// --> Verwende einen Tokenizer, um den String in Teile zu zerlegen und diese zu zaehlen <--
+				nCol = tokenize(vFileContents[i], " ", true).size();
+			}
+		}
+
+		nRows = nLine - nComment;	// Die maximale Zahl der Zeilen - die Zahl der Kommentare ergibt die noetige Zahl der Zeilen
+		nCols = nCol;
+
+		createStorage();
+
+		nLine = 0;
+
+		for (size_t i = 0; i < vFileContents.size(); i++)
+        {
+            if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))
+            {
+                // ignore table heads
+                continue;
+            }
+
+            vector<string> vLine = tokenize(vFileContents[i], " ", true);
+
+            if (vLine.size() != nCols)
+                throw SyntaxError(SyntaxError::COL_COUNTS_DOESNT_MATCH, sFileName, SyntaxError::invalid_position, sFileName);
+
+            for (size_t j = 0; j < vLine.size(); j++)
+            {
+                replaceDecimalSign(vLine[j]);
+
+                if (vLine[j] == "---" || toLowerCase(vLine[j]) == "nan")
+                    fileData[nLine][j] = NAN;
+                else if (toLowerCase(vLine[j]) == "inf")
+                    fileData[nLine][j] = INFINITY;
+                else if (toLowerCase(vLine[j]) == "-inf")
+                    fileData[nLine][j] = -INFINITY;
+                else
+                    fileData[nLine][j] = StrToDb(vLine[j]);
+            }
+
+            nLine++;
+        }
+
+        // --> Wurde die Datei schon von NumeRe erzeugt? Dann sind die Kopfzeilen einfach zu finden <--
+        if (nComment)
+        {
+            decodeTableHeads(vFileContents, nComment);
+        }
+    }
+
+    void TextDataFile::writeFile()
+    {
+        open(ios::out | ios::trunc);
+
+        writeHeader();
+
+        size_t nNumberOfHeadlines = 1u;
+        vector<size_t> vColumns =  calculateColumnWidths(nNumberOfHeadlines);
+        writeTableHeads(vColumns, nNumberOfHeadlines);
+        addSeparator(vColumns);
+        writeTableContents(vColumns);
+    }
+
+    void TextDataFile::writeHeader()
+    {
+        string sBuild = AutoVersion::YEAR;
+        sBuild += "-";
+        sBuild += AutoVersion::MONTH;
+        sBuild += "-";
+        sBuild += AutoVersion::DATE;
+
+        fFileStream << "#\n";
+        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE1") << "\n";
+        fFileStream << "# NumeRe: Framework für Numerische Rechnungen" << "\n";
+        fFileStream << "#=============================================" << "\n";
+        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild) << "\n";
+        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0, 4)) << "\n";
+        fFileStream << "#\n";
+        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getTimeStamp(false)) << "\n";
+        fFileStream << "#\n";
+        fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_STD") << "\n#" << endl;
+    }
+
+    void TextDataFile::writeTableHeads(const vector<size_t>& vColumnWidth, size_t nNumberOfLines)
+    {
+        fFileStream << "# ";
+
+        for (size_t i = 0; i < nNumberOfLines; i++)
+        {
+            for (long long int j = 0; j < nCols; j++)
+            {
+                fFileStream.width(vColumnWidth[j]);
+                fFileStream.fill(' ');
+                fFileStream << getLineFromHead(j, i);
+
+                if (j+1 < nCols)
+                {
+                    fFileStream.width(0);
+                    fFileStream << "  ";
+                }
+            }
+
+            fFileStream.width(0);
+            fFileStream << "\n";
+        }
+    }
+
+    void TextDataFile::writeTableContents(const vector<size_t>& vColumnWidth)
+    {
+        for (long long int i = 0; i < nRows; i++)
+        {
+            for (long long int j = 0; j < nCols; j++)
+            {
+                fFileStream.width(vColumnWidth[j]+2);
+                fFileStream.fill(' ');
+                fFileStream.precision(nPrecFields);
+
+                if (isnan(fileData[i][j]))
+                    fFileStream << "---";
+                else
+                    fFileStream << fileData[i][j];
+            }
+
+            fFileStream.width(0);
+            fFileStream << "\n";
+        }
+    }
+
+    void TextDataFile::addSeparator(const vector<size_t>& vColumnWidth)
+    {
+        fFileStream << "#=";
+
+        for (size_t j = 0; j < vColumnWidth.size(); j++)
+        {
+            fFileStream.width(vColumnWidth[j]);
+            fFileStream.fill('=');
+            fFileStream << "=";
+
+            if (j+1 < vColumnWidth.size())
+                fFileStream << "==";
+        }
+
+        fFileStream << "\n";
+    }
+
+    void TextDataFile::decodeTableHeads(vector<string>& vFileContents, long long int nComment)
+    {
+		long long int _nHeadline = 0;
+        string sCommentSign = "#";
+
+        if (vFileContents.size() > 14)
+            sCommentSign.append(vFileContents[13].length()-1, '=');
+
+        if (nComment >= 15 && vFileContents[2].substr(0, 21) == "# NumeRe: Framework f")
+        {
+            for (size_t k = 13; k < vFileContents.size(); k++)
+            {
+                if (vFileContents[k] == sCommentSign)
+                {
+                    _nHeadline = 14;
+                    break;
+                }
+            }
+        }
+        else if (nComment == 1)
+        {
+            for (size_t i = 0; i < vFileContents.size(); i++)
+            {
+                if (vFileContents[i][0] == '#')
+                {
+                    if (vFileContents[i].find(' ') != string::npos)
+                    {
+                        if (vFileContents[i][1] != ' ')
+                        {
+                            for (unsigned int n = 0; n < vFileContents[i].length(); n++)
+                            {
+                                if (vFileContents[i][n] != '#')
+                                {
+                                    if (vFileContents[i][n] != ' ')
+                                        vFileContents[i] = vFileContents[i].substr(0, n) + " " + vFileContents[i].substr(n);
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (nCols == tokenize(vFileContents[i], " ", true).size())
+                            _nHeadline = 1;
+                    }
+
+                    break;
+                }
+                else if (!isNumeric(vFileContents[i]))
+                {
+                    if (nCols == tokenize(vFileContents[i], " ", true).size())
+                        _nHeadline = 1;
+                }
+            }
+        }
+        else if (vFileContents[0][0] == '#' || !isNumeric(vFileContents[0]))
+        {
+            for (long long int i = 0; i < vFileContents.size(); i++)
+            {
+                if (vFileContents[i][0] != '#' && isNumeric(vFileContents[i]))
+                {
+                    if (vFileContents[i-1][0] == '#')
+                    {
+                        if ((nCols > 1 && vFileContents[i-1].find(' ') != string::npos) || (nCols == 1 && vFileContents[i-1].length() > 1))
+                        {
+                            if (vFileContents[i-1][1] != ' ')
+                            {
+                                for (unsigned int n = 0; n < vFileContents[i-1].length(); n++)
+                                {
+                                    if (vFileContents[i-1][n] != '#')
+                                    {
+                                        if (vFileContents[i-1][n] != ' ')
+                                            vFileContents[i-1] = vFileContents[i-1].substr(0, n) + " " + vFileContents[i-1].substr(n);
+
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols)
+                            {
+                                _nHeadline = i;
+                                break;
+                            }
+                        }
+
+                        if (i > 1 && vFileContents[i-2][0] == '#' && ((vFileContents[i-2].find(' ') != string::npos && nCols > 1) || (nCols == 1 && vFileContents[i-2].length() > 1)))
+                        {
+                            if (vFileContents[i-2][1] != ' ')
+                            {
+                                for (size_t n = 0; n < vFileContents[i-2].length(); n++)
+                                {
+                                    if (vFileContents[i-2][n] != '#')
+                                    {
+                                        if (vFileContents[i-2][n] != ' ')
+                                            vFileContents[i-2] = vFileContents[i-2].substr(0, n) + " " + vFileContents[i-2].substr(n);
+
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (tokenize(vFileContents[i-2], " ", true).size() == nCols)
+                                _nHeadline = i-1;
+                        }
+                    }
+                    else if (!isNumeric(vFileContents[i-1]))
+                    {
+                        if ((vFileContents[i-1].find(' ') != string::npos && nCols > 1) || (nCols == 1 && vFileContents[i-1].length() > 1))
+                        {
+                            if (vFileContents[i-1][1] != ' ')
+                            {
+                                for (size_t n = 0; n < vFileContents[i-1].length(); n++)
+                                {
+                                    if (vFileContents[i-1][n] != '#')
+                                    {
+                                        if (vFileContents[i-1][n] != ' ')
+                                            vFileContents[i-1] = vFileContents[i-1].substr(0, n) + " " + vFileContents[i-1].substr(n);
+
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols)
+                            {
+                                _nHeadline = i;
+                                break;
+                            }
+                        }
+
+                        if (i > 1 && vFileContents[i-2][0] == '#' && ((vFileContents[i-2].find(' ') != string::npos && nCols > 1) || (nCols == 1 && vFileContents[i-2].length() > 1)))
+                        {
+                            if (vFileContents[i-2][1] != ' ')
+                            {
+                                for (unsigned int n = 0; n < vFileContents[i-2].length(); n++)
+                                {
+                                    if (vFileContents[i-2][n] != '#')
+                                    {
+                                        if (vFileContents[i-2][n] != ' ')
+                                            vFileContents[i-2] = vFileContents[i-2].substr(0,n) + " " + vFileContents[i-2].substr(n);
+
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (tokenize(vFileContents[i-2], " ", true).size() == nCols)
+                                _nHeadline = i-1;
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        if (_nHeadline)
+		{
+            long long int n = 0; 		// zweite Zaehlvariable
+
+            for (size_t i = 0; i < vFileContents.size(); i++)
+            {
+                if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))
+                {
+                    n++;	// Erst n erhoehen, da man zuvor auch mit 1 angefangen hat, zu zaehlen
+
+                    if (n == _nHeadline) // Da ist sie ja, die Zeile...
+                    {
+                        for (size_t k = i+1; k < vFileContents.size(); k++)
+                        {
+                            // TAB-Replace ignorieren
+                            if (vFileContents[k].find(" _ ") != string::npos
+                                || (vFileContents[k].find_first_not_of(" #") != string::npos && vFileContents[k][vFileContents[k].find_first_not_of(" #")] == '_')
+                                || vFileContents[k].back() == '_')
+                            {
+                                break;
+                            }
+
+                            if (vFileContents[k][0] != '#' && isNumeric(vFileContents[k]))
+                                break;
+
+                            if (vFileContents[k].substr(0, 4) == "#===" || vFileContents[k].substr(0, 5) == "# ===")
+                                break;
+
+                            if (vFileContents[k].length() == vFileContents[i].length())
+                            {
+                                for (unsigned int l = 0; l < vFileContents[k].length(); l++)
+                                {
+                                    if (vFileContents[i][l] != ' ' && vFileContents[k][l] == ' ')
+                                        vFileContents[k][l] = '_';
+                                }
+                            }
+                            else if (vFileContents[k].length() < vFileContents[i].length() && vFileContents[i].back() != ' ' && vFileContents[k].back() != ' ')
+                            {
+                                vFileContents[k].append(vFileContents[i].length() - vFileContents[k].length(), ' ');
+
+                                for (unsigned int l = 0; l < vFileContents[k].length(); l++)
+                                {
+                                    if (vFileContents[i][l] != ' ' && vFileContents[k][l] == ' ')
+                                        vFileContents[k][l] = '_';
+                                }
+                            }
+                            else if (vFileContents[k].length() > vFileContents[i].length() && vFileContents[k].back() != ' ' && vFileContents[i].back() != ' ')
+                            {
+                                for (unsigned int l = 0; l < vFileContents[i].length(); l++)
+                                {
+                                    if (vFileContents[i][l] != ' ' && vFileContents[k][l] == ' ')
+                                        vFileContents[k][l] = '_';
+                                }
+                            }
+                            else
+                                break;
+                        }
+
+                        bool bBreakSignal = false;
+                        vector<string> vHeadline;
+                        vHeadline.resize((unsigned int)(2*nCols), "");
+
+                        for (size_t k = i; k < vFileContents.size(); k++)
+                        {
+                            if (vFileContents[k][0] != '#' && isNumeric(vFileContents[k]))
+                                break;
+
+                            if (vFileContents[k].substr(0, 4) == "#===" || vFileContents[k].substr(0, 5) == "# ===")
+                                break;
+
+                            vector<string> vLine = tokenize(vFileContents[k], " ", true);
+
+                            if (vLine.front() == "#")
+                                vLine.erase(vLine.begin());
+
+                            for (size_t j = 0; j < vLine.size(); j++)
+                            {
+                                if (k == i)
+                                    vHeadline.push_back("");
+
+                                if (k != i && j >= vHeadline.size())
+                                {
+                                    bBreakSignal = true;
+                                    break;
+                                }
+
+                                if (vLine[j].find_first_not_of('_') == string::npos)
+                                    continue;
+
+                                while (vLine[j].front() == '_')
+                                    vLine[j].erase(0,1);
+
+                                while (vLine[j].back() == '_')
+                                    vLine[j].pop_back();
+
+                                if (!vHeadline[j].length())
+                                    vHeadline[j] = vLine[j];
+                                else
+                                {
+                                    vHeadline[j] += "\\n";
+                                    vHeadline[j] += vLine[j];
+                                }
+                            }
+
+                            if (bBreakSignal)
+                                break;
+                        }
+
+                        for (auto iter = vHeadline.begin(); iter != vHeadline.end(); ++iter)
+                        {
+                            if (!(iter->length()))
+                            {
+                                iter = vHeadline.erase(iter);
+                                iter--;
+                            }
+                        }
+
+                        if (vHeadline.size() <= nCols)
+                        {
+                            copyStringArray(&vHeadline[0], fileTableHeads, vHeadline.size());
+                        }
+
+                        return;
+                    }
+                }
+            }
+		}
+    }
+
+    pair<size_t, size_t> TextDataFile::calculateCellExtents(const std::string& sContents)
+    {
+        // x, y
+        pair<size_t, size_t> pCellExtents(0u, 1u);
+        size_t nLastLineBreak = 0;
+
+        for (size_t i = 0; i < sContents.length(); i++)
+        {
+            if (sContents[i] == '\n')
+            {
+                pCellExtents.second++;
+
+                if (i - nLastLineBreak > pCellExtents.first)
+                    pCellExtents.first = i - nLastLineBreak;
+
+                nLastLineBreak = i;
+            }
+        }
+
+        return pCellExtents;
+    }
+
+    vector<size_t> TextDataFile::calculateColumnWidths(size_t& nNumberOfLines)
+    {
+        vector<size_t> vColumnWidths;
+        const size_t NUMBERFIELDLENGTH = nPrecFields + 7;
+
+        for (long long int j = 0; j < nCols; j++)
+        {
+            pair<size_t, size_t> pCellExtents = calculateCellExtents(fileTableHeads[j]);
+            vColumnWidths.push_back(max(NUMBERFIELDLENGTH, pCellExtents.first));
+
+            if (nNumberOfLines < pCellExtents.second)
+                nNumberOfLines = pCellExtents.second;
+        }
+
+        return vColumnWidths;
+    }
+
+    string TextDataFile::getLineFromHead(long long int nCol, size_t nLineNumber)
+    {
+        size_t nLastLineBreak = 0u;
+
+        for (size_t i = 0; i < fileTableHeads[nCol].length(); i++)
+        {
+            if (fileTableHeads[nCol][i] == '\n')
+            {
+                if (!nLineNumber)
+                    return fileTableHeads[nCol].substr(nLastLineBreak, i - nLastLineBreak);
+
+                nLineNumber--;
+                nLastLineBreak = i+1;
+            }
+        }
+
+        if (nLineNumber == 1)
+            return fileTableHeads[nCol].substr(nLastLineBreak);
+
+        return " ";
+    }
+
+
+
 
     NumeReDataFile::NumeReDataFile(const string& filename)
         : GenericFile(filename),
@@ -536,6 +1078,7 @@ namespace NumeRe
         }
 
         fFileStream << "\n";
+        fFileStream.precision(nPrecFields);
 
         for (long long int i = 0; i < nRows; i++)
         {

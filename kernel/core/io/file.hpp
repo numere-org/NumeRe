@@ -23,6 +23,7 @@
 #include <fstream>
 #include <cmath>
 #include <vector>
+#include <utility>
 
 #include "../utils/zip++.hpp"
 #include "../ui/error.hpp"
@@ -40,6 +41,7 @@ namespace NumeRe
             std::string sTableName;
             long long int nRows;
             long long int nCols;
+            unsigned short nPrecFields;
 
             bool useExternalData;
             std::ios::openmode openMode;
@@ -212,13 +214,16 @@ namespace NumeRe
                 return vTextFile;
             }
 
-            std::vector<std::string> tokenize(std::string sString, const std::string& sSeparators)
+            std::vector<std::string> tokenize(std::string sString, const std::string& sSeparators, bool skipEmptyTokens = false)
             {
                 std::vector<std::string> vTokens;
 
                 while (sString.length())
                 {
                     vTokens.push_back(sString.substr(0, sString.find_first_of(sSeparators)));
+
+                    if (skipEmptyTokens && !vTokens.back().length())
+                        vTokens.pop_back();
 
                     if (sString.find_first_of(sSeparators) != std::string::npos)
                         sString.erase(0, sString.find_first_of(sSeparators)+1);
@@ -372,7 +377,7 @@ namespace NumeRe
             }
 
         public:
-            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
+            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
             {
                 sFileName = fileName;
                 sFileExtension = getFileParts(fileName).back();
@@ -473,6 +478,11 @@ namespace NumeRe
                 sTableName = name;
             }
 
+            void setTextfilePrecision(unsigned short nPrecision)
+            {
+                nPrecFields = nPrecision;
+            }
+
             // use external data == no
             void addData(DATATYPE** data, long long int rows, long long int cols)
             {
@@ -511,6 +521,36 @@ namespace NumeRe
             }
     };
 
+
+    class TextDataFile : public GenericFile<double>
+    {
+        private:
+            void readFile();
+            void writeFile();
+            void writeHeader();
+            void writeTableHeads(const std::vector<size_t>& vColumnWidth, size_t nNumberOfLines);
+            void writeTableContents(const std::vector<size_t>& vColumnWidth);
+            void addSeparator(const std::vector<size_t>& vColumnWidth);
+
+            void decodeTableHeads(std::vector<std::string>& vFileContents, long long int nComment);
+            std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents);
+            std::vector<size_t> calculateColumnWidths(size_t& nNumberOfLines);
+            std::string getLineFromHead(long long int nCol, size_t nLineNumber);
+
+        public:
+            TextDataFile(const std::string& filename);
+            virtual ~TextDataFile();
+
+            virtual void read() override
+            {
+                readFile();
+            }
+
+            virtual void write() override
+            {
+                writeFile();
+            }
+    };
 
 
     class NumeReDataFile : public GenericFile<double>
