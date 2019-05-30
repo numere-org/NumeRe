@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "file.hpp"
+#include "../IgorLib/ReadWave.h"
 #include "../utils/tools.hpp"
 #include "../utils/BasicExcel.hpp"
 #include "../utils/tinyxml2.h"
@@ -2310,6 +2311,226 @@ namespace NumeRe
         }
     }
 
+
+
+
+    IgorBinaryWave::IgorBinaryWave(const string& filename) : GenericFile(filename), bXZSlice(false)
+    {
+        //
+    }
+
+    IgorBinaryWave::~IgorBinaryWave()
+    {
+        //
+    }
+
+    void IgorBinaryWave::readFile()
+    {
+        CP_FILE_REF _cp_file_ref;
+        int nType = 0;
+        long nPnts = 0;
+        void* vWaveDataPtr = nullptr;
+        long long int nFirstCol = 0;
+        long int nDim[MAXDIMS];
+        double dScalingFactorA[MAXDIMS];
+        double dScalingFactorB[MAXDIMS];
+        bool bReadComplexData = false;
+        int nSliceCounter = 0;
+        float* fData = nullptr;
+        double* dData = nullptr;
+        int8_t* n8_tData = nullptr;
+        int16_t* n16_tData = nullptr;
+        int32_t* n32_tData = nullptr;
+        char* cName = nullptr;
+
+        if (CPOpenFile(sFileName.c_str(), 0, &_cp_file_ref))
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        if (ReadWave(_cp_file_ref, &nType, &nPnts, nDim, dScalingFactorA, dScalingFactorB, &vWaveDataPtr, &cName))
+        {
+            CPCloseFile(_cp_file_ref);
+
+            if (vWaveDataPtr != NULL)
+                free(vWaveDataPtr);
+
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+        }
+
+        if (nType & NT_CMPLX)
+            bReadComplexData = true;
+
+        if (nType & NT_FP32)
+            fData = (float*)vWaveDataPtr;
+        else if (nType & NT_FP64)
+            dData = (double*)vWaveDataPtr;
+        else if (nType & NT_I8)
+            n8_tData = (int8_t*)vWaveDataPtr;
+        else if (nType & NT_I16)
+            n16_tData = (int16_t*)vWaveDataPtr;
+        else if (nType & NT_I32)
+            n32_tData = (int32_t*)vWaveDataPtr;
+        else
+        {
+            CPCloseFile(_cp_file_ref);
+
+            if (vWaveDataPtr != nullptr)
+                free(vWaveDataPtr);
+
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+        }
+
+        nRows = nDim[0];
+        nCols = nDim[1];
+
+        if (nDim[2])
+            nCols *= nDim[2];
+
+        if (!nRows)
+        {
+            CPCloseFile(_cp_file_ref);
+
+            if (vWaveDataPtr != nullptr)
+                free(vWaveDataPtr);
+
+            throw SyntaxError(SyntaxError::FILE_IS_EMPTY, sFileName, SyntaxError::invalid_position, sFileName);
+        }
+
+        if (!nCols || nCols == 1)
+        {
+            nFirstCol = 1;
+            nCols = 2;
+
+            if (bReadComplexData)
+                nCols++;
+        }
+        else if (nDim[1] && (!nDim[2] || nDim[2] == 1))
+        {
+            if (bReadComplexData)
+                nCols *= 2;
+
+            nCols += 2;
+            nFirstCol = 2;
+
+            if (nDim[1] > nDim[0])
+                nRows = nDim[1];
+        }
+        else if (nDim[1] && nDim[2] && (!nDim[3] || nDim[3] == 1))
+        {
+            if (bReadComplexData)
+                nCols *= 2;
+
+            nCols += 3;
+            nFirstCol = 3;
+            nRows = nDim[2] > nRows ? nDim[2] : nRows;
+            nRows = nDim[1] > nRows ? nDim[1] : nRows;
+        }
+
+        createStorage();
+
+        for (long long int j = 0; j < nFirstCol; j++)
+        {
+            fileTableHeads[j] = cName + string("_[")+(char)('x'+j)+string("]");
+
+            for (long long int i = 0; i < nDim[j]; i++)
+            {
+                fileData[i][j] = dScalingFactorA[j]*(double)i + dScalingFactorB[j];
+            }
+        }
+
+        for (long long int j = 0; j < nCols-nFirstCol; j++)
+        {
+            if (bXZSlice && nDim[2] > 1 && j)
+            {
+                nSliceCounter += nDim[1];
+
+                if (!(j % nDim[2]))
+                    nSliceCounter = j/nDim[2];
+            }
+            else
+                nSliceCounter = j;
+
+            if (nCols == 2 && !j)
+            {
+                fileTableHeads[1] = cName + string("_[y]");
+            }
+            else if (nCols == 3 && !j && bReadComplexData)
+            {
+                fileTableHeads[1] = string("Re:_") + cName + string("_[y]");
+                fileTableHeads[2] = string("Im:_") + cName + string("_[y]");
+            }
+            else if (!bReadComplexData)
+                fileTableHeads[j+nFirstCol] = cName + string("_["+toString(j+1)+"]");
+            else
+            {
+                fileTableHeads[j+nFirstCol] = string("Re:_") + cName + string("_["+toString(j+1)+"]");
+                fileTableHeads[j+nFirstCol+1] = string("Im:_") + cName + string("_["+toString(j+1)+"]");
+            }
+
+            for (long long int i = 0; i < (nDim[0]+bReadComplexData*nDim[0]); i++)
+            {
+                if (dData)
+                {
+                    fileData[i][nSliceCounter+nFirstCol] = dData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
+
+                    if (bReadComplexData)
+                    {
+                        fileData[i][nSliceCounter+1+nFirstCol] = dData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
+                        i++;
+                    }
+                }
+                else if (fData)
+                {
+                    fileData[i][nSliceCounter+nFirstCol] = fData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
+
+                    if (bReadComplexData)
+                    {
+                        fileData[i][nSliceCounter+1+nFirstCol] = fData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
+                        i++;
+                    }
+                }
+                else if (n8_tData)
+                {
+                    fileData[i][nSliceCounter+nFirstCol] = (double)n8_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
+
+                    if (bReadComplexData)
+                    {
+                        fileData[i][nSliceCounter+1+nFirstCol] = (double)n8_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
+                        i++;
+                    }
+                }
+                else if (n16_tData)
+                {
+                    fileData[i][nSliceCounter+nFirstCol] = (double)n16_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
+
+                    if (bReadComplexData)
+                    {
+                        fileData[i][nSliceCounter+1+nFirstCol] = (double)n16_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
+                        i++;
+                    }
+                }
+                else if (n32_tData)
+                {
+                    fileData[i][nSliceCounter+nFirstCol] = (double)n32_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
+
+                    if (bReadComplexData)
+                    {
+                        fileData[i][nSliceCounter+1+nFirstCol] = (double)n32_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
+                        i++;
+                    }
+                }
+                else
+                    continue;
+            }
+
+            if (bReadComplexData)
+                j++;
+        }
+
+        CPCloseFile(_cp_file_ref);
+
+        if (vWaveDataPtr != nullptr)
+            free(vWaveDataPtr);
+    }
     //
 }
 

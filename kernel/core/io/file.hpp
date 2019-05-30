@@ -743,6 +743,34 @@ namespace NumeRe
                 // do nothing
             }
     };
+
+
+    class IgorBinaryWave : public GenericFile<double>
+    {
+        private:
+            bool bXZSlice;
+
+            void readFile();
+
+        public:
+            IgorBinaryWave(const std::string& filename);
+            virtual ~IgorBinaryWave();
+
+            virtual void read() override
+            {
+                readFile();
+            }
+
+            virtual void write() override
+            {
+                // do nothing
+            }
+
+            void useXZSlicing()
+            {
+                bXZSlice = true;
+            }
+    };
 }
 
 
