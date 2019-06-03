@@ -472,11 +472,11 @@ namespace NumeRe
                                     vLine[j].pop_back();
 
                                 if (!vHeadline[j].length())
-                                    vHeadline[j] = vLine[j];
+                                    vHeadline[j] = utf8parser(vLine[j]);
                                 else
                                 {
                                     vHeadline[j] += "\\n";
-                                    vHeadline[j] += vLine[j];
+                                    vHeadline[j] += utf8parser(vLine[j]);
                                 }
                             }
 
@@ -821,6 +821,8 @@ namespace NumeRe
                     + "_[" + sLabx_substr.substr(sLabx_substr.find("<unit>")+6, sLabx_substr.find("</unit>")-sLabx_substr.find("<unit>")-6) + "]");
             }
 
+            vHeadLines.back() = utf8parser(vHeadLines.back());
+
             sLabx_substr = sLabx_substr.substr(sLabx_substr.find("</channels>")+11);
 
             if (StrToInt(vCols[i].substr(vCols[i].find("count=\"")+7, vCols[i].find("\">")-vCols[i].find("count=\"")-7)) > nLine)
@@ -952,16 +954,13 @@ namespace NumeRe
 
                 for (unsigned int n = 0; n < nCols-1; n++)
                 {
-                    vHeadLine.push_back(__sLine.substr(0,__sLine.find(cSep)));
+                    vHeadLine.push_back(utf8parser(__sLine.substr(0,__sLine.find(cSep))));
                     StripSpaces(vHeadLine.back());
-
-                    if (!vHeadLine.back().length())
-                        vHeadLine.back() = "Spalte_" + toString((int)n+1);
 
                     __sLine = __sLine.substr(__sLine.find(cSep)+1);
                 }
 
-                vHeadLine.push_back(__sLine);
+                vHeadLine.push_back(utf8parser(__sLine));
 
                 for (unsigned int n = 0; n < nCols; n++)
                 {
@@ -981,7 +980,7 @@ namespace NumeRe
                     {
                         for (unsigned int k = 0; k < nCols; k++)
                         {
-                            vHeadLine[k] = "Spalte_" + toString((int)k+1);
+                            vHeadLine[k] = "";
                         }
 
                         nComment = -1;
@@ -1733,7 +1732,7 @@ namespace NumeRe
             for (long long int j = 0; j < nCols; j++)
             {
                 nPos = vMatrix[i].find('<', nPos);
-                string sEntry = vMatrix[i].substr(nPos,vMatrix[i].find('>', nPos)+1-nPos);
+                string sEntry = utf8parser(vMatrix[i].substr(nPos,vMatrix[i].find('>', nPos)+1-nPos));
                 nPos++;
 
                 if (sEntry == "<>")
@@ -1756,7 +1755,7 @@ namespace NumeRe
             for (long long int j = 0; j < nCols; j++)
             {
                 nPos = vMatrix[i+nCommentLines].find('<', nPos);
-                string sEntry = vMatrix[i+nCommentLines].substr(nPos,vMatrix[i+nCommentLines].find('>', nPos)+1-nPos);
+                string sEntry = utf8parser(vMatrix[i+nCommentLines].substr(nPos,vMatrix[i+nCommentLines].find('>', nPos)+1-nPos));
                 nPos++;
 
                 if (sEntry == "<>")
@@ -1945,9 +1944,9 @@ namespace NumeRe
                     _cell = _sheet->Cell(i,j);
 
                     if (_cell->Type() == YExcel::BasicExcelCell::STRING)
-                        sEntry = _cell->GetString();
+                        sEntry = utf8parser(_cell->GetString());
                     else if (_cell->Type() == YExcel::BasicExcelCell::WSTRING)
-                        sEntry = wcstombs(_cell->GetWString());
+                        sEntry = utf8parser(wcstombs(_cell->GetWString()));
                     else
                         continue;
 
@@ -2259,7 +2258,7 @@ namespace NumeRe
                             }
 
                             if (_stringelement->FirstChildElement()->FirstChild())
-                                sEntry = _stringelement->FirstChildElement()->FirstChild()->ToText()->Value();
+                                sEntry = utf8parser(_stringelement->FirstChildElement()->FirstChild()->ToText()->Value());
                             else
                                 sEntry.clear();
 
