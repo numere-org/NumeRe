@@ -376,20 +376,32 @@ namespace NumeRe
                 return true;
             }
 
-        public:
-            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
+            void assign(const GenericFile& file)
             {
-                sFileName = fileName;
-                sFileExtension = getFileParts(fileName).back();
-            }
-            GenericFile(const GenericFile& file) : GenericFile(file.sFileName)
-            {
+                clearStorage();
+
                 nRows = file.nRows;
                 nCols = file.nCols;
+                nPrecFields = file.nPrecFields;
+                useExternalData = file.useExternalData;
+                sFileName = file.sFileName;
+                sFileExtension = file.sFileExtension;
+                sTableName = file.sTableName;
 
                 createStorage();
                 copyDataArray(file.fileData, fileData, nRows, nCols);
                 copyStringArray(file.fileTableHeads, fileTableHeads, nCols);
+            }
+
+        public:
+            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
+            {
+                sFileName = ValidFileName(fileName, "", false);
+                sFileExtension = getFileParts(sFileName).back();
+            }
+            GenericFile(const GenericFile& file) : GenericFile(file.sFileName)
+            {
+                assign(file);
             }
             virtual ~GenericFile()
             {
@@ -440,6 +452,12 @@ namespace NumeRe
 
             virtual void read() = 0;
             virtual void write() = 0;
+
+            GenericFile& operator=(const GenericFile& file)
+            {
+                assign(file);
+                return *this;
+            }
 
             void getData(DATATYPE** data)
             {
@@ -586,6 +604,8 @@ namespace NumeRe
             {
                 writeFile();
             }
+
+            NumeReDataFile& operator=(NumeReDataFile& file);
 
             void readFileInformation()
             {
@@ -754,6 +774,7 @@ namespace NumeRe
 
         public:
             IgorBinaryWave(const std::string& filename);
+            IgorBinaryWave(const IgorBinaryWave& file);
             virtual ~IgorBinaryWave();
 
             virtual void read() override
@@ -765,6 +786,8 @@ namespace NumeRe
             {
                 // do nothing
             }
+
+            IgorBinaryWave& operator=(const IgorBinaryWave& file);
 
             void useXZSlicing()
             {

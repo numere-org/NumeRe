@@ -751,6 +751,19 @@ namespace NumeRe
         delete[] nAppendedZeros;
     }
 
+    NumeReDataFile& NumeReDataFile::operator=(NumeReDataFile& file)
+    {
+        assign(file);
+        isLegacy = file.isLegacy;
+        timeStamp = file.timeStamp;
+        sComment = file.sComment;
+        versionMajor = file.versionMajor;
+        versionMinor = file.versionMinor;
+        versionBuild = file.versionBuild;
+
+        return *this;
+    }
+
     std::string NumeReDataFile::getVersionString()
     {
         return toString(versionMajor) + "." + toString(versionMinor) + "." + toString(versionBuild);
@@ -2318,6 +2331,11 @@ namespace NumeRe
         //
     }
 
+    IgorBinaryWave::IgorBinaryWave(const IgorBinaryWave& file) : GenericFile(file)
+    {
+        bXZSlice = file.bXZSlice;
+    }
+
     IgorBinaryWave::~IgorBinaryWave()
     {
         //
@@ -2529,6 +2547,14 @@ namespace NumeRe
 
         if (vWaveDataPtr != nullptr)
             free(vWaveDataPtr);
+    }
+
+    IgorBinaryWave& IgorBinaryWave::operator=(const IgorBinaryWave& file)
+    {
+        assign(file);
+        bXZSlice = file.bXZSlice;
+
+        return *this;
     }
     //
 }
