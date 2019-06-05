@@ -3492,7 +3492,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 					throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
 
 				if (_data.containsTablesOrClusters(sToken.substr(0, sToken.find_first_of("({") + 1))
-                    && !_data.isCacheElement(sToken.substr(0, sToken.find_first_of("({")))
+                    && !_data.isTable(sToken.substr(0, sToken.find_first_of("({")))
                     && !_data.isCluster(sToken.substr(0, sToken.find_first_of("({"))))
 					throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
 

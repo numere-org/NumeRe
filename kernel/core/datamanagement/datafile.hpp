@@ -53,7 +53,7 @@ int StrToInt(const string&);
  * Header zur Datafile-Klasse
  */
 
-class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von FileSystem und von Cache
+class Datafile : public MemoryManager, private Sorter		//	Diese Klasse ist ein CHILD von FileSystem und von Cache
 {
 	private:
 		long long int nLines;							// Zeilen des Datenfiles

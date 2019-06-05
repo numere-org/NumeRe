@@ -167,8 +167,8 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         if (sTargetName[parens] == '(')
         {
             // Create a new table
-            if (!_data.isCacheElement(sTargetName))
-                _data.addCache(sTargetName.substr(0, parens), _option);
+            if (!_data.isTable(sTargetName))
+                _data.addTable(sTargetName.substr(0, parens), _option);
 
             if (sTargetName.substr(sTargetName.find('('),2) == "()")
                 bAllowMatrixClearing = true;
@@ -200,9 +200,9 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
         _idx.row = VectorIndex(0LL, VectorIndex::OPEN_END);
         _idx.col = VectorIndex(0LL, VectorIndex::OPEN_END);
 
-        if (!_data.isCacheElement("matrix("))
+        if (!_data.isTable("matrix("))
         {
-            _data.addCache("matrix", _option);
+            _data.addTable("matrix", _option);
         }
         else
             bAllowMatrixClearing = true;
@@ -230,7 +230,7 @@ bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Def
                 for (unsigned int j = 0; j < _mResult[0].size(); j++)
                 {
                     if (_idx.col[j] != VectorIndex::INVALID)
-                        _data.writeToCache(_idx.row[i], _idx.col[j], sTargetName, _mResult[i][j]);
+                        _data.writeToTable(_idx.row[i], _idx.col[j], sTargetName, _mResult[i][j]);
                     else
                         break;
                 }
@@ -909,7 +909,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         {
             if (sCmd.substr(i,getMatchingParenthesis(sCmd.substr(i))).find("**") != string::npos
                 || (i > 1
-                    && !_data.isCacheElement(sCmd.substr(sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)+1, i-sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)-1))
+                    && !_data.isTable(sCmd.substr(sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)+1, i-sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)-1))
                     && sCmd.substr(sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)+1, i-sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)-1) != "data"))
             {
                 string sSubExpr = sCmd.substr(i+1, getMatchingParenthesis(sCmd.substr(i))-1);
@@ -2129,7 +2129,7 @@ static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const
     {
         for (size_t j = 0; j < _mMatrix[0].size(); j++)
         {
-            _cache.writeToCache(j + i*_mMatrix.size(), 0, "cache", _mMatrix[i][j]);
+            _cache.writeToTable(j + i*_mMatrix.size(), 0, "cache", _mMatrix[i][j]);
         }
     }
 
@@ -2146,7 +2146,7 @@ static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const
     {
         for (size_t j = 0; j < _mMatrix[0].size(); j++)
         {
-            _cache.writeToCache(j + i*_mMatrix.size(), 0, "cache", _mMatrix[i][j]);
+            _cache.writeToTable(j + i*_mMatrix.size(), 0, "cache", _mMatrix[i][j]);
         }
     }
 

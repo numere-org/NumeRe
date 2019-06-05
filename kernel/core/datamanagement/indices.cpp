@@ -354,7 +354,7 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
     }
 
 	// If the cache is not really a cache
-	if (sCache.find("data") == string::npos && !isCluster && !_data.isCacheElement(sCache))
+	if (sCache.find("data") == string::npos && !isCluster && !_data.isTable(sCache))
 		throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
 }
 

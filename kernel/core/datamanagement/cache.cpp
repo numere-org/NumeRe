@@ -27,7 +27,7 @@ using namespace std;
  */
 
 // --> Standard-Konstruktor <--
-Cache::Cache() : FileSystem(), StringMemory(), NumeRe::ClusterManager()
+MemoryManager::MemoryManager() : FileSystem(), StringMemory(), NumeRe::ClusterManager()
 {
 	bSaveMutex = false;
 	sCache_file = "<>/numere.cache";
@@ -36,21 +36,21 @@ Cache::Cache() : FileSystem(), StringMemory(), NumeRe::ClusterManager()
 	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;pulse;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;stfa;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
 	sPluginCommands = "";
 	mCachesMap["cache"] = 0;
-	vCacheMemory.push_back(new Memory());
+	vMemory.push_back(new Memory());
 }
 
 // --> Destruktor <--
-Cache::~Cache()
+MemoryManager::~MemoryManager()
 {
     if (cache_file.is_open())
         cache_file.close();
-    for (size_t i = 0; i < vCacheMemory.size(); i++)
-        delete vCacheMemory[i];
+    for (size_t i = 0; i < vMemory.size(); i++)
+        delete vMemory[i];
 }
 
 
 // --> loescht den Inhalt des Datenfile-Objekts, ohne selbiges zu zerstoeren <--
-void Cache::removeCachedData()
+void MemoryManager::removeDataInMemory()
 {
 	if (isValid())	// Sind ueberhaupt Daten vorhanden?
 	{
@@ -58,67 +58,67 @@ void Cache::removeCachedData()
             return;
         bSaveMutex = true;
 		// --> Speicher, wo denn noetig freigeben <--
-		for (size_t i = 0; i < vCacheMemory.size(); i++)
-            delete vCacheMemory[i];
-		vCacheMemory.clear();
+		for (size_t i = 0; i < vMemory.size(); i++)
+            delete vMemory[i];
+		vMemory.clear();
 		bSaveMutex = false;
 		mCachesMap.clear();
 		mCachesMap["cache"] = 0;
-		vCacheMemory.push_back(new Memory());
+		vMemory.push_back(new Memory());
 	}
 	return;
 }
 
 // --> gibt den Wert von bValidData zurueck <--
-bool Cache::isValid() const
+bool MemoryManager::isValid() const
 {
-    if (!vCacheMemory.size())
+    if (!vMemory.size())
         return false;
 
-    for (size_t i = 0; i < vCacheMemory.size(); i++)
+    for (size_t i = 0; i < vMemory.size(); i++)
     {
-        if (vCacheMemory[i]->getCols(false))
+        if (vMemory[i]->getCols(false))
             return true;
     }
 	return false;
 }
 
 // --> gibt den Wert von bIsSaved zurueck <--
-bool Cache::getSaveStatus() const
+bool MemoryManager::getSaveStatus() const
 {
-    if (!vCacheMemory.size())
+    if (!vMemory.size())
         return true;
-    for (size_t i = 0; i < vCacheMemory.size(); i++)
+    for (size_t i = 0; i < vMemory.size(); i++)
     {
-        if (!vCacheMemory[i]->getSaveStatus())
+        if (!vMemory[i]->getSaveStatus())
             return false;
     }
     return true;
 }
 
-void Cache::setSaveStatus(bool _bIsSaved)
+void MemoryManager::setSaveStatus(bool _bIsSaved)
 {
-    for (size_t i = 0; i < vCacheMemory.size(); i++)
+    for (size_t i = 0; i < vMemory.size(); i++)
     {
-        vCacheMemory[i]->setSaveStatus(_bIsSaved);
+        vMemory[i]->setSaveStatus(_bIsSaved);
     }
 }
 
-long long int Cache::getLastSaved() const
+long long int MemoryManager::getLastSaved() const
 {
     long long int nLastSaved = 0;
-    if (!vCacheMemory.size())
+    if (!vMemory.size())
         return 0;
-    nLastSaved = vCacheMemory[0]->getLastSaved();
-    for (size_t i = 1; i < vCacheMemory.size(); i++)
+    nLastSaved = vMemory[0]->getLastSaved();
+    for (size_t i = 1; i < vMemory.size(); i++)
     {
-        if (vCacheMemory[i]->getLastSaved() < nLastSaved)
-            nLastSaved = vCacheMemory[i]->getLastSaved();
+        if (vMemory[i]->getLastSaved() < nLastSaved)
+            nLastSaved = vMemory[i]->getLastSaved();
     }
     return nLastSaved;
 }
 
-vector<int> Cache::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3]4[5:9]10:
+vector<int> MemoryManager::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3]4[5:9]10:
 {
     if (!isValid())
         return vector<int>();
@@ -161,15 +161,15 @@ vector<int> Cache::sortElements(const string& sLine) // cache -sort[[=desc]] col
     if (matchParams(sLine, "index"))
         sSortingExpression += " index";
 
-    return vCacheMemory[mCachesMap.at(sCache)]->sortElements(0, getCacheLines(sCache, false)-1, 0, getCacheCols(sCache, false)-1, sSortingExpression);
+    return vMemory[mCachesMap.at(sCache)]->sortElements(0, getTableLines(sCache, false)-1, 0, getTableCols(sCache, false)-1, sSortingExpression);
 }
 
-vector<int> Cache::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
+vector<int> MemoryManager::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
 {
-    return vCacheMemory[mCachesMap.at(sCache)]->sortElements(i1, i2, j1, j2, sSortingExpression);
+    return vMemory[mCachesMap.at(sCache)]->sortElements(i1, i2, j1, j2, sSortingExpression);
 }
 
-void Cache::setCacheFileName(string _sFileName)
+void MemoryManager::setCacheFileName(string _sFileName)
 {
     if (_sFileName.length())
     {
@@ -178,7 +178,7 @@ void Cache::setCacheFileName(string _sFileName)
     return;
 }
 
-bool Cache::saveCache()
+bool MemoryManager::saveToCacheFile()
 {
     if (bSaveMutex)
         return false;
@@ -190,17 +190,17 @@ bool Cache::saveCache()
     long long int nLineMax = 0;
     bool* bValidElement = 0;
     double* dCache = 0;
-    if (!vCacheMemory.size())
+    if (!vMemory.size())
     {
         bSaveMutex = false;
         return false;
     }
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
-        if (vCacheMemory[iter->second]->getCols(false) > nColMax)
-            nColMax = vCacheMemory[iter->second]->getCols(false);
-        if (vCacheMemory[iter->second]->getLines(false) > nLineMax)
-            nLineMax = vCacheMemory[iter->second]->getLines(false);
+        if (vMemory[iter->second]->getCols(false) > nColMax)
+            nColMax = vMemory[iter->second]->getCols(false);
+        if (vMemory[iter->second]->getLines(false) > nLineMax)
+            nLineMax = vMemory[iter->second]->getLines(false);
     }
 
     while (nSavingCols < nColMax)
@@ -221,13 +221,13 @@ bool Cache::saveCache()
         nAppZeroesTemp[i] = new long long int[nSavingCols];
         for (long long int j = 0; j < nSavingCols; j++)
         {
-            nAppZeroesTemp[i][j] = vCacheMemory[i]->getAppendedZeroes(j) - (vCacheMemory[i]->getLines(true) - nSavingLines);
-            cHeadLine[i][j] = new char[vCacheMemory[i]->getHeadLineElement(j).length()+1];
-            for (unsigned int k = 0; k < vCacheMemory[i]->getHeadLineElement(j).length(); k++)
+            nAppZeroesTemp[i][j] = vMemory[i]->getAppendedZeroes(j) - (vMemory[i]->getLines(true) - nSavingLines);
+            cHeadLine[i][j] = new char[vMemory[i]->getHeadLineElement(j).length()+1];
+            for (unsigned int k = 0; k < vMemory[i]->getHeadLineElement(j).length(); k++)
             {
-                cHeadLine[i][j][k] = vCacheMemory[i]->getHeadLineElement(j)[k];
+                cHeadLine[i][j][k] = vMemory[i]->getHeadLineElement(j)[k];
             }
-            cHeadLine[i][j][vCacheMemory[i]->getHeadLineElement(j).length()] = '\0';
+            cHeadLine[i][j][vMemory[i]->getHeadLineElement(j).length()] = '\0';
         }
     }
     //cerr << 1.1 << endl;
@@ -248,7 +248,7 @@ bool Cache::saveCache()
         cache_file.close();
     cache_file.open(sCache_file.c_str(), ios_base::out | ios_base::binary | ios_base::trunc);
     //cerr << 1.3 << endl;
-    if (vCacheMemory.size() && cache_file.good())
+    if (vMemory.size() && cache_file.good())
     {
         setSaveStatus(true);
         long long int nDimTemp = -nSavingLines;
@@ -280,10 +280,10 @@ bool Cache::saveCache()
         {
             for (long long int j = 0; j < nSavingCols; j++)
             {
-                size_t nlength = vCacheMemory[i]->getHeadLineElement(j).length()+1;
+                size_t nlength = vMemory[i]->getHeadLineElement(j).length()+1;
                 //cerr << nlength << endl;
                 cache_file.write((char*)&nlength, sizeof(size_t));
-                cache_file.write(cHeadLine[i][j], sizeof(char)*(vCacheMemory[i]->getHeadLineElement(j).length()+1));
+                cache_file.write(cHeadLine[i][j], sizeof(char)*(vMemory[i]->getHeadLineElement(j).length()+1));
             }
         }
         //cerr << 4 << endl;
@@ -294,7 +294,7 @@ bool Cache::saveCache()
             for (long long int j = 0; j < nSavingCols; j++)
             {
                 for (long long int k = 0; k < nSavingLayers; k++)
-                    dCache[k] = vCacheMemory[k]->readMem(i, j);
+                    dCache[k] = vMemory[k]->readMem(i, j);
                 cache_file.write((char*)dCache, sizeof(double)*nSavingLayers);
             }
         }
@@ -304,7 +304,7 @@ bool Cache::saveCache()
             for (long long int j = 0; j < nSavingCols; j++)
             {
                 for (long long int k = 0; k < nSavingLayers; k++)
-                    bValidElement[k] = !isnan(vCacheMemory[k]->readMem(i, j));
+                    bValidElement[k] = !isnan(vMemory[k]->readMem(i, j));
                 cache_file.write((char*)bValidElement, sizeof(bool)*nSavingLayers);
             }
         }
@@ -354,7 +354,7 @@ bool Cache::saveCache()
     return true;
 }
 
-bool Cache::loadCache()
+bool MemoryManager::loadFromCacheFile()
 {
     if (bSaveMutex)
         return false;
@@ -401,9 +401,9 @@ bool Cache::loadCache()
             cache_file.read((char*)&nLayers, sizeof(long long int));
             nLayers *= -1;
             cache_file.read((char*)&cachemapssize, sizeof(size_t));
-            for (size_t i = 0; i < vCacheMemory.size(); i++)
-                delete vCacheMemory[i];
-            vCacheMemory.clear();
+            for (size_t i = 0; i < vMemory.size(); i++)
+                delete vMemory[i];
+            vMemory.clear();
             for (size_t i = 0; i < cachemapssize; i++)
             {
                 nLength = 0;
@@ -421,7 +421,7 @@ bool Cache::loadCache()
                 delete[] cCachesMap;
                 cCachesMap = 0;
                 mCachesMap[sTemp] = nLayerIndex;
-                vCacheMemory.push_back(new Memory());
+                vMemory.push_back(new Memory());
             }
         }
         else
@@ -446,7 +446,7 @@ bool Cache::loadCache()
                     sHead += cHeadLine[i][j][k];
                 }
                 if (i < cachemapssize)
-                    vCacheMemory[i]->setHeadLineElement(j, sHead);
+                    vMemory[i]->setHeadLineElement(j, sHead);
             }
         }
         cache_file.seekg(sizeof(long long int)*nLayers*nCols, ios_base::cur);
@@ -457,7 +457,7 @@ bool Cache::loadCache()
             {
                 cache_file.read((char*)dCache, sizeof(double)*nLayers);
                 for (long long int k = 0; k < cachemapssize; k++)
-                    vCacheMemory[k]->writeData(i, j, dCache[k]);
+                    vMemory[k]->writeData(i, j, dCache[k]);
             }
         }
         for (long long int i = 0; i < nLines; i++)
@@ -468,14 +468,14 @@ bool Cache::loadCache()
                 for (long long int k = 0; k < cachemapssize; k++)
                 {
                     if (!bValidData[k])
-                        vCacheMemory[k]->writeData(i, j, NAN);
+                        vMemory[k]->writeData(i, j, NAN);
                 }
             }
         }
 
-        for (size_t i = 0; i < vCacheMemory.size(); i++)
+        for (size_t i = 0; i < vMemory.size(); i++)
         {
-            vCacheMemory[i]->shrink();
+            vMemory[i]->shrink();
         }
 
         cache_file.close();
@@ -514,7 +514,7 @@ bool Cache::loadCache()
     return true;
 }
 
-bool Cache::isCacheElement(const string& sCache)
+bool MemoryManager::isTable(const string& sCache)
 {
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
@@ -526,7 +526,7 @@ bool Cache::isCacheElement(const string& sCache)
 
 // This member function detects, whether a table is used
 // in the current expression
-bool Cache::containsCacheElements(const string& sExpression)
+bool MemoryManager::containsTables(const string& sExpression)
 {
     size_t nQuotes = 0;
 
@@ -566,7 +566,7 @@ bool Cache::containsCacheElements(const string& sExpression)
 }
 
 // This member function creates a new table
-bool Cache::addCache(const string& sCache, const Settings& _option)
+bool MemoryManager::addTable(const string& sCache, const Settings& _option)
 {
     string sCacheName = sCache.substr(0,sCache.find('('));
     static const string sVALIDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~";
@@ -609,14 +609,14 @@ bool Cache::addCache(const string& sCache, const Settings& _option)
         NumeReKernel::print(LineBreak(_lang.get("CACHE_WARNING_PLUGIN_OVERLAP"), _option));
 
     // Actually create the new table
-    long long int nIndex = vCacheMemory.size();
+    long long int nIndex = vMemory.size();
     mCachesMap[sCacheName] = nIndex;
-    vCacheMemory.push_back(new Memory());
+    vMemory.push_back(new Memory());
 
     return true;
 }
 
-bool Cache::deleteCache(const string& sCache)
+bool MemoryManager::deleteTable(const string& sCache)
 {
     if (sCache == "cache")
         return false;
@@ -625,10 +625,10 @@ bool Cache::deleteCache(const string& sCache)
     {
         if (iter->first == sCache)
         {
-            if (vCacheMemory.size() > iter->second)
+            if (vMemory.size() > iter->second)
             {
-                delete vCacheMemory[iter->second];
-                vCacheMemory.erase(vCacheMemory.begin() + iter->second);
+                delete vMemory[iter->second];
+                vMemory.erase(vMemory.begin() + iter->second);
             }
             else
                 return false;
@@ -639,11 +639,11 @@ bool Cache::deleteCache(const string& sCache)
             }
             mCachesMap.erase(iter);
             //cerr << 4 << endl;
-            if (getSaveStatus() && Cache::isValid())
+            if (getSaveStatus() && MemoryManager::isValid())
             {
                 setSaveStatus(false);
             }
-            else if (!Cache::isValid())
+            else if (!MemoryManager::isValid())
             {
                 if (fileExists(getProgramPath()+"/numere.cache"))
                 {

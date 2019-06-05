@@ -2166,7 +2166,7 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 
 			StripSpaces(sData);
 
-			if (sData.substr(0, 5) == "data(" || _data.isCacheElement(sData) || _data.isCluster(sData))
+			if (sData.substr(0, 5) == "data(" || _data.isTable(sData) || _data.isCluster(sData))
 				sLine = sLine.substr(0, n_pos) + "true" + sLine.substr(nPos + 1);
 			else
 				sLine = sLine.substr(0, n_pos) + "false" + sLine.substr(nPos + 1);
@@ -2217,7 +2217,7 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 
 			StripSpaces(sData);
 
-			if (sData.substr(0, 5) == "data(" || _data.isCacheElement(sData))
+			if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
 				sLine = sLine.substr(0, n_pos) + "true" + sLine.substr(nPos + 1);
 			else
 				sLine = sLine.substr(0, n_pos) + "false" + sLine.substr(nPos + 1);
@@ -2316,7 +2316,7 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 			if (sHeadline.back() == '"')
 				sHeadline.erase(sHeadline.length() - 1);
 			StripSpaces(sHeadline);
-			if (sData.substr(0, 5) == "data(" || _data.isCacheElement(sData))
+			if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
 			{
 				sData.erase(sData.find("("));
 				string sResult;
@@ -3937,7 +3937,7 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
             // Special case: only one single value
             if (_idx.row.size() == 1 && _idx.col.size() == 1)
             {
-                _data.writeToCache(_idx.row.front(), _idx.col.front(), sTableName, v[0]);
+                _data.writeToTable(_idx.row.front(), _idx.col.front(), sTableName, v[0]);
 
                 break;
             }
@@ -3950,14 +3950,14 @@ static void parser_StoreStringToDataObjects(const vector<string>& vFinal, string
                     if (_idx.col[nthComponent] == VectorIndex::INVALID)
                         break;
 
-                    _data.writeToCache(_idx.row.front(), _idx.col[nthComponent], sTableName, v[j]);
+                    _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, v[j]);
                 }
                 else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                 {
                     if (_idx.row[nthComponent] == VectorIndex::INVALID)
                         break;
 
-                    _data.writeToCache(_idx.row[nthComponent], _idx.col.front(), sTableName, v[j]);
+                    _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, v[j]);
                 }
 
                 nthComponent++;

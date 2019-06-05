@@ -1246,7 +1246,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
                 sFunctionDefString = "Fitw(x,y) := " + sFuncDisplay + " " + _lang.get("PARSERFUNCS_FIT_DEFINECOMMENT");
             }
 
-            _data.writeToCache(_idx.row[i], _idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, _fControl.getFitChi());
+            _data.writeToTable(_idx.row[i], _idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, _fControl.getFitChi());
 
             if (!i && !fitData.b1DChiMap)
                 _data.setHeadLineElement(_idx.col[1 + (!fitData.b1DChiMap) * (j + 1)], fitData.sChiMap, "chi^2[" + toString(j + 1) + "]");

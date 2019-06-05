@@ -32,7 +32,7 @@ static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Setting
 static bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 static string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 static bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-static int swapCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
+static int swapTables(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
 static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions);
 static bool undefineFunctions(string sFunctionList, Define& _functions, const Settings& _option);
 static int showDialog(string& sCmd);
@@ -91,7 +91,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	int nArgument = -1;     // Integer fuer das evtl. uebergebene Argument
 	unsigned int nPos = string::npos;
 	Indices _idx;
-	map<string, long long int> mCaches = _data.getCacheList();
+	map<string, long long int> mCaches = _data.getTableMap();
 	mCaches["data"] = -1;
 	const static string sPreferredCmds = ";clear;copy;smooth;retoque;retouch;resample;stats;save;showf;swap;hist;help;man;move;matop;mtrxop;random;remove;rename;append;reload;delete;datagrid;list;load;export;edit";
 	const static string sPlotCommands = " plotcompose plot plot3d graph graph3d mesh meshgrid mesh3d meshgrid3d surf surface surf3d surface3d cont contour cont3d contour3d vect vector vect3d vector3d dens density dens3d density3d draw draw3d grad gradient grad3d gradient3d ";
@@ -1828,7 +1828,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 
 			sArgument = getArgAtPos(sCmd, matchParams(sCmd, "rename", '=') + 6);
-			_data.renameCache(sCommand, sArgument);
+			_data.renameTable(sCommand, sArgument);
 			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) );
 			//NumeReKernel::print(LineBreak("|-> Der Cache wurde erfolgreich zu \""+sArgument+"\" umbenannt.", _option) );
 			return 1;
@@ -1839,7 +1839,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 
 			sArgument = getArgAtPos(sCmd, matchParams(sCmd, "swap", '=') + 4);
-			_data.swapCaches(sCommand, sArgument);
+			_data.swapTables(sCommand, sArgument);
 			if (_option.getSystemPrintStatus())
 				NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCommand, sArgument), _option) );
 			//NumeReKernel::print(LineBreak("|-> Der Inhalt von \""+sCommand+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) );
@@ -1860,7 +1860,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				  || matchParams(sCmd, "med"))
 				 && (matchParams(sCmd, "lines") || matchParams(sCmd, "cols")))
 		{
-			if (!_data.isValidCache() || !_data.getCacheCols(sCacheCmd, false))
+			if (!_data.isValidCache() || !_data.getTableCols(sCacheCmd, false))
 				//throw NO_CACHED_DATA;
 				throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sCacheCmd, sCacheCmd);
 			string sEvery = "";
@@ -2071,13 +2071,13 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				  || matchParams(sCmd, "med"))
 				)
 		{
-			if (!_data.isValidCache() || !_data.getCacheCols(sCacheCmd, false))
+			if (!_data.isValidCache() || !_data.getTableCols(sCacheCmd, false))
 				//throw NO_CACHED_DATA;
 				throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sCacheCmd, sCacheCmd);
 			nPos = findCommand(sCmd, sCacheCmd).nPos;
 			sArgument = extractCommandString(sCmd, findCommand(sCmd, sCacheCmd));
 			sCommand = sArgument;
-			if (matchParams(sCmd, "grid") && _data.getCacheCols(sCacheCmd, false) < 3)
+			if (matchParams(sCmd, "grid") && _data.getTableCols(sCacheCmd, false) < 3)
 				//throw TOO_FEW_COLS;
 				throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, sCacheCmd, sCacheCmd);
 			else if (matchParams(sCmd, "grid"))
@@ -2426,7 +2426,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                                     _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], iter->first));
                                 }
                                 if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                                    _cache.writeToCache(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                                    _cache.writeToTable(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
                             }
                         }
 
@@ -2510,7 +2510,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
 
                         if (iter->first != "cache")
-                            _cache.renameCache("cache", (iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first)), true);
+                            _cache.renameTable("cache", (iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first)), true);
 
                         for (size_t i = 0; i < _idx.row.size(); i++)
                         {
@@ -2521,7 +2521,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                                     _cache.setHeadLineElement(j, iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getHeadLineElement(_idx.col[j], iter->first));
                                 }
                                 if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                                    _cache.writeToCache(i, j, iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                                    _cache.writeToTable(i, j, iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getElement(_idx.row[i], _idx.col[j], iter->first));
                             }
                         }
 
@@ -3370,7 +3370,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 
 			if (matchParams(sCmd, "grid"))
 			{
-				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::GRID))
+				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::GRID))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
@@ -3382,7 +3382,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
 			{
-				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::ALL))
+				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::ALL))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
@@ -3394,7 +3394,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "lines"))
 			{
-				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::LINES))
+				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::LINES))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_LINES")), _option) );
@@ -3406,7 +3406,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "cols"))
 			{
-				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::COLS))
+				if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::COLS))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_COLS")), _option) );
@@ -3441,7 +3441,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand == "swap")
 		{
-			return swapCaches(sCmd, _data, _parser, _option, _functions);
+			return swapTables(sCmd, _data, _parser, _option, _functions);
 		}
 
 		return 0;
@@ -3504,7 +3504,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                                     _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], iter->first));
                                 }
                                 if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                                    _cache.writeToCache(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                                    _cache.writeToTable(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
                             }
                         }
 
@@ -3663,7 +3663,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				nArgument = (int)_parser.Eval();
 			}
 			else
-				nArgument = _data.getCacheLines(sArgument.substr(0, sArgument.find('(')), false);
+				nArgument = _data.getTableLines(sArgument.substr(0, sArgument.find('(')), false);
 
 
 			_idx = parser_getIndices(sArgument, _parser, _data, _option);
@@ -3679,7 +3679,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 
 			if (matchParams(sCmd, "grid"))
 			{
-				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::GRID))
+				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::GRID))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
@@ -3691,7 +3691,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
 			{
-				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::ALL))
+				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::ALL))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
@@ -3703,7 +3703,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "cols"))
 			{
-				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::COLS))
+				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::COLS))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_COLS")), _option) );
@@ -3715,7 +3715,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "lines"))
 			{
-				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, Cache::LINES))
+				if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::LINES))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) );
@@ -3738,7 +3738,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						if (sCmd.find(iter->first + "()") != string::npos && iter->first != "cache")
 						{
 							string sObj = iter->first;
-							if (_data.deleteCache(iter->first))
+							if (_data.deleteTable(iter->first))
 							{
 								if (sArgument.length())
 									sArgument += ", ";
@@ -3866,7 +3866,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 
 			if (matchParams(sCmd, "grid"))
 			{
-				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, Cache::GRID))
+				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, MemoryManager::GRID))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
@@ -3878,7 +3878,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
 			{
-				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, Cache::ALL))
+				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, MemoryManager::ALL))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
@@ -3890,7 +3890,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "lines"))
 			{
-				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, Cache::LINES))
+				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, MemoryManager::LINES))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_LINES")), _option) );
@@ -3902,7 +3902,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (matchParams(sCmd, "cols"))
 			{
-				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, Cache::COLS))
+				if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, MemoryManager::COLS))
 				{
 					if (_option.getSystemPrintStatus())
 						NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
@@ -3934,7 +3934,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (sCmd.length() > 8)
 			{
-				_functions.setCacheList(_data.getCacheNames());
+				_functions.setCacheList(_data.getTableNames());
 				if (_data.containsStringVars(sCmd))
 					_data.getStringValues(sCmd);
 				if (matchParams(sCmd, "comment", '='))
@@ -4199,8 +4199,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						_cache.setPath(_option.getLoadPath(), false, _option.getExePath());
 						_cache.openFile(sArgument, _option, false, true, nArgument);
 						sArgument = generateCacheName(sArgument, _option);
-						if (!_data.isCacheElement(sArgument + "()"))
-							_data.addCache(sArgument + "()", _option);
+						if (!_data.isTable(sArgument + "()"))
+							_data.addTable(sArgument + "()", _option);
 						nArgument = _data.getCols(sArgument, false);
 						for (long long int i = 0; i < _cache.getLines("data", false); i++)
 						{
@@ -4210,7 +4210,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 									_data.setHeadLineElement(j + nArgument, sArgument, _cache.getHeadLineElement(j, "data"));
 								if (_cache.isValidEntry(i, j, "data"))
 								{
-									_data.writeToCache(i, j + nArgument, sArgument, _cache.getElement(i, j, "data"));
+									_data.writeToTable(i, j + nArgument, sArgument, _cache.getElement(i, j, "data"));
 								}
 							}
 						}
@@ -4236,8 +4236,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						{
 							_cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
 							sTarget = generateCacheName(sPath + vFilelist[i], _option);
-							if (!_data.isCacheElement(sTarget + "()"))
-								_data.addCache(sTarget + "()", _option);
+							if (!_data.isTable(sTarget + "()"))
+								_data.addTable(sTarget + "()", _option);
 							nArgument = _data.getCols(sTarget, false);
 							for (long long int i = 0; i < _cache.getLines("data", false); i++)
 							{
@@ -4247,7 +4247,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 										_data.setHeadLineElement(j + nArgument, sTarget, _cache.getHeadLineElement(j, "data"));
 									if (_cache.isValidEntry(i, j, "data"))
 									{
-										_data.writeToCache(i, j + nArgument, sTarget, _cache.getElement(i, j, "data"));
+										_data.writeToTable(i, j + nArgument, sTarget, _cache.getElement(i, j, "data"));
 									}
 								}
 							}
@@ -4452,8 +4452,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						_cache.setPath(_option.getLoadPath(), false, _option.getExePath());
 						_cache.openFile(sArgument, _option, false, true, nArgument);
 						sArgument = generateCacheName(sArgument, _option);
-						if (!_data.isCacheElement(sArgument + "()"))
-							_data.addCache(sArgument + "()", _option);
+						if (!_data.isTable(sArgument + "()"))
+							_data.addTable(sArgument + "()", _option);
 						nArgument = _data.getCols(sArgument, false);
 						for (long long int i = 0; i < _cache.getLines("data", false); i++)
 						{
@@ -4463,7 +4463,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 									_data.setHeadLineElement(j + nArgument, sArgument, _cache.getHeadLineElement(j, "data"));
 								if (_cache.isValidEntry(i, j, "data"))
 								{
-									_data.writeToCache(i, j + nArgument, sArgument, _cache.getElement(i, j, "data"));
+									_data.writeToTable(i, j + nArgument, sArgument, _cache.getElement(i, j, "data"));
 								}
 							}
 						}
@@ -4489,8 +4489,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						{
 							_cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
 							sTarget = generateCacheName(sPath + vFilelist[i], _option);
-							if (!_data.isCacheElement(sTarget + "()"))
-								_data.addCache(sTarget + "()", _option);
+							if (!_data.isTable(sTarget + "()"))
+								_data.addTable(sTarget + "()", _option);
 							nArgument = _data.getCols(sTarget, false);
 							for (long long int i = 0; i < _cache.getLines("data", false); i++)
 							{
@@ -4500,7 +4500,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 										_data.setHeadLineElement(j + nArgument, sTarget, _cache.getHeadLineElement(j, "data"));
 									if (_cache.isValidEntry(i, j, "data"))
 									{
-										_data.writeToCache(i, j + nArgument, sTarget, _cache.getElement(i, j, "data"));
+										_data.writeToTable(i, j + nArgument, sTarget, _cache.getElement(i, j, "data"));
 									}
 								}
 							}
@@ -4689,10 +4689,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                         _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
 
                         if (iter->first != "cache" && iter->first != "data")
-                            _cache.renameCache("cache", iter->first, true);
+                            _cache.renameTable("cache", iter->first, true);
 
                         if (iter->first == "data")
-                            _cache.renameCache("cache", "copy_of_data", true);
+                            _cache.renameTable("cache", "copy_of_data", true);
 
                         for (unsigned int i = 0; i < _idx.row.size(); i++)
                         {
@@ -4703,7 +4703,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                                     _cache.setHeadLineElement(j, (iter->first == "data" ? "copy_of_data" : iter->first), _data.getHeadLineElement(_idx.col[j], iter->first));
                                 }
                                 if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                                    _cache.writeToCache(i, j, (iter->first == "data" ? "copy_of_data" : iter->first), _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                                    _cache.writeToTable(i, j, (iter->first == "data" ? "copy_of_data" : iter->first), _data.getElement(_idx.row[i], _idx.col[j], iter->first));
                             }
                         }
 
@@ -4836,7 +4836,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 
 // This static function handles the swapping of the values
 // of two caches
-static int swapCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions)
+static int swapTables(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions)
 {
     string sArgument;
 
@@ -4854,7 +4854,7 @@ static int swapCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& 
         sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=') + _data.matchCache(sCmd, '=').length());
 
         // Swap the caches
-        _data.swapCaches(_data.matchCache(sCmd, '='), sArgument);
+        _data.swapTables(_data.matchCache(sCmd, '='), sArgument);
 
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", _data.matchCache(sCmd, '='), sArgument), _option) );
@@ -4883,7 +4883,7 @@ static int swapCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings& 
         StripSpaces(sArgument);
 
         // Swap the caches
-        _data.swapCaches(sCmd, sArgument);
+        _data.swapTables(sCmd, sArgument);
 
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCmd, sArgument), _option) );
@@ -4912,7 +4912,7 @@ static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings
         sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=') + _data.matchCache(sCmd, '=').length());
 
         // Rename the cache
-        _data.renameCache(_data.matchCache(sCmd, '='), sArgument);
+        _data.renameTable(_data.matchCache(sCmd, '='), sArgument);
 
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) );
@@ -4941,7 +4941,7 @@ static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings
         StripSpaces(sCmd);
 
         // Rename the cache
-        _data.renameCache(sArgument, sCmd);
+        _data.renameTable(sArgument, sCmd);
 
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sCmd), _option) );
@@ -5211,7 +5211,7 @@ static int showDataObject(string& sCmd)
                     _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
 
                 _cache.setCacheSize(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
-                _cache.renameCache("cache", "*" + _accessParser.getDataObject(), true);
+                _cache.renameTable("cache", "*" + _accessParser.getDataObject(), true);
 
                 for (unsigned int i = 0; i < _accessParser.getIndices().row.size(); i++)
                 {
@@ -5223,7 +5223,7 @@ static int showDataObject(string& sCmd)
                         }
 
                         if (_data.isValidEntry(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
-                            _cache.writeToCache(i, j, "*" + _accessParser.getDataObject(), _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
+                            _cache.writeToTable(i, j, "*" + _accessParser.getDataObject(), _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
                     }
                 }
 
@@ -5266,7 +5266,7 @@ void BI_Autosave(Datafile& _data, Output& _out, Settings& _option)
 			NumeReKernel::printPreFmt(toSystemCodePage(  _lang.get("BUILTIN_AUTOSAVE") + " ... "));
 
 		// Try to save the cache
-		if (_data.saveCache())
+		if (_data.saveToCacheFile())
 		{
 			if (_option.getSystemPrintStatus())
 				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS") + ".") );
@@ -6307,7 +6307,7 @@ static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Setting
 			return false;
 		while (sObject.length() && getNextArgument(sObject, false).length())
 		{
-			if (_data.isCacheElement(getNextArgument(sObject, false)))
+			if (_data.isTable(getNextArgument(sObject, false)))
 			{
 				if (matchParams(sCmd, "free"))
 				{
@@ -6321,7 +6321,7 @@ static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Setting
 				getNextArgument(sObject, true);
 				continue;
 			}
-			if (_data.addCache(getNextArgument(sObject, false), _option))
+			if (_data.addTable(getNextArgument(sObject, false), _option))
 			{
 				if (sReturnVal.length())
 					sReturnVal += ", ";
@@ -6368,7 +6368,7 @@ static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Setting
 				return false;
 			while (sObject.length() && getNextArgument(sObject, false).length())
 			{
-				if (_data.isCacheElement(getNextArgument(sObject, false)))
+				if (_data.isTable(getNextArgument(sObject, false)))
 				{
 					if (matchParams(sCmd, "free"))
 					{
@@ -6382,7 +6382,7 @@ static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Setting
 					getNextArgument(sObject, true);
 					continue;
 				}
-				if (_data.addCache(getNextArgument(sObject, false), _option))
+				if (_data.addTable(getNextArgument(sObject, false), _option))
 				{
 					if (sReturnVal.length())
 						sReturnVal += ", ";

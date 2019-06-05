@@ -41,6 +41,8 @@
 
 using namespace std;
 
+// forward declaration for using the memory manager as friend
+class MemoryManager;
 
 /*
  * Header zur Memory-Klasse
@@ -52,6 +54,8 @@ class Memory : public Sorter
         enum AppDir {LINES, COLS, GRID, ALL};
 
 	private:
+	    friend class MemoryManager;
+
 		long long int nLines;							// Zeilen des Caches
 		long long int nCols;							// Spalten des Caches
 		long long int nWrittenHeadlines;

@@ -50,12 +50,12 @@ using namespace std;
  * Header zur Cache-Klasse --> PARENT zur Datafile-Klasse
  */
 
-class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterManager
+class MemoryManager : public FileSystem, public StringMemory, public NumeRe::ClusterManager
 {
 	public:
 		enum AppDir {LINES = Memory::LINES, COLS = Memory::COLS, GRID = Memory::GRID, ALL = Memory::ALL};
 	private:
-		vector<Memory*> vCacheMemory;
+		vector<Memory*> vMemory;
 		bool bSaveMutex;
 		fstream cache_file;
 		string sCache_file;
@@ -70,56 +70,56 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 
 	protected:
 		bool isValid() const;							                        // gibt den Wert von bValidData zurueck
-		void removeCachedData();						                        // Loescht den Inhalt von dCache, allen Arrays und setzt das Objekt auf den Urzustand zurueck
+		void removeDataInMemory();						                        // Loescht den Inhalt von dCache, allen Arrays und setzt das Objekt auf den Urzustand zurueck
 
-		inline bool resizeCache(long long int _nLines, long long int _nCols, const string& _sCache)
+		inline bool resizeTables(long long int _nLines, long long int _nCols, const string& _sCache)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->resizeMemory(_nLines, _nCols);
+			return vMemory[mCachesMap.at(_sCache)]->resizeMemory(_nLines, _nCols);
 		}
-		inline double readFromCache(long long int _nLine, long long int _nCol, const string& _sCache) const
+		inline double readFromTable(long long int _nLine, long long int _nCol, const string& _sCache) const
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->readMem(_nLine, _nCol);
+			return vMemory[mCachesMap.at(_sCache)]->readMem(_nLine, _nCol);
 		}
-		inline vector<double> readFromCache(const VectorIndex& _vLine, const VectorIndex& _vCol, const string& _sCache) const
+		inline vector<double> readFromTable(const VectorIndex& _vLine, const VectorIndex& _vCol, const string& _sCache) const
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->readMem(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->readMem(_vLine, _vCol);
 		}
 		inline void copyCachedElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const string& _sCache) const
 		{
-			vCacheMemory[mCachesMap.at(_sCache)]->copyElementsInto(vTarget, _vLine, _vCol);
+			vMemory[mCachesMap.at(_sCache)]->copyElementsInto(vTarget, _vLine, _vCol);
 		}
 		inline string getCacheHeadLineElement(long long int _i, const string& _sCache) const
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->getHeadLineElement(_i);
+			return vMemory[mCachesMap.at(_sCache)]->getHeadLineElement(_i);
 		}
 		inline vector<string> getCacheHeadLineElement(const VectorIndex& _vCol, const string& _sCache) const
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->getHeadLineElement(_vCol);
+			return vMemory[mCachesMap.at(_sCache)]->getHeadLineElement(_vCol);
 		}
 		inline bool setCacheHeadLineElement(long long int _i, const string& _sCache, string _sHead)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->setHeadLineElement(_i, _sHead);
+			return vMemory[mCachesMap.at(_sCache)]->setHeadLineElement(_i, _sHead);
 		}
 		inline long long int getAppendedZeroes(long long int _i, const string& _sCache) const
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->getAppendedZeroes(_i);
+			return vMemory[mCachesMap.at(_sCache)]->getAppendedZeroes(_i);
 		}
 		inline bool isValidElement(long long int _nLine, long long int _nCol, const string& _sCache) const
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->isValidElement(_nLine, _nCol);
+			return vMemory[mCachesMap.at(_sCache)]->isValidElement(_nLine, _nCol);
 		}
 		inline bool saveLayer(string _sFileName, const string& _sCache)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->save(ValidFileName(_sFileName, ".ndat"));
+			return vMemory[mCachesMap.at(_sCache)]->save(ValidFileName(_sFileName, ".ndat"));
 		}
 		inline int getHeadlineCount(const string& _sCache) const
 		{
-		    return vCacheMemory[mCachesMap.at(_sCache)]->getHeadlineCount();
+		    return vMemory[mCachesMap.at(_sCache)]->getHeadlineCount();
 		}
 
 	public:
-		Cache();										// Standard-Konstruktor
-		~Cache();										// Destruktor (wendet delete[] auf die Matrix und alle Arrays an, sofern es noetig ist)
+		MemoryManager();										// Standard-Konstruktor
+		~MemoryManager();										// Destruktor (wendet delete[] auf die Matrix und alle Arrays an, sofern es noetig ist)
 
 
 		map<string, long long int> mCachesMap;
@@ -141,27 +141,27 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		}
 
 
-		inline bool writeToCache(long long int _nLine, long long int _nCol, const string& _sCache, double _dData)
+		inline bool writeToTable(long long int _nLine, long long int _nCol, const string& _sCache, double _dData)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->writeData(_nLine, _nCol, _dData);
+			return vMemory[mCachesMap.at(_sCache)]->writeData(_nLine, _nCol, _dData);
 		}
-		inline bool writeToCache(Indices& _idx, const string& _sCache, double* _dData, unsigned int _nNum)
+		inline bool writeToTable(Indices& _idx, const string& _sCache, double* _dData, unsigned int _nNum)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->writeData(_idx, _dData, _nNum);
+			return vMemory[mCachesMap.at(_sCache)]->writeData(_idx, _dData, _nNum);
 		}
 
-		inline long long int getCacheLines(const string& _sCache, bool _bFull = false) const
+		inline long long int getTableLines(const string& _sCache, bool _bFull = false) const
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->getLines(_bFull);
+			return vMemory[mCachesMap.at(_sCache)]->getLines(_bFull);
 		}
-		inline long long int getCacheCols(const string& _sCache, bool _bFull) const
+		inline long long int getTableCols(const string& _sCache, bool _bFull) const
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->getCols(_bFull);
+			return vMemory[mCachesMap.at(_sCache)]->getCols(_bFull);
 		}
 		inline int getSize(long long int _nLayer) const
 		{
-			if (vCacheMemory.size() && _nLayer < vCacheMemory.size())
-				return vCacheMemory[_nLayer]->getSize();
+			if (vMemory.size() && _nLayer < vMemory.size())
+				return vMemory[_nLayer]->getSize();
 			else
 				return 0;
 		}
@@ -178,31 +178,31 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		bool getSaveStatus() const;                     // gibt bIsSaved zurueck
 		void setSaveStatus(bool _bIsSaved);             // setzt bIsSaved
 		long long int getLastSaved() const;             // gibt nLastSaved zurueck
-		bool isCacheElement(const string& sCache);
-		bool containsCacheElements(const string& sExpression);
-		bool addCache(const string& sCache, const Settings& _option);
-		bool deleteCache(const string& sCache);
+		bool isTable(const string& sCache);
+		bool containsTables(const string& sExpression);
+		bool addTable(const string& sCache, const Settings& _option);
+		bool deleteTable(const string& sCache);
 		inline void deleteEntry(long long int _nLine, long long int _nCol, const string& _sCache)
 		{
-			vCacheMemory[mCachesMap.at(_sCache)]->deleteEntry(_nLine, _nCol);
+			vMemory[mCachesMap.at(_sCache)]->deleteEntry(_nLine, _nCol);
 		}
 		void deleteBulk(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0)
 		{
-			vCacheMemory[mCachesMap.at(_sCache)]->deleteBulk(i1, i2, j1, j2);
+			vMemory[mCachesMap.at(_sCache)]->deleteBulk(i1, i2, j1, j2);
 		}
 		void deleteBulk(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			vCacheMemory[mCachesMap.at(_sCache)]->deleteBulk(_vLine, _vCol);
+			vMemory[mCachesMap.at(_sCache)]->deleteBulk(_vLine, _vCol);
 		}
-		inline unsigned int getCacheCount() const
+		inline unsigned int getNumberOfTables() const
 		{
 			return mCachesMap.size();
 		}
-		inline map<string, long long int> getCacheList() const
+		inline const map<string, long long int>& getTableMap() const
 		{
 			return mCachesMap;
 		}
-		inline string getCacheNames() const
+		inline string getTableNames() const
 		{
 			string sReturn = ";";
 			for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
@@ -211,13 +211,13 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 			}
 			return sReturn;
 		}
-		inline void renameCache(const string& sCache, const string& sNewName, bool bForceRenaming = false)
+		inline void renameTable(const string& sCache, const string& sNewName, bool bForceRenaming = false)
 		{
-			if (isCacheElement(sNewName))
+			if (isTable(sNewName))
 			{
 				throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, "", SyntaxError::invalid_position, sNewName + "()");
 			}
-			if (!isCacheElement(sCache))
+			if (!isTable(sCache))
 			{
 				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache);
 			}
@@ -230,13 +230,13 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 			setSaveStatus(false);
 			return;
 		}
-		inline void swapCaches(const string& sCache1, const string& sCache2)
+		inline void swapTables(const string& sCache1, const string& sCache2)
 		{
-			if (!isCacheElement(sCache1))
+			if (!isTable(sCache1))
 			{
 				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache1);
 			}
-			if (!isCacheElement(sCache2))
+			if (!isTable(sCache2))
 			{
 				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache2);
 			}
@@ -249,159 +249,159 @@ class Cache : public FileSystem, public StringMemory, public NumeRe::ClusterMana
 		vector<int> sortElements(const string& sLine);               // wandelt das Kommando in einen Ausdruck um, startet qSort und fuehrt die Sortierung aus
 		vector<int> sortElements(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
 		void setCacheFileName(string _sFileName);
-		bool saveCache();
-		bool loadCache();
+		bool saveToCacheFile();
+		bool loadFromCacheFile();
 
 		inline NumeRe::Table extractTable(const string& _sTable)
 		{
-			return vCacheMemory[mCachesMap.at(_sTable)]->extractTable(_sTable);
+			return vMemory[mCachesMap.at(_sTable)]->extractTable(_sTable);
 		}
 		inline NumeRe::Table extractTable(long long int _nLayer, const string& _sTable = "")
 		{
-			return vCacheMemory[_nLayer]->extractTable(_sTable);
+			return vMemory[_nLayer]->extractTable(_sTable);
 		}
 		inline void importTable(NumeRe::Table _table, const string& _sTable)
 		{
-			return vCacheMemory[mCachesMap.at(_sTable)]->importTable(_table);
+			return vMemory[mCachesMap.at(_sTable)]->importTable(_table);
 		}
 		inline void importTable(NumeRe::Table _table, long long int _nLayer)
 		{
-			return vCacheMemory[_nLayer]->importTable(_table);
+			return vMemory[_nLayer]->importTable(_table);
 		}
 
 		// MAFIMPLEMENTATIONS
 		inline double std(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->std(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->std(i1, i2, j1, j2);
 		}
 		inline double std(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->std(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->std(_vLine, _vCol);
 		}
 		inline double avg(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->avg(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->avg(i1, i2, j1, j2);
 		}
 		inline double avg(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->avg(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->avg(_vLine, _vCol);
 		}
 		inline double max(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->max(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->max(i1, i2, j1, j2);
 		}
 		inline double max(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->max(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->max(_vLine, _vCol);
 		}
 		inline double min(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->min(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->min(i1, i2, j1, j2);
 		}
 		inline double min(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->min(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->min(_vLine, _vCol);
 		}
 		inline double prd(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->prd(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->prd(_vLine, _vCol);
 		}
 		inline double prd(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->prd(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->prd(i1, i2, j1, j2);
 		}
 		inline double sum(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->sum(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->sum(_vLine, _vCol);
 		}
 		inline double sum(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->sum(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->sum(i1, i2, j1, j2);
 		}
 		inline double num(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->num(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->num(_vLine, _vCol);
 		}
 		inline double num(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->num(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->num(i1, i2, j1, j2);
 		}
 		inline double and_func(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->and_func(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->and_func(i1, i2, j1, j2);
 		}
 		inline double and_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->and_func(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->and_func(_vLine, _vCol);
 		}
 		inline double or_func(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->or_func(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->or_func(i1, i2, j1, j2);
 		}
 		inline double or_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->or_func(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->or_func(_vLine, _vCol);
 		}
 		inline double xor_func(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->xor_func(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->xor_func(i1, i2, j1, j2);
 		}
 		inline double xor_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->xor_func(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->xor_func(_vLine, _vCol);
 		}
 		inline double cnt(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->cnt(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->cnt(_vLine, _vCol);
 		}
 		inline double cnt(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->cnt(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->cnt(i1, i2, j1, j2);
 		}
 		inline double norm(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->norm(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->norm(_vLine, _vCol);
 		}
 		inline double norm(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->norm(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->norm(i1, i2, j1, j2);
 		}
 		inline double cmp(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->cmp(_vLine, _vCol, dRef, nType);
+			return vMemory[mCachesMap.at(_sCache)]->cmp(_vLine, _vCol, dRef, nType);
 		}
 		inline double cmp(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dRef = 0.0, int nType = 0)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->cmp(i1, i2, j1, j2, dRef, nType);
+			return vMemory[mCachesMap.at(_sCache)]->cmp(i1, i2, j1, j2, dRef, nType);
 		}
 		inline double med(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->med(_vLine, _vCol);
+			return vMemory[mCachesMap.at(_sCache)]->med(_vLine, _vCol);
 		}
 		inline double med(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->med(i1, i2, j1, j2);
+			return vMemory[mCachesMap.at(_sCache)]->med(i1, i2, j1, j2);
 		}
 		inline double pct(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->pct(_vLine, _vCol, dPct);
+			return vMemory[mCachesMap.at(_sCache)]->pct(_vLine, _vCol, dPct);
 		}
 		inline double pct(const string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dPct = 0.5)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->pct(i1, i2, j1, j2, dPct);
+			return vMemory[mCachesMap.at(_sCache)]->pct(i1, i2, j1, j2, dPct);
 		}
 
 		inline bool smooth(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, unsigned int nOrder = 1, AppDir Direction = ALL)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->smooth(_vLine, _vCol, nOrder, (Memory::AppDir)Direction);
+			return vMemory[mCachesMap.at(_sCache)]->smooth(_vLine, _vCol, nOrder, (Memory::AppDir)Direction);
 		}
 		inline bool retoque(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction = ALL)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->retoque(_vLine, _vCol, (Memory::AppDir)Direction);
+			return vMemory[mCachesMap.at(_sCache)]->retoque(_vLine, _vCol, (Memory::AppDir)Direction);
 		}
 		inline bool resample(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, unsigned int nSamples = 0, AppDir Direction = ALL)
 		{
-			return vCacheMemory[mCachesMap.at(_sCache)]->resample(_vLine, _vCol, nSamples, (Memory::AppDir)Direction);
+			return vMemory[mCachesMap.at(_sCache)]->resample(_vLine, _vCol, nSamples, (Memory::AppDir)Direction);
 		}
 };
 

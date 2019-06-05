@@ -146,7 +146,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
 	// If the integration function contains a data object,
 	// the calculation is done way different from the usual
 	// integration
-	if ((sInt_Line[3].substr(0, 5) == "data(" || _data.isCacheElement(sInt_Line[3]))
+	if ((sInt_Line[3].substr(0, 5) == "data(" || _data.isTable(sInt_Line[3]))
 			&& getMatchingParenthesis(sInt_Line[3]) != string::npos
 			&& sInt_Line[3].find_first_not_of(' ', getMatchingParenthesis(sInt_Line[3]) + 1) == string::npos) // xvals
 	{
@@ -198,8 +198,8 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
             // Copy the data
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-                _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+                _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+                _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
             }
 
             // Sort the data
@@ -1837,8 +1837,8 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
             Datafile _cache;
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sExpr));
-                _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sExpr));
+                _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sExpr));
+                _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sExpr));
             }
             _cache.sortElements("cache -sort c=1[2]");
 
@@ -2003,7 +2003,7 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
 	map<string, string> StringMap = _data.getStringVars();
 
 	// Get the current defined data tables
-	map<string, long long int> CacheMap = _data.getCacheList();
+	map<string, long long int> CacheMap = _data.getTableMap();
 
 	const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
 
@@ -2030,7 +2030,7 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
 	// Print all defined caches first
 	for (auto iter = CacheMap.begin(); iter != CacheMap.end(); ++iter)
 	{
-		string sCacheSize = toString(_data.getCacheLines(iter->first, false)) + " x " + toString(_data.getCacheCols(iter->first, false));
+		string sCacheSize = toString(_data.getTableLines(iter->first, false)) + " x " + toString(_data.getTableCols(iter->first, false));
 		NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sCacheSize, (_option.getWindow(0) - 50) / 2) + strfill("[double x double]", 19));
 
 		if (_data.getSize(iter->second) >= 1024 * 1024)
@@ -2948,7 +2948,7 @@ bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Se
 			int nResults_x = 0;
 			for (int i = 0; i < nResults; i++)
 			{
-				_cache.writeToCache(i, 1, "cache", v[i]);
+				_cache.writeToTable(i, 1, "cache", v[i]);
 			}
 			_parser.SetExpr(sInterval);
 			v = _parser.Eval(nResults_x);
@@ -2958,11 +2958,11 @@ bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Se
 				{
 					if (i >= nResults_x)
 					{
-						_cache.writeToCache(i, 0, "cache", 0.0);
+						_cache.writeToTable(i, 0, "cache", 0.0);
 					}
 					else
 					{
-						_cache.writeToCache(i, 0, "cache", v[i]);
+						_cache.writeToTable(i, 0, "cache", v[i]);
 					}
 				}
 			}
@@ -3477,7 +3477,7 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 			int nResults_x = 0;
 			for (int i = 0; i < nResults; i++)
 			{
-				_cache.writeToCache(i, 1, "cache", v[i]);
+				_cache.writeToTable(i, 1, "cache", v[i]);
 			}
 			_parser.SetExpr(sInterval);
 			v = _parser.Eval(nResults_x);
@@ -3487,11 +3487,11 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 				{
 					if (i >= nResults_x)
 					{
-						_cache.writeToCache(i, 0, "cache", 0.0);
+						_cache.writeToTable(i, 0, "cache", 0.0);
 					}
 					else
 					{
-						_cache.writeToCache(i, 0, "cache", v[i]);
+						_cache.writeToTable(i, 0, "cache", v[i]);
 					}
 				}
 			}
@@ -4409,11 +4409,11 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 			if (i > _idx.row.size())
 				break;
 
-			_data.writeToCache(_idx.row[i], _idx.col.front(), sTargetTable, 2.0 * (double)(i)*dNyquistFrequency / (double)(_fftData.GetNx()));
+			_data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable, 2.0 * (double)(i)*dNyquistFrequency / (double)(_fftData.GetNx()));
 
 			if (!bComplex)
 			{
-				_data.writeToCache(_idx.row[i], _idx.col[1], sTargetTable, hypot(_fftData.a[i].real(), _fftData.a[i].imag()));
+				_data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, hypot(_fftData.a[i].real(), _fftData.a[i].imag()));
 
 				if (i > 2 && (fabs(atan2(_fftData.a[i].imag(), _fftData.a[i].real()) - atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real())) >= M_PI)
 						&& ((atan2(_fftData.a[i].imag(), _fftData.a[i].real()) - atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real())) * (atan2(_fftData.a[i - 1].imag(), _fftData.a[i - 1].real()) - atan2(_fftData.a[i - 2].imag(), _fftData.a[i - 2].real())) < 0))
@@ -4424,12 +4424,12 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 						dPhaseOffset += 2 * M_PI;
 				}
 
-				_data.writeToCache(_idx.row[i], _idx.col[2], sTargetTable, atan2(_fftData.a[i].imag(), _fftData.a[i].real()) + dPhaseOffset);
+				_data.writeToTable(_idx.row[i], _idx.col[2], sTargetTable, atan2(_fftData.a[i].imag(), _fftData.a[i].real()) + dPhaseOffset);
 			}
 			else
 			{
-				_data.writeToCache(i, _idx.col[1], sTargetTable, _fftData.a[i].real());
-				_data.writeToCache(i, _idx.col[2], sTargetTable, _fftData.a[i].imag());
+				_data.writeToTable(i, _idx.col[1], sTargetTable, _fftData.a[i].real());
+				_data.writeToTable(i, _idx.col[2], sTargetTable, _fftData.a[i].imag());
 			}
 		}
 
@@ -4457,9 +4457,9 @@ bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 			if (i > _idx.row.size())
 				break;
 
-			_data.writeToCache(_idx.row[i], _idx.col[0], sTargetTable, (double)(i)*dTimeInterval / (double)(_fftData.GetNx() - 1));
-			_data.writeToCache(_idx.row[i], _idx.col[1], sTargetTable, _fftData.a[i].real());
-			_data.writeToCache(_idx.row[i], _idx.col[2], sTargetTable, _fftData.a[i].imag());
+			_data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i)*dTimeInterval / (double)(_fftData.GetNx() - 1));
+			_data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, _fftData.a[i].real());
+			_data.writeToTable(_idx.row[i], _idx.col[2], sTargetTable, _fftData.a[i].imag());
 		}
 
 		_data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME") + "_[s]");
@@ -4598,7 +4598,7 @@ bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settin
 				if (_idx.col[j] == VectorIndex::INVALID)
 					break;
 
-				_data.writeToCache(_idx.row[i], _idx.col[j], sTargetTable, tWaveletData.getValue(i, j));
+				_data.writeToTable(_idx.row[i], _idx.col[j], sTargetTable, tWaveletData.getValue(i, j));
 			}
 		}
 
@@ -4620,8 +4620,8 @@ bool parser_wavelet(string& sCmd, Parser& _parser, Datafile& _data, const Settin
 		if (_idx.row[i] == VectorIndex::INVALID)
 			break;
 
-		_data.writeToCache(_idx.row[i], _idx.col[0], sTargetTable, (double)(i));
-		_data.writeToCache(_idx.row[i], _idx.col[1], sTargetTable, vWaveletData[i]);
+		_data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i));
+		_data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, vWaveletData[i]);
 	}
 
 	_data.setCacheStatus(true);
@@ -5054,13 +5054,13 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 
 	// Write the x axis
 	for (size_t i = 0; i < vXVals.size(); i++)
-		_data.writeToCache(i, _iTargetIndex.col[0], sTargetCache, vXVals[i]);
+		_data.writeToTable(i, _iTargetIndex.col[0], sTargetCache, vXVals[i]);
 
 	_data.setHeadLineElement(_iTargetIndex.col[0], sTargetCache, "x");
 
 	// Write the y axis
 	for (size_t i = 0; i < vYVals.size(); i++)
-		_data.writeToCache(i, _iTargetIndex.col[1], sTargetCache, vYVals[i]);
+		_data.writeToTable(i, _iTargetIndex.col[1], sTargetCache, vYVals[i]);
 
 	_data.setHeadLineElement(_iTargetIndex.col[1], sTargetCache, "y");
 
@@ -5075,7 +5075,7 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 			if (_iTargetIndex.col[j+2] == VectorIndex::INVALID)
 				break;
 
-			_data.writeToCache(_iTargetIndex.row[i], _iTargetIndex.col[j+2], sTargetCache, vZVals[i][j]);
+			_data.writeToTable(_iTargetIndex.row[i], _iTargetIndex.col[j+2], sTargetCache, vZVals[i][j]);
 
 			if (!i)
 				_data.setHeadLineElement(_iTargetIndex.col[j+2], sTargetCache, "z[" + toString((int)j + 1) + "]");
@@ -5320,8 +5320,8 @@ string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, I
 			throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetTable);
 
 		// Create the target table, if it doesn't exist
-		if (!_data.isCacheElement(sTargetTable.substr(0, sTargetTable.find('(')) + "()"))
-			_data.addCache(sTargetTable.substr(0, sTargetTable.find('(')), _option);
+		if (!_data.isTable(sTargetTable.substr(0, sTargetTable.find('(')) + "()"))
+			_data.addTable(sTargetTable.substr(0, sTargetTable.find('(')), _option);
 
 		// Read the target indices
 		_idx = parser_getIndices(sTargetTable, _parser, _data, _option);
@@ -5342,10 +5342,10 @@ string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, I
 		_idx.col.front() = 0;
 
 		// Create cache, if needed. Otherwise get first empty column
-		if (_data.isCacheElement(sDefaultTarget + "()"))
+		if (_data.isTable(sDefaultTarget + "()"))
 			_idx.col.front() += _data.getCols(sDefaultTarget, false);
 		else
-			_data.addCache(sDefaultTarget, _option);
+			_data.addTable(sDefaultTarget, _option);
 
 		_idx.col.back() = VectorIndex::OPEN_END;
 		sTargetTable = sDefaultTarget;
@@ -5773,8 +5773,8 @@ bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	long long int nLastCol = _data.getCols(sDataset, false);
 	for (long long int i = 0; i < nSamples; i++)
 	{
-		_data.writeToCache(i, nLastCol, sDataset, dXmin + i * (dXmax - dXmin) / (nSamples - 1));
-		_data.writeToCache(i, nLastCol + 1, sDataset, _regularized.a[i]);
+		_data.writeToTable(i, nLastCol, sDataset, dXmin + i * (dXmax - dXmin) / (nSamples - 1));
+		_data.writeToTable(i, nLastCol + 1, sDataset, _regularized.a[i]);
 	}
 	_data.setHeadLineElement(nLastCol, sDataset, sColHeaders[0]);
 	_data.setHeadLineElement(nLastCol + 1, sDataset, sColHeaders[1]);
@@ -5897,8 +5897,8 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 	{
 		sTargetCache = getArgAtPos(sCmd, matchParams(sCmd, "target", '=') + 6);
 
-        if (!_data.isCacheElement(sTargetCache))
-            _data.addCache(sTargetCache, _option);
+        if (!_data.isTable(sTargetCache))
+            _data.addTable(sTargetCache, _option);
 
 		_target = parser_getIndices(sTargetCache, _parser, _data, _option);
 		sTargetCache.erase(sTargetCache.find('('));
@@ -5914,10 +5914,10 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 		_target.row = VectorIndex(0LL, VectorIndex::OPEN_END);
 		_target.col.front() = 0;
 
-		if (_data.isCacheElement("stfdat()"))
+		if (_data.isTable("stfdat()"))
 			_target.col.front() += _data.getCols("stfdat", false);
         else
-            _data.addCache("stfdat()", _option);
+            _data.addTable("stfdat()", _option);
 
 		sTargetCache = "stfdat";
 		_target.col.back() = VectorIndex::OPEN_END;
@@ -5969,13 +5969,13 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 
 	// UPDATE DATA ELEMENTS
 	for (int i = 0; i < _result.GetNx(); i++)
-		_data.writeToCache(i, _target.col.front(), sTargetCache, dXmin + i * dSampleSize);
+		_data.writeToTable(i, _target.col.front(), sTargetCache, dXmin + i * dSampleSize);
 
 	_data.setHeadLineElement(_target.col.front(), sTargetCache, sDataset);
 	dSampleSize = 2 * (dFmax - dFmin) / ((double)_result.GetNy() - 1.0);
 
 	for (int i = 0; i < _result.GetNy() / 2; i++)
-		_data.writeToCache(i, _target.col[1], sTargetCache, dFmin + i * dSampleSize); // Fourier f Hier ist was falsch
+		_data.writeToTable(i, _target.col[1], sTargetCache, dFmin + i * dSampleSize); // Fourier f Hier ist was falsch
 
 	_data.setHeadLineElement(_target.col[1], sTargetCache, "f [Hz]");
 
@@ -5989,7 +5989,7 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 			if (_target.col[j+2] == VectorIndex::INVALID)
 				break;
 
-			_data.writeToCache(_target.row[i], _target.col[j+2], sTargetCache, _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
+			_data.writeToTable(_target.row[i], _target.col[j+2], sTargetCache, _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
 
 			if (!i)
 				_data.setHeadLineElement(_target.col[j+2], sTargetCache, "A[" + toString((int)j + 1) + "]");

@@ -34,7 +34,7 @@ size_t qSortDouble(double* dArray, size_t nlength);
  */
 
 // --> Standard-Konstruktor <--
-Datafile::Datafile() : Cache()
+Datafile::Datafile() : MemoryManager()
 {
 	nLines = 0;
 	nCols = 0;
@@ -57,7 +57,7 @@ Datafile::Datafile() : Cache()
 }
 
 // --> Allgemeiner Konstruktor <--
-Datafile::Datafile(long long int _nLines, long long int _nCols) : Cache()
+Datafile::Datafile(long long int _nLines, long long int _nCols) : MemoryManager()
 {
 	nLines = _nLines;
 	nCols = _nCols;
@@ -3498,7 +3498,7 @@ void Datafile::setLines(long long int _nLines)
 long long int Datafile::getCols(const string& sCache, bool _bFull) const
 {
 	if (sCache != "data")
-		return getCacheCols(sCache, _bFull);
+		return getTableCols(sCache, _bFull);
     else if (!dDatafile)
         return 0;
 	else
@@ -3509,7 +3509,7 @@ long long int Datafile::getCols(const string& sCache, bool _bFull) const
 long long int Datafile::getLines(const string& sCache, bool _bFull) const
 {
 	if (sCache != "data")
-		return getCacheLines(sCache, _bFull);
+		return getTableLines(sCache, _bFull);
     else if (!dDatafile)
         return 0;
 	else
@@ -3520,7 +3520,7 @@ long long int Datafile::getLines(const string& sCache, bool _bFull) const
 double Datafile::getElement(long long int _nLine, long long int _nCol, const string& sCache) const
 {
 	if (sCache != "data")	// Daten aus dem Cache uebernehmen?
-		return readFromCache(_nLine, _nCol, sCache);
+		return readFromTable(_nLine, _nCol, sCache);
     else if (_nLine >= nLines || _nCol >= nCols || _nLine < 0 || _nCol < 0)
         return NAN;
 	else if (dDatafile)		// Sonst werden die Daten des Datafiles verwendet
@@ -3534,7 +3534,7 @@ vector<double> Datafile::getElement(const VectorIndex& _vLine, const VectorIndex
     //cerr << _vLine.size() << " " << _vCol.size() << " " << sCache << endl;
 
     if (sCache != "data")
-        return readFromCache(_vLine, _vCol, sCache);
+        return readFromTable(_vLine, _vCol, sCache);
     vector<double> vReturn;
 
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !dDatafile)
@@ -3692,7 +3692,7 @@ string Datafile::getHeadLineElement(long long int _i, const string& sCache) cons
 vector<string> Datafile::getHeadLineElement(const VectorIndex& _vCol, const string& sCache) const
 {
     if (sCache != "data")
-        return Cache::getCacheHeadLineElement(_vCol, sCache);
+        return MemoryManager::getCacheHeadLineElement(_vCol, sCache);
     vector<string> vHeadlines;
     for (unsigned int i = 0; i < _vCol.size(); i++)
     {
@@ -3753,7 +3753,7 @@ long long int Datafile::getAppendedZeroes(long long int _i, const string& sCache
 {
 	if (sCache != "data")
 	{
-		return Cache::getAppendedZeroes(_i, sCache);
+		return MemoryManager::getAppendedZeroes(_i, sCache);
 	}
 	else
 	{
@@ -3768,7 +3768,7 @@ long long int Datafile::getAppendedZeroes(long long int _i, const string& sCache
 int Datafile::getHeadlineCount(const string& sCache) const
 {
     if (sCache != "data")
-        return Cache::getHeadlineCount(sCache);
+        return MemoryManager::getHeadlineCount(sCache);
 
     int nHeadlineCount = 1;
     // Get the dimensions of the complete headline (i.e. including possible linebreaks)
@@ -3970,19 +3970,19 @@ bool Datafile::getCacheStatus() const
 
 bool Datafile::isValidCache() const
 {
-	return Cache::isValid();
+	return MemoryManager::isValid();
 }
 
 void Datafile::clearCache()
 {
 	if (isValidCache())
-		removeCachedData();
+		removeDataInMemory();
 	return;
 }
 
 bool Datafile::setCacheSize(long long int _nLines, long long int _nCols, const string& _sCache)
 {
-	if (!resizeCache(_nLines, _nCols, _sCache))
+	if (!resizeTables(_nLines, _nCols, _sCache))
         return false;
 	return true;
 }
@@ -3990,13 +3990,13 @@ bool Datafile::setCacheSize(long long int _nLines, long long int _nCols, const s
 void Datafile::openAutosave(string _sFile, Settings& _option)
 {
     openFile(_sFile, _option, true);
-    resizeCache(nLines, nCols, "cache");
+    resizeTables(nLines, nCols, "cache");
     for (long long int i = 0; i < nLines; i++)
     {
         for (long long int j = 0; j < nCols; j++)
         {
             if (isValidEntry(i, j, "data"))
-                writeToCache(i, j, "cache", dDatafile[i][j]);
+                writeToTable(i, j, "cache", dDatafile[i][j]);
         }
     }
     for (long long int i = 0; i < nCols; i++)
@@ -4012,7 +4012,7 @@ vector<int> Datafile::sortElements(const string& sLine) // data -sort[[=desc]] c
     if (!dDatafile && sLine.find("data") != string::npos)
         return vector<int>();
     else if (sLine.find("cache") != string::npos || sLine.find("data") == string::npos)
-        return Cache::sortElements(sLine);
+        return MemoryManager::sortElements(sLine);
 
 
     string sCache;
@@ -4048,7 +4048,7 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
     if (!dDatafile && sCache == "data")
         return vector<int>();
     else if (sCache != "data")
-        return Cache::sortElements(sCache, i1, i2, j1, j2, sSortingExpression);
+        return MemoryManager::sortElements(sCache, i1, i2, j1, j2, sSortingExpression);
 
     bool bError = false;
     bool bReturnIndex = false;
@@ -4196,7 +4196,7 @@ bool Datafile::updateDimensionVariables(const string& sTableName)
 // the clusters detector functions
 bool Datafile::containsTablesOrClusters(const string& sCmdLine)
 {
-    return containsCacheElements(" " + sCmdLine + " ") || containsClusters(" " + sCmdLine + " ");
+    return containsTables(" " + sCmdLine + " ") || containsClusters(" " + sCmdLine + " ");
 }
 
 // Create a copy-efficient table object from the
@@ -4205,7 +4205,7 @@ bool Datafile::containsTablesOrClusters(const string& sCmdLine)
 NumeRe::Table Datafile::extractTable(const string& _sTable)
 {
     if (_sTable != "data")
-        return Cache::extractTable(_sTable);
+        return MemoryManager::extractTable(_sTable);
 
     return NumeRe::Table(dDatafile, sHeadLine, nLines, nCols, "data");
 }
@@ -4225,9 +4225,9 @@ bool Datafile::saveFile(const string& sCache, string _sFileName)
         setPath(sTemp, false, sWhere);
     }
     if (sCache != "data")
-        return Cache::saveLayer(sOutputFile, sCache);
+        return MemoryManager::saveLayer(sOutputFile, sCache);
     if (getCacheStatus())
-        return Cache::saveLayer(sOutputFile, "cache");
+        return MemoryManager::saveLayer(sOutputFile, "cache");
     if (file_out.is_open())
         file_out.close();
     file_out.open(sOutputFile.c_str(), ios_base::binary | ios_base::trunc | ios_base::out);
@@ -4369,7 +4369,7 @@ void Datafile::openFromCmdLine(Settings& _option, string _sFile, bool bOpen)
 double Datafile::std(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::std(sCache, i1,i2,j1,j2);
+        return MemoryManager::std(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return NAN;
     double dMean = 0.0;
@@ -4434,7 +4434,7 @@ double Datafile::std(const string& sCache, long long int i1, long long int i2, l
 double Datafile::std(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::std(sCache, _vLine, _vCol);
+        return MemoryManager::std(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     double dAvg = Datafile::avg(sCache, _vLine, _vCol);
@@ -4461,7 +4461,7 @@ double Datafile::std(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::avg(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::avg(sCache, i1,i2,j1,j2);
+        return MemoryManager::avg(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return NAN;
     double dMean = 0.0;
@@ -4511,7 +4511,7 @@ double Datafile::avg(const string& sCache, long long int i1, long long int i2, l
 double Datafile::avg(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::avg(sCache, _vLine, _vCol);
+        return MemoryManager::avg(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     double dAvg = 0.0;
@@ -4537,7 +4537,7 @@ double Datafile::avg(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::max(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::max(sCache, i1,i2,j1,j2);
+        return MemoryManager::max(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return NAN;
     double dMax = 0.0;
@@ -4587,7 +4587,7 @@ double Datafile::max(const string& sCache, long long int i1, long long int i2, l
 double Datafile::max(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::max(sCache, _vLine, _vCol);
+        return MemoryManager::max(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     double dMax = NAN;
@@ -4612,7 +4612,7 @@ double Datafile::max(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::min(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::min(sCache, i1,i2,j1,j2);
+        return MemoryManager::min(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return NAN;
     double dMin = 0.0;
@@ -4662,7 +4662,7 @@ double Datafile::min(const string& sCache, long long int i1, long long int i2, l
 double Datafile::min(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::min(sCache, _vLine, _vCol);
+        return MemoryManager::min(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     double dMin = NAN;
@@ -4687,7 +4687,7 @@ double Datafile::min(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::prd(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::prd(sCache, i1,i2,j1,j2);
+        return MemoryManager::prd(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return NAN;
     double dPrd = 1.0;
@@ -4733,7 +4733,7 @@ double Datafile::prd(const string& sCache, long long int i1, long long int i2, l
 double Datafile::prd(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::prd(sCache, _vLine, _vCol);
+        return MemoryManager::prd(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     double dPrd = 0.0;
@@ -4755,7 +4755,7 @@ double Datafile::prd(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::sum(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::sum(sCache, i1,i2,j1,j2);
+        return MemoryManager::sum(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return NAN;
     double dSum = 0.0;
@@ -4800,7 +4800,7 @@ double Datafile::sum(const string& sCache, long long int i1, long long int i2, l
 double Datafile::sum(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::sum(sCache, _vLine, _vCol);
+        return MemoryManager::sum(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     double dSum = 0.0;
@@ -4822,7 +4822,7 @@ double Datafile::sum(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::num(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::num(sCache, _vLine, _vCol);
+        return MemoryManager::num(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     //double dNum = 0.0;
@@ -4844,7 +4844,7 @@ double Datafile::num(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::num(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::num(sCache, i1,i2,j1,j2);
+        return MemoryManager::num(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return NAN;
     int nInvalid = 0;
@@ -4888,7 +4888,7 @@ double Datafile::num(const string& sCache, long long int i1, long long int i2, l
 double Datafile::and_func(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::and_func(sCache, i1,i2,j1,j2);
+        return MemoryManager::and_func(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return 0.0;
     if (i2 == -1)
@@ -4937,7 +4937,7 @@ double Datafile::and_func(const string& sCache, long long int i1, long long int 
 double Datafile::and_func(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::and_func(sCache, _vLine, _vCol);
+        return MemoryManager::and_func(sCache, _vLine, _vCol);
     if (!bValidData)
         return 0.0;
 
@@ -4963,7 +4963,7 @@ double Datafile::and_func(const string& sCache, const VectorIndex& _vLine, const
 double Datafile::or_func(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::or_func(sCache, i1,i2,j1,j2);
+        return MemoryManager::or_func(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return 0.0;
     if (i2 == -1)
@@ -5006,7 +5006,7 @@ double Datafile::or_func(const string& sCache, long long int i1, long long int i
 double Datafile::or_func(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::or_func(sCache, _vLine, _vCol);
+        return MemoryManager::or_func(sCache, _vLine, _vCol);
     if (!bValidData)
         return 0.0;
 
@@ -5026,7 +5026,7 @@ double Datafile::or_func(const string& sCache, const VectorIndex& _vLine, const 
 double Datafile::xor_func(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::xor_func(sCache, i1,i2,j1,j2);
+        return MemoryManager::xor_func(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return 0.0;
     if (i2 == -1)
@@ -5077,7 +5077,7 @@ double Datafile::xor_func(const string& sCache, long long int i1, long long int 
 double Datafile::xor_func(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::xor_func(sCache, _vLine, _vCol);
+        return MemoryManager::xor_func(sCache, _vLine, _vCol);
     if (!bValidData)
         return 0.0;
 
@@ -5106,7 +5106,7 @@ double Datafile::xor_func(const string& sCache, const VectorIndex& _vLine, const
 double Datafile::cnt(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::cnt(sCache, i1,i2,j1,j2);
+        return MemoryManager::cnt(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return NAN;
     if (i2 == -1)
@@ -5146,7 +5146,7 @@ double Datafile::cnt(const string& sCache, long long int i1, long long int i2, l
 double Datafile::cnt(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::cnt(sCache, _vLine, _vCol);
+        return MemoryManager::cnt(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     int nInvalid = 0;
@@ -5170,7 +5170,7 @@ double Datafile::cnt(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::norm(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::norm(sCache, i1,i2,j1,j2);
+        return MemoryManager::norm(sCache, i1,i2,j1,j2);
     if (!bValidData)
         return NAN;
     double dNorm = 0.0;
@@ -5215,7 +5215,7 @@ double Datafile::norm(const string& sCache, long long int i1, long long int i2, 
 double Datafile::norm(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::norm(sCache, _vLine, _vCol);
+        return MemoryManager::norm(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     double dNorm = 0.0;
@@ -5238,7 +5238,7 @@ double Datafile::cmp(const string& sCache, long long int i1, long long int i2, l
 {
     //cerr << sCache << i1 << " " << i2 << " " << j1 << " " << j2 << " " << dRef << " " << nType << endl;
     if (sCache != "data")
-        return Cache::cmp(sCache, i1, i2, j1, j2, dRef, nType);
+        return MemoryManager::cmp(sCache, i1, i2, j1, j2, dRef, nType);
     if (!bValidData)
         return NAN;
     double dKeep = 0.0;
@@ -5327,7 +5327,7 @@ double Datafile::cmp(const string& sCache, long long int i1, long long int i2, l
 double Datafile::cmp(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int nType)
 {
     if (sCache != "data")
-        return Cache::cmp(sCache, _vLine, _vCol, dRef, nType);
+        return MemoryManager::cmp(sCache, _vLine, _vCol, dRef, nType);
     if (!bValidData)
         return NAN;
     double dKeep = 0.0;
@@ -5337,7 +5337,7 @@ double Datafile::cmp(const string& sCache, const VectorIndex& _vLine, const Vect
     {
         for (long long int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getCacheLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
+            if (_vLine[i] < 0 || _vLine[i] >= getTableLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
                 continue;
             if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
                 continue;
@@ -5392,7 +5392,7 @@ double Datafile::cmp(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::med(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
 {
     if (sCache != "data")
-        return Cache::med(sCache, i1, i2, j1, j2);
+        return MemoryManager::med(sCache, i1, i2, j1, j2);
     if (!bValidData)
         return NAN;
     Datafile _cache;
@@ -5430,36 +5430,36 @@ double Datafile::med(const string& sCache, long long int i1, long long int i2, l
             if (i1 != i2 && j1 != j2)
             {
                 if (!isnan(dDatafile[i][j]))
-                    _cache.writeToCache((j-j1)+(i-i1)*(j2-j1+1),0, "cache", dDatafile[i][j]);
+                    _cache.writeToTable((j-j1)+(i-i1)*(j2-j1+1),0, "cache", dDatafile[i][j]);
             }
             else if (i1 != i2)
             {
                 if (!isnan(dDatafile[i][j]))
-                    _cache.writeToCache(i-i1,j-j1,"cache",dDatafile[i][j]);
+                    _cache.writeToTable(i-i1,j-j1,"cache",dDatafile[i][j]);
             }
             else
             {
                 if (!isnan(dDatafile[i][j]))
-                    _cache.writeToCache(j-j1,i-i1,"cache",dDatafile[i][j]);
+                    _cache.writeToTable(j-j1,i-i1,"cache",dDatafile[i][j]);
             }
         }
     }
     string sSortCommand = "cache -sort";
     _cache.sortElements(sSortCommand);
-    if (_cache.getCacheLines("cache", false) % 2)
+    if (_cache.getTableLines("cache", false) % 2)
     {
-        return _cache.getElement(_cache.getCacheLines("cache", false) / 2, 0, "cache");
+        return _cache.getElement(_cache.getTableLines("cache", false) / 2, 0, "cache");
     }
     else
     {
-        return (_cache.getElement(_cache.getCacheLines("cache", false) / 2, 0, "cache") + _cache.getElement(_cache.getCacheLines("cache", false) / 2 - 1, 0, "cache")) / 2.0;
+        return (_cache.getElement(_cache.getTableLines("cache", false) / 2, 0, "cache") + _cache.getElement(_cache.getTableLines("cache", false) / 2 - 1, 0, "cache")) / 2.0;
     }
 }
 
 double Datafile::med(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (sCache != "data")
-        return Cache::med(sCache, _vLine, _vCol);
+        return MemoryManager::med(sCache, _vLine, _vCol);
     if (!bValidData)
         return NAN;
     double dMed = 0.0;
@@ -5512,7 +5512,7 @@ double Datafile::med(const string& sCache, const VectorIndex& _vLine, const Vect
 double Datafile::pct(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, double dPct)
 {
     if (sCache != "data")
-        return Cache::pct(sCache, i1, i2, j1, j2, dPct);
+        return MemoryManager::pct(sCache, i1, i2, j1, j2, dPct);
     if (!bValidData)
         return NAN;
     if (dPct <= 0 || dPct >= 1)
@@ -5552,30 +5552,30 @@ double Datafile::pct(const string& sCache, long long int i1, long long int i2, l
             if (i1 != i2 && j1 != j2)
             {
                 if (!isnan(dDatafile[i][j]))
-                    _cache.writeToCache((j-j1)+(i-i1)*(j2-j1+1),0, "cache", dDatafile[i][j]);
+                    _cache.writeToTable((j-j1)+(i-i1)*(j2-j1+1),0, "cache", dDatafile[i][j]);
             }
             else if (i1 != i2)
             {
                 if (!isnan(dDatafile[i][j]))
-                    _cache.writeToCache(i-i1,j-j1,"cache",dDatafile[i][j]);
+                    _cache.writeToTable(i-i1,j-j1,"cache",dDatafile[i][j]);
             }
             else
             {
                 if (!isnan(dDatafile[i][j]))
-                    _cache.writeToCache(j-j1,i-i1,"cache",dDatafile[i][j]);
+                    _cache.writeToTable(j-j1,i-i1,"cache",dDatafile[i][j]);
             }
         }
     }
     string sSortCommand = "cache -sort";
     _cache.sortElements(sSortCommand);
-    return (1-((_cache.getCacheLines(0,false)-1)*dPct-floor((_cache.getCacheLines(0,false)-1)*dPct)))*_cache.getElement(floor((_cache.getCacheLines(0,false)-1)*dPct),0,"cache")
-        + ((_cache.getCacheLines(0,false)-1)*dPct-floor((_cache.getCacheLines(0,false)-1)*dPct))*_cache.getElement(floor((_cache.getCacheLines(0,false)-1)*dPct)+1,0,"cache");
+    return (1-((_cache.getTableLines(0,false)-1)*dPct-floor((_cache.getTableLines(0,false)-1)*dPct)))*_cache.getElement(floor((_cache.getTableLines(0,false)-1)*dPct),0,"cache")
+        + ((_cache.getTableLines(0,false)-1)*dPct-floor((_cache.getTableLines(0,false)-1)*dPct))*_cache.getElement(floor((_cache.getTableLines(0,false)-1)*dPct)+1,0,"cache");
 }
 
 double Datafile::pct(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct)
 {
     if (sCache != "data")
-        return Cache::pct(sCache, _vLine, _vCol, dPct);
+        return MemoryManager::pct(sCache, _vLine, _vCol, dPct);
     if (!bValidData)
         return NAN;
     if (dPct <= 0 || dPct >= 1)

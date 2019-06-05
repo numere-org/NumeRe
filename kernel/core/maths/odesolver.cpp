@@ -190,8 +190,8 @@ bool Odesolver::solve(const string& sCmd)
         bAllowCacheClearance = true;
 
     //cerr << 3 << endl;
-    if (!_odeData->isCacheElement(sTarget))
-        _odeData->addCache(sTarget, *_odeSettings);
+    if (!_odeData->isTable(sTarget))
+        _odeData->addTable(sTarget, *_odeSettings);
 
     _idx = parser_getIndices(sTarget, *_odeParser, *_odeData, *_odeSettings);
 
@@ -380,7 +380,7 @@ bool Odesolver::solve(const string& sCmd)
     if (bAllowCacheClearance || !_idx.row.front())
         _odeData->setHeadLineElement(_idx.col.front(), sTarget, "x");
 
-    _odeData->writeToCache(_idx.row.front(), _idx.col.front(), sTarget, t);
+    _odeData->writeToTable(_idx.row.front(), _idx.col.front(), sTarget, t);
 
     for (int j = 0; j < nDimensions; j++)
     {
@@ -390,7 +390,7 @@ bool Odesolver::solve(const string& sCmd)
         if (bAllowCacheClearance || !_idx.row.front())
             _odeData->setHeadLineElement(_idx.col[1+j], sTarget, "y"+toString(j+1));
 
-        _odeData->writeToCache(_idx.row.front(), _idx.col[j+1], sTarget, y[j]);
+        _odeData->writeToTable(_idx.row.front(), _idx.col[j+1], sTarget, y[j]);
     }
 
     if (bCalcLyapunov && (bAllowCacheClearance || !_idx.row.front()) && _idx.col[nDimensions+2] != VectorIndex::INVALID)
@@ -464,8 +464,8 @@ bool Odesolver::solve(const string& sCmd)
 
             if (!((i+1) % nLyapuSamples) && _idx.col[nDimensions + 2] != VectorIndex::INVALID)
             {
-                _odeData->writeToCache((i+1)/nLyapuSamples-1, _idx.col[nDimensions+1], sTarget, t1);
-                _odeData->writeToCache((i+1)/nLyapuSamples-1, _idx.col[nDimensions+2], sTarget, lyapu[0]);
+                _odeData->writeToTable((i+1)/nLyapuSamples-1, _idx.col[nDimensions+1], sTarget, t1);
+                _odeData->writeToTable((i+1)/nLyapuSamples-1, _idx.col[nDimensions+2], sTarget, lyapu[0]);
             }
 
             for (int n = 0; n < nDimensions; n++)
@@ -477,14 +477,14 @@ bool Odesolver::solve(const string& sCmd)
             gsl_odeiv_step_reset(odeStep_ly);
         }
 
-        _odeData->writeToCache(_idx.row[i+1], _idx.col[0], sTarget, t);
+        _odeData->writeToTable(_idx.row[i+1], _idx.col[0], sTarget, t);
 
         for (int j = 0; j < nDimensions; j++)
         {
             if (_idx.col[j+1] == VectorIndex::INVALID)
                 break;
 
-            _odeData->writeToCache(_idx.row[i+1], _idx.col[j+1], sTarget, y[j]);
+            _odeData->writeToTable(_idx.row[i+1], _idx.col[j+1], sTarget, y[j]);
         }
     }
 

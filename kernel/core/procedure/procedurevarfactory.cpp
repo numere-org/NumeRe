@@ -139,7 +139,7 @@ void ProcedureVarFactory::reset()
         for (size_t i = 0; i < nLocalTableSize; i++)
         {
             if (_dataRef)
-                _dataRef->deleteCache(sLocalTables[i][1]);
+                _dataRef->deleteTable(sLocalTables[i][1]);
 
             delete[] sLocalTables[i];
         }
@@ -928,7 +928,7 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
 
         try
         {
-            _dataRef->addCache(sLocalTables[i][1], *_optionRef);
+            _dataRef->addTable(sLocalTables[i][1], *_optionRef);
         }
         catch (...)
         {
@@ -937,7 +937,7 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
             for (unsigned int j = 0; j <= i; j++)
             {
                 if (j < i)
-                    _dataRef->deleteCache(sLocalTables[j][1]);
+                    _dataRef->deleteTable(sLocalTables[j][1]);
 
                 delete[] sLocalTables[j];
             }

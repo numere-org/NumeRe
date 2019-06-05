@@ -112,7 +112,7 @@ void NumeReKernel::setKernelSettings(const Settings& _settings)
 void NumeReKernel::Autosave()
 {
 	if (!_data.getSaveStatus())
-		_data.saveCache();
+		_data.saveToCacheFile();
 	return;
 }
 
@@ -250,11 +250,11 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 			_data.openAutosave(sAutosave, _option);
 			_data.setSaveStatus(true);
 			remove(sAutosave.c_str());
-			_data.saveCache();
+			_data.saveToCacheFile();
 		}
 		else
 		{
-			_data.loadCache();
+			_data.loadFromCacheFile();
 		}
 
 		addToLog("> SYSTEM: Automatic backup was loaded.");
@@ -722,7 +722,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 							NumeReKernel::getline(c);
 							if (c == _lang.YES())
 							{
-								_data.saveCache(); // MAIN_CACHE_SAVED
+								_data.saveToCacheFile(); // MAIN_CACHE_SAVED
 								print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
 								Sleep(500);
 							}
@@ -846,7 +846,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                     cluster.assignResults(_idx, nNum, v);
                 }
                 else
-                    _data.writeToCache(_idx, sCache, v, nNum);
+                    _data.writeToTable(_idx, sCache, v, nNum);
             }
 		}
 		// This section starts the error handling
@@ -1786,7 +1786,7 @@ void NumeReKernel::saveData()
 {
 	if (!_data.getSaveStatus()) // MAIN_UNSAVED_CACHE
 	{
-		_data.saveCache(); // MAIN_CACHE_SAVED
+		_data.saveToCacheFile(); // MAIN_CACHE_SAVED
 		print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
 		Sleep(500);
 	}
@@ -2478,7 +2478,7 @@ NumeRe::Table NumeReKernel::getTable(const string& sTableName)
     if (sSelectedTable.find("()") != string::npos)
         sSelectedTable.erase(sSelectedTable.find("()"));
 
-    if ((!_data.isCacheElement(sSelectedTable) && sSelectedTable != "data") || !_data.getCols(sSelectedTable))
+    if ((!_data.isTable(sSelectedTable) && sSelectedTable != "data") || !_data.getCols(sSelectedTable))
         return NumeRe::Table();
 
     return _data.extractTable(sSelectedTable);
