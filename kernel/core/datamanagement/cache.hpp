@@ -84,19 +84,19 @@ class MemoryManager : public FileSystem, public StringMemory, public NumeRe::Clu
 		{
 			return vMemory[mCachesMap.at(_sCache)]->readMem(_vLine, _vCol);
 		}
-		inline void copyCachedElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const string& _sCache) const
+		inline void copyTableElementsToVector(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const string& _sCache) const
 		{
 			vMemory[mCachesMap.at(_sCache)]->copyElementsInto(vTarget, _vLine, _vCol);
 		}
-		inline string getCacheHeadLineElement(long long int _i, const string& _sCache) const
+		inline string getTableHeadlineElement(long long int _i, const string& _sCache) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->getHeadLineElement(_i);
 		}
-		inline vector<string> getCacheHeadLineElement(const VectorIndex& _vCol, const string& _sCache) const
+		inline vector<string> getTableHeadlineElement(const VectorIndex& _vCol, const string& _sCache) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->getHeadLineElement(_vCol);
 		}
-		inline bool setCacheHeadLineElement(long long int _i, const string& _sCache, string _sHead)
+		inline bool setTableHeadlineElement(long long int _i, const string& _sCache, string _sHead)
 		{
 			return vMemory[mCachesMap.at(_sCache)]->setHeadLineElement(_i, _sHead);
 		}
@@ -165,7 +165,7 @@ class MemoryManager : public FileSystem, public StringMemory, public NumeRe::Clu
 			else
 				return 0;
 		}
-		inline string matchCache(const string& sExpression, char cFollowing = ' ')
+		inline string matchTableAsParameter(const string& sExpression, char cFollowing = ' ')
 		{
 			for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
 			{

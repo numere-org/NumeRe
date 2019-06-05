@@ -2132,7 +2132,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				else
 					remove_data(_data, _option);
 			}
-			else if (_data.matchCache(sCmd).length() || _data.containsTablesOrClusters(sCmd.substr(findCommand(sCmd).nPos)))
+			else if (_data.matchTableAsParameter(sCmd).length() || _data.containsTablesOrClusters(sCmd.substr(findCommand(sCmd).nPos)))
 			{
 				if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
 					clear_cache(_data, _option, true);
@@ -2385,7 +2385,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			sArgument = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 			if (matchParams(sCmd, "data") && _data.isValid())
 				plugin_statistics(sArgument, _data, _out, _option, false, true);
-			else if (_data.matchCache(sCmd).length() && _data.isValidCache())
+			else if (_data.matchTableAsParameter(sCmd).length() && _data.isValidCache())
 				plugin_statistics(sArgument, _data, _out, _option, true, false);
 			else
 			{
@@ -4645,19 +4645,19 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				else
 					show_data(_data, _out, _option, "data", nPrecision, true, false, true);
 			}
-			else if (_data.matchCache(sCmd).length() || _data.matchCache(sCmd, '=').length())
+			else if (_data.matchTableAsParameter(sCmd).length() || _data.matchTableAsParameter(sCmd, '=').length())
 			{
 				if (_data.containsStringVars(sCmd))
 					_data.getStringValues(sCmd);
-				if (_data.matchCache(sCmd, '=').length())
-					addArgumentQuotes(sCmd, _data.matchCache(sCmd, '='));
+				if (_data.matchTableAsParameter(sCmd, '=').length())
+					addArgumentQuotes(sCmd, _data.matchTableAsParameter(sCmd, '='));
 				if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
 				{
 					_out.setFileName(sArgument);
-					show_data(_data, _out, _option, _data.matchCache(sCmd), nPrecision, false, true, true, false);
+					show_data(_data, _out, _option, _data.matchTableAsParameter(sCmd), nPrecision, false, true, true, false);
 				}
 				else
-					show_data(_data, _out, _option, _data.matchCache(sCmd), nPrecision, false, true, true);
+					show_data(_data, _out, _option, _data.matchTableAsParameter(sCmd), nPrecision, false, true, true);
 			}
 			else //if (sCmd.find("cache(") != string::npos || sCmd.find("data(") != string::npos)
 			{
@@ -4846,18 +4846,18 @@ static int swapTables(string& sCmd, Datafile& _data, Parser& _parser, Settings& 
         sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 
     // Handle legacy and new syntax in these two cases
-    if (_data.matchCache(sCmd, '=').length())
+    if (_data.matchTableAsParameter(sCmd, '=').length())
     {
         // Legacy syntax: swap -cache1=cache2
         //
         // Get the option value of the parameter "cache1"
-        sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=') + _data.matchCache(sCmd, '=').length());
+        sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchTableAsParameter(sCmd, '='), '=') + _data.matchTableAsParameter(sCmd, '=').length());
 
         // Swap the caches
-        _data.swapTables(_data.matchCache(sCmd, '='), sArgument);
+        _data.swapTables(_data.matchTableAsParameter(sCmd, '='), sArgument);
 
         if (_option.getSystemPrintStatus())
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", _data.matchCache(sCmd, '='), sArgument), _option) );
+            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", _data.matchTableAsParameter(sCmd, '='), sArgument), _option) );
     }
     else if (sCmd.find("()") != string::npos && sCmd.find(',') != string::npos)
     {
@@ -4904,15 +4904,15 @@ static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings
         sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 
     // Handle legacy and new syntax in these two cases
-    if (_data.matchCache(sCmd, '=').length())
+    if (_data.matchTableAsParameter(sCmd, '=').length())
     {
         // Legacy syntax: rename -cache1=cache2
         //
         // Get the option value of the parameter "cache1"
-        sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchCache(sCmd, '='), '=') + _data.matchCache(sCmd, '=').length());
+        sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchTableAsParameter(sCmd, '='), '=') + _data.matchTableAsParameter(sCmd, '=').length());
 
         // Rename the cache
-        _data.renameTable(_data.matchCache(sCmd, '='), sArgument);
+        _data.renameTable(_data.matchTableAsParameter(sCmd, '='), sArgument);
 
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) );
@@ -5133,10 +5133,10 @@ static int showDataObject(string& sCmd)
         // data as object, passed as parameter
         show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
     }
-    else if (_data.matchCache(sCmd).length())
+    else if (_data.matchTableAsParameter(sCmd).length())
     {
         // a cache as object, passed as parameter
-        show_data(_data, _out, _option, _data.matchCache(sCmd), _option.getPrecision(), false, true);
+        show_data(_data, _out, _option, _data.matchTableAsParameter(sCmd), _option.getPrecision(), false, true);
     }
     else
     {

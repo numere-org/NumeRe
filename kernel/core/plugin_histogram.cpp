@@ -68,7 +68,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 				NumeReKernel::print(LineBreak(_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option));
 			}
 		}
-		else if (bUseCache || sCmd.find("-cache") != string::npos || _data.matchCache(sCmd).length())
+		else if (bUseCache || sCmd.find("-cache") != string::npos || _data.matchTableAsParameter(sCmd).length())
 		{
 			_data.setCacheStatus(true);
 		}
@@ -79,8 +79,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 		string** sOut;				// Ausgabe-Matrix
 		string sLegend = "";
 		string sDatatable = "data";
-		if (_data.matchCache(sCmd).length())
-			sDatatable = _data.matchCache(sCmd);
+		if (_data.matchTableAsParameter(sCmd).length())
+			sDatatable = _data.matchTableAsParameter(sCmd);
 		if (!_data.getCols(sDatatable) || !_data.getLines(sDatatable))
 			throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 		string sTargettable = "cache";

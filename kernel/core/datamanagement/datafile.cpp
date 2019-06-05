@@ -3565,7 +3565,7 @@ void Datafile::copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLi
         return;
     if (sCache != "data")
     {
-        copyCachedElementsInto(vTarget, _vLine, _vCol, sCache);
+        copyTableElementsToVector(vTarget, _vLine, _vCol, sCache);
         return;
     }
     vTarget->clear();
@@ -3681,7 +3681,7 @@ string Datafile::getHeadLineElement(long long int _i, const string& sCache) cons
 {
 	if (sCache != "data")
 	{
-		return getCacheHeadLineElement(_i, sCache);
+		return getTableHeadlineElement(_i, sCache);
 	}
 	else if (_i >= nCols)
         return "Spalte " + toString((int)_i+1) + " (leer)";
@@ -3692,7 +3692,7 @@ string Datafile::getHeadLineElement(long long int _i, const string& sCache) cons
 vector<string> Datafile::getHeadLineElement(const VectorIndex& _vCol, const string& sCache) const
 {
     if (sCache != "data")
-        return MemoryManager::getCacheHeadLineElement(_vCol, sCache);
+        return MemoryManager::getTableHeadlineElement(_vCol, sCache);
     vector<string> vHeadlines;
     for (unsigned int i = 0; i < _vCol.size(); i++)
     {
@@ -3738,7 +3738,7 @@ bool Datafile::setHeadLineElement(long long int _i, const string& sCache, string
 	// --> Jetzt koennen wir den String verwenden <--
 	if (sCache != "data")
 	{
-		if (!setCacheHeadLineElement(_i, sCache, _sHead))
+		if (!setTableHeadlineElement(_i, sCache, _sHead))
             return false;
 	}
 	else if (_i < nCols)
@@ -4001,7 +4001,7 @@ void Datafile::openAutosave(string _sFile, Settings& _option)
     }
     for (long long int i = 0; i < nCols; i++)
     {
-        setCacheHeadLineElement(i, 0, sHeadLine[i]);
+        setTableHeadlineElement(i, 0, sHeadLine[i]);
     }
     removeData(true);
     return;
