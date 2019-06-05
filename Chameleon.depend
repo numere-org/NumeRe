@@ -3995,17 +3995,17 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1557295183 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1559719665 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
 	"datamanagement/dataops.hpp"
 
-1555102907 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
+1559719665 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.cpp
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1557295183 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
@@ -4048,20 +4048,20 @@
 	"fitcontroller.hpp"
 	"../../kernel.hpp"
 
-1557335590 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1557295183 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	<list>
 	<cmath>
 
-1557295183 source:d:\cpp\numere-source\trunk\kernel\core\maths\odesolver.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\maths\odesolver.cpp
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1557593297 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4180,7 +4180,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1559556838 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -4204,11 +4204,11 @@
 1552085383 source:d:\cpp\numere-source\trunk\kernel\core\plugin.cpp
 	"plugin.hpp"
 
-1554233215 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\plugin_histogram.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1529939887 source:d:\cpp\numere-source\trunk\kernel\core\plugin_random.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\plugin_random.cpp
 	"plugins.hpp"
 	"../kernel.hpp"
 
@@ -4222,11 +4222,11 @@
 	"../utils/tools.hpp"
 	"procedurevarfactory.hpp"
 
-1557295184 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
+1559719665 source:d:\cpp\numere-source\trunk\kernel\core\procedure\flowctrl.cpp
 	"flowctrl.hpp"
 	"../../kernel.hpp"
 
-1557651479 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedure.cpp
 	"procedure.hpp"
 	"../../kernel.hpp"
 	"procedurevarfactory.hpp"
@@ -4255,7 +4255,7 @@
 	"../ui/error.hpp"
 	"../utils/tools.hpp"
 
-1555682706 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\procedure\procedurevarfactory.cpp
 	"procedurevarfactory.hpp"
 	"procedure.hpp"
 	"../../kernel.hpp"
@@ -4268,7 +4268,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1558098275 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -4319,7 +4319,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1557335592 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1559719665 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
@@ -4363,7 +4363,7 @@
 	"output.hpp"
 	"../../kernel.hpp"
 
-1558098275 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataops.cpp
 	<wx/image.h>
 	"dataops.hpp"
 	"container.hpp"
@@ -4382,7 +4382,7 @@
 	"../settings.hpp"
 	"../structures.hpp"
 
-1557295183 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
 	"dataaccess.hpp"
 	"../utils/tools.hpp"
 	"../../kernel.hpp"
@@ -8799,7 +8799,7 @@
 	"memory.hpp"
 	"../../kernel.hpp"
 
-1557295183 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\indices.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\indices.cpp
 	"dataaccess.hpp"
 	"../utils/tools.hpp"
 	<vector>
@@ -9187,7 +9187,7 @@
 	"breakpointmanager.hpp"
 	"../utils/tools.hpp"
 
-1555694714 source:d:\cpp\numere-source\trunk\kernel\core\debugger\debugger.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\debugger\debugger.cpp
 	"debugger.hpp"
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
@@ -9238,7 +9238,7 @@
 	"cluster.hpp"
 	"../ui/error.hpp"
 
-1557299397 source:d:\cpp\numere-source\trunk\kernel\core\maths\fitting.cpp
+1559719666 source:d:\cpp\numere-source\trunk\kernel\core\maths\fitting.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 
@@ -9376,7 +9376,7 @@
 	"../ui/language.hpp"
 	"../version.h"
 
-1559718251 d:\cpp\numere-source\trunk\kernel\core\io\file.hpp
+1559720350 d:\cpp\numere-source\trunk\kernel\core\io\file.hpp
 	<string>
 	<fstream>
 	<cmath>

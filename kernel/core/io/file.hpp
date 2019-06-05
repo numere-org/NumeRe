@@ -449,6 +449,15 @@ namespace NumeRe
                 if (!sTableName.length())
                 {
                     sTableName = getFileParts(sFileName)[2];
+
+                    for (size_t i = 0; i < sTableName.length(); i++)
+                    {
+                        if (sTableName[i] != '_' && !isalnum(sTableName[i]))
+                            sTableName[i] = '_';
+                    }
+
+                    if (isdigit(sTableName.front()))
+                        sTableName.insert(0, 1, '_');
                 }
 
                 return sTableName;
