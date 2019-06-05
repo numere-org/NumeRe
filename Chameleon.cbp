@@ -328,6 +328,8 @@
 		<Unit filename="gui/dialogs/RemoteFileDialog.h" />
 		<Unit filename="gui/dialogs/debugviewer.cpp" />
 		<Unit filename="gui/dialogs/debugviewer.hpp" />
+		<Unit filename="gui/dialogs/dependencydialog.cpp" />
+		<Unit filename="gui/dialogs/dependencydialog.hpp" />
 		<Unit filename="gui/dialogs/duplicatecodedialog.cpp" />
 		<Unit filename="gui/dialogs/duplicatecodedialog.hpp" />
 		<Unit filename="gui/dialogs/fndrpldialog.cpp" />
