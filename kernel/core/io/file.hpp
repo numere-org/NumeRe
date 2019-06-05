@@ -31,6 +31,7 @@
 
 namespace NumeRe
 {
+    //
     template <class DATATYPE>
     class GenericFile : public FileSystem
     {
@@ -117,6 +118,10 @@ namespace NumeRe
             std::string readStringField()
             {
                 long long int size = readNumField<long long int>();
+
+                if (!size)
+                    return "";
+
                 char* buffer = new char[size];
 
                 fFileStream.read(buffer, size);
@@ -399,10 +404,12 @@ namespace NumeRe
                 sFileName = ValidFileName(fileName, "", false);
                 sFileExtension = getFileParts(sFileName).back();
             }
+
             GenericFile(const GenericFile& file) : GenericFile(file.sFileName)
             {
                 assign(file);
             }
+
             virtual ~GenericFile()
             {
                 clearStorage();
@@ -415,23 +422,28 @@ namespace NumeRe
             {
                 return fFileStream.is_open();
             }
+
             void close()
             {
                 fFileStream.close();
                 clearStorage();
             }
+
             bool good()
             {
                 return fFileStream.good();
             }
+
             std::string getExtension()
             {
                 return sFileExtension;
             }
+
             std::string getFileName()
             {
                 return sFileName;
             }
+
             std::string getTableName()
             {
                 if (!sTableName.length())
@@ -441,10 +453,12 @@ namespace NumeRe
 
                 return sTableName;
             }
+
             long long int getRows()
             {
                 return nRows;
             }
+
             long long int getCols()
             {
                 return nCols;
@@ -539,7 +553,7 @@ namespace NumeRe
             }
     };
 
-
+    //
     class TextDataFile : public GenericFile<double>
     {
         private:
@@ -570,10 +584,10 @@ namespace NumeRe
             }
     };
 
-
+    //
     class NumeReDataFile : public GenericFile<double>
     {
-        private:
+        protected:
             bool isLegacy;
             time_t timeStamp;
             std::string sComment;
@@ -590,6 +604,8 @@ namespace NumeRe
             void skipDummyHeader();
             void readFile();
             void readLegacyFormat();
+            void* readGenericField(std::string& type, long long int& size);
+            void deleteGenericData(void* data, const std::string& type);
 
         public:
             NumeReDataFile(const std::string& filename);
@@ -600,6 +616,7 @@ namespace NumeRe
             {
                 readFile();
             }
+
             virtual void write() override
             {
                 writeFile();
@@ -612,23 +629,62 @@ namespace NumeRe
                 open(std::ios::in | std::ios::binary);
                 readHeader();
             }
+
             time_t getTimeStamp()
             {
                 return timeStamp;
             }
+
             std::string getVersionString();
             std::string getComment()
             {
                 return sComment;
             }
+
             void setComment(const std::string& comment)
             {
                 sComment = comment;
             }
     };
 
+    //
+    class CacheFile : public NumeReDataFile
+    {
+        private:
+            size_t nNumberOfTables;
 
+            void reset();
+            void readSome();
+            void writeSome();
+            void readCacheHeader();
+            void writeCacheHeader();
 
+        public:
+            CacheFile(const std::string& filename);
+            virtual ~CacheFile();
+
+            virtual void read() override
+            {
+                readSome();
+            }
+
+            virtual void write() override
+            {
+                writeSome();
+            }
+
+            size_t getNumberOfTables()
+            {
+                return nNumberOfTables;
+            }
+
+            void setNumberOfTables(size_t nTables)
+            {
+                nNumberOfTables = nTables;
+            }
+    };
+
+    //
     class CassyLabx : public GenericFile<double>
     {
         private:
@@ -649,8 +705,7 @@ namespace NumeRe
             }
     };
 
-
-
+    //
     class CommaSeparatedValues : public GenericFile<double>
     {
         private:
@@ -674,8 +729,7 @@ namespace NumeRe
             }
     };
 
-
-
+    //
     class JcampDX : public GenericFile<double>
     {
         private:
@@ -698,7 +752,7 @@ namespace NumeRe
             }
     };
 
-
+    //
     class OpenDocumentSpreadSheet : public GenericFile<double>
     {
         private:
@@ -720,7 +774,7 @@ namespace NumeRe
             }
     };
 
-
+    //
     class XLSSpreadSheet : public GenericFile<double>
     {
         private:
@@ -742,7 +796,7 @@ namespace NumeRe
             }
     };
 
-
+    //
     class XLSXSpreadSheet : public GenericFile<double>
     {
         private:
@@ -764,7 +818,7 @@ namespace NumeRe
             }
     };
 
-
+    //
     class IgorBinaryWave : public GenericFile<double>
     {
         private:

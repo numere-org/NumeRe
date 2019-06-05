@@ -30,6 +30,10 @@ namespace NumeRe
 {
     using namespace std;
 
+    //////////////////////////////////////////////
+    // class TextDataFile
+    //////////////////////////////////////////////
+    //
     TextDataFile::TextDataFile(const string& filename) : GenericFile(filename)
     {
         //
@@ -567,8 +571,10 @@ namespace NumeRe
     }
 
 
-
-
+    //////////////////////////////////////////////
+    // class NumeReDataFile
+    //////////////////////////////////////////////
+    //
     NumeReDataFile::NumeReDataFile(const string& filename)
         : GenericFile(filename),
         isLegacy(false), timeStamp(0), versionMajor(0), versionMinor(0),
@@ -605,10 +611,13 @@ namespace NumeRe
         writeNumField(fileVersionMinor);
         writeStringField(getTableName());
         writeStringField(sComment);
+        writeStringField("FTYPE=DOUBLE");
         writeDataBlock(nullptr, 0);
+        writeStringField("FTYPE=DOUBLE");
         writeDataBlock(nullptr, 0);
+        writeStringField("FTYPE=DOUBLE");
         writeDataBlock(nullptr, 0);
-        writeStringField("DATATYPE=DOUBLE");
+        writeStringField("DTYPE=DOUBLE");
         writeNumField(nRows);
         writeNumField(nCols);
     }
@@ -628,7 +637,8 @@ namespace NumeRe
 
     void NumeReDataFile::writeFile()
     {
-        open(ios::binary | ios::out | ios::trunc);
+        if (!is_open())
+            open(ios::binary | ios::out | ios::trunc);
 
         writeHeader();
         writeStringBlock(fileTableHeads, nCols);
@@ -662,9 +672,15 @@ namespace NumeRe
         sComment = readStringField();
 
         long long int size;
-        readDataBlock(size);
-        readDataBlock(size);
-        readDataBlock(size);
+        string type;
+        void* data = readGenericField(type, size);
+        deleteGenericData(data, type);
+
+        data = readGenericField(type, size);
+        deleteGenericData(data, type);
+
+        data = readGenericField(type, size);
+        deleteGenericData(data, type);
 
         string dataType = readStringField();
         nRows = readNumField<long long int>();
@@ -686,7 +702,8 @@ namespace NumeRe
 
     void NumeReDataFile::readFile()
     {
-        open(ios::binary | ios::in);
+        if (!is_open())
+            open(ios::binary | ios::in);
 
         readHeader();
 
@@ -751,6 +768,37 @@ namespace NumeRe
         delete[] nAppendedZeros;
     }
 
+    void* NumeReDataFile::readGenericField(std::string& type, long long int& size)
+    {
+        type = readStringField();
+        type.erase(0, type.find('=')+1);
+        size = 0;
+
+        if (type == "DOUBLE")
+        {
+            double* data = readDataBlock(size);
+            return (void*)data;
+        }
+        else if (type == "STRING")
+        {
+            string* data = readStringBlock(size);
+            return (void*)data;
+        }
+
+        return nullptr;
+    }
+
+    void NumeReDataFile::deleteGenericData(void* data, const string& type)
+    {
+        if (data)
+        {
+            if (type == "DOUBLE")
+                delete[] (double*)data;
+            else if (type == "STRING")
+                delete[] (string*)data;
+        }
+    }
+
     NumeReDataFile& NumeReDataFile::operator=(NumeReDataFile& file)
     {
         assign(file);
@@ -770,8 +818,80 @@ namespace NumeRe
     }
 
 
+    //////////////////////////////////////////////
+    // class NumeReDataFile
+    //////////////////////////////////////////////
+    //
+    CacheFile::CacheFile(const string& filename) : NumeReDataFile(filename), nNumberOfTables(0)
+    {
+        //
+    }
 
+    CacheFile::~CacheFile()
+    {
+        //
+    }
 
+    void CacheFile::reset()
+    {
+        sComment.clear();
+        sTableName.clear();
+        clearStorage();
+    }
+
+    void CacheFile::readSome()
+    {
+        reset();
+
+        if (nNumberOfTables && !fFileStream.eof())
+            readFile();
+    }
+
+    void CacheFile::writeSome()
+    {
+        if (nNumberOfTables)
+            writeFile();
+    }
+
+    void CacheFile::readCacheHeader()
+    {
+        open(ios::binary | ios::in);
+
+        versionMajor = readNumField<long int>();
+        versionMinor = readNumField<long int>();
+        versionBuild = readNumField<long int>();
+        timeStamp = readNumField<time_t>();
+
+        if (readStringField() != "NUMERECACHEFILE")
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        short fileVerMajor = readNumField<short>();
+        short fileVerMinor = readNumField<short>();
+
+        if (fileVerMajor > fileVersionMajor)
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        nNumberOfTables = readNumField<size_t>();
+    }
+
+    void CacheFile::writeCacheHeader()
+    {
+        open(ios::binary | ios::out | ios::trunc);
+
+        writeNumField(AutoVersion::MAJOR);
+        writeNumField(AutoVersion::MINOR);
+        writeNumField(AutoVersion::BUILD);
+        writeNumField(time(0));
+        writeStringField("NUMERECACHEFILE");
+        writeNumField(fileVersionMajor);
+        writeNumField(fileVersionMinor);
+        writeNumField(nNumberOfTables);
+    }
+
+    //////////////////////////////////////////////
+    // class CassyLabx
+    //////////////////////////////////////////////
+    //
     CassyLabx::CassyLabx(const string& filename) : GenericFile(filename)
     {
         //
@@ -918,9 +1038,10 @@ namespace NumeRe
     }
 
 
-
-
-
+    //////////////////////////////////////////////
+    // class CommaSeparatedValues
+    //////////////////////////////////////////////
+    //
     CommaSeparatedValues::CommaSeparatedValues(const string& filename) : GenericFile(filename)
     {
         //
@@ -1234,9 +1355,10 @@ namespace NumeRe
     }
 
 
-
-
-
+    //////////////////////////////////////////////
+    // class JcampDX
+    //////////////////////////////////////////////
+    //
     JcampDX::JcampDX(const string& filename) : GenericFile(filename)
     {
         //
@@ -1586,8 +1708,10 @@ namespace NumeRe
     }
 
 
-
-
+    //////////////////////////////////////////////
+    // class OpenDocumentSpreadSheet
+    //////////////////////////////////////////////
+    //
     OpenDocumentSpreadSheet::OpenDocumentSpreadSheet(const string& filename) : GenericFile(filename)
     {
         //
@@ -1862,9 +1986,10 @@ namespace NumeRe
     }
 
 
-
-
-
+    //////////////////////////////////////////////
+    // class XLSSpreadSheet
+    //////////////////////////////////////////////
+    //
     XLSSpreadSheet::XLSSpreadSheet(const string& filename) : GenericFile(filename)
     {
         //
@@ -2092,8 +2217,10 @@ namespace NumeRe
     }
 
 
-
-
+    //////////////////////////////////////////////
+    // class XLSXSpreadSheet
+    //////////////////////////////////////////////
+    //
     XLSXSpreadSheet::XLSXSpreadSheet(const string& filename) : GenericFile(filename)
     {
         //
@@ -2324,8 +2451,10 @@ namespace NumeRe
     }
 
 
-
-
+    //////////////////////////////////////////////
+    // class IgorBinaryWave
+    //////////////////////////////////////////////
+    //
     IgorBinaryWave::IgorBinaryWave(const string& filename) : GenericFile(filename), bXZSlice(false)
     {
         //
