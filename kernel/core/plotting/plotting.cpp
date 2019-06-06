@@ -1294,13 +1294,15 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 			// Fallback for all bended coordinates, which are not covered by the second case
 			if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT || _pData.getCoords() == PlotData::SPHERICAL_RT || _pData.getCoords() == PlotData::POLAR_RZ)
 				_mDataPlots[nTypeCounter[1]][0] = fmod(_mDataPlots[nTypeCounter[1]][0], 2.0 * M_PI);
+
 			if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
 				_mDataPlots[nTypeCounter[1]][1] = fmod(_mDataPlots[nTypeCounter[1]][1], 2.0 * M_PI);
 
 
 			_mData = _mDataPlots[nTypeCounter[1]][1];
 			_mPlotAxes = _mDataPlots[nTypeCounter[1]][0];
-			if (_pData.getBoxplot()) ///
+
+			if (_pData.getBoxplot())
 			{
 				_mData2[0].Create(nDataDim[nTypeCounter[1]]);
 				for (int col = 0; col < nDataDim[nTypeCounter[1]]; col++)
@@ -1325,7 +1327,7 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 				}
 				_mData.Transpose();
 			}
-			else if (_pData.getBars() || _pData.getHBars()) ///
+			else if (_pData.getBars() || _pData.getHBars())
 			{
 				long int maxdim = _mDataPlots[nTypeCounter[1]][1].nx;
 				for (int data = 2; data < nDataDim[nTypeCounter[1]]; data++)
@@ -1359,6 +1361,32 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 					}
 					else
 					{
+					    // If the current data dimension is higher than 2, then we
+					    // expand it into an array of curves
+					    if (nDataDim[nTypeCounter[1]] >= 3)
+                        {
+                            long int maxdim = _mDataPlots[nTypeCounter[1]][1].nx;
+
+                            // Find the largest x-set
+                            for (int data = 2; data < nDataDim[nTypeCounter[1]]; data++)
+                            {
+                                if (maxdim < _mDataPlots[nTypeCounter[1]][data].nx)
+                                    maxdim = _mDataPlots[nTypeCounter[1]][data].nx;
+                            }
+
+                            // Create the target array and copy the data
+                            _mData.Create(maxdim, nDataDim[nTypeCounter[1]] - 1);
+
+                            for (int data = 0; data < nDataDim[nTypeCounter[1]] - 1; data++)
+                            {
+                                for (int col = 0; col < _mDataPlots[nTypeCounter[1]][data + 1].nx; col++)
+                                {
+                                    _mData.a[col + data * maxdim] = _mDataPlots[nTypeCounter[1]][data + 1].a[col];
+                                }
+                            }
+                        }
+
+                        // Create an zero-error data set
 						_mData2[0].Create(getNN(_mData));
 						for (long int i = 0; i < getNN(_mData); i++)
 							_mData2[0].a[i] = 0.0;
@@ -1391,7 +1419,30 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 							_mData2[1].a[i] = 0.0;
 					}
 				}
+				else if (nDataDim[nTypeCounter[1]] >= 3)
+                {
+                    long int maxdim = _mDataPlots[nTypeCounter[1]][1].nx;
+
+                    // Find the largest x-set
+                    for (int data = 2; data < nDataDim[nTypeCounter[1]]; data++)
+                    {
+                        if (maxdim < _mDataPlots[nTypeCounter[1]][data].nx)
+                            maxdim = _mDataPlots[nTypeCounter[1]][data].nx;
+                    }
+
+                    // Create the target array and copy the data
+                    _mData.Create(maxdim, nDataDim[nTypeCounter[1]] - 1);
+
+                    for (int data = 0; data < nDataDim[nTypeCounter[1]] - 1; data++)
+                    {
+                        for (int col = 0; col < _mDataPlots[nTypeCounter[1]][data + 1].nx; col++)
+                        {
+                            _mData.a[col + data * maxdim] = _mDataPlots[nTypeCounter[1]][data + 1].a[col];
+                        }
+                    }
+                }
 			}
+
 			if (_pData.getAxisbind(nType)[1] == 't')
 			{
 				for (int i = 0; i < getNN(_mPlotAxes); i++)
@@ -1409,18 +1460,22 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 						_mPlotAxes.a[i] = NAN;
 				}
 			}
+
 			if (_pData.getAxisbind(nType)[0] == 'r')
 			{
 				_mData = (_mData - _pInfo.dSecAxisRanges[1][0]) * (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (_pInfo.dSecAxisRanges[1][1] - _pInfo.dSecAxisRanges[1][0]) + _pInfo.dRanges[YCOORD][0];
 			}
+
 			if (_pData.getRegion() && _pData.getAxisbind(nType + 1)[0] == 'r' && getNN(_mData2[0]) > 1)
 			{
 				_mData2[0] = (_mData2[0] - _pInfo.dSecAxisRanges[1][0]) * (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (_pInfo.dSecAxisRanges[1][1] - _pInfo.dSecAxisRanges[1][0]) + _pInfo.dRanges[YCOORD][0];
 			}
+
 			if (_pData.getyError() && _pData.getAxisbind(nType)[0] == 'r')
 			{
 				_mData2[1] = (_mData2[1] - _pInfo.dSecAxisRanges[1][0]) * (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (_pInfo.dSecAxisRanges[1][1] - _pInfo.dSecAxisRanges[1][0]) + _pInfo.dRanges[YCOORD][0];
 			}
+
 			if (_pData.getxError() && _pData.getAxisbind(nType)[1] == 't')
 			{
 				_mData2[0] = (_mData2[0] - _pInfo.dSecAxisRanges[1][0]) * (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (_pInfo.dSecAxisRanges[0][1] - _pInfo.dSecAxisRanges[0][0]) + _pInfo.dRanges[XCOORD][0];
@@ -1631,7 +1686,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
 			if (_pData.getInterpolate() && countValidElements(_mData) >= _pInfo.nSamples)
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion() && !_pData.getStepplot())
-					_graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+					_graph->Plot(_mAxisVals, _mData, expandStyleForCurveArray(_pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1).c_str());
 				else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion() && !_pData.getStepplot())
 					_graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
 				else if (_pData.getRegion() && getNN(_mData2[0]) > 1)
@@ -1654,7 +1709,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
 			else if (_pData.getConnectPoints() || (_pData.getInterpolate() && countValidElements(_mData) >= 0.9 * _pInfo.nSamples))
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getStepplot())
-					_graph->Plot(_mAxisVals, _mData, _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+					_graph->Plot(_mAxisVals, _mData, expandStyleForCurveArray(_pInfo.sConPointStyles[*_pInfo.nStyle], _mData.ny > 1).c_str());
 				else if (_pData.getBars() && !_pData.getArea())
 					_graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
 				else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
@@ -1665,7 +1720,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
 			else
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
-					_graph->Plot(_mAxisVals, _mData, _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
+					_graph->Plot(_mAxisVals, _mData, expandStyleForCurveArray(_pInfo.sPointStyles[*_pInfo.nStyle], _mData.ny > 1).c_str());
 				else if (_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && !_pData.getStepplot())
 					_graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
 				else if (!_pData.getBars() && !_pData.getArea() && _pData.getHBars() && !_pData.getStepplot())
@@ -3181,19 +3236,24 @@ void Plot::setStyles(PlotData& _pData)
 		_pInfo.sConPointStyles[i] = " ";
 		_pInfo.sConPointStyles[i][0] = _pData.getColors()[i];
 	}
+
 	for (int i = 0; i < _pInfo.nStyleMax; i++)
 	{
 		_pInfo.sLineStyles[i] += _pData.getLineStyles()[i];
+
 		if (_pData.getDrawPoints())
 		{
 			if (_pData.getPointStyles()[2 * i] != ' ')
 				_pInfo.sLineStyles[i] += _pData.getPointStyles()[2 * i];
+
 			_pInfo.sLineStyles[i] += _pData.getPointStyles()[2 * i + 1];
 		}
+
 		if (_pData.getyError() || _pData.getxError())
 		{
 			if (_pData.getPointStyles()[2 * i] != ' ')
 				_pInfo.sPointStyles[i] += _pData.getPointStyles()[2 * i];
+
 			_pInfo.sPointStyles[i] += _pData.getPointStyles()[2 * i + 1];
 		}
 		else
@@ -3203,13 +3263,34 @@ void Plot::setStyles(PlotData& _pData)
 			else
 				_pInfo.sPointStyles[i] += " " + _pData.getPointStyles().substr(2 * i + 1, 1);
 		}
+
 		if (_pData.getPointStyles()[2 * i] != ' ')
 			_pInfo.sConPointStyles[i] += _pData.getLineStyles().substr(i, 1) + _pData.getPointStyles().substr(2 * i, 1) + _pData.getPointStyles().substr(2 * i + 1, 1);
 		else
 			_pInfo.sConPointStyles[i] += _pData.getLineStyles().substr(i, 1) + _pData.getPointStyles().substr(2 * i + 1, 1);
+
 		_pInfo.sContStyles[i] += _pData.getLineStyles()[i];
 		_pInfo.sLineStyles[i] += _pData.getLineSizes()[i];
 	}
+}
+
+// This protected member function expands a style string into 9 style
+// string with different luminosities. This is used by curve arrays
+string Plot::expandStyleForCurveArray(const string& sCurrentStyle, bool expand)
+{
+    // Do nothing, if the string shall not be expanded
+    if (!expand)
+        return sCurrentStyle;
+
+    string sExpandedStyle;
+
+    // Expand the style string
+    for (size_t i = 1; i <= 9; i++)
+    {
+        sExpandedStyle += "{" + sCurrentStyle.substr(0, 1) + toString(i) + "}" + sCurrentStyle.substr(1);
+    }
+
+    return sExpandedStyle;
 }
 
 
@@ -3695,16 +3776,18 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         default:
                             if (!(_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) || _pInfo.b2D)
                             {
-                                if (nColumns > 6)
+                                // This section was commented to allow arrays of curves
+                                // to be displayed in the plot
+                                /*if (nColumns > 6)
                                     nDataDim[i] = 6;
                                 else
-                                    nDataDim[i] = nColumns;
+                                    */nDataDim[i] = nColumns;
 
-                                if (_idx.col.size() > 6)
+                                /*if (_idx.col.size() > 6)
                                 {
                                     vector<long long int> vJ = _idx.col.getVector();
                                     _idx.col = vector<long long int>(vJ.begin() + 6, vJ.end());
-                                }
+                                }*/
                             }
                             else
                             {
@@ -3772,10 +3855,10 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                         }
                     }
 
-                    // --> Berechnen der DataRanges <--
+                    // Calculated the data ranges
                     for (int l = 0; l < (int)_idx.row.size(); l++)
                     {
-                        calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.row);
+                        calculateDataRanges(_pData, sDataAxisBinds, dDataRanges, dSecDataRanges, i, l, _idx.row, _idx.col.numberOfNodes());
                     }
 				}
 				else
@@ -4260,7 +4343,7 @@ string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const 
 
 // This member function is used to calculate the data ranges.
 // It is called during filling the data objects.
-void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, const VectorIndex& _vLine)
+void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, const VectorIndex& _vLine, size_t numberofColNodes)
 {
     // Calculate the ranges for all three spatial directions
 	for (int q = 0; q < 3; q++)
@@ -4309,7 +4392,7 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 				dDataRanges[q][0] = _mDataPlots[i][q].a[l];
 				dDataRanges[q][1] = _mDataPlots[i][q].a[l];
 			}
-            else if ((_pData.getBoxplot() || _pData.getBars()) && q == 1)
+            else if ((_pData.getBoxplot() || _pData.getBars() || (numberofColNodes > 2 && !_pData.getHBars())) && q == 1)
             {
                 // Handle boxplots (not only the first value but the whole table)
                 for (int dim = 1; dim < nDataDim[i]; dim++)
@@ -4410,7 +4493,7 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 					if (dDataRanges[q][1] < _mDataPlots[i][q].a[l] || isnan(dDataRanges[q][1]))
 						dDataRanges[q][1] = _mDataPlots[i][q].a[l];
 				}
-				else if ((_pData.getBoxplot() || _pData.getBars()) && q == 1)
+				else if ((_pData.getBoxplot() || _pData.getBars() || (numberofColNodes > 2 && !_pData.getHBars())) && q == 1)
 				{
 				    // Handle boxplots (evalute the row of the whole table)
 					for (int dim = 1; dim < nDataDim[i]; dim++)
