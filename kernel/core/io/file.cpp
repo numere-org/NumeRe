@@ -822,14 +822,18 @@ namespace NumeRe
     // class NumeReDataFile
     //////////////////////////////////////////////
     //
-    CacheFile::CacheFile(const string& filename) : NumeReDataFile(filename), nNumberOfTables(0)
+    CacheFile::CacheFile(const string& filename) : NumeReDataFile(filename), nIndexPos(0u)
     {
         //
     }
 
     CacheFile::~CacheFile()
     {
-        //
+        if (nIndexPos && vFileIndex.size())
+        {
+            seekp(nIndexPos);
+            writeNumBlock(&vFileIndex[0], vFileIndex.size());
+        }
     }
 
     void CacheFile::reset()
@@ -843,14 +847,25 @@ namespace NumeRe
     {
         reset();
 
-        if (nNumberOfTables && !fFileStream.eof())
+        if (vFileIndex.size() && !fFileStream.eof())
             readFile();
     }
 
     void CacheFile::writeSome()
     {
-        if (nNumberOfTables)
+        if (vFileIndex.size())
+        {
+            for (size_t i = 0; i < vFileIndex.size(); i++)
+            {
+                if (!vFileIndex[i])
+                {
+                    vFileIndex[i] = tellp();
+                    break;
+                }
+            }
+
             writeFile();
+        }
     }
 
     void CacheFile::readCacheHeader()
@@ -871,7 +886,13 @@ namespace NumeRe
         if (fileVerMajor > fileVersionMajor)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        nNumberOfTables = readNumField<size_t>();
+        size_t nNumberOfTables = readNumField<size_t>();
+
+        vFileIndex = vector<size_t>(nNumberOfTables, 0u);
+        long long int size = 0;
+        size_t* nIndex = readNumBlock<size_t>(size);
+        copyArray(nIndex, &vFileIndex[0], nNumberOfTables);
+        delete[] nIndex;
     }
 
     void CacheFile::writeCacheHeader()
@@ -885,7 +906,9 @@ namespace NumeRe
         writeStringField("NUMERECACHEFILE");
         writeNumField(fileVersionMajor);
         writeNumField(fileVersionMinor);
-        writeNumField(nNumberOfTables);
+        writeNumField(vFileIndex.size());
+        nIndexPos = tellp();
+        writeNumBlock(&vFileIndex[0], vFileIndex.size());
     }
 
     //////////////////////////////////////////////

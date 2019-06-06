@@ -150,6 +150,20 @@ namespace NumeRe
                 return sFileItem;
             }
 
+            template <typename T> T* readNumBlock(long long int& size)
+            {
+                size = readNumField<long long int>();
+
+                if (!size)
+                    return nullptr;
+
+                T* data = new T[size];
+
+                fFileStream.read((char*)data, sizeof(T)*size);
+
+                return data;
+            }
+
             DATATYPE* readDataBlock(long long int& size)
             {
                 size = readNumField<long long int>();
@@ -250,6 +264,12 @@ namespace NumeRe
                 fFileStream.write(sString.c_str(), sString.length());
             }
 
+            template <typename T> void writeNumBlock(T* data, long long int size)
+            {
+                writeNumField<long long int>(size);
+                fFileStream.write((char*)data, sizeof(T)*size);
+            }
+
             void writeDataBlock(DATATYPE* data, long long int size)
             {
                 writeNumField<long long int>(size);
@@ -336,6 +356,15 @@ namespace NumeRe
             }
 
             void copyStringArray(std::string* from, std::string* to, long long int nElements)
+            {
+                if (!from || !to || !nElements)
+                    return;
+
+                for (long long int i = 0; i < nElements; i++)
+                    to[i] = from[i];
+            }
+
+            template <typename T> void copyArray(T* from, T* to, long long int nElements)
             {
                 if (!from || !to || !nElements)
                     return;
@@ -432,6 +461,26 @@ namespace NumeRe
             bool good()
             {
                 return fFileStream.good();
+            }
+
+            size_t tellg()
+            {
+                return fFileStream.tellg();
+            }
+
+            size_t tellp()
+            {
+                return fFileStream.tellp();
+            }
+
+            void seekg(size_t pos)
+            {
+                fFileStream.seekg(pos, ios::beg);
+            }
+
+            void seekp(size_t pos)
+            {
+                fFileStream.seekp(pos, ios::beg);
             }
 
             std::string getExtension()
@@ -660,7 +709,8 @@ namespace NumeRe
     class CacheFile : public NumeReDataFile
     {
         private:
-            size_t nNumberOfTables;
+            std::vector<size_t> vFileIndex;
+            size_t nIndexPos;
 
             void reset();
             void readSome();
@@ -684,12 +734,20 @@ namespace NumeRe
 
             size_t getNumberOfTables()
             {
-                return nNumberOfTables;
+                return vFileIndex.size();
             }
 
             void setNumberOfTables(size_t nTables)
             {
-                nNumberOfTables = nTables;
+                vFileIndex = std::vector<size_t>(nTables, 0u);
+            }
+
+            size_t getPosition(size_t nthTable)
+            {
+                if (nthTable < vFileIndex.size())
+                    return vFileIndex[nthTable];
+
+                return -1;
             }
     };
 
