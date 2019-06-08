@@ -85,7 +85,7 @@ namespace NumeRe
 			}
 		}
 
-		nRows = nLine - nComment;	// Die maximale Zahl der Zeilen - die Zahl der Kommentare ergibt die noetige Zahl der Zeilen
+		nRows = vFileContents.size() - nComment;	// Die maximale Zahl der Zeilen - die Zahl der Kommentare ergibt die noetige Zahl der Zeilen
 		nCols = nCol;
 
 		createStorage();
@@ -302,7 +302,7 @@ namespace NumeRe
                                 }
                             }
 
-                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols)
+                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols+1) // wegen "#" an erster stelle
                             {
                                 _nHeadline = i;
                                 break;
@@ -325,7 +325,7 @@ namespace NumeRe
                                 }
                             }
 
-                            if (tokenize(vFileContents[i-2], " ", true).size() == nCols)
+                            if (tokenize(vFileContents[i-2], " ", true).size() == nCols+1)
                                 _nHeadline = i-1;
                         }
                     }
@@ -819,7 +819,7 @@ namespace NumeRe
 
 
     //////////////////////////////////////////////
-    // class NumeReDataFile
+    // class CacheFile
     //////////////////////////////////////////////
     //
     CacheFile::CacheFile(const string& filename) : NumeReDataFile(filename), nIndexPos(0u)
@@ -911,6 +911,7 @@ namespace NumeRe
         writeNumBlock(&vFileIndex[0], vFileIndex.size());
     }
 
+
     //////////////////////////////////////////////
     // class CassyLabx
     //////////////////////////////////////////////
@@ -931,7 +932,6 @@ namespace NumeRe
 
         string sLabx = "";
         string sLabx_substr = "";
-        string* sCols = 0;
         string** sDataMatrix = 0;
         long long int nLine = 0;
 
@@ -1007,10 +1007,10 @@ namespace NumeRe
 
         for (long long int i = 0; i < nCols; i++)
         {
-            if (sCols[i].find("<values count=\"0\" />") == string::npos)
+            if (vCols[i].find("<values count=\"0\" />") == string::npos)
             {
-                nElements = StrToInt(sCols[i].substr(sCols[i].find('"')+1, sCols[i].find('"', sCols[i].find('"')+1)-1-sCols[i].find('"')));
-                sCols[i] = sCols[i].substr(sCols[i].find('>')+1);
+                nElements = StrToInt(vCols[i].substr(vCols[i].find('"')+1, vCols[i].find('"', vCols[i].find('"')+1)-1-vCols[i].find('"')));
+                vCols[i] = vCols[i].substr(vCols[i].find('>')+1);
 
                 for (long long int j = 0; j < nRows; j++)
                 {
@@ -1020,8 +1020,8 @@ namespace NumeRe
                     }
                     else
                     {
-                        sDataMatrix[j][i] = sCols[i].substr(sCols[i].find("<value"), sCols[i].find('<', sCols[i].find('/'))-sCols[i].find("<value"));
-                        sCols[i] = sCols[i].substr(sCols[i].find('>', sCols[i].find('/'))+1);
+                        sDataMatrix[j][i] = vCols[i].substr(vCols[i].find("<value"), vCols[i].find('<', vCols[i].find('/'))-vCols[i].find("<value"));
+                        vCols[i] = vCols[i].substr(vCols[i].find('>', vCols[i].find('/'))+1);
                     }
                 }
             }
@@ -1075,7 +1075,6 @@ namespace NumeRe
         //
     }
 
-
     void CommaSeparatedValues::readFile()
     {
         open(ios::in);
@@ -1100,6 +1099,8 @@ namespace NumeRe
 
         countColumns(vFileData, cSep);
 
+        vHeadLine.resize(nCols);
+
         string sValidSymbols = "0123456789.,;-+eE INFAinfa";
         sValidSymbols += cSep;
 
@@ -1111,13 +1112,13 @@ namespace NumeRe
 
                 for (unsigned int n = 0; n < nCols-1; n++)
                 {
-                    vHeadLine.push_back(utf8parser(__sLine.substr(0,__sLine.find(cSep))));
+                    vHeadLine[n] = utf8parser(__sLine.substr(0, __sLine.find(cSep)));
                     StripSpaces(vHeadLine.back());
 
                     __sLine = __sLine.substr(__sLine.find(cSep)+1);
                 }
 
-                vHeadLine.push_back(utf8parser(__sLine));
+                vHeadLine.back() = utf8parser(__sLine);
 
                 for (unsigned int n = 0; n < nCols; n++)
                 {
@@ -1170,19 +1171,10 @@ namespace NumeRe
                 else
                     fileTableHeads[0] = sFileName.substr(sFileName.rfind('/')+1, sFileName.rfind('.')-1-sFileName.rfind('/'));
 			}
-			else
-			{
-				for (long long int i = 0; i < nCols; i++)
-				{
-					fileTableHeads[i] = "Spalte_" + toString(i+1);
-				}
-			}
 		}
 
 		// --> Hier werden die Strings in Tokens zerlegt <--
-		size_t n = 0;
-
-		for (size_t i = 0; i < vFileData.size(); i++)
+		for (size_t i = nComment; i < vFileData.size(); i++)
         {
             if (!vFileData[i].length())
                 continue;
@@ -1197,27 +1189,30 @@ namespace NumeRe
                     || vTokens[j] == "NAN"
                     || vTokens[j] == "nan")
                 {
-                    fileData[n][j] = NAN;
+                    fileData[i][j] = NAN;
                 }
                 else if (vTokens[j] == "inf")
-                    fileData[n][j] = INFINITY;
+                    fileData[i][j] = INFINITY;
                 else if (vTokens[j] == "-inf")
-                    fileData[n][j] = -INFINITY;
+                    fileData[i][j] = -INFINITY;
                 else
                 {
                     for (size_t k = 0; k < vTokens[j].length(); k++)
                     {
                         if (sValidSymbols.find(vTokens[j][k]) == string::npos)
                         {
-                            fileTableHeads[j] += "\\n" + vTokens[j];
-                            fileData[n][j] = NAN;
+                            if (fileTableHeads[j].length())
+                                fileTableHeads[j] += "\\n";
+
+                            fileTableHeads[j] += vTokens[j];
+                            fileData[i][j] = NAN;
                             break;
                         }
 
                         if (k+1 == vTokens[j].length())
                         {
                             replaceDecimalSign(vTokens[j]);
-                            fileData[n][j] = StrToDb(vTokens[j]);
+                            fileData[i][j] = StrToDb(vTokens[j]);
                         }
                     }
                 }

@@ -2505,7 +2505,7 @@
 	"TextManager.h"
 	"../../kernel/syntax.hpp"
 
-1533623012 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
+1559986175 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
 	<vector>
 	<deque>
 	<string>
@@ -2559,7 +2559,7 @@
 	"version.h"
 	"utils/tools.hpp"
 
-1559718911 d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.hpp
+1559987446 d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.hpp
 	<string>
 	<boost/tokenizer.hpp>
 	<vector>
@@ -2572,6 +2572,7 @@
 	"../utils/zip++.hpp"
 	"../utils/BasicExcel.hpp"
 	"../utils/tinyxml2.h"
+	"../io/file.hpp"
 	"sorter.hpp"
 
 1559762262 d:\cpp\numere-source\trunk\kernel\core\datamanagement\cache.hpp
@@ -3913,7 +3914,7 @@
 1533461617 source:d:\cpp\numere-source\trunk\gui\terminal\states.cpp
 	"gterm.hpp"
 
-1557654720 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
+1559986175 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
 	"TextManager.h"
 	<iostream>
 	<stdlib.h>
@@ -4005,7 +4006,7 @@
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1559762474 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1559987719 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
@@ -4180,7 +4181,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1559719666 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1559986353 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -4282,7 +4283,7 @@
 1553541120 source:d:\cpp\numere-source\trunk\kernel\core\ui\language.cpp
 	"language.hpp"
 
-1490791550 source:d:\cpp\numere-source\trunk\kernel\core\utils\basicexcel.cpp
+1559851572 source:d:\cpp\numere-source\trunk\kernel\core\utils\basicexcel.cpp
 	"BasicExcel.hpp"
 
 1490791551 source:d:\cpp\numere-source\trunk\kernel\core\utils\tinyxml2.cpp
@@ -9367,7 +9368,7 @@
 	"../../kernel/core/procedure/procedurelibrary.hpp"
 	"../../kernel/core/procedure/dependency.hpp"
 
-1559716693 source:d:\cpp\numere-source\trunk\kernel\core\io\file.cpp
+1559987353 source:d:\cpp\numere-source\trunk\kernel\core\io\file.cpp
 	"file.hpp"
 	"../IgorLib/ReadWave.h"
 	"../utils/tools.hpp"
@@ -9376,7 +9377,7 @@
 	"../ui/language.hpp"
 	"../version.h"
 
-1559720350 d:\cpp\numere-source\trunk\kernel\core\io\file.hpp
+1559844670 d:\cpp\numere-source\trunk\kernel\core\io\file.hpp
 	<string>
 	<fstream>
 	<cmath>

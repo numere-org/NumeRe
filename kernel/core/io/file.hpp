@@ -546,7 +546,7 @@ namespace NumeRe
 
             void getColumnHeadings(std::string* sHead)
             {
-                copyStringArray(sHead, fileTableHeads, nCols);
+                copyStringArray(fileTableHeads, sHead, nCols);
             }
 
             std::string* getColumnHeadings(long long int& cols)
