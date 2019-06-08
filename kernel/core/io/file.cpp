@@ -626,10 +626,10 @@ namespace NumeRe
     {
         writeNumField(1LL);
         writeNumField(1LL);
-        writeStringField("THIS_FILE_NEEDS_A_NEWER_VERSION_OF_NUMERE");
+        writeStringField("THIS_FILE_NEEDS_AT_LEAST_VERSION_v1.1.2 ");
         long long int appZeros = 0;
-        double data = NAN;
-        bool valid = false;
+        double data = 1.12;
+        bool valid = true;
         fFileStream.write((char*)&appZeros, sizeof(long long int));
         fFileStream.write((char*)&data, sizeof(double));
         fFileStream.write((char*)&valid, sizeof(bool));
@@ -666,7 +666,7 @@ namespace NumeRe
         short fileVerMinor = readNumField<short>();
 
         if (fileVerMajor > fileVersionMajor)
-            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+            throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sFileName, SyntaxError::invalid_position, sFileName);
 
         sTableName = readStringField();
         sComment = readStringField();

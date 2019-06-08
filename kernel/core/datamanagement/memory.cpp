@@ -19,6 +19,8 @@
 
 #include "memory.hpp"
 #include "../../kernel.hpp"
+#include "../io/file.hpp"
+
 using namespace std;
 
 /*
@@ -820,80 +822,16 @@ void Memory::importTable(NumeRe::Table _table)
 
 bool Memory::save(string _sFileName)
 {
-	ofstream file_out;
-	if (file_out.is_open())
-		file_out.close();
-	file_out.open(_sFileName.c_str(), ios_base::binary | ios_base::trunc | ios_base::out);
+    NumeRe::NumeReDataFile file(_sFileName);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
 
-	if (file_out.is_open() && file_out.good() && bValidData)
-	{
-		char** cHeadLine = new char* [nCols];
-		long int nMajor = AutoVersion::MAJOR;
-		long int nMinor = AutoVersion::MINOR;
-		long int nBuild = AutoVersion::BUILD;
-		long long int lines = getLines(false);
-		long long int cols = getCols(false);
-		long long int appendedzeroes[cols];
-		double dDataValues[cols];
-		bool bValidValues[cols];
-		for (long long int i = 0; i < cols; i++)
-		{
-			appendedzeroes[i] = nAppendedZeroes[i] - (nLines - lines);
-		}
-
-		for (long long int i = 0; i < cols; i++)
-		{
-			cHeadLine[i] = new char[sHeadLine[i].length() + 1];
-			for (unsigned int j = 0; j < sHeadLine[i].length(); j++)
-			{
-				cHeadLine[i][j] = sHeadLine[i][j];
-			}
-			cHeadLine[i][sHeadLine[i].length()] = '\0';
-		}
-
-		time_t tTime = time(0);
-		file_out.write((char*)&nMajor, sizeof(long));
-		file_out.write((char*)&nMinor, sizeof(long));
-		file_out.write((char*)&nBuild, sizeof(long));
-		file_out.write((char*)&tTime, sizeof(time_t));
-		file_out.write((char*)&lines, sizeof(long long int));
-		file_out.write((char*)&cols, sizeof(long long int));
-		//cerr << lines << " " << cols << endl;
-		for (long long int i = 0; i < cols; i++)
-		{
-			size_t nlength = sHeadLine[i].length() + 1;
-			//cerr << nlength << endl;
-			file_out.write((char*)&nlength, sizeof(size_t));
-			file_out.write(cHeadLine[i], sizeof(char)*sHeadLine[i].length() + 1);
-		}
-		file_out.write((char*)appendedzeroes, sizeof(long long int)*cols);
-
-		for (long long int i = 0; i < lines; i++)
-		{
-			for (long long int j = 0; j < cols; j++)
-				dDataValues[j] = dMemTable[i][j];
-			file_out.write((char*)dDataValues, sizeof(double)*cols);
-		}
-		for (long long int i = 0; i < lines; i++)
-		{
-			for (long long int j = 0; j < cols; j++)
-				bValidValues[j] = !isnan(dMemTable[i][j]);
-			file_out.write((char*)bValidValues, sizeof(bool)*cols);
-		}
-		file_out.close();
-		for (long long int i = 0; i < cols; i++)
-		{
-			delete[] cHeadLine[i];
-		}
-		delete[] cHeadLine;
-
-		return true;
-	}
-	else
-	{
-		file_out.close();
-		return false;
-	}
+    file.setDimensions(lines, cols);
+    file.setColumnHeadings(sHeadLine, cols);
+    file.setData(dMemTable, lines, cols);
+    file.setTableName("data");
+    file.setComment("THIS IS A TEST FILE");
+    file.write();
 
 	return true;
 }

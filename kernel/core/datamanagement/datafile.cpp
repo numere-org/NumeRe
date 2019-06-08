@@ -101,14 +101,6 @@ Datafile::~Datafile()
 		}
 		delete[] dDatafile;
 	}
-	/*if(bValidEntry)
-	{
-		for (long long int i = 0; i < nLines; i++)
-		{
-			delete[] bValidEntry[i];
-		}
-		delete[] bValidEntry;
-	}*/
 	if(sHeadLine)
 		delete[] sHeadLine;
 	if(nAppendedZeroes)
@@ -152,7 +144,8 @@ void Datafile::createTableHeaders()
 {
     for (long long int j = 0; j < nCols; j++)
     {
-        sHeadLine[j] = _lang.get("COMMON_COL") + "_" + toString(j+1);
+        if (!sHeadLine[j].length())
+            sHeadLine[j] = _lang.get("COMMON_COL") + "_" + toString(j+1);
     }
 }
 
@@ -1501,84 +1494,14 @@ bool Datafile::saveFile(const string& sCache, string _sFileName)
         return MemoryManager::saveLayer(sOutputFile, sCache);
     if (getCacheStatus())
         return MemoryManager::saveLayer(sOutputFile, "cache");
-    if (file_out.is_open())
-        file_out.close();
-    file_out.open(sOutputFile.c_str(), ios_base::binary | ios_base::trunc | ios_base::out);
 
-    if (file_out.is_open() && file_out.good() && bValidData)
-    {
-        char** cHeadLine = new char*[getCols("data")];
-        long int nMajor = AutoVersion::MAJOR;
-        long int nMinor = AutoVersion::MINOR;
-        long int nBuild = AutoVersion::BUILD;
-        long long int lines = 0;
-        long long int cols = 0;
-
-        cols = Datafile::nCols;
-        lines = Datafile::nLines;
-        for (long long int i = 0; i < cols; i++)
-        {
-            cHeadLine[i] = new char[getHeadLineElement(i, "data").length()+1];
-            for (unsigned int j = 0; j < getHeadLineElement(i, "data").length(); j++)
-            {
-                cHeadLine[i][j] = getHeadLineElement(i, "data")[j];
-            }
-            cHeadLine[i][getHeadLineElement(i, "data").length()] = '\0';
-        }
-
-        time_t tTime = time(0);
-        file_out.write((char*)&nMajor, sizeof(long));
-        file_out.write((char*)&nMinor, sizeof(long));
-        file_out.write((char*)&nBuild, sizeof(long));
-        file_out.write((char*)&tTime, sizeof(time_t));
-        file_out.write((char*)&lines, sizeof(long long int));
-        file_out.write((char*)&cols, sizeof(long long int));
-        //cerr << lines << " " << cols << endl;
-        for (long long int i = 0; i < cols; i++)
-        {
-            size_t nlength = getHeadLineElement(i, "data").length()+1;
-            //cerr << nlength << endl;
-            file_out.write((char*)&nlength, sizeof(size_t));
-            file_out.write(cHeadLine[i], sizeof(char)*getHeadLineElement(i, "data").length()+1);
-        }
-        long long int* appendedzeroes = 0;
-        appendedzeroes = Datafile::nAppendedZeroes;
-        file_out.write((char*)appendedzeroes, sizeof(long long int)*cols);
-
-        double** data = 0;
-        bool* validelement = new bool[cols];
-
-        data = Datafile::dDatafile;
-        //validelement = Datafile::bValidEntry;
-        for (long long int i = 0; i < lines; i++)
-        {
-            file_out.write((char*)data[i], sizeof(double)*cols);
-        }
-        for (long long int i = 0; i < lines; i++)
-        {
-            for (long long int j = 0; j < cols; j++)
-            {
-                validelement[j] = !isnan(data[i][j]);
-            }
-            file_out.write((char*)validelement, sizeof(bool)*cols);
-        }
-        file_out.close();
-        for (long long int i = 0; i < cols; i++)
-        {
-            delete[] cHeadLine[i];
-        }
-        delete[] cHeadLine;
-        if (validelement)
-            delete[] validelement;
-
-        return true;
-    }
-    else
-    {
-        file_out.close();
-        return false;
-    }
-
+    NumeRe::NumeReDataFile file(sOutputFile);
+    file.setDimensions(nLines, nCols);
+    file.setColumnHeadings(sHeadLine, nCols);
+    file.setData(dDatafile, nLines, nCols);
+    file.setTableName("data");
+    file.setComment("THIS IS A TEST FILE");
+    file.write();
 }
 
 void Datafile::generateFileName()

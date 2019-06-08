@@ -117,16 +117,16 @@ namespace NumeRe
 
             std::string readStringField()
             {
-                long long int size = readNumField<long long int>();
+                size_t nLength = readNumField<size_t>();
 
-                if (!size)
+                if (!nLength)
                     return "";
 
-                char* buffer = new char[size];
+                char* buffer = new char[nLength];
 
-                fFileStream.read(buffer, size);
+                fFileStream.read(buffer, nLength);
 
-                std::string sBuffer(buffer, size);
+                std::string sBuffer(buffer, nLength);
                 delete[] buffer;
 
                 return sBuffer;
@@ -260,7 +260,7 @@ namespace NumeRe
 
             void writeStringField(const std::string& sString)
             {
-                writeNumField<long long int>(sString.length());
+                writeNumField<size_t>(sString.length());
                 fFileStream.write(sString.c_str(), sString.length());
             }
 

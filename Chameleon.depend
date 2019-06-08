@@ -4006,7 +4006,7 @@
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1559987719 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1559991471 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
@@ -4389,9 +4389,10 @@
 	"../../kernel.hpp"
 	<vector>
 
-1557295183 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
+1559989325 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
 	"memory.hpp"
 	"../../kernel.hpp"
+	"../io/file.hpp"
 
 1559718911 d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.hpp
 	<iostream>
@@ -9368,7 +9369,7 @@
 	"../../kernel/core/procedure/procedurelibrary.hpp"
 	"../../kernel/core/procedure/dependency.hpp"
 
-1559987353 source:d:\cpp\numere-source\trunk\kernel\core\io\file.cpp
+1559991727 source:d:\cpp\numere-source\trunk\kernel\core\io\file.cpp
 	"file.hpp"
 	"../IgorLib/ReadWave.h"
 	"../utils/tools.hpp"
@@ -9377,7 +9378,7 @@
 	"../ui/language.hpp"
 	"../version.h"
 
-1559844670 d:\cpp\numere-source\trunk\kernel\core\io\file.hpp
+1559990552 d:\cpp\numere-source\trunk\kernel\core\io\file.hpp
 	<string>
 	<fstream>
 	<cmath>
