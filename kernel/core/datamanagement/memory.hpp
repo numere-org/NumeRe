@@ -78,6 +78,7 @@ class Memory : public Sorter
 		virtual int compare(int i, int j, int col);
         virtual bool isValue(int line, int col);
 		bool evaluateIndices(long long int& i1, long long int& i2, long long int& j1, long long int& j2);
+		void countAppendedZeroes();
 
     public:
 		Memory();										// Standard-Konstruktor

@@ -764,8 +764,7 @@ namespace NumeRe
             void reset();
             void readSome();
             void writeSome();
-            void readCacheHeader();
-            void writeCacheHeader();
+
 
         public:
             CacheFile(const std::string& filename);
@@ -782,6 +781,9 @@ namespace NumeRe
                 writeSome();
                 return true;
             }
+
+            void readCacheHeader();
+            void writeCacheHeader();
 
             size_t getNumberOfTables()
             {

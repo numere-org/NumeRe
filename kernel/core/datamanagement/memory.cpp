@@ -1031,6 +1031,23 @@ bool Memory::evaluateIndices(long long int& i1, long long int& i2, long long int
 }
 
 
+void Memory::countAppendedZeroes()
+{
+    for (long long int i = 0; i < nCols; i++)
+    {
+        nAppendedZeroes[i] = 0;
+
+        for (long long int j = nLines-1; j >= 0; j--)
+        {
+            if (isnan(dMemTable[j][i]))
+                nAppendedZeroes[i]++;
+            else
+                break;
+        }
+    }
+}
+
+
 double Memory::std(long long int i1, long long int i2, long long int j1, long long int j2)
 {
 	if (!bValidData)

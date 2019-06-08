@@ -182,174 +182,35 @@ bool MemoryManager::saveToCacheFile()
 {
     if (bSaveMutex)
         return false;
-    bSaveMutex = true;
-    long long int nSavingLayers = mCachesMap.size();
-    long long int nSavingCols = 8;
-    long long int nSavingLines = 128;
-    long long int nColMax = 0;
-    long long int nLineMax = 0;
-    bool* bValidElement = 0;
-    double* dCache = 0;
-    if (!vMemory.size())
-    {
-        bSaveMutex = false;
-        return false;
-    }
-    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
-    {
-        if (vMemory[iter->second]->getCols(false) > nColMax)
-            nColMax = vMemory[iter->second]->getCols(false);
-        if (vMemory[iter->second]->getLines(false) > nLineMax)
-            nLineMax = vMemory[iter->second]->getLines(false);
-    }
 
-    while (nSavingCols < nColMax)
-        nSavingCols *= 2;
-    while (nSavingLines < nLineMax)
-        nSavingLines *= 2;
+    bSaveMutex = true;
+
     sCache_file = FileSystem::ValidFileName(sCache_file, ".cache");
 
-    char*** cHeadLine = new char**[nSavingLayers];
-    bValidElement = new bool[nSavingLayers];
-    dCache = new double[nSavingLayers];
+    NumeRe::CacheFile cacheFile(sCache_file);
 
-    char** cCachesList = new char*[mCachesMap.size()];
-    long long int** nAppZeroesTemp = new long long int*[nSavingLayers];
-    for (long long int i = 0; i < nSavingLayers; i++)
-    {
-        cHeadLine[i] = new char*[nSavingCols];
-        nAppZeroesTemp[i] = new long long int[nSavingCols];
-        for (long long int j = 0; j < nSavingCols; j++)
-        {
-            nAppZeroesTemp[i][j] = vMemory[i]->getAppendedZeroes(j) - (vMemory[i]->getLines(true) - nSavingLines);
-            cHeadLine[i][j] = new char[vMemory[i]->getHeadLineElement(j).length()+1];
-            for (unsigned int k = 0; k < vMemory[i]->getHeadLineElement(j).length(); k++)
-            {
-                cHeadLine[i][j][k] = vMemory[i]->getHeadLineElement(j)[k];
-            }
-            cHeadLine[i][j][vMemory[i]->getHeadLineElement(j).length()] = '\0';
-        }
-    }
-    //cerr << 1.1 << endl;
-    int n = 0;
+    cacheFile.setNumberOfTables(mCachesMap.size());
+    cacheFile.writeCacheHeader();
+
+    long long int nLines;
+    long long int nCols;
+
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
-        cCachesList[n] = new char[(iter->first).length()+1];
-        for (unsigned int k = 0; k < (iter->first).length(); k++)
-            cCachesList[n][k] = (iter->first)[k];
-        cCachesList[n][(iter->first).length()] = '\0';
-        n++;
+        nLines = vMemory[iter->second]->getLines(false);
+        nCols = vMemory[iter->second]->getCols(false);
+
+        cacheFile.setDimensions(nLines, nCols);
+        cacheFile.setColumnHeadings(vMemory[iter->second]->sHeadLine, nCols);
+        cacheFile.setData(vMemory[iter->second]->dMemTable, nLines, nCols);
+        cacheFile.setTableName(iter->first);
+        cacheFile.setComment("NO COMMENT");
+
+        cacheFile.write();
     }
-    //cerr << 1.2 << endl;
-    long int nMajor = AutoVersion::MAJOR;
-    long int nMinor = AutoVersion::MINOR;
-    long int nBuild = AutoVersion::BUILD;
-    if (cache_file.is_open())
-        cache_file.close();
-    cache_file.open(sCache_file.c_str(), ios_base::out | ios_base::binary | ios_base::trunc);
-    //cerr << 1.3 << endl;
-    if (vMemory.size() && cache_file.good())
-    {
-        setSaveStatus(true);
-        long long int nDimTemp = -nSavingLines;
-        time_t tTime = time(0);
-        cache_file.write((char*)&nMajor, sizeof(long));
-        cache_file.write((char*)&nMinor, sizeof(long));
-        cache_file.write((char*)&nBuild, sizeof(long));
-        cache_file.write((char*)&tTime, sizeof(time_t));
-        cache_file.write((char*)&nDimTemp, sizeof(long long int));
-        nDimTemp = -nSavingCols;
-        cache_file.write((char*)&nDimTemp, sizeof(long long int));
-        nDimTemp = -nSavingLayers;
-        cache_file.write((char*)&nDimTemp, sizeof(long long int));
-        size_t cachemapsize = mCachesMap.size();
-        cache_file.write((char*)&cachemapsize, sizeof(size_t));
-        n = 0;
-        //cerr << 2 << endl;
-        for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
-        {
-            nDimTemp = iter->second;
-            size_t nLength = (iter->first).length()+1;
-            cache_file.write((char*)&nLength, sizeof(size_t));
-            cache_file.write(cCachesList[n], sizeof(char)*(nLength));
-            cache_file.write((char*)&nDimTemp, sizeof(long long int));
-            n++;
-        }
-        //cerr << 3 << endl;
-        for (long long int i = 0; i < nSavingLayers; i++)
-        {
-            for (long long int j = 0; j < nSavingCols; j++)
-            {
-                size_t nlength = vMemory[i]->getHeadLineElement(j).length()+1;
-                //cerr << nlength << endl;
-                cache_file.write((char*)&nlength, sizeof(size_t));
-                cache_file.write(cHeadLine[i][j], sizeof(char)*(vMemory[i]->getHeadLineElement(j).length()+1));
-            }
-        }
-        //cerr << 4 << endl;
-        for (long long int i = 0; i < nSavingLayers; i++)
-            cache_file.write((char*)nAppZeroesTemp[i], sizeof(long long int)*nSavingCols);
-        for (long long int i = 0; i < nSavingLines; i++)
-        {
-            for (long long int j = 0; j < nSavingCols; j++)
-            {
-                for (long long int k = 0; k < nSavingLayers; k++)
-                    dCache[k] = vMemory[k]->readMem(i, j);
-                cache_file.write((char*)dCache, sizeof(double)*nSavingLayers);
-            }
-        }
-        //cerr << 5 << endl;
-        for (long long int i = 0; i < nSavingLines; i++)
-        {
-            for (long long int j = 0; j < nSavingCols; j++)
-            {
-                for (long long int k = 0; k < nSavingLayers; k++)
-                    bValidElement[k] = !isnan(vMemory[k]->readMem(i, j));
-                cache_file.write((char*)bValidElement, sizeof(bool)*nSavingLayers);
-            }
-        }
-        //cerr << 6 << endl;
-        cache_file.close();
-    }
-    else
-    {
-        for (long long int i = 0; i < nSavingLayers; i++)
-        {
-            for (long long int j = 0; j < nSavingCols; j++)
-            {
-                delete[] cHeadLine[i][j];
-            }
-            delete[] cHeadLine[i];
-            delete[] nAppZeroesTemp[i];
-        }
-        if (bValidElement)
-            delete[] bValidElement;
-        if (dCache)
-            delete[] dCache;
-        delete[] cHeadLine;
-        delete[] nAppZeroesTemp;
-        for (unsigned int i = 0; i < mCachesMap.size(); i++)
-            delete[] cCachesList[i];
-        delete[] cCachesList;
-        bSaveMutex = false;
-        return false;
-    }
-    for (long long int i = 0; i < nSavingLayers; i++)
-    {
-        for (long long int j = 0; j < nSavingCols; j++)
-            delete[] cHeadLine[i][j];
-        delete[] cHeadLine[i];
-        delete[] nAppZeroesTemp[i];
-    }
-    if (bValidElement)
-        delete[] bValidElement;
-    if (dCache)
-        delete[] dCache;
-    delete[] cHeadLine;
-    delete[] nAppZeroesTemp;
-    for (unsigned int i = 0; i < mCachesMap.size(); i++)
-        delete[] cCachesList[i];
-    delete[] cCachesList;
+
+    setSaveStatus(true);
+
     bSaveMutex = false;
     return true;
 }
@@ -358,8 +219,48 @@ bool MemoryManager::loadFromCacheFile()
 {
     if (bSaveMutex)
         return false;
+
     bSaveMutex = true;
     sCache_file = FileSystem::ValidFileName(sCache_file, ".cache");
+
+    NumeRe::CacheFile cacheFile(sCache_file);
+
+    try
+    {
+        cacheFile.readCacheHeader();
+        size_t nCaches = cacheFile.getNumberOfTables();
+
+        for (size_t i = 0; i < vMemory.size(); i++)
+            delete vMemory[i];
+
+        vMemory.clear();
+
+        for (size_t i = 0; i < nCaches; i++)
+        {
+            cacheFile.read();
+
+            mCachesMap[cacheFile.getTableName()] = vMemory.size();
+            vMemory.push_back(new Memory());
+
+            vMemory.back()->resizeMemory(cacheFile.getRows(), cacheFile.getCols());
+            cacheFile.getData(vMemory.back()->dMemTable);
+            cacheFile.getColumnHeadings(vMemory.back()->sHeadLine);
+
+            vMemory.back()->bValidData = true;
+
+            vMemory.back()->countAppendedZeroes();
+            vMemory.back()->shrink();
+        }
+
+        return true;
+
+    }
+    catch (...)
+    {
+        cacheFile.close();
+    }
+
+
     char*** cHeadLine = 0;
     char* cCachesMap = 0;
     double* dCache = 0;
