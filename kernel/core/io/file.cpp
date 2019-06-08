@@ -30,6 +30,44 @@ namespace NumeRe
 {
     using namespace std;
 
+    GenericFile<double>* getFileByType(const string& filename)
+    {
+        FileSystem _fSys;
+        string sExt = toLowerCase(_fSys.getFileParts(filename).back());
+
+        if (sExt == "ndat")
+            return new NumeReDataFile(filename);
+
+        if (sExt == "txt" || sExt == "dat" || !sExt.length())
+            return new TextDataFile(filename);
+
+        if (sExt == "csv")
+            return new CommaSeparatedValues(filename);
+
+        if (sExt == "tex")
+            return new LaTeXTable(filename);
+
+        if (sExt == "labx")
+            return new CassyLabx(filename);
+
+        if (sExt == "ibw")
+            return new IgorBinaryWave(filename);
+
+        if (sExt == "ods")
+            return new OpenDocumentSpreadSheet(filename);
+
+        if (sExt == "xls")
+            return new XLSSpreadSheet(filename);
+
+        if (sExt == "xlsx")
+            return new XLSXSpreadSheet(filename);
+
+        if (sExt == "jdx" || sExt == "dx" || sExt == "jcm")
+            return new JcampDX(filename);
+
+        return nullptr;
+    }
+
     //////////////////////////////////////////////
     // class TextDataFile
     //////////////////////////////////////////////
@@ -509,28 +547,6 @@ namespace NumeRe
 		}
     }
 
-    pair<size_t, size_t> TextDataFile::calculateCellExtents(const std::string& sContents)
-    {
-        // x, y
-        pair<size_t, size_t> pCellExtents(0u, 1u);
-        size_t nLastLineBreak = 0;
-
-        for (size_t i = 0; i < sContents.length(); i++)
-        {
-            if (sContents[i] == '\n')
-            {
-                pCellExtents.second++;
-
-                if (i - nLastLineBreak > pCellExtents.first)
-                    pCellExtents.first = i - nLastLineBreak;
-
-                nLastLineBreak = i;
-            }
-        }
-
-        return pCellExtents;
-    }
-
     vector<size_t> TextDataFile::calculateColumnWidths(size_t& nNumberOfLines)
     {
         vector<size_t> vColumnWidths;
@@ -546,28 +562,6 @@ namespace NumeRe
         }
 
         return vColumnWidths;
-    }
-
-    string TextDataFile::getLineFromHead(long long int nCol, size_t nLineNumber)
-    {
-        size_t nLastLineBreak = 0u;
-
-        for (size_t i = 0; i < fileTableHeads[nCol].length(); i++)
-        {
-            if (fileTableHeads[nCol][i] == '\n')
-            {
-                if (!nLineNumber)
-                    return fileTableHeads[nCol].substr(nLastLineBreak, i - nLastLineBreak);
-
-                nLineNumber--;
-                nLastLineBreak = i+1;
-            }
-        }
-
-        if (nLineNumber == 1)
-            return fileTableHeads[nCol].substr(nLastLineBreak);
-
-        return " ";
     }
 
 
@@ -884,7 +878,7 @@ namespace NumeRe
         short fileVerMinor = readNumField<short>();
 
         if (fileVerMajor > fileVersionMajor)
-            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+            throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sFileName, SyntaxError::invalid_position, sFileName);
 
         size_t nNumberOfTables = readNumField<size_t>();
 
@@ -1372,6 +1366,255 @@ namespace NumeRe
         }
     }
 
+
+    //////////////////////////////////////////////
+    // class LaTeXTable
+    //////////////////////////////////////////////
+    //
+    LaTeXTable::LaTeXTable(const string& filename) : GenericFile(filename)
+    {
+        //
+    }
+
+    LaTeXTable::~LaTeXTable()
+    {
+        //
+    }
+
+    void LaTeXTable::writeFile()
+    {
+        open(ios::trunc | ios::out);
+
+        string sLabel = sFileName;
+
+        if (sLabel.find('/') != string::npos)
+            sLabel.erase(0, sLabel.rfind('/')+1);
+
+        if (sLabel.find(".tex") != string::npos)
+            sLabel.erase(sLabel.rfind(".tex"));
+
+        while (sLabel.find(' ') != string::npos)
+            sLabel[sLabel.find(' ')] = '_';
+
+        writeHeader();
+
+        if (nRows < 30)
+        {
+            fFileStream << "\\begin{table}[htb]\n";
+            fFileStream << "\\centering\n";
+            string sPrint = "\\begin{tabular}{";
+
+            for (long long int j = 0; j < nCols; j++)
+                sPrint += "c";
+
+            sPrint += "}";
+            fFileStream << sPrint + "\n";
+            fFileStream << "\\toprule\n";
+
+            writeTableHeads();
+        }
+        else
+        {
+            string sPrint = "\\begin{longtable}{";
+
+            for (long long int j = 0; j < nCols; j++)
+                sPrint += "c";
+
+            sPrint += "}";
+            fFileStream << sPrint + "\n";
+            fFileStream << "\\caption{" + _lang.get("OUTPUT_FORMAT_TEX_HEAD", "NumeRe")+"}\n";
+            fFileStream << "\\label{tab:" + sLabel + "}\\\\\n";
+            fFileStream << "\\toprule\n";
+
+            writeTableHeads();
+
+            fFileStream << sPrint + "\n";
+            fFileStream << "\\midrule\n";
+            fFileStream << "\\endfirsthead\n";
+            fFileStream << "\\caption{"+_lang.get("OUTPUT_FORMAT_TEXLONG_CAPTION")+"}\\\\\n";
+            fFileStream << "\\toprule\n";
+            fFileStream << sPrint;
+            fFileStream << "\\midrule\n";
+            fFileStream << "\\endhead\n";
+            fFileStream << "\\midrule\n";
+            fFileStream << "\\multicolumn{" + toString(nCols) + "}{c}{--- \\emph{"+_lang.get("OUTPUT_FORMAT_TEXLONG_FOOT")+"} ---}\\\\\n";
+            fFileStream << "\\bottomrule\n";
+            fFileStream << "\\endfoot\n";
+            fFileStream << "\\bottomrule\n";
+            fFileStream << "\\endlastfoot\n";
+        }
+
+        for (long long int i = 0; i < nRows; i++)
+        {
+            for (long long int j = 0; j < nCols; j++)
+            {
+                fFileStream.width(nPrecFields+20);
+                fFileStream.fill(' ');
+
+                fFileStream << formatNumber(fileData[i][j]);
+
+                if (j+1 < nCols)
+                    fFileStream << " &";
+                else
+                    fFileStream << "\\\n";
+            }
+        }
+
+        if (nRows < 30)
+        {
+            fFileStream << "\\bottomrule\n";
+            fFileStream << "\\end{tabular}\n";
+            fFileStream << "\\caption{"+ _lang.get("OUTPUT_FORMAT_TEX_HEAD", "NumeRe")+"}\n";
+            fFileStream << "\\label{tab:" + sLabel + "}\n";
+            fFileStream << "\\end{table}\n";
+        }
+        else
+        {
+            fFileStream << "\\end{longtable}\n";
+        }
+
+        fFileStream << flush;
+    }
+
+    void LaTeXTable::writeHeader()
+    {
+        string sBuild = AutoVersion::YEAR;
+        sBuild += "-";
+        sBuild += AutoVersion::MONTH;
+        sBuild += "-";
+        sBuild += AutoVersion::DATE;
+
+        fFileStream << "%\n";
+        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE1") << "\n";
+        fFileStream << "% NumeRe: Framework für Numerische Rechnungen" << "\n";
+        fFileStream << "%=============================================" << "\n";
+        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild) << "\n";
+        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0, 4)) << "\n";
+        fFileStream << "%\n";
+        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getTimeStamp(false)) << "\n";
+        fFileStream << "%\n";
+        fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << endl;
+    }
+
+    void LaTeXTable::writeTableHeads()
+    {
+        string sPrint = "";
+
+        for (size_t i = 0; i < countHeadLines(); i++)
+        {
+            for (long long int j = 0; j < nCols; j++)
+                sPrint += getLineFromHead(j, i) + " & ";
+
+            sPrint = sPrint.substr(0, sPrint.length()-2) + "\\\\\n";
+        }
+
+        for (unsigned int i = 0; i < sPrint.length(); i++)
+        {
+            if (sPrint[i] == '_')
+                sPrint[i] = ' ';
+        }
+
+        fFileStream << sPrint + "\n";
+    }
+
+    size_t LaTeXTable::countHeadLines()
+    {
+        size_t headlines = 0u;
+
+        for (long long int i = 0; i < nCols; i++)
+        {
+            auto extents = calculateCellExtents(fileTableHeads[i]);
+
+            if (extents.second > headlines)
+                headlines = extents.second;
+        }
+
+        return headlines;
+    }
+
+    string LaTeXTable::replaceNonASCII(const string& _sText)
+    {
+        string sReturn = _sText;
+
+        for (unsigned int i = 0; i < sReturn.length(); i++)
+        {
+            if (sReturn[i] == 'Ä' || sReturn[i] == (char)142)
+                sReturn.replace(i,1,"\\\"A");
+
+            if (sReturn[i] == 'ä' || sReturn[i] == (char)132)
+                sReturn.replace(i,1,"\\\"a");
+
+            if (sReturn[i] == 'Ö' || sReturn[i] == (char)153)
+                sReturn.replace(i,1,"\\\"O");
+
+            if (sReturn[i] == 'ö' || sReturn[i] == (char)148)
+                sReturn.replace(i,1,"\\\"o");
+
+            if (sReturn[i] == 'Ü' || sReturn[i] == (char)154)
+                sReturn.replace(i,1,"\\\"U");
+
+            if (sReturn[i] == 'ü' || sReturn[i] == (char)129)
+                sReturn.replace(i,1,"\\\"u");
+
+            if (sReturn[i] == 'ß' || sReturn[i] == (char)225)
+                sReturn.replace(i,1,"\\ss ");
+
+            if (sReturn[i] == '°' || sReturn[i] == (char)248)
+                sReturn.replace(i,1,"$^\\circ$");
+
+            if (sReturn[i] == (char)196 || sReturn[i] == (char)249)
+                sReturn.replace(i,1,"\\pm ");
+
+            if (sReturn[i] == (char)171 || sReturn[i] == (char)174)
+                sReturn.replace(i,1,"\"<");
+
+            if (sReturn[i] == (char)187 || sReturn[i] == (char)175)
+                sReturn.replace(i,1,"\">");
+
+            if ((!i && sReturn[i] == '_') || (i && sReturn[i] == '_' && sReturn[i-1] != '\\'))
+                sReturn.insert(i,1,'\\');
+        }
+
+        if (sReturn.find("+/-") != string::npos)
+        {
+            sReturn = sReturn.substr(0, sReturn.find("+/-"))
+                    + "$\\pm$"
+                    + sReturn.substr(sReturn.find("+/-")+3);
+        }
+
+        return sReturn;
+    }
+
+    string LaTeXTable::formatNumber(double number)
+    {
+        string sNumber = toString(number, nPrecFields);
+
+        if (sNumber.find('e') != string::npos)
+        {
+            sNumber = sNumber.substr(0, sNumber.find('e'))
+                    + "\\cdot10^{"
+                    + (sNumber[sNumber.find('e')+1] == '-' ? "-" : "")
+                    + sNumber.substr(sNumber.find_first_not_of('0', sNumber.find('e')+2))
+                    + "}";
+        }
+
+        if (sNumber == "inf")
+        {
+            sNumber = "\\infty";
+        }
+
+        if (sNumber == "-inf")
+        {
+            sNumber = "-\\infty";
+        }
+
+        if (sNumber == "nan")
+        {
+            return "---";
+        }
+
+        return "$" + sNumber + "$";
+    }
 
     //////////////////////////////////////////////
     // class JcampDX

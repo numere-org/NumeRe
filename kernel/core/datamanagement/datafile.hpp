@@ -139,7 +139,6 @@ class Datafile : public MemoryManager, private Sorter		//	Diese Klasse ist ein C
         bool isNumeric(const string& _sString);
         virtual int compare(int i, int j, int col);
         virtual bool isValue(int line, int col);
-        NumeRe::GenericFile<double>* openFileByType();
         void countAppendedZeroes(long long int nCol = -1);
         void condenseDataSet();
         vector<string> getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens);

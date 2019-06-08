@@ -822,16 +822,34 @@ void Memory::importTable(NumeRe::Table _table)
 
 bool Memory::save(string _sFileName)
 {
-    NumeRe::NumeReDataFile file(_sFileName);
+    NumeRe::GenericFile<double>* file = NumeRe::getFileByType(_sFileName);
+
+    if (!file)
+        throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, _sFileName, SyntaxError::invalid_position, _sFileName);
+
     long long int lines = getLines(false);
     long long int cols = getCols(false);
 
-    file.setDimensions(lines, cols);
-    file.setColumnHeadings(sHeadLine, cols);
-    file.setData(dMemTable, lines, cols);
-    file.setTableName("data");
-    file.setComment("THIS IS A TEST FILE");
-    file.write();
+    file->setDimensions(lines, cols);
+    file->setColumnHeadings(sHeadLine, cols);
+    file->setData(dMemTable, lines, cols);
+    file->setTableName("data");
+
+    if (file->getExtension() == "ndat")
+        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("THIS IS A TEST FILE");
+
+    try
+    {
+        if (!file->write())
+            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, _sFileName, SyntaxError::invalid_position, _sFileName);
+    }
+    catch (...)
+    {
+        delete file;
+        throw;
+    }
+
+    delete file;
 
 	return true;
 }

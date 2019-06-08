@@ -179,42 +179,6 @@ void Datafile::countAppendedZeroes(long long int nCol)
     return;
 }
 
-
-NumeRe::GenericFile<double>* Datafile::openFileByType()
-{
-    string sExt = toLowerCase(FileSystem::getFileParts(sDataFile).back());
-
-    if (sExt == "ndat")
-        return new NumeRe::NumeReDataFile(sDataFile);
-
-    if (sExt == "txt" || sExt == "dat" || !sExt.length())
-        return new NumeRe::TextDataFile(sDataFile);
-
-    if (sExt == "csv")
-        return new NumeRe::CommaSeparatedValues(sDataFile);
-
-    if (sExt == "labx")
-        return new NumeRe::CassyLabx(sDataFile);
-
-    if (sExt == "ibw")
-        return new NumeRe::IgorBinaryWave(sDataFile);
-
-    if (sExt == "ods")
-        return new NumeRe::OpenDocumentSpreadSheet(sDataFile);
-
-    if (sExt == "xls")
-        return new NumeRe::XLSSpreadSheet(sDataFile);
-
-    if (sExt == "xlsx")
-        return new NumeRe::XLSXSpreadSheet(sDataFile);
-
-    if (sExt == "jdx" || sExt == "dx" || sExt == "jcm")
-        return new NumeRe::JcampDX(sDataFile);
-
-    return nullptr;
-}
-
-
 // --> Oeffne eine Datei, lies sie ein und interpretiere die Daten als Double <--
 void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool bIgnore, int _nHeadline)
 {
@@ -225,7 +189,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
         if (!fileExists(sDataFile) && (_sFile.find('.') == string::npos || _sFile.find('.') < _sFile.rfind('/')))
             sDataFile = FileSystem::ValidFileName(_sFile+".*");
 
-        NumeRe::GenericFile<double>* file = openFileByType();
+        NumeRe::GenericFile<double>* file = NumeRe::getFileByType(sDataFile);
 
         if (!file)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, _sFile, SyntaxError::invalid_position, _sFile);
@@ -235,7 +199,8 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
             if (file->getExtension() == "ibw" && _nHeadline == -1)
                 static_cast<NumeRe::IgorBinaryWave*>(file)->useXZSlicing();
 
-            file->read();
+            if (!file->read())
+                throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sDataFile, SyntaxError::invalid_position, sDataFile);
         }
         catch (...)
         {
@@ -1495,13 +1460,31 @@ bool Datafile::saveFile(const string& sCache, string _sFileName)
     if (getCacheStatus())
         return MemoryManager::saveLayer(sOutputFile, "cache");
 
-    NumeRe::NumeReDataFile file(sOutputFile);
-    file.setDimensions(nLines, nCols);
-    file.setColumnHeadings(sHeadLine, nCols);
-    file.setData(dDatafile, nLines, nCols);
-    file.setTableName("data");
-    file.setComment("THIS IS A TEST FILE");
-    file.write();
+    NumeRe::GenericFile<double>* file = NumeRe::getFileByType(sOutputFile);
+
+    if (!file)
+        throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sOutputFile, SyntaxError::invalid_position, sOutputFile);
+
+    file->setDimensions(nLines, nCols);
+    file->setColumnHeadings(sHeadLine, nCols);
+    file->setData(dDatafile, nLines, nCols);
+    file->setTableName("data");
+
+    if (file->getExtension() == "ndat")
+        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("THIS IS A TEST FILE");
+
+    try
+    {
+        if (!file->write())
+            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sOutputFile, SyntaxError::invalid_position, sOutputFile);
+    }
+    catch (...)
+    {
+        delete file;
+        throw;
+    }
+
+    delete file;
 }
 
 void Datafile::generateFileName()

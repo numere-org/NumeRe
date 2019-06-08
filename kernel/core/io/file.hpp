@@ -106,6 +106,50 @@ namespace NumeRe
                 }
             }
 
+            std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents)
+            {
+                // x, y
+                std::pair<size_t, size_t> pCellExtents(0u, 1u);
+                size_t nLastLineBreak = 0;
+
+                for (size_t i = 0; i < sContents.length(); i++)
+                {
+                    if (sContents[i] == '\n')
+                    {
+                        pCellExtents.second++;
+
+                        if (i - nLastLineBreak > pCellExtents.first)
+                            pCellExtents.first = i - nLastLineBreak;
+
+                        nLastLineBreak = i;
+                    }
+                }
+
+                return pCellExtents;
+            }
+
+            std::string getLineFromHead(long long int nCol, size_t nLineNumber)
+            {
+                size_t nLastLineBreak = 0u;
+
+                for (size_t i = 0; i < fileTableHeads[nCol].length(); i++)
+                {
+                    if (fileTableHeads[nCol][i] == '\n')
+                    {
+                        if (!nLineNumber)
+                            return fileTableHeads[nCol].substr(nLastLineBreak, i - nLastLineBreak);
+
+                        nLineNumber--;
+                        nLastLineBreak = i+1;
+                    }
+                }
+
+                if (nLineNumber == 1)
+                    return fileTableHeads[nCol].substr(nLastLineBreak);
+
+                return " ";
+            }
+
             template <typename T> T readNumField()
             {
                 T num;
@@ -522,8 +566,8 @@ namespace NumeRe
                 return nCols;
             }
 
-            virtual void read() = 0;
-            virtual void write() = 0;
+            virtual bool read() = 0;
+            virtual bool write() = 0;
 
             GenericFile& operator=(const GenericFile& file)
             {
@@ -612,6 +656,9 @@ namespace NumeRe
     };
 
     //
+    GenericFile<double>* getFileByType(const std::string& filename);
+
+    //
     class TextDataFile : public GenericFile<double>
     {
         private:
@@ -623,22 +670,22 @@ namespace NumeRe
             void addSeparator(const std::vector<size_t>& vColumnWidth);
 
             void decodeTableHeads(std::vector<std::string>& vFileContents, long long int nComment);
-            std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents);
             std::vector<size_t> calculateColumnWidths(size_t& nNumberOfLines);
-            std::string getLineFromHead(long long int nCol, size_t nLineNumber);
 
         public:
             TextDataFile(const std::string& filename);
             virtual ~TextDataFile();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readFile();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 writeFile();
+                return true;
             }
     };
 
@@ -670,14 +717,16 @@ namespace NumeRe
             NumeReDataFile(const NumeReDataFile& file);
             virtual ~NumeReDataFile();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readFile();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 writeFile();
+                return true;
             }
 
             NumeReDataFile& operator=(NumeReDataFile& file);
@@ -722,14 +771,16 @@ namespace NumeRe
             CacheFile(const std::string& filename);
             virtual ~CacheFile();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readSome();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 writeSome();
+                return true;
             }
 
             size_t getNumberOfTables()
@@ -761,14 +812,16 @@ namespace NumeRe
             CassyLabx(const std::string& filename);
             virtual ~CassyLabx();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readFile();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 // do nothing here
+                return false;
             }
     };
 
@@ -785,14 +838,44 @@ namespace NumeRe
             CommaSeparatedValues(const std::string& filename);
             virtual ~CommaSeparatedValues();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readFile();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 writeFile();
+                return true;
+            }
+    };
+
+    //
+    class LaTeXTable : public GenericFile<double>
+    {
+        private:
+            void writeFile();
+            void writeHeader();
+            void writeTableHeads();
+            size_t countHeadLines();
+            std::string replaceNonASCII(const std::string& sText);
+            std::string formatNumber(double number);
+
+        public:
+            LaTeXTable(const std::string& filename);
+            virtual ~LaTeXTable();
+
+            virtual bool read() override
+            {
+                // do nothing here
+                return false;
+            }
+
+            virtual bool write() override
+            {
+                writeFile();
+                return true;
             }
     };
 
@@ -808,14 +891,16 @@ namespace NumeRe
             JcampDX(const std::string& filename);
             virtual ~JcampDX();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readFile();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 // do nothing
+                return false;
             }
     };
 
@@ -830,14 +915,16 @@ namespace NumeRe
             OpenDocumentSpreadSheet(const std::string& filename);
             virtual ~OpenDocumentSpreadSheet();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readFile();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 // do nothing
+                return false;
             }
     };
 
@@ -852,14 +939,16 @@ namespace NumeRe
             XLSSpreadSheet(const std::string& filename);
             virtual ~XLSSpreadSheet();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readFile();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 writeFile();
+                return true;
             }
     };
 
@@ -874,14 +963,16 @@ namespace NumeRe
             XLSXSpreadSheet(const std::string& filename);
             virtual ~XLSXSpreadSheet();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readFile();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 // do nothing
+                return false;
             }
     };
 
@@ -898,14 +989,16 @@ namespace NumeRe
             IgorBinaryWave(const IgorBinaryWave& file);
             virtual ~IgorBinaryWave();
 
-            virtual void read() override
+            virtual bool read() override
             {
                 readFile();
+                return true;
             }
 
-            virtual void write() override
+            virtual bool write() override
             {
                 // do nothing
+                return false;
             }
 
             IgorBinaryWave& operator=(const IgorBinaryWave& file);
