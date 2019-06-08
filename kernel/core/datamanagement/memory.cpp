@@ -820,7 +820,7 @@ void Memory::importTable(NumeRe::Table _table)
     }
 }
 
-bool Memory::save(string _sFileName)
+bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision)
 {
     NumeRe::GenericFile<double>* file = NumeRe::getFileByType(_sFileName);
 
@@ -833,10 +833,11 @@ bool Memory::save(string _sFileName)
     file->setDimensions(lines, cols);
     file->setColumnHeadings(sHeadLine, cols);
     file->setData(dMemTable, lines, cols);
-    file->setTableName("data");
+    file->setTableName(sTableName);
+    file->setTextfilePrecision(nPrecision);
 
     if (file->getExtension() == "ndat")
-        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("THIS IS A TEST FILE");
+        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("NO COMMENT");
 
     try
     {

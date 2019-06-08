@@ -116,7 +116,7 @@ class Memory : public Sorter
 
 		bool setHeadLineElement(long long int _i, string _sHead);	        // setzt das _i-te Element der Kopfzeile auf _sHead
 
-		bool save(string _sFileName);
+		bool save(string _sFileName, const string& sTableName, unsigned short nPrecision);
         bool getSaveStatus() const;                     // gibt bIsSaved zurueck
         void setSaveStatus(bool _bIsSaved);             // setzt bIsSaved
         long long int getLastSaved() const;             // gibt nLastSaved zurueck

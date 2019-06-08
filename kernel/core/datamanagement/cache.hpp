@@ -108,9 +108,9 @@ class MemoryManager : public FileSystem, public StringMemory, public NumeRe::Clu
 		{
 			return vMemory[mCachesMap.at(_sCache)]->isValidElement(_nLine, _nCol);
 		}
-		inline bool saveLayer(string _sFileName, const string& _sCache)
+		inline bool saveLayer(string _sFileName, const string& _sCache, unsigned short nPrecision)
 		{
-			return vMemory[mCachesMap.at(_sCache)]->save(ValidFileName(_sFileName, ".ndat"));
+			return vMemory[mCachesMap.at(_sCache)]->save(ValidFileName(_sFileName, ".ndat"), _sCache, nPrecision);
 		}
 		inline int getHeadlineCount(const string& _sCache) const
 		{

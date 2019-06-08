@@ -224,7 +224,7 @@ class Datafile : public MemoryManager, private Sorter		//	Diese Klasse ist ein C
         }
 
         NumeRe::Table extractTable(const string& _sTable);
-        bool saveFile(const string& sCache, string _sFileName);
+        bool saveFile(const string& sCache, string _sFileName, unsigned short nPrecision = 7);
 
         string getOutputFileName() const
         {

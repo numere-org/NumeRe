@@ -1228,7 +1228,7 @@ namespace NumeRe
 
         for (long long int i = 0; i < nRows; i++)
         {
-            for (long long int j = 0; i < nCols; j++)
+            for (long long int j = 0; j < nCols; j++)
             {
                 if (!isnan(fileData[i][j]))
                     fFileStream << fileData[i][j];
@@ -1514,7 +1514,7 @@ namespace NumeRe
                 sPrint[i] = ' ';
         }
 
-        fFileStream << sPrint + "\n";
+        fFileStream << sPrint;
     }
 
     size_t LaTeXTable::countHeadLines()

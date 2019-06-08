@@ -2479,7 +2479,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				_option.save(_option.getExePath());
 				return 1;
 			}
-			else //if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
+			else
 			{
 				for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
 				{
@@ -2530,34 +2530,32 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						if (matchParams(sCmd, "file", '='))
 							addArgumentQuotes(sCmd, "file");
 
-						//NumeReKernel::print(sCmd );
 						_data.setCacheStatus(false);
 						if (containsStrings(sCmd) && BI_parseStringArgs(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument, _parser, _data, _option))
 						{
-							//NumeReKernel::print(sArgument );
 							_cache.setPrefix(sArgument);
+
 							if (_cache.saveFile(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), sArgument))
 							{
 								if (_option.getSystemPrintStatus())
 									NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
-								//NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _cache.getOutputFileName() + "\" gespeichert.", _option) );
+
 								return 1;
 							}
 							else
-								//throw CANNOT_SAVE_FILE;
 								throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
 						}
 						else
 							_cache.setPrefix(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first));
+
 						if (_cache.saveFile(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), ""))
 						{
 							if (_option.getSystemPrintStatus())
 								NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
-							//NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _cache.getOutputFileName() + "\" gespeichert.", _option) );
 						}
 						else
-							//throw CANNOT_SAVE_FILE;
 							throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
+
 						return 1;
 					}
 				}
@@ -4649,15 +4647,17 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			{
 				if (_data.containsStringVars(sCmd))
 					_data.getStringValues(sCmd);
+
 				if (_data.matchTableAsParameter(sCmd, '=').length())
 					addArgumentQuotes(sCmd, _data.matchTableAsParameter(sCmd, '='));
+
 				if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
 				{
 					_out.setFileName(sArgument);
-					show_data(_data, _out, _option, _data.matchTableAsParameter(sCmd), nPrecision, false, true, true, false);
+					_data.saveFile(_data.matchTableAsParameter(sCmd), sArgument, nPrecision);
 				}
 				else
-					show_data(_data, _out, _option, _data.matchTableAsParameter(sCmd), nPrecision, false, true, true);
+					_data.saveFile(_data.matchTableAsParameter(sCmd), "", nPrecision);
 			}
 			else //if (sCmd.find("cache(") != string::npos || sCmd.find("data(") != string::npos)
 			{
@@ -4669,9 +4669,10 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 					{
 						//NumeReKernel::print(sCmd );
 						Datafile _cache;
-						_cache.setCacheStatus(true);
+
 						if (sCmd.find("()") != string::npos)
 							sCmd.replace(sCmd.find("()"), 2, "(:,:)");
+
 						_idx = parser_getIndices(sCmd, _parser, _data, _option);
 
 						if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
@@ -4713,18 +4714,14 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						if (matchParams(sCmd, "file", '='))
 							addArgumentQuotes(sCmd, "file");
 
-						//NumeReKernel::print(sCmd );
-						_data.setCacheStatus(false);
-						if (containsStrings(sCmd) && BI_parseStringArgs(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument, _parser, _data, _option))
-						{
-							//NumeReKernel::print(sArgument );
-							_out.setFileName(sArgument);
-							show_data(_cache, _out, _option, (iter->first == "data" ? "copy_of_data" : iter->first), nPrecision, false, true, true, false);
-						}
-						else
-						{
-							show_data(_cache, _out, _option, (iter->first == "data" ? "copy_of_data" : iter->first), nPrecision, false, true, true);
-						}
+                        if (containsStrings(sCmd) && BI_parseStringArgs(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument, _parser, _data, _option))
+                        {
+                            _out.setFileName(sArgument);
+                            _cache.saveFile((iter->first == "data" ? "copy_of_data" : iter->first), sArgument, nPrecision);
+                        }
+                        else
+                            _cache.saveFile((iter->first == "data" ? "copy_of_data" : iter->first), "", nPrecision);
+
 						return 1;
 					}
 				}

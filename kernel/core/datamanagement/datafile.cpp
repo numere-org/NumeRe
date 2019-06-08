@@ -1442,7 +1442,7 @@ NumeRe::Table Datafile::extractTable(const string& _sTable)
 }
 
 
-bool Datafile::saveFile(const string& sCache, string _sFileName)
+bool Datafile::saveFile(const string& sCache, string _sFileName, unsigned short nPrecision)
 {
     if (!_sFileName.length())
         generateFileName();
@@ -1450,15 +1450,16 @@ bool Datafile::saveFile(const string& sCache, string _sFileName)
     {
         string sTemp = sPath;
         setPath(sSavePath, false, sWhere);
-        if (_sFileName.find('.') != string::npos && _sFileName.substr(_sFileName.rfind('.')) != ".ndat")
-            _sFileName = _sFileName.substr(0,_sFileName.rfind('.'));
+
         sOutputFile = FileSystem::ValidFileName(_sFileName, ".ndat");
         setPath(sTemp, false, sWhere);
     }
+
     if (sCache != "data")
-        return MemoryManager::saveLayer(sOutputFile, sCache);
+        return MemoryManager::saveLayer(sOutputFile, sCache, nPrecision);
+
     if (getCacheStatus())
-        return MemoryManager::saveLayer(sOutputFile, "cache");
+        return MemoryManager::saveLayer(sOutputFile, "cache", nPrecision);
 
     NumeRe::GenericFile<double>* file = NumeRe::getFileByType(sOutputFile);
 
@@ -1469,6 +1470,7 @@ bool Datafile::saveFile(const string& sCache, string _sFileName)
     file->setColumnHeadings(sHeadLine, nCols);
     file->setData(dDatafile, nLines, nCols);
     file->setTableName("data");
+    file->setTextfilePrecision(nPrecision);
 
     if (file->getExtension() == "ndat")
         static_cast<NumeRe::NumeReDataFile*>(file)->setComment("THIS IS A TEST FILE");

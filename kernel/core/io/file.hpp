@@ -144,7 +144,7 @@ namespace NumeRe
                     }
                 }
 
-                if (nLineNumber == 1)
+                if (!nLineNumber)
                     return fileTableHeads[nCol].substr(nLastLineBreak);
 
                 return " ";
