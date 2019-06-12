@@ -223,6 +223,14 @@ bool MemoryManager::loadFromCacheFile()
     bSaveMutex = true;
     sCache_file = FileSystem::ValidFileName(sCache_file, ".cache");
 
+    if (!loadFromNewCacheFile())
+        return loadFromLegacyCacheFile();
+
+    return true;
+}
+
+bool MemoryManager::loadFromNewCacheFile()
+{
     NumeRe::CacheFile cacheFile(sCache_file);
 
     try
@@ -247,11 +255,11 @@ bool MemoryManager::loadFromCacheFile()
             cacheFile.getColumnHeadings(vMemory.back()->sHeadLine);
 
             vMemory.back()->bValidData = true;
-
             vMemory.back()->countAppendedZeroes();
             vMemory.back()->shrink();
         }
 
+        bSaveMutex = false;
         return true;
 
     }
@@ -260,7 +268,11 @@ bool MemoryManager::loadFromCacheFile()
         cacheFile.close();
     }
 
+    return false;
+}
 
+bool MemoryManager::loadFromLegacyCacheFile()
+{
     char*** cHeadLine = 0;
     char* cCachesMap = 0;
     double* dCache = 0;
@@ -275,20 +287,24 @@ bool MemoryManager::loadFromCacheFile()
     size_t nLength = 0;
     size_t cachemapssize = 0;
     long long int nLayerIndex = 0;
+
     if (!cache_file.is_open())
         cache_file.close();
+
     cache_file.open(sCache_file.c_str(), ios_base::in | ios_base::binary);
 
     if (!isValid() && cache_file.good())
     {
         time_t tTime = 0;
         cache_file.read((char*)&nMajor, sizeof(long int));
+
         if (cache_file.fail() || cache_file.eof())
         {
             cache_file.close();
             bSaveMutex = false;
             return false;
         }
+
         cache_file.read((char*)&nMinor, sizeof(long int));
         cache_file.read((char*)&nBuild, sizeof(long int));
         cache_file.read((char*)&tTime, sizeof(time_t));
@@ -302,9 +318,12 @@ bool MemoryManager::loadFromCacheFile()
             cache_file.read((char*)&nLayers, sizeof(long long int));
             nLayers *= -1;
             cache_file.read((char*)&cachemapssize, sizeof(size_t));
+
             for (size_t i = 0; i < vMemory.size(); i++)
                 delete vMemory[i];
+
             vMemory.clear();
+
             for (size_t i = 0; i < cachemapssize; i++)
             {
                 nLength = 0;
@@ -315,10 +334,12 @@ bool MemoryManager::loadFromCacheFile()
                 cache_file.read((char*)&nLayerIndex, sizeof(long long int));
                 string sTemp;
                 sTemp.resize(nLength-1);
+
                 for (unsigned int n = 0; n < nLength-1; n++)
                 {
                     sTemp[n] = cCachesMap[n];
                 }
+
                 delete[] cCachesMap;
                 cCachesMap = 0;
                 mCachesMap[sTemp] = nLayerIndex;
@@ -331,25 +352,29 @@ bool MemoryManager::loadFromCacheFile()
         cHeadLine = new char**[nLayers];
         dCache = new double[nLayers];
         bValidData = new bool[nLayers];
+
         for (long long int i = 0; i < nLayers; i++)
         {
             cHeadLine[i] = new char*[nCols];
+
             for (long long int j = 0; j < nCols; j++)
             {
                 nLength = 0;
                 cache_file.read((char*)&nLength, sizeof(size_t));
-                //cerr << nLength << endl;
                 cHeadLine[i][j] = new char[nLength];
                 cache_file.read(cHeadLine[i][j], sizeof(char)*nLength);
                 string sHead;
+
                 for (unsigned int k = 0; k < nLength-1; k++)
                 {
                     sHead += cHeadLine[i][j][k];
                 }
+
                 if (i < cachemapssize)
                     vMemory[i]->setHeadLineElement(j, sHead);
             }
         }
+
         cache_file.seekg(sizeof(long long int)*nLayers*nCols, ios_base::cur);
 
         for (long long int i = 0; i < nLines; i++)
@@ -357,15 +382,18 @@ bool MemoryManager::loadFromCacheFile()
             for (long long int j = 0; j < nCols; j++)
             {
                 cache_file.read((char*)dCache, sizeof(double)*nLayers);
+
                 for (long long int k = 0; k < cachemapssize; k++)
                     vMemory[k]->writeData(i, j, dCache[k]);
             }
         }
+
         for (long long int i = 0; i < nLines; i++)
         {
             for (long long int j = 0; j < nCols; j++)
             {
                 cache_file.read((char*)bValidData, sizeof(bool)*nLayers);
+
                 for (long long int k = 0; k < cachemapssize; k++)
                 {
                     if (!bValidData[k])
@@ -385,33 +413,44 @@ bool MemoryManager::loadFromCacheFile()
     else
     {
         bSaveMutex = false;
+
         if (cHeadLine)
         {
             for (long long int i = 0; i < nLayers; i++)
             {
                 for (long long int j = 0; j < nCols; j++)
                     delete[] cHeadLine[i][j];
+
                 delete[] cHeadLine[i];
             }
+
             delete[] cHeadLine;
         }
+
         if (dCache)
             delete[] dCache;
+
         return false;
     }
+
     bSaveMutex = false;
+
     if (cHeadLine)
     {
         for (long long int i = 0; i < nLayers; i++)
         {
             for (long long int j = 0; j < nCols; j++)
                 delete[] cHeadLine[i][j];
+
             delete[] cHeadLine[i];
         }
+
         delete[] cHeadLine;
     }
+
     if (dCache)
         delete[] dCache;
+
     return true;
 }
 

@@ -30,11 +30,19 @@ namespace NumeRe
 {
     using namespace std;
 
+    // This function determines the correct class to be used for the filename
+    // passed to this function. If there's no fitting file type, a null pointer
+    // is returned. The calling function is responsible for clearing the
+    // created instance. The returned pointer is of the type of GenericFile<double>
+    // but references an instance of a derived class
     GenericFile<double>* getFileByType(const string& filename)
     {
         FileSystem _fSys;
+
+        // Get the extension of the filename
         string sExt = toLowerCase(_fSys.getFileParts(filename).back());
 
+        // Create an instance of the selected file type
         if (sExt == "ndat")
             return new NumeReDataFile(filename);
 
@@ -65,8 +73,10 @@ namespace NumeRe
         if (sExt == "jdx" || sExt == "dx" || sExt == "jcm")
             return new JcampDX(filename);
 
+        // If no filetype matches, return a null pointer
         return nullptr;
     }
+
 
     //////////////////////////////////////////////
     // class TextDataFile
@@ -74,29 +84,33 @@ namespace NumeRe
     //
     TextDataFile::TextDataFile(const string& filename) : GenericFile(filename)
     {
-        //
+        // Empty constructor
     }
 
     TextDataFile::~TextDataFile()
     {
-        //
+        // Empty destructor
     }
 
+    // This method reads the data in the referenced text file
+    // to memory
     void TextDataFile::readFile()
     {
         open(ios::in);
 
-		// --> Benoetigte temporaere Variablen initialisieren <--
-		string s = "";
 		long long int nLine = 0;
 		long long int nCol = 0;
 		long long int nComment = 0;
 
+		// Read the text file contents to memory
 		vector<string> vFileContents = readTextFile(true);
 
+		// Ensure that the file was not empty
 		if (!vFileContents.size())
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Replace tabulator characters with whitespaces but
+        // insert placeholders for empty table headlines
 		for (size_t i = 0; i < vFileContents.size(); i++)
         {
             if (!isNumeric(vFileContents[i]))
@@ -108,28 +122,34 @@ namespace NumeRe
             }
         }
 
-		// --> Kommentare muessen auch noch escaped werden... <--
+		// Count the number of comment lines, which are found
+		// in the files contents. Determine also, how many
+		// columns are found in the file
 		for (size_t i = 0; i < vFileContents.size(); i++)
 		{
-			if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))	// ist das erste Zeichen ein #?
+			if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))
 			{
-				nComment++;			// Kommentarzeilen zaehlen
-				continue; 			// Dann ist das wohl ein Kommentar -> Ueberspringen
+				nComment++;
+				continue;
 			}
-			else if (!nCol)			// Suche so lange, bis du eine Zeile findest, die nicht kommentiert wurde
-			{						// Sobald die Spaltenzahl einmal bestimmt wurde, braucht das hier nicht mehr durchgefuehrt werden
-				// --> Verwende einen Tokenizer, um den String in Teile zu zerlegen und diese zu zaehlen <--
+			else if (!nCol)
+			{
+			    // Determine the number of columns by applying
+			    // the tokenizer to the files contents
 				nCol = tokenize(vFileContents[i], " ", true).size();
 			}
 		}
 
-		nRows = vFileContents.size() - nComment;	// Die maximale Zahl der Zeilen - die Zahl der Kommentare ergibt die noetige Zahl der Zeilen
+		// Set the final dimensions
+		nRows = vFileContents.size() - nComment;
 		nCols = nCol;
 
+		// Create the target storage
 		createStorage();
 
 		nLine = 0;
 
+		// Copy the data from the file to the internal memory
 		for (size_t i = 0; i < vFileContents.size(); i++)
         {
             if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))
@@ -138,15 +158,24 @@ namespace NumeRe
                 continue;
             }
 
+            // Tokenize the current line
             vector<string> vLine = tokenize(vFileContents[i], " ", true);
 
+            // Ensure that the number of columns is matching
+            // If it does not match, then we did not determine
+            // the columns correctly
             if (vLine.size() != nCols)
                 throw SyntaxError(SyntaxError::COL_COUNTS_DOESNT_MATCH, sFileName, SyntaxError::invalid_position, sFileName);
 
+            // Go through the already tokenized line and store
+            // the converted values
             for (size_t j = 0; j < vLine.size(); j++)
             {
+                // Replace comma with a dot
                 replaceDecimalSign(vLine[j]);
 
+                // Handle special values and convert the text
+                // string into a numerical value
                 if (vLine[j] == "---" || toLowerCase(vLine[j]) == "nan")
                     fileData[nLine][j] = NAN;
                 else if (toLowerCase(vLine[j]) == "inf")
@@ -160,26 +189,38 @@ namespace NumeRe
             nLine++;
         }
 
-        // --> Wurde die Datei schon von NumeRe erzeugt? Dann sind die Kopfzeilen einfach zu finden <--
+        // Decode the table headlines in this member function
         if (nComment)
         {
             decodeTableHeads(vFileContents, nComment);
         }
     }
 
+    // This method writes the data in memory to the referenced text
+    // file
     void TextDataFile::writeFile()
     {
+        // Open the file
         open(ios::out | ios::trunc);
 
+        // Write the header
         writeHeader();
 
+        // Get the necessary column widths and the number
+        // of lines, which are needed for the column heads
         size_t nNumberOfHeadlines = 1u;
         vector<size_t> vColumns =  calculateColumnWidths(nNumberOfHeadlines);
+
+        // Write the column heads and append a separator
         writeTableHeads(vColumns, nNumberOfHeadlines);
         addSeparator(vColumns);
+
+        // Write the actual data
         writeTableContents(vColumns);
     }
 
+    // This member function writes the header lines for the
+    // text files
     void TextDataFile::writeHeader()
     {
         string sBuild = AutoVersion::YEAR;
@@ -200,6 +241,8 @@ namespace NumeRe
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_STD") << "\n#" << endl;
     }
 
+    // This member function is used to write the table heads
+    // into the target file
     void TextDataFile::writeTableHeads(const vector<size_t>& vColumnWidth, size_t nNumberOfLines)
     {
         fFileStream << "# ";
@@ -224,6 +267,8 @@ namespace NumeRe
         }
     }
 
+    // This member function is used to write the data in
+    // memory to the target text file
     void TextDataFile::writeTableContents(const vector<size_t>& vColumnWidth)
     {
         for (long long int i = 0; i < nRows; i++)
@@ -234,6 +279,7 @@ namespace NumeRe
                 fFileStream.fill(' ');
                 fFileStream.precision(nPrecFields);
 
+                // Handle NaNs correctly
                 if (isnan(fileData[i][j]))
                     fFileStream << "---";
                 else
@@ -245,6 +291,8 @@ namespace NumeRe
         }
     }
 
+    // This member function draws a separator line based
+    // upon the overall width of the columns
     void TextDataFile::addSeparator(const vector<size_t>& vColumnWidth)
     {
         fFileStream << "#=";
@@ -262,16 +310,25 @@ namespace NumeRe
         fFileStream << "\n";
     }
 
+    // This member function decodes the table heads in the
+    // text file and stores them in memory
     void TextDataFile::decodeTableHeads(vector<string>& vFileContents, long long int nComment)
     {
 		long long int _nHeadline = 0;
         string sCommentSign = "#";
 
+        // If the length of the file is larger than 14 lines, then
+        // append equal signs to the comment sign
         if (vFileContents.size() > 14)
             sCommentSign.append(vFileContents[13].length()-1, '=');
 
+        // This section will locate the first line in the comment section,
+        // where the table heads are located. Depending on the format of
+        // the comment section in the file, the following code tries
+        // different approaches
         if (nComment >= 15 && vFileContents[2].substr(0, 21) == "# NumeRe: Framework f")
         {
+            // This is a NumeRe-created text file
             for (size_t k = 13; k < vFileContents.size(); k++)
             {
                 if (vFileContents[k] == sCommentSign)
@@ -283,12 +340,18 @@ namespace NumeRe
         }
         else if (nComment == 1)
         {
+            // That's a custom created text file with only one possible
+            // candidate for the table heads
             for (size_t i = 0; i < vFileContents.size(); i++)
             {
                 if (vFileContents[i][0] == '#')
                 {
+                    // Starting with a "#" sign
                     if (vFileContents[i].find(' ') != string::npos)
                     {
+                        // Insert a whitespace character right after
+                        // the comment character to make it separatable
+                        // using the tokenizer
                         if (vFileContents[i][1] != ' ')
                         {
                             for (unsigned int n = 0; n < vFileContents[i].length(); n++)
@@ -296,14 +359,17 @@ namespace NumeRe
                                 if (vFileContents[i][n] != '#')
                                 {
                                     if (vFileContents[i][n] != ' ')
-                                        vFileContents[i] = vFileContents[i].substr(0, n) + " " + vFileContents[i].substr(n);
+                                        vFileContents[i].insert(n, " ");
 
                                     break;
                                 }
                             }
                         }
 
-                        if (nCols == tokenize(vFileContents[i], " ", true).size())
+                        // Considering the comment character, which is the
+                        // first token, does the number of elements match to
+                        // the number of columns?
+                        if (nCols + 1 == tokenize(vFileContents[i], " ", true).size())
                             _nHeadline = 1;
                     }
 
@@ -311,6 +377,7 @@ namespace NumeRe
                 }
                 else if (!isNumeric(vFileContents[i]))
                 {
+                    // Simply a non-numeric line
                     if (nCols == tokenize(vFileContents[i], " ", true).size())
                         _nHeadline = 1;
                 }
@@ -318,14 +385,21 @@ namespace NumeRe
         }
         else if (vFileContents[0][0] == '#' || !isNumeric(vFileContents[0]))
         {
-            for (long long int i = 0; i < vFileContents.size(); i++)
+            // This is the most generic approach: every line, which contains
+            // non-numeric characters is examined to locate the correct line
+            // containing the table column heads
+            for (size_t i = 0; i < vFileContents.size(); i++)
             {
                 if (vFileContents[i][0] != '#' && isNumeric(vFileContents[i]))
                 {
                     if (vFileContents[i-1][0] == '#')
                     {
-                        if ((nCols > 1 && vFileContents[i-1].find(' ') != string::npos) || (nCols == 1 && vFileContents[i-1].length() > 1))
+                        if ((nCols > 1 && vFileContents[i-1].find(' ') != string::npos)
+                            || (nCols == 1 && vFileContents[i-1].length() > 1))
                         {
+                            // Insert a whitespace character right after
+                            // the comment character to make it separatable
+                            // using the tokenizer
                             if (vFileContents[i-1][1] != ' ')
                             {
                                 for (unsigned int n = 0; n < vFileContents[i-1].length(); n++)
@@ -333,22 +407,31 @@ namespace NumeRe
                                     if (vFileContents[i-1][n] != '#')
                                     {
                                         if (vFileContents[i-1][n] != ' ')
-                                            vFileContents[i-1] = vFileContents[i-1].substr(0, n) + " " + vFileContents[i-1].substr(n);
+                                            vFileContents[i-1].insert(n, " ");
 
                                         break;
                                     }
                                 }
                             }
 
-                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols+1) // wegen "#" an erster stelle
+                            // Considering the comment character, which is the
+                            // first token, does the number of elements match to
+                            // the number of columns?
+                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols+1)
                             {
                                 _nHeadline = i;
                                 break;
                             }
                         }
 
-                        if (i > 1 && vFileContents[i-2][0] == '#' && ((vFileContents[i-2].find(' ') != string::npos && nCols > 1) || (nCols == 1 && vFileContents[i-2].length() > 1)))
+                        if (i > 1
+                            && vFileContents[i-2][0] == '#'
+                            && ((vFileContents[i-2].find(' ') != string::npos && nCols > 1)
+                                || (nCols == 1 && vFileContents[i-2].length() > 1)))
                         {
+                            // Insert a whitespace character right after
+                            // the comment character to make it separatable
+                            // using the tokenizer
                             if (vFileContents[i-2][1] != ' ')
                             {
                                 for (size_t n = 0; n < vFileContents[i-2].length(); n++)
@@ -356,21 +439,28 @@ namespace NumeRe
                                     if (vFileContents[i-2][n] != '#')
                                     {
                                         if (vFileContents[i-2][n] != ' ')
-                                            vFileContents[i-2] = vFileContents[i-2].substr(0, n) + " " + vFileContents[i-2].substr(n);
+                                            vFileContents[i-2].insert(n, " ");
 
                                         break;
                                     }
                                 }
                             }
 
+                            // Considering the comment character, which is the
+                            // first token, does the number of elements match to
+                            // the number of columns?
                             if (tokenize(vFileContents[i-2], " ", true).size() == nCols+1)
                                 _nHeadline = i-1;
                         }
                     }
                     else if (!isNumeric(vFileContents[i-1]))
                     {
-                        if ((vFileContents[i-1].find(' ') != string::npos && nCols > 1) || (nCols == 1 && vFileContents[i-1].length() > 1))
+                        if ((vFileContents[i-1].find(' ') != string::npos && nCols > 1)
+                            || (nCols == 1 && vFileContents[i-1].length() > 1))
                         {
+                            // Insert a whitespace character right after
+                            // the comment character to make it separatable
+                            // using the tokenizer
                             if (vFileContents[i-1][1] != ' ')
                             {
                                 for (size_t n = 0; n < vFileContents[i-1].length(); n++)
@@ -378,22 +468,31 @@ namespace NumeRe
                                     if (vFileContents[i-1][n] != '#')
                                     {
                                         if (vFileContents[i-1][n] != ' ')
-                                            vFileContents[i-1] = vFileContents[i-1].substr(0, n) + " " + vFileContents[i-1].substr(n);
+                                            vFileContents[i-1].insert(n, " ");
 
                                         break;
                                     }
                                 }
                             }
 
-                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols)
+                            // Considering the comment character, which is the
+                            // first token, does the number of elements match to
+                            // the number of columns?
+                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols+1)
                             {
                                 _nHeadline = i;
                                 break;
                             }
                         }
 
-                        if (i > 1 && vFileContents[i-2][0] == '#' && ((vFileContents[i-2].find(' ') != string::npos && nCols > 1) || (nCols == 1 && vFileContents[i-2].length() > 1)))
+                        if (i > 1
+                            && vFileContents[i-2][0] == '#'
+                            && ((vFileContents[i-2].find(' ') != string::npos && nCols > 1)
+                                || (nCols == 1 && vFileContents[i-2].length() > 1)))
                         {
+                            // Insert a whitespace character right after
+                            // the comment character to make it separatable
+                            // using the tokenizer
                             if (vFileContents[i-2][1] != ' ')
                             {
                                 for (unsigned int n = 0; n < vFileContents[i-2].length(); n++)
@@ -401,14 +500,17 @@ namespace NumeRe
                                     if (vFileContents[i-2][n] != '#')
                                     {
                                         if (vFileContents[i-2][n] != ' ')
-                                            vFileContents[i-2] = vFileContents[i-2].substr(0,n) + " " + vFileContents[i-2].substr(n);
+                                            vFileContents[i-2].insert(n, " ");
 
                                         break;
                                     }
                                 }
                             }
 
-                            if (tokenize(vFileContents[i-2], " ", true).size() == nCols)
+                            // Considering the comment character, which is the
+                            // first token, does the number of elements match to
+                            // the number of columns?
+                            if (tokenize(vFileContents[i-2], " ", true).size() == nCols+1)
                                 _nHeadline = i-1;
                         }
                     }
@@ -418,21 +520,38 @@ namespace NumeRe
             }
         }
 
+        // This section will extract the identified table
+        // column heads and store them in the internal
+        // storage
         if (_nHeadline)
 		{
-            long long int n = 0; 		// zweite Zaehlvariable
+            long long int n = 0;
 
+            // Go through the contents of the whole file and
+            // search for the non-numeric lines in the file
             for (size_t i = 0; i < vFileContents.size(); i++)
             {
+                // Is this a non-numeric line?
                 if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))
                 {
-                    n++;	// Erst n erhoehen, da man zuvor auch mit 1 angefangen hat, zu zaehlen
+                    // increment the counter variable first,
+                    // because we counted from 1 previously
+                    n++;
 
-                    if (n == _nHeadline) // Da ist sie ja, die Zeile...
+                    // Does the counter match the selected
+                    // headline?
+                    if (n == _nHeadline)
                     {
+                        // This section creates the needed "empty" tokens,
+                        // which will be used to determine the association
+                        // of single strings (i.e. a single string in the
+                        // second line of a column head)
                         for (size_t k = i+1; k < vFileContents.size(); k++)
                         {
-                            // TAB-Replace ignorieren
+                            // If the current line contains the placeholders,
+                            // which we introduced before, we abort at this
+                            // line, because we already know the number of
+                            // tokens in this line
                             if (vFileContents[k].find(" _ ") != string::npos
                                 || (vFileContents[k].find_first_not_of(" #") != string::npos && vFileContents[k][vFileContents[k].find_first_not_of(" #")] == '_')
                                 || vFileContents[k].back() == '_')
@@ -440,14 +559,21 @@ namespace NumeRe
                                 break;
                             }
 
+                            // Abort on non-numeric lines
                             if (vFileContents[k][0] != '#' && isNumeric(vFileContents[k]))
                                 break;
 
+                            // Abort on separator lines
                             if (vFileContents[k].substr(0, 4) == "#===" || vFileContents[k].substr(0, 5) == "# ===")
                                 break;
 
+                            // Ensure that the current line has the same length
+                            // as the first line in the current headline set. Also,
+                            // transform multiple whitespaces into underscores, to mirror
+                            // the "tokens" from the previous lines
                             if (vFileContents[k].length() == vFileContents[i].length())
                             {
+                                // Mirror the tokens from the previous lines
                                 for (unsigned int l = 0; l < vFileContents[k].length(); l++)
                                 {
                                     if (vFileContents[i][l] != ' ' && vFileContents[k][l] == ' ')
@@ -458,6 +584,7 @@ namespace NumeRe
                             {
                                 vFileContents[k].append(vFileContents[i].length() - vFileContents[k].length(), ' ');
 
+                                // Mirror the tokens from the previous lines
                                 for (unsigned int l = 0; l < vFileContents[k].length(); l++)
                                 {
                                     if (vFileContents[i][l] != ' ' && vFileContents[k][l] == ' ')
@@ -466,6 +593,7 @@ namespace NumeRe
                             }
                             else if (vFileContents[k].length() > vFileContents[i].length() && vFileContents[k].back() != ' ' && vFileContents[i].back() != ' ')
                             {
+                                // Mirror the tokens from the previous lines
                                 for (unsigned int l = 0; l < vFileContents[i].length(); l++)
                                 {
                                     if (vFileContents[i][l] != ' ' && vFileContents[k][l] == ' ')
@@ -480,19 +608,33 @@ namespace NumeRe
                         vector<string> vHeadline;
                         vHeadline.resize((unsigned int)(2*nCols), "");
 
+                        // Go now through the selected headlines and
+                        // break them down into the single columns. Based
+                        // upon the created tokens from the previous code
+                        // section, we can ensure that we may keep the
+                        // association of the different lines
                         for (size_t k = i; k < vFileContents.size(); k++)
                         {
+                            // Abort on numeric lines
                             if (vFileContents[k][0] != '#' && isNumeric(vFileContents[k]))
                                 break;
 
+                            // Abort on separator lines
                             if (vFileContents[k].substr(0, 4) == "#===" || vFileContents[k].substr(0, 5) == "# ===")
                                 break;
 
+                            // Tokenize the current line
                             vector<string> vLine = tokenize(vFileContents[k], " ", true);
 
+                            // Remove the comment character from the list
+                            // of tokens
                             if (vLine.front() == "#")
                                 vLine.erase(vLine.begin());
 
+                            // Distribute the tokens into the single column
+                            // headings and insert line break characters
+                            // whereever needed. Of course, we will ignore
+                            // the inserted placeholders in this case
                             for (size_t j = 0; j < vLine.size(); j++)
                             {
                                 if (k == i)
@@ -504,15 +646,22 @@ namespace NumeRe
                                     break;
                                 }
 
+                                // Ignore placeholder tokens
                                 if (vLine[j].find_first_not_of('_') == string::npos)
                                     continue;
 
+                                // Strip all underscores from the
+                                // current token
                                 while (vLine[j].front() == '_')
                                     vLine[j].erase(0,1);
 
                                 while (vLine[j].back() == '_')
                                     vLine[j].pop_back();
 
+                                // Append the current token to the
+                                // corresponding column heading and
+                                // insert the linebreak character,
+                                // if needed
                                 if (!vHeadline[j].length())
                                     vHeadline[j] = utf8parser(vLine[j]);
                                 else
@@ -526,6 +675,8 @@ namespace NumeRe
                                 break;
                         }
 
+                        // Remove all empty columns from the list of
+                        // column headings
                         for (auto iter = vHeadline.begin(); iter != vHeadline.end(); ++iter)
                         {
                             if (!(iter->length()))
@@ -535,11 +686,14 @@ namespace NumeRe
                             }
                         }
 
+                        // Copy the decoded column headings to
+                        // the internal memory
                         if (vHeadline.size() <= nCols)
                         {
                             copyStringArray(&vHeadline[0], fileTableHeads, vHeadline.size());
                         }
 
+                        // Return here
                         return;
                     }
                 }
@@ -547,11 +701,18 @@ namespace NumeRe
 		}
     }
 
+    // This member function calculates the widths of the columns
+    // and also determines the number of lines needed for the
+    // column heads
     vector<size_t> TextDataFile::calculateColumnWidths(size_t& nNumberOfLines)
     {
         vector<size_t> vColumnWidths;
         const size_t NUMBERFIELDLENGTH = nPrecFields + 7;
 
+        // Go through the column heads in memory, determine
+        // their cell extents and store the maximal value of
+        // the extents and the needed width for the numerical
+        // value
         for (long long int j = 0; j < nCols; j++)
         {
             pair<size_t, size_t> pCellExtents = calculateCellExtents(fileTableHeads[j]);
@@ -574,9 +735,11 @@ namespace NumeRe
         isLegacy(false), timeStamp(0), versionMajor(0), versionMinor(0),
         versionBuild(0)
     {
-        //
+        // Empty constructor
     }
 
+    // This copy constructor extents the copy constructor
+    // of the parent class
     NumeReDataFile::NumeReDataFile(const NumeReDataFile& file) : GenericFile(file)
     {
         isLegacy = file.isLegacy;
@@ -589,9 +752,14 @@ namespace NumeRe
 
     NumeReDataFile::~NumeReDataFile()
     {
-        //
+        // Empty destructor
     }
 
+    // This member function writes the new standard
+    // header for NDAT files. It includes a dummy
+    // section, which older versions of NumeRe may
+    // read without errors, but which won't contain
+    // any reasonable information
     void NumeReDataFile::writeHeader()
     {
         writeNumField(AutoVersion::MAJOR);
@@ -605,17 +773,29 @@ namespace NumeRe
         writeNumField(fileVersionMinor);
         writeStringField(getTableName());
         writeStringField(sComment);
+
+        // The following fields are placeholders
+        // for further changes. They may be filled
+        // in future versions and will be ignored
+        // in older versions of NumeRe
         writeStringField("FTYPE=DOUBLE");
-        writeDataBlock(nullptr, 0);
+        writeNumBlock<double>(nullptr, 0);
         writeStringField("FTYPE=DOUBLE");
-        writeDataBlock(nullptr, 0);
+        writeNumBlock<double>(nullptr, 0);
         writeStringField("FTYPE=DOUBLE");
-        writeDataBlock(nullptr, 0);
+        writeNumBlock<double>(nullptr, 0);
         writeStringField("DTYPE=DOUBLE");
+
+        // Finally, write the dimensions of the
+        // target data
         writeNumField(nRows);
         writeNumField(nCols);
     }
 
+    // This member function will write the dummy
+    // header, which is readable in older versions
+    // of NumeRe. In principle, this is the old
+    // legacy format of NDAT files for a 1x1 data set
     void NumeReDataFile::writeDummyHeader()
     {
         writeNumField(1LL);
@@ -629,23 +809,43 @@ namespace NumeRe
         fFileStream.write((char*)&valid, sizeof(bool));
     }
 
+    // This member funcion will write the data in
+    // the internal storage into the target file
     void NumeReDataFile::writeFile()
     {
+        // Open the file in binary mode and truncate
+        // its contents (this will only be done, if
+        // it's not already open, because otherwise
+        // the cache file would be overwritten by each
+        // table in memory completely)
         if (!is_open())
             open(ios::binary | ios::out | ios::trunc);
 
+        // Write the file header
         writeHeader();
+
+        // Write the table column headers
         writeStringBlock(fileTableHeads, nCols);
+
+        // Write the actual data array
         writeDataArray(fileData, nRows, nCols);
     }
 
+    // This member function will read the header
+    // in the selected file. It will automatically
+    // detect, whether the file is in legacy format
+    // or not. If the file format is newer than
+    // expected, it will throw an error
     void NumeReDataFile::readHeader()
     {
+        // Read the basic information
         versionMajor = readNumField<long int>();
         versionMinor = readNumField<long int>();
         versionBuild = readNumField<long int>();
         timeStamp = readNumField<time_t>();
 
+        // Detect, whether this file was created in
+        // legacy format (earlier than v1.1.2)
         if (versionMajor * 100 + versionMinor * 10 + versionBuild <= 111)
         {
             isLegacy = true;
@@ -654,17 +854,29 @@ namespace NumeRe
             return;
         }
 
+        // Omitt the dummy header
         skipDummyHeader();
 
+        // Read the file version number (which is
+        // independent on the version number of
+        // NumeRe)
         short fileVerMajor = readNumField<short>();
         short fileVerMinor = readNumField<short>();
 
+        // Ensure that the major version of the file
+        // is not larger than the major version
+        // implemented in this class (minor version
+        // changes shall be downwards compatible)
         if (fileVerMajor > fileVersionMajor)
             throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Read the table name and the comment
         sTableName = readStringField();
         sComment = readStringField();
 
+        // Read now the three empty fields of the
+        // header. We created special functions for
+        // reading and deleting arbitary data types
         long long int size;
         string type;
         void* data = readGenericField(type, size);
@@ -676,11 +888,21 @@ namespace NumeRe
         data = readGenericField(type, size);
         deleteGenericData(data, type);
 
+        // Determine the data type of the table
         string dataType = readStringField();
+
+        // Ensure that the data type is DOUBLE
+        if (dataType != "DTYPE=DOUBLE")
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+
+        // Read the dimensions of the table
         nRows = readNumField<long long int>();
         nCols = readNumField<long long int>();
     }
 
+    // This function jumps over the dummy section
+    // in the new file format, because it doesn't
+    // contain any valid information
     void NumeReDataFile::skipDummyHeader()
     {
         readNumField<long long int>();
@@ -694,13 +916,22 @@ namespace NumeRe
         fFileStream.read((char*)&valid, sizeof(bool));
     }
 
+    // This member function will read the contents
+    // of the target file
     void NumeReDataFile::readFile()
     {
+        // Open the file in binary mode, if it's not
+        // already open
         if (!is_open())
             open(ios::binary | ios::in);
 
+        // Read the file header and determine,
+        // whether the file is in legacy mode
         readHeader();
 
+        // If the file is in legacy mode, read
+        // the remaining file in legacy mode as
+        // well
         if (isLegacy)
         {
             readLegacyFormat();
@@ -710,19 +941,33 @@ namespace NumeRe
         long long int stringBlockSize;
         long long int dataarrayrows;
         long long int dataarraycols;
+
+        // Read the table column headers and the
+        // table data directly to the internal
+        // memory (we avoid unneeded copying of
+        // the data)
         fileTableHeads = readStringBlock(stringBlockSize);
         fileData = readDataArray(dataarrayrows, dataarraycols);
     }
 
+    // This member function reads the data section
+    // of the target file in legacy format. The
+    // function "readHeader()" determines, whether
+    // the target file is in legacy mode
     void NumeReDataFile::readLegacyFormat()
     {
+        // Prepare some POD arrays to read the
+        // blocks to memory
         size_t nLength = 0;
         bool* bValidEntry = new bool[nCols];
         char** cHeadLine = new char*[nCols];
         long long int* nAppendedZeros = new long long int[nCols];
 
+        // Create the internal storage
         createStorage();
 
+        // Read the table heads to the internal
+        // storage
         for (long long int i = 0; i < nCols; i++)
         {
             nLength = 0;
@@ -737,13 +982,26 @@ namespace NumeRe
             }
         }
 
+        // Read the appended zeros field, which
+        // is ignored in this implementation,
+        // because the calling data object will
+        // determine this information by itself
         fFileStream.read((char*)nAppendedZeros, sizeof(long long int)*nCols);
 
+        // Read the table data linewise to the
+        // internal memory. We cannot read the
+        // whole block at once, because the
+        // two dimensional array is probably
+        // not layed out as continous block
+        // in memory
         for (long long int i = 0; i < nRows; i++)
         {
             fFileStream.read((char*)fileData[i], sizeof(double)*nCols);
         }
 
+        // Read the validation block and apply
+        // the contained information on the data
+        // in the internal storage
         for (long long int i = 0; i < nRows; i++)
         {
             fFileStream.read((char*)bValidEntry, sizeof(bool)*nCols);
@@ -754,6 +1012,7 @@ namespace NumeRe
             }
         }
 
+        // Free the created memory
         for (long long int i = 0; i < nCols; i++)
             delete[] cHeadLine[i];
 
@@ -762,15 +1021,22 @@ namespace NumeRe
         delete[] nAppendedZeros;
     }
 
+    // This member function will read a generic
+    // field from the header (the three fields,
+    // which can be used in future versions of NumeRe)
     void* NumeReDataFile::readGenericField(std::string& type, long long int& size)
     {
+        // Determine the field data type
         type = readStringField();
         type.erase(0, type.find('=')+1);
         size = 0;
 
+        // Read the data block depending on the
+        // data type and convert the pointer to
+        // a void*
         if (type == "DOUBLE")
         {
-            double* data = readDataBlock(size);
+            double* data = readNumBlock<double>(size);
             return (void*)data;
         }
         else if (type == "STRING")
@@ -782,6 +1048,11 @@ namespace NumeRe
         return nullptr;
     }
 
+    // This member function will delete the data array
+    // obtained from the generic fields but convert
+    // them into their original type first, because
+    // deleting of void* is undefined (the length of
+    // the field in memory is not defined)
     void NumeReDataFile::deleteGenericData(void* data, const string& type)
     {
         if (data)
@@ -793,6 +1064,10 @@ namespace NumeRe
         }
     }
 
+    // This member function is an overload for the
+    // assignment operator. It extends the already
+    // available assignment operator from the parent
+    // class
     NumeReDataFile& NumeReDataFile::operator=(NumeReDataFile& file)
     {
         assign(file);
@@ -806,6 +1081,9 @@ namespace NumeRe
         return *this;
     }
 
+    // This simple member function returns the
+    // version string associated with the current
+    // file type
     std::string NumeReDataFile::getVersionString()
     {
         return toString(versionMajor) + "." + toString(versionMinor) + "." + toString(versionBuild);
@@ -818,11 +1096,15 @@ namespace NumeRe
     //
     CacheFile::CacheFile(const string& filename) : NumeReDataFile(filename), nIndexPos(0u)
     {
-        //
+        // Empty constructor
     }
 
+    // This destructor will write the offsets for
+    // the different tables to the file before
+    // the file stream will be closed
     CacheFile::~CacheFile()
     {
+
         if (nIndexPos && vFileIndex.size())
         {
             seekp(nIndexPos);
@@ -830,6 +1112,10 @@ namespace NumeRe
         }
     }
 
+    // This member function will reset the string
+    // information and the internal storage. This
+    // is used before the next table will be read
+    // from the cache file to memory
     void CacheFile::reset()
     {
         sComment.clear();
@@ -837,6 +1123,10 @@ namespace NumeRe
         clearStorage();
     }
 
+    // This member function will read the next table,
+    // which is available in the cache file, to the
+    // internal storage. It uses the "readFile()"
+    // function from its parent class
     void CacheFile::readSome()
     {
         reset();
@@ -845,10 +1135,19 @@ namespace NumeRe
             readFile();
     }
 
+    // This member function will write the current
+    // contents in the internal storage to the
+    // target file. Before writing, the function
+    // stores the current byte position in the
+    // target file to create the file index. The
+    // function uses the function "writeFile()"
+    // from the parent class for writing the data
     void CacheFile::writeSome()
     {
         if (vFileIndex.size())
         {
+            // Store the current position in the
+            // file in the file index array
             for (size_t i = 0; i < vFileIndex.size(); i++)
             {
                 if (!vFileIndex[i])
@@ -862,35 +1161,59 @@ namespace NumeRe
         }
     }
 
+    // This member function will read the cache file
+    // header and ensure that the version of the
+    // file is not newer than expected
     void CacheFile::readCacheHeader()
     {
+        // Open the file in binary mode
         open(ios::binary | ios::in);
 
+        // Read the basic information
         versionMajor = readNumField<long int>();
         versionMinor = readNumField<long int>();
         versionBuild = readNumField<long int>();
         timeStamp = readNumField<time_t>();
 
+        // Ensure that this file contains
+        // the "NUMERECACHEFILE" string
         if (readStringField() != "NUMERECACHEFILE")
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Read the file version information
         short fileVerMajor = readNumField<short>();
         short fileVerMinor = readNumField<short>();
 
+        // Ensure that the file major version is
+        // not larger than the one currently
+        // implemented in this class
         if (fileVerMajor > fileVersionMajor)
             throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Read the number of available tables
+        // in the cache file
         size_t nNumberOfTables = readNumField<size_t>();
 
+        // Create the file index array. This array
+        // may be used to support memory paging
+        // in a future version of NumeRe
         vFileIndex = vector<size_t>(nNumberOfTables, 0u);
+
+        // Read the file index information in
+        // the file to the newly created file
+        // index array
         long long int size = 0;
         size_t* nIndex = readNumBlock<size_t>(size);
         copyArray(nIndex, &vFileIndex[0], nNumberOfTables);
         delete[] nIndex;
     }
 
+    // This member function will write the standard
+    // cache file header to the cache file
     void CacheFile::writeCacheHeader()
     {
+        // Open the file in binary mode and truncate
+        // all its contents
         open(ios::binary | ios::out | ios::trunc);
 
         writeNumField(AutoVersion::MAJOR);
@@ -900,8 +1223,16 @@ namespace NumeRe
         writeStringField("NUMERECACHEFILE");
         writeNumField(fileVersionMajor);
         writeNumField(fileVersionMinor);
+
+        // Write the length of the file index array
         writeNumField(vFileIndex.size());
+
+        // Store the current position in the file
+        // to update the array in the future (done
+        // in the destructor)
         nIndexPos = tellp();
+
+        // Write the file index to the file
         writeNumBlock(&vFileIndex[0], vFileIndex.size());
     }
 
@@ -912,16 +1243,20 @@ namespace NumeRe
     //
     CassyLabx::CassyLabx(const string& filename) : GenericFile(filename)
     {
-        //
+        // Empty constructor
     }
 
     CassyLabx::~CassyLabx()
     {
-        //
+        // Empty destructor
     }
 
+    // This member function will read the contents
+    // of the associated LABX file to the internal
+    // storage
     void CassyLabx::readFile()
     {
+        // Open the filestream in text mode
         open(ios::in);
 
         string sLabx = "";
@@ -929,6 +1264,8 @@ namespace NumeRe
         string** sDataMatrix = 0;
         long long int nLine = 0;
 
+        // Get the whole content of the file in a
+        // single string
         while (!fFileStream.eof())
         {
             getline(fFileStream, sLabx_substr);
@@ -936,122 +1273,104 @@ namespace NumeRe
             sLabx += sLabx_substr;
         }
 
+        // Ensure that the least minimal information
+        // is available in the file
         if (!sLabx.length() || sLabx.find("<allchannels count=") == string::npos)
-        {
             throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, "", SyntaxError::invalid_position, sFileName);
-        }
 
+        // Extract the information on the number of
+        // data sets in the file
         sLabx_substr = sLabx.substr(sLabx.find("<allchannels count="));
         sLabx_substr = sLabx_substr.substr(sLabx_substr.find("=\"")+2, sLabx_substr.find("\">")-sLabx_substr.find("=\"")-2);
-
         nCols = StrToInt(sLabx_substr);
 
+        // Ensure that there is at least one column
+        // of data available
         if (!nCols)
-        {
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
-        }
 
         vector<string> vHeadLines;
         vector<string> vCols;
 
+        // Start extracting the actual data from the
+        // file
         sLabx_substr = sLabx.substr(sLabx.find("<allchannels"), sLabx.find("</allchannels>")-sLabx.find("<allchannels"));
         sLabx_substr = sLabx_substr.substr(sLabx_substr.find("<channels"));
 
-        for (unsigned int i = 0; i < nCols; i++)
+        // Distribute the different data columns
+        // across the previously created vector
+        for (long long int i = 0; i < nCols; i++)
         {
+            // Push the current column to the
+            // column vector
             vCols.push_back(sLabx_substr.substr(sLabx_substr.find("<values"), sLabx_substr.find("</channel>")-sLabx_substr.find("<values")));
 
+            // Store the headline of the current
+            // column in the corresponding
+            // headline vector. Consider also the
+            // possible available unit
             if (sLabx_substr.find("<unit />") != string::npos && sLabx_substr.find("<unit />") < sLabx_substr.find("<unit>"))
-            {
                 vHeadLines.push_back(sLabx_substr.substr(sLabx_substr.find("<quantity>")+10, sLabx_substr.find("</quantity>")-sLabx_substr.find("<quantity>")-10));
-            }
             else
             {
                 vHeadLines.push_back(sLabx_substr.substr(sLabx_substr.find("<quantity>")+10, sLabx_substr.find("</quantity>")-sLabx_substr.find("<quantity>")-10)
                     + "_[" + sLabx_substr.substr(sLabx_substr.find("<unit>")+6, sLabx_substr.find("</unit>")-sLabx_substr.find("<unit>")-6) + "]");
             }
 
+            // Convert UTF8 to WinCP1252 and erase the
+            // already extracted part from the string
             vHeadLines.back() = utf8parser(vHeadLines.back());
+            sLabx_substr.erase(0, sLabx_substr.find("</channels>")+11);
 
-            sLabx_substr = sLabx_substr.substr(sLabx_substr.find("</channels>")+11);
-
+            // Determine the maximal number of rows needed
+            // for the overall data table
             if (StrToInt(vCols[i].substr(vCols[i].find("count=\"")+7, vCols[i].find("\">")-vCols[i].find("count=\"")-7)) > nLine)
                 nLine = StrToInt(vCols[i].substr(vCols[i].find("count=\"")+7, vCols[i].find("\">")-vCols[i].find("count=\"")-7));
         }
 
+        // Ensure that the columns are not empty
         if (!nLine)
-        {
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
-        }
 
         nRows = nLine;
 
-        sDataMatrix = new string*[nRows];
-
-        for (long long int i = 0; i < nRows; i++)
-        {
-            sDataMatrix[i] = new string[nCols];
-        }
-
+        // Prepare the internal storage and copy
+        // the already decoded headlines
         createStorage();
-
         copyStringArray(&vHeadLines[0], fileTableHeads, vHeadLines.size());
+        long long int nElements = 0;
 
-        unsigned int nElements = 0;
-
+        // Extract the numerical values directly
+        // from the XML string into the internal
+        // storage
         for (long long int i = 0; i < nCols; i++)
         {
+            // Only do something, if the current
+            // column contains some values
             if (vCols[i].find("<values count=\"0\" />") == string::npos)
             {
+                // Get the number of elements in
+                // the current column
                 nElements = StrToInt(vCols[i].substr(vCols[i].find('"')+1, vCols[i].find('"', vCols[i].find('"')+1)-1-vCols[i].find('"')));
-                vCols[i] = vCols[i].substr(vCols[i].find('>')+1);
+                vCols[i].erase(0, vCols[i].find('>')+1);
 
-                for (long long int j = 0; j < nRows; j++)
+                // Copy the elements into the internal
+                // storage
+                for (long long int j = 0; j < min(nElements, nRows); j++)
                 {
-                    if (j >= nElements)
-                    {
-                        sDataMatrix[j][i] = "<value />";
-                    }
-                    else
-                    {
-                        sDataMatrix[j][i] = vCols[i].substr(vCols[i].find("<value"), vCols[i].find('<', vCols[i].find('/'))-vCols[i].find("<value"));
-                        vCols[i] = vCols[i].substr(vCols[i].find('>', vCols[i].find('/'))+1);
-                    }
-                }
-            }
-            else
-            {
-                for (long long int j = 0; j < nRows; j++)
-                {
-                    sDataMatrix[j][i] = "<value />";
+                    fileData[j][i] = extractValueFromTag(vCols[i].substr(vCols[i].find("<value"), vCols[i].find('<', vCols[i].find('/'))-vCols[i].find("<value")));
+                    vCols[i].erase(vCols[i].find('>', vCols[i].find('/'))+1);
                 }
             }
         }
 
-        for (long long int i = 0; i < nRows; i++)
-        {
-            for (long long int j = 0; j < nCols; j++)
-            {
-                if (sDataMatrix[i][j] == "<value />")
-                {
-                    fileData[i][j] = NAN;
-                }
-                else
-                {
-                    fileData[i][j] = StrToDb(sDataMatrix[i][j].substr(7, sDataMatrix[i][j].find('<', 7)-7));
-                }
-            }
-        }
+    }
 
-        for (long long int i = 0; i < nRows; i++)
-        {
-            delete[] sDataMatrix[i];
-        }
-
-        delete[] sDataMatrix;
-
-        return;
-
+    // This simple member function extracts the
+    // numerical value of the XML tag string
+    double CassyLabx::extractValueFromTag(const string& sTag)
+    {
+        return StrToDb(sTag.substr(7, sTag.find('<', 7)-7));
     }
 
 
@@ -1061,104 +1380,117 @@ namespace NumeRe
     //
     CommaSeparatedValues::CommaSeparatedValues(const string& filename) : GenericFile(filename)
     {
-        //
+        // Empty constructor
     }
 
     CommaSeparatedValues::~CommaSeparatedValues()
     {
-        //
+        // Empty destructor
     }
 
+    // This member function is used to read the
+    // target file to the internal storage
     void CommaSeparatedValues::readFile()
     {
+        // Open the file stream in text mode
         open(ios::in);
 
+        // Create the needed variabels
 		char cSep = 0;
-
-		// --> Benoetigte temporaere Variablen initialisieren <--
-		long long int nLine = 0;
+        long long int nLine = 0;
 		long long int nComment = 0;
-		vector<string> vFileData = readTextFile(true);
 		vector<string> vHeadLine;
 
+		// Read the whole file to a vector and
+		// get the number of lines available in
+		// the data file
+		vector<string> vFileData = readTextFile(true);
 		nLine = vFileData.size();
 
+		// Ensure that there is at least one
+		// line available
 		if (!nLine)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Determine, which character is used
+        // as cell separator
 		cSep = findSeparator(vFileData);
 
+		// Ensure that we were able to determine
+		// the separator
 		if (!cSep)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Count the number of columns available
+        // in the file and ensure that the identified
+        // separator character is correct
         countColumns(vFileData, cSep);
 
         vHeadLine.resize(nCols);
 
+        // Define the set of valid letters numeric and
+        // append the separator character
         string sValidSymbols = "0123456789.,;-+eE INFAinfa";
         sValidSymbols += cSep;
 
-        for (unsigned int j = 0; j < vFileData[0].length(); j++)
+        // Search for non-numeric characters in the first
+        // line of the file. Extract the possible table
+        // column heads and note, when the table heads were
+        // extracted from the file
+        if (vFileData[0].find_first_not_of(sValidSymbols) != string::npos)
         {
-            if (sValidSymbols.find(vFileData[0][j]) == string::npos)
+            // Tokenize the current line using the
+            // separator character
+            vector<string> vTokens = tokenize(vFileData[0], string(1, cSep));
+
+            for (size_t i = 0; i < vTokens.size(); i++)
             {
-                string __sLine = vFileData[0];
-
-                for (unsigned int n = 0; n < nCols-1; n++)
+                if (vTokens[i].find_first_not_of(sValidSymbols) == string::npos)
                 {
-                    vHeadLine[n] = utf8parser(__sLine.substr(0, __sLine.find(cSep)));
-                    StripSpaces(vHeadLine.back());
-
-                    __sLine = __sLine.substr(__sLine.find(cSep)+1);
+                    vTokens.clear();
+                    break;
                 }
-
-                vHeadLine.back() = utf8parser(__sLine);
-
-                for (unsigned int n = 0; n < nCols; n++)
-                {
-                    for (unsigned int k = 0; k < vHeadLine[n].length(); k++)
-                    {
-                        if (sValidSymbols.find(vHeadLine[n][k]) == string::npos)
-                            break;
-
-                        if (k == vHeadLine[n].length()-1)
-                        {
-                            nComment--;
-                            break;
-                        }
-                    }
-
-                    if (nComment < 0)
-                    {
-                        for (unsigned int k = 0; k < nCols; k++)
-                        {
-                            vHeadLine[k] = "";
-                        }
-
-                        nComment = -1;
-                        break;
-                    }
-                }
-
-                if (!nComment)
-                    vFileData[0] = "";
-
-                nComment++;
             }
+
+            // Copy the tokenized strings to the target
+            // table column headline vector
+            for (size_t n = 0; n < (vTokens.size() < nCols ? vTokens.size() : nCols); n++)
+            {
+                vHeadLine[n] = utf8parser(vTokens[n]);
+                StripSpaces(vHeadLine[n]);
+            }
+
+            // Clear the first line, if the tokens were
+            // not erased before
+            if (vTokens.size())
+                vFileData[0].clear();
+
+            nComment++;
         }
 
-        if (nComment) // Problem: Offenbar scheinen die Eintraege nur aus Text zu bestehen --> Anderer Loesungsweg
+        // Store the number of lines of the file,
+        // which contain numeric data, in the rows
+        // variable
+        if (nComment)
             nRows = nLine - 1;
         else
-            nRows = nLine;	// Die maximale Zahl der Zeilen ergibt die noetige Zahl der Zeilen
+            nRows = nLine;
 
+        // Prepare the internal storage
         createStorage();
 
+        // Copy the already decoded table heads to
+        // the internal storage or create a dummy
+        // column head, if the data contains only
+        // one column
 		if (nComment)
             copyStringArray(&vHeadLine[0], fileTableHeads, vHeadLine.size());
 		else
 		{
-			if (nCols == 1)		// Hat nur eine Spalte: Folglich verwenden wir logischerweise den Dateinamen
+		    // If the file contains only one column,
+		    // then we'll use the file name as table
+		    // column head
+			if (nCols == 1)
 			{
                 if (sFileName.find('/') == string::npos)
                     fileTableHeads[0] = sFileName.substr(0, sFileName.rfind('.'));
@@ -1167,57 +1499,67 @@ namespace NumeRe
 			}
 		}
 
-		// --> Hier werden die Strings in Tokens zerlegt <--
+		// Decode now the whole data table into single
+		// tokens, which can be distributed into their
+		// corresponding cells
 		for (size_t i = nComment; i < vFileData.size(); i++)
         {
+            // Ignore empty lines
             if (!vFileData[i].length())
                 continue;
 
+            // Tokenize the current line
             vector<string> vTokens = tokenize(vFileData[i], string(1, cSep));
 
+            // Decode each token
             for (size_t j = 0; j < vTokens.size(); j++)
             {
+                // Handle special values first
                 if (!vTokens[j].length()
                     || vTokens[j] == "---"
-                    || vTokens[j] == "NaN"
-                    || vTokens[j] == "NAN"
-                    || vTokens[j] == "nan")
+                    || toLowerCase(vTokens[j]) == "nan")
                 {
                     fileData[i][j] = NAN;
                 }
-                else if (vTokens[j] == "inf")
+                else if (toLowerCase(vTokens[j]) == "inf")
                     fileData[i][j] = INFINITY;
-                else if (vTokens[j] == "-inf")
+                else if (toLowerCase(vTokens[j]) == "-inf")
                     fileData[i][j] = -INFINITY;
                 else
                 {
-                    for (size_t k = 0; k < vTokens[j].length(); k++)
+                    // In all other cases, ensure that the current
+                    // token is not a string token, which should
+                    // be stored in the table column header
+                    if (vTokens[j].find_first_not_of(sValidSymbols) != string::npos)
                     {
-                        if (sValidSymbols.find(vTokens[j][k]) == string::npos)
-                        {
-                            if (fileTableHeads[j].length())
-                                fileTableHeads[j] += "\\n";
+                        // Append a linebreak character, if the
+                        // current table head is not empty
+                        if (fileTableHeads[j].length())
+                            fileTableHeads[j] += "\\n";
 
-                            fileTableHeads[j] += vTokens[j];
-                            fileData[i][j] = NAN;
-                            break;
-                        }
-
-                        if (k+1 == vTokens[j].length())
-                        {
-                            replaceDecimalSign(vTokens[j]);
-                            fileData[i][j] = StrToDb(vTokens[j]);
-                        }
+                        fileTableHeads[j] += vTokens[j];
+                        fileData[i][j] = NAN;
+                    }
+                    else
+                    {
+                        replaceDecimalSign(vTokens[j]);
+                        fileData[i][j] = StrToDb(vTokens[j]);
                     }
                 }
             }
         }
     }
 
+    // This member function is used to write the
+    // contents in the internal storage to the
+    // target file
     void CommaSeparatedValues::writeFile()
     {
+        // Open the file in text mode and truncate
+        // all its contents
         open(ios::out | ios::trunc);
 
+        // Write the table heads to the file
         for (long long int j = 0; j < nCols; j++)
         {
             fFileStream << fileTableHeads[j] + ",";
@@ -1226,6 +1568,7 @@ namespace NumeRe
         fFileStream << "\n";
         fFileStream.precision(nPrecFields);
 
+        // Write the data to the file
         for (long long int i = 0; i < nRows; i++)
         {
             for (long long int j = 0; j < nCols; j++)
@@ -1242,34 +1585,28 @@ namespace NumeRe
         fFileStream.flush();
     }
 
+    // This member function determines the
+    // separator character used for the current
+    // file name. It does so by some simple
+    // heuristic: the most common characters
+    // are checked first and the uncommon ones
+    // afterwards
     char CommaSeparatedValues::findSeparator(const vector<string>& vTextData)
     {
         char cSep = 0;
 
         if (vTextData[0].find('.') != string::npos && vTextData[0].find(',') != string::npos && vTextData[0].find('\t') != string::npos)
-		{
             cSep = ',';
-        }
 		else if (vTextData[0].find(';') != string::npos && (vTextData[0].find(',') != string::npos || vTextData[0].find('.') != string::npos) && vTextData[0].find('\t') != string::npos)
-		{
             cSep = ';';
-		}
 		else if (vTextData[0].find('\t') != string::npos)
-        {
             cSep = '\t';
-        }
         else if (vTextData[0].find(';') != string::npos)
-        {
             cSep = ';';
-        }
         else if (vTextData[0].find(',') != string::npos)
-        {
             cSep = ',';
-        }
         else if (vTextData[0].find(' ') != string::npos && vTextData.size() > 1 && vTextData[1].find(' ') != string::npos)
-        {
             cSep = ' ';
-        }
         else
         {
             if (vTextData[0].find(',') != string::npos)
@@ -1283,6 +1620,11 @@ namespace NumeRe
 
             size_t cols = 0;
 
+            // To ensure the selection of the current
+            // separator character, we try to determine
+            // the number of columns. If the this number
+            // does not alter between the lines, then we
+            // found the correct character
             for (size_t i = 0; i < vTextData.size(); i++)
             {
                 size_t nCol = 1;
@@ -1290,14 +1632,11 @@ namespace NumeRe
                 for (size_t j = 0; j < vTextData[i].length(); j++)
                 {
                     if (vTextData[i][j] == cSep)
-                    {
                         nCol++;
-                    }
                 }
 
                 if (!cols)
                     cols = nCol;
-
                 else if (nCol != cols)
                 {
                     if (cSep == ',')
@@ -1312,20 +1651,20 @@ namespace NumeRe
                     cols = 0;
                 }
                 else
-                {
                     return cSep;
-                }
 
                 if (i+1 == vTextData.size())
-                {
                     return 0;
-                }
             }
         }
 
         return cSep;
     }
 
+    // This member function determines the number of
+    // columns available in the current file and alters
+    // the separator character, if the column counts
+    // are not consistent between the different lines
     void CommaSeparatedValues::countColumns(const std::vector<std::string>& vTextData, char& cSep)
     {
         long long int nCol;
@@ -1337,9 +1676,7 @@ namespace NumeRe
             for (size_t j = 0; j < vTextData[i].length(); j++)
             {
                 if (vTextData[i][j] == cSep)
-                {
                     nCol++;
-                }
             }
 
             if (!nCols)
@@ -1373,18 +1710,24 @@ namespace NumeRe
     //
     LaTeXTable::LaTeXTable(const string& filename) : GenericFile(filename)
     {
-        //
+        // Empty constructor
     }
 
     LaTeXTable::~LaTeXTable()
     {
-        //
+        // Empty destructor
     }
 
+    // This member function is used to
+    // write the contents of the internal
+    // storage to the file
     void LaTeXTable::writeFile()
     {
+        // Open the file in text mode and
+        // truncate all its contents
         open(ios::trunc | ios::out);
 
+        // Prepare a label for the table
         string sLabel = sFileName;
 
         if (sLabel.find('/') != string::npos)
@@ -1396,8 +1739,15 @@ namespace NumeRe
         while (sLabel.find(' ') != string::npos)
             sLabel[sLabel.find(' ')] = '_';
 
+        // Write the legal header stuff
         writeHeader();
 
+        // Depending on the number of lines
+        // in the current table, the layout
+        // switches between usual and longtables
+        //
+        // Write the table column headers and
+        // all needed layout stuff
         if (nRows < 30)
         {
             fFileStream << "\\begin{table}[htb]\n";
@@ -1444,6 +1794,9 @@ namespace NumeRe
             fFileStream << "\\endlastfoot\n";
         }
 
+        // Write the actual data formatted as
+        // LaTeX numbers into the file and insert
+        // the needed column separators
         for (long long int i = 0; i < nRows; i++)
         {
             for (long long int j = 0; j < nCols; j++)
@@ -1460,6 +1813,9 @@ namespace NumeRe
             }
         }
 
+        // Finalize the table. This also depends
+        // on the number of lines in the internal
+        // storage
         if (nRows < 30)
         {
             fFileStream << "\\bottomrule\n";
@@ -1476,6 +1832,8 @@ namespace NumeRe
         fFileStream << flush;
     }
 
+    // This member function writes the
+    // legal header to the file
     void LaTeXTable::writeHeader()
     {
         string sBuild = AutoVersion::YEAR;
@@ -1496,10 +1854,17 @@ namespace NumeRe
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << endl;
     }
 
+    // This member funciton writes the
+    // table column heads to the file. The
+    // number of lines needed for the
+    // heads is considered in this case
     void LaTeXTable::writeTableHeads()
     {
         string sPrint = "";
 
+        // Copy the contents to the string and
+        // consider the number of lines needed
+        // for the headlines
         for (size_t i = 0; i < countHeadLines(); i++)
         {
             for (long long int j = 0; j < nCols; j++)
@@ -1508,7 +1873,10 @@ namespace NumeRe
             sPrint = sPrint.substr(0, sPrint.length()-2) + "\\\\\n";
         }
 
-        for (unsigned int i = 0; i < sPrint.length(); i++)
+        // Remove the underscores from the whole
+        // string, because they would interfere
+        // with LaTeX
+        for (size_t i = 0; i < sPrint.length(); i++)
         {
             if (sPrint[i] == '_')
                 sPrint[i] = ' ';
@@ -1517,10 +1885,16 @@ namespace NumeRe
         fFileStream << sPrint;
     }
 
+    // This member function calculates the
+    // number of lines needed for the complete
+    // table column heads
     size_t LaTeXTable::countHeadLines()
     {
         size_t headlines = 0u;
 
+        // Get the cell extents of each table
+        // column head and store the maximal
+        // value
         for (long long int i = 0; i < nCols; i++)
         {
             auto extents = calculateCellExtents(fileTableHeads[i]);
@@ -1532,6 +1906,9 @@ namespace NumeRe
         return headlines;
     }
 
+    // This member function replaces all
+    // non-ASCII characters into their
+    // corresponding LaTeX entities
     string LaTeXTable::replaceNonASCII(const string& _sText)
     {
         string sReturn = _sText;
@@ -1585,10 +1962,14 @@ namespace NumeRe
         return sReturn;
     }
 
+    // This member function formats a double
+    // as LaTeX number string.
     string LaTeXTable::formatNumber(double number)
     {
         string sNumber = toString(number, nPrecFields);
 
+        // Handle floating point numbers with
+        // exponents correctly
         if (sNumber.find('e') != string::npos)
         {
             sNumber = sNumber.substr(0, sNumber.find('e'))
@@ -1598,23 +1979,20 @@ namespace NumeRe
                     + "}";
         }
 
+        // Consider some special values
         if (sNumber == "inf")
-        {
             sNumber = "\\infty";
-        }
 
         if (sNumber == "-inf")
-        {
             sNumber = "-\\infty";
-        }
 
         if (sNumber == "nan")
-        {
             return "---";
-        }
 
+        // Return the formatted string in math mode
         return "$" + sNumber + "$";
     }
+
 
     //////////////////////////////////////////////
     // class JcampDX
@@ -1622,12 +2000,12 @@ namespace NumeRe
     //
     JcampDX::JcampDX(const string& filename) : GenericFile(filename)
     {
-        //
+        // Empty constructor
     }
 
     JcampDX::~JcampDX()
     {
-        //
+        // Empty destructor
     }
 
     void JcampDX::readFile()
@@ -1651,13 +2029,6 @@ namespace NumeRe
         {
             stripTrailingSpaces(vFileContents[i]);
             parseLabel(vFileContents[i]);
-            /*if (vFileContents[i].find("##JCAMPDX=") != string::npos)
-            {
-                if (StrToDb(vFileContents[i].substr(vFileContents[i].find("##JCAMPDX=")+11)) > 5.1)
-                {
-                    NumeReKernel::print(LineBreak("HINWEIS: Die Versionsnummer dieses JCAMP-DX-Spektrums ist größer als 5.1. Es besteht die Möglichkeit, dass NumeRe diese Datei nicht korrekt lesen kann. Es wird trotzdem versucht, die Daten zu interpretieren.", _option));
-                }
-            }*/
 
             if (vFileContents[i].substr(0, 6) == "##END=")
             {
@@ -1975,12 +2346,12 @@ namespace NumeRe
     //
     OpenDocumentSpreadSheet::OpenDocumentSpreadSheet(const string& filename) : GenericFile(filename)
     {
-        //
+        // Empty constructor
     }
 
     OpenDocumentSpreadSheet::~OpenDocumentSpreadSheet()
     {
-        //
+        // Empty destructor
     }
 
     void OpenDocumentSpreadSheet::readFile()
@@ -2253,12 +2624,12 @@ namespace NumeRe
     //
     XLSSpreadSheet::XLSSpreadSheet(const string& filename) : GenericFile(filename)
     {
-        //
+        // Empty constructor
     }
 
     XLSSpreadSheet::~XLSSpreadSheet()
     {
-        //
+        // Empty destructor
     }
 
     void XLSSpreadSheet::readFile()
@@ -2484,12 +2855,12 @@ namespace NumeRe
     //
     XLSXSpreadSheet::XLSXSpreadSheet(const string& filename) : GenericFile(filename)
     {
-        //
+        // Empty constructor
     }
 
     XLSXSpreadSheet::~XLSXSpreadSheet()
     {
-        //
+        // Empty destructor
     }
 
     void XLSXSpreadSheet::readFile()
@@ -2718,9 +3089,11 @@ namespace NumeRe
     //
     IgorBinaryWave::IgorBinaryWave(const string& filename) : GenericFile(filename), bXZSlice(false)
     {
-        //
+        // Empty constructor
     }
 
+    // This copy constructor extents the copy
+    // constructor of the GenericFile class
     IgorBinaryWave::IgorBinaryWave(const IgorBinaryWave& file) : GenericFile(file)
     {
         bXZSlice = file.bXZSlice;
@@ -2728,7 +3101,7 @@ namespace NumeRe
 
     IgorBinaryWave::~IgorBinaryWave()
     {
-        //
+        // Empty destructor
     }
 
     void IgorBinaryWave::readFile()
@@ -2946,7 +3319,6 @@ namespace NumeRe
 
         return *this;
     }
-    //
 }
 
 

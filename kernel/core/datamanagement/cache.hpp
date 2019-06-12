@@ -66,6 +66,8 @@ class MemoryManager : public FileSystem, public StringMemory, public NumeRe::Clu
 		string sPluginCommands;
 
 		void reorderColumn(long long int _nLayer, const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
+		bool loadFromNewCacheFile();
+		bool loadFromLegacyCacheFile();
 
 
 	protected:

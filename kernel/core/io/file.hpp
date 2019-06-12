@@ -31,7 +31,10 @@
 
 namespace NumeRe
 {
-    //
+    // Template class representing a generic file. This class may be specified
+    // for the main data type contained in the read or written table. All other
+    // file classes are derived from this class. This class cannot be instantiated
+    // directly, because the read and write methods are declared as pure virtual
     template <class DATATYPE>
     class GenericFile : public FileSystem
     {
@@ -44,12 +47,20 @@ namespace NumeRe
             long long int nCols;
             unsigned short nPrecFields;
 
+            // Flag for using external data, i.e. data, which won't be deleted
+            // by this class upon calling "clearStorage()" or the destructor
             bool useExternalData;
             std::ios::openmode openMode;
 
+            // The main data table
             DATATYPE** fileData;
+
+            // The table column headlines
             std::string* fileTableHeads;
 
+            // This method has to be used, to open the target file in stream
+            // mode. If the file cannot be opened, this method throws an
+            // error
             void open(std::ios::openmode mode)
             {
                 if (fFileStream.is_open())
@@ -63,61 +74,76 @@ namespace NumeRe
                 openMode = mode;
             }
 
+            // This method strips trailing spaces from the passed string
             void stripTrailingSpaces(std::string& _sToStrip)
             {
                 if (_sToStrip.find_first_not_of(" \t") != std::string::npos)
                     _sToStrip.erase(_sToStrip.find_last_not_of(" \t")+1);
             }
 
+            // This method simply replaces commas with dots in the passed string
+            // to enable correct parsing into a double
             void replaceDecimalSign(std::string& _sToReplace)
             {
-                if (_sToReplace.find(',') != std::string::npos)
+                for (size_t i = 0; i < _sToReplace.length(); i++)
                 {
-                    for (size_t i = 0; i < _sToReplace.length(); i++)
-                    {
-                        if (_sToReplace[i] == ',')
-                            _sToReplace[i] = '.';
-                    }
+                    if (_sToReplace[i] == ',')
+                        _sToReplace[i] = '.';
                 }
             }
 
+            // This method replaces tabulator characters into whitespaces
+            // to simplify the column determination (the used tokenizer will
+            // only have to consider whitespaces as separator characters).
+            // Sometimes, replacing tabulators into whitespaces will destroy
+            // column information. To avoid this, placeholders (underscores) may
+            // be inserted as "empty" column cells.
             void replaceTabSign(std::string& _sToReplace, bool bAddPlaceholders = false)
             {
-                if (_sToReplace.find('\t') != std::string::npos)
+                for (size_t i = 0; i < _sToReplace.length(); i++)
                 {
-                    for (size_t i = 0; i < _sToReplace.length(); i++)
+                    if (_sToReplace[i] == '\t')
                     {
-                        if (_sToReplace[i] == '\t')
+                        _sToReplace[i] = ' ';
+
+                        // Shall "empty cells" be added?
+                        if (bAddPlaceholders)
                         {
-                            _sToReplace[i] = ' ';
+                            // Insert underscores as empty cells
+                            if (!i)
+                                _sToReplace.insert(0, 1, '_');
+                            else if (_sToReplace[i-1] == ' ')
+                                _sToReplace.insert(i, 1, '_');
 
-                            if (bAddPlaceholders)
-                            {
-                                if (!i)
-                                    _sToReplace.insert(0, 1, '_');
-                                else if (_sToReplace[i-1] == ' ')
-                                    _sToReplace.insert(i, 1, '_');
-
-                                if (i+1 == _sToReplace.length())
-                                    _sToReplace += "_";
-                            }
+                            if (i+1 == _sToReplace.length())
+                                _sToReplace += "_";
                         }
                     }
                 }
             }
 
+            // This method calculates the extents of the passed string, if it
+            // is used as a table column headline. This method will return a
+            // std::pair<> with the maximal numbers of characters in a line
+            // in the first and the number of lines in the second component
             std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents)
             {
-                // x, y
+                // Prepare the std::pair<> to contain the extents of the cell.
+                // (One line is the minimal value)
                 std::pair<size_t, size_t> pCellExtents(0u, 1u);
                 size_t nLastLineBreak = 0;
 
+                // Search for linebreak characters
                 for (size_t i = 0; i < sContents.length(); i++)
                 {
+                    // Linebreak character found?
                     if (sContents[i] == '\n')
                     {
+                        // Increment the number of lines
                         pCellExtents.second++;
 
+                        // Use the maximal number of characters per line
+                        // as the first column
                         if (i - nLastLineBreak > pCellExtents.first)
                             pCellExtents.first = i - nLastLineBreak;
 
@@ -125,61 +151,90 @@ namespace NumeRe
                     }
                 }
 
+                // Examine the last part of the string, which won't be
+                // detected by the for loop
+                if (sContents.length() - nLastLineBreak > pCellExtents.first)
+                    pCellExtents.first = sContents.length() - nLastLineBreak;
+
                 return pCellExtents;
             }
 
+            // This method gets the selected line number from the table column
+            // headline in the selected column. If the selected text does not
+            // contain enough lines, a simple whitespace is returned
             std::string getLineFromHead(long long int nCol, size_t nLineNumber)
             {
                 size_t nLastLineBreak = 0u;
 
+                // Search the selected part
                 for (size_t i = 0; i < fileTableHeads[nCol].length(); i++)
                 {
+                    // Linebreak character found?
                     if (fileTableHeads[nCol][i] == '\n')
                     {
+                        // If this is the correct line number, return
+                        // the corresponding substring
                         if (!nLineNumber)
                             return fileTableHeads[nCol].substr(nLastLineBreak, i - nLastLineBreak);
 
+                        // Decrement the line number and store the
+                        // position of the current line break
                         nLineNumber--;
                         nLastLineBreak = i+1;
                     }
                 }
 
+                // Catch the last part of the string, which is not found by
+                // the for loop
                 if (!nLineNumber)
                     return fileTableHeads[nCol].substr(nLastLineBreak);
 
+                // Not enough lines in this string, return a whitespace character
                 return " ";
             }
 
+            // This method is a template for reading an numeric field of the
+            // selected template type in binary mode
             template <typename T> T readNumField()
             {
                 T num;
-
                 fFileStream.read((char*)&num, sizeof(T));
-
                 return num;
             }
 
+            // This method can be used to read a string field from the file
+            // in binary mode
             std::string readStringField()
             {
+                // Get the length of the field
                 size_t nLength = readNumField<size_t>();
 
+                // If the length is zero, return an empty string
                 if (!nLength)
                     return "";
 
+                // Create a character buffer with the corresponding
+                // length
                 char* buffer = new char[nLength];
 
+                // Read the contents into the buffer
                 fFileStream.read(buffer, nLength);
 
+                // Copy the buffer into a string and delete the buffer
                 std::string sBuffer(buffer, nLength);
                 delete[] buffer;
 
                 return sBuffer;
             }
 
+            // This method may be used to get the contents of an embedded file
+            // in a zipfile and return the contents as string
             std::string getZipFileItem(const std::string& filename)
             {
+                // Create a Zipfile class object
                 Zipfile* _zip = new Zipfile();
 
+                // Open the file in ZIP mode
                 if (!_zip->open(sFileName))
                 {
                     _zip->close();
@@ -187,51 +242,53 @@ namespace NumeRe
                     throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, sFileName, SyntaxError::invalid_position, sFileName);
                 }
 
+                // Obtain the contents of the embedded file
                 std::string sFileItem = _zip->getZipItem(filename);
+
+                // Close the Zip file and delete the class instance
                 _zip->close();
                 delete _zip;
 
                 return sFileItem;
             }
 
+            // This method template is for reading a block of numeric data
+            // into memory in binary mode
             template <typename T> T* readNumBlock(long long int& size)
             {
+                // Get the number of values in the data block
                 size = readNumField<long long int>();
 
+                // If the size is zero, return a null pointer
                 if (!size)
                     return nullptr;
 
+                // Create new storage for the data
                 T* data = new T[size];
 
+                // Read the contents of the file into the created storager
                 fFileStream.read((char*)data, sizeof(T)*size);
 
                 return data;
             }
 
-            DATATYPE* readDataBlock(long long int& size)
-            {
-                size = readNumField<long long int>();
-
-                if (!size)
-                    return nullptr;
-
-                DATATYPE* data = new DATATYPE[size];
-
-                fFileStream.read((char*)data, sizeof(DATATYPE)*size);
-
-                return data;
-            }
-
+            // This method template is for reading a whole two-dimensional
+            // array of data into memory in binary mode
             DATATYPE** readDataArray(long long int& rows, long long int& cols)
             {
+                // Get the dimensions of the data block in memory
                 rows = readNumField<long long int>();
                 cols = readNumField<long long int>();
 
+                // If one of the dimensions is zero, return a null pointer
                 if (!rows || !cols)
                     return nullptr;
 
+                // Prepare a new storage object for the contained data
                 DATATYPE** data = new DATATYPE*[rows];
 
+                // Create the storage for the columns during reading the
+                // file and read the contents directly to memory
                 for (long long int i = 0; i < rows; i++)
                 {
                     data[i] = new DATATYPE[cols];
@@ -241,15 +298,22 @@ namespace NumeRe
                 return data;
             }
 
+            // This method can be used for reading a block of string data
+            // to memory in binary mode
             std::string* readStringBlock(long long int& size)
             {
+                // Get the number of strings in the current block
                 size = readNumField<long long int>();
 
+                // If no strings are in the file, return a null pointer
                 if (!size)
                     return nullptr;
 
+                // Create an array of strings for the data in the file
                 std::string* data = new std::string[size];
 
+                // Read each string separately (because their length is
+                // most probably independent on each other)
                 for (long long int i = 0; i < size; i++)
                 {
                     data[i] = readStringField();
@@ -258,18 +322,25 @@ namespace NumeRe
                 return data;
             }
 
+            // This method may be used to read the file in text mode and
+            // to obtain the data as a vector
             std::vector<std::string> readTextFile(bool stripEmptyLines)
             {
                 std::vector<std::string> vTextFile;
                 std::string currentLine;
 
+                // Read the whole file linewise
                 while (!fFileStream.eof())
                 {
                     std::getline(fFileStream, currentLine);
 
+                    // If empty lines shall be stripped, strip
+                    // trailing whitespaces first
                     if (stripEmptyLines)
                         stripTrailingSpaces(currentLine);
 
+                    // If empty lines shall be stripped, store
+                    // only non-empty lines
                     if (!stripEmptyLines || currentLine.length())
                         vTextFile.push_back(currentLine);
                 }
@@ -277,17 +348,27 @@ namespace NumeRe
                 return vTextFile;
             }
 
+            // This method may be used to separate a line into multiple
+            // tokens using a set of separator characters. If empty tokens
+            // shall be skipped, then only tokens with a non-zero length
+            // are stored
             std::vector<std::string> tokenize(std::string sString, const std::string& sSeparators, bool skipEmptyTokens = false)
             {
                 std::vector<std::string> vTokens;
 
+                // As long as the string has a length
                 while (sString.length())
                 {
+                    // Store the string until the first separator character
                     vTokens.push_back(sString.substr(0, sString.find_first_of(sSeparators)));
 
+                    // If empty tokens shall not be stored, remove the last
+                    // token again, if it is empty
                     if (skipEmptyTokens && !vTokens.back().length())
                         vTokens.pop_back();
 
+                    // Erase the contents of the line including the first
+                    // separator character
                     if (sString.find_first_of(sSeparators) != std::string::npos)
                         sString.erase(0, sString.find_first_of(sSeparators)+1);
                     else
@@ -297,48 +378,62 @@ namespace NumeRe
                 return vTokens;
             }
 
+            // This method template can be used to write a numeric value
+            // to file in binary mode
             template <typename T> void writeNumField(T num)
             {
                 fFileStream.write((char*)&num, sizeof(T));
             }
 
+            // This method may be used to write a string to file in
+            // binary mode
             void writeStringField(const std::string& sString)
             {
+                // Store the length of string as numeric value first
                 writeNumField<size_t>(sString.length());
                 fFileStream.write(sString.c_str(), sString.length());
             }
 
+            // This method template may be used to write a block of
+            // data of the selected type to the file in binary mode
             template <typename T> void writeNumBlock(T* data, long long int size)
             {
+                // Store the length of the data block first
                 writeNumField<long long int>(size);
                 fFileStream.write((char*)data, sizeof(T)*size);
             }
 
-            void writeDataBlock(DATATYPE* data, long long int size)
-            {
-                writeNumField<long long int>(size);
-                fFileStream.write((char*)data, sizeof(DATATYPE)*size);
-            }
-
+            // This method may be used to write a two-dimensional array of
+            // data to the file in binary mode
             void writeDataArray(DATATYPE** data, long long int rows, long long int cols)
             {
+                // Store the dimensions of the array first
                 writeNumField<long long int>(rows);
                 writeNumField<long long int>(cols);
 
+                // Write the contents to the file in linewise fashion
                 for (long long int i = 0; i < rows; i++)
                     fFileStream.write((char*)data[i], sizeof(DATATYPE)*cols);
             }
 
+            // This method may used to write a block of strings into the
+            // file in binary mode
             void writeStringBlock(std::string* data, long long int size)
             {
+                // Store the number of fields first
                 writeNumField<long long int>(size);
 
+                // Write each field separately, because their length is
+                // independent on each other
                 for (long long int i = 0; i < size; i++)
                 {
                     writeStringField(data[i]);
                 }
             }
 
+            // This method prepares the internal storage, so that it
+            // may contain the read data. This method is only used
+            // for textual files
             void createStorage()
             {
                 if (nRows && nCols && !fileData && !fileTableHeads)
@@ -357,8 +452,13 @@ namespace NumeRe
                 }
             }
 
+            // This method cleares the internal storage. This method
+            // is called by the destructor automatically
             void clearStorage()
             {
+                // Only delete the storage, if it is internal data. Do
+                // not delete the storage, if it is linked from an external
+                // source
                 if (!useExternalData)
                 {
                     if (fileTableHeads)
@@ -387,6 +487,8 @@ namespace NumeRe
                 nCols = 0;
             }
 
+            // This method may be used to copy two-dimensional arrays of
+            // data. Both source and target arrays have to exist in advance
             void copyDataArray(DATATYPE** from, DATATYPE** to, long long int rows, long long int cols)
             {
                 if (!from || !to || !rows || !cols)
@@ -399,6 +501,8 @@ namespace NumeRe
                 }
             }
 
+            // This method may be used to copy string arrays. Both
+            // source and target arrays have to exist in advance
             void copyStringArray(std::string* from, std::string* to, long long int nElements)
             {
                 if (!from || !to || !nElements)
@@ -408,6 +512,9 @@ namespace NumeRe
                     to[i] = from[i];
             }
 
+            // This method template may be used to copy arrays of data
+            // of the selected type. Both source and target arrays have
+            // to exist in advance
             template <typename T> void copyArray(T* from, T* to, long long int nElements)
             {
                 if (!from || !to || !nElements)
@@ -417,23 +524,18 @@ namespace NumeRe
                     to[i] = from[i];
             }
 
+            // This method may be used to determine, whether a string
+            // contains only numeric data
             bool isNumeric(const std::string& sString)
             {
                 if (!sString.length())
                     return false;
 
+                static const std::string sVALIDNUMERICCHARACTERS = "0123456789eE+-.,\t% ";
+
                 for (unsigned int i = 0; i < sString.length(); i++)
                 {
-                    if ((sString[i] >= '0' && sString[i] <= '9')
-                        || sString[i] == 'e'
-                        || sString[i] == 'E'
-                        || sString[i] == '-'
-                        || sString[i] == '+'
-                        || sString[i] == '.'
-                        || sString[i] == ','
-                        || sString[i] == '\t'
-                        || sString[i] == '%'
-                        || sString[i] == ' ')
+                    if (sVALIDNUMERICCHARACTERS.find(sString[i]) != std::string::npos)
                         continue;
                     else if (sString.substr(i, 3) == "nan"
                         || sString.substr(i, 3) == "NaN"
@@ -454,6 +556,9 @@ namespace NumeRe
                 return true;
             }
 
+            // This method is used by the assignment operator and
+            // the copy constructor to copy the contents of the
+            // passed GenericFile instance
             void assign(const GenericFile& file)
             {
                 clearStorage();
@@ -472,17 +577,23 @@ namespace NumeRe
             }
 
         public:
+            // Constructor from filename
             GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
             {
                 sFileName = ValidFileName(fileName, "", false);
                 sFileExtension = getFileParts(sFileName).back();
             }
 
+            // Copy constructor
             GenericFile(const GenericFile& file) : GenericFile(file.sFileName)
             {
                 assign(file);
             }
 
+            // Virtual destructor: we'll work with instances on the heap
+            // therefore we'll need virtual declared destructors. This
+            // destructor will clear the internal memory and closes the
+            // file stream, if it is still open
             virtual ~GenericFile()
             {
                 clearStorage();
@@ -491,64 +602,85 @@ namespace NumeRe
                     fFileStream.close();
             }
 
+            // Wrapper for fstream::is_open()
             bool is_open()
             {
                 return fFileStream.is_open();
             }
 
+            // Wrapper for fstream::close(). Will also clear the internal
+            // memory
             void close()
             {
                 fFileStream.close();
                 clearStorage();
             }
 
+            // Wrapper for fstream::good()
             bool good()
             {
                 return fFileStream.good();
             }
 
+            // Wrapper for fstream::tellg()
             size_t tellg()
             {
                 return fFileStream.tellg();
             }
 
+            // Wrapper for fstream::tellp()
             size_t tellp()
             {
                 return fFileStream.tellp();
             }
 
+            // Wrapper for fstream::seekg() with start from the
+            // beginning of the stream
             void seekg(size_t pos)
             {
                 fFileStream.seekg(pos, ios::beg);
             }
 
+            // Wrapper for fstream::seekp() with start from the
+            // beginning of the stream
             void seekp(size_t pos)
             {
                 fFileStream.seekp(pos, ios::beg);
             }
 
+            // Returns the file extension
             std::string getExtension()
             {
                 return sFileExtension;
             }
 
+            // Returns the file name
             std::string getFileName()
             {
                 return sFileName;
             }
 
+            // Returns the table name referenced in the file. Will
+            // default to the file name with non-alnum characters
+            // replaced with underscores, if the file does not reference
+            // a table name by itself
             std::string getTableName()
             {
+                // Has the table name not been defined yet
                 if (!sTableName.length())
                 {
+                    // Get the file name (not the whole path)
                     sTableName = getFileParts(sFileName)[2];
 
+                    // Replace all non-alnum characters with underscores
                     for (size_t i = 0; i < sTableName.length(); i++)
                     {
                         if (sTableName[i] != '_' && !isalnum(sTableName[i]))
                             sTableName[i] = '_';
                     }
 
+                    // If the first character is a digit, prepend an
+                    // underscore
                     if (isdigit(sTableName.front()))
                         sTableName.insert(0, 1, '_');
                 }
@@ -556,30 +688,44 @@ namespace NumeRe
                 return sTableName;
             }
 
+            // Returns the number of rows
             long long int getRows()
             {
                 return nRows;
             }
 
+            // Returns the number of columns
             long long int getCols()
             {
                 return nCols;
             }
 
+            // Pure virtual declaration of read and write
+            // access methods. These have to be implemented in all
+            // derived classes
             virtual bool read() = 0;
             virtual bool write() = 0;
 
+            // Assignent operator definition
             GenericFile& operator=(const GenericFile& file)
             {
                 assign(file);
                 return *this;
             }
 
+            // This method copies the internal data to the
+            // passed memory address. The target memory must
+            // exist
             void getData(DATATYPE** data)
             {
                 copyDataArray(fileData, data, nRows, nCols);
             }
 
+            // This method returns a pointer to the internal
+            // memory with read and write access. This pointer
+            // shall not be stored for future use, because
+            // the referenced memory will be deleted upon
+            // destruction of this class instance
             DATATYPE** getData(long long int& rows, long long int& cols)
             {
                 rows = nRows;
@@ -588,17 +734,29 @@ namespace NumeRe
                 return fileData;
             }
 
+            // This method copies the column headings of the
+            // internal data to the passed memory address.
+            // The target memory must exist
             void getColumnHeadings(std::string* sHead)
             {
                 copyStringArray(fileTableHeads, sHead, nCols);
             }
 
+            // This method returns a pointer to the column
+            // headings of the internal memory with read and
+            // write access. This pointer shall not be stored
+            // for future use, because the referenced memory
+            // will be deleted upon destruction of this
+            // class instance
             std::string* getColumnHeadings(long long int& cols)
             {
                 cols = nCols;
                 return fileTableHeads;
             }
 
+            // Sets the dimensions of the data table, which
+            // will be used in the future. Clears the internal
+            // memory in advance
             void setDimensions(long long int rows, long long int cols)
             {
                 clearStorage();
@@ -607,17 +765,21 @@ namespace NumeRe
                 nCols = cols;
             }
 
+            // Set the table's name
             void setTableName(const std::string& name)
             {
                 sTableName = name;
             }
 
+            // Set the precision, which shall be used to convert
+            // the floating point numbers into strings
             void setTextfilePrecision(unsigned short nPrecision)
             {
                 nPrecFields = nPrecision;
             }
 
-            // use external data == no
+            // This method creates the internal storage and copies
+            // the passed data to this storage
             void addData(DATATYPE** data, long long int rows, long long int cols)
             {
                 if (!nRows && !nCols)
@@ -630,13 +792,17 @@ namespace NumeRe
                 copyDataArray(data, fileData, rows, cols);
             }
 
+            // This method creates the internal storage (if not already
+            // done) and copies the passed column headings to this storage
             void addColumnHeadings(std::string* sHead, long long int cols)
             {
                 createStorage();
                 copyStringArray(sHead, fileTableHeads, cols);
             }
 
-            // use external data == yes
+            // This method references the passed external data internally.
+            // The data is not copied and must exist as long as this class
+            // exists
             void setData(DATATYPE** data, long long int rows, long long int cols)
             {
                 useExternalData = true;
@@ -646,6 +812,9 @@ namespace NumeRe
                 nCols = cols;
             }
 
+            // This method references the passed external column headings internally.
+            // The headings are not copied and must exist as long as this class
+            // exists
             void setColumnHeadings(std::string* sHead, long long int cols)
             {
                 useExternalData = true;
@@ -655,10 +824,20 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This function determines the correct class to be used for the filename
+    // passed to this function. If there's no fitting file type, a null pointer
+    // is returned. The calling function is responsible for clearing the
+    // created instance. The returned pointer is of the type of GenericFile<double>
+    // but references an instance of a derived class
     GenericFile<double>* getFileByType(const std::string& filename);
 
-    //
+
+
+    // This class resembles an arbitrary text data file, which is formatted in a
+    // table-like manner. The columns may be separated using tabulators and/or
+    // whitespace characters.
     class TextDataFile : public GenericFile<double>
     {
         private:
@@ -689,7 +868,10 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles the binary NumeRe data file format. The data is
+    // read and written in binary mode using the methods from GenericFile
     class NumeReDataFile : public GenericFile<double>
     {
         protected:
@@ -754,7 +936,14 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles the cache file used to auto save and recover the tables
+    // in memory. It's derived from the NumeRe data file format and uses its
+    // functionalities to layout the data in the file: the cache file starts with
+    // a header containing the number of tables in the file and the character
+    // positions in the file, where each table starts. The tables itself are written
+    // in the NumeRe data file format
     class CacheFile : public NumeReDataFile
     {
         private:
@@ -804,11 +993,15 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles the CASSYLab *.labx file format, which is based
+    // upon XML. Only reading from this file format is supported.
     class CassyLabx : public GenericFile<double>
     {
         private:
             void readFile();
+            double extractValueFromTag(const string& sTag);
 
         public:
             CassyLabx(const std::string& filename);
@@ -827,7 +1020,11 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles a comma separated value file format (*.csv). The
+    // algorithm may detect the separator character automatically. Reading
+    // and writing is supported for this file format
     class CommaSeparatedValues : public GenericFile<double>
     {
         private:
@@ -853,7 +1050,12 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles a LaTeX table. This class formats the data
+    // into this format using some heuristics on whether a long table
+    // or a standard table is needed to contain the tabular data. Only
+    // writing is supported by this file format.
     class LaTeXTable : public GenericFile<double>
     {
         private:
@@ -881,7 +1083,11 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles a JCAMP-DX file format (*.jcm, *.jdx, *.dx). The
+    // data in this format may be hashed somehow to save storage. Only reading
+    // is supported by this class.
     class JcampDX : public GenericFile<double>
     {
         private:
@@ -906,7 +1112,11 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles a OpenDocument spreadsheet (*.ods), which is based
+    // upon a zipped XML file. The data is read using the Zipfile extractor
+    // from GenericFile. Only reading is supported by this class.
     class OpenDocumentSpreadSheet : public GenericFile<double>
     {
         private:
@@ -930,7 +1140,11 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles a Excel (97) workbook (*.xls), which is composed
+    // out of a compound file. Reading and writing is done using the BasicExcel
+    // library.
     class XLSSpreadSheet : public GenericFile<double>
     {
         private:
@@ -954,7 +1168,11 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles a Excel (2003) spreadsheet (*.xlsx), which is based
+    // upon a zipped XML file. The data is read using the Zipfile extractor
+    // from GenericFile. Only reading is supported by this class.
     class XLSXSpreadSheet : public GenericFile<double>
     {
         private:
@@ -978,7 +1196,11 @@ namespace NumeRe
             }
     };
 
-    //
+
+
+    // This class resembles a Igor binary wave file format (*.ibw). The data is
+    // read by the WaveMetrics implementation of the file format. Only reading is
+    // supported by this class.
     class IgorBinaryWave : public GenericFile<double>
     {
         private:
