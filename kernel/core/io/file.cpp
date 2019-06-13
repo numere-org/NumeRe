@@ -1261,7 +1261,6 @@ namespace NumeRe
 
         string sLabx = "";
         string sLabx_substr = "";
-        string** sDataMatrix = 0;
         long long int nLine = 0;
 
         // Get the whole content of the file in a
@@ -2008,233 +2007,223 @@ namespace NumeRe
         // Empty destructor
     }
 
+    // This member function is used to read the
+    // contents of the JCAMP-DX file to the
+    // internal storage
     void JcampDX::readFile()
     {
+        // Open the file in text mode
         open(ios::in);
 
-		vector<long long int> vComment;
-		vector<long long int> vCols;
+        // Create some temporary buffer variables
+		long long int nComment = 0;
 		vector<double> vLine;
-		vector<vector<string> > vDataMatrix;
 
-		if (!fFileStream.good())
-            throw SyntaxError(SyntaxError::DATAFILE_NOT_EXIST, sFileName, SyntaxError::invalid_position, sFileName);
-
+		// Read the contents of the file to the
+		// vector variable
 		vector<string> vFileContents = readTextFile(true);
 
+		// Ensure that contents are available
 		if (!vFileContents.size())
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Find the end tag in the file and omit
+        // all following lines
 		for (size_t i = 0; i < vFileContents.size(); i++)
         {
             stripTrailingSpaces(vFileContents[i]);
             parseLabel(vFileContents[i]);
 
+            // Erase everything after the end tag
             if (vFileContents[i].substr(0, 6) == "##END=")
             {
                 vFileContents.erase(vFileContents.begin()+i+1, vFileContents.end());
-                vDataMatrix.push_back(vFileContents);
                 break;
             }
         }
 
-        for (unsigned int i = 0; i < vDataMatrix.size(); i++)
+        // Count the number of labels (comments) in
+        // the current file
+        for (unsigned int i = 0; i < vFileContents.size(); i++)
         {
-            for (unsigned int j = 0; j < vDataMatrix[i].size(); j++)
-            {
-                if (vDataMatrix[i][j].substr(0,2) == "##")
-                {
-                    if (vComment.size() == i)
-                        vComment.push_back(1);
-                    else
-                        vComment[i]++;
-                }
-            }
+            if (vFileContents[i].substr(0,2) == "##")
+                nComment++;
         }
 
-        nRows = vDataMatrix[0].size() - vComment[0];
+        // Determine the dimensions of the data
+        // set using the comments and the decoded
+        // last line of the tags (we ignore the closing
+        // "##END=" tag
+        nRows = vFileContents.size() - nComment;
+        nCols = parseLine(vFileContents[nComment-1]).size();
 
-        for (unsigned int i = 0; i < vDataMatrix.size(); i++)
-        {
-            if (vDataMatrix[i].size() - vComment[i] > nRows)
-                nRows = vDataMatrix[i].size() - vComment[i];
-        }
-
-        for (unsigned int i = 0; i < vDataMatrix.size(); i++)
-        {
-            vLine = parseLine(vDataMatrix[i][vComment[i]-1]);
-            vCols.push_back(vLine.size());
-        }
-
-        for (unsigned int i = 0; i < vCols.size(); i++)
-        {
-            nCols += vCols[i];
-        }
-
+        // Prepare the internal storage
         createStorage();
 
-        for (long long int i = 0; i < vDataMatrix.size(); i++)
+        // Prepare some decoding variables
+        double dXFactor = 1.0;
+        double dYFactor = 1.0;
+
+        string sXUnit = "";
+        string sYUnit = "";
+
+        string sDataType = "";
+        string sXYScheme = "";
+
+        // Go through the label section first
+        // and decode the header information of
+        // the data set
+        for (long long int j = 0; j < nComment-1; j++)
         {
-            double dXFactor = 1.0;
-            double dYFactor = 1.0;
+            // Omit comments
+            if (vFileContents[j].find("$$") != string::npos)
+                vFileContents[j].erase(vFileContents[j].find("$$"));
 
-            string sXUnit = "";
-            string sYUnit = "";
+            // Get the x and y scaling factors
+            if (vFileContents[j].substr(0,10) == "##XFACTOR=")
+                dXFactor = StrToDb(vFileContents[j].substr(10));
 
-            string sDataType = "";
-            string sXYScheme = "";
+            if (vFileContents[j].substr(0,10) == "##YFACTOR=")
+                dYFactor = StrToDb(vFileContents[j].substr(10));
 
-            for (long long int j = 0; j < vComment[i] - 1; j++)
+            // Extract the x units
+            if (vFileContents[j].substr(0,9) == "##XUNITS=")
             {
-                if (vDataMatrix[i][j].find("$$") != string::npos)
-                    vDataMatrix[i][j].erase(vDataMatrix[i][j].find("$$"));
+                sXUnit = vFileContents[j].substr(9);
+                StripSpaces(sXUnit);
 
-                if (vDataMatrix[i][j].substr(0,10) == "##XFACTOR=")
-                    dXFactor = StrToDb(vDataMatrix[i][j].substr(10));
+                if (toUpperCase(sXUnit) == "1/CM")
+                    sXUnit = "Wellenzahl k [cm^-1]";
+                else if (toUpperCase(sXUnit) == "MICROMETERS")
+                    sXUnit = "Wellenlänge lambda [mu m]";
+                else if (toUpperCase(sXUnit) == "NANOMETERS")
+                    sXUnit = "Wellenlänge lambda [nm]";
+                else if (toUpperCase(sXUnit) == "SECONDS")
+                    sXUnit = "Zeit t [s]";
+                else if (toUpperCase(sXUnit) == "1/S" || toUpperCase(sXUnit) == "1/SECONDS")
+                    sXUnit = "Frequenz f [Hz]";
+                else
+                    sXUnit = "[" + sXUnit + "]";
 
-                if (vDataMatrix[i][j].substr(0,10) == "##YFACTOR=")
-                    dYFactor = StrToDb(vDataMatrix[i][j].substr(10));
-
-                if (vDataMatrix[i][j].substr(0,9) == "##XUNITS=")
-                {
-                    sXUnit = vDataMatrix[i][j].substr(9);
-                    StripSpaces(sXUnit);
-
-                    if (toUpperCase(sXUnit) == "1/CM")
-                        sXUnit = "Wellenzahl k [cm^-1]";
-                    else if (toUpperCase(sXUnit) == "MICROMETERS")
-                        sXUnit = "Wellenlänge lambda [mu m]";
-                    else if (toUpperCase(sXUnit) == "NANOMETERS")
-                        sXUnit = "Wellenlänge lambda [nm]";
-                    else if (toUpperCase(sXUnit) == "SECONDS")
-                        sXUnit = "Zeit t [s]";
-                    else if (toUpperCase(sXUnit) == "1/S" || toUpperCase(sXUnit) == "1/SECONDS")
-                        sXUnit = "Frequenz f [Hz]";
-                    else
-                        sXUnit = "[" + sXUnit + "]";
-
-                }
-
-                if (vDataMatrix[i][j].substr(0,9) == "##YUNITS=")
-                {
-                    sYUnit = vDataMatrix[i][j].substr(9);
-                    StripSpaces(sYUnit);
-
-                    if (toUpperCase(sYUnit) == "TRANSMITTANCE")
-                        sYUnit = "Transmission";
-                    else if (toUpperCase(sYUnit) == "REFLECTANCE")
-                        sYUnit = "Reflexion";
-                    else if (toUpperCase(sYUnit) == "ABSORBANCE")
-                        sYUnit = "Absorbtion";
-                    else if (toUpperCase(sYUnit) == "KUBELKA-MUNK")
-                        sYUnit = "Kubelka-Munk";
-                    else if (toUpperCase(sYUnit) == "ARBITRARY UNITS" || sYUnit.substr(0,9) == "Intensity")
-                        sYUnit = "Intensität";
-                }
-
-                if (vDataMatrix[i][j].substr(0,11) == "##DATATYPE=")
-                {
-                    sDataType = vDataMatrix[i][j].substr(11);
-                    StripSpaces(sDataType);
-                }
-
-                if (vDataMatrix[i][j].substr(0,11) == "##XYPOINTS=")
-                {
-                    sXYScheme = vDataMatrix[i][j].substr(11);
-                    StripSpaces(sXYScheme);
-                }
             }
 
-            for (long long int j = vComment[i] - 1; j < vDataMatrix[i].size() - 1; j++)
+            // Extract the y units
+            if (vFileContents[j].substr(0,9) == "##YUNITS=")
             {
-                if (vDataMatrix[i][j].substr(0, 2) == "##")
-                    continue;
+                sYUnit = vFileContents[j].substr(9);
+                StripSpaces(sYUnit);
 
-                if (vDataMatrix[i][j].substr(0, 6) == "##END=")
+                if (toUpperCase(sYUnit) == "TRANSMITTANCE")
+                    sYUnit = "Transmission";
+                else if (toUpperCase(sYUnit) == "REFLECTANCE")
+                    sYUnit = "Reflexion";
+                else if (toUpperCase(sYUnit) == "ABSORBANCE")
+                    sYUnit = "Absorbtion";
+                else if (toUpperCase(sYUnit) == "KUBELKA-MUNK")
+                    sYUnit = "Kubelka-Munk";
+                else if (toUpperCase(sYUnit) == "ARBITRARY UNITS" || sYUnit.substr(0,9) == "Intensity")
+                    sYUnit = "Intensität";
+            }
+
+            // Get the data type (currently unused)
+            if (vFileContents[j].substr(0,11) == "##DATATYPE=")
+            {
+                sDataType = vFileContents[j].substr(11);
+                StripSpaces(sDataType);
+            }
+
+            // Get the data encoding scheme (currently
+            // unused as well)
+            if (vFileContents[j].substr(0,11) == "##XYPOINTS=")
+            {
+                sXYScheme = vFileContents[j].substr(11);
+                StripSpaces(sXYScheme);
+            }
+        }
+
+        // Now go through the actual data section
+        // of the file and convert it into
+        // numerical values
+        for (long long int j = nComment-1; j < vFileContents.size() - 1; j++)
+        {
+            // Ignore lables
+            if (vFileContents[j].substr(0, 2) == "##")
+                continue;
+
+            // Abort at the end tag
+            if (vFileContents[j].substr(0, 6) == "##END=")
+                break;
+
+            // Abort, if we read enough lines
+            if (nComment + 1 == nRows)
+                break;
+
+            // Decode the current line
+            vLine = parseLine(vFileContents[j]);
+
+            for (unsigned int k = 0; k < vLine.size(); k++)
+            {
+                if (k == nCols)
                     break;
 
-                if (j - vComment[i] + 1 == nRows)
-                    break;
+                // Store the table column heads
+                if (j == nComment-1)
+                    fileTableHeads[k] = (k % 2 ? sYUnit : sXUnit);
 
-                vLine = parseLine(vDataMatrix[i][j]);
-
-                for (unsigned int k = 0; k < vLine.size(); k++)
-                {
-                    if (k == vCols[i])
-                        break;
-
-                    if (j == vComment[i]-1)
-                    {
-                        if (i)
-                        {
-                            fileTableHeads[vCols[i-1]+k] = (k % 2 ? sYUnit : sXUnit);
-                        }
-                        else
-                        {
-                            fileTableHeads[k] = (k % 2 ? sYUnit : sXUnit);
-                        }
-                    }
-
-                    if (i)
-                    {
-                        if (k+1 == vDataMatrix[i][j].length())
-                            fileData[j-vComment[i]+1][vCols[i-1]+k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
-                        else
-                            fileData[j-vComment[i]+1][vCols[i-1]+k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
-                    }
-                    else
-                    {
-                        if (k+1 == vDataMatrix[i][j].length())
-                            fileData[j-vComment[i]+1][k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
-                        else
-                            fileData[j-vComment[i]+1][k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
-                    }
-                }
+                // Write the data to the internal
+                // storage
+                fileData[j-nComment+1][k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
             }
         }
     }
 
+    // This member function parses JCAMP-DX labels
+    // by removing whitespaces, minus characters and
+    // underscores from the label name itself and
+    // converting it into upper case
     void JcampDX::parseLabel(string& sLine)
     {
         if (sLine.find("##") == string::npos || sLine.find('=') == string::npos)
             return;
 
-        for (unsigned int i = 0; i < sLine.length(); i++)
+        for (size_t i = 0; i < sLine.length(); i++)
         {
-            if (sLine[i] == ' ')
+            // Remove some characters
+            if (sLine[i] == ' ' || sLine[i] == '-' || sLine[i] == '_')
             {
                 sLine.erase(i, 1);
                 i--;
             }
 
-            if (sLine[i] == '-')
-            {
-                sLine.erase(i, 1);
-                i--;
-            }
-
-            if (sLine[i] == '_')
-            {
-                sLine.erase(i, 1);
-                i--;
-            }
-
+            // Transform to uppercase
             if (sLine[i] >= 'a' && sLine[i] <= 'z')
                 sLine[i] += 'A'-'a';
 
+            // Stop at the equal sign
             if (sLine[i] == '=')
                 break;
         }
     }
 
+    // This member function parses the current data
+    // line into numerical values by decoding the
+    // JCAMP-DX encoding scheme. The JCAMP-DX format
+    // is a textual data format, but the text data may
+    // compressed to save some storage space.
+    // Reference: http://www.jcamp-dx.org/protocols.html
     vector<double> JcampDX::parseLine(const string& sLine)
     {
         vector<double> vLine;
         string sValue = "";
         const string sNumericChars = "0123456789.+-";
 
+        // Go through the complete line and uncompress
+        // the data into usual text strings, which will
+        // be stored in another string
         for (unsigned int i = 0; i < sLine.length(); i++)
         {
+            // The first three cases are the simplest
+            // cases, where the data is not compressed
             if ((sLine[i] >= '0' && sLine[i] <= '9') || sLine[i] == '.')
                 sValue += sLine[i];
             else if (sValue.length()
@@ -2248,42 +2237,51 @@ namespace NumeRe
                 sValue += sLine[i];
             else
             {
+                // This section is for compressed data
+                // DIFDUP form. Only the first character
+                // is compressed
                 if (sValue.length())
                 {
                     if ((sValue[0] >= 'J' && sValue[0] <= 'R'))
                     {
+                        // Positive DIF digits
                         sValue[0] = toString(sValue[0]-'J'+1)[0];
-                        vLine.push_back(vLine[vLine.size()-1]+StrToDb(sValue));
+                        vLine.push_back(vLine.back()+StrToDb(sValue));
                     }
                     else if ((sValue[0] >= 'j' && sValue[0] <= 'r'))
                     {
+                        // Negative DIF digits
                         sValue[0] = toString(sValue[0]-'j'+1)[0];
-                        vLine.push_back(vLine[vLine.size()-1]-StrToDb(sValue));
+                        vLine.push_back(vLine.back()-StrToDb(sValue));
                     }
                     else if (sValue[0] == '%')
                     {
+                        // A zero
                         sValue[0] = '0';
-                        vLine.push_back(vLine[vLine.size()-1]+StrToDb(sValue));
+                        vLine.push_back(vLine.back()+StrToDb(sValue));
                     }
                     else if ((sValue[0] >= 'S' && sValue[0] >= 'Z') || sValue[0] == 's')
                     {
+                        // DUP digits
                         if (sValue[0] == 's')
                         {
                             for (int j = 0; j < 9; j++)
-                                vLine.push_back(vLine[vLine.size()-1]);
+                                vLine.push_back(vLine.back());
                         }
                         else
                         {
                             for (int j = 0; j <= sValue[0]-'S'; j++)
-                                vLine.push_back(vLine[vLine.size()-1]);
+                                vLine.push_back(vLine.back());
                         }
                     }
                     else
-                        vLine.push_back(StrToDb(sValue));
+                        vLine.push_back(StrToDb(sValue)); // Simply convert into a double
 
                     sValue.clear();
                 }
 
+                // We convert SQZ digits directly in
+                // their plain format
                 if (sLine[i] >= 'A' && sLine[i] <= 'I')
                     sValue += toString(sLine[i]-'A'+1)[0];
                 else if (sLine[i] >= 'a' && sLine[i] <= 'i')
@@ -2294,44 +2292,51 @@ namespace NumeRe
                         || sLine[i] == '%'
                         || (sLine[i] >= 'S' && sLine[i] <= 'Z')
                         || sLine[i] == 's'))
-                        || sLine[i] == '+'
-                        || sLine[i] == '-')
+                    || sLine[i] == '+'
+                    || sLine[i] == '-')
                     sValue += sLine[i];
             }
         }
 
+        // This section is for compressed data
+        // DIFDUP form. Only the first character
+        // is compressed
         if (sValue.length())
         {
             if ((sValue[0] >= 'J' && sValue[0] <= 'R'))
             {
+                // Positive DIF digits
                 sValue[0] = toString(sValue[0]-'J'+1)[0];
-                vLine.push_back(vLine[vLine.size()-1]+StrToDb(sValue));
+                vLine.push_back(vLine.back()+StrToDb(sValue));
             }
             else if ((sValue[0] >= 'j' && sValue[0] <= 'r'))
             {
+                // Negative DIF digits
                 sValue[0] = toString(sValue[0]-'j'+1)[0];
-                vLine.push_back(vLine[vLine.size()-1]-StrToDb(sValue));
+                vLine.push_back(vLine.back()-StrToDb(sValue));
             }
             else if (sValue[0] == '%')
             {
+                // A zero
                 sValue[0] = '0';
-                vLine.push_back(vLine[vLine.size()-1]+StrToDb(sValue));
+                vLine.push_back(vLine.back()+StrToDb(sValue));
             }
             else if ((sValue[0] >= 'S' && sValue[0] >= 'Z') || sValue[0] == 's')
             {
+                // DUP digits
                 if (sValue[0] == 's')
                 {
                     for (int j = 0; j < 9; j++)
-                        vLine.push_back(vLine[vLine.size()-1]);
+                        vLine.push_back(vLine.back());
                 }
                 else
                 {
                     for (int j = 0; j <= sValue[0]-'S'; j++)
-                        vLine.push_back(vLine[vLine.size()-1]);
+                        vLine.push_back(vLine.back());
                 }
             }
             else
-                vLine.push_back(StrToDb(sValue));
+                vLine.push_back(StrToDb(sValue)); // Simply convert into a double
 
             sValue.clear();
         }
@@ -2354,6 +2359,10 @@ namespace NumeRe
         // Empty destructor
     }
 
+    // This member function is used to read the
+    // target file into the internal storage. ODS
+    // is a ZIP file containing the data formatted
+    // as XML
     void OpenDocumentSpreadSheet::readFile()
     {
         string sODS = "";
@@ -2363,27 +2372,43 @@ namespace NumeRe
         long long int nCommentLines = 0;
         long long int nMaxCols = 0;
 
+        // Get the contents of the embedded
+        // XML file
         sODS = getZipFileItem("content.xml");
 
+        // Ensure that the embedded file is
+        // not empty
         if (!sODS.length())
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        sODS.erase(0,sODS.find("<office:spreadsheet>"));
+        // Remove the obsolete beginning of
+        // the file, which we don't need
+        sODS.erase(0, sODS.find("<office:spreadsheet>"));
 
+        // Ensure again that the file is not empty
         if (!sODS.length())
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        sODS.erase(0,sODS.find("<table:table "));
+        // Remove the part until the first table
+        sODS.erase(0, sODS.find("<table:table "));
 
+        // Extract the different tables from the
+        // whole string and store them in different
+        // vector components
         while (sODS.size() && sODS.find("<table:table ") != string::npos && sODS.find("</table:table>") != string::npos)
         {
             vTables.push_back(sODS.substr(sODS.find("<table:table "), sODS.find("</table:table>")+14-sODS.find("<table:table ")));
             sODS.erase(sODS.find("<table:table "), sODS.find("</table:table>")+14-sODS.find("<table:table "));
         }
 
+        // Ensure that we found at least a single
+        // table
         if (!vTables.size())
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Decode all tables and store them next
+        // to each other in the vMatrix vector
+        // variable
         for (unsigned int i = 0; i < vTables.size(); i++)
         {
             unsigned int nPos = 0;
@@ -2391,18 +2416,30 @@ namespace NumeRe
             long long int _nCols = 0;
             string sLine = "";
 
+            // This section decodes a single table and stores
+            // the lines in the vMatrix vector variable. If
+            // this is not the first table, then the lines
+            // are appended to the already existing ones
             while (vTables[i].find("<table:table-row ", nPos) != string::npos && vTables[i].find("</table:table-row>", nPos) != string::npos)
             {
+                // Extract the next line from the current
+                // table and expand the line
                 nPos = vTables[i].find("<table:table-row ", nPos);
                 sLine = vTables[i].substr(nPos, vTables[i].find("</table:table-row>", nPos)+18-nPos);
                 sLine = expandLine(sLine);
 
+                // If the line is not empty, store it
+                // at the corresponding line in the vMatrix
+                // variable
                 if (sLine.length())
                 {
-                    if (!i)
+                    if (!i) // first table
                         vMatrix.push_back(sLine);
                     else
                     {
+                        // Extent the number if rows with
+                        // empty cells, if the following tables
+                        // contain more rows
                         if (vMatrix.size() <= nCount)
                         {
                             vMatrix.push_back("<>");
@@ -2422,10 +2459,15 @@ namespace NumeRe
                 nPos++;
             }
 
+            // Determine the current number of columns,
+            // which are contained in the vMatrix variable
+            // up to now
             for (unsigned int j = 0; j < vMatrix.size(); j++)
             {
                 _nCols = 0;
 
+                // Each opening left angle brace corresponds
+                // to a single cell
                 for (unsigned int n = 0; n < vMatrix[j].length(); n++)
                 {
                     if (vMatrix[j][n] == '<')
@@ -2436,10 +2478,15 @@ namespace NumeRe
                     nMaxCols = _nCols;
             }
 
+            // Append empty cells to matrix rows, if their
+            // number of columns is not sufficient to resemble
+            // a full rectangle matrix
             for (unsigned int j = 0; j < vMatrix.size(); j++)
             {
                 _nCols = 0;
 
+                // Each opening left angle brace corresponds
+                // to a single cell
                 for (unsigned int n = 0; n < vMatrix[j].length(); n++)
                 {
                     if (vMatrix[j][n] == '<')
@@ -2454,23 +2501,34 @@ namespace NumeRe
             }
         }
 
+        // Replace all whitespaces in the matrix
+        // with underscores
         for (unsigned int i = 0; i < vMatrix.size(); i++)
         {
             while (vMatrix[i].find(' ') != string::npos)
                 vMatrix[i].replace(vMatrix[i].find(' '), 1, "_");
         }
 
+        // Ensure that the matrix is not empty
         if (!vMatrix.size() || !nMaxCols)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Try to detect the number of (pure)
+        // text lines in the matrix. Those will be
+        // used as table column heads. If a single
+        // cell is numeric, we do not use this row
+        // as a text line
         for (unsigned int i = 0; i < vMatrix.size(); i++)
         {
             bool bBreak = false;
 
             for (unsigned int j = 0; j < vMatrix[i].length(); j++)
             {
+                // Only examine non-empty cells
                 if (vMatrix[i][j] == '<' && vMatrix[i][j+1] != '>')
                 {
+                    // If this cell is numeric, leave the
+                    // whole loop
                     if (isNumeric(vMatrix[i].substr(j+1, vMatrix[i].find('>',j)-j-1)))
                     {
                         bBreak = true;
@@ -2486,14 +2544,16 @@ namespace NumeRe
                 break;
         }
 
-        // Allokation
+        // Set the dimensions of the final table
+        // and create the internal storage
         nRows = vMatrix.size() - nCommentLines;
         nCols = nMaxCols;
         createStorage();
 
-        // Interpretation
         unsigned int nPos = 0;
 
+        // Store the pure text lines as table
+        // column heads
         for (long long int i = 0; i < nCommentLines; i++)
         {
             nPos = 0;
@@ -2504,10 +2564,12 @@ namespace NumeRe
                 string sEntry = utf8parser(vMatrix[i].substr(nPos,vMatrix[i].find('>', nPos)+1-nPos));
                 nPos++;
 
+                // Omit empty cells
                 if (sEntry == "<>")
                     continue;
 
-                sEntry.erase(0,1);
+                // Remove the left and right angles
+                sEntry.erase(0, 1);
                 sEntry.pop_back();
 
                 if (!fileTableHeads[j].length())
@@ -2517,6 +2579,10 @@ namespace NumeRe
             }
         }
 
+        // Store the actual data in the internal
+        // storage. If we hit a text-only cell,
+        // then we'll append it to the corresponding
+        // table column head
         for (long long int i = 0; i < nRows; i++)
         {
             nPos = 0;
@@ -2527,12 +2593,17 @@ namespace NumeRe
                 string sEntry = utf8parser(vMatrix[i+nCommentLines].substr(nPos,vMatrix[i+nCommentLines].find('>', nPos)+1-nPos));
                 nPos++;
 
+                // Omit empty cells
                 if (sEntry == "<>")
                     continue;
 
-                sEntry.erase(0,1);
+                // Remove left and right angles
+                sEntry.erase(0, 1);
                 sEntry.pop_back();
 
+                // Store the content as double value,
+                // if it is numeric, and as part of
+                // the table column head, otherwise
                 if (isNumeric(sEntry))
                 {
                     if (sEntry.find_first_not_of('-') == string::npos)
@@ -2548,19 +2619,25 @@ namespace NumeRe
         }
     }
 
+    // This member function is used by readFile()
+    // to expand the XML-based table row string into
+    // the intermediate cell format. Compressed cells
+    // are extended as well
     string OpenDocumentSpreadSheet::expandLine(const string& sLine)
     {
         string sExpandedLine = "";
 
         for (unsigned int i = 0; i < sLine.length(); i++)
         {
-            if (sLine.substr(i,17) == "<table:table-cell")
+            if (sLine.substr(i, 17) == "<table:table-cell")
             {
                 if (sLine[sLine.find('>',i)-1] != '/')
                 {
-                    // --> Value-reader
+                    // Read the value of the current cell
                     string sCellEntry = sLine.substr(i, sLine.find("</table:table-cell>", i)-i);
 
+                    // Extract the value into a simpler,
+                    // intermediate cell format: "<VALUE>"
                     if (sCellEntry.find("office:value-type=") != string::npos && getArgAtPos(sCellEntry, sCellEntry.find("office:value-type=")+18) == "float")
                         sExpandedLine += "<" + getArgAtPos(sCellEntry, sCellEntry.find("office:value=")+13) + ">";
                     else if (sCellEntry.find("<text:p>") != string::npos)
@@ -2573,6 +2650,9 @@ namespace NumeRe
 
                     if (sLine.substr(i, sLine.find('>',i)+1-i).find("table:number-columns-repeated=") != string::npos)
                     {
+                        // If there are some empty cells,
+                        // which are compressed, then we
+                        // expand them here
                         string sTemp = getArgAtPos(sLine, sLine.find("table:number-columns-repeated=", i)+30);
 
                         if (sTemp.front() == '"')
@@ -2581,6 +2661,8 @@ namespace NumeRe
                         if (sTemp.back() == '"')
                             sTemp.pop_back();
 
+                        // Create the corresponding number
+                        // of empty cells
                         for (int j = 0; j < StrToInt(sTemp); j++)
                             sExpandedLine += "<>";
                     }
@@ -2590,6 +2672,9 @@ namespace NumeRe
             }
             else if (sLine.substr(i,25) == "<table:covered-table-cell")
             {
+                // If there are some empty cells,
+                // which are compressed, then we
+                // expand them here
                 string sTemp = getArgAtPos(sLine, sLine.find("table:number-columns-repeated=", i)+30);
 
                 if (sTemp.front() == '"')
@@ -2598,11 +2683,17 @@ namespace NumeRe
                 if (sTemp.back() == '"')
                     sTemp.pop_back();
 
+                // Create the corresponding number
+                // of empty cells
                 for (int j = 0; j < StrToInt(sTemp); j++)
                     sExpandedLine += "<>";
             }
         }
 
+        // Remove all trailing empty cells from the
+        // current line. If they are necessary to
+        // create a rectangular table, then they
+        // will be added again
         if (sExpandedLine.length())
         {
             while (sExpandedLine.substr(sExpandedLine.length()-2) == "<>")
@@ -2632,6 +2723,9 @@ namespace NumeRe
         // Empty destructor
     }
 
+    // This member function is used to read the
+    // data from the XLS spreadsheet into the
+    // internal storage
     void XLSSpreadSheet::readFile()
     {
         YExcel::BasicExcel _excel;
@@ -2646,16 +2740,22 @@ namespace NumeRe
         bool bBreakSignal = false;
         string sEntry;
 
+        // Ensure that the XLS file is readable
         if (!_excel.Load(sFileName.c_str()))
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        // get the total number
+        // get the total number of sheets
         nSheets = _excel.GetTotalWorkSheets();
 
+        // Ensure that we have at least a single
+        // sheet in the file
         if (!nSheets)
-            return;
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        // get the total size
+        // get the total size needed for all sheets,
+        // which will be stored next to each other. We
+        // consider pure text lines as table column
+        // heads
         for (unsigned int n = 0; n < nSheets; n++)
         {
             _sheet = _excel.GetWorksheet(n);
@@ -2666,6 +2766,8 @@ namespace NumeRe
             {
                 for (unsigned int j = 0; j < _sheet->GetTotalCols(); j++)
                 {
+                    // Abort the loop, if we find a single
+                    // non-textual cell in the current row
                     if (_sheet->Cell(i,j)->Type() != YExcel::BasicExcelCell::STRING
                         && _sheet->Cell(i,j)->Type() != YExcel::BasicExcelCell::WSTRING
                         && _sheet->Cell(i,j)->Type() != YExcel::BasicExcelCell::UNDEFINED)
@@ -2683,24 +2785,30 @@ namespace NumeRe
 
             vCommentLines.push_back(nCommentLines);
 
+            // Find the maximal number of needed rows
             if (nExcelLines < _sheet->GetTotalRows()-nCommentLines)
                 nExcelLines = _sheet->GetTotalRows()-nCommentLines;
 
+            // Add the number of columns of the current
+            // sheet to the total number of columns
             nExcelCols += _sheet->GetTotalCols();
         }
 
-        // create data
+        // Set the dimensions of the needed internal
+        // storage and create it
         nRows = nExcelLines;
         nCols = nExcelCols;
         createStorage();
 
-        // copy data/strings
+        // Copy the pure text lines into the corresponding
+        // table column heads
         for (unsigned int n = 0; n < nSheets; n++)
         {
             _sheet = _excel.GetWorksheet(n);
             nExcelCols = _sheet->GetTotalCols();
             nExcelLines = _sheet->GetTotalRows();
 
+            // We only use the pure text lines from the top
             for (long long int i = 0; i < vCommentLines[n]; i++)
             {
                 if (i >= nExcelLines)
@@ -2720,12 +2828,16 @@ namespace NumeRe
                     else
                         continue;
 
+                    // Replace line break characters with their
+                    // corresponding masked character
                     while (sEntry.find('\n') != string::npos)
                         sEntry.replace(sEntry.find('\n'), 1, "\\n");
 
                     while (sEntry.find((char)10) != string::npos)
                         sEntry.replace(sEntry.find((char)10), 1, "\\n");
 
+                    // Append the string to the current table
+                    // column head, if it is not empty
                     if (!fileTableHeads[j+nOffset].length())
                         fileTableHeads[j+nOffset] = sEntry;
                     else if (fileTableHeads[j+nOffset] != sEntry)
@@ -2738,6 +2850,10 @@ namespace NumeRe
 
         nOffset = 0;
 
+        // Copy now the data to the internal storage.
+        // We consider textual cells as part of the
+        // corresponding table column heads and append
+        // them automatically
         for (unsigned int n = 0; n < nSheets; n++)
         {
             _sheet = _excel.GetWorksheet(n);
@@ -2757,6 +2873,8 @@ namespace NumeRe
                     _cell = _sheet->Cell(i,j);
                     sEntry.clear();
 
+                    // Select the type of the cell and
+                    // store the value, if it's a number
                     switch (_cell->Type())
                     {
                         case YExcel::BasicExcelCell::UNDEFINED:
@@ -2780,6 +2898,9 @@ namespace NumeRe
                             fileData[i-vCommentLines[n]][j+nOffset] = NAN;
                     }
 
+                    // If the entry is not empty, then it
+                    // is a textual cell. We append it to
+                    // the corresponding table column head
                     if (sEntry.length())
                     {
                         if (!fileTableHeads[j+nOffset].length())
@@ -2794,6 +2915,9 @@ namespace NumeRe
         }
     }
 
+    // This member function is used to write
+    // the data in the internal storage to the
+    // target XLS spreadsheet
     void XLSSpreadSheet::writeFile()
     {
         YExcel::BasicExcel _excel;
@@ -2863,6 +2987,10 @@ namespace NumeRe
         // Empty destructor
     }
 
+    // This member function is used to read the
+    // data from the XLSX spreadsheet into the
+    // internal storage. XLSX is a ZIP file
+    // containing the data formatted as XML
     void XLSXSpreadSheet::readFile()
     {
         unsigned int nSheets = 0;
@@ -2880,6 +3008,7 @@ namespace NumeRe
         string sStringsContent;
         string sCellLocation;
 
+        // We use TinyXML-2 as XML libary in this case
         tinyxml2::XMLDocument _workbook;
         tinyxml2::XMLDocument _sheet;
         tinyxml2::XMLDocument _strings;
@@ -2887,17 +3016,24 @@ namespace NumeRe
         tinyxml2::XMLElement* _element;
         tinyxml2::XMLElement* _stringelement;
 
+        // Get the content of the workbool XML file
         sEntry = getZipFileItem("xl/workbook.xml");
 
+        // Ensure that a workbook XML is available
         if (!sEntry.length())
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        // Get the number of sheets
+        // Parse the file to obtain the number of
+        // sheets, which are associated with this
+        // workbook
         _workbook.Parse(sEntry.c_str());
 
+        // Ensure that we could parse the file correctly
         if (_workbook.ErrorID())
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Search the first child of the "sheets" node
+        // in the current workbook and count all siblings
         _node = _workbook.FirstChildElement()->FirstChildElement("sheets")->FirstChild();
 
         if (_node)
@@ -2906,22 +3042,31 @@ namespace NumeRe
         while ((_node = _node->NextSibling()))
             nSheets++;
 
+        // Ensure that we have at least one sheet in
+        // the workbook
         if (!nSheets)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
-        // Walk through the sheets and extract the dimension info
+        // Walk through the sheets and extract the
+        // dimension info
         for (unsigned int i = 0; i < nSheets; i++)
         {
+            // Get the file contents of the current
+            // sheet
             sSheetContent = getZipFileItem("xl/worksheets/sheet"+toString(i+1)+".xml");
 
+            // Ensure that the sheet is not empty
             if (!sSheetContent.length())
                 throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+            // Parse the sheet and catch parsing
+            // errors
             _sheet.Parse(sSheetContent.c_str());
 
             if (_sheet.ErrorID())
                 throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+            // Get the dimensions of the current sheet
             _element = _sheet.FirstChildElement()->FirstChildElement("dimension");
             sCellLocation = _element->Attribute("ref");
             int nLinemin = 0, nLinemax = 0;
@@ -2932,19 +3077,27 @@ namespace NumeRe
             evalIndices(sCellLocation.substr(sCellLocation.find(':') + 1), nLinemax, nColmax);
 
             vCommentLines.push_back(0);
+
+            // Search the data section of the sheet
             _node = _sheet.FirstChildElement()->FirstChildElement("sheetData")->FirstChild();
 
             if (!_node)
                 continue;
 
+            // Find pure textual lines in the current
+            // sheet, which will be used as table column
+            // heads
             do
             {
+                // Find the next cell
                 _element = _node->ToElement()->FirstChildElement("c");
 
                 do
                 {
                     if (_element->Attribute("t"))
                     {
+                        // If the attribute signalizes a
+                        // non-string element, we abort here
                         if (_element->Attribute("t") != string("s"))
                         {
                             bBreakSignal = true;
@@ -2968,36 +3121,59 @@ namespace NumeRe
 
             bBreakSignal = false;
 
+            // Calculate the maximal number of needed
+            // rows to store all sheets next to each
+            // other
             if (nExcelLines < nLinemax-nLinemin+1-vCommentLines[i])
                 nExcelLines = nLinemax-nLinemin+1-vCommentLines[i];
 
+            // Add the number of columns to the total
+            // number of columns
             nExcelCols += nColmax-nColmin+1;
         }
 
+        // Set the dimensions of the final table
         nRows = nExcelLines;
         nCols = nExcelCols;
 
         // Allocate the memory
         createStorage();
 
-        // Walk through the sheets and extract the contents to memory
+        // Walk through the sheets and extract the
+        // contents to memory
+        //
+        // Get the contents of the shared strings
+        // XML file and parse it
         sStringsContent = getZipFileItem("xl/sharedStrings.xml");
         _strings.Parse(sStringsContent.c_str());
 
+        // Go through all sheets
         for (unsigned int i = 0; i < nSheets; i++)
         {
+            // Get the file contents of the current
+            // sheet and parse it
             sSheetContent = getZipFileItem("xl/worksheets/sheet"+toString(i+1)+".xml");
             _sheet.Parse(sSheetContent.c_str());
+
+            // Search the data section and the dimensions
+            // of the current sheet
             _node = _sheet.FirstChildElement()->FirstChildElement("sheetData")->FirstChild();
             _element = _sheet.FirstChildElement()->FirstChildElement("dimension");
 
+            // Ensure that data is available
             if (!_node)
                 continue;
 
+            // Extract the target indices
             sCellLocation = _element->Attribute("ref");
             evalIndices(sCellLocation.substr(0, sCellLocation.find(':')), nLinemin, nColmin);
             evalIndices(sCellLocation.substr(sCellLocation.find(':')+1), nLinemax, nColmax);
 
+            // Go through each cell and store its
+            // value at the correct position in the
+            // final table. If we hit a textual cell,
+            // then we store its contents as a table
+            // column head
             do
             {
                 _element = _node->ToElement()->FirstChildElement("c");
@@ -3005,6 +3181,8 @@ namespace NumeRe
                 if (!_element)
                     continue;
 
+                // Go through the cells of the current
+                // row
                 do
                 {
                     sCellLocation = _element->Attribute("r");
@@ -3015,6 +3193,9 @@ namespace NumeRe
                     if (nCol+nOffset >= nCols || nLine-vCommentLines[i] >= nRows)
                         continue;
 
+                    // catch textual cells and store them
+                    // in the corresponding table column
+                    // head
                     if (_element->Attribute("t"))
                     {
                         if (_element->Attribute("t") == string("s"))
@@ -3034,6 +3215,9 @@ namespace NumeRe
                             else
                                 sEntry.clear();
 
+                            // If the string is not empty, then
+                            // we'll add it to the correct table
+                            // column head
                             if (sEntry.length())
                             {
                                 if (!fileTableHeads[nCol+nOffset].length())
@@ -3046,6 +3230,9 @@ namespace NumeRe
                         }
                     }
 
+                    // If the current cell contains a value
+                    // tag, then we'll obtain that value and
+                    // store it in the target table
                     if (_element->FirstChildElement("v"))
                         _element->FirstChildElement("v")->QueryDoubleText(&fileData[nLine-vCommentLines[i]][nCol+nOffset]);
                 }
@@ -3057,6 +3244,8 @@ namespace NumeRe
         }
     }
 
+    // This member function converts the usual
+    // Excel indices in to numerical ones
     void XLSXSpreadSheet::evalIndices(const string& _sIndices, int& nLine, int& nCol)
     {
         //A1 -> IV65536
@@ -3064,18 +3253,21 @@ namespace NumeRe
 
         for (size_t i = 0; i < sIndices.length(); i++)
         {
-            if (!isalpha(sIndices[i]))
+            // Find the first character,
+            // which is a digit: that's a
+            // line index
+            if (isdigit(sIndices[i]))
             {
+                // Convert the line index
                 nLine = StrToInt(sIndices.substr(i))-1;
 
+                // Convert the column index.
+                // This index might be two
+                // characters long
                 if (i == 2)
-                {
                     nCol = (sIndices[0]-'A'+1)*26+sIndices[1]-'A';
-                }
                 else if (i == 1)
-                {
                     nCol = sIndices[0]-'A';
-                }
 
                 break;
             }
@@ -3104,6 +3296,10 @@ namespace NumeRe
         // Empty destructor
     }
 
+    // This member function is used to read
+    // the contents of the IBW file into the
+    // internal storage. We use the IBW library
+    // read the binary file
     void IgorBinaryWave::readFile()
     {
         CP_FILE_REF _cp_file_ref;
@@ -3123,9 +3319,12 @@ namespace NumeRe
         int32_t* n32_tData = nullptr;
         char* cName = nullptr;
 
+        // Try to open the target file
         if (CPOpenFile(sFileName.c_str(), 0, &_cp_file_ref))
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
+        // Try to read the data from the
+        // file into the passed void*
         if (ReadWave(_cp_file_ref, &nType, &nPnts, nDim, dScalingFactorA, dScalingFactorB, &vWaveDataPtr, &cName))
         {
             CPCloseFile(_cp_file_ref);
@@ -3136,9 +3335,12 @@ namespace NumeRe
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
         }
 
+        // Detect complex data
         if (nType & NT_CMPLX)
             bReadComplexData = true;
 
+        // Convert the pointer into the correct
+        // type
         if (nType & NT_FP32)
             fData = (float*)vWaveDataPtr;
         else if (nType & NT_FP64)
@@ -3159,12 +3361,17 @@ namespace NumeRe
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
         }
 
+        // Obtain the final dimensions of
+        // the whol table. A three-dimensional
+        // wave will be rolled out in the
+        // third dimension
         nRows = nDim[0];
         nCols = nDim[1];
 
         if (nDim[2])
             nCols *= nDim[2];
 
+        // Ensure that data is available
         if (!nRows)
         {
             CPCloseFile(_cp_file_ref);
@@ -3175,6 +3382,9 @@ namespace NumeRe
             throw SyntaxError(SyntaxError::FILE_IS_EMPTY, sFileName, SyntaxError::invalid_position, sFileName);
         }
 
+        // Alter the column dimensions to
+        // respect the data conventions of IGOR
+        // (they do not store x-values)
         if (!nCols || nCols == 1)
         {
             nFirstCol = 1;
@@ -3205,8 +3415,12 @@ namespace NumeRe
             nRows = nDim[1] > nRows ? nDim[1] : nRows;
         }
 
+        // Create the internal storage using the
+        // final dimensions
         createStorage();
 
+        // Fill the x column and its corresponding
+        // table column head
         for (long long int j = 0; j < nFirstCol; j++)
         {
             fileTableHeads[j] = cName + string("_[")+(char)('x'+j)+string("]");
@@ -3217,8 +3431,12 @@ namespace NumeRe
             }
         }
 
+        // Fill the remaining data into the table
+        // next to the x column
         for (long long int j = 0; j < nCols-nFirstCol; j++)
         {
+            // Take respect on three-dimensional
+            // waves and roll them out correctly
             if (bXZSlice && nDim[2] > 1 && j)
             {
                 nSliceCounter += nDim[1];
@@ -3229,6 +3447,8 @@ namespace NumeRe
             else
                 nSliceCounter = j;
 
+            // Write the corresponding table column
+            // head
             if (nCols == 2 && !j)
             {
                 fileTableHeads[1] = cName + string("_[y]");
@@ -3246,6 +3466,10 @@ namespace NumeRe
                 fileTableHeads[j+nFirstCol+1] = string("Im:_") + cName + string("_["+toString(j+1)+"]");
             }
 
+            // Write the actual data to the table.
+            // We have to take care about the type
+            // of the data and whether the data is
+            // complex or not
             for (long long int i = 0; i < (nDim[0]+bReadComplexData*nDim[0]); i++)
             {
                 if (dData)
@@ -3306,12 +3530,16 @@ namespace NumeRe
                 j++;
         }
 
+        // Close the file reference and
+        // free the allocated memory
         CPCloseFile(_cp_file_ref);
 
         if (vWaveDataPtr != nullptr)
             free(vWaveDataPtr);
     }
 
+    // This is an overload for the assignment
+    // operator of the GenericFile class
     IgorBinaryWave& IgorBinaryWave::operator=(const IgorBinaryWave& file)
     {
         assign(file);
