@@ -37,6 +37,7 @@ static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings
 static bool undefineFunctions(string sFunctionList, Define& _functions, const Settings& _option);
 static int showDialog(string& sCmd);
 static int showDataObject(string& sCmd);
+static int saveDataObject(string& sCmd);
 
 
 
@@ -2480,90 +2481,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				return 1;
 			}
 			else
-			{
-				for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
-				{
-					if (sCmd.find(iter->first + "(") != string::npos
-							&& (!sCmd.find(iter->first + "(")
-								|| (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-					{
-						//NumeReKernel::print(sCmd );
-						Datafile _cache;
-						_cache.setTokens(_option.getTokenPaths());
-						_cache.setPath(_data.getPath(), false, _option.getExePath());
-						_cache.setCacheStatus(true);
-						if (sCmd.find("()") != string::npos)
-							sCmd.replace(sCmd.find("()"), 2, "(:,:)");
-						_idx = parser_getIndices(sCmd, _parser, _data, _option);
-
-						if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
-							_data.setCacheStatus(true);
-						if (!isValidIndexSet(_idx))
-							throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
-
-                        if (_idx.row.isOpenEnd())
-                            _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
-
-                        if (_idx.col.isOpenEnd())
-                            _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
-
-                        _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
-
-                        if (iter->first != "cache")
-                            _cache.renameTable("cache", (iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first)), true);
-
-                        for (size_t i = 0; i < _idx.row.size(); i++)
-                        {
-                            for (size_t j = 0; j < _idx.col.size(); j++)
-                            {
-                                if (!i)
-                                {
-                                    _cache.setHeadLineElement(j, iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getHeadLineElement(_idx.col[j], iter->first));
-                                }
-                                if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                                    _cache.writeToTable(i, j, iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), _data.getElement(_idx.row[i], _idx.col[j], iter->first));
-                            }
-                        }
-
-						if (_data.containsStringVars(sCmd))
-							_data.getStringValues(sCmd);
-						if (matchParams(sCmd, "file", '='))
-							addArgumentQuotes(sCmd, "file");
-
-						_data.setCacheStatus(false);
-						if (containsStrings(sCmd) && BI_parseStringArgs(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument, _parser, _data, _option))
-						{
-							_cache.setPrefix(sArgument);
-
-							if (_cache.saveFile(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), sArgument))
-							{
-								if (_option.getSystemPrintStatus())
-									NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
-
-								return 1;
-							}
-							else
-								throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
-						}
-						else
-							_cache.setPrefix(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first));
-
-						if (_cache.saveFile(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), ""))
-						{
-							if (_option.getSystemPrintStatus())
-								NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
-						}
-						else
-							throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
-
-						return 1;
-					}
-				}
-				return 1;
-			}
-
-			doc_Help("save", _option);
-			return 1;
+				return saveDataObject(sCmd);
 		}
 		else if (sCommand == "set")
 		{
@@ -4618,116 +4536,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	}
 	else if (sCommand[0] == 'e')
 	{
-		//NumeReKernel::print("export" );
 		if (sCommand == "export")
-		{
-			size_t nPrecision = _option.getPrecision();
-			if (matchParams(sCmd, "precision", '='))
-			{
-				_parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "precision", '=')));
-				nPrecision = _parser.Eval();
-				if (nPrecision < 0 || nPrecision > 14)
-					nPrecision = _option.getPrecision();
-			}
-			if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
-			{
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
-				if (matchParams(sCmd, "data", '='))
-					addArgumentQuotes(sCmd, "data");
-				if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
-				{
-					_out.setFileName(sArgument);
-					show_data(_data, _out, _option, "data", nPrecision, true, false, true, false);
-				}
-				else
-					show_data(_data, _out, _option, "data", nPrecision, true, false, true);
-			}
-			else if (_data.matchTableAsParameter(sCmd).length() || _data.matchTableAsParameter(sCmd, '=').length())
-			{
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
-
-				if (_data.matchTableAsParameter(sCmd, '=').length())
-					addArgumentQuotes(sCmd, _data.matchTableAsParameter(sCmd, '='));
-
-				if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
-				{
-					_out.setFileName(sArgument);
-					_data.saveFile(_data.matchTableAsParameter(sCmd), sArgument, nPrecision);
-				}
-				else
-					_data.saveFile(_data.matchTableAsParameter(sCmd), "", nPrecision);
-			}
-			else //if (sCmd.find("cache(") != string::npos || sCmd.find("data(") != string::npos)
-			{
-				for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
-				{
-					if (sCmd.find(iter->first + "(") != string::npos
-							&& (!sCmd.find(iter->first + "(")
-								|| (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-					{
-						//NumeReKernel::print(sCmd );
-						Datafile _cache;
-
-						if (sCmd.find("()") != string::npos)
-							sCmd.replace(sCmd.find("()"), 2, "(:,:)");
-
-						_idx = parser_getIndices(sCmd, _parser, _data, _option);
-
-						if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
-							_data.setCacheStatus(true);
-
-						if (!isValidIndexSet(_idx))
-							throw SyntaxError(SyntaxError::CANNOT_EXPORT_DATA, sCmd, iter->first + "(", iter->first);
-
-                        if (_idx.row.isOpenEnd())
-                            _idx.row.setRange(0, _data.getLines(iter->first)-1);
-
-                        if (_idx.col.isOpenEnd())
-                            _idx.col.setRange(0, _data.getCols(iter->first)-1);
-
-                        _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
-
-                        if (iter->first != "cache" && iter->first != "data")
-                            _cache.renameTable("cache", iter->first, true);
-
-                        if (iter->first == "data")
-                            _cache.renameTable("cache", "copy_of_data", true);
-
-                        for (unsigned int i = 0; i < _idx.row.size(); i++)
-                        {
-                            for (unsigned int j = 0; j < _idx.col.size(); j++)
-                            {
-                                if (!i)
-                                {
-                                    _cache.setHeadLineElement(j, (iter->first == "data" ? "copy_of_data" : iter->first), _data.getHeadLineElement(_idx.col[j], iter->first));
-                                }
-                                if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                                    _cache.writeToTable(i, j, (iter->first == "data" ? "copy_of_data" : iter->first), _data.getElement(_idx.row[i], _idx.col[j], iter->first));
-                            }
-                        }
-
-						if (_data.containsStringVars(sCmd))
-							_data.getStringValues(sCmd);
-
-						if (matchParams(sCmd, "file", '='))
-							addArgumentQuotes(sCmd, "file");
-
-                        if (containsStrings(sCmd) && BI_parseStringArgs(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument, _parser, _data, _option))
-                        {
-                            _out.setFileName(sArgument);
-                            _cache.saveFile((iter->first == "data" ? "copy_of_data" : iter->first), sArgument, nPrecision);
-                        }
-                        else
-                            _cache.saveFile((iter->first == "data" ? "copy_of_data" : iter->first), "", nPrecision);
-
-						return 1;
-					}
-				}
-			}
-			return 1;
-		}
+			return saveDataObject(sCmd);
 		else if (sCommand == "edit")
 		{
 			if (sCmd.length() > 5)
@@ -5242,8 +5052,124 @@ static int showDataObject(string& sCmd)
     return 1;
 }
 
+// This static function handles the saving and exporting of
+// data into files (internally, there's no real difference
+// between those two actions)
+static int saveDataObject(string& sCmd)
+{
+    // Get references to the main objects
+    Datafile& _data = NumeReKernel::getInstance()->getData();
+    Output& _out = NumeReKernel::getInstance()->getOutput();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
 
+    // Create the caches map
+    map<string, long long int> mCaches = _data.getTableMap();
+	mCaches["data"] = -1;
+	string sArgument;
 
+    size_t nPrecision = _option.getPrecision();
+
+    // Update the precision, if the user selected any
+    if (matchParams(sCmd, "precision", '='))
+    {
+        _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "precision", '=')));
+        nPrecision = _parser.Eval();
+
+        if (nPrecision < 0 || nPrecision > 14)
+            nPrecision = _option.getPrecision();
+    }
+
+    // Copy the selected data into another datafile instance and
+    // save the copied data
+    for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
+    {
+        if (sCmd.find(iter->first + "(") != string::npos
+                && (!sCmd.find(iter->first + "(")
+                    || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
+        {
+            // Create the new instance
+            Datafile _cache;
+
+            // Update the necessary parameters
+            _cache.setTokens(_option.getTokenPaths());
+            _cache.setPath(_data.getPath(), false, _option.getExePath());
+            _cache.setCacheStatus(true);
+
+            // Get the indices passed with the selected table
+            Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
+
+            // Ensure that the indices are valid
+            if (!isValidIndexSet(_idx))
+                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
+
+            // Set the maximal dimensions, if they were
+            // selected as open end
+            if (_idx.row.isOpenEnd())
+                _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
+
+            if (_idx.col.isOpenEnd())
+                _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
+
+            // Set the target size
+            _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
+
+            // Write the data to the temporary datafile object
+            for (size_t i = 0; i < _idx.row.size(); i++)
+            {
+                for (size_t j = 0; j < _idx.col.size(); j++)
+                {
+                    if (!i)
+                        _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], iter->first));
+
+                    if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
+                        _cache.writeToTable(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
+                }
+            }
+
+            // Update the name of the  cache table (force it)
+            if (iter->first != "cache")
+                _cache.renameTable("cache", (iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first)), true);
+
+            // If the command line contains string variables
+            // get those values here
+            if (_data.containsStringVars(sCmd))
+                _data.getStringValues(sCmd);
+
+            if (matchParams(sCmd, "file", '='))
+                addArgumentQuotes(sCmd, "file");
+
+            // Try to extract the file name, if it was passed
+            if (containsStrings(sCmd) && BI_parseStringArgs(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument, _parser, _data, _option))
+            {
+                if (_cache.saveFile(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), sArgument, nPrecision))
+                {
+                    if (_option.getSystemPrintStatus())
+                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
+
+                    return 1;
+                }
+                else
+                    throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
+            }
+            else
+                _cache.setPrefix(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first));
+
+            // Auto-generate a file name during saving
+            if (_cache.saveFile(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), "", nPrecision))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 
 

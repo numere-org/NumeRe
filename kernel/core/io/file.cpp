@@ -1086,7 +1086,7 @@ namespace NumeRe
     // file type
     std::string NumeReDataFile::getVersionString()
     {
-        return toString(versionMajor) + "." + toString(versionMinor) + "." + toString(versionBuild);
+        return toString((int)versionMajor) + "." + toString((int)versionMinor) + "." + toString((int)versionBuild);
     }
 
 

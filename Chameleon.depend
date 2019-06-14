@@ -3996,7 +3996,7 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1560004282 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1560499723 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -4006,7 +4006,7 @@
 	"cache.hpp"
 	"../../kernel.hpp"
 
-1559999197 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
+1560497629 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\datafile.cpp
 	"datafile.hpp"
 	"../../kernel.hpp"
 
@@ -4294,9 +4294,10 @@
 	<cstddef>
 	<cstdarg>
 
-1558082906 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
+1560501454 source:d:\cpp\numere-source\trunk\kernel\core\utils\tools.cpp
 	"tools.hpp"
 	"../../kernel.hpp"
+	"../io/file.hpp"
 	<cstdlib>
 
 1511650326 source:d:\cpp\numere-source\trunk\kernel\core\utils\unzip.cpp
@@ -4389,7 +4390,7 @@
 	"../../kernel.hpp"
 	<vector>
 
-1560008084 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
+1560497563 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
 	"memory.hpp"
 	"../../kernel.hpp"
 	"../io/file.hpp"
@@ -9369,7 +9370,7 @@
 	"../../kernel/core/procedure/procedurelibrary.hpp"
 	"../../kernel/core/procedure/dependency.hpp"
 
-1560327751 source:d:\cpp\numere-source\trunk\kernel\core\io\file.cpp
+1560501559 source:d:\cpp\numere-source\trunk\kernel\core\io\file.cpp
 	"file.hpp"
 	"../IgorLib/ReadWave.h"
 	"../utils/tools.hpp"

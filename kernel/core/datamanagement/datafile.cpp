@@ -71,20 +71,19 @@ Datafile::Datafile(long long int _nLines, long long int _nCols) : MemoryManager(
 	sPrefix = "data";
 	sSavePath = "<savepath>";
 	nAppendedZeroes = 0;
+
 	// --> Bereite gleich den Speicher auf Basis der beiden ints vor <--
 	dDatafile = new double*[nLines];
-	//bValidEntry = new bool*[nLines];
 	sHeadLine = new string[nCols];
 
 	for (long long int i = 0; i < nLines; i++)
 	{
 		dDatafile[i] = new double[nCols];
-		//bValidEntry[i] = new bool[nCols];
+
 		for (long long int j = 0; j < nCols; j++)
 		{
 			sHeadLine[j] = "";
 			dDatafile[i][j] = 0.0;
-			//bValidEntry[i][j] = false;
 		}
 	}
 }
@@ -140,6 +139,8 @@ void Datafile::Allocate()
 	}
 }
 
+// This function creates the table column headers,
+// if the headers are empty
 void Datafile::createTableHeaders()
 {
     for (long long int j = 0; j < nCols; j++)
@@ -149,6 +150,10 @@ void Datafile::createTableHeaders()
     }
 }
 
+// This member function determines the number of appended
+// zeroes in the current data set, i.e. the number of
+// invalid values, which are appended at the end of the
+// columns
 void Datafile::countAppendedZeroes(long long int nCol)
 {
     if (nCol == -1)
@@ -179,26 +184,39 @@ void Datafile::countAppendedZeroes(long long int nCol)
     return;
 }
 
-// --> Oeffne eine Datei, lies sie ein und interpretiere die Daten als Double <--
+// This function opens the desired file and stores its
+// contents in the internal storage
 void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool bIgnore, int _nHeadline)
 {
     if (!bValidData)
     {
+        // Ensure that the file name is valid
         sDataFile = FileSystem::ValidFileName(_sFile);
 
+        // If the file seems not to exist and the user did
+        // not provide the extension, try to detect it using
+        // wildcard
         if (!fileExists(sDataFile) && (_sFile.find('.') == string::npos || _sFile.find('.') < _sFile.rfind('/')))
             sDataFile = FileSystem::ValidFileName(_sFile+".*");
 
+        // Get an instance of the desired file type
         NumeRe::GenericFile<double>* file = NumeRe::getFileByType(sDataFile);
 
+        // Ensure that the instance is valid
         if (!file)
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, _sFile, SyntaxError::invalid_position, _sFile);
 
+        // Try to read the contents of the file. This may
+        // either result in a read error or the read method
+        // is not defined for this function
         try
         {
+            // Igor binary waves might contain three-dimensional
+            // waves. We select the roll-out mode in this case
             if (file->getExtension() == "ibw" && _nHeadline == -1)
                 static_cast<NumeRe::IgorBinaryWave*>(file)->useXZSlicing();
 
+            // Read the file
             if (!file->read())
                 throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sDataFile, SyntaxError::invalid_position, sDataFile);
         }
@@ -208,17 +226,26 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
             throw;
         }
 
+        // Set the dimensions obtained from the file
         nLines = file->getRows();
         nCols = file->getCols();
 
+        // Create the internal memory
         Allocate();
 
+        // If the dimensions were valid and the internal
+        // memory was created, copy the data to this
+        // memory
         if (dDatafile && sHeadLine)
         {
+            // Copy them and delete the file instance
+            // afterwards
             file->getData(dDatafile);
             file->getColumnHeadings(sHeadLine);
             delete file;
 
+            // Declare the data as valid and try to
+            // shrink it to save memory space
             bValidData = true;
             condenseDataSet();
             countAppendedZeroes();
@@ -1441,7 +1468,9 @@ NumeRe::Table Datafile::extractTable(const string& _sTable)
     return NumeRe::Table(dDatafile, sHeadLine, nLines, nCols, "data");
 }
 
-
+// This member function is use th save the contents
+// of this class into a file. The file type is selected
+// by the extension of the passed file name
 bool Datafile::saveFile(const string& sCache, string _sFileName, unsigned short nPrecision)
 {
     if (!_sFileName.length())
@@ -1455,26 +1484,37 @@ bool Datafile::saveFile(const string& sCache, string _sFileName, unsigned short 
         setPath(sTemp, false, sWhere);
     }
 
+    // Redirect the control to the memory manager, if not
+    // the data in this class was adressed
     if (sCache != "data")
         return MemoryManager::saveLayer(sOutputFile, sCache, nPrecision);
 
     if (getCacheStatus())
         return MemoryManager::saveLayer(sOutputFile, "cache", nPrecision);
 
+    // Get an instance of the desired file type
     NumeRe::GenericFile<double>* file = NumeRe::getFileByType(sOutputFile);
 
+    // Ensure that the file instance is valid
     if (!file)
         throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sOutputFile, SyntaxError::invalid_position, sOutputFile);
 
+    // Set generic informations in the file instance
     file->setDimensions(nLines, nCols);
     file->setColumnHeadings(sHeadLine, nCols);
     file->setData(dDatafile, nLines, nCols);
     file->setTableName("data");
     file->setTextfilePrecision(nPrecision);
 
+    // If the file type is a NumeRe data file,
+    // we may set the comment associated with this
+    // class
     if (file->getExtension() == "ndat")
-        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("THIS IS A TEST FILE");
+        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("");
 
+    // Try to write the data to the file. This might
+    // either result in writing errors or the write
+    // function is not defined for this file type
     try
     {
         if (!file->write())

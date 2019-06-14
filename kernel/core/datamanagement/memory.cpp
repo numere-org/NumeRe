@@ -820,25 +820,39 @@ void Memory::importTable(NumeRe::Table _table)
     }
 }
 
+// This member function is used for saving the
+// contents of this memory page into a file. The
+// type of the file is selected by the name of the
+// file
 bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision)
 {
+    // Get an instance of the desired file type
     NumeRe::GenericFile<double>* file = NumeRe::getFileByType(_sFileName);
 
+    // Ensure that a file was created
     if (!file)
         throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, _sFileName, SyntaxError::invalid_position, _sFileName);
 
     long long int lines = getLines(false);
     long long int cols = getCols(false);
 
+    // Set the dimensions and the generic information
+    // in the file
     file->setDimensions(lines, cols);
     file->setColumnHeadings(sHeadLine, cols);
     file->setData(dMemTable, lines, cols);
     file->setTableName(sTableName);
     file->setTextfilePrecision(nPrecision);
 
+    // If the file type is a NumeRe data file, then
+    // we can also set the comment associated with
+    // this memory page
     if (file->getExtension() == "ndat")
-        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("NO COMMENT");
+        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("");
 
+    // Try to write the data to the file. This might
+    // either result in writing errors or the write
+    // function is not defined for this file type
     try
     {
         if (!file->write())
@@ -850,6 +864,7 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
         throw;
     }
 
+    // Delete the created file instance
     delete file;
 
 	return true;
@@ -1030,7 +1045,10 @@ bool Memory::evaluateIndices(long long int& i1, long long int& i2, long long int
 	return true;
 }
 
-
+// This member function counts the number of
+// appended zeroes, i.e. the number of invalid
+// values, which are appended at the end of the
+// columns
 void Memory::countAppendedZeroes()
 {
     for (long long int i = 0; i < nCols; i++)

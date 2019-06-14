@@ -19,6 +19,7 @@
 
 #include "tools.hpp"
 #include "../../kernel.hpp"
+#include "../io/file.hpp"
 #include <cstdlib>
 
 // toString function implementations
@@ -3383,33 +3384,19 @@ string generateCacheName(const string& sFilename, Settings& _option)
 // This function opens a NumeRe-Datafile file and reads the header of the file
 string getFileInfo(const string& sFileName)
 {
-	fstream fFileInfo;
-	long int nNumber;
-	time_t tTime;
-	long long int nDim;
+    NumeRe::NumeReDataFile file(sFileName);
 	string sFileInfo;
 
-	// Open the file stream
-	fFileInfo.open(sFileName.c_str());
+    try
+    {
+        file.readFileInformation();
+    }
+    catch (...)
+    {
+        return "";
+    }
 
-	// If the file stream is good read the file meta information
-	if (fFileInfo.good())
-	{
-		string sNumeReVersion = " (v";
-		fFileInfo.read((char*)&nNumber, sizeof(long int));
-		sNumeReVersion += toString((long long int)nNumber) + ".";
-		fFileInfo.read((char*)&nNumber, sizeof(long int));
-		sNumeReVersion += toString((long long int)nNumber) + ".";
-		fFileInfo.read((char*)&nNumber, sizeof(long int));
-		sNumeReVersion += toString((long long int)nNumber) + ")";
-		fFileInfo.read((char*)&tTime, sizeof(time_t));
-		sFileInfo += toString(tTime) + sNumeReVersion + "  | ";
-		fFileInfo.read((char*)&nDim, sizeof(long long int));
-		sFileInfo += " " + toString(nDim) + " x ";
-		fFileInfo.read((char*)&nDim, sizeof(long long int));
-		sFileInfo += toString(nDim);
-		fFileInfo.close();
-	}
+    sFileInfo = toString(file.getTimeStamp()) + " (v" + file.getVersionString() + ") | " + toString(file.getRows()) + " x " + toString(file.getCols()) + " | \"" + file.getTableName() + "()\"";
 
 	// Return the read file meta information
 	return sFileInfo;
