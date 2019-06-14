@@ -66,3 +66,4 @@ Fixed	Resolved an issue with the "textparse()" function
 Added	Bookmarks may now be saved upon application shutdown and will be restored in the next session.
 Fixed	Resolved the random error issue in string expressions and improved the performance of string expressions.
 New	A package creator is now available from the "Tools" menu to create packages from your procedures.
+Updated	The file formats were changed. The cache file will now need a significant lesser amount of harddisk space. Even more, the NDAT files are now future-safe, because they're featuring now a file format versioning.
