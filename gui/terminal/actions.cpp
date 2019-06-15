@@ -303,23 +303,32 @@ void GenericTerminal::reset()
 // Moves the cursor to the left
 bool GenericTerminal::cursor_left()
 {
-	if (!termCursor.x || !tm.IsEditable(termCursor.y, termCursor.x - 1))
-		return false;
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
 
-	if (termCursor--)
-        return true;
-    return false;
+    if (!cursor--)
+        return false;
+
+    if (!tm.IsEditableLogical(cursor))
+        return false;
+
+    termCursor = tm.toViewCursor(cursor);
+
+    return true;
 }
 
 // Moves the cursor to the right
 bool GenericTerminal::cursor_right()
 {
-	if (termCursor.x + 1 >= (size_t)width || !tm.IsEditable(termCursor.y, termCursor.x + 1))
-		return false;
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
 
-	termCursor++;
+    cursor++;
 
-	return true;
+    if (!tm.IsEditableLogical(cursor))
+        return false;
+
+    termCursor = tm.toViewCursor(cursor);
+
+    return true;
 }
 
 // Either moves the cursor up or performs a history jump
@@ -390,6 +399,58 @@ bool GenericTerminal::cursor_down()
 
 	move_cursor(termCursor.x, y);
 	return true;
+}
+
+// Moves the cursor one word to the left
+bool GenericTerminal::ctrl_left()
+{
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
+
+    // If already at the beginning of a word, go one
+    // position to the left
+    if (!isalnum(tm.GetCharLogical(cursor-1)))
+        cursor--;
+
+    // Always go to the first non-whitespace character
+    while (!isalnum(tm.GetCharLogical(cursor)) && tm.IsEditableLogical(cursor))
+        cursor--;
+
+    // Search now the first whitespace character to the
+    // left
+    while (isalnum(tm.GetCharLogical(cursor)) && tm.IsEditableLogical(cursor))
+        cursor--;
+
+    // Go back to the first word character
+    cursor++;
+
+    if (!tm.IsEditableLogical(cursor))
+        return false;
+
+    termCursor = tm.toViewCursor(cursor);
+
+    return true;
+}
+
+// Moves the cursor one word to the right
+bool GenericTerminal::ctrl_right()
+{
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
+
+    // Search for the next whitespace character to the
+    // right
+    while (isalnum(tm.GetCharLogical(cursor)) && tm.IsEditableLogical(cursor))
+        cursor++;
+
+    // Go to the first word character
+    while (!isalnum(tm.GetCharLogical(cursor)) && tm.IsEditableLogical(cursor))
+        cursor++;
+
+    if (!tm.IsEditableLogical(cursor))
+        return false;
+
+    termCursor = tm.toViewCursor(cursor);
+
+    return true;
 }
 
 // Moves the cursor to the left most position in the current line

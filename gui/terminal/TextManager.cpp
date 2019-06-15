@@ -942,7 +942,12 @@ string TextManager::GetWordStartAt(int y, int x)
 char TextManager::GetCharAdjusted(int y, int x)
 {
 	LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
-	if (!cursor)
+	return GetCharLogical(cursor);
+}
+
+char TextManager::GetCharLogical(const LogicalCursor& cursor)
+{
+    if (!cursor)
         return ' ';
 	if (cursor.pos >= m_managedText[cursor.line].size())
 		return ' '; // default color

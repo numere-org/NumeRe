@@ -68,6 +68,18 @@ struct LogicalCursor
 		this->advance();
 		return *this;
 	}
+	LogicalCursor operator+(int n)
+	{
+	    LogicalCursor cursor(*this);
+	    cursor.pos += n;
+	    return cursor;
+	}
+	LogicalCursor operator-(int n)
+	{
+	    LogicalCursor cursor(*this);
+	    cursor.pos -= n;
+	    return cursor;
+	}
 	bool operator--(int)
 	{
 		return this->revert();
@@ -437,6 +449,7 @@ class TextManager
 		string GetWordAt(int y, int x);
 		string GetWordStartAt(int y, int x);
 		char GetCharAdjusted(int y, int x);
+		char GetCharLogical(const LogicalCursor& cursor);
 		bool IsUserText(int y, int x);
 		bool IsEditable(int y, int x);
 		bool IsEditableLogical(LogicalCursor& logCursor);
@@ -476,9 +489,6 @@ class TextManager
 		size_t m_tabLength;
 		size_t m_indentDepth;
 
-		//deque<vector<unsigned short> > m_color;
-		//deque<vector<short> > m_userText;
-		//deque<string> m_text;
 		deque<CharacterVector> m_managedText;
 		vector<RenderedLine> m_renderedBlock;
 

@@ -770,7 +770,7 @@ wxTerm::OnChar(wxKeyEvent& event)
 			ClearSelection();
 
         // Filter special keycodes
-        if (filterKeyCodes(keyCode))
+        if (filterKeyCodes(keyCode, event.ControlDown()))
             return;
 
 		GenericTerminal::resetAutoComp();
@@ -795,7 +795,7 @@ wxTerm::OnChar(wxKeyEvent& event)
 }
 
 // This private member function filters special key codes and handles them
-bool wxTerm::filterKeyCodes(int keyCode)
+bool wxTerm::filterKeyCodes(int keyCode, bool ctrlDown)
 {
     // Filter special keycodes
     switch (keyCode)
@@ -826,7 +826,7 @@ bool wxTerm::filterKeyCodes(int keyCode)
             return true;
         case WXK_LEFT:
             GenericTerminal::resetAutoComp();
-            if (GenericTerminal::cursor_left())
+            if ((ctrlDown && GenericTerminal::ctrl_left()) || GenericTerminal::cursor_left())
             {
                 GenericTerminal::update_changes();
                 Refresh();
@@ -834,7 +834,7 @@ bool wxTerm::filterKeyCodes(int keyCode)
             return true;
         case WXK_RIGHT:
             GenericTerminal::resetAutoComp();
-            if (GenericTerminal::cursor_right())
+            if ((ctrlDown && GenericTerminal::ctrl_right()) || GenericTerminal::cursor_right())
             {
                 GenericTerminal::update_changes();
                 Refresh();
