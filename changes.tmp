@@ -67,3 +67,4 @@ Added	Bookmarks may now be saved upon application shutdown and will be restored 
 Fixed	Resolved the random error issue in string expressions and improved the performance of string expressions.
 New	A package creator is now available from the "Tools" menu to create packages from your procedures.
 Added	Arrays of curves may now be plotted, if the columns of the current tables are selected using an index vector.
+Applied	Double hitting "HOME" or "END" on your keyboard will move the cursor in the terminal at very beginning or end of the current input line even if it spans multiple lines in the terminal.

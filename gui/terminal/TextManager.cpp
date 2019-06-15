@@ -69,7 +69,7 @@ TextManager::~TextManager()
 void TextManager::printOutput(const string& _sLine)
 {
     // Create a new line if the buffer is empty
-	if (!m_text.size())
+	if (!m_managedText.size())
 		newLine();
 
     // Copy the line and determine, whether the current line
@@ -82,15 +82,7 @@ void TextManager::printOutput(const string& _sLine)
         sLine.erase(sLine.find((char)15), 1);
 
     // Append the line to the current line
-	m_text.back() += sLine;
-
-	// Clear the m_userText line, if it is only one character long
-	// This first character is created by newLine to avoid SegFaults
-	if (m_userText.back().size() == USER_TEXT)
-		m_userText.back().clear();
-
-	// Set the current characters to non-editable
-	m_userText.back().insert(m_userText.back().end(), sLine.length(), KERNEL_TEXT);
+	m_managedText.back() += CharacterVector(sLine, KERNEL_TEXT);
 
 	// Update the colors and render the layout
 	updateColors(isErrorLine);
@@ -103,13 +95,10 @@ void TextManager::insertInput(const string& sLine, size_t logicalpos /*= string:
 {
     // Ensure that the logical position is a valid position
 	if (logicalpos == string::npos)
-		logicalpos = m_text.back().length();
+		logicalpos = m_managedText.back().length();
 
     // Insert the text at the desired position
-	m_text.back().insert(logicalpos, sLine);
-
-	// Mark the current text as editable
-	m_userText.back().insert(m_userText.back().begin() + logicalpos, sLine.length(), EDITABLE_TEXT);
+	m_managedText.back().insert(logicalpos, sLine, EDITABLE_TEXT);
 
 	// Update colors and render the layout
 	updateColors();
@@ -194,12 +183,12 @@ LogicalCursor TextManager::toLogicalCursor(const ViewCursor& viewCursor)
 LogicalCursor TextManager::getCurrentLogicalPos()
 {
     // Ensure that there's text in the buffer
-    if (!m_text.size())
+    if (!m_managedText.size())
         return LogicalCursor();
 
     // Construct a valid cursor with the dimensions of the
     // text buffer
-    return LogicalCursor(m_text.back().length(), m_text.size()-1);
+    return LogicalCursor(m_managedText.back().length(), m_managedText.size()-1);
 }
 
 // Return the rendered line for the current viewport setting
@@ -225,7 +214,7 @@ vector<unsigned short> TextManager::getRenderedColors(size_t viewLine)
     // Copy, whether there is a part of the current line is selected
     for (size_t i = 0; i < m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].coords.size(); i++)
     {
-        if (m_color[m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].coords[i].line][m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].coords[i].pos] & GenericTerminal::SELECTED)
+        if (m_managedText[m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].coords[i].line][m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].coords[i].pos].isSelected())
             colors[i] |= GenericTerminal::SELECTED;
     }
 
@@ -250,27 +239,23 @@ void TextManager::updateColors(bool isErrorLine /*= false*/)
 	// correspondingly. Otherwise style it with the usual
 	// lexer function
 	if (isErrorLine)
-        sColors = syntax->highlightError(m_text.back());
+        sColors = syntax->highlightError(m_managedText.back().toString());
     else
-        sColors = syntax->highlightLine(m_text.back());
-
-    // Ensure that the current color line is long enough
-    if (m_color.back().size() < m_text.back().length())
-        m_color.back().resize(m_text.back().length(), short(7));
+        sColors = syntax->highlightLine(m_managedText.back().toString());
 
     // Convert the string characters to the correct color codes
 	for (size_t i = 0; i < sColors.length(); i++)
 	{
 		if ((int)(sColors[i] - '0') == NumeReSyntax::SYNTAX_COMMAND)
-			m_color.back()[i] = calc_color((int)(sColors[i] - '0'), 0, GenericTerminal::BOLD | GenericTerminal::UNDERLINE);
+			m_managedText.back()[i].setColor(calc_color((int)(sColors[i] - '0'), 0, GenericTerminal::BOLD | GenericTerminal::UNDERLINE));
 		else if ((int)(sColors[i] - '0') == NumeReSyntax::SYNTAX_FUNCTION
 				 || (int)(sColors[i] - '0') == NumeReSyntax::SYNTAX_CONSTANT
 				 || (int)(sColors[i] - '0') == NumeReSyntax::SYNTAX_SPECIALVAL
 				 || (int)(sColors[i] - '0') == NumeReSyntax::SYNTAX_METHODS
 				 || (int)(sColors[i] - '0') == NumeReSyntax::SYNTAX_PROCEDURE)
-			m_color.back()[i] = calc_color((int)(sColors[i] - '0'), 0, GenericTerminal::BOLD);
+			m_managedText.back()[i].setColor(calc_color((int)(sColors[i] - '0'), 0, GenericTerminal::BOLD));
 		else
-			m_color.back()[i] = calc_color((int)(sColors[i] - '0'), 0, 0);
+			m_managedText.back()[i].setColor(calc_color((int)(sColors[i] - '0'), 0, 0));
 	}
 }
 
@@ -281,7 +266,7 @@ void TextManager::renderLayout()
 		m_renderedBlock.clear();
 
 	// Go through the complete container
-	for (size_t i = 0; i < m_text.size(); i++)
+	for (size_t i = 0; i < m_managedText.size(); i++)
 	{
 		size_t breakpos;
 		size_t lastbreakpos = 0;
@@ -298,7 +283,7 @@ void TextManager::renderLayout()
                 firstline = false;
 
             // Get the new break position
-			breakpos = findNextLinebreak(m_text[i], lastbreakpos);
+			breakpos = findNextLinebreak(m_managedText[i].toString(), lastbreakpos);
 
 			// If it's not the first line, add the indent here
 			if (!firstline)
@@ -309,12 +294,13 @@ void TextManager::renderLayout()
             }
 
 			// Assign text and colors
-			line.sLine += m_text[i].substr(lastbreakpos, breakpos - lastbreakpos);
-			line.colors.insert(line.colors.end(), m_color[i].begin() + lastbreakpos, m_color[i].begin() + breakpos);
+			line.sLine += m_managedText[i].substr(lastbreakpos, breakpos - lastbreakpos);
+			vector<unsigned short> colors = m_managedText[i].subcolors(lastbreakpos, breakpos - lastbreakpos);
+			line.colors.insert(line.colors.end(), colors.begin(), colors.end());
 
 			// The last line has an additional white space character,
 			// which is used as input location (to ensure that the cursor is valid)
-			if (i + 1 == m_text.size())
+			if (i + 1 == m_managedText.size())
 			{
 				line.sLine += " ";
 				line.colors.push_back(calc_color(7, 0, 0));
@@ -332,7 +318,7 @@ void TextManager::renderLayout()
 			// Store the rendered line
 			m_renderedBlock.push_back(line);
 		}
-		while (lastbreakpos < m_text[i].length());
+		while (lastbreakpos < m_managedText[i].length());
 	}
 
 	// Calculate new topline, because it depends on the size of the rendered block
@@ -369,11 +355,11 @@ size_t TextManager::findNextLinebreak(const string& currentLine, size_t currentL
 size_t TextManager::tab()
 {
     // If the buffer is empty add an empty line first
-    if (!m_text.size())
+    if (!m_managedText.size())
         newLine();
 
     // Get the length of the current input line
-    size_t currentPos = m_text.back().length();
+    size_t currentPos = m_managedText.back().length();
 
     // Determine the length of the current tab, which is
     // between 1 and m_tabLength
@@ -381,7 +367,7 @@ size_t TextManager::tab()
 
     // Append the length of the tab as
     // whitespaces to the text buffer
-    m_text.back().append(tabLength, ' ');
+    m_managedText.back().append(tabLength, ' ');
 
     // Return the calculated tab length
     return tabLength;
@@ -391,16 +377,13 @@ size_t TextManager::tab()
 void TextManager::newLine()
 {
     // Add a new line to all buffers and fill it with a reasonable value
-	m_text.push_back("");
-	m_color.push_back(vector<unsigned short>(1, calc_color(7, 0, 0)));
-	m_userText.push_back(vector<short>(1, EDITABLE_TEXT));
+	m_managedText.push_back(CharacterVector("", EDITABLE_TEXT));
+	//m_color.push_back(vector<unsigned short>(1, calc_color(7, 0, 0)));
 
 	// Ensure that the buffer is not larger than the desired history length
-	while (m_text.size() > (size_t)m_maxHeight)
+	while (m_managedText.size() > (size_t)m_maxHeight)
 	{
-		m_text.pop_front();
-		m_color.pop_front();
-		m_userText.pop_front();
+		m_managedText.pop_front();
 	}
 
 	// render layout, get new top line and reset the virtual cursor line
@@ -419,16 +402,16 @@ void TextManager::backspace(const LogicalCursor& logCursor)
 	if (logCursor.pos)
 	{
 	    // In the current line
-		m_text[logCursor.line].erase(logCursor.pos - 1, 1);
-		m_userText[logCursor.line].erase(m_userText[logCursor.line].begin() + logCursor.pos - 1);
-		m_color[logCursor.line].erase(m_color[logCursor.line].begin() + logCursor.pos - 1);
+		//m_text[logCursor.line].erase(logCursor.pos - 1, 1);
+		m_managedText[logCursor.line].erase(m_managedText[logCursor.line].begin() + logCursor.pos - 1);
+		//m_color[logCursor.line].erase(m_color[logCursor.line].begin() + logCursor.pos - 1);
 	}
 	else
 	{
 	    // go to the previous line
-		m_text[logCursor.line - 1].pop_back();
-		m_userText[logCursor.line - 1].pop_back();
-		m_color[logCursor.line - 1].pop_back();
+		//m_text[logCursor.line - 1].pop_back();
+		m_managedText[logCursor.line - 1].pop_back();
+		//m_color[logCursor.line - 1].pop_back();
 	}
 
 	// Update the colors and render the layout
@@ -440,20 +423,20 @@ void TextManager::backspace(const LogicalCursor& logCursor)
 void TextManager::eraseLine()
 {
     // Do nothing if the buffer is empty
-    if (!m_text.size())
+    if (!m_managedText.size())
         return;
 
     // Clear the lines and fill them with a
     // reasonable default content (just like in
     // the new line function)
-    m_text.back().clear();
-    m_text.back() += "";
+    m_managedText.back().clear();
+    /*m_text.back() += "";
 
     m_color.back().clear();
     m_color.back().push_back(calc_color(7, 0, 0));
 
     m_userText.back().clear();
-    m_userText.back().push_back(EDITABLE_TEXT);
+    m_userText.back().push_back(EDITABLE_TEXT);*/
 
     // Render the layout
     renderLayout();
@@ -486,29 +469,29 @@ bool TextManager::clearRange(const ViewCursor& cursor1, const ViewCursor& cursor
         {
             // The cursors are in different lines
             // Erase all from the first to the cursor's position
-            m_text[logCursor2.line].erase(0, logCursor2.pos);
-            m_userText[logCursor2.line].erase(m_userText[logCursor2].begin(), m_userText[logCursor2].begin()+logCursor2.pos);
-            m_color[logCursor2.line].erase(m_color[logCursor2].begin(), m_color[logCursor2].begin()+logCursor2.pos);
+            //m_text[logCursor2.line].erase(0, logCursor2.pos);
+            m_managedText[logCursor2.line].erase(m_managedText[logCursor2].begin(), m_managedText[logCursor2].begin()+logCursor2.pos);
+            //m_color[logCursor2.line].erase(m_color[logCursor2].begin(), m_color[logCursor2].begin()+logCursor2.pos);
 
             // If the text buffer of the current line is empty,
             // erase the overall line from all three buffers
-            if (!m_text[logCursor2.line].length())
+            if (!m_managedText[logCursor2.line].length())
             {
-                m_text.erase(m_text.begin()+logCursor2.line);
-                m_userText.erase(m_userText.begin()+logCursor2.line);
-                m_color.erase(m_color.begin()+logCursor2.line);
+                //m_text.erase(m_text.begin()+logCursor2.line);
+                m_managedText.erase(m_managedText.begin()+logCursor2.line);
+                //m_color.erase(m_color.begin()+logCursor2.line);
             }
 
             // set the cursor to the last position of the previous line
             logCursor2.line--;
-            logCursor2.pos = m_text[logCursor2.line].length();
+            logCursor2.pos = m_managedText[logCursor2.line].length();
         }
         else
         {
             // The cursors are in the same line
-            m_text[logCursor2.line].erase(logCursor1.pos, logCursor2.pos - logCursor1.pos);
-            m_userText[logCursor2.line].erase(m_userText[logCursor2.line].begin() + logCursor1.pos, m_userText[logCursor2.line].begin() + logCursor2.pos);
-            m_color[logCursor2.line].erase(m_color[logCursor2.line].begin() + logCursor1.pos, m_color[logCursor2.line].begin() + logCursor2.pos);
+            //m_text[logCursor2.line].erase(logCursor1.pos, logCursor2.pos - logCursor1.pos);
+            m_managedText[logCursor2.line].erase(m_managedText[logCursor2.line].begin() + logCursor1.pos, m_managedText[logCursor2.line].begin() + logCursor2.pos);
+            //m_color[logCursor2.line].erase(m_color[logCursor2.line].begin() + logCursor1.pos, m_color[logCursor2.line].begin() + logCursor2.pos);
             break;
         }
     }
@@ -533,9 +516,9 @@ void TextManager::selectText(const ViewCursor& viewCursor, bool bSelect /*= true
 
     // Select or deselect the pointer character
     if (bSelect)
-        m_color[cursor.line][cursor.pos] |= GenericTerminal::SELECTED;
+        m_managedText[cursor.line][cursor.pos].select();
     else
-        m_color[cursor.line][cursor.pos] &= ~GenericTerminal::SELECTED;
+        m_managedText[cursor.line][cursor.pos].unselect();
 }
 
 // This member function returns true if the character at the position of
@@ -550,7 +533,7 @@ bool TextManager::isSelected(const ViewCursor& viewCursor)
         return false;
 
     // Return true, if the color line at the current contains the SELECTED flag
-    return m_color[cursor.line][cursor.pos] & GenericTerminal::SELECTED;
+    return m_managedText[cursor.line][cursor.pos].isSelected();
 }
 
 // This member function returns the selected text
@@ -559,13 +542,13 @@ string TextManager::getSelectedText()
     string sText;
 
     // Find every selected character in the text buffer
-    for (size_t i = 0; i < m_color.size(); i++)
+    for (size_t i = 0; i < m_managedText.size(); i++)
     {
-        for (size_t j = 0; j < m_color[i].size(); j++)
+        for (size_t j = 0; j < m_managedText[i].size(); j++)
         {
-            if (m_color[i][j] & GenericTerminal::SELECTED)
+            if (m_managedText[i][j].isSelected())
             {
-                sText += m_text[i][j];
+                sText += m_managedText[i][j].m_char;
             }
         }
 
@@ -587,17 +570,17 @@ string TextManager::getSelectedText()
 string TextManager::getCurrentInputLine()
 {
     // Ensure that the buffer is available and that there's user text
-    if (!m_text.size() || m_userText.back().back() != EDITABLE_TEXT)
+    if (!m_managedText.size() || !m_managedText.back().back().editable())
         return "";
 
     string sInput;
 
     // Find the beginning of the user text
-    for (int i = m_userText.back().size()-1; i >= 0; i--)
+    for (int i = m_managedText.back().size()-1; i >= 0; i--)
     {
-        if (m_userText.back()[i] != EDITABLE_TEXT)
+        if (!m_managedText.back()[i].editable())
         {
-            sInput = m_text.back().substr(i+1);
+            sInput = m_managedText.back().substr(i+1);
             break;
         }
     }
@@ -615,9 +598,9 @@ string TextManager::getCurrentInputLine()
 //////////////////////////////////////////////////////////////////////////////
 void TextManager::Reset()
 {
-	m_text.clear();
-	m_color.clear();
-	m_userText.clear();
+	m_managedText.clear();
+	//m_color.clear();
+	//m_userText.clear();
 	m_renderedBlock.clear();
 
 
@@ -725,7 +708,7 @@ bool TextManager::Scroll(int numLines, bool scrollUp)
 //////////////////////////////////////////////////////////////////////////////
 int TextManager::GetSize()
 {
-	return m_text.size();
+	return m_managedText.size();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -788,38 +771,6 @@ void TextManager::Resize(int width, int height)
     }
 }
 
-
-//////////////////////////////////////////////////////////////////////////////
-///  public GetLine
-///  Retrieves a line without any adjustments for the viewport
-///
-///  @param  index    int  The absolute value of the line to retrieve (0 to (maxheight - 1))
-///
-///  @return string & The string at that location
-///
-///  @author Mark Erikson @date 04-23-2004
-//////////////////////////////////////////////////////////////////////////////
-string& TextManager::GetLine(int index)
-{
-	return m_text[index];
-}
-
-//////////////////////////////////////////////////////////////////////////////
-///  public GetLineAdjusted
-///  Returns a line from within the viewport
-///
-///  @param  index    int  The index of the line to retrieve (0 to (lines displayed - 1))
-///
-///  @return string & The string at that location
-///
-///  @author Mark Erikson @date 04-23-2004
-//////////////////////////////////////////////////////////////////////////////
-string& TextManager::GetLineAdjusted(int index)
-{
-	LogicalCursor cursor = toLogicalCursor(ViewCursor(0, index));
-	return m_text[cursor.line];
-}
-
 // This member function gets the next history line
 // depending on the bool vcursorup
 string TextManager::GetInputHistory(bool vcursorup)
@@ -830,25 +781,25 @@ string TextManager::GetInputHistory(bool vcursorup)
 	    // decrement the virtual cursor
 		m_virtualCursor--;
 
-		if (m_virtualCursor >= (int)m_userText.size())
-            m_virtualCursor = m_userText.size() - 1;
+		if (m_virtualCursor >= (int)m_managedText.size())
+            m_virtualCursor = m_managedText.size() - 1;
 
 		// While the virtual cursor is non-zero
 		while (m_virtualCursor)
 		{
 		    // find the next user text and return it
-			for (size_t i = 0; i < m_userText[m_virtualCursor].size(); i++)
+			for (size_t i = 0; i < m_managedText[m_virtualCursor].size(); i++)
 			{
-				if (m_userText[m_virtualCursor][i] == USER_TEXT)
+				if (m_managedText[m_virtualCursor][i].userText())
 				{
-					for (size_t j = i; j < m_userText[m_virtualCursor].size(); j++)
+					for (size_t j = i; j < m_managedText[m_virtualCursor].size(); j++)
 					{
-						if (m_userText[m_virtualCursor][j] == KERNEL_TEXT)
+						if (!m_managedText[m_virtualCursor][j].userText())
 						{
-							return m_text[m_virtualCursor].substr(i, j - i - 1);
+							return m_managedText[m_virtualCursor].substr(i, j - i - 1);
 						}
 					}
-					return m_text[m_virtualCursor].substr(i);
+					return m_managedText[m_virtualCursor].substr(i);
 				}
 			}
 
@@ -862,28 +813,28 @@ string TextManager::GetInputHistory(bool vcursorup)
 	else
 	{
 	    // Return an empty string, if the virtual cursor is the lowest possible line
-		if (m_virtualCursor + 1 >= (int)m_text.size())
+		if (m_virtualCursor + 1 >= (int)m_managedText.size())
 			return "";
 
         // increment the virtual cursor
 		m_virtualCursor++;
 
 		// While the virtual cursor is smaller than the number of lines in the text buffer
-		while (m_virtualCursor < (int)m_userText.size())
+		while (m_virtualCursor < (int)m_managedText.size())
 		{
 		    // find the next user text and return it
-			for (size_t i = 0; i < m_userText[m_virtualCursor].size(); i++)
+			for (size_t i = 0; i < m_managedText[m_virtualCursor].size(); i++)
 			{
-				if (m_userText[m_virtualCursor][i] == USER_TEXT)
+				if (m_managedText[m_virtualCursor][i].userText())
 				{
-					for (size_t j = i; j < m_userText[m_virtualCursor].size(); j++)
+					for (size_t j = i; j < m_managedText[m_virtualCursor].size(); j++)
 					{
-						if (m_userText[m_virtualCursor][j] == KERNEL_TEXT)
+						if (!m_managedText[m_virtualCursor][j].userText())
 						{
-							return m_text[m_virtualCursor].substr(i, j - i - 1);
+							return m_managedText[m_virtualCursor].substr(i, j - i - 1);
 						}
 					}
-					return m_text[m_virtualCursor].substr(i);
+					return m_managedText[m_virtualCursor].substr(i);
 				}
 			}
 
@@ -892,7 +843,7 @@ string TextManager::GetInputHistory(bool vcursorup)
 		}
 
 		// Return an empty string, if the virtual cursor is the lowest possible line
-		if (m_virtualCursor + 1 >= (int)m_text.size())
+		if (m_virtualCursor + 1 >= (int)m_managedText.size())
 			return "";
 	}
 
@@ -911,7 +862,7 @@ string TextManager::GetTextRange(int y, int x0, int x1)
         return "";
 
     // Return the extracted string
-	return m_text[cursor.line].substr(cursor.pos, x1 - x0);
+	return m_managedText[cursor.line].substr(cursor.pos, x1 - x0);
 }
 
 // This member function returns the word, which
@@ -926,7 +877,7 @@ string TextManager::GetWordAt(int y, int x)
         return "";
 
     // Get the text at the corresponnding line
-	string sWord = m_text[cursor.line];
+	string sWord = m_managedText[cursor.line].toString();
 
 	// Find the start of the word and erase everything in front of it
 	for (int pos = cursor.pos; pos >= 0; pos--)
@@ -961,7 +912,7 @@ string TextManager::GetWordStartAt(int y, int x)
         return "";
 
     // Get the line until the position
-	string sWord = m_text[cursor.line].substr(0, cursor.pos);
+	string sWord = m_managedText[cursor.line].substr(0, cursor.pos);
 
 	// Find the start of the word and return it as a new string
 	for (int pos = cursor.pos - 1; pos >= 0; pos--)
@@ -993,9 +944,9 @@ char TextManager::GetCharAdjusted(int y, int x)
 	LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
 	if (!cursor)
         return ' ';
-	if (cursor.pos >= m_text[cursor.line].size())
+	if (cursor.pos >= m_managedText[cursor.line].size())
 		return ' '; // default color
-	return m_text[cursor.line][cursor.pos];
+	return m_managedText[cursor.line][cursor.pos].m_char;
 }
 
 // This member function evaluates, whether the character at (x,y)
@@ -1007,11 +958,11 @@ bool TextManager::IsUserText(int y, int x)
 	if (!cursor)
         return false;
 
-	if (cursor.pos == m_userText[cursor.line].size())
+	if (cursor.pos == m_managedText[cursor.line].size())
 		return true;
-	if (cursor.pos > m_userText[cursor.line].size())
+	if (cursor.pos > m_managedText[cursor.line].size())
 		return false;
-	return m_userText[cursor.line][cursor.pos] != KERNEL_TEXT;
+	return m_managedText[cursor.line][cursor.pos].userText();
 }
 
 // This member function evaluates, whether the character at (x,y)
@@ -1023,11 +974,11 @@ bool TextManager::IsEditable(int y, int x)
 	if (!cursor)
         return false;
 
-	if (cursor.pos == m_userText[cursor.line].size())
+	if (cursor.pos == m_managedText[cursor.line].size())
 		return true;
-	if (cursor.pos > m_userText[cursor.line].size())
+	if (cursor.pos > m_managedText[cursor.line].size())
 		return false;
-	return (m_userText[cursor.line][cursor.pos] == EDITABLE_TEXT);
+	return m_managedText[cursor.line][cursor.pos].editable();
 }
 
 // This member function evaluates, whether the character at the
@@ -1037,11 +988,11 @@ bool TextManager::IsEditableLogical(LogicalCursor& logCursor)
     if (!logCursor)
         return false;
 
-	if (logCursor.pos == m_userText[logCursor.line].size())
+	if (logCursor.pos == m_managedText[logCursor.line].size())
 		return true;
-	if (logCursor.pos > m_userText[logCursor.line].size())
+	if (logCursor.pos > m_managedText[logCursor.line].size())
 		return false;
-	return (m_userText[logCursor.line][logCursor.pos] == EDITABLE_TEXT);
+	return m_managedText[logCursor.line][logCursor.pos].editable();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1057,7 +1008,7 @@ bool TextManager::IsEditableLogical(LogicalCursor& logCursor)
 //////////////////////////////////////////////////////////////////////////////
 unsigned short TextManager::GetColor(int y, int x)
 {
-	return m_color[y][x];
+	return m_managedText[y][x].getColor();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1078,9 +1029,9 @@ unsigned short TextManager::GetColorAdjusted(int y, int x)
 	if (!cursor)
         return 112;
 
-	if (cursor.pos >= m_color[cursor.line].size())
+	if (cursor.pos >= m_managedText[cursor.line].size())
 		return 112; // default color
-	return m_color[cursor.line][cursor.pos];
+	return m_managedText[cursor.line][cursor.pos].getColor();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1102,20 +1053,20 @@ void TextManager::SetColorAdjusted(int y, int x, unsigned short value)
     if (!cursor)
         return;
 
-	if (cursor.pos >= m_color[cursor.line].size())
+	if (cursor.pos >= m_managedText[cursor.line].size())
 		return;
-	m_color[cursor.line][cursor.pos] = value;
+	m_managedText[cursor.line][cursor.pos].setColor(value);
 }
 
 // This member function will switch every editable text to a
 // simple user text
 void TextManager::ChangeEditableState()
 {
-	for (size_t i = 0; i < m_userText.size(); i++)
+	for (size_t i = 0; i < m_managedText.size(); i++)
 	{
-		for (size_t j = 0; j < m_userText[i].size(); j++)
-			if (m_userText[i][j] == EDITABLE_TEXT)
-				m_userText[i][j] = USER_TEXT;
+		for (size_t j = 0; j < m_managedText[i].size(); j++)
+			if (m_managedText[i][j].editable())
+				m_managedText[i][j].makeUserText();
 	}
 }
 
@@ -1165,7 +1116,7 @@ void TextManager::SetMaxSize(int newSize)
 		return;
 	}
 
-	if (m_text.size())
+	if (m_managedText.size())
     {
         if (newSize < m_maxHeight)
         {
@@ -1173,11 +1124,10 @@ void TextManager::SetMaxSize(int newSize)
 
             for (int i = 0; i < linesToPitch; i++)
             {
-                if (!m_text.size())
+                if (!m_managedText.size())
                     break;
-                m_color.pop_front();
-                m_userText.pop_front();
-                m_text.pop_front();
+
+                m_managedText.pop_front();
             }
         }
     }

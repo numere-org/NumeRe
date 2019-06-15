@@ -115,6 +115,8 @@ class GenericTerminal
         bool cursor_up();
         bool home();
         bool end();
+        bool front();
+        bool back();
 
         void erase_line();
         void erase_usercontent_line();

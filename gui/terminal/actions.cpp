@@ -403,7 +403,7 @@ bool GenericTerminal::home()
 
     // Don't do anything, if the cursor is already there
 	if (n == (int)termCursor.x)
-		return false;
+		return front();
 
     // Move the cursor
 	move_cursor(n, termCursor.y);
@@ -421,10 +421,58 @@ bool GenericTerminal::end()
 
     // Don't do anything, if the cursor is already there
 	if (n == termCursor.x)
-		return false;
+		return back();
 
     // Move the cursor
 	move_cursor(n, termCursor.y);
+	return true;
+}
+
+// Moves the cursor to the left most position in the whole input
+bool GenericTerminal::front()
+{
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
+
+	// Search the last not editable character from the right
+	while (tm.IsEditableLogical(cursor))
+		cursor--;
+
+    // Move the cursor to the first editable position
+    cursor++;
+
+    // Create a corresponding view cursor
+    ViewCursor vCursor = tm.toViewCursor(cursor);
+
+    // Ensure that the cursor is different
+    if (vCursor == termCursor)
+        return false;
+
+    // Move the cursor
+	move_cursor(vCursor.x, vCursor.y);
+	return true;
+}
+
+// Moves the cursor to the rightmost position in the whole input
+bool GenericTerminal::back()
+{
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
+
+	// Search the last not editable character from the right
+	while (tm.IsEditableLogical(cursor))
+		cursor++;
+
+    // Move the cursor to the last editable position
+    cursor--;
+
+    // Create a corresponding view cursor
+    ViewCursor vCursor = tm.toViewCursor(cursor);
+
+    // Ensure that the cursor is different
+    if (vCursor == termCursor)
+        return false;
+
+    // Move the cursor
+	move_cursor(vCursor.x, vCursor.y);
 	return true;
 }
 
@@ -437,6 +485,9 @@ void GenericTerminal::erase_line()
 // Erases alle user-written contents from the current line
 void GenericTerminal::erase_usercontent_line()
 {
+    // Go to the very last position first
+    back();
+
 	if (!tm.IsEditable(termCursor.y, termCursor.x))
 		return;
 
@@ -460,3 +511,7 @@ void GenericTerminal::erase_usercontent_line()
     if (!termCursor)
         termCursor = tm.getCurrentViewPos();
 }
+
+
+
+
