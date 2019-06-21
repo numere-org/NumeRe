@@ -72,6 +72,8 @@ static Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const
 static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType, const string& sCmd, const string& sExpr, size_t position);
+static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position);
+static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const string& sCmd, const string& sExpr, size_t position);
@@ -454,6 +456,38 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             else
                 vReturnedMatrices.push_back(parser_ZeroesMatrix((unsigned int)v[0], (unsigned int)v[0]));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+
+        // calculate the covariance of two
+        // matrices
+        if (sCmd.substr(i, 6) == "covar("
+            && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,7))))
+        {
+            string sMatrix2 = sCmd.substr(i+6, getMatchingParenthesis(sCmd.substr(i+5))-1);
+            string sMatrix1 = getNextArgument(sMatrix2, true);
+
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
+            vReturnedMatrices.push_back(parser_Covariance(parser_subMatrixOperations(sMatrix1, _parser, _data, _functions, _option), parser_subMatrixOperations(sMatrix2, _parser, _data, _functions, _option), sCmd, sMatrix1 + ", " + sMatrix2, i+5));
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+
+        // calculate the correlation of two
+        // matrices
+        if (sCmd.substr(i, 7) == "correl("
+            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
+        {
+            string sMatrix2 = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
+            string sMatrix1 = getNextArgument(sMatrix2, true);
+
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
+            vReturnedMatrices.push_back(parser_Correlation(parser_subMatrixOperations(sMatrix1, _parser, _data, _functions, _option), parser_subMatrixOperations(sMatrix2, _parser, _data, _functions, _option), sCmd, sMatrix1 + ", " + sMatrix2, i+6));
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
@@ -2214,6 +2248,81 @@ static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType,
     }
 
     return _mReturn;
+}
+
+// This static function implements the cross- and
+// auto-correlation matrix calculation from the
+// passed two matrices. If their sizes are not
+// fitting, they are resized to fit
+static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position)
+{
+    // Ensure that the size is non-zero
+    if (!(_mMatrix1.size() * _mMatrix2.size()) || !(_mMatrix1[0].size() * _mMatrix2[0].size()))
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix1.size()) +"x"+ toString(_mMatrix1[0].size()) + ", " + toString(_mMatrix2.size()) +"x"+ toString(_mMatrix2[0].size()));
+
+    // Resize the matrices to fit their counterparts
+    Matrix mMatrix1 = parser_MatrixResize(_mMatrix1, max(_mMatrix1.size(), _mMatrix2.size()), max(_mMatrix1[0].size(), _mMatrix2[0].size()), sCmd, sExpr, position);
+    Matrix mMatrix2 = parser_MatrixResize(_mMatrix2, max(_mMatrix1.size(), _mMatrix2.size()), max(_mMatrix1[0].size(), _mMatrix2[0].size()), sCmd, sExpr, position);
+
+    int n = mMatrix1.size();
+    int m = mMatrix1[0].size();
+
+    // Create the target matrix
+    Matrix mCorrelation = parser_ZeroesMatrix(2*n-1, 2*m-1);
+
+    // Calculate the elements of the matrix by applying
+    // elementwise shifts to the matrices
+    for (int i1 = 0; i1 < mCorrelation.size(); i1++)
+    {
+        for (int j1 = 0; j1 < mCorrelation[0].size(); j1++)
+        {
+            // These loops shall indicate the number of elements
+            for (int i2 = 0; i2 < n + min(i1-n+1, n-i1-1); i2++)
+            {
+                for (int j2 = 0; j2 < m + min(j1-m+1, m-j1-1); j2++)
+                {
+                    // calculate the correlation of the current
+                    // shift indicated by the other two loops
+                    mCorrelation[i1][j1] += mMatrix1[i2 + max(0, i1-n+1)][j2 + max(0, j1-m+1)] * mMatrix2[i2 + max(0, n-i1-1)][j2 + max(0, m-j1-1)];
+                }
+            }
+        }
+    }
+
+    return mCorrelation;
+}
+
+// This static function implements the covariance
+// calculation of the passed two matrices
+static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position)
+{
+    // Ensure that their size is equal
+    if (_mMatrix1.size() != _mMatrix2.size() || _mMatrix1[0].size() != _mMatrix2[0].size() || !_mMatrix1.size() || !_mMatrix1[0].size())
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix1.size()) +"x"+ toString(_mMatrix1[0].size()) + " != " + toString(_mMatrix2.size()) +"x"+ toString(_mMatrix2[0].size()));
+
+    // Prepare the target matrix
+    Matrix mCovariance = parser_ZeroesMatrix(1, 1);
+
+    // Calculate the average values of both
+    // matrices
+    Matrix mAvg1 = parser_MatrixAvg(_mMatrix1, sCmd, sExpr, position);
+    Matrix mAvg2 = parser_MatrixAvg(_mMatrix2, sCmd, sExpr, position);
+
+    // Calculate the covariance value for each
+    // component and sum it up
+    for (size_t i = 0; i < _mMatrix1.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix2.size(); j++)
+        {
+            mCovariance[0][0] += (_mMatrix1[i][j] - mAvg1[0][0]) * (_mMatrix2[i][j] - mAvg2[0][0]);
+        }
+    }
+
+    // Normalize the covariance value using
+    // the number of elements
+    mCovariance[0][0] /= (_mMatrix1.size() * _mMatrix1[0].size() - 1);
+
+    return mCovariance;
 }
 
 static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)
