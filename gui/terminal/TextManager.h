@@ -435,6 +435,7 @@ class TextManager
 		bool clearRange(const ViewCursor& cursor1, const ViewCursor& cursor2);
 
 		void selectText(const ViewCursor& viewCursor, bool bSelect = true);
+		void unselectAll();
 		bool isSelected(const ViewCursor& viewCursor);
 		string getSelectedText();
 		string getCurrentInputLine();

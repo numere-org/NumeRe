@@ -521,6 +521,18 @@ void TextManager::selectText(const ViewCursor& viewCursor, bool bSelect /*= true
         m_managedText[cursor.line][cursor.pos].unselect();
 }
 
+// This member function unselects the whole text at once
+void TextManager::unselectAll()
+{
+    for (size_t i = 0; i < m_managedText.size(); i++)
+    {
+        for (size_t j = 0; j < m_managedText[i].length(); j++)
+        {
+            m_managedText[i][j].unselect();
+        }
+    }
+}
+
 // This member function returns true if the character at the position of
 // the passed view cursor is selected
 bool TextManager::isSelected(const ViewCursor& viewCursor)

@@ -2173,7 +2173,7 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1560601023 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+1561130802 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
 	<map>
 	"../NumeReWindow.h"
 	"../../common/Options.h"
@@ -2493,7 +2493,7 @@
 	<cmath>
 	"muParserError.h"
 
-1560600926 d:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
+1561130802 d:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
 	<string.h>
 	<cstring>
 	<stdlib.h>
@@ -2505,7 +2505,7 @@
 	"TextManager.h"
 	"../../kernel/syntax.hpp"
 
-1560601884 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
+1561294188 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
 	<vector>
 	<deque>
 	<string>
@@ -3840,7 +3840,7 @@
 	<wx/dataobj.h>
 	<wx/tokenzr.h>
 
-1560602381 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
+1561130802 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
@@ -3913,7 +3913,7 @@
 1533461617 source:d:\cpp\numere-source\trunk\gui\terminal\states.cpp
 	"gterm.hpp"
 
-1560600392 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
+1561294275 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
 	"TextManager.h"
 	<iostream>
 	<stdlib.h>
@@ -3924,7 +3924,7 @@
 	"gterm.hpp"
 	"../../common/debug.h"
 
-1536686114 source:d:\cpp\numere-source\trunk\gui\terminal\utils.cpp
+1561290444 source:d:\cpp\numere-source\trunk\gui\terminal\utils.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
@@ -3938,7 +3938,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1560601256 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1561294689 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4051,7 +4051,7 @@
 1560502651 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1560502651 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1561130801 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	<list>

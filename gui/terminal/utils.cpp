@@ -28,7 +28,7 @@ void GenericTerminal::update_changes ()
 	int x;
 
 	// prevent recursion for scrolls which cause exposures
-	if ( doing_update )
+	if (doing_update)
 		return;
 #ifdef DO_LOG
     wxLogDebug("Updating Terminal");
