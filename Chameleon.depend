@@ -3346,7 +3346,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1558083707 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1561885250 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4020,7 +4020,7 @@
 	"../version.h"
 	<list>
 
-1549827203 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
+1561917888 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
 	"documentation.hpp"
 	"../../kernel.hpp"
 
@@ -9192,7 +9192,7 @@
 	"breakpointmanager.hpp"
 	"../utils/tools.hpp"
 
-1560502654 source:d:\cpp\numere-source\trunk\kernel\core\debugger\debugger.cpp
+1561360788 source:d:\cpp\numere-source\trunk\kernel\core\debugger\debugger.cpp
 	"debugger.hpp"
 	"../../kernel.hpp"
 	"../utils/tools.hpp"

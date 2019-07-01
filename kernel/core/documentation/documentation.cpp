@@ -615,7 +615,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                     if (generateFile)
                         vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><div style=\"font-style: italic;margin-left: 40px\">" + sExprBlock + "</div><p>");
                     else
-                        vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><blockquote><span style=\"font-style: italic;\">" + sExprBlock + "</span></blockquote><p>");
+                        vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><blockquote><span style=\"font-style: italic; font-family: palatino linotype; font-size: 11pt; font-weight: bold;\">" + sExprBlock + "</span></blockquote><p>");
                 }
                 sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
             }
@@ -631,7 +631,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                 {
                     if (vDocArticle[i] != "<exprblock>")
                         sHTML += "<p>" + (vDocArticle[i].substr(0,vDocArticle[i].find("<exprblock>"))) + "</p>\n";
-                    sHTML += "<blockquote><span style=\"font-style: italic;\">\n";
+                    sHTML += "<blockquote><span style=\"font-style: italic; font-family: palatino linotype; font-size: 11pt; font-weight: bold;\">\n";
                 }
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
@@ -940,7 +940,7 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
         {
             string sExpr = sDocParagraph.substr(k+6, sDocParagraph.find("</expr>", k+6)-k-6);
             doc_ReplaceExprContentForHTML(sExpr,_option);
-            sDocParagraph.replace(k, sDocParagraph.find("</expr>",k+6)+7-k, "<em>"+sExpr+"</em>");
+            sDocParagraph.replace(k, sDocParagraph.find("</expr>",k+6)+7-k, "<span style=\"font-style:italic; font-family: palatino linotype; font-size: 11pt; font-weight: bold;\">"+sExpr+"</span>");
         }
         if (sDocParagraph.substr(k,6) == "<code>" && sDocParagraph.find("</code>", k+6) != string::npos)
         {
@@ -991,97 +991,112 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
 
 void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
 {
-    static const unsigned int nEntities = 10;
-    static const string sHTMLEntities[nEntities][2] =
+    static const unsigned int nEntities = 26;
+    static const string sHTMLEntities[nEntities][3] =
         {
-            { "_2pi",   "2&pi;"},
-            {  "_pi",    "&pi;"},
-            {   "PI",    "&pi;"},
-            {   "pi",    "&pi;"},
-            {  "chi",   "&chi;"},
-            {  "phi",   "&phi;"},
-            {  "Phi",   "&Phi;"},
-            {  "rho",   "&rho;"},
-            {"theta", "&theta;"},
-            {"delta", "&delta;"},
+            { "_2pi",   "<span style=\"font-style: italic;\">2&pi;</span>", "VAL"},
+            {  "_pi",    "<span style=\"font-style: italic;\">&pi;</span>", "VAL"},
+            {   "PI",    "<span style=\"font-style: italic;\">&pi;</span>", "VAL"},
+            {   "pi",    "<span style=\"font-style: italic;\">&pi;</span>", "VAL"},
+            {  "chi",   "<span style=\"font-style: italic;\">&chi;</span>", "VAL"},
+            {  "phi",   "<span style=\"font-style: italic;\">&phi;</span>", "VAL"},
+            {  "Phi",   "<span style=\"font-style: normal;\">&Phi;</span>", "VAL"},
+            {  "rho",   "<span style=\"font-style: italic;\">&rho;</span>", "VAL"},
+            {"theta", "<span style=\"font-style: italic;\">&theta;</span>", "VAL"},
+            {"delta", "<span style=\"font-style: italic;\">&delta;</span>", "VAL"}, //10
+            {    "-", "<span style=\"font-style: normal;\">&minus;</span>",  "OP"},
+            {    "+",       "<span style=\"font-style: normal;\">+</span>",  "OP"},
+            {    "*",                                             "&nbsp;",  "OP"},
+            {  "\\n",                                               "<br>",  "OP"},
+            {   "<=",    "<span style=\"font-style: normal;\">&le;</span>",  "OP"},
+            {"&lt;=",    "<span style=\"font-style: normal;\">&le;</span>",  "OP"},
+            {   ">=",    "<span style=\"font-style: normal;\">&ge;</span>",  "OP"},
+            {"&gt;=",    "<span style=\"font-style: normal;\">&ge;</span>",  "OP"},
+            {    "=",       "<span style=\"font-style: normal;\">=</span>",  "OP"},
+            {    ":",       "<span style=\"font-style: normal;\">:</span>",  "OP"}, //20
+            {    "(",       "<span style=\"font-style: normal;\">(</span>",  "OP"},
+            {    ")",       "<span style=\"font-style: normal;\">)</span>",  "OP"},
+            {    "[",       "<span style=\"font-style: normal;\">[</span>",  "OP"},
+            {    "]",       "<span style=\"font-style: normal;\">]</span>",  "OP"},
+            {    "{",       "<span style=\"font-style: normal;\">{</span>",  "OP"},
+            {    "}",       "<span style=\"font-style: normal;\">}</span>",  "OP"}
         };
     unsigned int nPos = 0;
+
     if (sExpr.find("<exprblock>") != string::npos)
         nPos = sExpr.find("<exprblock>")+11;
+
     for (unsigned int i = nPos; i < sExpr.length(); i++)
     {
-        if (sExpr.substr(i,12) == "</exprblock>")
+        if (sExpr.substr(i, 12) == "</exprblock>")
         {
             if (sExpr.find("<exprblock>", i+12) != string::npos)
             {
-                i = sExpr.find("<exprblock>",i+12)+10;
+                i = sExpr.find("<exprblock>", i+12) + 10;
                 continue;
             }
+
             break;
         }
-        if (sExpr.substr(i,2) == "<=")
-        {
-            sExpr.replace(i,2,"&le;");
-            i += 3;
-        }
-        if (sExpr.substr(i,5) == "&lt;=")
-        {
-            sExpr.replace(i,5,"&le;");
-            i += 3;
-        }
-        if (sExpr.substr(i,2) == ">=")
-        {
-            sExpr.replace(i,2,"&ge;");
-            i += 3;
-        }
-        if (sExpr.substr(i,5) == "&gt;=")
-        {
-            sExpr.replace(i,5,"&ge;");
-            i += 3;
-        }
+
         for (unsigned int n = 0; n < nEntities; n++)
         {
-            if (sExpr.substr(i,sHTMLEntities[n][0].length()) == sHTMLEntities[n][0]
-                && (!i
-                    || !isalpha(sExpr[i-1]))
-                && (i+sHTMLEntities[n][0].length() == sExpr.length()
-                    || !isalpha(sExpr[i+sHTMLEntities[n][0].length()]))
+            if (sExpr.substr(i, sHTMLEntities[n][0].length()) == sHTMLEntities[n][0]
+                && (sHTMLEntities[n][2] == "OP"
+                    || ((!i || !isalpha(sExpr[i-1]))
+                        && (i+sHTMLEntities[n][0].length() == sExpr.length() || !isalpha(sExpr[i+sHTMLEntities[n][0].length()]))))
                 )
             {
-                sExpr.replace(i,sHTMLEntities[n][0].length(),sHTMLEntities[n][1]);
+                sExpr.replace(i, sHTMLEntities[n][0].length(), sHTMLEntities[n][1]);
                 i += sHTMLEntities[n][1].length()-1;
             }
         }
+
         if (sExpr[i] == '^')
         {
             if (sExpr[i+1] == '(')
             {
                 sExpr.replace(getMatchingParenthesis(sExpr.substr(i))+i, 1, "</sup>");
                 sExpr.replace(i, 2, "<sup>");
+                i += 5;
             }
             else
             {
                 sExpr.insert(i+2, "</sup>");
                 sExpr.replace(i, 1, "<sup>");
+                i += 5;
             }
         }
+
         if (sExpr[i] == '_')
         {
-            sExpr.insert(i+2,"</sub>");
-            sExpr.replace(i,1,"<sub>");
-            i += 7;
+            if (sExpr[i+1] == '(')
+            {
+                sExpr.replace(getMatchingParenthesis(sExpr.substr(i))+i, 1, "</sub>");
+                sExpr.replace(i, 2, "<sub>");
+                i += 5;
+            }
+            else
+            {
+                sExpr.insert(i+2, "</sub>");
+                sExpr.replace(i, 1, "<sub>");
+                i += 5;
+            }
         }
+
+        if (sExpr[i] == ',' && sExpr[i+1] != ' ')
+            sExpr.insert(i+1, 1, ' ');
+
         if (i < sExpr.length()-1 && isdigit(sExpr[i+1]) && isalpha(sExpr[i]))
         {
             if (i < sExpr.length()-2)
                 sExpr.insert(i+2, "</sub>");
             else
                 sExpr.append("</sub>");
+
             sExpr.insert(i+1,"<sub>");
-            i += 7;
+            i += 12;
         }
-        if (sExpr.substr(i,2) == "\\n")
-            sExpr.replace(i,2,"<br>");
     }
 }
 
