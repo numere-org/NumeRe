@@ -703,7 +703,7 @@ vector<string> NumeReDebugger::getGlobals()
         if (iter->first.substr(0, 2) != "_~")
         {
             mGlobals[iter->first + "()"] = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false))
-                                           + "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ...," + toString(_data.max(iter->first, "")[0], 5) + "}";
+                                           + "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ..., " + toString(_data.max(iter->first, "")[0], 5) + "}";
         }
     }
 
