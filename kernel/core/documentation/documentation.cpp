@@ -1058,30 +1058,32 @@ void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
             {
                 sExpr.replace(getMatchingParenthesis(sExpr.substr(i))+i, 1, "</sup>");
                 sExpr.replace(i, 2, "<sup>");
-                i += 5;
             }
             else
             {
                 sExpr.insert(i+2, "</sup>");
                 sExpr.replace(i, 1, "<sup>");
-                i += 5;
             }
+
+            i += 4;
+            continue;
         }
 
         if (sExpr[i] == '_')
         {
             if (sExpr[i+1] == '(')
             {
-                sExpr.replace(getMatchingParenthesis(sExpr.substr(i))+i, 1, "</sub>");
+                sExpr.replace(getMatchingParenthesis(sExpr.substr(i))+i, 1, "</sub >");
                 sExpr.replace(i, 2, "<sub>");
-                i += 5;
             }
             else
             {
                 sExpr.insert(i+2, "</sub>");
                 sExpr.replace(i, 1, "<sub>");
-                i += 5;
             }
+
+            i += 4;
+            continue;
         }
 
         if (sExpr[i] == ',' && sExpr[i+1] != ' ')
