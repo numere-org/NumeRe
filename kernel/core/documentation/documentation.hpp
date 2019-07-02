@@ -35,10 +35,10 @@ extern const string sVersion;
 
 void doc_Help(const string&, Settings&);
 string doc_HelpAsHTML(const string&, bool, Settings& _option);
-void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option);
-void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option);
-void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option);
-vector<vector<string> > doc_readTokenTable(const string& sTable, const Settings& _option);
+void doc_ReplaceTokens(string& sDocParagraph, Settings& _option);
+void doc_ReplaceTokensForHTML(string& sDocParagraph, Settings& _option);
+void doc_ReplaceExprContentForHTML(string& sExpr, Settings& _option);
+vector<vector<string> > doc_readTokenTable(const string& sTable, Settings& _option);
 void doc_SearchFct(const string& sToLookFor, Settings& _option);
 void doc_FirstStart(const Settings& _option);
 void doc_TipOfTheDay(Settings& _option);

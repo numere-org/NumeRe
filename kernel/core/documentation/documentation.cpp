@@ -824,7 +824,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
 }
 
 // Definierte Tokens durch Steuerzeichen ersetzen
-void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
+void doc_ReplaceTokens(string& sDocParagraph, Settings& _option)
 {
     for (unsigned int k = 0; k < sDocParagraph.length(); k++)
     {
@@ -913,7 +913,7 @@ void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
 }
 
 // Definierte Tokens durch ggf. passende HTML-Tokens ersetzen
-void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
+void doc_ReplaceTokensForHTML(string& sDocParagraph, Settings& _option)
 {
     FileSystem _fSys;
     _fSys.setTokens(_option.getTokenPaths());
@@ -989,44 +989,16 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
     return;
 }
 
-void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
+void doc_ReplaceExprContentForHTML(string& sExpr, Settings& _option)
 {
-    static const unsigned int nEntities = 26;
-    static const string sHTMLEntities[nEntities][3] =
-        {
-            { "_2pi",   "<span style=\"font-style: italic;\">2&pi;</span>", "VAL"},
-            {  "_pi",    "<span style=\"font-style: italic;\">&pi;</span>", "VAL"},
-            {   "PI",    "<span style=\"font-style: italic;\">&pi;</span>", "VAL"},
-            {   "pi",    "<span style=\"font-style: italic;\">&pi;</span>", "VAL"},
-            {  "chi",   "<span style=\"font-style: italic;\">&chi;</span>", "VAL"},
-            {  "phi",   "<span style=\"font-style: italic;\">&phi;</span>", "VAL"},
-            {  "Phi",   "<span style=\"font-style: normal;\">&Phi;</span>", "VAL"},
-            {  "rho",   "<span style=\"font-style: italic;\">&rho;</span>", "VAL"},
-            {"theta", "<span style=\"font-style: italic;\">&theta;</span>", "VAL"},
-            {"delta", "<span style=\"font-style: italic;\">&delta;</span>", "VAL"}, //10
-            {    "-", "<span style=\"font-style: normal;\">&minus;</span>",  "OP"},
-            {    "+",       "<span style=\"font-style: normal;\">+</span>",  "OP"},
-            {    "*",                                             "&nbsp;",  "OP"},
-            {  "\\n",                                               "<br>",  "OP"},
-            {   "<=",    "<span style=\"font-style: normal;\">&le;</span>",  "OP"},
-            {"&lt;=",    "<span style=\"font-style: normal;\">&le;</span>",  "OP"},
-            {   ">=",    "<span style=\"font-style: normal;\">&ge;</span>",  "OP"},
-            {"&gt;=",    "<span style=\"font-style: normal;\">&ge;</span>",  "OP"},
-            {    "=",       "<span style=\"font-style: normal;\">=</span>",  "OP"},
-            {    ":",       "<span style=\"font-style: normal;\">:</span>",  "OP"}, //20
-            {    "(",       "<span style=\"font-style: normal;\">(</span>",  "OP"},
-            {    ")",       "<span style=\"font-style: normal;\">)</span>",  "OP"},
-            {    "[",       "<span style=\"font-style: normal;\">[</span>",  "OP"},
-            {    "]",       "<span style=\"font-style: normal;\">]</span>",  "OP"},
-            {    "{",       "<span style=\"font-style: normal;\">{</span>",  "OP"},
-            {    "}",       "<span style=\"font-style: normal;\">}</span>",  "OP"}
-        };
-    unsigned int nPos = 0;
+    static vector<vector<string> > vHTMLEntities = getDataBase("<>/docs/mathstyle.ndb", _option);
+
+    size_t nPos = 0;
 
     if (sExpr.find("<exprblock>") != string::npos)
         nPos = sExpr.find("<exprblock>")+11;
 
-    for (unsigned int i = nPos; i < sExpr.length(); i++)
+    for (size_t i = nPos; i < sExpr.length(); i++)
     {
         if (sExpr.substr(i, 12) == "</exprblock>")
         {
@@ -1039,16 +1011,16 @@ void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
             break;
         }
 
-        for (unsigned int n = 0; n < nEntities; n++)
+        for (size_t n = 0; n < vHTMLEntities.size(); n++)
         {
-            if (sExpr.substr(i, sHTMLEntities[n][0].length()) == sHTMLEntities[n][0]
-                && (sHTMLEntities[n][2] == "OP"
+            if (sExpr.substr(i, vHTMLEntities[n][0].length()) == vHTMLEntities[n][0]
+                && (vHTMLEntities[n][2] == "OP"
                     || ((!i || !isalpha(sExpr[i-1]))
-                        && (i+sHTMLEntities[n][0].length() == sExpr.length() || !isalpha(sExpr[i+sHTMLEntities[n][0].length()]))))
+                        && (i+vHTMLEntities[n][0].length() == sExpr.length() || !isalpha(sExpr[i+vHTMLEntities[n][0].length()]))))
                 )
             {
-                sExpr.replace(i, sHTMLEntities[n][0].length(), sHTMLEntities[n][1]);
-                i += sHTMLEntities[n][1].length()-1;
+                sExpr.replace(i, vHTMLEntities[n][0].length(), vHTMLEntities[n][1]);
+                i += vHTMLEntities[n][1].length()-1;
             }
         }
 
@@ -1102,7 +1074,7 @@ void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
     }
 }
 
-vector<vector<string> > doc_readTokenTable(const string& sTable, const Settings& _option)
+vector<vector<string> > doc_readTokenTable(const string& sTable, Settings& _option)
 {
     vector<vector<string> > vTable;
     vector<string> vLine;
