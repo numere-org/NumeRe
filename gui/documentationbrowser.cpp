@@ -19,6 +19,8 @@
 #include "documentationbrowser.hpp"
 #include "NumeReWindow.h"
 #include "../common/datastructures.h"
+#include "controls/treesearchctrl.hpp"
+#include "compositions/treepanel.hpp"
 #include "../kernel/core/ui/language.hpp"
 #include <vector>
 #include <string>
@@ -39,7 +41,7 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
     // Obtain the program root directory and create a new
     // IconManager object using this information
     wxString programPath = mainwindow->getProgramFolder();
-    m_manager = new IconManager(mainwindow->getProgramFolder());
+    m_manager = new IconManager(programPath);
 
     // Create the status bar and the window splitter
     this->CreateStatusBar();
@@ -48,8 +50,12 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
 
     // Create the tree and the viewer objects as childs
     // of the window splitter
-    m_doctree = new wxTreeCtrl(splitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_SINGLE | wxTR_FULL_ROW_HIGHLIGHT | wxTR_NO_LINES | wxTR_TWIST_BUTTONS);
+    TreePanel* treePanel = new TreePanel(splitter, wxID_ANY);
+    m_doctree = new wxTreeCtrl(treePanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_SINGLE | wxTR_FULL_ROW_HIGHLIGHT | wxTR_NO_LINES | wxTR_TWIST_BUTTONS);
     m_doctree->SetImageList(m_manager->GetImageList());
+    TreeSearchCtrl* treeSearchCtrl = new TreeSearchCtrl(treePanel, wxID_ANY, _guilang.get("GUI_SEARCH_DOCUMENTATION"), m_doctree);
+    treePanel->AddWindows(treeSearchCtrl, m_doctree);
+
     m_viewer = new HelpViewer(splitter, mainwindow);
     m_viewer->SetRelatedFrame(this, titletemplate);
     m_viewer->SetRelatedStatusBar(0);
@@ -59,7 +65,7 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
     this->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
 
     // Split the view using the tree and the viewer
-    splitter->SplitVertically(m_doctree, m_viewer, 150);
+    splitter->SplitVertically(treePanel, m_viewer, 150);
 
     // Fill the index into the tree
     fillDocTree(mainwindow);

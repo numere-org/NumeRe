@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "packagedialog.hpp"
-#include "grouppanel.hpp"
+#include "../compositions/grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/procedure/dependency.hpp"

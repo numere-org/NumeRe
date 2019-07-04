@@ -22,7 +22,7 @@
 #include <wx/wx.h>
 #include <string>
 #include <map>
-#include "treelistctrl.h"
+#include "../controls/treelistctrl.h"
 #include "../../kernel/core/procedure/procedurelibrary.hpp"
 #include "../../kernel/core/procedure/dependency.hpp"
 

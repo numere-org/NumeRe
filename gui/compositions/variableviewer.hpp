@@ -20,7 +20,7 @@
 #ifndef VARIABLEVIEWER_HPP
 #define VARIABLEVIEWER_HPP
 
-#include "treelistctrl.h"
+#include "../controls/treelistctrl.h"
 //#include <wx/treelist.h>
 #include <map>
 #include <vector>

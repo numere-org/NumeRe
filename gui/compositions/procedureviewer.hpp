@@ -1,6 +1,6 @@
 /*****************************************************************************
     NumeRe: Framework fuer Numerische Rechnungen
-    Copyright (C) 2017  Erik Haenel et al.
+    Copyright (C) 2019  Erik Haenel et al.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,37 +16,37 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "filetree.hpp"
-#include "globals.hpp"
+#include <wx/wx.h>
+#include <vector>
+#include "../NumeReWindow.h"
 
-BEGIN_EVENT_TABLE(FileTree, wxTreeCtrl)
-    EVT_ENTER_WINDOW    (FileTree::OnEnter)
-END_EVENT_TABLE()
+#ifndef PROCEDUREVIEWER_HPP
+#define PROCEDUREVIEWER_HPP
 
-void FileTree::OnEnter(wxMouseEvent& event)
+struct ProcedureViewerData;
+
+class ProcedureViewer : public wxListView
 {
-    if (g_findReplace != nullptr && g_findReplace->IsShown())
-    {
-        event.Skip();
-        return;
-    }
-    this->SetFocus();
-    event.Skip();
-}
+    private:
+        NumeReEditor* m_currentEd;
+        void getProcedureListFromEditor();
+        void stripSpaces(wxString& sString);
+        void emptyControl();
 
-void FileTree::SetDnDHighlight(const wxTreeItemId& itemToHighLight)
-{
-    if (itemToHighLight == m_currentHighLight)
-        return;
+    public:
+        ProcedureViewer(wxWindow* parent);
 
-    if (m_currentHighLight.IsOk())
-    {
-        this->SetItemDropHighlight(m_currentHighLight, false);
-        m_currentHighLight = wxTreeItemId();
-    }
-    if (itemToHighLight.IsOk())
-    {
-        this->SetItemDropHighlight(itemToHighLight);
-        m_currentHighLight = itemToHighLight;
-    }
-}
+        int nSortColumn;
+        vector<ProcedureViewerData> vData;
+
+        void setCurrentEditor(NumeReEditor* editor);
+        void OnColumnClick(wxListEvent& event);
+        void OnItemClick(wxListEvent& event);
+        void updateProcedureList(const vector<wxString>& vProcedures);
+
+        DECLARE_EVENT_TABLE();
+};
+
+
+#endif // PROCEDUREVIEWER_HPP
+

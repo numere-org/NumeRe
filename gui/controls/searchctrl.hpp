@@ -1,6 +1,6 @@
 /*****************************************************************************
     NumeRe: Framework fuer Numerische Rechnungen
-    Copyright (C) 2017  Erik Haenel et al.
+    Copyright (C) 2019  Erik Haenel et al.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,39 +16,36 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TABLEEDITPANEL_HPP
-#define TABLEEDITPANEL_HPP
+#ifndef SEARCHCTRL_HPP
+#define SEARCHCTRL_HPP
 
 #include <wx/wx.h>
-#include <wx/panel.h>
-#include "tableviewer.hpp"
-#include "terminal/wxterm.h"
-#include "../kernel/core/ui/language.hpp"
 
-extern Language _guilang;
-
-class TableEditPanel : public wxPanel
+// Implementation of a generic search control based
+// upon a combo box
+class SearchCtrl : public wxComboBox
 {
     private:
-        wxTerm* m_terminal;
-        wxBoxSizer* vsizer;
-        wxBoxSizer* hsizer;
-        bool finished;
+        bool textChangeMutex;
+        wxString textEntryValue;
+
+    protected:
+        // Virtual functions to interact with the data
+        // model
+        virtual void selectItem(const wxString& value);
+        virtual wxArrayString getCandidates(const wxString& enteredText);
 
     public:
-        TableViewer* grid;
+        SearchCtrl(wxWindow* parent, wxWindowID id, const wxString& value = wxEmptyString) : wxComboBox(parent, id, value, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxCB_SORT), textChangeMutex(false) {}
 
-        TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar);
-
-        void SetTerminal(wxTerm* term) {m_terminal = term;}
-
-        void OnButtonOk(wxCommandEvent& event);
-        void OnButtonCancel(wxCommandEvent& event);
-        void OnClose(wxCloseEvent& event);
-        //void OnKeyDown(wxKeyEvent& event);
+        // Event handler functions
+        void OnItemSelect(wxCommandEvent& event);
+        void OnTextChange(wxCommandEvent& event);
+        void OnPopup(wxCommandEvent& event);
 
         DECLARE_EVENT_TABLE();
 };
 
-#endif // TABLEEDITPANEL_HPP
+
+#endif // SEARCHCTRL_HPP
 

@@ -17,8 +17,8 @@
 ******************************************************************************/
 
 #include "procedureviewer.hpp"
-#include "../kernel/core/ui/language.hpp"
-#include "editor/editor.h"
+#include "../../kernel/core/ui/language.hpp"
+#include "../editor/editor.h"
 
 BEGIN_EVENT_TABLE(ProcedureViewer, wxListView)
     EVT_LIST_COL_CLICK(-1, ProcedureViewer::OnColumnClick)

@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "../kernel/core/datamanagement/table.hpp"
+#include "../../kernel/core/datamanagement/table.hpp"
 #include <wx/grid.h>
 
 #ifndef GRIDTABLE_HPP

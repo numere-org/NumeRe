@@ -21,7 +21,7 @@
 #include "NumeReWindow.h"
 #include "editor/editor.h"
 #include "terminal/wxssh.h"
-#include "filetree.hpp"
+#include "compositions/filetree.hpp"
 #include "DirTraverser.hpp"
 
 #define wxUSE_DRAG_AND_DROP 1

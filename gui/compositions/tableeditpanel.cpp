@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "tableeditpanel.hpp"
-#include "../kernel/core/datamanagement/container.hpp"
+#include "../../kernel/core/datamanagement/container.hpp"
 
 #define ID_TABLEEDIT_OK 10101
 #define ID_TABLEEDIT_CANCEL 10102

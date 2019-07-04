@@ -16,33 +16,37 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <wx/wx.h>
-#include "wx.h"
-#include "compositions/viewerframe.hpp"
-#include "../kernel/core/plotting/graph_helper.hpp"
-#include "terminal/wxterm.h"
+#include "filetree.hpp"
+#include "../globals.hpp"
 
-#ifndef GRAPHVIEWER_HPP
-#define GRAPHVIEWER_HPP
-class GraphViewer : public ViewerFrame
+BEGIN_EVENT_TABLE(FileTree, wxTreeCtrl)
+    EVT_ENTER_WINDOW    (FileTree::OnEnter)
+END_EVENT_TABLE()
+
+void FileTree::OnEnter(wxMouseEvent& event)
 {
-    private:
+    if (g_findReplace != nullptr && g_findReplace->IsShown())
+    {
+        event.Skip();
+        return;
+    }
+    this->SetFocus();
+    event.Skip();
+}
 
-    public:
-        GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, wxTerm* terminal);
-        ~GraphViewer()
-            {
-                if (_grapherWindow)
-                    delete _grapherWindow;
-                _grapherWindow = nullptr;
-            }
+void FileTree::SetDnDHighlight(const wxTreeItemId& itemToHighLight)
+{
+    if (itemToHighLight == m_currentHighLight)
+        return;
 
-
-        wxMGL* _grapherWindow;
-        wxTerm* m_terminal;
-
-        DECLARE_EVENT_TABLE();
-};
-
-#endif // GRAPHVIEWER_HPP
-
+    if (m_currentHighLight.IsOk())
+    {
+        this->SetItemDropHighlight(m_currentHighLight, false);
+        m_currentHighLight = wxTreeItemId();
+    }
+    if (itemToHighLight.IsOk())
+    {
+        this->SetItemDropHighlight(itemToHighLight);
+        m_currentHighLight = itemToHighLight;
+    }
+}

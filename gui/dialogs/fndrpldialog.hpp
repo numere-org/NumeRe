@@ -32,8 +32,8 @@
 #include <wx/textctrl.h>
 #include <wx/settings.h>
 
-#include "../viewerbook.hpp"
-#include "../viewerpanel.hpp"
+#include "../compositions/viewerbook.hpp"
+#include "../compositions/viewerpanel.hpp"
 
 #define wxFR_WRAPAROUND 8
 

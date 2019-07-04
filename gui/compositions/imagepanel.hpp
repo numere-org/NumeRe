@@ -19,7 +19,7 @@
 #include <wx/wx.h>
 #include <wx/sizer.h>
 
-#include "../common/datastructures.h"
+#include "../../common/datastructures.h"
 
 class ImagePanel : public wxPanel
 {

@@ -17,7 +17,7 @@
 ******************************************************************************/
 
 #include "renamesymbolsdialog.hpp"
-#include "grouppanel.hpp"
+#include "../compositions/grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 
 extern Language _guilang;

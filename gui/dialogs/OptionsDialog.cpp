@@ -36,7 +36,7 @@
 
 #include "../../common/debug.h"
 
-#include "grouppanel.hpp"
+#include "../compositions/grouppanel.hpp"
 
 
 #ifdef _DEBUG

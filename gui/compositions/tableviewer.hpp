@@ -26,8 +26,8 @@
 #include <vector>
 #include <string>
 
-#include "../kernel/core/datamanagement/container.hpp"
-#include "../kernel/core/datamanagement/table.hpp"
+#include "../../kernel/core/datamanagement/container.hpp"
+#include "../../kernel/core/datamanagement/table.hpp"
 
 using namespace std;
 

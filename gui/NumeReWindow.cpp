@@ -61,14 +61,17 @@
 #include "IconManager.h"
 #include "wxProportionalSplitterWindow.h"
 #include "ChameleonProjectManager.h"
-#include "viewerframe.hpp"
-#include "imagepanel.hpp"
-#include "helpviewer.hpp"
 #include "documentationbrowser.hpp"
-#include "tableviewer.hpp"
-#include "tableeditpanel.hpp"
 #include "graphviewer.hpp"
 #include "textsplashscreen.hpp"
+
+#include "compositions/viewerframe.hpp"
+#include "compositions/imagepanel.hpp"
+#include "compositions/helpviewer.hpp"
+#include "compositions/tableviewer.hpp"
+#include "compositions/tableeditpanel.hpp"
+#include "compositions/wxTermContainer.h"
+#include "compositions/debugviewer.hpp"
 
 #include "editor/editor.h"
 #include "editor/history.hpp"
@@ -76,10 +79,7 @@
 
 #include "dialogs/OptionsDialog.h"
 #include "dialogs/RemoteFileDialog.h"
-#include "dialogs/wxTermContainer.h"
-//#include "dialogs/VariableWatchPanel.h"
 #include "dialogs/AboutChameleonDialog.h"
-#include "dialogs/debugviewer.hpp"
 #include "dialogs/textoutputdialog.hpp"
 #include "dialogs/packagedialog.hpp"
 #include "dialogs/dependencydialog.hpp"
@@ -97,6 +97,8 @@
 #include "../common/recycler.hpp"
 #include "../common/Options.h"
 #include "../common/DebugEvent.h"
+
+#include "controls/treesearchctrl.hpp"
 
 #include "icons/newstart1.xpm"
 #include "icons/newcontinue1.xpm"
@@ -325,13 +327,24 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	// project setup
 	m_projMultiFiles = NULL;
 	m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
-	m_fileTree = new FileTree(m_treeBook, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
-	m_treeBook->AddPage(m_fileTree, _guilang.get("GUI_FILETREE"));
-	m_functionTree = new FileTree(m_treeBook, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
-	m_treeBook->AddPage(m_functionTree, _guilang.get("GUI_FUNCTIONTREE"));
+
+	m_filePanel = new TreePanel(m_treeBook, wxID_ANY);
+	m_fileTree = new FileTree(m_filePanel, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
+	TreeSearchCtrl* fileSearchCtrl = new TreeSearchCtrl(m_filePanel, wxID_ANY, _guilang.get("GUI_SEARCH_FILES"), m_fileTree);
+	m_filePanel->AddWindows(fileSearchCtrl, m_fileTree);
+	m_treeBook->AddPage(m_filePanel, _guilang.get("GUI_FILETREE"));
+
+    m_functionPanel = new TreePanel(m_treeBook, wxID_ANY);
+	m_functionTree = new FileTree(m_functionPanel, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
+	TreeSearchCtrl* functionSearchCtrl = new TreeSearchCtrl(m_functionPanel, wxID_ANY, _guilang.get("GUI_SEARCH_SYMBOLS"), m_functionTree);
+	m_functionPanel->AddWindows(functionSearchCtrl, m_functionTree);
+	m_treeBook->AddPage(m_functionPanel, _guilang.get("GUI_FUNCTIONTREE"));
 	m_treeBook->Hide();
+
+
 	m_watcher = new Filewatcher();
 	m_watcher->SetOwner(this);
+
 
 	m_iconManager = new IconManager(getProgramFolder());
 
@@ -4794,7 +4807,7 @@ wxPrintData* NumeReWindow::setDefaultPrinterSettings()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_fileTree)
+    if (m_treeBook->GetCurrentPage() == m_filePanel)
     {
         wxTreeItemId clickedItem = event.GetItem();
         m_clickedTreeItem = clickedItem;
@@ -5047,7 +5060,7 @@ void NumeReWindow::AddFileToProject()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 {
-    if (m_treeBook->GetCurrentPage() == m_fileTree)
+    if (m_treeBook->GetCurrentPage() == m_filePanel)
     {
         wxTreeItemId item = event.GetItem();
 
@@ -5109,7 +5122,7 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
 
 void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_functionTree)
+    if (m_treeBook->GetCurrentPage() == m_functionPanel)
     {
         wxTreeItemId item = event.GetItem();
 
@@ -5140,7 +5153,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 
 void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
 {
-    if (m_treeBook->GetCurrentPage() == m_functionTree)
+    if (m_treeBook->GetCurrentPage() == m_functionPanel)
     {
         wxTreeItemId item = event.GetItem();
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));

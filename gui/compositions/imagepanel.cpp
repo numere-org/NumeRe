@@ -21,7 +21,7 @@
 #include <wx/dir.h>
 #include <wx/clipbrd.h>
 #include "imagepanel.hpp"
-#include "../kernel/core/ui/language.hpp"
+#include "../../kernel/core/ui/language.hpp"
 
 extern Language _guilang;
 

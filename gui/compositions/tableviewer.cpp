@@ -18,7 +18,7 @@
 
 #include "tableviewer.hpp"
 #include "gridtable.hpp"
-#include "../kernel/core/ui/language.hpp"
+#include "../../kernel/core/ui/language.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>

@@ -16,33 +16,39 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <wx/wx.h>
-#include "wx.h"
-#include "compositions/viewerframe.hpp"
-#include "../kernel/core/plotting/graph_helper.hpp"
-#include "terminal/wxterm.h"
+#ifndef TABLEEDITPANEL_HPP
+#define TABLEEDITPANEL_HPP
 
-#ifndef GRAPHVIEWER_HPP
-#define GRAPHVIEWER_HPP
-class GraphViewer : public ViewerFrame
+#include <wx/wx.h>
+#include <wx/panel.h>
+#include "tableviewer.hpp"
+#include "../terminal/wxterm.h"
+#include "../../kernel/core/ui/language.hpp"
+
+extern Language _guilang;
+
+class TableEditPanel : public wxPanel
 {
     private:
+        wxTerm* m_terminal;
+        wxBoxSizer* vsizer;
+        wxBoxSizer* hsizer;
+        bool finished;
 
     public:
-        GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, wxTerm* terminal);
-        ~GraphViewer()
-            {
-                if (_grapherWindow)
-                    delete _grapherWindow;
-                _grapherWindow = nullptr;
-            }
+        TableViewer* grid;
 
+        TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar);
 
-        wxMGL* _grapherWindow;
-        wxTerm* m_terminal;
+        void SetTerminal(wxTerm* term) {m_terminal = term;}
+
+        void OnButtonOk(wxCommandEvent& event);
+        void OnButtonCancel(wxCommandEvent& event);
+        void OnClose(wxCloseEvent& event);
+        //void OnKeyDown(wxKeyEvent& event);
 
         DECLARE_EVENT_TABLE();
 };
 
-#endif // GRAPHVIEWER_HPP
+#endif // TABLEEDITPANEL_HPP
 

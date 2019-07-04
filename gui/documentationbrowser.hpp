@@ -21,8 +21,8 @@
 
 #include <wx/treectrl.h>
 #include <wx/splitter.h>
-#include "viewerframe.hpp"
-#include "helpviewer.hpp"
+#include "compositions/viewerframe.hpp"
+#include "compositions/helpviewer.hpp"
 #include "IconManager.h"
 
 class NumeReWindow;

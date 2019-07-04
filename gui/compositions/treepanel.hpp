@@ -16,37 +16,33 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#ifndef TREEPANEL_HPP
+#define TREEPANEL_HPP
+
 #include <wx/wx.h>
-#include <vector>
-#include "NumeReWindow.h"
 
-#ifndef PROCEDUREVIEWER_HPP
-#define PROCEDUREVIEWER_HPP
-
-struct ProcedureViewerData;
-
-class ProcedureViewer : public wxListView
+// This class specializes the generic search control
+// to interact with a wxTreeCtrl
+class TreePanel : public wxPanel
 {
-    private:
-        NumeReEditor* m_currentEd;
-        void getProcedureListFromEditor();
-        void stripSpaces(wxString& sString);
-        void emptyControl();
-
     public:
-        ProcedureViewer(wxWindow* parent);
+        TreePanel(wxWindow* parent, wxWindowID id) : wxPanel(parent, id) {}
 
-        int nSortColumn;
-        vector<ProcedureViewerData> vData;
+        void AddWindows(wxWindow* searchbar, wxWindow* tree)
+        {
+            wxBoxSizer* hsizer = new wxBoxSizer(wxHORIZONTAL);
+            wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
 
-        void setCurrentEditor(NumeReEditor* editor);
-        void OnColumnClick(wxListEvent& event);
-        void OnItemClick(wxListEvent& event);
-        void updateProcedureList(const vector<wxString>& vProcedures);
+            vsizer->Add(searchbar, 0, wxEXPAND, 0);
+            vsizer->AddSpacer(2);
+            vsizer->Add(tree, 1, wxEXPAND, 0);
 
-        DECLARE_EVENT_TABLE();
+            hsizer->Add(vsizer, 1, wxEXPAND | wxRIGHT, 3);
+            SetSizer(hsizer);
+        }
 };
 
 
-#endif // PROCEDUREVIEWER_HPP
+#endif // TREEPANEL_HPP
+
 

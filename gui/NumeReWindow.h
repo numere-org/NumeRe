@@ -14,26 +14,28 @@
 #include <wx/wx.h>
 #endif
 
-#include "../common/datastructures.h"
-#include "../common/DebugEvent.h"
-#include "globals.hpp"
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
-#include "../common/filewatcher.hpp"
+
+#include "NumeReStatusbar.hpp"
+#include "globals.hpp"
 #include "wx/dnd.h"
+#include "../common/datastructures.h"
+#include "../common/DebugEvent.h"
+#include "../common/filewatcher.hpp"
+#include "../kernel/windowmanager.hpp"
 #include "../kernel/core/ui/language.hpp"
 #include "../kernel/core/utils/tools.hpp"
-#include "dialogs/tipdialog.hpp"
-#include "viewerframe.hpp"
-#include "viewerbook.hpp"
-#include "filetree.hpp"
-#include "NumeReStatusbar.hpp"
-#include "../kernel/windowmanager.hpp"
 #include "../kernel/core/plotting/graph_helper.hpp"
 #include "../kernel/core/datamanagement/container.hpp"
 #include "../kernel/core/datamanagement/table.hpp"
-#include "dialogs/variableviewer.hpp"
-#include "procedureviewer.hpp"
+#include "dialogs/tipdialog.hpp"
+#include "compositions/treepanel.hpp"
+#include "compositions/viewerframe.hpp"
+#include "compositions/viewerbook.hpp"
+#include "compositions/filetree.hpp"
+#include "compositions/variableviewer.hpp"
+#include "compositions/procedureviewer.hpp"
 
 #define OPENFILE_NOTHING 0
 #define OPENFILE_BLACKLIST_ADD 1
@@ -372,6 +374,8 @@ class NumeReWindow : public wxFrame
         /*! Displays the files in the current project */
         FileTree* m_fileTree;
         Filewatcher* m_watcher;
+        TreePanel* m_filePanel;
+        TreePanel* m_functionPanel;
 
         // Blacklist for suppressing the reloading and the corresponding dialog
         std::vector<wxString> vReloadBlackList;

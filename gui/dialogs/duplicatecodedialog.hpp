@@ -19,7 +19,7 @@
 #ifndef DUPLICATECODEDIALOG_HPP
 #define DUPLICATECODEDIALOG_HPP
 
-#include "../viewerframe.hpp"
+#include "../compositions/viewerframe.hpp"
 #include <wx/panel.h>
 #include <wx/gauge.h>
 #include <wx/listctrl.h>

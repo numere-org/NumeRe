@@ -19,7 +19,7 @@
 
 
 #include "helpviewer.hpp"
-#include "NumeReWindow.h"
+#include "../NumeReWindow.h"
 #include <wx/html/htmprint.h>
 
 extern wxPrintData* g_printData;

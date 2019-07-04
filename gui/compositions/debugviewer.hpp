@@ -19,7 +19,7 @@
 #ifndef DEBUGVIEWER_HPP
 #define DEBUGVIEWER_HPP
 
-#include "../viewerframe.hpp"
+#include "viewerframe.hpp"
 #include "../terminal/wxterm.h"
 #include "../../common/Options.h"
 #include "variableviewer.hpp"
