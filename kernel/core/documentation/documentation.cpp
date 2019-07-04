@@ -647,7 +647,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                     if (generateFile)
                         vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><div style=\"font-style: italic;margin-left: 40px\">" + sExprBlock + "</div><p>");
                     else
-                        vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><blockquote><span style=\"font-style: italic; font-family: palatino linotype; font-size: 11pt; font-weight: bold;\">" + sExprBlock + "</span></blockquote><p>");
+                        vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><blockquote><span style=\"font-style: italic; font-family: palatino linotype; font-size: 12pt; font-weight: bold;\">" + sExprBlock + "</span></blockquote><p>");
                 }
 
                 sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
@@ -660,7 +660,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                 if (generateFile)
                     sHTML += "<div style=\"font-style: italic;margin-left: 40px\">\n";
                 else
-                    sHTML += "<blockquote><span style=\"font-style: italic; font-family: palatino linotype; font-size: 11pt; font-weight: bold;\">\n";
+                    sHTML += "<blockquote><span style=\"font-style: italic; font-family: palatino linotype; font-size: 12pt; font-weight: bold;\">\n";
 
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
@@ -964,7 +964,7 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, Settings& _option)
         {
             string sExpr = sDocParagraph.substr(k+6, sDocParagraph.find("</expr>", k+6)-k-6);
             doc_ReplaceExprContentForHTML(sExpr,_option);
-            sDocParagraph.replace(k, sDocParagraph.find("</expr>",k+6)+7-k, "<span style=\"font-style:italic; font-family: palatino linotype; font-size: 11pt; font-weight: bold;\">"+sExpr+"</span>");
+            sDocParagraph.replace(k, sDocParagraph.find("</expr>",k+6)+7-k, "<span style=\"font-style:italic; font-family: palatino linotype; font-weight: bold;\">"+sExpr+"</span>");
         }
         if (sDocParagraph.substr(k,6) == "<code>" && sDocParagraph.find("</code>", k+6) != string::npos)
         {
