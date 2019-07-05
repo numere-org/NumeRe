@@ -2173,14 +2173,14 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\ole\droptgt.h
 
-1561959128 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
+1562321146 d:\cpp\numere-source\trunk\gui\terminal\wxterm.h
 	<map>
 	"../NumeReWindow.h"
 	"../../common/Options.h"
 	"gterm.hpp"
 	"../../kernel/kernel.hpp"
 
-1562224342 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1562320573 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	<wx/treectrl.h>
@@ -2241,7 +2241,7 @@
 1511364107 d:\cpp\numere-source\trunk\gui\globals.hpp
 	"dialogs/fndrpldialog.hpp"
 
-1562224145 d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.hpp
+1562320574 d:\cpp\numere-source\trunk\gui\dialogs\fndrpldialog.hpp
 	<wx/fdrepdlg.h>
 	<wx/wx.h>
 	<wx/intl.h>
@@ -2494,7 +2494,7 @@
 	<cmath>
 	"muParserError.h"
 
-1561959128 d:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
+1562321146 d:\cpp\numere-source\trunk\gui\terminal\gterm.hpp
 	<string.h>
 	<cstring>
 	<stdlib.h>
@@ -2506,7 +2506,7 @@
 	"TextManager.h"
 	"../../kernel/syntax.hpp"
 
-1561959128 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
+1562321145 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
 	<vector>
 	<deque>
 	<string>
@@ -2778,7 +2778,7 @@
 	"version.h"
 	"maths/define.hpp"
 
-1562137676 d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.hpp
+1562320671 d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.hpp
 	<iostream>
 	<iomanip>
 	<string>
@@ -2857,7 +2857,7 @@
 	<vector>
 	"procedurecommandline.hpp"
 
-1562224406 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
+1562320574 d:\cpp\numere-source\trunk\gui\dialogs\duplicatecodedialog.hpp
 	"../compositions/viewerframe.hpp"
 	<wx/panel.h>
 	<wx/gauge.h>
@@ -2961,7 +2961,7 @@
 	"fndrpldialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1562224549 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
+1562320574 source:d:\cpp\numere-source\trunk\gui\dialogs\optionsdialog.cpp
 	"wx/wxprec.h"
 	"../../common/CommonHeaders.h"
 	"../../common/Options.h"
@@ -3452,7 +3452,7 @@
 1552085576 source:d:\cpp\numere-source\trunk\gui\graphviewer.cpp
 	"graphviewer.hpp"
 
-1562224640 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
+1562320574 d:\cpp\numere-source\trunk\gui\graphviewer.hpp
 	<wx/wx.h>
 	"wx.h"
 	"compositions/viewerframe.hpp"
@@ -3678,7 +3678,7 @@
 	<wx/sizer.h>
 	"../common/datastructures.h"
 
-1562224659 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+1562320574 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"NumeReWindow.h"
 	"editor/editor.h"
@@ -3716,7 +3716,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1562174955 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3744,22 +3744,22 @@
 	"IconManager.h"
 	"wxProportionalSplitterWindow.h"
 	"ChameleonProjectManager.h"
-	"viewerframe.hpp"
-	"imagepanel.hpp"
-	"helpviewer.hpp"
 	"documentationbrowser.hpp"
-	"tableviewer.hpp"
-	"tableeditpanel.hpp"
 	"graphviewer.hpp"
 	"textsplashscreen.hpp"
+	"compositions/viewerframe.hpp"
+	"compositions/imagepanel.hpp"
+	"compositions/helpviewer.hpp"
+	"compositions/tableviewer.hpp"
+	"compositions/tableeditpanel.hpp"
+	"compositions/wxTermContainer.h"
+	"compositions/debugviewer.hpp"
 	"editor/editor.h"
 	"editor/history.hpp"
 	"editor/NumeRePrintout.h"
 	"dialogs/OptionsDialog.h"
 	"dialogs/RemoteFileDialog.h"
-	"dialogs/wxTermContainer.h"
 	"dialogs/AboutChameleonDialog.h"
-	"dialogs/debugviewer.hpp"
 	"dialogs/textoutputdialog.hpp"
 	"dialogs/packagedialog.hpp"
 	"dialogs/dependencydialog.hpp"
@@ -3774,8 +3774,7 @@
 	"../common/recycler.hpp"
 	"../common/Options.h"
 	"../common/DebugEvent.h"
-	"../common/treepanel.hpp"
-	"../common/treesearchctrl.hpp"
+	"controls/treesearchctrl.hpp"
 	"icons/newstart1.xpm"
 	"icons/newcontinue1.xpm"
 	"icons/newstop1.xpm"
@@ -3843,7 +3842,7 @@
 	<wx/dataobj.h>
 	<wx/tokenzr.h>
 
-1561959128 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
+1562321146 source:d:\cpp\numere-source\trunk\gui\terminal\actions.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
@@ -3916,7 +3915,7 @@
 1533461617 source:d:\cpp\numere-source\trunk\gui\terminal\states.cpp
 	"gterm.hpp"
 
-1561959128 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
+1562321145 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
 	"TextManager.h"
 	<iostream>
 	<stdlib.h>
@@ -3927,7 +3926,7 @@
 	"gterm.hpp"
 	"../../common/debug.h"
 
-1561959128 source:d:\cpp\numere-source\trunk\gui\terminal\utils.cpp
+1562321145 source:d:\cpp\numere-source\trunk\gui\terminal\utils.cpp
 	"gterm.hpp"
 	"../../common/debug.h"
 
@@ -3941,7 +3940,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1561959128 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1562321145 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4023,7 +4022,7 @@
 	"../version.h"
 	<list>
 
-1562137676 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
+1562320671 source:d:\cpp\numere-source\trunk\kernel\core\documentation\documentation.cpp
 	"documentation.hpp"
 	"../../kernel.hpp"
 
@@ -4054,7 +4053,7 @@
 1560502651 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1561959128 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1562225764 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	<list>
@@ -8883,7 +8882,7 @@
 1555578293 c:\cpp\numere-source\trunk\kernel\core\procedure\procedurecommandline.hpp
 	<string>
 
-1562223444 source:d:\cpp\numere-source\trunk\gui\documentationbrowser.cpp
+1562320574 source:d:\cpp\numere-source\trunk\gui\documentationbrowser.cpp
 	"documentationbrowser.hpp"
 	"NumeReWindow.h"
 	"../common/datastructures.h"
@@ -8894,7 +8893,7 @@
 	<string>
 	<wx/artprov.h>
 
-1562224618 d:\cpp\numere-source\trunk\gui\documentationbrowser.hpp
+1562320574 d:\cpp\numere-source\trunk\gui\documentationbrowser.hpp
 	<wx/treectrl.h>
 	<wx/splitter.h>
 	"compositions/viewerframe.hpp"
@@ -8966,7 +8965,7 @@
 	<wx/spinctrl.h>
 	<wx/listctrl.h>
 
-1562224567 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
+1562320574 source:d:\cpp\numere-source\trunk\gui\dialogs\renamesymbolsdialog.cpp
 	"renamesymbolsdialog.hpp"
 	"../compositions/grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
@@ -9197,7 +9196,7 @@
 	"breakpointmanager.hpp"
 	"../utils/tools.hpp"
 
-1561959140 source:d:\cpp\numere-source\trunk\kernel\core\debugger\debugger.cpp
+1562225764 source:d:\cpp\numere-source\trunk\kernel\core\debugger\debugger.cpp
 	"debugger.hpp"
 	"../../kernel.hpp"
 	"../utils/tools.hpp"
@@ -9294,7 +9293,7 @@
 1557683186 d:\cpp\numere-source\trunk\gui\dialogs\textoutputdialog.hpp
 	<wx/wx.h>
 
-1562224625 source:d:\cpp\numere-source\trunk\gui\dialogs\packagedialog.cpp
+1562320574 source:d:\cpp\numere-source\trunk\gui\dialogs\packagedialog.cpp
 	"packagedialog.hpp"
 	"../compositions/grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
@@ -9369,7 +9368,7 @@
 	"../../kernel/core/utils/tools.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1562224529 d:\cpp\numere-source\trunk\gui\dialogs\dependencydialog.hpp
+1562320574 d:\cpp\numere-source\trunk\gui\dialogs\dependencydialog.hpp
 	<wx/wx.h>
 	<string>
 	<map>
@@ -9493,45 +9492,45 @@
 1562173986 d:\cpp\numere-source\trunk\common\treepanel.hpp
 	<wx/wx.h>
 
-1562224198 source:d:\cpp\numere-source\trunk\gui\compositions\filetree.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\filetree.cpp
 	"filetree.hpp"
 	"../globals.hpp"
 
-1518629812 d:\cpp\numere-source\trunk\gui\compositions\filetree.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\filetree.hpp
 	<wx/wx.h>
 	<wx/treectrl.h>
 
-1491133959 d:\cpp\numere-source\trunk\gui\compositions\viewerbook.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\viewerbook.hpp
 	<wx/wx.h>
 	<wx/notebook.h>
 
-1491133892 d:\cpp\numere-source\trunk\gui\compositions\viewerpanel.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\viewerpanel.hpp
 	<wx/wx.h>
 	<wx/panel.h>
 
-1552085576 source:d:\cpp\numere-source\trunk\gui\compositions\gridtable.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\gridtable.cpp
 	"gridtable.hpp"
 
-1562224276 d:\cpp\numere-source\trunk\gui\compositions\gridtable.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\gridtable.hpp
 	"../../kernel/core/datamanagement/table.hpp"
 	<wx/grid.h>
 
-1557734686 source:d:\cpp\numere-source\trunk\gui\compositions\grouppanel.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\grouppanel.cpp
 	"grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1557734663 d:\cpp\numere-source\trunk\gui\compositions\grouppanel.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\grouppanel.hpp
 	<wx/wx.h>
 	<wx/spinctrl.h>
 	<wx/listctrl.h>
 
-1557852810 source:d:\cpp\numere-source\trunk\gui\compositions\debugviewer.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\debugviewer.cpp
 	"debugviewer.hpp"
 	<wx/statbox.h>
 	"../../kernel/core/ui/language.hpp"
 	"../NumeReWindow.h"
 
-1562224183 d:\cpp\numere-source\trunk\gui\compositions\debugviewer.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\debugviewer.hpp
 	"viewerframe.hpp"
 	"../terminal/wxterm.h"
 	"../../common/Options.h"
@@ -9541,53 +9540,53 @@
 	<string>
 	<vector>
 
-1500558167 d:\cpp\numere-source\trunk\gui\compositions\viewerframe.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\viewerframe.hpp
 	<wx/wx.h>
 
-1562173986 d:\cpp\numere-source\trunk\gui\compositions\treepanel.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\treepanel.hpp
 	<wx/wx.h>
 
-1562224357 d:\cpp\numere-source\trunk\gui\compositions\variableviewer.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\variableviewer.hpp
 	"../controls/treelistctrl.h"
 	<map>
 	<vector>
 	<string>
 
-1552085576 d:\cpp\numere-source\trunk\gui\controls\treelistctrl.h
+1562320573 d:\cpp\numere-source\trunk\gui\controls\treelistctrl.h
 	<wx/treectrl.h>
 	<wx/control.h>
 	<wx/pen.h>
 	<wx/listctrl.h>
 	"wx/xrc/xmlres.h"
 
-1562224376 d:\cpp\numere-source\trunk\gui\compositions\procedureviewer.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\procedureviewer.hpp
 	<wx/wx.h>
 	<vector>
 	"../NumeReWindow.h"
 
-1562224368 source:d:\cpp\numere-source\trunk\gui\compositions\helpviewer.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\helpviewer.cpp
 	"helpviewer.hpp"
 	"../NumeReWindow.h"
 	<wx/html/htmprint.h>
 
-1549830161 d:\cpp\numere-source\trunk\gui\compositions\helpviewer.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\helpviewer.hpp
 	<wx/wxhtml.h>
 	<wx/wx.h>
 	<vector>
 
-1562224445 source:d:\cpp\numere-source\trunk\gui\compositions\imagepanel.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\imagepanel.cpp
 	<wx/artprov.h>
 	<wx/dir.h>
 	<wx/clipbrd.h>
 	"imagepanel.hpp"
 	"../../kernel/core/ui/language.hpp"
 
-1562224425 d:\cpp\numere-source\trunk\gui\compositions\imagepanel.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\imagepanel.hpp
 	<wx/wx.h>
 	<wx/sizer.h>
 	"../../common/datastructures.h"
 
-1556354910 source:d:\cpp\numere-source\trunk\gui\compositions\variableviewer.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\variableviewer.cpp
 	"variableviewer.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../../common/datastructures.h"
@@ -9596,7 +9595,7 @@
 	<wx/menu.h>
 	<wx/dialog.h>
 
-1562224475 source:d:\cpp\numere-source\trunk\gui\compositions\tableviewer.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\tableviewer.cpp
 	"tableviewer.hpp"
 	"gridtable.hpp"
 	"../../kernel/core/ui/language.hpp"
@@ -9604,7 +9603,7 @@
 	<wx/dataobj.h>
 	<wx/tokenzr.h>
 
-1562224437 d:\cpp\numere-source\trunk\gui\compositions\tableviewer.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\tableviewer.hpp
 	<wx/wx.h>
 	<wx/grid.h>
 	<vector>
@@ -9612,32 +9611,32 @@
 	"../../kernel/core/datamanagement/container.hpp"
 	"../../kernel/core/datamanagement/table.hpp"
 
-1491133979 source:d:\cpp\numere-source\trunk\gui\compositions\viewerbook.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\viewerbook.cpp
 	"viewerbook.hpp"
 
-1562224493 source:d:\cpp\numere-source\trunk\gui\compositions\procedureviewer.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\procedureviewer.cpp
 	"procedureviewer.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../editor/editor.h"
 
-1543323589 source:d:\cpp\numere-source\trunk\gui\compositions\viewerframe.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\viewerframe.cpp
 	"viewerframe.hpp"
 
-1491133847 source:d:\cpp\numere-source\trunk\gui\compositions\viewerpanel.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\viewerpanel.cpp
 	"viewerpanel.hpp"
 
-1562224501 source:d:\cpp\numere-source\trunk\gui\compositions\tableeditpanel.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\tableeditpanel.cpp
 	"tableeditpanel.hpp"
 	"../../kernel/core/datamanagement/container.hpp"
 
-1562224463 d:\cpp\numere-source\trunk\gui\compositions\tableeditpanel.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\tableeditpanel.hpp
 	<wx/wx.h>
 	<wx/panel.h>
 	"tableviewer.hpp"
 	"../terminal/wxterm.h"
 	"../../kernel/core/ui/language.hpp"
 
-1552085576 source:d:\cpp\numere-source\trunk\gui\compositions\wxtermcontainer.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\compositions\wxtermcontainer.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	"wx/scrolbar.h"
@@ -9645,15 +9644,15 @@
 	"../terminal/wxTerm.h"
 	"../../common/debug.h"
 
-1552085576 d:\cpp\numere-source\trunk\gui\compositions\wxtermcontainer.h
+1562320573 d:\cpp\numere-source\trunk\gui\compositions\wxtermcontainer.h
 
-1562222782 source:d:\cpp\numere-source\trunk\gui\controls\searchctrl.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\controls\searchctrl.cpp
 	"searchctrl.hpp"
 
-1562222530 d:\cpp\numere-source\trunk\gui\controls\searchctrl.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\controls\searchctrl.hpp
 	<wx/wx.h>
 
-1552085576 source:d:\cpp\numere-source\trunk\gui\controls\treelistctrl.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\controls\treelistctrl.cpp
 	"wx/wxprec.h"
 	<wx/app.h>
 	<wx/treebase.h>
@@ -9677,10 +9676,10 @@
 	<wx/log.h>
 	<wx/msgdlg.h>
 
-1562221096 source:d:\cpp\numere-source\trunk\gui\controls\treesearchctrl.cpp
+1562320573 source:d:\cpp\numere-source\trunk\gui\controls\treesearchctrl.cpp
 	"treesearchctrl.hpp"
 
-1562222807 d:\cpp\numere-source\trunk\gui\controls\treesearchctrl.hpp
+1562320573 d:\cpp\numere-source\trunk\gui\controls\treesearchctrl.hpp
 	"searchctrl.hpp"
 	<wx/wx.h>
 	<wx/treectrl.h>

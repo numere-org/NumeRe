@@ -113,8 +113,12 @@ class GenericTerminal
         bool cursor_down();
         bool cursor_right();
         bool cursor_up();
+        bool ctrl_left();
+        bool ctrl_right();
         bool home();
         bool end();
+        bool front();
+        bool back();
 
         void erase_line();
         void erase_usercontent_line();

@@ -132,7 +132,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		BOLDSTYLE
 		m_boldStyle;
 
-        bool filterKeyCodes(int keyCode);
+        bool filterKeyCodes(int keyCode, bool ctrlDown);
 		void scrollToInput();
 		void MarkSelection(bool bRectangular = false);
 		void DoDrawCursor(int fg_color, int bg_color, int flags,

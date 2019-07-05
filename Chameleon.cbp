@@ -22,6 +22,7 @@
 				<Option compiler="tdm-gcc" />
 				<Compiler>
 					<Add option="-Wall" />
+					<Add option="-Og" />
 					<Add option="-g" />
 					<Add option="-std=gnu++11" />
 					<Add option="-mthreads" />

@@ -770,7 +770,7 @@ wxTerm::OnChar(wxKeyEvent& event)
 			ClearSelection();
 
         // Filter special keycodes
-        if (filterKeyCodes(keyCode))
+        if (filterKeyCodes(keyCode, event.ControlDown()))
             return;
 
 		GenericTerminal::resetAutoComp();
@@ -790,12 +790,12 @@ wxTerm::OnChar(wxKeyEvent& event)
         // Process the input line
         GenericTerminal::ProcessInput(len, string((char*)buf));
 
-        m_curDC = 0;
+        m_curDC = nullptr;
 	}
 }
 
 // This private member function filters special key codes and handles them
-bool wxTerm::filterKeyCodes(int keyCode)
+bool wxTerm::filterKeyCodes(int keyCode, bool ctrlDown)
 {
     // Filter special keycodes
     switch (keyCode)
@@ -806,7 +806,7 @@ bool wxTerm::filterKeyCodes(int keyCode)
                 GenericTerminal::cr();
                 GenericTerminal::lf();
                 GetTM()->ChangeEditableState();
-                GenericTerminal::update_changes();
+                Refresh();
                 m_wxParent->Busy();
                 pipe_command(sCommand);
                 return true;
@@ -815,28 +815,24 @@ bool wxTerm::filterKeyCodes(int keyCode)
             GenericTerminal::resetAutoComp();
             if (GenericTerminal::bs())
             {
-                GenericTerminal::update_changes();
                 Refresh();
             }
             return true;
         case WXK_TAB:
             GenericTerminal::tab();
-            GenericTerminal::update_changes();
             Refresh();
             return true;
         case WXK_LEFT:
             GenericTerminal::resetAutoComp();
-            if (GenericTerminal::cursor_left())
+            if ((ctrlDown && GenericTerminal::ctrl_left()) || GenericTerminal::cursor_left())
             {
-                GenericTerminal::update_changes();
                 Refresh();
             }
             return true;
         case WXK_RIGHT:
             GenericTerminal::resetAutoComp();
-            if (GenericTerminal::cursor_right())
+            if ((ctrlDown && GenericTerminal::ctrl_right()) || GenericTerminal::cursor_right())
             {
-                GenericTerminal::update_changes();
                 Refresh();
             }
             return true;
@@ -844,7 +840,6 @@ bool wxTerm::filterKeyCodes(int keyCode)
             GenericTerminal::resetAutoComp();
             if (GenericTerminal::cursor_up())
             {
-                GenericTerminal::update_changes();
                 Refresh();
             }
             return true;
@@ -852,7 +847,6 @@ bool wxTerm::filterKeyCodes(int keyCode)
             GenericTerminal::resetAutoComp();
             if (GenericTerminal::cursor_down())
             {
-                GenericTerminal::update_changes();
                 Refresh();
             }
             return true;
@@ -860,7 +854,6 @@ bool wxTerm::filterKeyCodes(int keyCode)
             GenericTerminal::resetAutoComp();
             if (GenericTerminal::home())
             {
-                GenericTerminal::update_changes();
                 Refresh();
             }
             return true;
@@ -868,7 +861,6 @@ bool wxTerm::filterKeyCodes(int keyCode)
             GenericTerminal::resetAutoComp();
             if (GenericTerminal::end())
             {
-                GenericTerminal::update_changes();
                 Refresh();
             }
             return true;
@@ -876,7 +868,6 @@ bool wxTerm::filterKeyCodes(int keyCode)
             GenericTerminal::resetAutoComp();
             if (GenericTerminal::del())
             {
-                GenericTerminal::update_changes();
                 Refresh();
             }
             return true;
@@ -974,16 +965,17 @@ wxTerm::OnKeyDown(wxKeyEvent& event)
 void
 wxTerm::OnPaint(wxPaintEvent& WXUNUSED(event))
 {
-	wxPaintDC
-	dc(this);
+	wxPaintDC dc(this);
 
 #ifdef DO_LOG
 	wxLogDebug("Painting");
 #endif
 
+    wxDC* backup = m_curDC;
+
 	m_curDC = &dc;
 	update_changes();
-	m_curDC = 0;
+	m_curDC = backup;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1004,16 +996,16 @@ wxTerm::OnLeftDown(wxMouseEvent& event)
 	m_selx1 = m_selx2 = event.GetX() / m_charWidth;
 	m_sely1 = m_sely2 = event.GetY() / m_charHeight;
 	m_selecting = true;
-	CaptureMouse();
+	this->CaptureMouse();
 }
 
 // This member function handles the "MouseCaptureLostEvent" and releases the mouse
 void wxTerm::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 {
-	if (GetCapture() == this)
+	if (this->GetCapture() == this)
 	{
 		m_selecting = false;
-		ReleaseMouse();
+		this->ReleaseMouse();
 		Refresh();
 	}
 }
@@ -1031,9 +1023,9 @@ void
 wxTerm::OnLeftUp(wxMouseEvent& event)
 {
 	m_selecting = false;
-	if (GetCapture() == this)
+	if (this->GetCapture() == this)
 	{
-		ReleaseMouse();
+		this->ReleaseMouse();
 		Refresh();
 	}
 	move_cursor_editable_area(m_selx2, m_sely2);
@@ -1056,9 +1048,12 @@ wxTerm::OnMouseMove(wxMouseEvent& event)
 	{
 	    // Get the text coordinates of the mouse
 		m_selx2 = event.GetX() / m_charWidth;
+
 		if (m_selx2 >= Width())
 			m_selx2 = Width() - 1;
+
 		m_sely2 = event.GetY() / m_charHeight;
+
 		if (m_sely2 >= Height())
 			m_sely2 = Height() - 1;
 
@@ -1069,7 +1064,7 @@ wxTerm::OnMouseMove(wxMouseEvent& event)
 			MarkSelection();
 
         // Update the terminal
-		GenericTerminal::Update();
+		// GenericTerminal::Update();
 		Refresh();
 	}
 }
@@ -1099,31 +1094,10 @@ wxTerm::ClearSelection()
 {
 	if (!HasSelection() || m_selecting)
 		return;
-	int
-	x,
-	y;
-
-	wxClientDC
-	*dc = 0;
 
 	m_selx1 = m_sely1 = m_selx2 = m_sely2 = 0;
-
-	if (!m_curDC)
-	{
-		dc = new wxClientDC(this);
-		m_curDC = dc;
-	}
-
-	for (y = 0; y < Height(); y++)
-		for (x = 0; x < Width(); x++)
-			Select(x, y, 0);
-	if (dc)
-	{
-		this->wxWindow::Update();
-
-		m_curDC = 0;
-		delete dc;
-	}
+	GetTM()->unselectAll();
+    Refresh();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1138,27 +1112,13 @@ wxTerm::ClearSelection()
 void
 wxTerm::MarkSelection(bool bRectangular)
 {
-	int
-	x,
-	y;
-
-	wxClientDC
-	*dc = 0;
+	int x;
+	int y;
 
 	m_marking = true;
 
-	if (!m_curDC)
-	{
-		dc = new wxClientDC(this);
-		m_curDC = dc;
-	}
-
 	// First deselect all text
-	for (y = 0; y < Height(); y++)
-	{
-		for (x = 0; x < Width(); x++)
-			Select(x, y, 0);
-	}
+	GetTM()->unselectAll();
 
 	// Now select the corresponding region
 	if (bRectangular)
@@ -1178,16 +1138,8 @@ wxTerm::MarkSelection(bool bRectangular)
 	    // More difficult
 		if (m_sely1 == m_sely2)
 		{
-			if (m_selx1 > m_selx2)
-			{
-				for (x = m_selx2; x <= m_selx1; x++)
-					Select(x, m_sely1, 1);
-			}
-			else
-			{
-				for (x = m_selx1; x <= m_selx2; x++)
-					Select(x, m_sely1, 1);
-			}
+            for (x = min(m_selx1, m_selx2); x <= max(m_selx1, m_selx2); x++)
+                Select(x, m_sely1, 1);
 		}
 		else if (m_sely1 < m_sely2)
 		{
@@ -1199,6 +1151,7 @@ wxTerm::MarkSelection(bool bRectangular)
 				for (x = 0; x < Width(); x++)
 					Select(x, y, 1);
 			}
+
 			for (x = 0; x <= m_selx2; x++)
 				Select(x, m_sely2, 1);
 		}
@@ -1212,14 +1165,10 @@ wxTerm::MarkSelection(bool bRectangular)
 				for (x = 0; x < Width(); x++)
 					Select(x, y, 1);
 			}
+
 			for (x = m_selx2; x < Width(); x++)
 				Select(x, m_sely2, 1);
 		}
-	}
-	if (dc)
-	{
-		m_curDC = 0;
-		delete dc;
 	}
 
 	m_marking = false;
@@ -1482,14 +1431,13 @@ wxTerm::DrawCursor(int fg_color, int bg_color, int flags,
 void
 wxTerm::OnTimer(wxTimerEvent& WXUNUSED(event))
 {
-	wxClientDC
-	*dc = 0;
+	wxClientDC* dc = nullptr;
 
 	if (m_init)
 		return;
 
     // Do nothing if the cursor coordinates are invalid
-	if (m_curX == -1 || m_curY == -1)
+	if (m_curX == -1 || m_curY == -1 || m_selecting)
 		return;
 
     // Do nothing, if the cursor is invisible
@@ -1519,7 +1467,7 @@ wxTerm::OnTimer(wxTimerEvent& WXUNUSED(event))
 	if (dc)
 	{
 		delete dc;
-		m_curDC = 0;
+		m_curDC = nullptr;
 	}
 }
 
@@ -1547,23 +1495,13 @@ wxTerm::ClearChars(int bg_color, int x, int y, int w, int h)
 	w *= m_charWidth;
 	h *= m_charHeight;
 
-	bool deleteDC = false;
 	if (!m_curDC)
-	{
-		m_curDC = new wxClientDC(this);
-		deleteDC = true;
-	}
+		return;
 
 	// Clear the area by drawing a rectangle with the background color
 	m_curDC->SetPen(m_colorPens[bg_color]);
 	m_curDC->SetBrush(wxBrush(m_colors[bg_color], wxSOLID));
 	m_curDC->DrawRectangle(x, y, w /* + 1*/, h /*+ 1*/);
-
-	if (deleteDC)
-	{
-		delete m_curDC;
-		m_curDC = 0;
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1623,11 +1561,11 @@ void wxTerm::UpdateSize()
 
 	m_inUpdateSize = true;
 	int charWidth, charHeight, w, h;
-
-	wxClientDC* dc = new wxClientDC(this);
+	wxClientDC* dc = nullptr;
 
 	if (!m_curDC)
 	{
+        dc = new wxClientDC(this);
 		m_curDC = dc;
 	}
 
@@ -1666,10 +1604,11 @@ void wxTerm::UpdateSize()
 
 	m_inUpdateSize = false;
 	Refresh();
+
 	if (dc)
 	{
 		delete dc;
-		m_curDC = 0;
+		m_curDC = nullptr;
 	}
 }
 
@@ -1778,7 +1717,7 @@ void wxTerm::ProcessInput(int len, const string& sData)
 
 	m_curDC = &dc;
 	GenericTerminal::ProcessInput(len, sData);
-	m_curDC = 0;
+	m_curDC = nullptr;
 }
 
 /** \brief Processes text received from the kernel
@@ -1796,7 +1735,7 @@ void wxTerm::ProcessOutput(int len, const string& sData)
 	dc(this);
 	m_curDC = &dc;
 	GenericTerminal::ProcessOutput(len, sData);
-	m_curDC = 0;
+	m_curDC = nullptr;
 }
 
 
