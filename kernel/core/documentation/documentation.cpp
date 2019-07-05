@@ -20,6 +20,20 @@
 #include "documentation.hpp"
 #include "../../kernel.hpp"
 
+static bool isValue(const string& sExpr, size_t nPos, size_t nLength)
+{
+    return (!nPos || !isalpha(sExpr[nPos-1])) && (nPos+nLength == sExpr.length() || !isalpha(sExpr[nPos+nLength]));
+}
+
+static bool isOperator(const string& sExpr, size_t nPos, size_t nLength)
+{
+    return true;
+}
+
+static bool isFunction(const string& sExpr, size_t nPos, size_t nLength)
+{
+    return (!nPos || !isalpha(sExpr[nPos-1])) && sExpr[nPos+nLength] == '(';
+}
 
 void doc_Help(const string& __sTopic, Settings& _option)
 {
@@ -503,17 +517,20 @@ void doc_Help(const string& __sTopic, Settings& _option)
 }
 
 
+// This function returns the documentation article
+// for the selected topic as a HTML string. This
+// string either may be used to create a corresponding
+// file or it may be displayed in the documentation viewer
 string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _option)
 {
     string sTopic = __sTopic;
     StripSpaces(sTopic);
 
+    // Get the article contents
     vector<string> vDocArticle = _option.getHelpArticle(sTopic);
 
     if (vDocArticle[0] == "NO_ENTRY_FOUND") // Nix gefunden
-    {
         return "";
-    }
 
     bool isIndex = (vDocArticle[0] == "Index");
 
@@ -521,8 +538,13 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
 
     sHTML = "<!DOCTYPE html>\n<html>\n<head>\n";
 
+    // Convert the XML-like structure of the documentation
+    // article into a valid HTML DOM, which can be returned
+    // as a single string
     for (unsigned int i = 0; i < vDocArticle.size(); i++)
     {
+        // If this is the first line, then create the header
+        // tag section of the HTML file
         if (!i)
         {
             if (generateFile)
@@ -538,28 +560,32 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
             else
             {
                 // Header fertigstellen
-                sHTML += "<title>" + vDocArticle[i] + "</title>\n</head>\n\n<body>\n<h2>"+vDocArticle[i]+"</h2>\n";//<h4>" + _lang.get("DOC_HELP_DESC_HEADLINE") + "</h4>\n";
+                sHTML += "<title>" + vDocArticle[i] + "</title>\n</head>\n\n<body>\n<h2>"+vDocArticle[i]+"</h2>\n";
             }
+
             continue;
         }
 
+        // Expand the XML tags in the documentation article
+        // into corresponding HTML tags, which will resemble
+        // the intended style
         if (vDocArticle[i].find("<example ") != string::npos) // Beispiel-Tags
         {
             sHTML += "<h4>"+ _lang.get("DOC_HELP_EXAMPLE_HEADLINE") +"</h4>\n";
             bool bVerb = false;
+
             if (vDocArticle[i].find("type=") && getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
                 bVerb = true;
+
             string sDescription = getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5);
 
             doc_ReplaceTokensForHTML(sDescription, _option);
+
             if (generateFile)
-            {
                 sHTML += "<p>" + sDescription + "</p>\n<div style=\"margin-left:40px;\">\n<code><span style=\"color:#00008B;\">\n";
-            }
             else
-            {
                 sHTML += "<p>" + sDescription + "</p>\n<div>\n<code><span style=\"color:#00008B;\">\n";
-            }
+
             for (unsigned int j = i+1; j < vDocArticle.size(); j++)
             {
                 if (vDocArticle[j].find("</example>") != string::npos)
@@ -569,6 +595,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                     sHTML += "\n</span></code>\n</div>\n";
                     break;
                 }
+
                 if (vDocArticle[j] == "[...]")
                 {
                     sHTML += "[...]<br>\n";
@@ -586,6 +613,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                     else
                     {
                         sHTML += "|-&gt; " + (vDocArticle[j]) + "<br>\n";
+
                         if (vDocArticle[j+1].find("</example>") == string::npos)
                             sHTML += "|<br>\n";
                     }
@@ -602,42 +630,44 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
             {
                 doc_ReplaceTokensForHTML(vDocArticle[i], _option);
                 doc_ReplaceExprContentForHTML(vDocArticle[i], _option);
+
                 while (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != string::npos)
                 {
                     string sExprBlock = vDocArticle[i].substr(vDocArticle[i].find("<exprblock>")+11, vDocArticle[i].find("</exprblock>")-vDocArticle[i].find("<exprblock>")-11);
+
                     for (unsigned int k = 0; k < sExprBlock.length(); k++)
                     {
                         if (sExprBlock.substr(k,2) == "\\n")
                             sExprBlock.replace(k,2,"<br>");
+
                         if (sExprBlock.substr(k,2) == "\\t")
                             sExprBlock.replace(k,2,"&nbsp;&nbsp;&nbsp;&nbsp;");
                     }
+
                     if (generateFile)
                         vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><div style=\"font-style: italic;margin-left: 40px\">" + sExprBlock + "</div><p>");
                     else
-                        vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><blockquote><span style=\"font-style: italic;\">" + sExprBlock + "</span></blockquote><p>");
+                        vDocArticle[i].replace(vDocArticle[i].find("<exprblock>"), vDocArticle[i].find("</exprblock>")+12-vDocArticle[i].find("<exprblock>"), "</p><blockquote><span style=\"font-style: italic; font-family: palatino linotype; font-size: 12pt; font-weight: bold;\">" + sExprBlock + "</span></blockquote><p>");
                 }
+
                 sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
             }
             else
             {
+                if (vDocArticle[i] != "<exprblock>")
+                    sHTML += "<p>" + (vDocArticle[i].substr(0, vDocArticle[i].find("<exprblock>"))) + "</p>\n";
+
                 if (generateFile)
-                {
-                    if (vDocArticle[i] != "<exprblock>")
-                        sHTML += "<p>" + (vDocArticle[i].substr(0,vDocArticle[i].find("<exprblock>"))) + "</p>\n";
                     sHTML += "<div style=\"font-style: italic;margin-left: 40px\">\n";
-                }
                 else
-                {
-                    if (vDocArticle[i] != "<exprblock>")
-                        sHTML += "<p>" + (vDocArticle[i].substr(0,vDocArticle[i].find("<exprblock>"))) + "</p>\n";
-                    sHTML += "<blockquote><span style=\"font-style: italic;\">\n";
-                }
+                    sHTML += "<blockquote><span style=\"font-style: italic; font-family: palatino linotype; font-size: 12pt; font-weight: bold;\">\n";
+
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</exprblock>") != string::npos)
                     {
                         i = j;
+
                         if (generateFile)
                             sHTML += "</div>\n";
                         else
@@ -645,6 +675,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                             sHTML.erase(sHTML.length()-5);
                             sHTML += "\n</span></blockquote>\n";
                         }
+
                         break;
                     }
 
@@ -663,42 +694,44 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
             if (vDocArticle[i].find("</codeblock>", vDocArticle[i].find("<codeblock>")) != string::npos)
             {
                 doc_ReplaceTokensForHTML(vDocArticle[i], _option);
+
                 while (vDocArticle[i].find("</codeblock>", vDocArticle[i].find("<codeblock>")) != string::npos)
                 {
                     string sExprBlock = vDocArticle[i].substr(vDocArticle[i].find("<codeblock>")+11, vDocArticle[i].find("</codeblock>")-vDocArticle[i].find("<codeblock>")-11);
+
                     for (unsigned int k = 0; k < sExprBlock.length(); k++)
                     {
                         if (sExprBlock.substr(k,2) == "\\n")
                             sExprBlock.replace(k,2,"<br>");
+
                         if (sExprBlock.substr(k,2) == "\\t")
                             sExprBlock.replace(k,2,"&nbsp;&nbsp;&nbsp;&nbsp;");
                     }
+
                     if (generateFile)
                         vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "</p><div class=\"sites-codeblock sites-codesnippet-block\"><code><span style=\"color:#00008B;\">" + sExprBlock + "</span></code></div><p>");
                     else
                         vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "</p><blockquote><code><span style=\"color:#00008B;\">" + sExprBlock + "</span></code></blockquote><p>");
                 }
+
                 sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
             }
             else
             {
+                if (vDocArticle[i] != "<codeblock>")
+                    sHTML += "<p>" + (vDocArticle[i].substr(0, vDocArticle[i].find("<codeblock>"))) + "</p>\n";
+
                 if (generateFile)
-                {
-                    if (vDocArticle[i] != "<codeblock>")
-                        sHTML += "<p>" + (vDocArticle[i].substr(0,vDocArticle[i].find("<codeblock>"))) + "</p>\n";
                     sHTML += "<div class=\"sites-codeblock sites-codesnippet-block\"><code><span style=\"color:#00008B;\">\n";
-                }
                 else
-                {
-                    if (vDocArticle[i] != "<codeblock>")
-                        sHTML += "<p>" + (vDocArticle[i].substr(0,vDocArticle[i].find("<codeblock>"))) + "</p>\n";
                     sHTML += "<blockquote><code><span style=\"color:#00008B;\">\n";
-                }
+
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
                     if (vDocArticle[j].find("</codeblock>") != string::npos)
                     {
                         i = j;
+
                         if (generateFile)
                             sHTML += "</span></code></div>\n";
                         else
@@ -706,10 +739,12 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                             sHTML.erase(sHTML.length()-5);
                             sHTML += "\n</span></code></blockquote>\n";
                         }
+
                         break;
                     }
 
                     doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+
                     while (vDocArticle[j].find("\\t") != string::npos)
                         vDocArticle[j].replace(vDocArticle[j].find("\\t"), 2, "&nbsp;&nbsp;&nbsp;&nbsp;");
 
@@ -726,8 +761,9 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
             }
             else
             {
-                sHTML += /*"<h4>"+ _lang.get("DOC_HELP_OPTIONS_HEADLINE") +"</h4>\n*/"<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
+                sHTML += "<table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
             }
+
             for (unsigned int j = i+1; j < vDocArticle.size(); j++)
             {
                 if (vDocArticle[j].find("</list>") != string::npos)
@@ -740,6 +776,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                 else
                 {
                     doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+
                     if (generateFile)
                     {
                         sHTML += "    <tr>\n";
@@ -776,14 +813,10 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
         else if (vDocArticle[i].find("<table") != string::npos) // Table-Tags
         {
             if (generateFile)
-            {
-                //fHTML << "<h4>"+ _lang.get("DOC_HELP_OPTIONS_HEADLINE") +"</h4>" << endl;
                 sHTML += "<div align=\"center\"><table style=\"border-collapse:collapse; border-color:rgb(136,136,136);border-width:1px\" border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
-            }
             else
-            {
                 sHTML += "<div align=\"center\"><table border=\"1\" bordercolor=\"#888\" cellspacing=\"0\">\n  <tbody>\n";
-            }
+
             for (unsigned int j = i+1; j < vDocArticle.size(); j++)
             {
                 if (vDocArticle[j].find("</table>") != string::npos)
@@ -805,26 +838,17 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
             sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
         }
     }
+
     if (generateFile)
-    {
         sHTML += "<!-- END COPYING HERE -->\n</body>\n</html>\n";
-    }
     else
-    {
-        /*sHTML += "<hr><h4>"+_lang.get("DOC_HELP_NAVIGATION")+"</h4>\n"
-                "<table cellspacing=\"0\" width=\"100%\" bgcolor=\"#DDDDDD\"><tr>"
-                "<td align=\"center\"><a href=\"nhlp://numere?frame=self\">"+_lang.get("DOC_HELP_START")+"</a></td>"
-                "<td align=\"center\"><a href=\"history://back?frame=self\">&lt;&lt; "+_lang.get("DOC_HELP_BACK")+"</a></td>"
-                "<td align=\"center\"><a href=\"history://forward?frame=self\">"+_lang.get("DOC_HELP_FORWARD")+" &gt;&gt;</a></td>"
-                "<td align=\"center\"><a href=\"nhlp://index?frame=self\">"+_lang.get("DOC_HELP_INDEX")+"</a></td>"
-                "</tr></table>\n";*/
         sHTML += "</body>\n</html>\n";
-    }
+
     return sHTML;
 }
 
 // Definierte Tokens durch Steuerzeichen ersetzen
-void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
+void doc_ReplaceTokens(string& sDocParagraph, Settings& _option)
 {
     for (unsigned int k = 0; k < sDocParagraph.length(); k++)
     {
@@ -913,7 +937,7 @@ void doc_ReplaceTokens(string& sDocParagraph, const Settings& _option)
 }
 
 // Definierte Tokens durch ggf. passende HTML-Tokens ersetzen
-void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
+void doc_ReplaceTokensForHTML(string& sDocParagraph, Settings& _option)
 {
     FileSystem _fSys;
     _fSys.setTokens(_option.getTokenPaths());
@@ -940,7 +964,7 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
         {
             string sExpr = sDocParagraph.substr(k+6, sDocParagraph.find("</expr>", k+6)-k-6);
             doc_ReplaceExprContentForHTML(sExpr,_option);
-            sDocParagraph.replace(k, sDocParagraph.find("</expr>",k+6)+7-k, "<em>"+sExpr+"</em>");
+            sDocParagraph.replace(k, sDocParagraph.find("</expr>",k+6)+7-k, "<span style=\"font-style:italic; font-family: palatino linotype; font-weight: bold;\">"+sExpr+"</span>");
         }
         if (sDocParagraph.substr(k,6) == "<code>" && sDocParagraph.find("</code>", k+6) != string::npos)
         {
@@ -989,69 +1013,51 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, const Settings& _option)
     return;
 }
 
-void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
+// This function replaces tokens in <expr>-tags to
+// improve the readability of mathematical code
+void doc_ReplaceExprContentForHTML(string& sExpr, Settings& _option)
 {
-    static const unsigned int nEntities = 10;
-    static const string sHTMLEntities[nEntities][2] =
-        {
-            { "_2pi",   "2&pi;"},
-            {  "_pi",    "&pi;"},
-            {   "PI",    "&pi;"},
-            {   "pi",    "&pi;"},
-            {  "chi",   "&chi;"},
-            {  "phi",   "&phi;"},
-            {  "Phi",   "&Phi;"},
-            {  "rho",   "&rho;"},
-            {"theta", "&theta;"},
-            {"delta", "&delta;"},
-        };
-    unsigned int nPos = 0;
+    // Get the mathstyle data base's contents
+    static vector<vector<string> > vHTMLEntities = getDataBase("<>/docs/mathstyle.ndb", _option);
+    size_t nPos = 0;
+
+    // Set the starting position
     if (sExpr.find("<exprblock>") != string::npos)
         nPos = sExpr.find("<exprblock>")+11;
-    for (unsigned int i = nPos; i < sExpr.length(); i++)
+
+    // Try to match the tokens to those in the
+    // data base and replace them
+    for (size_t i = nPos; i < sExpr.length(); i++)
     {
-        if (sExpr.substr(i,12) == "</exprblock>")
+        // If this is the end of the current
+        // expression block, try to find a new
+        // one or abort the current loop
+        if (sExpr.substr(i, 12) == "</exprblock>")
         {
             if (sExpr.find("<exprblock>", i+12) != string::npos)
             {
-                i = sExpr.find("<exprblock>",i+12)+10;
+                i = sExpr.find("<exprblock>", i+12) + 10;
                 continue;
             }
+
             break;
         }
-        if (sExpr.substr(i,2) == "<=")
+
+        // Match the tokens of the data base
+        for (size_t n = 0; n < vHTMLEntities.size(); n++)
         {
-            sExpr.replace(i,2,"&le;");
-            i += 3;
-        }
-        if (sExpr.substr(i,5) == "&lt;=")
-        {
-            sExpr.replace(i,5,"&le;");
-            i += 3;
-        }
-        if (sExpr.substr(i,2) == ">=")
-        {
-            sExpr.replace(i,2,"&ge;");
-            i += 3;
-        }
-        if (sExpr.substr(i,5) == "&gt;=")
-        {
-            sExpr.replace(i,5,"&ge;");
-            i += 3;
-        }
-        for (unsigned int n = 0; n < nEntities; n++)
-        {
-            if (sExpr.substr(i,sHTMLEntities[n][0].length()) == sHTMLEntities[n][0]
-                && (!i
-                    || !isalpha(sExpr[i-1]))
-                && (i+sHTMLEntities[n][0].length() == sExpr.length()
-                    || !isalpha(sExpr[i+sHTMLEntities[n][0].length()]))
+            if (sExpr.substr(i, vHTMLEntities[n][0].length()) == vHTMLEntities[n][0]
+                && ((vHTMLEntities[n][2] == "OP" && isOperator(sExpr, i, vHTMLEntities[n][0].length()))
+                    || (vHTMLEntities[n][2] == "VAL" && isValue(sExpr, i, vHTMLEntities[n][0].length()))
+                    || (vHTMLEntities[n][2] == "FCT" && isFunction(sExpr, i, vHTMLEntities[n][0].length())))
                 )
             {
-                sExpr.replace(i,sHTMLEntities[n][0].length(),sHTMLEntities[n][1]);
-                i += sHTMLEntities[n][1].length()-1;
+                sExpr.replace(i, vHTMLEntities[n][0].length(), vHTMLEntities[n][1]);
+                i += vHTMLEntities[n][1].length()-1;
             }
         }
+
+        // Handle supscripts
         if (sExpr[i] == '^')
         {
             if (sExpr[i+1] == '(')
@@ -1064,28 +1070,49 @@ void doc_ReplaceExprContentForHTML(string& sExpr, const Settings& _option)
                 sExpr.insert(i+2, "</sup>");
                 sExpr.replace(i, 1, "<sup>");
             }
+
+            i += 4;
+            continue;
         }
+
+        // Handle subscripts
         if (sExpr[i] == '_')
         {
-            sExpr.insert(i+2,"</sub>");
-            sExpr.replace(i,1,"<sub>");
-            i += 7;
+            if (sExpr[i+1] == '(')
+            {
+                sExpr.replace(getMatchingParenthesis(sExpr.substr(i))+i, 1, "</sub >");
+                sExpr.replace(i, 2, "<sub>");
+            }
+            else
+            {
+                sExpr.insert(i+2, "</sub>");
+                sExpr.replace(i, 1, "<sub>");
+            }
+
+            i += 4;
+            continue;
         }
+
+        // Insert whitespaces after commas
+        if (sExpr[i] == ',' && sExpr[i+1] != ' ')
+            sExpr.insert(i+1, 1, ' ');
+
+        // Special case: autodetect numerical
+        // subscripts
         if (i < sExpr.length()-1 && isdigit(sExpr[i+1]) && isalpha(sExpr[i]))
         {
             if (i < sExpr.length()-2)
                 sExpr.insert(i+2, "</sub>");
             else
                 sExpr.append("</sub>");
+
             sExpr.insert(i+1,"<sub>");
-            i += 7;
+            i += 12;
         }
-        if (sExpr.substr(i,2) == "\\n")
-            sExpr.replace(i,2,"<br>");
     }
 }
 
-vector<vector<string> > doc_readTokenTable(const string& sTable, const Settings& _option)
+vector<vector<string> > doc_readTokenTable(const string& sTable, Settings& _option)
 {
     vector<vector<string> > vTable;
     vector<string> vLine;

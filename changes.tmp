@@ -69,3 +69,4 @@ New	A package creator is now available from the "Tools" menu to create packages 
 Added	Arrays of curves may now be plotted, if the columns of the current tables are selected using an index vector.
 New	Added two new matop functions: "correl()" (correlation) and "covar()" (covariance)
 New	The file and symbol trees and the documentation index feature now a search bar, which allows the user to search in its contents for objects.
+Updated	The math style in the documentation articles was update to resemble a more TeX-like layout.
