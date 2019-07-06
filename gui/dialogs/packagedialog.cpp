@@ -151,10 +151,13 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
 // This is the event handler for the remove files button
 void PackageDialog::OnRemoveItems(wxCommandEvent& event)
 {
+    long selected = m_fileList->GetFirstSelected();
+
     // Remove all selected items
-    while (m_fileList->GetItemCount() && m_fileList->GetSelectedItemCount())
+    while (m_fileList->GetItemCount() && m_fileList->GetSelectedItemCount() && selected != -1)
     {
-        m_fileList->DeleteItem(m_fileList->GetNextSelected(0));
+        m_fileList->DeleteItem(selected);
+        selected = m_fileList->GetFirstSelected();
     }
 }
 

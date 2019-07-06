@@ -73,3 +73,4 @@ Fixed	A strange heap corruption issue going from the terminal seems to be correc
 New	Added two new matop functions: "correl()" (correlation) and "covar()" (covariance)
 New	The file and symbol trees and the documentation index feature now a search bar, which allows the user to search in its contents for objects.
 Updated	The math style in the documentation articles was update to resemble a more TeX-like layout.
+Fixed	The crash upon removing the last item in the package creator was resolved.
