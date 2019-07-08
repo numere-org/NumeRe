@@ -181,12 +181,22 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 
 	// Set the default paths for all objects
 	_out.setPath(_option.getSavePath(), true, sPath);
+	_out.createRevisionsFolder();
+
 	_data.setPath(_option.getLoadPath(), true, sPath);
+	_data.createRevisionsFolder();
+
 	_data.setSavePath(_option.getSavePath());
 	_data.setbLoadEmptyCols(_option.getbLoadEmptyCols());
+
 	_pData.setPath(_option.getPlotOutputPath(), true, sPath);
+	_pData.createRevisionsFolder();
+
 	_script.setPath(_option.getScriptPath(), true, sPath);
+	_script.createRevisionsFolder();
+
 	_procedure.setPath(_option.getProcsPath(), true, sPath);
+	_procedure.createRevisionsFolder();
 
 	// Create the default paths, if they are not present
 	_option.setPath(_option.getExePath() + "/docs/plugins", true, sPath);

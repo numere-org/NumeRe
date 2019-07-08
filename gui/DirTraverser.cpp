@@ -20,7 +20,7 @@
 
 #include "DirTraverser.hpp"
 
-
+// Constructor
 DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager, wxTreeItemId theid, const wxString& thepath, FileFilterType thefilespec)
 {
     rootNode = therootNode;
@@ -30,6 +30,8 @@ DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager,
     fileSpec = thefilespec;
     vcurrentnodes.push_back(id);
     ncurrentdepth = 0;
+
+    // Calculate the current folder depth
     for (size_t i = 0; i < path.length(); i++)
     {
         if (path[i] == '\\' || path[i] == '/')
@@ -37,72 +39,79 @@ DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager,
     }
 }
 
+// This method classifies the files found during
+// traversing the directory and appends them to the
+// tree, if they correspond to one of the selected
+// file filter types
 wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
 {
-    if (filename.find('.') == string::npos)
+    if (filename.find('.') == string::npos || filename.find(".revisions") != string::npos)
         return wxDIR_CONTINUE;
+
     wxString filespec;
     wxString extension = filename.substr(filename.rfind('.')+1);
+
+    // Determine, whether the current file matches to the
+    // selected file filter types
     switch (fileSpec)
     {
         case FILE_NSCR:
             if (filename.length() < 6 || extension != "nscr")
-            {
                 return wxDIR_CONTINUE;
-            }
+
             break;
         case FILE_NPRC:
             if (filename.length() < 6 || extension != "nprc")
-            {
                 return wxDIR_CONTINUE;
-            }
+
             break;
         case FILE_NUMERE:
             if (filename.length() < 6)
                 return wxDIR_CONTINUE;
+
             filespec = "*.nscr;*.nprc;*.ndat;";
+
             if (filespec.find("*."+extension+";") == string::npos)
-            {
                 return wxDIR_CONTINUE;
-            }
+
             break;
         case FILE_DATAFILES:
             if (filename.length() < 4)
                 return wxDIR_CONTINUE;
+
             filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;*.pdf;*.m;*.cpp;*.cxx;*.c;*.hpp;*.hxx;*.h;";
+
             if (filespec.find("*."+extension + ";") == string::npos)
-            {
                 return wxDIR_CONTINUE;
-            }
+
             break;
         case FILE_IMAGEFILES:
             if (filename.length() < 5)
                 return wxDIR_CONTINUE;
+
             filespec = "*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.bmp;";
+
             if (filespec.find("*."+extension+";") == string::npos)
-            {
                 return wxDIR_CONTINUE;
-            }
+
             break;
         default:
             filespec  = "*.*";
     }
 
     unsigned int ndepth = 0;
+
     for (size_t i = 0; i < filename.length(); i++)
     {
         if (filename[i] == '/' || filename[i] == '\\')
             ndepth++;
     }
+
     while (ndepth-1 < ncurrentdepth)
     {
         vcurrentnodes.pop_back();
         ncurrentdepth--;
     }
-    /*if (ndepth == ncurrentdepth)
-        vcurrentnodes.pop_back();
-    if (ndepth > ncurrentdepth)
-        ncurrentdepth = ndepth;*/
 
     FileNameTreeData* data = new FileNameTreeData();
     data->filename = filename;
@@ -111,21 +120,30 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
     return wxDIR_CONTINUE;
 }
 
+// This method appends the folders found during traversing
+// the directory to the file tree
 wxDirTraverseResult DirTraverser::OnDir(const wxString& dirname)
 {
+    if (dirname.find(".revisions") != string::npos)
+        return wxDIR_IGNORE;
+
     unsigned int ndepth = 0;
+
     for (size_t i = 0; i < dirname.length(); i++)
     {
         if (dirname[i] == '/' || dirname[i] == '\\')
             ndepth++;
     }
+
     while (ndepth < ncurrentdepth)
     {
         vcurrentnodes.pop_back();
         ncurrentdepth--;
     }
+
     if (ndepth == ncurrentdepth)
         vcurrentnodes.pop_back();
+
     if (ndepth > ncurrentdepth)
         ncurrentdepth = ndepth;
 
@@ -138,54 +156,4 @@ wxDirTraverseResult DirTraverser::OnDir(const wxString& dirname)
 }
 
 
-/*
 
-void NumeReWindow::LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid)
-{
-    //int nNumFiles = 0;
-    wxDir currentDir(fromPath);
-    wxString currentName = "";
-    wxString filespec = "";
-    wxString currentfilespec = "";
-    switch(fileType)
-    {
-        case FILE_NSCR:
-            filespec = "*.nscr";
-            break;
-        case FILE_NPRC:
-            filespec = "*.nprc";
-            break;
-        case FILE_NUMERE:
-            filespec = "*.nscr;*.nprc;*.ndat";
-            break;
-        case FILE_DATAFILES:
-            filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx";
-            break;
-        default:
-            filespec  = "*.*";
-    }
-    do
-    {
-        currentfilespec = filespec.substr(0,filespec.find(';'));
-        if (filespec.find(';') != string::npos)
-            filespec.erase(0,filespec.find(';')+1);
-        else
-            filespec.clear();
-        if (currentDir.GetFirst(&currentName, currentfilespec))
-        {
-            FileNameTreeData* data = new FileNameTreeData();
-            data->filename = fromPath + "/" + currentName;
-
-            m_projectTree->AppendItem(treeid, currentName, m_iconManager->GetIconIndex(currentName.substr(currentName.rfind('.'))),-1, data);
-            while (currentDir.GetNext(&currentName))
-            {
-                FileNameTreeData* data = new FileNameTreeData();
-                data->filename = fromPath + "/" + currentName;
-                m_projectTree->AppendItem(treeid, currentName, m_iconManager->GetIconIndex(currentName.substr(currentName.rfind('.'))), -1, data);
-            }
-        }
-    }
-    while (filespec.length());
-    m_projectTree->SortChildren(treeid);
-}
-*/

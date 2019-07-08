@@ -393,6 +393,15 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
 	return 1;
 }
 
+// This member function creates the hidden revisions folders
+// for the version control system
+void FileSystem::createRevisionsFolder()
+{
+    string sRevisionsPath = sPath.substr(1, sPath.length()-2) + "/.revisions";
+    createFolders(sRevisionsPath);
+    SetFileAttributesA(sRevisionsPath.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
+}
+
 string FileSystem::getPath() const
 {
     if (sPath[0] == '"' && sPath[sPath.length()-1] == '"')

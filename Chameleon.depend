@@ -2323,7 +2323,7 @@
 	<fstream>
 	"../filesystem.hpp"
 
-1543224203 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
+1562491275 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
 	<string>
 	<iostream>
 	<fstream>
@@ -3336,7 +3336,7 @@
 
 1552085576 d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.h
 
-1523004442 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
+1562493629 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
 1505647363 d:\cpp\numere-source\trunk\gui\dirtraverser.hpp
@@ -3347,7 +3347,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1561885250 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1562573250 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3358,6 +3358,7 @@
 	<vector>
 	<string>
 	<set>
+	<memory>
 	"editor.h"
 	"../NumeReWindow.h"
 	"../NumeReNotebook.h"
@@ -3366,6 +3367,8 @@
 	"../../common/DebugEvent.h"
 	"../../common/ProjectInfo.h"
 	"../../common/debug.h"
+	"../../common/vcsmanager.hpp"
+	"../../common/filerevisions.hpp"
 	"../dialogs/renamesymbolsdialog.hpp"
 	"../globals.hpp"
 
@@ -3716,7 +3719,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1562320573 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1562574649 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3774,6 +3777,8 @@
 	"../common/recycler.hpp"
 	"../common/Options.h"
 	"../common/DebugEvent.h"
+	"../common/vcsmanager.hpp"
+	"../common/filerevisions.hpp"
 	"controls/treesearchctrl.hpp"
 	"icons/newstart1.xpm"
 	"icons/newcontinue1.xpm"
@@ -4026,7 +4031,7 @@
 	"documentation.hpp"
 	"../../kernel.hpp"
 
-1555855774 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1562491864 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
@@ -4321,7 +4326,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1560502650 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1562491669 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
@@ -9293,7 +9298,7 @@
 1557683186 d:\cpp\numere-source\trunk\gui\dialogs\textoutputdialog.hpp
 	<wx/wx.h>
 
-1562320574 source:d:\cpp\numere-source\trunk\gui\dialogs\packagedialog.cpp
+1562407984 source:d:\cpp\numere-source\trunk\gui\dialogs\packagedialog.cpp
 	"packagedialog.hpp"
 	"../compositions/grouppanel.hpp"
 	"../../kernel/core/ui/language.hpp"
@@ -9683,4 +9688,38 @@
 	"searchctrl.hpp"
 	<wx/wx.h>
 	<wx/treectrl.h>
+
+1562570037 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
+	"filerevisions.hpp"
+	<wx/zipstrm.h>
+	<wx/txtstrm.h>
+	<wx/wfstream.h>
+	<memory>
+
+1562570009 d:\cpp\numere-source\trunk\common\filerevisions.hpp
+	<wx/wx.h>
+	<wx/filename.h>
+
+1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\zipstrm.h
+	"wx/defs.h"
+	"wx/archive.h"
+	"wx/filename.h"
+
+1412507948 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\archive.h
+	"wx/defs.h"
+	"wx/stream.h"
+	"wx/filename.h"
+	<iterator>
+	<utility>
+
+1562512483 source:d:\cpp\numere-source\trunk\common\vcsmanager.cpp
+	"vcsmanager.hpp"
+	"filerevisions.hpp"
+	"../gui/NumeReWindow.h"
+	"datastructures.h"
+	<vector>
+	<string>
+
+1562497279 d:\cpp\numere-source\trunk\common\vcsmanager.hpp
+	<wx/wx.h>
 

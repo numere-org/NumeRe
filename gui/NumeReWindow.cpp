@@ -97,6 +97,8 @@
 #include "../common/recycler.hpp"
 #include "../common/Options.h"
 #include "../common/DebugEvent.h"
+#include "../common/vcsmanager.hpp"
+#include "../common/filerevisions.hpp"
 
 #include "controls/treesearchctrl.hpp"
 
@@ -5139,14 +5141,26 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
         wxTreeItemId item = event.GetItem();
 
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
+
         if (!data || data->isDir)
             return;
+
         wxFileName pathname = data->filename;
         wxString tooltip = _guilang.get("COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()));
+
         if (pathname.GetExt() == "ndat")
         {
             tooltip += getFileDetails(pathname);
         }
+
+        VersionControlSystemManager manager(this);
+
+        if (manager.hasRevisions(pathname.GetFullPath()))
+        {
+            unique_ptr<FileRevisions> revisions(manager.getRevisions(pathname.GetFullPath()));
+            tooltip += "\n(rev. " + wxString(toString(revisions->getRevisionCount())) + ")";
+        }
+
         event.SetToolTip(tooltip);
     }
 }
