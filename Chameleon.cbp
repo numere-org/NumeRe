@@ -296,6 +296,8 @@
 		<Unit filename="common/chameleonprocessevent.h" />
 		<Unit filename="common/datastructures.h" />
 		<Unit filename="common/debug.h" />
+		<Unit filename="common/filerevisions.cpp" />
+		<Unit filename="common/filerevisions.hpp" />
 		<Unit filename="common/filewatcher.cpp" />
 		<Unit filename="common/filewatcher.hpp" />
 		<Unit filename="common/fixvsbug.h" />
@@ -305,6 +307,8 @@
 		<Unit filename="common/tree.h" />
 		<Unit filename="common/tree_msvc.h" />
 		<Unit filename="common/tree_util.h" />
+		<Unit filename="common/vcsmanager.cpp" />
+		<Unit filename="common/vcsmanager.hpp" />
 		<Unit filename="common/verinfo.cpp" />
 		<Unit filename="common/verinfo.h" />
 		<Unit filename="gui/ChameleonProjectManager.cpp" />
