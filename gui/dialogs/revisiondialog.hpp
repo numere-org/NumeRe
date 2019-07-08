@@ -16,37 +16,47 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef FILEREVISIONS_HPP
-#define FILEREVISIONS_HPP
+
+#ifndef REVISIONDIALOG_HPP
+#define REVISIONDIALOG_HPP
 
 #include <wx/wx.h>
-#include <wx/filename.h>
+#include "../../common/filerevisions.hpp"
+#include "../controls/treelistctrl.h"
 
-class FileRevisions
+class NumeReWindow;
+
+class RevisionDialog : public wxDialog
 {
     private:
-        wxFileName m_revisionPath;
-        wxString convertLineEndings(const wxString& content);
+        FileRevisions* revisions;
+        wxcode::wxTreeListCtrl* revisionList;
+        wxTreeItemId clickedItem;
+        NumeReWindow* mainWindow;
+        wxString currentFile;
+
+        void populateRevisionList();
+        void showRevision(const wxString& revString);
+
+        // Event handling functions
+        void OnRightClick(wxTreeEvent& event);
+        void OnItemActivated(wxTreeEvent& event);
+        void OnMenuEvent(wxCommandEvent& event);
 
     public:
-        FileRevisions(const wxString& revisionPath);
-        size_t getRevisionCount();
-        wxArrayString getRevisionList();
+        RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxString& currentFileName);
 
-        size_t addRevision(const wxString& revisionContent);
-        void undoRevision();
+        ~RevisionDialog()
+        {
+            if (revisions)
+                delete revisions;
+        }
 
-        wxString getRevision(size_t nRevision);
-        wxString getRevision(const wxString& revString);
-
-        void restoreRevision(size_t nRevision, const wxString& targetFile);
-        void restoreRevision(const wxString& revString, const wxString& targetFile);
-
-        size_t tagRevision(size_t nRevision, const wxString& tagComment);
-        size_t tagRevision(const wxString& revString, const wxString& tagComment);
+        DECLARE_EVENT_TABLE();
 };
 
 
-#endif // FILEREVISIONS_HPP
+
+#endif // REVISIONDIALOG_HPP
 
 

@@ -376,6 +376,8 @@
 		<Unit filename="gui/dialogs/packagedialog.hpp" />
 		<Unit filename="gui/dialogs/renamesymbolsdialog.cpp" />
 		<Unit filename="gui/dialogs/renamesymbolsdialog.hpp" />
+		<Unit filename="gui/dialogs/revisiondialog.cpp" />
+		<Unit filename="gui/dialogs/revisiondialog.hpp" />
 		<Unit filename="gui/dialogs/textoutputdialog.cpp" />
 		<Unit filename="gui/dialogs/textoutputdialog.hpp" />
 		<Unit filename="gui/dialogs/tipdialog.cpp" />

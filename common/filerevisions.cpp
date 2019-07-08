@@ -71,7 +71,7 @@ wxArrayString FileRevisions::getRevisionList()
 
         while (entry.reset(zip.GetNextEntry()), entry.get() != nullptr)
         {
-            stringArray.Add(entry->GetName() + "\t" + entry->GetDateTime().FormatISOCombined(' '));
+            stringArray.Add(entry->GetName() + "\t" + entry->GetDateTime().FormatISOCombined(' ') + "\t" + entry->GetComment());
         }
     }
 
@@ -92,6 +92,7 @@ wxString FileRevisions::getRevision(const wxString& revString)
     if (!m_revisionPath.Exists())
         return "";
 
+    wxMBConvUTF8 conv;
     wxFFileInputStream in(m_revisionPath.GetFullPath());
     wxZipInputStream zip(in);
     wxTextInputStream txt(zip);
@@ -100,14 +101,14 @@ wxString FileRevisions::getRevision(const wxString& revString)
 
     while (entry.reset(zip.GetNextEntry()), entry.get() != nullptr)
     {
-        if (entry->GetName() == revString);
+        if (entry->GetName() == revString)
         {
             wxString revision;
 
             while (!zip.Eof())
                 revision += txt.ReadLine() + "\n";
 
-            return revision;
+            return wxString(conv.cMB2WC(revision.c_str()));
         }
     }
 
@@ -120,7 +121,7 @@ void FileRevisions::restoreRevision(size_t nRevision, const wxString& targetFile
     wxString revision = getRevision(nRevision);
 
     wxFile restoredFile;
-    restoredFile.Open(targetFile);
+    restoredFile.Open(targetFile, wxFile::write);
     restoredFile.Write(revision);
 }
 
@@ -130,8 +131,86 @@ void FileRevisions::restoreRevision(const wxString& revString, const wxString& t
     wxString revision = getRevision(revString);
 
     wxFile restoredFile;
-    restoredFile.Open(targetFile);
+    restoredFile.Open(targetFile, wxFile::write);
     restoredFile.Write(revision);
+}
+
+
+size_t FileRevisions::tagRevision(size_t nRevision, const wxString& tagComment)
+{
+    wxString revision = getRevision(nRevision);
+    size_t revisionNo = getRevisionCount();
+    wxZipEntry* taggedRevision = new wxZipEntry("tag" + toString(nRevision) + "-rev" + toString(revisionNo));
+    taggedRevision->SetComment("TAG: " + tagComment);
+
+    std::unique_ptr<wxFFileInputStream> in(new wxFFileInputStream(m_revisionPath.GetFullPath()));
+    wxTempFileOutputStream out(m_revisionPath.GetFullPath());
+
+    wxZipInputStream inzip(*in);
+    wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
+    wxTextOutputStream txt(outzip);
+
+    std::unique_ptr<wxZipEntry> entry;
+
+    outzip.CopyArchiveMetaData(inzip);
+
+    while (entry.reset(inzip.GetNextEntry()), entry.get() != nullptr)
+    {
+        if (entry->GetName() == wxString("rev" + toString(nRevision)))
+        {
+            outzip.CopyEntry(entry.release(), inzip);
+            outzip.PutNextEntry(taggedRevision);
+            txt << revision;
+            outzip.CloseEntry();
+        }
+        else
+            outzip.CopyEntry(entry.release(), inzip);
+    }
+
+    in.reset();
+    outzip.Close();
+    out.Commit();
+
+    return revisionNo;
+}
+
+
+size_t FileRevisions::tagRevision(const wxString& revString, const wxString& tagComment)
+{
+    wxString revision = getRevision(revString);
+    size_t revisionNo = getRevisionCount();
+    wxZipEntry* taggedRevision = new wxZipEntry("tag" + revString.substr(3) + "-rev" + toString(revisionNo));
+    taggedRevision->SetComment("TAG: " + tagComment);
+
+    std::unique_ptr<wxFFileInputStream> in(new wxFFileInputStream(m_revisionPath.GetFullPath()));
+    wxTempFileOutputStream out(m_revisionPath.GetFullPath());
+
+    wxZipInputStream inzip(*in);
+    wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
+    wxTextOutputStream txt(outzip);
+
+    std::unique_ptr<wxZipEntry> entry;
+
+    outzip.CopyArchiveMetaData(inzip);
+
+    while (entry.reset(inzip.GetNextEntry()), entry.get() != nullptr)
+    {
+        if (entry->GetName() == revString)
+        {
+            outzip.CopyEntry(entry.release(), inzip);
+            outzip.PutNextEntry(taggedRevision);
+            txt << revision;
+            outzip.CloseEntry();
+        }
+        else
+            outzip.CopyEntry(entry.release(), inzip);
+    }
+
+    in.reset();
+    outzip.Close();
+    out.Commit();
+
+    return revisionNo;
 }
 
 

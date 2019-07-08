@@ -171,6 +171,7 @@ class NumeReWindow : public wxFrame
         NetworkCallResult CheckNetworkStatus();
 
         void NewFile(FileFilterType _filetype = FILE_NONSOURCE, const wxString& defaultfilename = "");
+        void ShowRevision(const wxString& revisionName, const wxString& revisionContent);
         void DefaultPage();
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
@@ -248,6 +249,8 @@ class NumeReWindow : public wxFrame
         void OnFindReplace(int id );
         void OnCopy();
         void OnOpenInExplorer();
+        void OnShowRevisions();
+        void OnTagCurrentRevision();
         void OnCreateNewFolder();
         void OnRemoveFolder();
         void OnSaveSourceFile( int id );

@@ -83,6 +83,7 @@
 #include "dialogs/textoutputdialog.hpp"
 #include "dialogs/packagedialog.hpp"
 #include "dialogs/dependencydialog.hpp"
+#include "dialogs/revisiondialog.hpp"
 
 #include "terminal/wxssh.h"
 #include "terminal/networking.h"
@@ -1059,6 +1060,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_OPEN_IN_EXPLORER:
             OnOpenInExplorer();
             break;
+        case ID_MENU_SHOW_REVISIONS:
+            OnShowRevisions();
+            break;
+        case ID_MENU_TAG_CURRENT_REVISION:
+            OnTagCurrentRevision();
+            break;
         case ID_MENU_AUTOINDENT:
         {
             m_currentEd->ApplyAutoIndentation();
@@ -1537,6 +1544,10 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
     {
         //m_currentSavedFile.clear();
         string sEventpath = replacePathSeparator(event.GetPath().GetFullPath().ToStdString());
+
+        if (sEventpath.find(".revisions") != string::npos)
+            return;
+
         vector<string> vPaths = m_terminal->getPathSettings();
         const FileFilterType fileType[] = {FILE_DATAFILES, FILE_DATAFILES, FILE_NSCR, FILE_NPRC, FILE_IMAGEFILES};
         for (size_t i = LOADPATH; i < vPaths.size(); i++)
@@ -1556,7 +1567,7 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
     {
         wxString sEventPath = event.GetPath().GetFullPath();
         m_terminal->UpdateLibrary();
-        if (isOnReloadBlackList(sEventPath))
+        if (isOnReloadBlackList(sEventPath) || sEventPath.find(".revisions") != string::npos)
             return;
         if (m_currentSavedFile == toString((int)time(0))+"|"+sEventPath || m_currentSavedFile == toString((int)time(0)-1)+"|"+sEventPath || m_currentSavedFile == "BLOCKALL|"+sEventPath)
         {
@@ -2250,6 +2261,39 @@ void NumeReWindow::OnOpenInExplorer()
         ShellExecute(nullptr, nullptr, fileName.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
+void NumeReWindow::OnShowRevisions()
+{
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+    wxString filename = data->filename;
+    VersionControlSystemManager manager(this);
+    FileRevisions* revisions = manager.getRevisions(filename);
+
+    if (revisions)
+    {
+        RevisionDialog* dialog = new RevisionDialog(this, revisions, m_fileTree->GetItemText(m_clickedTreeItem));
+        dialog->Show();
+    }
+}
+
+void NumeReWindow::OnTagCurrentRevision()
+{
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+    wxString filename = data->filename;
+    VersionControlSystemManager manager(this);
+    unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
+
+    if (revisions.get())
+    {
+        wxTextEntryDialog textdialog(this, _guilang.get("GUI_DLG_REVISIONDIALOG_PROVIDETAGCOMMENT"), _guilang.get("GUI_DLG_REVISIONDIALOG_PROVIDETAGCOMMENT_TITLE"), wxEmptyString, wxCENTER | wxOK | wxCANCEL);
+        int ret = textdialog.ShowModal();
+
+        if (ret == wxID_OK)
+        {
+            revisions->tagRevision(revisions->getRevisionCount()-1, textdialog.GetValue());
+        }
+    }
+}
+
 void NumeReWindow::OnCreateNewFolder()
 {
     wxString fileName = getTreeFolderPath(m_clickedTreeItem);
@@ -2492,7 +2536,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             filename += ".nscr";
         else if (_filetype == FILE_PLUGIN)
             filename = "plgn_" + filename + ".nscr";
-        else
+        else if (_filetype == FILE_NPRC)
             filename += ".nprc";
 
         vector<string> vPaths = m_terminal->getPathSettings();
@@ -2526,6 +2570,13 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Add a new tab for the editor
         m_book->AddPage (edit, filename, true);
     }
+}
+
+void NumeReWindow::ShowRevision(const wxString& revisionName, const wxString& revisionContent)
+{
+    NewFile(FILE_NOTYPE, revisionName);
+    m_currentEd->SetText(revisionContent);
+    m_currentEd->UpdateSyntaxHighlighting(true);
 }
 
 void NumeReWindow::CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileType)
@@ -4811,6 +4862,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 {
     if (m_treeBook->GetCurrentPage() == m_filePanel)
     {
+        VersionControlSystemManager manager(this);
         wxTreeItemId clickedItem = event.GetItem();
         m_clickedTreeItem = clickedItem;
         wxMenu popupMenu;
@@ -4818,41 +4870,26 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         wxString loadableExt = ".dat;.txt;.dx;.jcm;.jdx;.xls;.xlsx;.ods;.ndat;.labx;.ibw;.csv;";
         wxString showableImgExt = ".png;.jpeg;.jpg;.gif;.bmp;";
 
-        //wxTreeItemId rootItem = m_projectTree->GetRootItem();
-        //wxTreeItemId parentItem = m_projectTree->GetItemParent(clickedItem);
         wxString fname_ext = m_fileTree->GetItemText(m_clickedTreeItem);
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+
         if (m_clickedTreeItem == m_fileTree->GetRootItem())
             return;
+
         if (!data || data->isDir)
         {
             popupMenu.Append(ID_MENU_NEW_FOLDER_IN_TREE, _guilang.get("GUI_TREE_POP_NEWFOLDER"));
+
             if (data)
                 popupMenu.Append(ID_MENU_REMOVE_FOLDER_FROM_TREE, _guilang.get("GUI_TREE_POP_REMOVEFOLDER"));
+
             popupMenu.AppendSeparator();
             popupMenu.Append(ID_MENU_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_POP_OPENINEXPLORER"));
-            /*if (loadableExt.find(fname_ext) != string::npos)
-                popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_LOAD"));
-            else if (fname_ext == ".nscr;")
-                popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_START"));
-            else if (fname_ext == ".nprc;")
-                popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_RUN"));
-
-            if (editableExt.find(fname_ext) != string::npos)
-                popupMenu.Append(ID_EDIT_FILE, _guilang.get("GUI_TREE_PUP_EDIT"));
-            if (showableImgExt.find(fname_ext) != string::npos)
-                popupMenu.Append(ID_OPEN_IMAGE, _guilang.get("GUI_TREE_PUP_OPENIMAGE"));
-            popupMenu.AppendSeparator();
-            popupMenu.Append(ID_DELETE_FILE, _guilang.get("GUI_TREE_PUP_DELETEFILE"));
-            popupMenu.Append(ID_COPY_FILE, _guilang.get("GUI_TREE_PUP_COPYFILE"));
-            if (m_copiedTreeItem)
-                popupMenu.Append(ID_INSERT_FILE, _guilang.get("GUI_TREE_PUP_INSERTFILE"));
-            popupMenu.Append(ID_RENAME_FILE, _guilang.get("GUI_TREE_PUP_RENAMEFILE"));*/
-
             wxPoint p = event.GetPoint();
             m_fileTree->PopupMenu(&popupMenu, p);
             return;
         }
+
         fname_ext = fname_ext.substr(fname_ext.rfind('.')) + ";";
 
         if (loadableExt.find(fname_ext) != string::npos)
@@ -4864,13 +4901,24 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
         if (editableExt.find(fname_ext) != string::npos)
             popupMenu.Append(ID_MENU_EDIT_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_EDIT"));
+
         if (showableImgExt.find(fname_ext) != string::npos)
             popupMenu.Append(ID_MENU_OPEN_IMAGE_FROM_TREE, _guilang.get("GUI_TREE_PUP_OPENIMAGE"));
+
+        if (manager.hasRevisions(data->filename))
+        {
+            popupMenu.AppendSeparator();
+            popupMenu.Append(ID_MENU_SHOW_REVISIONS, _guilang.get("GUI_TREE_PUP_SHOWREVISIONS"));
+            popupMenu.Append(ID_MENU_TAG_CURRENT_REVISION, _guilang.get("GUI_TREE_PUP_TAGCURRENTREVISION"));
+        }
+
         popupMenu.AppendSeparator();
         popupMenu.Append(ID_MENU_DELETE_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_DELETEFILE"));
         popupMenu.Append(ID_MENU_COPY_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_COPYFILE"));
+
         if (m_copiedTreeItem)
             popupMenu.Append(ID_MENU_INSERT_FILE_INTO_TREE, _guilang.get("GUI_TREE_PUP_INSERTFILE"));
+
         popupMenu.Append(ID_MENU_RENAME_FILE_IN_TREE, _guilang.get("GUI_TREE_PUP_RENAMEFILE"));
 
         wxPoint p = event.GetPoint();
