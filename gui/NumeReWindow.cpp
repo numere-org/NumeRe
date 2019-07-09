@@ -2250,6 +2250,16 @@ void NumeReWindow::renameFile()
         return;
     }
 
+    VersionControlSystemManager manager(this);
+
+    if (manager.hasRevisions(source_filename.GetFullPath()))
+    {
+        unique_ptr<FileRevisions> revisions(manager.getRevisions(source_filename.GetFullPath()));
+
+        if (revisions.get())
+            revisions->renameFile(source_filename.GetFullName(), target_filename.GetFullName(), manager.getRevisionPath(target_filename.GetFullPath()));
+    }
+
     wxRenameFile(source_filename.GetFullPath(), target_filename.GetFullPath());
 }
 
@@ -2289,7 +2299,7 @@ void NumeReWindow::OnTagCurrentRevision()
 
         if (ret == wxID_OK)
         {
-            revisions->tagRevision(revisions->getRevisionCount()-1, textdialog.GetValue());
+            revisions->tagRevision(revisions->getCurrentRevision(), textdialog.GetValue());
         }
     }
 }
@@ -4878,13 +4888,13 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
         if (!data || data->isDir)
         {
-            popupMenu.Append(ID_MENU_NEW_FOLDER_IN_TREE, _guilang.get("GUI_TREE_POP_NEWFOLDER"));
+            popupMenu.Append(ID_MENU_NEW_FOLDER_IN_TREE, _guilang.get("GUI_TREE_PUP_NEWFOLDER"));
 
             if (data)
-                popupMenu.Append(ID_MENU_REMOVE_FOLDER_FROM_TREE, _guilang.get("GUI_TREE_POP_REMOVEFOLDER"));
+                popupMenu.Append(ID_MENU_REMOVE_FOLDER_FROM_TREE, _guilang.get("GUI_TREE_PUP_REMOVEFOLDER"));
 
             popupMenu.AppendSeparator();
-            popupMenu.Append(ID_MENU_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_POP_OPENINEXPLORER"));
+            popupMenu.Append(ID_MENU_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_PUP_OPENINEXPLORER"));
             wxPoint p = event.GetPoint();
             m_fileTree->PopupMenu(&popupMenu, p);
             return;
@@ -4934,14 +4944,15 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
         if (data->isDir)
             return;
+
         popupMenu.Append(ID_MENU_INSERT_IN_EDITOR_FROM_TREE, _guilang.get("GUI_TREE_PUP_INSERT_EDITOR"));
         popupMenu.Append(ID_MENU_INSERT_IN_CONSOLE_FROM_TREE, _guilang.get("GUI_TREE_PUP_INSERT_CONSOLE"));
+
         if (data->isCommand)
         {
             popupMenu.AppendSeparator();
             popupMenu.Append(ID_MENU_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", m_functionTree->GetItemText(clickedItem).ToStdString()));
         }
-        //popupMenu.Append(ID_SHOW_DESCRIPTION, _guilang.get("GUI_TREE_PUP_SHOW_DESCRIPTION"));
 
         wxPoint p = event.GetPoint();
         m_functionTree->PopupMenu(&popupMenu, p);
@@ -5206,7 +5217,9 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
         if (manager.hasRevisions(pathname.GetFullPath()))
         {
             unique_ptr<FileRevisions> revisions(manager.getRevisions(pathname.GetFullPath()));
-            tooltip += "\n(rev. " + wxString(toString(revisions->getRevisionCount())) + ")";
+
+            if (revisions.get())
+                tooltip += "\n(" + revisions->getCurrentRevision() + ")";
         }
 
         event.SetToolTip(tooltip);

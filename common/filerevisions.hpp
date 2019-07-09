@@ -27,14 +27,20 @@ class FileRevisions
     private:
         wxFileName m_revisionPath;
         wxString convertLineEndings(const wxString& content);
+        size_t createNewRevision(const wxString& revisionContent, const wxString& comment);
+        size_t createNewTag(const wxString& revString, const wxString& comment);
+        void fileMove(const wxString& newRevPath, const wxString& comment);
 
     public:
         FileRevisions(const wxString& revisionPath);
         size_t getRevisionCount();
         wxArrayString getRevisionList();
+        wxString getCurrentRevision();
 
         size_t addRevision(const wxString& revisionContent);
         void undoRevision();
+        void renameFile(const wxString& oldName, const wxString& newName, const wxString& newRevPath);
+        void moveFile(const wxString& oldPath, const wxString& newPath, const wxString& newRevPath);
 
         wxString getRevision(size_t nRevision);
         wxString getRevision(const wxString& revString);

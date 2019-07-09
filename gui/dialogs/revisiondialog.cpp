@@ -30,7 +30,7 @@ extern Language _guilang;
 
 
 RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxString& currentFileName)
-    : wxDialog(parent, wxID_ANY, _guilang.get("GUI_DLG_REVISIONDIALOG_TITLE"), wxDefaultPosition, wxSize(550, 500), wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX), revisions(rev), currentFile(currentFileName)
+    : wxDialog(parent, wxID_ANY, _guilang.get("GUI_DLG_REVISIONDIALOG_TITLE"), wxDefaultPosition, wxSize(750, 500), wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX), revisions(rev), currentFile(currentFileName)
 {
     mainWindow = static_cast<NumeReWindow*>(parent);
 
@@ -38,7 +38,7 @@ RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxStr
     revisionList = new wxcode::wxTreeListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT);
     revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_REV"), 150);
     revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_DATE"), 150);
-    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_COMMENT"), 250);
+    revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_COMMENT"), 450);
     revisionList->AddRoot(currentFile);
 
     populateRevisionList();
@@ -52,6 +52,8 @@ RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxStr
 
 void RevisionDialog::populateRevisionList()
 {
+    revisionList->SetItemText(revisionList->GetRootItem(), 0, currentFile + " (" + revisions->getCurrentRevision() + ")");
+
     wxArrayString revList = revisions->getRevisionList();
     wxTreeItemId currentItem;
 

@@ -26,6 +26,13 @@
 
 std::string toString(size_t);
 
+FileRevisions::FileRevisions(const wxString& revisionPath) : m_revisionPath(revisionPath)
+{
+    if (!m_revisionPath.Exists())
+        wxFileName::Mkdir(m_revisionPath.GetPath(), wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+}
+
+
 wxString FileRevisions::convertLineEndings(const wxString& content)
 {
     wxString target = content;
@@ -37,12 +44,91 @@ wxString FileRevisions::convertLineEndings(const wxString& content)
 }
 
 
-
-
-FileRevisions::FileRevisions(const wxString& revisionPath) : m_revisionPath(revisionPath)
+size_t FileRevisions::createNewRevision(const wxString& revContent, const wxString& comment)
 {
-    if (!m_revisionPath.Exists())
-        wxFileName::Mkdir(m_revisionPath.GetPath(), wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+    size_t revisionNo = getRevisionCount();
+
+    std::unique_ptr<wxFFileInputStream> in(new wxFFileInputStream(m_revisionPath.GetFullPath()));
+    wxTempFileOutputStream out(m_revisionPath.GetFullPath());
+
+    wxZipInputStream inzip(*in);
+    wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
+    wxTextOutputStream txt(outzip);
+
+    std::unique_ptr<wxZipEntry> entry;
+
+    outzip.CopyArchiveMetaData(inzip);
+
+    while (entry.reset(inzip.GetNextEntry()), entry.get() != nullptr)
+    {
+        outzip.CopyEntry(entry.release(), inzip);
+    }
+
+    wxZipEntry* currentRev = new wxZipEntry("rev" + toString(revisionNo));
+    currentRev->SetComment(comment);
+
+    outzip.PutNextEntry(currentRev);
+    txt << revContent;
+    outzip.CloseEntry();
+    in.reset();
+    outzip.Close();
+    out.Commit();
+
+    return revisionNo;
+}
+
+
+size_t FileRevisions::createNewTag(const wxString& revString, const wxString& comment)
+{
+    wxString revision = getRevision(revString);
+    size_t revisionNo = getRevisionCount();
+    wxZipEntry* taggedRevision = new wxZipEntry("tag" + revString.substr(3) + "-rev" + toString(revisionNo));
+    taggedRevision->SetComment("TAG: " + comment);
+
+    std::unique_ptr<wxFFileInputStream> in(new wxFFileInputStream(m_revisionPath.GetFullPath()));
+    wxTempFileOutputStream out(m_revisionPath.GetFullPath());
+
+    wxZipInputStream inzip(*in);
+    wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
+    wxTextOutputStream txt(outzip);
+
+    std::unique_ptr<wxZipEntry> entry;
+
+    outzip.CopyArchiveMetaData(inzip);
+
+    while (entry.reset(inzip.GetNextEntry()), entry.get() != nullptr)
+    {
+        if (entry->GetName() == revString)
+        {
+            outzip.CopyEntry(entry.release(), inzip);
+            outzip.PutNextEntry(taggedRevision);
+            txt << revision;
+            outzip.CloseEntry();
+        }
+        else
+            outzip.CopyEntry(entry.release(), inzip);
+    }
+
+    in.reset();
+    outzip.Close();
+    out.Commit();
+
+    return revisionNo;
+}
+
+
+void FileRevisions::fileMove(const wxString& newRevPath, const wxString& comment)
+{
+    wxString revContent = getRevision(getCurrentRevision());
+    createNewRevision(revContent, comment);
+
+    wxFileName newPath(newRevPath);
+
+    if (!newPath.DirExists())
+        wxFileName::Mkdir(newPath.GetPath(), wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+
+    wxRenameFile(m_revisionPath.GetFullPath(), newRevPath);
+    m_revisionPath.Assign(newRevPath);
 }
 
 
@@ -76,6 +162,20 @@ wxArrayString FileRevisions::getRevisionList()
     }
 
     return stringArray;
+}
+
+
+wxString FileRevisions::getCurrentRevision()
+{
+    wxArrayString revList = getRevisionList();
+
+    for (int i = revList.size()-1; i >= 0; i--)
+    {
+        if (revList[i].substr(0, 3) == "rev")
+            return revList[i].substr(0, revList[i].find('\t'));
+    }
+
+    return "";
 }
 
 
@@ -138,79 +238,15 @@ void FileRevisions::restoreRevision(const wxString& revString, const wxString& t
 
 size_t FileRevisions::tagRevision(size_t nRevision, const wxString& tagComment)
 {
-    wxString revision = getRevision(nRevision);
-    size_t revisionNo = getRevisionCount();
-    wxZipEntry* taggedRevision = new wxZipEntry("tag" + toString(nRevision) + "-rev" + toString(revisionNo));
-    taggedRevision->SetComment("TAG: " + tagComment);
-
-    std::unique_ptr<wxFFileInputStream> in(new wxFFileInputStream(m_revisionPath.GetFullPath()));
-    wxTempFileOutputStream out(m_revisionPath.GetFullPath());
-
-    wxZipInputStream inzip(*in);
-    wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
-    wxTextOutputStream txt(outzip);
-
-    std::unique_ptr<wxZipEntry> entry;
-
-    outzip.CopyArchiveMetaData(inzip);
-
-    while (entry.reset(inzip.GetNextEntry()), entry.get() != nullptr)
-    {
-        if (entry->GetName() == wxString("rev" + toString(nRevision)))
-        {
-            outzip.CopyEntry(entry.release(), inzip);
-            outzip.PutNextEntry(taggedRevision);
-            txt << revision;
-            outzip.CloseEntry();
-        }
-        else
-            outzip.CopyEntry(entry.release(), inzip);
-    }
-
-    in.reset();
-    outzip.Close();
-    out.Commit();
-
-    return revisionNo;
+    // Will probably fail, because the selected revision is not
+    // stored as "revXYZ" but as "tagABC-revXYZ"
+    return createNewTag("rev" + toString(nRevision), tagComment);
 }
 
 
 size_t FileRevisions::tagRevision(const wxString& revString, const wxString& tagComment)
 {
-    wxString revision = getRevision(revString);
-    size_t revisionNo = getRevisionCount();
-    wxZipEntry* taggedRevision = new wxZipEntry("tag" + revString.substr(3) + "-rev" + toString(revisionNo));
-    taggedRevision->SetComment("TAG: " + tagComment);
-
-    std::unique_ptr<wxFFileInputStream> in(new wxFFileInputStream(m_revisionPath.GetFullPath()));
-    wxTempFileOutputStream out(m_revisionPath.GetFullPath());
-
-    wxZipInputStream inzip(*in);
-    wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
-    wxTextOutputStream txt(outzip);
-
-    std::unique_ptr<wxZipEntry> entry;
-
-    outzip.CopyArchiveMetaData(inzip);
-
-    while (entry.reset(inzip.GetNextEntry()), entry.get() != nullptr)
-    {
-        if (entry->GetName() == revString)
-        {
-            outzip.CopyEntry(entry.release(), inzip);
-            outzip.PutNextEntry(taggedRevision);
-            txt << revision;
-            outzip.CloseEntry();
-        }
-        else
-            outzip.CopyEntry(entry.release(), inzip);
-    }
-
-    in.reset();
-    outzip.Close();
-    out.Commit();
-
-    return revisionNo;
+    return createNewTag(revString, tagComment);
 }
 
 
@@ -235,35 +271,7 @@ size_t FileRevisions::addRevision(const wxString& revisionContent)
     }
     else
     {
-        size_t revisionNo = getRevisionCount();
-
-        std::unique_ptr<wxFFileInputStream> in(new wxFFileInputStream(m_revisionPath.GetFullPath()));
-        wxTempFileOutputStream out(m_revisionPath.GetFullPath());
-
-        wxZipInputStream inzip(*in);
-        wxZipOutputStream outzip(out, COMPRESSIONLEVEL);
-        wxTextOutputStream txt(outzip);
-
-        std::unique_ptr<wxZipEntry> entry;
-
-        outzip.CopyArchiveMetaData(inzip);
-
-        while (entry.reset(inzip.GetNextEntry()), entry.get() != nullptr)
-        {
-            outzip.CopyEntry(entry.release(), inzip);
-        }
-
-        wxZipEntry* currentRev = new wxZipEntry("rev" + toString(revisionNo));
-        currentRev->SetComment("Revision created during saving");
-
-        outzip.PutNextEntry(currentRev);
-        txt << revContent;
-        outzip.CloseEntry();
-        in.reset();
-        outzip.Close();
-        out.Commit();
-
-        return revisionNo;
+        return createNewRevision(revContent, "Revision created during saving");
     }
 }
 
@@ -301,5 +309,18 @@ void FileRevisions::undoRevision()
             wxRemoveFile(m_revisionPath.GetFullPath());
     }
 }
+
+
+void FileRevisions::renameFile(const wxString& oldName, const wxString& newName, const wxString& newRevPath)
+{
+    fileMove(newRevPath, "RENAME: " + oldName + " -> " + newName);
+}
+
+
+void FileRevisions::moveFile(const wxString& oldPath, const wxString& newPath, const wxString& newRevPath)
+{
+    fileMove(newRevPath, "MOVE: " + oldPath + " -> " + newPath);
+}
+
 
 

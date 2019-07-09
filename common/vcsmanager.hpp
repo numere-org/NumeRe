@@ -29,13 +29,13 @@ class VersionControlSystemManager
 {
     private:
         NumeReWindow* m_parent;
-        wxString getRevisionPath(const wxString& currentFilePath);
 
     public:
         VersionControlSystemManager(NumeReWindow* parent) : m_parent(parent) {}
 
         FileRevisions* getRevisions(const wxString& currentFile);
         bool hasRevisions(const wxString& currentFile);
+        wxString getRevisionPath(const wxString& currentFilePath);
 };
 
 #endif // VCSMANAGER_HPP

@@ -23,6 +23,8 @@
 #include "terminal/wxssh.h"
 #include "compositions/filetree.hpp"
 #include "DirTraverser.hpp"
+#include "../common/vcsmanager.hpp"
+#include "../common/filerevisions.hpp"
 
 #define wxUSE_DRAG_AND_DROP 1
 
@@ -167,8 +169,11 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
             else if (m_type == FILETREE)
             {
                 FileTree* tree = static_cast<FileTree*>(m_owner);
+                VersionControlSystemManager manager(top);
 
                 wxTreeItemId dragdropsource = top->getDragDropSourceItem();
+
+                // Internal drag-drop
                 if (dragdropsource.IsOk() && (static_cast<FileNameTreeData*>(tree->GetItemData(dragdropsource)))->filename == filenames[0])
                 {
                     wxTreeItemId dragdroptarget = tree->HitTest(wxPoint(x,y));
@@ -177,11 +182,23 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                     if (pathname.length())
                     {
                         wxString filename = pathname + "\\" + filenames[0].substr(filenames[0].rfind('\\')+1);
+
+                        if (manager.hasRevisions(filenames[0]))
+                        {
+                            unique_ptr<FileRevisions> revisions(manager.getRevisions(filenames[0]));
+
+                            if (revisions.get())
+                            {
+                                revisions->moveFile(filenames[0], filename, manager.getRevisionPath(filename));
+                            }
+                        }
+
                         wxCopyFile(filenames[0], filename, true);
                         wxRemoveFile(filenames[0]);
                         tree->SetDnDHighlight(wxTreeItemId());
                         return defaultDragResult;
                     }
+
                     tree->SetDnDHighlight(wxTreeItemId());
                     return wxDragNone;
                 }
@@ -194,10 +211,13 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                     {
                         filenames.erase(filenames.begin()+i);
                     }
+
                     if (!filenames.size())
                         return wxDragNone;
+
                     fileType type = getFileType(filenames[i]);
                     string sFileName = replacePathSeparator(filenames[i].ToStdString());
+
                     if (type == TEXTFILE || type == BINARYFILE)
                     {
                         // load or savepath
@@ -205,9 +225,11 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                         if (sFileName.substr(vPaths[LOADPATH].length()) == vPaths[LOADPATH]
                             || sFileName.substr(vPaths[SAVEPATH].length()) == vPaths[SAVEPATH])
                             continue;
+
                         if (wxFileExists(vPaths[LOADPATH] + sFileName.substr(sFileName.rfind('/')))
                             || wxFileExists(vPaths[SAVEPATH] + sFileName.substr(sFileName.rfind('/'))))
                             continue;
+
                         wxCopyFile(sFileName, vPaths[LOADPATH] + sFileName.substr(sFileName.rfind('/')));
                     }
                     else if (type == EXECUTABLE)
@@ -219,6 +241,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
                             continue;
 
                         PathID pathID;
+
                         if (sFileName.find(".nscr") != string::npos)
                             pathID = SCRIPTPATH;
                         else
@@ -226,6 +249,7 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 
                         if (wxFileExists(vPaths[pathID] + sFileName.substr(sFileName.rfind('/'))))
                             continue;
+
                         wxCopyFile(sFileName, vPaths[pathID] + sFileName.substr(sFileName.rfind('/')));
                     }
                     else if (type == IMAGEFILE)
@@ -239,12 +263,15 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 
                         if (wxFileExists(vPaths[pathID] + sFileName.substr(sFileName.rfind('/'))))
                             continue;
+
                         wxCopyFile(sFileName, vPaths[pathID] + sFileName.substr(sFileName.rfind('/')));
                     }
                 }
+
                 tree->SetDnDHighlight(wxTreeItemId());
                 // if no: copy the file to the fitting location
             }
+
             break;
         }
         case wxDF_TEXT:

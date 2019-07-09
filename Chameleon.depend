@@ -2016,14 +2016,14 @@
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1562606318 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
+1562660908 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
 	"filerevisions.hpp"
 	<wx/zipstrm.h>
 	<wx/txtstrm.h>
 	<wx/wfstream.h>
 	<memory>
 
-1562589574 d:\cpp\numere-source\trunk\common\filerevisions.hpp
+1562660375 d:\cpp\numere-source\trunk\common\filerevisions.hpp
 	<wx/wx.h>
 	<wx/filename.h>
 
@@ -3077,7 +3077,7 @@
 	<vector>
 	<string>
 
-1562497279 d:\cpp\numere-source\trunk\common\vcsmanager.hpp
+1562656564 d:\cpp\numere-source\trunk\common\vcsmanager.hpp
 	<wx/wx.h>
 
 1490791550 source:d:\cpp\numere-source\trunk\common\verinfo.cpp
@@ -4000,13 +4000,15 @@
 
 1549727481 d:\cpp\numere-source\trunk\gui\icons\doc.xpm
 
-1562320574 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+1562659538 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"NumeReWindow.h"
 	"editor/editor.h"
 	"terminal/wxssh.h"
 	"compositions/filetree.hpp"
 	"DirTraverser.hpp"
+	"../common/vcsmanager.hpp"
+	"../common/filerevisions.hpp"
 
 1518774410 d:\cpp\numere-source\trunk\gui\numeredroptarget.hpp
 	<wx/wx.h>
@@ -4037,7 +4039,7 @@
 1536865330 source:d:\cpp\numere-source\trunk\gui\numerestatusbar.cpp
 	"NumeReStatusbar.hpp"
 
-1562606144 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1562659397 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4683,7 +4685,7 @@
 	"windowmanager.hpp"
 	"kernel.hpp"
 
-1562602743 source:d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.cpp
+1562656159 source:d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.cpp
 	"revisiondialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../NumeReWindow.h"
