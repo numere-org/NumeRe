@@ -43,7 +43,7 @@ class FileRevisions
         void moveFile(const wxString& oldPath, const wxString& newPath, const wxString& newRevPath);
 
         wxString getRevision(size_t nRevision);
-        wxString getRevision(const wxString& revString);
+        wxString getRevision(wxString revString);
 
         void restoreRevision(size_t nRevision, const wxString& targetFile);
         void restoreRevision(const wxString& revString, const wxString& targetFile);

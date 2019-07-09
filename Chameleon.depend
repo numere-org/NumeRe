@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1562605832 d:\cpp\numere-source\trunk\common\datastructures.h
+1562670451 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2016,14 +2016,14 @@
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1562660908 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
+1562664625 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
 	"filerevisions.hpp"
 	<wx/zipstrm.h>
 	<wx/txtstrm.h>
 	<wx/wfstream.h>
 	<memory>
 
-1562660375 d:\cpp\numere-source\trunk\common\filerevisions.hpp
+1562662507 d:\cpp\numere-source\trunk\common\filerevisions.hpp
 	<wx/wx.h>
 	<wx/filename.h>
 
@@ -4685,7 +4685,7 @@
 	"windowmanager.hpp"
 	"kernel.hpp"
 
-1562656159 source:d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.cpp
+1562672175 source:d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.cpp
 	"revisiondialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../NumeReWindow.h"

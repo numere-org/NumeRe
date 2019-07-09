@@ -22,7 +22,7 @@
 #include <wx/wfstream.h>
 #include <memory>
 
-#define COMPRESSIONLEVEL 9
+#define COMPRESSIONLEVEL 6
 
 std::string toString(size_t);
 
@@ -80,7 +80,7 @@ size_t FileRevisions::createNewRevision(const wxString& revContent, const wxStri
 
 size_t FileRevisions::createNewTag(const wxString& revString, const wxString& comment)
 {
-    wxString revision = getRevision(revString);
+    wxString revision = "TAG FOR " + revString;
     size_t revisionNo = getRevisionCount();
     wxZipEntry* taggedRevision = new wxZipEntry("tag" + revString.substr(3) + "-rev" + toString(revisionNo));
     taggedRevision->SetComment("TAG: " + comment);
@@ -187,10 +187,16 @@ wxString FileRevisions::getRevision(size_t nRevision)
     return getRevision("rev" + toString(nRevision));
 }
 
-wxString FileRevisions::getRevision(const wxString& revString)
+wxString FileRevisions::getRevision(wxString revString)
 {
     if (!m_revisionPath.Exists())
         return "";
+
+    if (revString.substr(0, 3) == "tag")
+    {
+        revString.replace(0, 3, "rev");
+        revString.erase(revString.find('-'));
+    }
 
     wxMBConvUTF8 conv;
     wxFFileInputStream in(m_revisionPath.GetFullPath());
@@ -206,9 +212,9 @@ wxString FileRevisions::getRevision(const wxString& revString)
             wxString revision;
 
             while (!zip.Eof())
-                revision += txt.ReadLine() + "\n";
+                revision += wxString(conv.cMB2WC(txt.ReadLine())) + "\n";
 
-            return wxString(conv.cMB2WC(revision.c_str()));
+            return revision;
         }
     }
 
@@ -271,7 +277,7 @@ size_t FileRevisions::addRevision(const wxString& revisionContent)
     }
     else
     {
-        return createNewRevision(revContent, "Revision created during saving");
+        return createNewRevision(revContent, "Saving revision");
     }
 }
 

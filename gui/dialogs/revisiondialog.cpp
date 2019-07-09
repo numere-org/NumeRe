@@ -23,7 +23,7 @@
 BEGIN_EVENT_TABLE(RevisionDialog, wxDialog)
     EVT_TREE_ITEM_RIGHT_CLICK(-1, RevisionDialog::OnRightClick)
     EVT_TREE_ITEM_ACTIVATED(-1, RevisionDialog::OnItemActivated)
-    EVT_MENU_RANGE(ID_REVISIONDIALOG_SHOW, ID_REVISIONDIALOG_RESTORE, RevisionDialog::OnMenuEvent)
+    EVT_MENU_RANGE(ID_REVISIONDIALOG_SHOW, ID_REVISIONDIALOG_REFRESH, RevisionDialog::OnMenuEvent)
 END_EVENT_TABLE()
 
 extern Language _guilang;
@@ -52,9 +52,10 @@ RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxStr
 
 void RevisionDialog::populateRevisionList()
 {
-    revisionList->SetItemText(revisionList->GetRootItem(), 0, currentFile + " (" + revisions->getCurrentRevision() + ")");
+    //revisionList->SetItemText(revisionList->GetRootItem(), 0, currentFile + " (" + revisions->getCurrentRevision() + ")");
 
     wxArrayString revList = revisions->getRevisionList();
+    wxString currentRev = revisions->getCurrentRevision();
     wxTreeItemId currentItem;
 
     for (size_t i = 0; i < revList.size(); i++)
@@ -64,16 +65,28 @@ void RevisionDialog::populateRevisionList()
             wxTreeItemId currentTagItem = revisionList->AppendItem(currentItem, revList[i].substr(0, revList[i].find('\t')));
             revisionList->SetItemText(currentTagItem, 1, revList[i].substr(revList[i].find('\t')+1, revList[i].find('\t', revList[i].find('\t')+1) - revList[i].find('\t')-1));
             revisionList->SetItemText(currentTagItem, 2, revList[i].substr(revList[i].rfind('\t')+1));
+            revisionList->SetItemFont(currentTagItem, revisionList->GetFont().MakeItalic());
+            revisionList->SetItemTextColour(currentTagItem, wxColour(0, 0, 192));
         }
         else
         {
             currentItem = revisionList->AppendItem(revisionList->GetRootItem(), revList[i].substr(0, revList[i].find('\t')));
             revisionList->SetItemText(currentItem, 1, revList[i].substr(revList[i].find('\t')+1, revList[i].find('\t', revList[i].find('\t')+1) - revList[i].find('\t')-1));
             revisionList->SetItemText(currentItem, 2, revList[i].substr(revList[i].rfind('\t')+1));
+
+            if (revisionList->GetItemText(currentItem, 2).substr(0, 5) == "MOVE:")
+                revisionList->SetItemTextColour(currentItem, wxColour(128, 0, 0));
+
+            if (revisionList->GetItemText(currentItem, 2).substr(0, 7) == "RENAME:")
+                revisionList->SetItemTextColour(currentItem, wxColour(0, 128, 0));
+
+            if (revisionList->GetItemText(currentItem, 0) == currentRev)
+                revisionList->SetItemBold(currentItem, true);
         }
     }
 
-    revisionList->Expand(revisionList->GetRootItem());
+    //revisionList->Expand(revisionList->GetRootItem());
+    revisionList->ExpandAll(revisionList->GetRootItem());
 }
 
 
@@ -101,6 +114,7 @@ void RevisionDialog::OnRightClick(wxTreeEvent& event)
     popUpmenu.AppendSeparator();
     popUpmenu.Append(ID_REVISIONDIALOG_TAG, _guilang.get("GUI_DLG_REVISIONDIALOG_TAG"));
     popUpmenu.Append(ID_REVISIONDIALOG_RESTORE, _guilang.get("GUI_DLG_REVISIONDIALOG_RESTORE"));
+    popUpmenu.Append(ID_REVISIONDIALOG_REFRESH, _guilang.get("GUI_DLG_REVISIONDIALOG_REFRESH"));
 
     // Display the menu
     PopupMenu(&popUpmenu, event.GetPoint());
@@ -145,6 +159,13 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
 
                 if (ret == wxID_OK)
                     revisions->restoreRevision(revID, filedialog.GetPath());
+
+                break;
+            }
+        case ID_REVISIONDIALOG_REFRESH:
+            {
+                revisionList->DeleteChildren(revisionList->GetRootItem());
+                populateRevisionList();
 
                 break;
             }
