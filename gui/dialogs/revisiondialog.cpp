@@ -35,7 +35,7 @@ RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxStr
     mainWindow = static_cast<NumeReWindow*>(parent);
 
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
-    revisionList = new wxcode::wxTreeListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT);
+    revisionList = new wxcode::wxTreeListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_EXTENDED | wxTR_MULTIPLE);
     revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_REV"), 150);
     revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_DATE"), 150);
     revisionList->AddColumn(_guilang.get("GUI_DLG_REVISIONDIALOG_COMMENT"), 450);
@@ -131,7 +131,12 @@ void RevisionDialog::OnItemActivated(wxTreeEvent& event)
 
 void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
 {
-    wxString revID = revisionList->GetItemText(clickedItem);
+    wxString revID;
+
+    if (clickedItem.IsOk() && clickedItem != revisionList->GetRootItem())
+        revID = revisionList->GetItemText(clickedItem);
+    else if (event.GetId() != ID_REVISIONDIALOG_REFRESH)
+        return;
 
     switch (event.GetId())
     {

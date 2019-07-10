@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1562670451 d:\cpp\numere-source\trunk\common\datastructures.h
+1562691698 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2016,14 +2016,14 @@
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1562664625 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
+1562691698 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
 	"filerevisions.hpp"
 	<wx/zipstrm.h>
 	<wx/txtstrm.h>
 	<wx/wfstream.h>
 	<memory>
 
-1562662507 d:\cpp\numere-source\trunk\common\filerevisions.hpp
+1562742583 d:\cpp\numere-source\trunk\common\filerevisions.hpp
 	<wx/wx.h>
 	<wx/filename.h>
 
@@ -2196,7 +2196,7 @@
 	"gterm.hpp"
 	"../../kernel/kernel.hpp"
 
-1562605868 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1562691698 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	<wx/treectrl.h>
@@ -2382,7 +2382,7 @@
 	<fstream>
 	"../filesystem.hpp"
 
-1562491275 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
+1562691698 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
 	<string>
 	<iostream>
 	<fstream>
@@ -2791,7 +2791,7 @@
 	"utils/tools.hpp"
 	"plotting/plotdata.hpp"
 
-1541842506 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
+1562691698 d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.hpp
 	<cstdlib>
 	<cmath>
 	<fstream>
@@ -3069,7 +3069,7 @@
 	<windows.h>
 	<shellapi.h>
 
-1562512483 source:d:\cpp\numere-source\trunk\common\vcsmanager.cpp
+1562691698 source:d:\cpp\numere-source\trunk\common\vcsmanager.cpp
 	"vcsmanager.hpp"
 	"filerevisions.hpp"
 	"../gui/NumeReWindow.h"
@@ -3077,7 +3077,7 @@
 	<vector>
 	<string>
 
-1562656564 d:\cpp\numere-source\trunk\common\vcsmanager.hpp
+1562691698 d:\cpp\numere-source\trunk\common\vcsmanager.hpp
 	<wx/wx.h>
 
 1490791550 source:d:\cpp\numere-source\trunk\common\verinfo.cpp
@@ -3856,7 +3856,7 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\statline.h
 
-1562493629 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
+1562691698 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
 1505647363 d:\cpp\numere-source\trunk\gui\dirtraverser.hpp
@@ -3885,7 +3885,7 @@
 	"compositions/helpviewer.hpp"
 	"IconManager.h"
 
-1562573250 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1562691698 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4000,7 +4000,7 @@
 
 1549727481 d:\cpp\numere-source\trunk\gui\icons\doc.xpm
 
-1562659538 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+1562691698 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"NumeReWindow.h"
 	"editor/editor.h"
@@ -4039,7 +4039,7 @@
 1536865330 source:d:\cpp\numere-source\trunk\gui\numerestatusbar.cpp
 	"NumeReStatusbar.hpp"
 
-1562659397 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1562691698 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4123,7 +4123,7 @@
 	<wx/wx.h>
 	<wx/splash.h>
 
-1562599552 d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.hpp
+1562691698 d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.hpp
 	<wx/wx.h>
 	"../../common/filerevisions.hpp"
 	"../controls/treelistctrl.h"
@@ -4384,7 +4384,7 @@
 	"documentation.hpp"
 	"../../kernel.hpp"
 
-1562491864 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1562691698 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
@@ -4625,7 +4625,7 @@
 	"settings.hpp"
 	"../kernel.hpp"
 
-1560502651 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
+1562691698 source:d:\cpp\numere-source\trunk\kernel\core\stringparsing.cpp
 	"maths/parser_functions.hpp"
 	"../kernel.hpp"
 	<ctime>
@@ -4672,7 +4672,7 @@
 	<tchar.h>
 	"zip.h"
 
-1562491669 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1562691698 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
@@ -4685,7 +4685,7 @@
 	"windowmanager.hpp"
 	"kernel.hpp"
 
-1562672175 source:d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.cpp
+1562741279 source:d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.cpp
 	"revisiondialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../NumeReWindow.h"

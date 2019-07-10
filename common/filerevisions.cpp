@@ -44,6 +44,53 @@ wxString FileRevisions::convertLineEndings(const wxString& content)
 }
 
 
+wxString FileRevisions::readRevision(const wxString& revString)
+{
+    wxMBConvUTF8 conv;
+    wxFFileInputStream in(m_revisionPath.GetFullPath());
+    wxZipInputStream zip(in);
+    wxTextInputStream txt(zip);
+
+    std::unique_ptr<wxZipEntry> entry;
+
+    while (entry.reset(zip.GetNextEntry()), entry.get() != nullptr)
+    {
+        if (entry->GetName() == revString)
+        {
+            wxString revision;
+
+            while (!zip.Eof())
+                revision += wxString(conv.cMB2WC(txt.ReadLine())) + "\n";
+
+            return revision;
+        }
+    }
+
+    return "";
+}
+
+
+wxString FileRevisions::getLastContentModification(const wxString& revString)
+{
+    wxArrayString revisionList = getRevisionList();
+    bool revFound = false;
+
+    for (int i = revisionList.size()-1; i >= 0; i--)
+    {
+        if (!revFound && revisionList[i].substr(0, revisionList[i].find('\t')) == revString)
+            revFound = true;
+
+        if (revFound
+            && revisionList[i].find("\tMOVE:") == std::string::npos
+            && revisionList[i].find("\tRENAME:") == std::string::npos
+            && revisionList[i].find("\tTAG:") == std::string::npos)
+            return revisionList[i].substr(0, revisionList[i].find('\t'));
+    }
+
+    return revString;
+}
+
+
 size_t FileRevisions::createNewRevision(const wxString& revContent, const wxString& comment)
 {
     size_t revisionNo = getRevisionCount();
@@ -119,7 +166,7 @@ size_t FileRevisions::createNewTag(const wxString& revString, const wxString& co
 
 void FileRevisions::fileMove(const wxString& newRevPath, const wxString& comment)
 {
-    wxString revContent = getRevision(getCurrentRevision());
+    wxString revContent = "FILEMOVE OPERATION ON " + getCurrentRevision();
     createNewRevision(revContent, comment);
 
     wxFileName newPath(newRevPath);
@@ -187,6 +234,7 @@ wxString FileRevisions::getRevision(size_t nRevision)
     return getRevision("rev" + toString(nRevision));
 }
 
+
 wxString FileRevisions::getRevision(wxString revString)
 {
     if (!m_revisionPath.Exists())
@@ -198,27 +246,9 @@ wxString FileRevisions::getRevision(wxString revString)
         revString.erase(revString.find('-'));
     }
 
-    wxMBConvUTF8 conv;
-    wxFFileInputStream in(m_revisionPath.GetFullPath());
-    wxZipInputStream zip(in);
-    wxTextInputStream txt(zip);
+    revString = getLastContentModification(revString);
 
-    std::unique_ptr<wxZipEntry> entry;
-
-    while (entry.reset(zip.GetNextEntry()), entry.get() != nullptr)
-    {
-        if (entry->GetName() == revString)
-        {
-            wxString revision;
-
-            while (!zip.Eof())
-                revision += wxString(conv.cMB2WC(txt.ReadLine())) + "\n";
-
-            return revision;
-        }
-    }
-
-    return "";
+    return readRevision(revString);
 }
 
 

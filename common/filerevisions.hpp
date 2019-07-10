@@ -27,6 +27,8 @@ class FileRevisions
     private:
         wxFileName m_revisionPath;
         wxString convertLineEndings(const wxString& content);
+        wxString readRevision(const wxString& revString);
+        wxString getLastContentModification(const wxString& revString);
         size_t createNewRevision(const wxString& revisionContent, const wxString& comment);
         size_t createNewTag(const wxString& revString, const wxString& comment);
         void fileMove(const wxString& newRevPath, const wxString& comment);
