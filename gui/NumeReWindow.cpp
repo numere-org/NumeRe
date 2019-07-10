@@ -1539,7 +1539,9 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
 {
     if (!m_fileTree)
         return;
+
     int type = event.GetChangeType();
+
     if (type == wxFSW_EVENT_DELETE || type == wxFSW_EVENT_CREATE || type == wxFSW_EVENT_RENAME)
     {
         //m_currentSavedFile.clear();
@@ -1550,6 +1552,7 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
 
         vector<string> vPaths = m_terminal->getPathSettings();
         const FileFilterType fileType[] = {FILE_DATAFILES, FILE_DATAFILES, FILE_NSCR, FILE_NPRC, FILE_IMAGEFILES};
+
         for (size_t i = LOADPATH; i < vPaths.size(); i++)
         {
             if (sEventpath.find(replacePathSeparator(vPaths[i])) != string::npos)
@@ -1559,58 +1562,94 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
                 break;
             }
         }
+
         m_dragDropSourceItem = wxTreeItemId();
-        CreateProcedureTree(vPaths[PROCPATH]);
-        m_terminal->UpdateLibrary();
+
+        if (sEventpath.substr(sEventpath.length()-5) == ".nprc")
+        {
+            CreateProcedureTree(vPaths[PROCPATH]);
+            m_terminal->UpdateLibrary();
+        }
     }
     else if (type == wxFSW_EVENT_MODIFY)
     {
         wxString sEventPath = event.GetPath().GetFullPath();
-        m_terminal->UpdateLibrary();
+
+        if (sEventPath.substr(sEventPath.length()-5) == ".nprc")
+            m_terminal->UpdateLibrary();
+
         if (isOnReloadBlackList(sEventPath) || sEventPath.find(".revisions") != string::npos)
             return;
+
         if (m_currentSavedFile == toString((int)time(0))+"|"+sEventPath || m_currentSavedFile == toString((int)time(0)-1)+"|"+sEventPath || m_currentSavedFile == "BLOCKALL|"+sEventPath)
         {
             return;
         }
-        NumeReEditor* edit;
-        // store current selection
-        int selection = m_book->GetSelection();
-        for (size_t i = 0; i < m_book->GetPageCount(); i++)
-        {
-            edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
-            if (edit->GetFileNameAndPath() == sEventPath)
-            {
-                m_currentSavedFile = "BLOCKALL|"+sEventPath;
-                if (edit->IsModified())
-                {
-                    m_book->SetSelection(i);
-                    int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", sEventPath.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
-                    if (answer == wxYES)
-                    {
-                        int pos = m_currentEd->GetCurrentPos();
-                        m_currentEd->LoadFile(sEventPath);
-                        m_currentEd->MarkerDeleteAll(MARKER_SAVED);
-                        m_currentEd->UpdateSyntaxHighlighting(true);
-                        m_currentEd->GotoPos(pos);
-                        m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
-                    }
-                }
-                else
-                {
-                    int pos = edit->GetCurrentPos();
-                    edit->LoadFile(sEventPath);
-                    edit->MarkerDeleteAll(MARKER_SAVED);
-                    edit->UpdateSyntaxHighlighting(true);
-                    edit->GotoPos(pos);
-                    m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
-                }
-                break;
-            }
-        }
-        // go back to previous selection
-        m_book->SetSelection(selection);
+
+        m_fileToRefresh = sEventPath;
+
+        CallAfter(NumeReWindow::OnAsynchFileRefresh);
     }
+}
+
+void NumeReWindow::OnAsynchFileRefresh()
+{
+    NumeReEditor* edit;
+    wxMilliSleep(1000);
+
+    // store current selection
+    int selection = m_book->GetSelection();
+    VersionControlSystemManager manager(this);
+
+    if (manager.hasRevisions(m_fileToRefresh) && m_options->GetKeepBackupFile())
+    {
+        unique_ptr<FileRevisions> revisions(manager.getRevisions(m_fileToRefresh));
+
+        if (revisions.get())
+            revisions->addExternalRevision(m_fileToRefresh);
+    }
+
+    for (size_t i = 0; i < m_book->GetPageCount(); i++)
+    {
+        edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+
+        if (edit->GetFileNameAndPath() == m_fileToRefresh)
+        {
+            m_currentSavedFile = "BLOCKALL|"+m_fileToRefresh;
+
+            if (edit->IsModified())
+            {
+                m_book->SetSelection(i);
+                int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", m_fileToRefresh.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
+
+                if (answer == wxYES)
+                {
+                    int pos = m_currentEd->GetCurrentPos();
+                    m_currentEd->LoadFile(m_fileToRefresh);
+                    m_currentEd->MarkerDeleteAll(MARKER_SAVED);
+                    m_currentEd->UpdateSyntaxHighlighting(true);
+                    m_currentEd->GotoPos(pos);
+                    m_currentSavedFile = toString((int)time(0))+"|"+m_fileToRefresh;
+                }
+            }
+            else
+            {
+                int pos = edit->GetCurrentPos();
+                edit->LoadFile(m_fileToRefresh);
+                edit->MarkerDeleteAll(MARKER_SAVED);
+                edit->UpdateSyntaxHighlighting(true);
+                edit->GotoPos(pos);
+                m_currentSavedFile = toString((int)time(0))+"|"+m_fileToRefresh;
+            }
+
+            break;
+        }
+    }
+
+    m_fileToRefresh.clear();
+
+    // go back to previous selection
+    m_book->SetSelection(selection);
 }
 
 void NumeReWindow::CreateProcedureTree(const string& sProcedurePath)

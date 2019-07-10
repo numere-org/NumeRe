@@ -21,6 +21,7 @@
 #include <wx/txtstrm.h>
 #include <wx/wfstream.h>
 #include <memory>
+#include <fstream>
 
 #define COMPRESSIONLEVEL 6
 
@@ -88,6 +89,27 @@ wxString FileRevisions::getLastContentModification(const wxString& revString)
     }
 
     return revString;
+}
+
+
+wxString FileRevisions::readExternalFile(const wxString& filePath)
+{
+    std::ifstream file_in;
+    wxString sFileContents;
+    std::string sLine;
+    wxMBConvUTF8 conv;
+
+    file_in.open(filePath.ToStdString().c_str());
+
+    while (file_in.good() && !file_in.eof())
+    {
+        std::getline(file_in, sLine);
+
+        sFileContents += sLine + "\n";
+        //sFileContents += wxString(conv.cMB2WC(sLine.c_str())) + "\n";
+    }
+
+    return sFileContents;
 }
 
 
@@ -307,8 +329,19 @@ size_t FileRevisions::addRevision(const wxString& revisionContent)
     }
     else
     {
-        return createNewRevision(revContent, "Saving revision");
+        return createNewRevision(revContent, "");
     }
+}
+
+
+size_t FileRevisions::addExternalRevision(const wxString& filePath)
+{
+    wxString revContent = readExternalFile(filePath);
+
+    if (!revContent.length())
+        revContent = "Other error";
+
+    return createNewRevision(convertLineEndings(revContent), "External modification");
 }
 
 

@@ -2016,14 +2016,15 @@
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1562691698 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
+1562751716 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
 	"filerevisions.hpp"
 	<wx/zipstrm.h>
 	<wx/txtstrm.h>
 	<wx/wfstream.h>
 	<memory>
+	<fstream>
 
-1562742583 d:\cpp\numere-source\trunk\common\filerevisions.hpp
+1562750352 d:\cpp\numere-source\trunk\common\filerevisions.hpp
 	<wx/wx.h>
 	<wx/filename.h>
 
@@ -2196,7 +2197,7 @@
 	"gterm.hpp"
 	"../../kernel/kernel.hpp"
 
-1562691698 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1562751517 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	<wx/treectrl.h>
@@ -4039,7 +4040,7 @@
 1536865330 source:d:\cpp\numere-source\trunk\gui\numerestatusbar.cpp
 	"NumeReStatusbar.hpp"
 
-1562691698 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1562751560 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4230,7 +4231,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1562321145 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1562752033 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>

@@ -330,9 +330,11 @@ wxThread::ExitCode wxTerm::Entry()
 			// This is the actual evaluating function. It is called from this second thread regularly (every 100ms) and
 			// enters the function, if a command was passed to the terminal.
 			m_KernelStatus = _kernel.MainLoop(sCommand);
+
 			if (m_KernelStatus > 0) // these are valid status values (0 = error, -1 = quit)
 			{
 				wxCriticalSectionLocker lock(m_kernelCS);
+
 				switch (m_KernelStatus)
 				{
 					case NumeReKernel::NUMERE_DONE:
@@ -342,6 +344,7 @@ wxThread::ExitCode wxTerm::Entry()
 						break;
 						//All others
 				}
+
 				bCommandAvailable = false;
 			}
 			else if (m_KernelStatus == NumeReKernel::NUMERE_QUIT) //quit
@@ -352,12 +355,15 @@ wxThread::ExitCode wxTerm::Entry()
 			// Notify the event handler that there's an update
 			wxQueueEvent(GetEventHandler(), new wxThreadEvent());
 		}
+
 		// During idle times so that these tasks don't interfere with the main evaluation routine
 		// do the following:
 		if (time(0) - _kernel.getLastSavedTime() >= _kernel.getAutosaveInterval())
 			_kernel.Autosave(); // save the cache
+
 		if (updateLibrary)
 		{
+		    Sleep(1000);
 			// update the internal procedure library if needed
 			NumeReKernel::ProcLibrary.updateLibrary();
 		}

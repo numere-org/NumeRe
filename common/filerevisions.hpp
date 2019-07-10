@@ -29,6 +29,7 @@ class FileRevisions
         wxString convertLineEndings(const wxString& content);
         wxString readRevision(const wxString& revString);
         wxString getLastContentModification(const wxString& revString);
+        wxString readExternalFile(const wxString& filePath);
         size_t createNewRevision(const wxString& revisionContent, const wxString& comment);
         size_t createNewTag(const wxString& revString, const wxString& comment);
         void fileMove(const wxString& newRevPath, const wxString& comment);
@@ -40,6 +41,7 @@ class FileRevisions
         wxString getCurrentRevision();
 
         size_t addRevision(const wxString& revisionContent);
+        size_t addExternalRevision(const wxString& filePath);
         void undoRevision();
         void renameFile(const wxString& oldName, const wxString& newName, const wxString& newRevPath);
         void moveFile(const wxString& oldPath, const wxString& newPath, const wxString& newRevPath);

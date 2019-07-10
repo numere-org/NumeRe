@@ -288,6 +288,7 @@ class NumeReWindow : public wxFrame
         void removeFileFromTree(const std::string& sFilePath);*/
 
         void OnFileSystemEvent(wxFileSystemWatcherEvent& event);
+        void OnAsynchFileRefresh();
         void CreateProcedureTree(const string& sProcedurePath);
 
         void showGraph(NumeRe::Window& window);
@@ -485,6 +486,7 @@ class NumeReWindow : public wxFrame
         wxString m_filterSupportedFiles;
 
         wxString m_currentSavedFile;
+        wxString m_fileToRefresh;
 
 
         DECLARE_EVENT_TABLE()
