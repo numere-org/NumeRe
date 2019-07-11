@@ -2232,6 +2232,13 @@ void NumeReWindow::OnOpenInExplorer()
         ShellExecute(nullptr, nullptr, fileName.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This method displays the revision dialog for the selected tree item.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnShowRevisions()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
@@ -2239,6 +2246,7 @@ void NumeReWindow::OnShowRevisions()
     VersionControlSystemManager manager(this);
     FileRevisions* revisions = manager.getRevisions(filename);
 
+    // Only display the dialog, if the FileRevisions object exists
     if (revisions)
     {
         RevisionDialog* dialog = new RevisionDialog(this, revisions, m_fileTree->GetItemText(m_clickedTreeItem));
@@ -2246,6 +2254,12 @@ void NumeReWindow::OnShowRevisions()
     }
 }
 
+/////////////////////////////////////////////////
+/// \brief This method allows the user to tag the current active revision of a file.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnTagCurrentRevision()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
@@ -2253,13 +2267,17 @@ void NumeReWindow::OnTagCurrentRevision()
     VersionControlSystemManager manager(this);
     unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
 
+    // Only do something, if the FileRevisions object exists
     if (revisions.get())
     {
+        // Display a text entry dialog to provide the user to
+        // enter a comment for the new tag
         wxTextEntryDialog textdialog(this, _guilang.get("GUI_DLG_REVISIONDIALOG_PROVIDETAGCOMMENT"), _guilang.get("GUI_DLG_REVISIONDIALOG_PROVIDETAGCOMMENT_TITLE"), wxEmptyString, wxCENTER | wxOK | wxCANCEL);
         int ret = textdialog.ShowModal();
 
         if (ret == wxID_OK)
         {
+            // Create the tag, if the user clicked on OK
             revisions->tagRevision(revisions->getCurrentRevision(), textdialog.GetValue());
         }
     }
