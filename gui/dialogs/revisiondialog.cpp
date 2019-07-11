@@ -29,6 +29,14 @@ END_EVENT_TABLE()
 extern Language _guilang;
 
 
+/////////////////////////////////////////////////
+/// \brief Constructor. Creates the window and populates the tree list ctrl.
+///
+/// \param parent wxWindow*
+/// \param rev FileRevisions*
+/// \param currentFileName const wxString&
+///
+/////////////////////////////////////////////////
 RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxString& currentFileName)
     : wxDialog(parent, wxID_ANY, _guilang.get("GUI_DLG_REVISIONDIALOG_TITLE"), wxDefaultPosition, wxSize(750, 500), wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX), revisions(rev), currentFile(currentFileName)
 {
@@ -50,18 +58,28 @@ RevisionDialog::RevisionDialog(wxWindow* parent, FileRevisions* rev, const wxStr
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method pupulates the tree list ctrl.
+///
+/// \return void
+///
+/// Depending on the the type of the revision, the line colour
+/// is selected. Tags are additionally indented and printed in
+/// italics.
+/////////////////////////////////////////////////
 void RevisionDialog::populateRevisionList()
 {
-    //revisionList->SetItemText(revisionList->GetRootItem(), 0, currentFile + " (" + revisions->getCurrentRevision() + ")");
-
     wxArrayString revList = revisions->getRevisionList();
     wxString currentRev = revisions->getCurrentRevision();
     wxTreeItemId currentItem;
 
+    // Handle each revision independently
     for (size_t i = 0; i < revList.size(); i++)
     {
+        // Is it a tag?
         if (revList[i].substr(0, 3) == "tag")
         {
+            // A tag is appended to the previous revision
             wxTreeItemId currentTagItem = revisionList->AppendItem(currentItem, revList[i].substr(0, revList[i].find('\t')));
             revisionList->SetItemText(currentTagItem, 1, revList[i].substr(revList[i].find('\t')+1, revList[i].find('\t', revList[i].find('\t')+1) - revList[i].find('\t')-1));
             revisionList->SetItemText(currentTagItem, 2, revList[i].substr(revList[i].rfind('\t')+1));
@@ -70,6 +88,7 @@ void RevisionDialog::populateRevisionList()
         }
         else
         {
+            // Create a new revision in the tree
             currentItem = revisionList->AppendItem(revisionList->GetRootItem(), revList[i].substr(0, revList[i].find('\t')));
             revisionList->SetItemText(currentItem, 1, revList[i].substr(revList[i].find('\t')+1, revList[i].find('\t', revList[i].find('\t')+1) - revList[i].find('\t')-1));
             revisionList->SetItemText(currentItem, 2, revList[i].substr(revList[i].rfind('\t')+1));
@@ -85,11 +104,20 @@ void RevisionDialog::populateRevisionList()
         }
     }
 
-    //revisionList->Expand(revisionList->GetRootItem());
     revisionList->ExpandAll(revisionList->GetRootItem());
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method displays the selected revision in the editor.
+///
+/// \param revString const wxString&
+/// \return void
+///
+/// The method gets the revision from the associated FileRevisions
+/// object and passes it to the main window method for displaying a
+/// revision.
+/////////////////////////////////////////////////
 void RevisionDialog::showRevision(const wxString& revString)
 {
     wxString revision = revisions->getRevision(revString);
@@ -97,6 +125,13 @@ void RevisionDialog::showRevision(const wxString& revString)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method displays the context menu containing the actions.
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void RevisionDialog::OnRightClick(wxTreeEvent& event)
 {
     clickedItem = event.GetItem();
@@ -122,6 +157,13 @@ void RevisionDialog::OnRightClick(wxTreeEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method displays the double-clicked revision.
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void RevisionDialog::OnItemActivated(wxTreeEvent& event)
 {
     wxString revID = revisionList->GetItemText(event.GetItem());
@@ -129,10 +171,19 @@ void RevisionDialog::OnItemActivated(wxTreeEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method handles the menu events emitted from the context menu.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
 {
     wxString revID;
 
+    // Ensure that the tree item id is valid and that
+    // the user did not click on the root item
     if (clickedItem.IsOk() && clickedItem != revisionList->GetRootItem())
         revID = revisionList->GetItemText(clickedItem);
     else if (event.GetId() != ID_REVISIONDIALOG_REFRESH)
@@ -141,10 +192,14 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
     switch (event.GetId())
     {
         case ID_REVISIONDIALOG_SHOW:
+            // Show the right-clicked revision
             showRevision(revID);
             break;
         case ID_REVISIONDIALOG_TAG:
             {
+                // Tag the right-clicked revision. Display
+                // a text entry dialog to ask for the
+                // comment
                 wxTextEntryDialog textdialog(this, _guilang.get("GUI_DLG_REVISIONDIALOG_PROVIDETAGCOMMENT"), _guilang.get("GUI_DLG_REVISIONDIALOG_PROVIDETAGCOMMENT_TITLE"), wxEmptyString, wxCENTER | wxOK | wxCANCEL);
                 int ret = textdialog.ShowModal();
 
@@ -159,6 +214,8 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
             }
         case ID_REVISIONDIALOG_RESTORE:
             {
+                // Restore the right-clicked revision. Display
+                // a file dialog to ask for the target file.
                 wxFileDialog filedialog(this, _guilang.get("GUI_DLG_REVISIONDIALOG_RESTOREFILE"), wxGetCwd(), currentFile, wxFileSelectorDefaultWildcardStr, wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
                 int ret = filedialog.ShowModal();
 
@@ -169,6 +226,7 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
             }
         case ID_REVISIONDIALOG_REFRESH:
             {
+                // Refresh the contents of the revision list
                 revisionList->DeleteChildren(revisionList->GetRootItem());
                 populateRevisionList();
 

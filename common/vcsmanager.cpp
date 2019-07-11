@@ -25,6 +25,17 @@
 
 std::string replacePathSeparator(const std::string&);
 
+/////////////////////////////////////////////////
+/// \brief This method returns the path, where the revisions are stored.
+///
+/// \param currentFilePath const wxString&
+/// \return wxString
+///
+/// The revision path is located in a subfolder called "/.revisions/",
+/// which is hidden and mirrors the files in their revision files. This
+/// function will only return a path for files belonging to the current
+/// standard folders.
+/////////////////////////////////////////////////
 wxString VersionControlSystemManager::getRevisionPath(const wxString& currentFilePath)
 {
     std::vector<std::string> vDefaultPaths = m_parent->getPathDefs();
@@ -39,6 +50,19 @@ wxString VersionControlSystemManager::getRevisionPath(const wxString& currentFil
     return "";
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This method returns the file revisions as pointer.
+///
+/// \param currentFile const wxString&
+/// \return FileRevisions*
+///
+/// The FileRevisions object is created on the heap and the calling
+/// function is responsible for cleaning up this allocated block
+/// of memory (use std::unique_ptr for simplification). If this file
+/// cannot have a revision, because it does not belong to the current
+/// standard folders, a nullptr is returned instead.
+/////////////////////////////////////////////////
 FileRevisions* VersionControlSystemManager::getRevisions(const wxString& currentFile)
 {
     wxString revisionPath = getRevisionPath(currentFile);
@@ -50,6 +74,17 @@ FileRevisions* VersionControlSystemManager::getRevisions(const wxString& current
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method detects, whether the selected file has revisions.
+///
+/// \param currentFile const wxString&
+/// \return bool
+///
+/// Use this method for detecting, whether the selected file has any
+/// revisions. The method getRevisions() will not work, because the
+/// constructor of the FileRevisions class will try to create everything
+/// upon construction.
+/////////////////////////////////////////////////
 bool VersionControlSystemManager::hasRevisions(const wxString& currentFile)
 {
     wxString revisionPath = getRevisionPath(currentFile);

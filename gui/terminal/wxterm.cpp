@@ -363,8 +363,7 @@ wxThread::ExitCode wxTerm::Entry()
 
 		if (updateLibrary)
 		{
-		    Sleep(1000);
-			// update the internal procedure library if needed
+		    // update the internal procedure library if needed
 			NumeReKernel::ProcLibrary.updateLibrary();
 		}
 	}

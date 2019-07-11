@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1562691698 d:\cpp\numere-source\trunk\common\datastructures.h
+1562776414 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2016,7 +2016,7 @@
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1562751716 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
+1562783487 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
 	"filerevisions.hpp"
 	<wx/zipstrm.h>
 	<wx/txtstrm.h>
@@ -2197,11 +2197,13 @@
 	"gterm.hpp"
 	"../../kernel/kernel.hpp"
 
-1562751517 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1562777110 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	<wx/treectrl.h>
 	<wx/notebook.h>
+	<vector>
+	<utility>
 	"NumeReStatusbar.hpp"
 	"globals.hpp"
 	"wx/dnd.h"
@@ -4040,7 +4042,7 @@
 1536865330 source:d:\cpp\numere-source\trunk\gui\numerestatusbar.cpp
 	"NumeReStatusbar.hpp"
 
-1562751560 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1562777675 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4061,6 +4063,7 @@
 	<wx/artprov.h>
 	<fstream>
 	<wx/msw/helpchm.h>
+	<array>
 	<math.h>
 	"NumeReNotebook.h"
 	"numeredroptarget.hpp"
@@ -4231,7 +4234,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1562752033 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1562777116 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
