@@ -3873,10 +3873,16 @@ void NumeReWindow::OnStatusTimer(wxTimerEvent &WXUNUSED(event))
 	}
 }
 
-// This member function handles the events from
-// the file event timer. This timer is started by
-// the file system event handler to catch a list
-// of events before processing them (which happens here)
+/////////////////////////////////////////////////
+/// \brief This member function handles the events from the file event timer.
+///
+/// \param event wxTimerEvent&
+/// \return void
+///
+/// This timer is started by
+/// the file system event handler to catch a list
+/// of events before processing them (which happens here)
+/////////////////////////////////////////////////
 void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
 {
     // store current selection
@@ -3895,6 +3901,8 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     // Go through all cached events
     for (size_t i = 0; i < m_modifiedFiles.size(); i++)
     {
+        wxFileName filename(m_modifiedFiles[i].second);
+
         if (m_modifiedFiles[i].first == wxFSW_EVENT_DELETE
             || m_modifiedFiles[i].first == wxFSW_EVENT_CREATE
             || m_modifiedFiles[i].first == wxFSW_EVENT_RENAME)
@@ -3921,6 +3929,10 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
         }
         else if (m_modifiedFiles[i].first == wxFSW_EVENT_MODIFY)
         {
+            // Ignore modified directories
+            if (!filename.GetExt().length() && wxFileName::DirExists(m_modifiedFiles[i].second))
+                continue;
+
             // This event type indicate, that files might have
             // to be reloaded and that the procedure library
             // should be refreshed as well.
@@ -3942,7 +3954,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             // more than two seconds from te current time. Older
             // modifications are likely to be metadata updates
             // done by the OS and do not require any refresh
-            if ((wxDateTime::Now() - wxFileName(m_modifiedFiles[i].second).GetModificationTime()).GetSeconds() > 2)
+            if ((wxDateTime::Now() - filename.GetModificationTime()).GetSeconds() > 2)
                 continue;
 
             // Add a new revision in the list of revisions that
