@@ -99,10 +99,18 @@ std::string DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const
 // of a procedure call
 void DependencyDialog::fillDependencyTree(const std::string& sMainProcedure, std::map<std::string, DependencyList>& mDeps)
 {
-    wxTreeItemId root = m_dependencyTree->AddRoot(sMainProcedure + "()");
-
     // Find the current main procedure
     auto iter = mDeps.find(sMainProcedure);
+
+    // Ensure that the main procedure exists and that it is found
+    // in the dependency maps
+    if (iter == mDeps.end())
+    {
+        m_dependencyTree->AddRoot("ERROR: No main procedure found.");
+        return;
+    }
+
+    wxTreeItemId root = m_dependencyTree->AddRoot(sMainProcedure + "()");
 
     // Go through the list of calls
     for (auto listiter = iter->second.begin(); listiter != iter->second.end(); ++listiter)

@@ -6035,6 +6035,11 @@ void NumeReWindow::OnCreatePackage()
         wxArrayString procedures = dlg.getProcedures();
         string sProcPath = m_terminal->getPathSettings()[PROCPATH];
 
+        // Ensure that the user provided at least a single
+        // procedure for the new package
+        if (!procedures.size())
+            return;
+
         NewFile(FILE_NSCR, identifier);
 
         m_currentEd->AddText("<install>\n" + installinfo + "\n");
