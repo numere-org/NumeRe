@@ -530,7 +530,7 @@ size_t FileRevisions::addRevision(const wxString& revisionContent)
     else
     {
         // Only add a new revision if the contents differ
-        if (revisionContent == getCurrentRevision())
+        if (revisionContent == getRevision(getCurrentRevision()))
             return -1;
 
         return createNewRevision(revContent, "");
@@ -559,7 +559,7 @@ size_t FileRevisions::addExternalRevision(const wxString& filePath)
 
     // Only add the external revision, if it actually
     // modified the file
-    if (getCurrentRevision() == revContent)
+    if (getRevision(getCurrentRevision()) == revContent)
         return -1;
 
     return createNewRevision(convertLineEndings(revContent), "External modification");
