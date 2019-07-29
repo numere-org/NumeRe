@@ -296,6 +296,14 @@
 		<Unit filename="common/chameleonprocessevent.h" />
 		<Unit filename="common/datastructures.h" />
 		<Unit filename="common/debug.h" />
+		<Unit filename="common/dtl/Diff.hpp" />
+		<Unit filename="common/dtl/Diff3.hpp" />
+		<Unit filename="common/dtl/Lcs.hpp" />
+		<Unit filename="common/dtl/Sequence.hpp" />
+		<Unit filename="common/dtl/Ses.hpp" />
+		<Unit filename="common/dtl/dtl.hpp" />
+		<Unit filename="common/dtl/functors.hpp" />
+		<Unit filename="common/dtl/variables.hpp" />
 		<Unit filename="common/filerevisions.cpp" />
 		<Unit filename="common/filerevisions.hpp" />
 		<Unit filename="common/filewatcher.cpp" />

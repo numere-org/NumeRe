@@ -17,11 +17,13 @@
 ******************************************************************************/
 
 #include "filerevisions.hpp"
+#include "dtl/dtl.hpp"
 #include <wx/zipstrm.h>
 #include <wx/txtstrm.h>
 #include <wx/wfstream.h>
 #include <memory>
 #include <fstream>
+#include <sstream>
 
 #define COMPRESSIONLEVEL 6
 
@@ -38,6 +40,39 @@ FileRevisions::FileRevisions(const wxString& revisionPath) : m_revisionPath(revi
     if (!m_revisionPath.Exists())
         wxFileName::Mkdir(m_revisionPath.GetPath(), wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Converts a single-string file into a vector of strings
+///
+/// \param fileContent wxString
+/// \return std::vector<wxString>
+///
+/// The file is split at the line break character so that each component
+/// of the vector is a single line of the passed file
+/////////////////////////////////////////////////
+std::vector<wxString> FileRevisions::vectorize(wxString fileContent)
+{
+    std::vector<wxString> vVectorizedFile;
+
+    // As long as there are contents left in the
+    // current file
+    while (fileContent.length())
+    {
+        // Push the current line to the vector
+        vVectorizedFile.push_back(fileContent.substr(0, fileContent.find('\n')));
+
+        // Erase the current line from the file
+        if (fileContent.find('\n') != std::string::npos)
+            fileContent.erase(0, fileContent.find('\n')+1);
+        else
+            break;
+    }
+
+    // Return the vectorized file
+    return vVectorizedFile;
+}
+
 
 
 /////////////////////////////////////////////////
@@ -98,6 +133,12 @@ wxString FileRevisions::readRevision(const wxString& revString)
             // Remove the last line's endings
             revision.erase(revision.length()-2);
 
+            // If the ZIP comment equals "DIFF", we need to merge
+            // the changes in this revision into the current
+            // revision root
+            if (entry->GetComment() == "DIFF")
+                revision = createMerge(revision);
+
             return revision;
         }
     }
@@ -140,6 +181,161 @@ wxString FileRevisions::getLastContentModification(const wxString& revString)
     }
 
     return revString;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method returns the revision identifier of the last revision root.
+///
+/// \param revString const wxString&
+/// \return wxString
+///
+/// The revision model is based upon comparing the new revisions
+/// with a revision root and saving only the difference between
+/// those two. The root revision may change upon time, because if
+/// the difference between the root and the current item is larger
+/// than the current item, the current item is the new revision root.
+/// Revision root items are marked by the absence of any ZIP comment
+/// except of the initial revision, which is the first root
+/////////////////////////////////////////////////
+wxString FileRevisions::getLastRevisionRoot(const wxString& revString)
+{
+    // Get the revision list
+    wxArrayString revisionList = getRevisionList();
+    bool revFound = false;
+
+    // Go reversely through the revision list and try to find
+    // the revision tag, where the file was modified lastly
+    for (int i = revisionList.size()-1; i >= 0; i--)
+    {
+        // Found the user selected revision?
+        if (!revFound && revisionList[i].substr(0, revisionList[i].find('\t')) == revString)
+            revFound = true;
+
+        // Is there an empty comment or the initial revision?
+        if (revFound
+            && (revisionList[i].find("\tInitial revision") != std::string::npos
+                || revisionList[i].substr(revisionList[i].length()-1) == "\t"))
+            return revisionList[i].substr(0, revisionList[i].find('\t'));
+    }
+
+    return revString;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method calculates the differences between two files.
+///
+/// \param revision1 const wxString&
+/// \param revisionID1 const wxString&
+/// \param revision2 const wxString&
+/// \param revisionID2 const wxString&
+/// \return wxString
+///
+/// The file differences are created by the DTL libary found in
+/// the "common" folder. The differences are returned in unified
+/// format, i.e. containing sequences of changes starting with a
+/// "@@ -a,b +c,d @@" section
+/////////////////////////////////////////////////
+wxString FileRevisions::diff(const wxString& revision1, const wxString& revisionID1, const wxString& revision2, const wxString& revisionID2)
+{
+    // Vectorize the revision root and the current file
+    std::vector<wxString> vVectorizedRoot = vectorize(convertLineEndings(revision1));
+    std::vector<wxString> vVectorizedFile = vectorize(convertLineEndings(revision2));
+
+    // Calculate the differences between both files
+    dtl::Diff<wxString> diffFile(vVectorizedRoot, vVectorizedFile);
+    diffFile.compose();
+
+    // Convert the differences into unified form
+    diffFile.composeUnifiedHunks();
+
+    // Print the differences to a string stream
+    std::ostringstream uniDiff;
+    uniDiff << "--- " << revisionID1 << "\n+++ " << revisionID2 << "\n";
+    diffFile.printUnifiedFormat(uniDiff);
+
+    // Return the contents of the stream
+    return uniDiff.str();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method creates the file differences between the file contents and the current revision root.
+///
+/// \param revisionContent const wxString&
+/// \return wxString
+///
+/// The file differences are created in the private FileRevisions::diff()
+/// method- The current revision root is detected automatically.
+/////////////////////////////////////////////////
+wxString FileRevisions::createDiff(const wxString& revisionContent)
+{
+    // Find the revision root
+    wxString revisionRoot = getRevision(getLastRevisionRoot(getCurrentRevision()));
+
+    // Calculate the differences of both files
+    return diff(revisionRoot, getLastRevisionRoot(getCurrentRevision()), revisionContent, "rev"+toString(getRevisionCount()));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method merges the diff file into the current revision root.
+///
+/// \param diffFile const wxString&
+/// \return wxString
+///
+/// The passed diff file is used to determine the revision root, which it is
+/// based upon. Both files are vectorized first, then the changes noted in the
+/// revision file are applied to the contents of the revision root, which is
+/// merged back into a single-string file afterwards.
+/////////////////////////////////////////////////
+wxString FileRevisions::createMerge(const wxString& diffFile)
+{
+    // Vectorizes the passed diff file and the current revision root
+    std::vector<wxString> vVectorizedDiff = vectorize(convertLineEndings(diffFile));
+    std::vector<wxString> vVectorizedRoot = vectorize(convertLineEndings(getRevision(vVectorizedDiff.front().substr(4))));
+
+    int nCurrentInputLine = 0;
+
+    // Go through the lines of the diff file. Ignore the first
+    // two, because they only contain the revision identifiers.
+    for (size_t i = 2; i < vVectorizedDiff.size(); i++)
+    {
+        // The start of a change section. Extract the target input
+        // line in the current revision (the second number set starting
+        // with a "+")
+        if (vVectorizedDiff[i].substr(0, 4) == "@@ -")
+        {
+            nCurrentInputLine = atoi(vVectorizedDiff[i].substr(vVectorizedDiff[i].find('+')+1, vVectorizedDiff[i].find(',', vVectorizedDiff[i].find('+') - vVectorizedDiff[i].find('+')-1)).c_str())-1;
+            continue;
+        }
+
+        // A deletion. This requires that we decrement the current
+        // input line
+        if (vVectorizedDiff[i][0] == '-')
+        {
+            vVectorizedRoot.erase(vVectorizedRoot.begin()+nCurrentInputLine);
+            nCurrentInputLine--;
+        }
+
+        // An addition
+        if (vVectorizedDiff[i][0] == '+')
+            vVectorizedRoot.insert(vVectorizedRoot.begin()+nCurrentInputLine, vVectorizedDiff[i].substr(1));
+
+        // Always increment the current input line
+        nCurrentInputLine++;
+    }
+
+    wxString mergedFile;
+
+    // Merge the vectorized file into a single-string file
+    for (size_t i = 0; i < vVectorizedRoot.size(); i++)
+        mergedFile += vVectorizedRoot[i] + "\r\n";
+
+    // Return the merged file with exception of the trailing
+    // line break characters
+    return mergedFile.substr(0, mergedFile.length()-2);
 }
 
 
@@ -533,7 +729,12 @@ size_t FileRevisions::addRevision(const wxString& revisionContent)
         if (revisionContent == getRevision(getCurrentRevision()))
             return -1;
 
-        return createNewRevision(revContent, "");
+        wxString diffFile = createDiff(revisionContent);
+
+        if (revContent.length() <= diffFile.length())
+            return createNewRevision(revContent, "");
+        else
+            return createNewRevision(diffFile, "DIFF");
     }
 }
 

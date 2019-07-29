@@ -3982,7 +3982,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                 edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
 
                 // Found it?
-                if (edit->GetFileNameAndPath() == m_modifiedFiles[i].second)
+                if (edit && edit->GetFileNameAndPath() == m_modifiedFiles[i].second)
                 {
                     m_currentSavedFile = "BLOCKALL|"+m_modifiedFiles[i].second;
 

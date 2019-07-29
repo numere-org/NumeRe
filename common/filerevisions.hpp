@@ -21,14 +21,20 @@
 
 #include <wx/wx.h>
 #include <wx/filename.h>
+#include <vector>
 
 class FileRevisions
 {
     private:
         wxFileName m_revisionPath;
+        std::vector<wxString> vectorize(wxString fileContent);
         wxString convertLineEndings(const wxString& content);
         wxString readRevision(const wxString& revString);
         wxString getLastContentModification(const wxString& revString);
+        wxString getLastRevisionRoot(const wxString& revString);
+        wxString diff(const wxString& revision1, const wxString& revisionID1, const wxString& revision2, const wxString& revisionID2);
+        wxString createDiff(const wxString& revisionContent);
+        wxString createMerge(const wxString& diffFile);
         wxString readExternalFile(const wxString& filePath);
         size_t createNewRevision(const wxString& revisionContent, const wxString& comment);
         size_t createNewTag(const wxString& revString, const wxString& comment);

@@ -333,7 +333,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 	unsigned int nPos = 0;
 	bool bWriteStrings = false;
 	bool bWriteFileName = false;
-	bool isCluster = _data.isCluster(sEntityName);
+	bool isCluster = sEntity[sEntity.find_first_of("({")] == '{';
 	vector<double> vEntityContents;
 	string sEntityReplacement = "";
 	string sEntityStringReplacement = "";

@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1562776414 d:\cpp\numere-source\trunk\common\datastructures.h
+1563173037 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2016,17 +2016,20 @@
 	"wx/treebase.h"
 	"wx/hashmap.h"
 
-1562826898 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
+1564335714 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
 	"filerevisions.hpp"
+	"dtl/dtl.hpp"
 	<wx/zipstrm.h>
 	<wx/txtstrm.h>
 	<wx/wfstream.h>
 	<memory>
 	<fstream>
+	<sstream>
 
-1562750352 d:\cpp\numere-source\trunk\common\filerevisions.hpp
+1564384706 d:\cpp\numere-source\trunk\common\filerevisions.hpp
 	<wx/wx.h>
 	<wx/filename.h>
+	<vector>
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\zipstrm.h
 	"wx/defs.h"
@@ -2197,7 +2200,7 @@
 	"gterm.hpp"
 	"../../kernel/kernel.hpp"
 
-1562777110 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1563173037 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	<wx/treectrl.h>
@@ -2385,7 +2388,7 @@
 	<fstream>
 	"../filesystem.hpp"
 
-1562691698 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
+1563173037 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
 	<string>
 	<iostream>
 	<fstream>
@@ -3072,7 +3075,7 @@
 	<windows.h>
 	<shellapi.h>
 
-1562824556 source:d:\cpp\numere-source\trunk\common\vcsmanager.cpp
+1563173037 source:d:\cpp\numere-source\trunk\common\vcsmanager.cpp
 	"vcsmanager.hpp"
 	"filerevisions.hpp"
 	"../gui/NumeReWindow.h"
@@ -3080,7 +3083,7 @@
 	<vector>
 	<string>
 
-1562691698 d:\cpp\numere-source\trunk\common\vcsmanager.hpp
+1563173037 d:\cpp\numere-source\trunk\common\vcsmanager.hpp
 	<wx/wx.h>
 
 1490791550 source:d:\cpp\numere-source\trunk\common\verinfo.cpp
@@ -3558,7 +3561,7 @@
 1490791550 d:\cpp\numere-source\trunk\gui\dialogs\addvariablewatch.h
 	"wx/wx.h"
 
-1558366396 source:d:\cpp\numere-source\trunk\gui\dialogs\dependencydialog.cpp
+1563173037 source:d:\cpp\numere-source\trunk\gui\dialogs\dependencydialog.cpp
 	"dependencydialog.hpp"
 	"../../kernel/core/utils/tools.hpp"
 	"../../kernel/core/ui/language.hpp"
@@ -3859,7 +3862,7 @@
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\generic\statline.h
 
-1562691698 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
+1563173037 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
 1505647363 d:\cpp\numere-source\trunk\gui\dirtraverser.hpp
@@ -3888,7 +3891,7 @@
 	"compositions/helpviewer.hpp"
 	"IconManager.h"
 
-1562691698 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1563173037 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -4003,7 +4006,7 @@
 
 1549727481 d:\cpp\numere-source\trunk\gui\icons\doc.xpm
 
-1562876122 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+1563173037 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"NumeReWindow.h"
 	"editor/editor.h"
@@ -4042,7 +4045,7 @@
 1536865330 source:d:\cpp\numere-source\trunk\gui\numerestatusbar.cpp
 	"NumeReStatusbar.hpp"
 
-1562919871 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1563869276 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -4127,7 +4130,7 @@
 	<wx/wx.h>
 	<wx/splash.h>
 
-1562691698 d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.hpp
+1563173037 d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.hpp
 	<wx/wx.h>
 	"../../common/filerevisions.hpp"
 	"../controls/treelistctrl.h"
@@ -4234,7 +4237,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1562777116 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1563173037 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4312,7 +4315,7 @@
 	"cluster.hpp"
 	"../ui/error.hpp"
 
-1560502650 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
+1564040495 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
 	"dataaccess.hpp"
 	"../utils/tools.hpp"
 	"../../kernel.hpp"
@@ -4388,7 +4391,7 @@
 	"documentation.hpp"
 	"../../kernel.hpp"
 
-1562691698 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1563173037 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
@@ -4555,7 +4558,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1560502662 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1563869682 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -4591,7 +4594,7 @@
 	"plugins.hpp"
 	"../kernel.hpp"
 
-1558367506 source:d:\cpp\numere-source\trunk\kernel\core\procedure\dependency.cpp
+1563171181 source:d:\cpp\numere-source\trunk\kernel\core\procedure\dependency.cpp
 	"dependency.hpp"
 	"procedureelement.hpp"
 	"../../kernel.hpp"
@@ -4676,7 +4679,7 @@
 	<tchar.h>
 	"zip.h"
 
-1562691698 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1563173037 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
@@ -4689,8 +4692,36 @@
 	"windowmanager.hpp"
 	"kernel.hpp"
 
-1562828987 source:d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.cpp
+1564385862 source:d:\cpp\numere-source\trunk\gui\dialogs\revisiondialog.cpp
 	"revisiondialog.hpp"
 	"../../kernel/core/ui/language.hpp"
 	"../NumeReWindow.h"
+
+1564301730 d:\cpp\numere-source\trunk\common\dtl\dtl.hpp
+	"variables.hpp"
+	"functors.hpp"
+	"Sequence.hpp"
+	"Lcs.hpp"
+	"Ses.hpp"
+	"Diff.hpp"
+	"Diff3.hpp"
+
+1564301730 d:\cpp\numere-source\trunk\common\dtl\variables.hpp
+	<vector>
+	<list>
+	<string>
+	<algorithm>
+	<iostream>
+
+1564301730 d:\cpp\numere-source\trunk\common\dtl\functors.hpp
+
+1564301730 d:\cpp\numere-source\trunk\common\dtl\sequence.hpp
+
+1564301730 d:\cpp\numere-source\trunk\common\dtl\lcs.hpp
+
+1564301730 d:\cpp\numere-source\trunk\common\dtl\ses.hpp
+
+1564301729 d:\cpp\numere-source\trunk\common\dtl\diff.hpp
+
+1564301730 d:\cpp\numere-source\trunk\common\dtl\diff3.hpp
 
