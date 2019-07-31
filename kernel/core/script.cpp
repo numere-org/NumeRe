@@ -247,6 +247,7 @@ void Script::close()
         nLine = 0;
         _localDef.reset();
     }
+
     return;
 }
 
@@ -278,6 +279,28 @@ void Script::restart()
         fScript.seekg(0);
     }
     return;
+}
+
+// This member function closes the script, if the code
+// reached a "return" statement. This function has to be
+// called from the outside, because this class won't
+// track this command
+void Script::returnCommand()
+{
+    if (bScriptOpen)
+    {
+        if (fLogFile.is_open())
+        {
+            fLogFile << "--- INSTALLATION TERMINATED SUCCESSFULLY ---" << endl;
+            fLogFile << endl << endl;
+            fLogFile.close();
+
+            if (!bDISABLE_SCREEN_OUTPUT)
+                NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_INSTALL_SUCCESS")));
+        }
+
+        close();
+    }
 }
 
 // This member function starts the current installation

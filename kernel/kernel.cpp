@@ -1662,6 +1662,7 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
                 toggleTableStatus();
                 // --> Wenn in "_procedure" geschrieben wird und dabei kein Script ausgefuehrt wird, hebe dies entsprechend hervor <--
                 printPreFmt("|" + _procedure.getCurrentBlock());
+
                 if (_procedure.getCurrentBlock() == "IF")
                 {
                     if (_procedure.getLoop() > 1)
@@ -1676,17 +1677,14 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
                     if (_procedure.getLoop() > 1)
                         printPreFmt("--");
                 }
+
                 toggleTableStatus();
                 printPreFmt(strfill("> ", 2 * _procedure.getLoop(), '-'));
             }
             else if (_procedure.is_writing())
-            {
                 printPreFmt("|PROC> ");
-            }
             else if (!_procedure.is_writing() && sPlotCompose.length() )
-            {
                 printPreFmt("|COMP> ");
-            }
             else
             {
                 if (_script.wasLastCommand())
@@ -1694,15 +1692,45 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
                     print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
                     _data.setPluginCommands(_procedure.getPluginNames());
                 }
+
                 bCancelSignal = false;
                 nReturnVal = NUMERE_DONE_KEYWORD;
                 return false;
             }
+
             nReturnVal = NUMERE_PENDING_SPECIAL;
             return false;
         }
+        else
+        {
+            // A return command occured in an evaluated flow
+            // control block. If the block was created by a
+            // script, close the script now.
+            if (_procedure.getReturnSignal())
+            {
+                _script.returnCommand();
+                print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+                nReturnVal = NUMERE_DONE_KEYWORD;
+            }
+        }
+
         return false;
     }
+    else if (sCurrentCommand == "return")
+    {
+        // The current command is return. If the command
+        // has been read from a script, close that script
+        // now
+        if (_script.isOpen())
+        {
+            _script.returnCommand();
+            print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+        }
+
+        nReturnVal = NUMERE_DONE_KEYWORD;
+        return false;
+    }
+
     return true;
 }
 

@@ -102,6 +102,7 @@ class Script : public FileSystem
         void openScript(string& _sScriptFileName);
         void close();
         void restart();
+        void returnCommand();
         inline void setInstallProcedures(bool _bInstall = true)
             {
                 bInstallProcedures = _bInstall;

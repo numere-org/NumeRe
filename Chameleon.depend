@@ -1970,7 +1970,7 @@
 	"datastructures.h"
 	"ProjectInfo.h"
 
-1563170625 d:\cpp\numere-source\trunk\common\datastructures.h
+1564422556 d:\cpp\numere-source\trunk\common\datastructures.h
 	<wx/wx.h>
 	<wx/hashmap.h>
 	<wx/string.h>
@@ -2180,7 +2180,7 @@
 	"gterm.hpp"
 	"../../kernel/kernel.hpp"
 
-1563170625 d:\cpp\numere-source\trunk\gui\numerewindow.h
+1564422558 d:\cpp\numere-source\trunk\gui\numerewindow.h
 	"wx/wxprec.h"
 	<wx/wx.h>
 	<wx/treectrl.h>
@@ -2323,7 +2323,7 @@
 	<fstream>
 	"../filesystem.hpp"
 
-1563170626 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
+1564422557 d:\cpp\numere-source\trunk\kernel\core\filesystem.hpp
 	<string>
 	<iostream>
 	<fstream>
@@ -2769,7 +2769,7 @@
 	"../utils/tools.hpp"
 	"../ui/error.hpp"
 
-1557902715 d:\cpp\numere-source\trunk\kernel\core\script.hpp
+1564557085 d:\cpp\numere-source\trunk\kernel\core\script.hpp
 	<iostream>
 	<string>
 	<fstream>
@@ -3336,7 +3336,7 @@
 
 1552085576 d:\cpp\numere-source\trunk\gui\dialogs\wxtermcontainer.h
 
-1563170625 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
+1564422558 source:d:\cpp\numere-source\trunk\gui\dirtraverser.cpp
 	"DirTraverser.hpp"
 
 1505647363 d:\cpp\numere-source\trunk\gui\dirtraverser.hpp
@@ -3347,7 +3347,7 @@
 	"IconManager.h"
 	"../common/datastructures.h"
 
-1563170625 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
+1564422558 source:d:\cpp\numere-source\trunk\gui\editor\editor.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"../../common/CommonHeaders.h"
@@ -3678,7 +3678,7 @@
 	<wx/sizer.h>
 	"../common/datastructures.h"
 
-1563170625 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
+1564422558 source:d:\cpp\numere-source\trunk\gui\numeredroptarget.cpp
 	"numeredroptarget.hpp"
 	"NumeReWindow.h"
 	"editor/editor.h"
@@ -3716,7 +3716,7 @@
 	<commctrl.h>
 	"../common/datastructures.h"
 
-1563170985 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
+1564422557 source:d:\cpp\numere-source\trunk\gui\numerewindow.cpp
 	<stdlib.h>
 	<crtdbg.h>
 	"NumeReWindow.h"
@@ -3940,7 +3940,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1563170625 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1564422557 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4026,7 +4026,7 @@
 	"documentation.hpp"
 	"../../kernel.hpp"
 
-1563170626 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
+1564422557 source:d:\cpp\numere-source\trunk\kernel\core\filesystem.cpp
 	"filesystem.hpp"
 	"../kernel.hpp"
 
@@ -4182,7 +4182,7 @@
 	<mgl2/mgl.h>
 	"plotdata.hpp"
 
-1560502662 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
+1564422557 source:d:\cpp\numere-source\trunk\kernel\core\plotting\plotting.cpp
 	"plotting.hpp"
 	"../maths/parser_functions.hpp"
 	"../../kernel.hpp"
@@ -4262,7 +4262,7 @@
 	"procedure.hpp"
 	"../../kernel.hpp"
 
-1557994931 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
+1564557348 source:d:\cpp\numere-source\trunk\kernel\core\script.cpp
 	"script.hpp"
 	"../kernel.hpp"
 
@@ -4321,7 +4321,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1563170626 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1564559500 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
@@ -4384,7 +4384,7 @@
 	"../settings.hpp"
 	"../structures.hpp"
 
-1560502650 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
+1564422557 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\dataaccess.cpp
 	"dataaccess.hpp"
 	"../utils/tools.hpp"
 	"../../kernel.hpp"
@@ -9363,7 +9363,7 @@
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\propgrid\editors.h
 	"wx/defs.h"
 
-1563171952 source:d:\cpp\numere-source\trunk\gui\dialogs\dependencydialog.cpp
+1564422557 source:d:\cpp\numere-source\trunk\gui\dialogs\dependencydialog.cpp
 	"dependencydialog.hpp"
 	"../../kernel/core/utils/tools.hpp"
 	"../../kernel/core/ui/language.hpp"
