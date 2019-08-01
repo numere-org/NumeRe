@@ -678,7 +678,7 @@ void NumeReWindow::InitializeProgramOptions()
 		bool formatBeforeSaving = (m_config->Read("Miscellaneous/FormatBeforeSaving", "false") == "true");
 		m_options->SetFormatBeforeSaving(formatBeforeSaving);
 
-		bool keepBackups = (m_config->Read("Miscellaneous/KeepBackups", "false") == "true");
+		bool keepBackups = (m_config->Read("Miscellaneous/KeepBackups", "true") == "true");
 		m_options->SetKeepBackupFile(keepBackups);
 
 		bool foldDuringLoading = (m_config->Read("Interface/FoldDuringLoading", "false") == "true");
@@ -741,14 +741,14 @@ void NumeReWindow::InitializeProgramOptions()
 #endif
 		m_config->Write("Miscellaneous/TerminalHistory", m_options->GetTerminalHistorySize());
 		m_config->Write("Interface/CaretBlinkTime", m_options->GetCaretBlinkTime());
-		m_config->Write("Interface/FoldDuringLoading", "false");
+		m_config->Write("Interface/FoldDuringLoading", m_options->GetFoldDuringLoading() ? "true" : "false");
 		m_config->Write("Miscellaneous/LaTeXRoot", m_options->GetLaTeXRoot());
-		m_config->Write("Miscellaneous/PrintInColor", "false");
-		m_config->Write("Miscellaneous/PrintLineNumbers", "false");
-		m_config->Write("Miscellaneous/SaveSession", "false");
-		m_config->Write("Miscellaneous/SaveBookmarksInSession", "false");
-		m_config->Write("Miscellaneous/FormatBeforeSaving", "false");
-		m_config->Write("Miscellaneous/KeepBackups", "false");
+		m_config->Write("Miscellaneous/PrintInColor", m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE ? "true" : "false");
+		m_config->Write("Miscellaneous/PrintLineNumbers", m_options->GetLineNumberPrinting() ? "true" : "false");
+		m_config->Write("Miscellaneous/SaveSession", m_options->GetSaveSession() ? "true" : "false");
+		m_config->Write("Miscellaneous/SaveBookmarksInSession", m_options->GetSaveBookmarksInSession() ? "true" : "false");
+		m_config->Write("Miscellaneous/FormatBeforeSaving", m_options->GetFormatBeforeSaving() ? "true" : "false");
+		m_config->Write("Miscellaneous/KeepBackups", m_options->GetKeepBackupFile() ? "true" : "false");
 		m_options->writeColoursToConfig(m_config);
 		m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
 		m_options->writeAnalyzerOptionsToConfig(m_config);
