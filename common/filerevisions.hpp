@@ -39,6 +39,7 @@ class FileRevisions
         size_t createNewRevision(const wxString& revisionContent, const wxString& comment);
         size_t createNewTag(const wxString& revString, const wxString& comment);
         void fileMove(const wxString& newRevPath, const wxString& comment);
+        size_t getMaxDiffFileSize(size_t nFileSize);
 
     public:
         FileRevisions(const wxString& revisionPath);
