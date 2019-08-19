@@ -3163,8 +3163,10 @@ void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings
 	if (!_pData.getFileName().length() && !nPlotCompose)
 	{
 		string sExt = ".png";
+
 		if (_pData.getAnimateSamples())
 			sExt = ".gif";
+
 		if (nPlotComposeSize > 1)
 			_pData.setFileName("composition" + sExt);
 		else if (_pInfo.sCommand == "plot3d")
@@ -3202,22 +3204,26 @@ void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings
 		else
 			_pData.setFileName("unknown_style" + sExt);
 	}
-	else if (_pData.getFileName().length())
+	else if (_pData.getFileName().length() && !nPlotCompose)
 		bOutputDesired = true;
+
 	if ((containsStrings(_pData.getFileName()) || _data.containsStringVars(_pData.getFileName())) && !nPlotCompose)
 	{
 		string sTemp = _pData.getFileName();
 		string sTemp_2 = "";
 		string sExtension = sTemp.substr(sTemp.find('.'));
 		sTemp = sTemp.substr(0, sTemp.find('.'));
+
 		if (sExtension[sExtension.length() - 1] == '"')
 		{
 			sTemp += "\"";
 			sExtension = sExtension.substr(0, sExtension.length() - 1);
 		}
+
 		parser_StringParser(sTemp, sTemp_2, _data, _parser, _option, true);
 		_pData.setFileName(sTemp.substr(1, sTemp.length() - 2) + sExtension);
 	}
+
 	if (_pData.getAnimateSamples() && _pData.getFileName().substr(_pData.getFileName().rfind('.')) != ".gif" && !nPlotCompose)
 		_pData.setFileName(_pData.getFileName().substr(0, _pData.getFileName().length() - 4) + ".gif");
 }

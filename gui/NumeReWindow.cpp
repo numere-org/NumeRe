@@ -50,6 +50,7 @@
 #include <wx/artprov.h>
 #include <fstream>
 #include <wx/msw/helpchm.h>
+#include <array>
 
 
 //need to include <wx/filename.h> and <wx/stdpaths.h>
@@ -83,6 +84,7 @@
 #include "dialogs/textoutputdialog.hpp"
 #include "dialogs/packagedialog.hpp"
 #include "dialogs/dependencydialog.hpp"
+#include "dialogs/revisiondialog.hpp"
 
 #include "terminal/wxssh.h"
 #include "terminal/networking.h"
@@ -97,6 +99,8 @@
 #include "../common/recycler.hpp"
 #include "../common/Options.h"
 #include "../common/DebugEvent.h"
+#include "../common/vcsmanager.hpp"
+#include "../common/filerevisions.hpp"
 
 #include "controls/treesearchctrl.hpp"
 
@@ -163,6 +167,7 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 
 	EVT_IDLE						(NumeReWindow::OnIdle)
 	EVT_TIMER						(ID_STATUSTIMER, NumeReWindow::OnStatusTimer)
+	EVT_TIMER						(ID_FILEEVENTTIMER, NumeReWindow::OnFileEventTimer)
 END_EVENT_TABLE()
 
 IMPLEMENT_APP(MyApp)
@@ -251,7 +256,7 @@ MyApp::~MyApp()
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSize& size)
-       : wxFrame((wxFrame *)NULL, -1, title, pos, size)
+       : wxFrame((wxFrame *)nullptr, -1, title, pos, size)
 {
 	// should be approximately 80x15 for the terminal
 	this->SetSize(1024, 768);
@@ -285,7 +290,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	wxString programPath = getProgramFolder();
 
-	m_updateTimer = NULL;
+	m_updateTimer = nullptr;
+	m_fileEventTimer = nullptr;
 
 	SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
 
@@ -395,7 +401,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 	SendSizeEvent();
 
-	m_updateTimer = new wxTimer (this, ID_STATUSTIMER);
+	m_updateTimer = new wxTimer(this, ID_STATUSTIMER);
+	m_fileEventTimer = new wxTimer(this, ID_FILEEVENTTIMER);
 
 	m_splitEditorOutput->Initialize(m_book);
 	m_splitProjectEditor->Initialize(m_splitEditorOutput);
@@ -519,8 +526,14 @@ NumeReWindow::~NumeReWindow()
 	if (m_updateTimer)
 	{
 		delete m_updateTimer;
-		m_updateTimer = NULL;
+		m_updateTimer = nullptr;
 	}
+
+	if (m_fileEventTimer)
+    {
+        delete m_fileEventTimer;
+        m_fileEventTimer = nullptr;
+    }
 
 	// (hopefully) fixes some issues with widgets not getting deleted for some reason
 	///m_noteTerm->DestroyChildren();
@@ -665,7 +678,7 @@ void NumeReWindow::InitializeProgramOptions()
 		bool formatBeforeSaving = (m_config->Read("Miscellaneous/FormatBeforeSaving", "false") == "true");
 		m_options->SetFormatBeforeSaving(formatBeforeSaving);
 
-		bool keepBackups = (m_config->Read("Miscellaneous/KeepBackups", "false") == "true");
+		bool keepBackups = (m_config->Read("Miscellaneous/KeepBackups", "true") == "true");
 		m_options->SetKeepBackupFile(keepBackups);
 
 		bool foldDuringLoading = (m_config->Read("Interface/FoldDuringLoading", "false") == "true");
@@ -728,14 +741,14 @@ void NumeReWindow::InitializeProgramOptions()
 #endif
 		m_config->Write("Miscellaneous/TerminalHistory", m_options->GetTerminalHistorySize());
 		m_config->Write("Interface/CaretBlinkTime", m_options->GetCaretBlinkTime());
-		m_config->Write("Interface/FoldDuringLoading", "false");
+		m_config->Write("Interface/FoldDuringLoading", m_options->GetFoldDuringLoading() ? "true" : "false");
 		m_config->Write("Miscellaneous/LaTeXRoot", m_options->GetLaTeXRoot());
-		m_config->Write("Miscellaneous/PrintInColor", "false");
-		m_config->Write("Miscellaneous/PrintLineNumbers", "false");
-		m_config->Write("Miscellaneous/SaveSession", "false");
-		m_config->Write("Miscellaneous/SaveBookmarksInSession", "false");
-		m_config->Write("Miscellaneous/FormatBeforeSaving", "false");
-		m_config->Write("Miscellaneous/KeepBackups", "false");
+		m_config->Write("Miscellaneous/PrintInColor", m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE ? "true" : "false");
+		m_config->Write("Miscellaneous/PrintLineNumbers", m_options->GetLineNumberPrinting() ? "true" : "false");
+		m_config->Write("Miscellaneous/SaveSession", m_options->GetSaveSession() ? "true" : "false");
+		m_config->Write("Miscellaneous/SaveBookmarksInSession", m_options->GetSaveBookmarksInSession() ? "true" : "false");
+		m_config->Write("Miscellaneous/FormatBeforeSaving", m_options->GetFormatBeforeSaving() ? "true" : "false");
+		m_config->Write("Miscellaneous/KeepBackups", m_options->GetKeepBackupFile() ? "true" : "false");
 		m_options->writeColoursToConfig(m_config);
 		m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
 		m_options->writeAnalyzerOptionsToConfig(m_config);
@@ -932,15 +945,18 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
 		return;
 	}
 
-	if(m_projMultiFiles != NULL)
+	if (m_projMultiFiles != nullptr)
 	{
 		CloseProjectFile();
 	}
 
-	if(m_updateTimer)
+	if (m_updateTimer)
 	{
 		m_updateTimer->Stop();
 	}
+
+	if (m_fileEventTimer)
+        m_fileEventTimer->Stop();
 
 	if (m_terminal->IsWorking())
 	{
@@ -1056,6 +1072,12 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             break;
         case ID_MENU_OPEN_IN_EXPLORER:
             OnOpenInExplorer();
+            break;
+        case ID_MENU_SHOW_REVISIONS:
+            OnShowRevisions();
+            break;
+        case ID_MENU_TAG_CURRENT_REVISION:
+            OnTagCurrentRevision();
             break;
         case ID_MENU_AUTOINDENT:
         {
@@ -1525,78 +1547,30 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 	}
 }
 
-
+// This member function handles all events, which result from
+// changes in the file system. Because it is likely that multiple
+// of them are fired, if whole folders are moved, we only cache
+// the paths and the event types here and start a one shot
+// timer. If this timer has ran (it will be resetted for each
+// incoming event), the cached changes will be processed
 void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
 {
-    if (!m_fileTree)
+    if (!m_fileTree || m_appStarting)
         return;
+
     int type = event.GetChangeType();
-    if (type == wxFSW_EVENT_DELETE || type == wxFSW_EVENT_CREATE || type == wxFSW_EVENT_RENAME)
+
+    // Cache the event types and the event paths, if
+    // the types match the selection and the path
+    // does not contain the revisions folders
+    if ((type == wxFSW_EVENT_CREATE
+         || type == wxFSW_EVENT_DELETE
+         || type == wxFSW_EVENT_RENAME
+         || type == wxFSW_EVENT_MODIFY) && event.GetPath().GetFullPath().find(".revisions") == string::npos)
     {
-        //m_currentSavedFile.clear();
-        string sEventpath = replacePathSeparator(event.GetPath().GetFullPath().ToStdString());
-        vector<string> vPaths = m_terminal->getPathSettings();
-        const FileFilterType fileType[] = {FILE_DATAFILES, FILE_DATAFILES, FILE_NSCR, FILE_NPRC, FILE_IMAGEFILES};
-        for (size_t i = LOADPATH; i < vPaths.size(); i++)
-        {
-            if (sEventpath.find(replacePathSeparator(vPaths[i])) != string::npos)
-            {
-                m_fileTree->DeleteChildren(m_projectFileFolders[i-LOADPATH]);
-                LoadFilesToTree(vPaths[i], fileType[i-LOADPATH], m_projectFileFolders[i-LOADPATH]);
-                break;
-            }
-        }
+        m_modifiedFiles.push_back(make_pair(type, event.GetPath().GetFullPath()));
         m_dragDropSourceItem = wxTreeItemId();
-        CreateProcedureTree(vPaths[PROCPATH]);
-        m_terminal->UpdateLibrary();
-    }
-    else if (type == wxFSW_EVENT_MODIFY)
-    {
-        wxString sEventPath = event.GetPath().GetFullPath();
-        m_terminal->UpdateLibrary();
-        if (isOnReloadBlackList(sEventPath))
-            return;
-        if (m_currentSavedFile == toString((int)time(0))+"|"+sEventPath || m_currentSavedFile == toString((int)time(0)-1)+"|"+sEventPath || m_currentSavedFile == "BLOCKALL|"+sEventPath)
-        {
-            return;
-        }
-        NumeReEditor* edit;
-        // store current selection
-        int selection = m_book->GetSelection();
-        for (size_t i = 0; i < m_book->GetPageCount(); i++)
-        {
-            edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
-            if (edit->GetFileNameAndPath() == sEventPath)
-            {
-                m_currentSavedFile = "BLOCKALL|"+sEventPath;
-                if (edit->IsModified())
-                {
-                    m_book->SetSelection(i);
-                    int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", sEventPath.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
-                    if (answer == wxYES)
-                    {
-                        int pos = m_currentEd->GetCurrentPos();
-                        m_currentEd->LoadFile(sEventPath);
-                        m_currentEd->MarkerDeleteAll(MARKER_SAVED);
-                        m_currentEd->UpdateSyntaxHighlighting(true);
-                        m_currentEd->GotoPos(pos);
-                        m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
-                    }
-                }
-                else
-                {
-                    int pos = edit->GetCurrentPos();
-                    edit->LoadFile(sEventPath);
-                    edit->MarkerDeleteAll(MARKER_SAVED);
-                    edit->UpdateSyntaxHighlighting(true);
-                    edit->GotoPos(pos);
-                    m_currentSavedFile = toString((int)time(0))+"|"+sEventPath;
-                }
-                break;
-            }
-        }
-        // go back to previous selection
-        m_book->SetSelection(selection);
+        m_fileEventTimer->StartOnce(500);
     }
 }
 
@@ -2237,6 +2211,16 @@ void NumeReWindow::renameFile()
         return;
     }
 
+    VersionControlSystemManager manager(this);
+
+    if (manager.hasRevisions(source_filename.GetFullPath()))
+    {
+        unique_ptr<FileRevisions> revisions(manager.getRevisions(source_filename.GetFullPath()));
+
+        if (revisions.get())
+            revisions->renameFile(source_filename.GetFullName(), target_filename.GetFullName(), manager.getRevisionPath(target_filename.GetFullPath()));
+    }
+
     wxRenameFile(source_filename.GetFullPath(), target_filename.GetFullPath());
 }
 
@@ -2246,6 +2230,57 @@ void NumeReWindow::OnOpenInExplorer()
 
     if (fileName.length())
         ShellExecute(nullptr, nullptr, fileName.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method displays the revision dialog for the selected tree item.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnShowRevisions()
+{
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+    wxString filename = data->filename;
+    VersionControlSystemManager manager(this);
+    FileRevisions* revisions = manager.getRevisions(filename);
+
+    // Only display the dialog, if the FileRevisions object exists
+    if (revisions)
+    {
+        RevisionDialog* dialog = new RevisionDialog(this, revisions, m_fileTree->GetItemText(m_clickedTreeItem));
+        dialog->Show();
+    }
+}
+
+/////////////////////////////////////////////////
+/// \brief This method allows the user to tag the current active revision of a file.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnTagCurrentRevision()
+{
+    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+    wxString filename = data->filename;
+    VersionControlSystemManager manager(this);
+    unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
+
+    // Only do something, if the FileRevisions object exists
+    if (revisions.get())
+    {
+        // Display a text entry dialog to provide the user to
+        // enter a comment for the new tag
+        wxTextEntryDialog textdialog(this, _guilang.get("GUI_DLG_REVISIONDIALOG_PROVIDETAGCOMMENT"), _guilang.get("GUI_DLG_REVISIONDIALOG_PROVIDETAGCOMMENT_TITLE"), wxEmptyString, wxCENTER | wxOK | wxCANCEL);
+        int ret = textdialog.ShowModal();
+
+        if (ret == wxID_OK)
+        {
+            // Create the tag, if the user clicked on OK
+            revisions->tagRevision(revisions->getCurrentRevision(), textdialog.GetValue());
+        }
+    }
 }
 
 void NumeReWindow::OnCreateNewFolder()
@@ -2280,8 +2315,8 @@ void NumeReWindow::OnRemoveFolder()
     if (m_clickedTreeItem == m_copiedTreeItem)
         m_copiedTreeItem = 0;
     Recycler _recycler;
-    int error = _recycler.recycle(data->filename.ToStdString().c_str());
-    error;
+    /*int error = */_recycler.recycle(data->filename.ToStdString().c_str());
+    //error;
     return;
 }
 
@@ -2490,7 +2525,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             filename += ".nscr";
         else if (_filetype == FILE_PLUGIN)
             filename = "plgn_" + filename + ".nscr";
-        else
+        else if (_filetype == FILE_NPRC)
             filename += ".nprc";
 
         vector<string> vPaths = m_terminal->getPathSettings();
@@ -2524,6 +2559,13 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Add a new tab for the editor
         m_book->AddPage (edit, filename, true);
     }
+}
+
+void NumeReWindow::ShowRevision(const wxString& revisionName, const wxString& revisionContent)
+{
+    NewFile(FILE_NOTYPE, revisionName);
+    m_currentEd->SetText(revisionContent);
+    m_currentEd->UpdateSyntaxHighlighting(true);
 }
 
 void NumeReWindow::CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileType)
@@ -3831,6 +3873,176 @@ void NumeReWindow::OnStatusTimer(wxTimerEvent &WXUNUSED(event))
 	}
 }
 
+/////////////////////////////////////////////////
+/// \brief This member function handles the events from the file event timer.
+///
+/// \param event wxTimerEvent&
+/// \return void
+///
+/// This timer is started by
+/// the file system event handler to catch a list
+/// of events before processing them (which happens here)
+/////////////////////////////////////////////////
+void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
+{
+    // store current selection
+    int selection = m_book->GetSelection();
+
+    // Create the relevant objects
+    const FileFilterType fileType[] = {FILE_DATAFILES, FILE_DATAFILES, FILE_NSCR, FILE_NPRC, FILE_IMAGEFILES};
+    VersionControlSystemManager manager(this);
+    bool refreshProcedureLibrary = false;
+    vector<string> vPaths = m_terminal->getPathSettings();
+    std::array<bool, PATH_LAST-LOADPATH> pathsToRefresh;
+
+    // Fill the refresh indicator with false values
+    pathsToRefresh.fill(false);
+
+    // Go through all cached events
+    for (size_t i = 0; i < m_modifiedFiles.size(); i++)
+    {
+        wxFileName filename(m_modifiedFiles[i].second);
+
+        if (m_modifiedFiles[i].first == wxFSW_EVENT_DELETE
+            || m_modifiedFiles[i].first == wxFSW_EVENT_CREATE
+            || m_modifiedFiles[i].first == wxFSW_EVENT_RENAME)
+        {
+            // These event types require refreshing of
+            // the created file trees and the procedure
+            // library, if necessary
+            string sEventpath = replacePathSeparator(m_modifiedFiles[i].second.ToStdString());
+
+            for (size_t i = LOADPATH; i < vPaths.size(); i++)
+            {
+                if (sEventpath.find(replacePathSeparator(vPaths[i])) != string::npos)
+                {
+                    pathsToRefresh[i-LOADPATH] = true;
+                    break;
+                }
+            }
+
+            // Mark the procedure library as to be
+            // refreshed
+            if (sEventpath.substr(sEventpath.length()-5) == ".nprc")
+               refreshProcedureLibrary = true;
+
+        }
+        else if (m_modifiedFiles[i].first == wxFSW_EVENT_MODIFY)
+        {
+            // Ignore modified directories
+            if (!filename.GetExt().length() && wxFileName::DirExists(m_modifiedFiles[i].second))
+                continue;
+
+            // This event type indicate, that files might have
+            // to be reloaded and that the procedure library
+            // should be refreshed as well.
+            //
+            // Mark the procedure library as to be
+            // refreshed
+            if (m_modifiedFiles[i].second.substr(m_modifiedFiles[i].second.length()-5) == ".nprc")
+                refreshProcedureLibrary = true;
+
+            // Ignore files, which have been saved by NumeRe
+            // currently and therefore are result of a modify
+            // event
+            if (m_currentSavedFile == toString((int)time(0))+"|"+m_modifiedFiles[i].second
+                || m_currentSavedFile == toString((int)time(0)-1)+"|"+m_modifiedFiles[i].second
+                || m_currentSavedFile == "BLOCKALL|"+m_modifiedFiles[i].second)
+                continue;
+
+            // Ignore also files, whose modification time differs
+            // more than two seconds from te current time. Older
+            // modifications are likely to be metadata updates
+            // done by the OS and do not require any refresh
+            if ((wxDateTime::Now() - filename.GetModificationTime()).GetSeconds() > 2)
+                continue;
+
+            // Add a new revision in the list of revisions that
+            // the file was modified from the outside. Files with
+            // a revision list, will therefore never lose their
+            // changes, even if the user disagrees with the reloading
+            if (manager.hasRevisions(m_modifiedFiles[i].second) && m_options->GetKeepBackupFile())
+            {
+                unique_ptr<FileRevisions> revisions(manager.getRevisions(m_modifiedFiles[i].second));
+
+                if (revisions.get())
+                    revisions->addExternalRevision(m_modifiedFiles[i].second);
+            }
+
+            // Ignore files on the current blacklist
+            if (isOnReloadBlackList(m_modifiedFiles[i].second))
+                continue;
+
+            NumeReEditor* edit;
+
+            // Search the file in the list of currently
+            // opened files
+            for (size_t i = 0; i < m_book->GetPageCount(); i++)
+            {
+                edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+
+                // Found it?
+                if (edit && edit->GetFileNameAndPath() == m_modifiedFiles[i].second)
+                {
+                    m_currentSavedFile = "BLOCKALL|"+m_modifiedFiles[i].second;
+
+                    // If the user has modified the file, as
+                    // him to reload the file, otherwise re-
+                    // load automatically
+                    if (edit->IsModified())
+                    {
+                        m_book->SetSelection(i);
+                        int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", m_modifiedFiles[i].second.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
+
+                        if (answer == wxYES)
+                        {
+                            int pos = m_currentEd->GetCurrentPos();
+                            m_currentEd->LoadFile(m_modifiedFiles[i].second);
+                            m_currentEd->MarkerDeleteAll(MARKER_SAVED);
+                            m_currentEd->UpdateSyntaxHighlighting(true);
+                            m_currentEd->GotoPos(pos);
+                            m_currentSavedFile = toString((int)time(0))+"|"+m_modifiedFiles[i].second;
+                        }
+                    }
+                    else
+                    {
+                        int pos = edit->GetCurrentPos();
+                        edit->LoadFile(m_modifiedFiles[i].second);
+                        edit->MarkerDeleteAll(MARKER_SAVED);
+                        edit->UpdateSyntaxHighlighting(true);
+                        edit->GotoPos(pos);
+                        m_currentSavedFile = toString((int)time(0))+"|"+m_modifiedFiles[i].second;
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+
+    // Now refresh all folders, which have been marked
+    // as to be refreshed
+    for (size_t i = 0; i < pathsToRefresh.size(); i++)
+    {
+        if (pathsToRefresh[i])
+        {
+            m_fileTree->DeleteChildren(m_projectFileFolders[i]);
+            LoadFilesToTree(vPaths[i+LOADPATH], fileType[i], m_projectFileFolders[i]);
+        }
+    }
+
+    // Now refresh the procedure library
+    if (refreshProcedureLibrary)
+    {
+        CreateProcedureTree(vPaths[PROCPATH]);
+        m_terminal->UpdateLibrary();
+    }
+
+    // go back to previous selection
+    m_book->SetSelection(selection);
+    m_modifiedFiles.clear();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnUpdateDebugUI
 ///  Updates the debug-related toolbar items
@@ -4809,6 +5021,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 {
     if (m_treeBook->GetCurrentPage() == m_filePanel)
     {
+        VersionControlSystemManager manager(this);
         wxTreeItemId clickedItem = event.GetItem();
         m_clickedTreeItem = clickedItem;
         wxMenu popupMenu;
@@ -4816,41 +5029,26 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         wxString loadableExt = ".dat;.txt;.dx;.jcm;.jdx;.xls;.xlsx;.ods;.ndat;.labx;.ibw;.csv;";
         wxString showableImgExt = ".png;.jpeg;.jpg;.gif;.bmp;";
 
-        //wxTreeItemId rootItem = m_projectTree->GetRootItem();
-        //wxTreeItemId parentItem = m_projectTree->GetItemParent(clickedItem);
         wxString fname_ext = m_fileTree->GetItemText(m_clickedTreeItem);
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+
         if (m_clickedTreeItem == m_fileTree->GetRootItem())
             return;
+
         if (!data || data->isDir)
         {
-            popupMenu.Append(ID_MENU_NEW_FOLDER_IN_TREE, _guilang.get("GUI_TREE_POP_NEWFOLDER"));
+            popupMenu.Append(ID_MENU_NEW_FOLDER_IN_TREE, _guilang.get("GUI_TREE_PUP_NEWFOLDER"));
+
             if (data)
-                popupMenu.Append(ID_MENU_REMOVE_FOLDER_FROM_TREE, _guilang.get("GUI_TREE_POP_REMOVEFOLDER"));
-            popupMenu.AppendSeparator();
-            popupMenu.Append(ID_MENU_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_POP_OPENINEXPLORER"));
-            /*if (loadableExt.find(fname_ext) != string::npos)
-                popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_LOAD"));
-            else if (fname_ext == ".nscr;")
-                popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_START"));
-            else if (fname_ext == ".nprc;")
-                popupMenu.Append(ID_OPEN_FILE, _guilang.get("GUI_TREE_PUP_RUN"));
+                popupMenu.Append(ID_MENU_REMOVE_FOLDER_FROM_TREE, _guilang.get("GUI_TREE_PUP_REMOVEFOLDER"));
 
-            if (editableExt.find(fname_ext) != string::npos)
-                popupMenu.Append(ID_EDIT_FILE, _guilang.get("GUI_TREE_PUP_EDIT"));
-            if (showableImgExt.find(fname_ext) != string::npos)
-                popupMenu.Append(ID_OPEN_IMAGE, _guilang.get("GUI_TREE_PUP_OPENIMAGE"));
             popupMenu.AppendSeparator();
-            popupMenu.Append(ID_DELETE_FILE, _guilang.get("GUI_TREE_PUP_DELETEFILE"));
-            popupMenu.Append(ID_COPY_FILE, _guilang.get("GUI_TREE_PUP_COPYFILE"));
-            if (m_copiedTreeItem)
-                popupMenu.Append(ID_INSERT_FILE, _guilang.get("GUI_TREE_PUP_INSERTFILE"));
-            popupMenu.Append(ID_RENAME_FILE, _guilang.get("GUI_TREE_PUP_RENAMEFILE"));*/
-
+            popupMenu.Append(ID_MENU_OPEN_IN_EXPLORER, _guilang.get("GUI_TREE_PUP_OPENINEXPLORER"));
             wxPoint p = event.GetPoint();
             m_fileTree->PopupMenu(&popupMenu, p);
             return;
         }
+
         fname_ext = fname_ext.substr(fname_ext.rfind('.')) + ";";
 
         if (loadableExt.find(fname_ext) != string::npos)
@@ -4862,13 +5060,24 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
         if (editableExt.find(fname_ext) != string::npos)
             popupMenu.Append(ID_MENU_EDIT_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_EDIT"));
+
         if (showableImgExt.find(fname_ext) != string::npos)
             popupMenu.Append(ID_MENU_OPEN_IMAGE_FROM_TREE, _guilang.get("GUI_TREE_PUP_OPENIMAGE"));
+
+        if (manager.hasRevisions(data->filename))
+        {
+            popupMenu.AppendSeparator();
+            popupMenu.Append(ID_MENU_SHOW_REVISIONS, _guilang.get("GUI_TREE_PUP_SHOWREVISIONS"));
+            popupMenu.Append(ID_MENU_TAG_CURRENT_REVISION, _guilang.get("GUI_TREE_PUP_TAGCURRENTREVISION"));
+        }
+
         popupMenu.AppendSeparator();
         popupMenu.Append(ID_MENU_DELETE_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_DELETEFILE"));
         popupMenu.Append(ID_MENU_COPY_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_COPYFILE"));
+
         if (m_copiedTreeItem)
             popupMenu.Append(ID_MENU_INSERT_FILE_INTO_TREE, _guilang.get("GUI_TREE_PUP_INSERTFILE"));
+
         popupMenu.Append(ID_MENU_RENAME_FILE_IN_TREE, _guilang.get("GUI_TREE_PUP_RENAMEFILE"));
 
         wxPoint p = event.GetPoint();
@@ -4884,14 +5093,15 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
         if (data->isDir)
             return;
+
         popupMenu.Append(ID_MENU_INSERT_IN_EDITOR_FROM_TREE, _guilang.get("GUI_TREE_PUP_INSERT_EDITOR"));
         popupMenu.Append(ID_MENU_INSERT_IN_CONSOLE_FROM_TREE, _guilang.get("GUI_TREE_PUP_INSERT_CONSOLE"));
+
         if (data->isCommand)
         {
             popupMenu.AppendSeparator();
             popupMenu.Append(ID_MENU_HELP_ON_ITEM, _guilang.get("GUI_TREE_PUP_HELPONITEM", m_functionTree->GetItemText(clickedItem).ToStdString()));
         }
-        //popupMenu.Append(ID_SHOW_DESCRIPTION, _guilang.get("GUI_TREE_PUP_SHOW_DESCRIPTION"));
 
         wxPoint p = event.GetPoint();
         m_functionTree->PopupMenu(&popupMenu, p);
@@ -5139,14 +5349,28 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
         wxTreeItemId item = event.GetItem();
 
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
+
         if (!data || data->isDir)
             return;
+
         wxFileName pathname = data->filename;
         wxString tooltip = _guilang.get("COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()));
+
         if (pathname.GetExt() == "ndat")
         {
             tooltip += getFileDetails(pathname);
         }
+
+        VersionControlSystemManager manager(this);
+
+        if (manager.hasRevisions(pathname.GetFullPath()))
+        {
+            unique_ptr<FileRevisions> revisions(manager.getRevisions(pathname.GetFullPath()));
+
+            if (revisions.get())
+                tooltip += "\n(" + revisions->getCurrentRevision() + ")";
+        }
+
         event.SetToolTip(tooltip);
     }
 }

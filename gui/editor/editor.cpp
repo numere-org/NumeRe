@@ -37,6 +37,7 @@
 #include <vector>
 #include <string>
 #include <set>
+#include <memory>
 
 #include "editor.h"
 #include "../NumeReWindow.h"
@@ -47,6 +48,8 @@
 #include "../../common/DebugEvent.h"
 #include "../../common/ProjectInfo.h"
 #include "../../common/debug.h"
+#include "../../common/vcsmanager.hpp"
+#include "../../common/filerevisions.hpp"
 #include "../dialogs/renamesymbolsdialog.hpp"
 //#include "../../common/fixvsbug.h"
 #include "../globals.hpp"
@@ -364,8 +367,20 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 		m_simpleFileName = fn.GetFullName();
 	}
 
-	// create a backup of the original file, if it exists
-	if (wxFileExists(filename))
+	VersionControlSystemManager manager(m_mainFrame);
+	unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
+
+	if (revisions.get())
+    {
+        if (!revisions->getRevisionCount() && wxFileExists(filename))
+        {
+            wxFile tempfile(filename);
+            wxString contents;
+            tempfile.ReadAll(&contents);
+            revisions->addRevision(contents);
+        }
+    }
+    else if (wxFileExists(filename))
 	{
 		wxCopyFile(filename, filename + ".backup", true);
 	}
@@ -374,22 +389,22 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 
 	// Write the file depending on its type
 	if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || filename.find("numere.history") != string::npos)
-    {
         bWriteSuccess = SaveNumeReFile(filename);
-    }
     else
-    {
         bWriteSuccess = SaveGeneralFile(filename);
-    }
 
 	// Check the contents of the newly created file
 	wxFile filecheck;
 	filecheck.Open(filename);
+
 	if (!bWriteSuccess)
 	{
-		// if the contents are not matching, restore the backup and signalize that an error occured
+	    // if the contents are not matching, restore the backup and signalize that an error occured
 		if (wxFileExists(filename + ".backup"))
 			wxCopyFile(filename + ".backup", filename, true);
+        else if (revisions.get() && revisions->getRevisionCount())
+            revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
+
 		return false;
 	}
 	else if ((m_fileType == FILE_NSCR || m_fileType == FILE_NPRC) && filecheck.Length() != this->GetLength() - countUmlauts(this->GetText().ToStdString()))
@@ -397,6 +412,9 @@ bool NumeReEditor::SaveFile( const wxString& filename )
         // if the contents are not matching, restore the backup and signalize that an error occured
 		if (wxFileExists(filename + ".backup"))
 			wxCopyFile(filename + ".backup", filename, true);
+        else if (revisions.get() && revisions->getRevisionCount())
+            revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
+
 		return false;
 	}
 	else if ((m_fileType != FILE_NSCR && m_fileType != FILE_NPRC) && !filecheck.Length() && this->GetLength())
@@ -404,8 +422,16 @@ bool NumeReEditor::SaveFile( const wxString& filename )
 		// if the contents are not matching, restore the backup and signalize that an error occured
 		if (wxFileExists(filename + ".backup"))
 			wxCopyFile(filename + ".backup", filename, true);
+        else if (revisions.get() && revisions->getRevisionCount())
+            revisions->restoreRevision(revisions->getRevisionCount()-1, filename);
+
 		return false;
     }
+
+    // Add the current text to the revisions, if the saving process was
+    // successful
+    if (revisions.get() && m_options->GetKeepBackupFile())
+        revisions->addRevision(GetText());
 
     // If the user doesn't want to keep the backup files
     // delete it here

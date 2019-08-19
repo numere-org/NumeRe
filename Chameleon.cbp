@@ -296,6 +296,16 @@
 		<Unit filename="common/chameleonprocessevent.h" />
 		<Unit filename="common/datastructures.h" />
 		<Unit filename="common/debug.h" />
+		<Unit filename="common/dtl/Diff.hpp" />
+		<Unit filename="common/dtl/Diff3.hpp" />
+		<Unit filename="common/dtl/Lcs.hpp" />
+		<Unit filename="common/dtl/Sequence.hpp" />
+		<Unit filename="common/dtl/Ses.hpp" />
+		<Unit filename="common/dtl/dtl.hpp" />
+		<Unit filename="common/dtl/functors.hpp" />
+		<Unit filename="common/dtl/variables.hpp" />
+		<Unit filename="common/filerevisions.cpp" />
+		<Unit filename="common/filerevisions.hpp" />
 		<Unit filename="common/filewatcher.cpp" />
 		<Unit filename="common/filewatcher.hpp" />
 		<Unit filename="common/fixvsbug.h" />
@@ -305,6 +315,8 @@
 		<Unit filename="common/tree.h" />
 		<Unit filename="common/tree_msvc.h" />
 		<Unit filename="common/tree_util.h" />
+		<Unit filename="common/vcsmanager.cpp" />
+		<Unit filename="common/vcsmanager.hpp" />
 		<Unit filename="common/verinfo.cpp" />
 		<Unit filename="common/verinfo.h" />
 		<Unit filename="gui/ChameleonProjectManager.cpp" />
@@ -372,6 +384,8 @@
 		<Unit filename="gui/dialogs/packagedialog.hpp" />
 		<Unit filename="gui/dialogs/renamesymbolsdialog.cpp" />
 		<Unit filename="gui/dialogs/renamesymbolsdialog.hpp" />
+		<Unit filename="gui/dialogs/revisiondialog.cpp" />
+		<Unit filename="gui/dialogs/revisiondialog.hpp" />
 		<Unit filename="gui/dialogs/textoutputdialog.cpp" />
 		<Unit filename="gui/dialogs/textoutputdialog.hpp" />
 		<Unit filename="gui/dialogs/tipdialog.cpp" />
@@ -558,7 +572,7 @@
 				<Code header_guard="VERSION_H" namespace="AutoVersion" prefix="" />
 			</AutoVersioning>
 			<DoxyBlocks>
-				<comment_style block="0" line="2" />
+				<comment_style block="5" line="2" />
 				<doxyfile_project />
 				<doxyfile_build />
 				<doxyfile_warnings />

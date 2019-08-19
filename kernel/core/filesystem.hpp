@@ -58,6 +58,7 @@ class FileSystem
 		string ValidFolderName(string _sFileName) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
 		string ValidizeAndPrepareName(const string& _sFileName, const string& sExtension = ".dat") const;
 		int setPath(string _sPath, bool bMkDir, string _sWhere);			// setzt sPath auf _sPath
+		void createRevisionsFolder();
 		string getPath() const;								// gibt sPath zurueck
 		vector<string> getFileParts(const string& sFilePath) const;
         inline void setProgramPath(string _sWhere)

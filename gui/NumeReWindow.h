@@ -16,6 +16,8 @@
 
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
+#include <vector>
+#include <utility>
 
 #include "NumeReStatusbar.hpp"
 #include "globals.hpp"
@@ -171,6 +173,7 @@ class NumeReWindow : public wxFrame
         NetworkCallResult CheckNetworkStatus();
 
         void NewFile(FileFilterType _filetype = FILE_NONSOURCE, const wxString& defaultfilename = "");
+        void ShowRevision(const wxString& revisionName, const wxString& revisionContent);
         void DefaultPage();
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
@@ -248,6 +251,8 @@ class NumeReWindow : public wxFrame
         void OnFindReplace(int id );
         void OnCopy();
         void OnOpenInExplorer();
+        void OnShowRevisions();
+        void OnTagCurrentRevision();
         void OnCreateNewFolder();
         void OnRemoveFolder();
         void OnSaveSourceFile( int id );
@@ -265,6 +270,7 @@ class NumeReWindow : public wxFrame
         void UpdateStatusBar();
 
         void OnStatusTimer(wxTimerEvent &event);
+        void OnFileEventTimer(wxTimerEvent& event);
 
         void OnSplitterDoubleClick(wxSplitterEvent &event);
         void OnTermResize(wxSplitterEvent &event);
@@ -420,6 +426,7 @@ class NumeReWindow : public wxFrame
         //wxImageList* m_tempImageList;
         /*! Used to initiate UI updates */
         wxTimer* m_updateTimer;
+        wxTimer* m_fileEventTimer;
 
         //IntIntHashmap m_permNumMap;
         /*! Maps a file extension to the image list index for that extension's icon */
@@ -468,6 +475,7 @@ class NumeReWindow : public wxFrame
         bool m_multiRowState;
         bool m_loadingFilesDuringStartup;
         map<int, wxMenuItem*> m_menuItems;
+        vector<pair<int, wxString> > m_modifiedFiles;
 
 
         wxString m_filterNSCRFiles;
@@ -482,6 +490,7 @@ class NumeReWindow : public wxFrame
         wxString m_filterSupportedFiles;
 
         wxString m_currentSavedFile;
+        wxString m_fileToRefresh;
 
 
         DECLARE_EVENT_TABLE()

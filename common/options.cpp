@@ -44,7 +44,7 @@ Options::Options()
 	m_saveSession = false;
 	m_saveBookmarksInSession = false;
 	m_formatBeforeSaving = false;
-	m_keepBackupFile = false;
+	m_keepBackupFile = true;
 	m_foldDuringLoading = false;
 
 	m_mingwProgramNames.Add("g++.exe");
