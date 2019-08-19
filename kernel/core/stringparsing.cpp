@@ -2667,7 +2667,16 @@ static void parser_StringFuncHandler(string& sLine, const string& sFuncName, Dat
 			else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_INT_INT)
 			{
 				s_vect sStringArg;
-				size_t nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg, bLogicalOnly);
+				size_t nMaxArgs = 0;
+
+				if (sFuncName == "to_string" && !containsStrings(sFunctionArgument))
+                {
+                    sStringArg.push_back(sFunctionArgument);
+                    nMaxArgs = 1;
+                }
+				else
+                    nMaxArgs = parser_StringFuncArgParser(_data, _parser, _option, sFunctionArgument, mStringVectorVars, sStringArg, bLogicalOnly);
+
 				if (!nMaxArgs)
 				{
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
