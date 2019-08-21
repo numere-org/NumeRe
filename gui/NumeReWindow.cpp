@@ -3888,6 +3888,10 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     // store current selection
     int selection = m_book->GetSelection();
 
+    // Copy data and clear the cache
+    vector<pair<int,wxString> > modifiedFiles = m_modifiedFiles;
+    m_modifiedFiles.clear();
+
     // Create the relevant objects
     const FileFilterType fileType[] = {FILE_DATAFILES, FILE_DATAFILES, FILE_NSCR, FILE_NPRC, FILE_IMAGEFILES};
     VersionControlSystemManager manager(this);
@@ -3899,24 +3903,24 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     pathsToRefresh.fill(false);
 
     // Go through all cached events
-    for (size_t i = 0; i < m_modifiedFiles.size(); i++)
+    for (size_t i = 0; i < modifiedFiles.size(); i++)
     {
-        wxFileName filename(m_modifiedFiles[i].second);
+        wxFileName filename(modifiedFiles[i].second);
 
-        if (m_modifiedFiles[i].first == wxFSW_EVENT_DELETE
-            || m_modifiedFiles[i].first == wxFSW_EVENT_CREATE
-            || m_modifiedFiles[i].first == wxFSW_EVENT_RENAME)
+        if (modifiedFiles[i].first == wxFSW_EVENT_DELETE
+            || modifiedFiles[i].first == wxFSW_EVENT_CREATE
+            || modifiedFiles[i].first == wxFSW_EVENT_RENAME)
         {
             // These event types require refreshing of
             // the created file trees and the procedure
             // library, if necessary
-            string sEventpath = replacePathSeparator(m_modifiedFiles[i].second.ToStdString());
+            string sEventpath = replacePathSeparator(modifiedFiles[i].second.ToStdString());
 
-            for (size_t i = LOADPATH; i < vPaths.size(); i++)
+            for (size_t j = LOADPATH; j < vPaths.size(); j++)
             {
-                if (sEventpath.find(replacePathSeparator(vPaths[i])) != string::npos)
+                if (sEventpath.find(replacePathSeparator(vPaths[j])) != string::npos)
                 {
-                    pathsToRefresh[i-LOADPATH] = true;
+                    pathsToRefresh[j-LOADPATH] = true;
                     break;
                 }
             }
@@ -3927,10 +3931,10 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                refreshProcedureLibrary = true;
 
         }
-        else if (m_modifiedFiles[i].first == wxFSW_EVENT_MODIFY)
+        else if (modifiedFiles[i].first == wxFSW_EVENT_MODIFY)
         {
             // Ignore modified directories
-            if (!filename.GetExt().length() && wxFileName::DirExists(m_modifiedFiles[i].second))
+            if (!filename.GetExt().length() && wxFileName::DirExists(modifiedFiles[i].second))
                 continue;
 
             // This event type indicate, that files might have
@@ -3939,15 +3943,15 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             //
             // Mark the procedure library as to be
             // refreshed
-            if (m_modifiedFiles[i].second.substr(m_modifiedFiles[i].second.length()-5) == ".nprc")
+            if (modifiedFiles[i].second.substr(modifiedFiles[i].second.length()-5) == ".nprc")
                 refreshProcedureLibrary = true;
 
             // Ignore files, which have been saved by NumeRe
             // currently and therefore are result of a modify
             // event
-            if (m_currentSavedFile == toString((int)time(0))+"|"+m_modifiedFiles[i].second
-                || m_currentSavedFile == toString((int)time(0)-1)+"|"+m_modifiedFiles[i].second
-                || m_currentSavedFile == "BLOCKALL|"+m_modifiedFiles[i].second)
+            if (m_currentSavedFile == toString((int)time(0))+"|"+modifiedFiles[i].second
+                || m_currentSavedFile == toString((int)time(0)-1)+"|"+modifiedFiles[i].second
+                || m_currentSavedFile == "BLOCKALL|"+modifiedFiles[i].second)
                 continue;
 
             // Ignore also files, whose modification time differs
@@ -3961,57 +3965,57 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             // the file was modified from the outside. Files with
             // a revision list, will therefore never lose their
             // changes, even if the user disagrees with the reloading
-            if (manager.hasRevisions(m_modifiedFiles[i].second) && m_options->GetKeepBackupFile())
+            if (manager.hasRevisions(modifiedFiles[i].second) && m_options->GetKeepBackupFile())
             {
-                unique_ptr<FileRevisions> revisions(manager.getRevisions(m_modifiedFiles[i].second));
+                unique_ptr<FileRevisions> revisions(manager.getRevisions(modifiedFiles[i].second));
 
                 if (revisions.get())
-                    revisions->addExternalRevision(m_modifiedFiles[i].second);
+                    revisions->addExternalRevision(modifiedFiles[i].second);
             }
 
             // Ignore files on the current blacklist
-            if (isOnReloadBlackList(m_modifiedFiles[i].second))
+            if (isOnReloadBlackList(modifiedFiles[i].second))
                 continue;
 
             NumeReEditor* edit;
 
             // Search the file in the list of currently
             // opened files
-            for (size_t i = 0; i < m_book->GetPageCount(); i++)
+            for (size_t j = 0; j < m_book->GetPageCount(); j++)
             {
-                edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+                edit = static_cast<NumeReEditor*>(m_book->GetPage(j));
 
                 // Found it?
-                if (edit && edit->GetFileNameAndPath() == m_modifiedFiles[i].second)
+                if (edit && edit->GetFileNameAndPath() == modifiedFiles[i].second)
                 {
-                    m_currentSavedFile = "BLOCKALL|"+m_modifiedFiles[i].second;
+                    m_currentSavedFile = "BLOCKALL|"+modifiedFiles[i].second;
 
                     // If the user has modified the file, as
                     // him to reload the file, otherwise re-
                     // load automatically
                     if (edit->IsModified())
                     {
-                        m_book->SetSelection(i);
-                        int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", m_modifiedFiles[i].second.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
+                        m_book->SetSelection(j);
+                        int answer = wxMessageBox(_guilang.get("GUI_DLG_FILEMODIFIED_QUESTION", modifiedFiles[i].second.ToStdString()), _guilang.get("GUI_DLG_FILEMODIFIED"), wxYES_NO | wxICON_QUESTION, this);
 
                         if (answer == wxYES)
                         {
                             int pos = m_currentEd->GetCurrentPos();
-                            m_currentEd->LoadFile(m_modifiedFiles[i].second);
+                            m_currentEd->LoadFile(modifiedFiles[i].second);
                             m_currentEd->MarkerDeleteAll(MARKER_SAVED);
                             m_currentEd->UpdateSyntaxHighlighting(true);
                             m_currentEd->GotoPos(pos);
-                            m_currentSavedFile = toString((int)time(0))+"|"+m_modifiedFiles[i].second;
+                            m_currentSavedFile = toString((int)time(0))+"|"+modifiedFiles[i].second;
                         }
                     }
                     else
                     {
                         int pos = edit->GetCurrentPos();
-                        edit->LoadFile(m_modifiedFiles[i].second);
+                        edit->LoadFile(modifiedFiles[i].second);
                         edit->MarkerDeleteAll(MARKER_SAVED);
                         edit->UpdateSyntaxHighlighting(true);
                         edit->GotoPos(pos);
-                        m_currentSavedFile = toString((int)time(0))+"|"+m_modifiedFiles[i].second;
+                        m_currentSavedFile = toString((int)time(0))+"|"+modifiedFiles[i].second;
                     }
 
                     break;
@@ -4040,7 +4044,6 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
 
     // go back to previous selection
     m_book->SetSelection(selection);
-    m_modifiedFiles.clear();
 }
 
 //////////////////////////////////////////////////////////////////////////////
