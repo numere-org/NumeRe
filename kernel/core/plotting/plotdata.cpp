@@ -260,7 +260,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (matchParams(sCmd, "alpha", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "alpha", '=')+5));
-            dAlphaVal = _parser.Eval();
+            dAlphaVal = 1 - _parser.Eval();
 
             if (dAlphaVal < 0 || dAlphaVal > 1)
                 dAlphaVal = 0.5;
@@ -269,7 +269,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (matchParams(sCmd, "transparency", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "transparency", '=')+12));
-            dAlphaVal = _parser.Eval();
+            dAlphaVal = 1 - _parser.Eval();
 
             if (dAlphaVal < 0 || dAlphaVal > 1)
                 dAlphaVal = 0.5;
