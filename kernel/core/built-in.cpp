@@ -38,7 +38,7 @@ static bool undefineFunctions(string sFunctionList, Define& _functions, const Se
 static int showDialog(string& sCmd);
 static int showDataObject(string& sCmd);
 
-
+string removeQuotationMarks(const string& sString);
 
 
 /*
@@ -5091,6 +5091,13 @@ static int showDialog(string& sCmd)
     if (nControls & NumeRe::CTRL_MESSAGEBOX && (!sMessage.length() || sMessage == "\"\""))
     {
         throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, sCmd, "dialog");
+    }
+
+    // Ensure that the path for the file and the directory
+    // dialog is a valid path and replace all placeholders
+    if ((nControls & NumeRe::CTRL_FILEDIALOG || nControls & NumeRe::CTRL_FOLDERDIALOG) && sExpression.length() && sExpression != "\"\"")
+    {
+        sExpression = kernel->getData().ValidFolderName(removeQuotationMarks(sExpression));
     }
 
     // Get the window manager, create the modal window and
