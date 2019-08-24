@@ -49,6 +49,7 @@ void SearchCtrl::OnItemSelect(wxCommandEvent& event)
     {
         selectItem(value);
         Clear();
+        SetCursor(wxCURSOR_IBEAM);
     }
 }
 
@@ -75,6 +76,7 @@ void SearchCtrl::OnTextChange(wxCommandEvent& event)
             SetValue(textEntryValue);
             SetInsertionPointEnd();
 
+            SetCursor(wxCURSOR_ARROW);
             Popup();
         }
 
@@ -90,7 +92,7 @@ void SearchCtrl::OnPopup(wxCommandEvent& event)
     textChangeMutex = true;
     SetInsertionPointEnd();
     SelectNone();
+    SetCursor(wxCURSOR_ARROW);
     textChangeMutex = false;
 }
-
 
