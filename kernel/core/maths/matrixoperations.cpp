@@ -74,6 +74,7 @@ static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const
 static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position);
+static Matrix parser_Normalize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const string& sCmd, const string& sExpr, size_t position);
@@ -568,6 +569,19 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_diagonalMatrix(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+
+        // Normalize the values in the matrix into the (absolute) range of [0,1]
+        if (sCmd.substr(i,10) == "normalize("
+            && getMatchingParenthesis(sCmd.substr(i+9)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,11))))
+        {
+            string sSubExpr = sCmd.substr(i+10, getMatchingParenthesis(sCmd.substr(i+9))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_Normalize(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+9));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+9))+10;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
@@ -2323,6 +2337,28 @@ static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2
     mCovariance[0][0] /= (_mMatrix1.size() * _mMatrix1[0].size() - 1);
 
     return mCovariance;
+}
+
+// This static function implements the normalize
+// function, which will normalize the (absolute) data range of
+// the passed matrix into the range [0,1]
+static Matrix parser_Normalize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    Matrix _mReturn = _mMatrix;
+    Matrix _mMax = parser_MatrixMax(_mMatrix, sCmd, sExpr, position);
+    Matrix _mMin = parser_MatrixMin(_mMatrix, sCmd, sExpr, position);
+
+    double dMax = max(fabs(_mMax[0][0]), fabs(_mMin[0][0]));
+
+    for (size_t  i = 0; i < _mReturn.size(); i++)
+    {
+        for (size_t j = 0; j < _mReturn[i].size(); j++)
+        {
+            _mReturn[i][j] /= dMax;
+        }
+    }
+
+    return _mReturn;
 }
 
 static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)

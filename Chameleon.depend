@@ -8554,7 +8554,7 @@
 1561984174 source:c:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1561984174 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1566646772 source:c:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	<list>
@@ -10006,7 +10006,7 @@
 
 1563344785 c:\cpp\numere-source\trunk\gui\compositions\wxtermcontainer.h
 
-1566644211 source:c:\cpp\numere-source\trunk\gui\controls\searchctrl.cpp
+1566644605 source:c:\cpp\numere-source\trunk\gui\controls\searchctrl.cpp
 	"searchctrl.hpp"
 
 1566644560 c:\cpp\numere-source\trunk\gui\controls\searchctrl.hpp
