@@ -4058,7 +4058,7 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 		string sTemp = sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos);
 
 		// Try to find a data object in the current label
-		if ((sTemp.find("data(") != string::npos || _data.containsTablesOrClusters(sTemp.substr(1, sTemp.length()-2)))
+		if ((sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp.substr(1, sTemp.length()-2)))
 				&& (sTemp.find(',') != string::npos || sTemp.substr(sTemp.find('('), 2) == "()")
 				&& sTemp.find(')') != string::npos)
 		{

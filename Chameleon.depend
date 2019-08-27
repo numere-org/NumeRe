@@ -4064,7 +4064,7 @@
 1560502651 source:d:\cpp\numere-source\trunk\kernel\core\maths\functionimplementation.cpp
 	"functionimplementation.hpp"
 
-1562225764 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
+1566734416 source:d:\cpp\numere-source\trunk\kernel\core\maths\matrixoperations.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	<list>
@@ -4074,7 +4074,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1560502651 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1566805935 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4332,7 +4332,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1566200965 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1566805382 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"
@@ -9672,7 +9672,7 @@
 
 1562320573 d:\cpp\numere-source\trunk\gui\compositions\wxtermcontainer.h
 
-1562320573 source:d:\cpp\numere-source\trunk\gui\controls\searchctrl.cpp
+1566734416 source:d:\cpp\numere-source\trunk\gui\controls\searchctrl.cpp
 	"searchctrl.hpp"
 
 1562320573 d:\cpp\numere-source\trunk\gui\controls\searchctrl.hpp
