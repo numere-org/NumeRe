@@ -271,6 +271,62 @@
 					<Add directory="$(#wx)/lib/gcc_lib" />
 				</Linker>
 			</Target>
+			<Target title="Deep Debug">
+				<Option output="../../../Software/NumeRe/numere" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../../Software/NumeRe/." />
+				<Option object_output="Deepdebug" />
+				<Option type="0" />
+				<Option compiler="tdm-gcc" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-g" />
+					<Add option="-std=gnu++11" />
+					<Add option="-mthreads" />
+					<Add option="-DDLLVER_MAJOR_MASK" />
+					<Add option="-DwxUSE_REGEX" />
+					<Add option="-DwxDIALOG_MODAL" />
+					<Add option="-DwxUSE_UNICODE" />
+					<Add option="-D__GNUWIN32__" />
+					<Add option="-D__WXMSW__" />
+					<Add option="-DWXDEBUG" />
+					<Add option="-DDO_LOG" />
+					<Add directory="$(#wx)/lib/gcc_lib/mswu" />
+					<Add directory="$(#wx)/include" />
+				</Compiler>
+				<ResourceCompiler>
+					<Add directory="$(#wx)/include/" />
+				</ResourceCompiler>
+				<Linker>
+					<Add library="wxmsw30u_stc" />
+					<Add library="wxscintilla" />
+					<Add library="wxmsw30u_propgrid" />
+					<Add library="wxmsw30u_media" />
+					<Add library="wxmsw30u_adv" />
+					<Add library="wxmsw30u_gl" />
+					<Add library="wxmsw30u_html" />
+					<Add library="wxexpat" />
+					<Add library="wxbase30u_xml" />
+					<Add library="wxbase30u_net" />
+					<Add library="wxmsw30u_core" />
+					<Add library="wxbase30u" />
+					<Add library="wxregexu" />
+					<Add library="wxjpeg" />
+					<Add library="wxpng" />
+					<Add library="wxtiff" />
+					<Add library="wxzlib" />
+					<Add library="rpcrt4" />
+					<Add library="winmm" />
+					<Add library="advapi32" />
+					<Add library="version" />
+					<Add library="wsock32" />
+					<Add library="comctl32" />
+					<Add library="ole32" />
+					<Add library="uuid" />
+					<Add library="winspool" />
+					<Add library="oleaut32" />
+					<Add directory="$(#wx)/lib/gcc_lib" />
+				</Linker>
+			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />

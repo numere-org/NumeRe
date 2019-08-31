@@ -1809,6 +1809,7 @@ void NumeReKernel::resetAfterError(string& sCmdCache)
 
     // Reset the debugger, if not already done
     _debugger.finalize();
+    _procedure.reset();
 }
 
 void NumeReKernel::updateLineLenght(int nLength)

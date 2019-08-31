@@ -83,7 +83,7 @@ namespace NumeRe
         // Assign the single results
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (nNum > 1 && nNum < i)
+            if (nNum > 1 && nNum <= i)
                 return;
 
             // Expand the current cluster on-the-fly

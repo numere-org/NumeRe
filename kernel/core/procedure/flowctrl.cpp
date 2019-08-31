@@ -2940,7 +2940,8 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
         }
 
         // No commands found? Then expand the defined
-        // function
+        // function. Otherwise deactivate the loop parsing
+        // mode (temporary fix)
         if (!bDefineCommands)
         {
             for (size_t i = 0; i < vCmdArray.size(); i++)
@@ -2955,6 +2956,8 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
 
             bFunctionsReplaced = true;
         }
+        else
+            bUseLoopParsingMode = false;
     }
 }
 
