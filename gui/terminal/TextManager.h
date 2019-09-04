@@ -194,81 +194,100 @@ struct RenderedLine
 struct Character
 {
     char m_char;
-    // 0x1 => User
-    // 0x2 => Editable
-    // 0x80 => Selected
-    unsigned char m_info;
-    int m_color;
+    int m_style;
 
     enum
     {
-        USERTEXT = 0x1,
-        EDITABLE = 0x2,
-        SELECTED = 0x80
+        USERTEXT = 0x1000,
+        EDITABLE = 0x2000,
+        SELECTED = 0x4000,
+        COLOR = 0xFFF,
+        FLAGS = 0xF000
     };
 
-    Character() : m_char(0), m_info(0), m_color(0) {}
-    Character(char c) : m_char(c), m_info(0), m_color(0) {}
-    Character(const Character& c) : m_char(c.m_char), m_info(c.m_info), m_color(c.m_color) {}
-    Character(char c, unsigned char flags) : m_char(c), m_info(flags), m_color(0) {}
+    Character() : m_char(0), m_style(0) {}
+    Character(char c) : m_char(c), m_style(0) {}
+    Character(char&& c) : m_style(0)
+    {
+        m_char = std::move(c);
+    }
+    Character(const Character& c) : m_char(c.m_char), m_style(c.m_style) {}
+    Character(Character&& c)
+    {
+        m_char = std::move(c.m_char);
+        m_style = std::move(c.m_style);
+    }
+    Character(char c, unsigned char flags) : m_char(c), m_style(flags << 12) {}
 
     Character& operator=(const Character& c)
     {
         m_char = c.m_char;
-        m_info = c.m_info;
-        m_color = c.m_color;
+        m_style = c.m_style;
+        return *this;
+    }
+
+    Character& operator=(Character&& c)
+    {
+        m_char = std::move(c.m_char);
+        m_style = std::move(c.m_style);
+        return *this;
+    }
+
+    Character& operator=(char&& c)
+    {
+        m_char = std::move(c);
         return *this;
     }
 
     void setFlags(short flags)
     {
-        m_info |= ((unsigned char)flags);
+        m_style |= (unsigned char)flags << 12;
     }
 
     bool userText()
     {
-        return m_info & USERTEXT;
+        return m_style & USERTEXT;
     }
 
     bool editable()
     {
-        return m_info & EDITABLE;
+        return m_style & EDITABLE;
     }
 
     void makeUserText()
     {
-        m_info |= USERTEXT;
-        m_info &= ~EDITABLE;
+        m_style |= USERTEXT;
+        m_style &= ~EDITABLE;
     }
 
     void makeEditable()
     {
-        m_info |= EDITABLE;
+        m_style |= EDITABLE;
     }
 
     void select()
     {
-        m_info |= SELECTED;
+        m_style |= SELECTED;
     }
 
     void unselect()
     {
-        m_info &= ~SELECTED;
+        m_style &= ~SELECTED;
     }
 
     bool isSelected()
     {
-        return m_info & SELECTED;
+        return m_style & SELECTED;
     }
 
     int getColor()
     {
-        return m_color;
+        return m_style & COLOR;
     }
 
     void setColor(int color)
     {
-        m_color = color;
+        m_style = (m_style & FLAGS) | (color & COLOR);
     }
 };
 
@@ -491,11 +510,12 @@ class TextManager
 		size_t m_indentDepth;
 
 		deque<CharacterVector> m_managedText;
-		vector<RenderedLine> m_renderedBlock;
+		deque<RenderedLine> m_renderedBlock;
 
 		int calc_color(int fg, int bg, int flags);
 		void updateColors(bool isErrorLine = false);
 		void renderLayout();
+		void synchronizeRenderedBlock(int linesToDelete);
 		size_t findNextLinebreak(const string& currentLine, size_t currentLinebreak);
 
 		enum

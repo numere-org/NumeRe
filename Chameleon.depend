@@ -2508,7 +2508,7 @@
 	"TextManager.h"
 	"../../kernel/syntax.hpp"
 
-1562321145 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
+1567327616 d:\cpp\numere-source\trunk\gui\terminal\textmanager.h
 	<vector>
 	<deque>
 	<string>
@@ -3926,7 +3926,7 @@
 1533461617 source:d:\cpp\numere-source\trunk\gui\terminal\states.cpp
 	"gterm.hpp"
 
-1562321145 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
+1567437249 source:d:\cpp\numere-source\trunk\gui\terminal\textmanager.cpp
 	"TextManager.h"
 	<iostream>
 	<stdlib.h>
@@ -3951,7 +3951,7 @@
 	"wxssh.h"
 	"../../common/debug.h"
 
-1566200966 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
+1567250064 source:d:\cpp\numere-source\trunk\gui\terminal\wxterm.cpp
 	"wx/wxprec.h"
 	"wx/wx.h"
 	<wx/timer.h>
@@ -4074,7 +4074,7 @@
 	"odesolver.hpp"
 	"../../kernel.hpp"
 
-1566805935 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
+1567241104 source:d:\cpp\numere-source\trunk\kernel\core\maths\parser_functions.cpp
 	"parser_functions.hpp"
 	"../../kernel.hpp"
 	"spline.h"
@@ -4332,7 +4332,7 @@
 	"debugmessenger.hpp"
 	"core/utils/tools.hpp"
 
-1567179462 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
+1567250115 source:d:\cpp\numere-source\trunk\kernel\kernel.cpp
 	"wx/wx.h"
 	"../gui/terminal/wxterm.h"
 	"core/datamanagement/dataops.hpp"

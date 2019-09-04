@@ -114,9 +114,6 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
 		throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "integrate");
 	}
 
-	if (_option.getSystemPrintStatus())
-		NumeReKernel::printPreFmt("                                              \r");
-
 	// Separate function from the parameter string
 	if (sCmd.find("-set") != string::npos)
 	{
@@ -673,8 +670,6 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 	{
 		throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "integrate");
 	}
-	if (_option.getSystemPrintStatus())
-		NumeReKernel::printPreFmt("                                              \r");
 
 	// Extract integration function and parameter list
 	if (sCmd.find("-set") != string::npos)
@@ -1011,7 +1006,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 		// faster in this case
 		if ((bIntVar[1] && !bIntVar[0]) && !bRenewBorder)
 		{
-			NumeReKernel::printPreFmt(LineBreak("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE2_SWAPVARS", parser_iVars.sName[0], parser_iVars.sName[1]) + " ...", _option, false, 0, 12) + "\n");
+			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE2_SWAPVARS", parser_iVars.sName[0], parser_iVars.sName[1]) + " ...\n");
 			// --> Leerzeichen als "virtuelle Delimiter" hinzufuegen <--
 			string_type sTempFct = " " + sInt_Fct + " ";
 			sInt_Fct = "";
@@ -1066,7 +1061,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 			parser_iVars.vValue[1][2] = vTemp;
 			bIntVar[0] = true;
 			bIntVar[1] = false;
-			NumeReKernel::printPreFmt("|INTEGRATE> " + _lang.get("COMMON_SUCCESS") + "!\n");
+			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_SUCCESS") + "!\n");
 		}
 
 		// Set the expression
@@ -1084,7 +1079,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 
 		// --> Kleine Info an den Benutzer, dass der Code arbeitet <--
 		if (_option.getSystemPrintStatus())
-			NumeReKernel::printPreFmt("|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 0 %");
+			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 0 %");
 
 		// --> Setzen wir "x" und "y" auf ihre Startwerte <--
 		parser_iVars.vValue[0][0] = parser_iVars.vValue[0][1]; // x = x_0
@@ -1439,7 +1434,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 		 *     werden. <--
 		 */
 		if (_option.getSystemPrintStatus())
-			NumeReKernel::printPreFmt("|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_CONSTANT") + " ... ");
+			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_CONSTANT") + " ... ");
 		// --> Waehle willkuerliche Praezision von 1e-4 <--
 		parser_iVars.vValue[0][3] = 1e-4;
 		parser_iVars.vValue[1][3] = 1e-4;
@@ -6062,8 +6057,8 @@ bool parser_spline(string& sCmd, Parser& _parser, Datafile& _data, Define& _func
 			sDefinition += " + ";
 	}
 
-	if (_option.getSystemPrintStatus())
-		NumeReKernel::print(LineBreak(sDefinition, _option, true, 0, 8));
+	if (_option.getSystemPrintStatus() && !NumeReKernel::bSupressAnswer)
+		NumeReKernel::print(sDefinition);
 
     bool bDefinitionSuccess = false;
 
@@ -6073,7 +6068,7 @@ bool parser_spline(string& sCmd, Parser& _parser, Datafile& _data, Define& _func
 		bDefinitionSuccess = _functions.defineFunc(sDefinition);
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus() && !NumeReKernel::bSupressAnswer);
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 

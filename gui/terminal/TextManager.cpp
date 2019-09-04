@@ -51,21 +51,33 @@ using namespace std;
 TextManager::TextManager(GenericTerminal* parent, int width, int height, int maxWidth, int maxHeight /* = 50 */)
 	: m_parent(parent), m_viewportWidth(width), m_viewportHeight(height), m_maxWidth(maxWidth), m_maxHeight(maxHeight)
 {
-	if (m_parent != NULL)
+	if (m_parent != nullptr)
 	{
 		Reset();
 	}
 
 }
 
-// Destructor will reset the internal buffer
+
+/////////////////////////////////////////////////
+/// \brief Destructor will reset the internal buffer
+/////////////////////////////////////////////////
 TextManager::~TextManager()
 {
     Reset();
 }
 
-// Print some text to the current output line
-// This is the read-only print function
+
+/////////////////////////////////////////////////
+/// \brief This is the read-only print function
+///
+/// \param _sLine const string&
+/// \return void
+///
+/// Adds the passed stringt to the internal managed
+/// text, stores it as read-only text and triggers
+/// the rendering section
+/////////////////////////////////////////////////
 void TextManager::printOutput(const string& _sLine)
 {
     // Create a new line if the buffer is empty
@@ -84,13 +96,27 @@ void TextManager::printOutput(const string& _sLine)
     // Append the line to the current line
 	m_managedText.back() += CharacterVector(sLine, KERNEL_TEXT);
 
+	// Synchronize the rendered layout by deleting the
+	// current line
+	synchronizeRenderedBlock(-1);
+
 	// Update the colors and render the layout
 	updateColors(isErrorLine);
 	renderLayout();
 }
 
-// Insert user text to the current input line
-// This is the user input function
+
+/////////////////////////////////////////////////
+/// \brief This is the user input function
+///
+/// \param sLine const string&
+/// \param string::npos size_t logicalpos=
+/// \return void
+///
+/// Adds the passed stringt to the internal managed
+/// text, stores it as user-given text and triggers
+/// the rendering section
+/////////////////////////////////////////////////
 void TextManager::insertInput(const string& sLine, size_t logicalpos /*= string::npos*/)
 {
     // Ensure that the logical position is a valid position
@@ -100,12 +126,26 @@ void TextManager::insertInput(const string& sLine, size_t logicalpos /*= string:
     // Insert the text at the desired position
 	m_managedText.back().insert(logicalpos, sLine, EDITABLE_TEXT);
 
+	// Synchronize the rendered layout by deleting the
+	// current line
+	synchronizeRenderedBlock(-1);
+
 	// Update colors and render the layout
 	updateColors();
 	renderLayout();
 }
 
-// Convert the logical cursor to the view cursor in the current viewport setting
+
+/////////////////////////////////////////////////
+/// \brief Convert a logical cursor to a view cursor
+///
+/// \param logCursor const LogicalCursor&
+/// \return ViewCursor
+///
+/// This member function converts the passed logical
+/// cursor (line, position) into a view cursor (x, y)
+/// for the current viewport size.
+/////////////////////////////////////////////////
 ViewCursor TextManager::toViewCursor(const LogicalCursor& logCursor)
 {
     // Ensure that the cursor is valid
@@ -150,8 +190,16 @@ ViewCursor TextManager::toViewCursor(const LogicalCursor& logCursor)
 	return ViewCursor();
 }
 
-// This member function will return the view cursor coordinates at the current text
-// input position
+
+/////////////////////////////////////////////////
+/// \brief Returns the current cursor position as view cursor
+///
+/// \return ViewCursor
+///
+/// This function returns the current input cursor
+/// position (which is a logical cursor) and returns
+/// it as a view cursor
+/////////////////////////////////////////////////
 ViewCursor TextManager::getCurrentViewPos()
 {
     // If the text was not rendered yet, return an invalid cursor
@@ -162,7 +210,17 @@ ViewCursor TextManager::getCurrentViewPos()
     return toViewCursor(getCurrentLogicalPos());
 }
 
-// Convert the view cursor to the logical cursor for the current viewport setting
+
+/////////////////////////////////////////////////
+/// \brief Convert a view cursor into a logical cursor
+///
+/// \param viewCursor const ViewCursor&
+/// \return LogicalCursor
+///
+/// This member function converts the passed view
+/// cursor (x,y) into a logical cursor (line,position)
+/// depending on the current viewport size.
+/////////////////////////////////////////////////
 LogicalCursor TextManager::toLogicalCursor(const ViewCursor& viewCursor)
 {
     // Go to the corresponding x and y positions in the rendered layout
@@ -178,8 +236,17 @@ LogicalCursor TextManager::toLogicalCursor(const ViewCursor& viewCursor)
 	return LogicalCursor();
 }
 
-// This member function will return the logical position of the current
-// text input position
+
+/////////////////////////////////////////////////
+/// \brief Returns the current cursor position as logical cursor
+///
+/// \return LogicalCursor
+///
+/// This function returns the current input cursor
+/// position (which is already a logical cursor).
+/// This position is extracted from the current
+/// position in the last line of the managed text
+/////////////////////////////////////////////////
 LogicalCursor TextManager::getCurrentLogicalPos()
 {
     // Ensure that there's text in the buffer
@@ -191,7 +258,18 @@ LogicalCursor TextManager::getCurrentLogicalPos()
     return LogicalCursor(m_managedText.back().length(), m_managedText.size()-1);
 }
 
-// Return the rendered line for the current viewport setting
+
+/////////////////////////////////////////////////
+/// \brief Return the rendered line for the current viewport setting
+///
+/// \param viewLine size_t
+/// \return string
+///
+/// This function returns the rendered line, which
+/// goes into the selected viewLine. This function
+/// requires that the managed text is already
+/// rendered
+/////////////////////////////////////////////////
 string TextManager::getRenderedString(size_t viewLine)
 {
     // Return an empty line, if the line is not valid
@@ -201,7 +279,18 @@ string TextManager::getRenderedString(size_t viewLine)
 	return m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].sLine;
 }
 
-// Get the colors for the current viewport setting
+
+/////////////////////////////////////////////////
+/// \brief Return the rendered colors for the selected viewport line
+///
+/// \param viewLine size_t
+/// \return vector<unsigned short>
+///
+/// This function returns the colors for the rendered
+/// line, which goes into the selected viewLine.
+/// This function requires that the managed text is
+/// already rendered
+/////////////////////////////////////////////////
 vector<unsigned short> TextManager::getRenderedColors(size_t viewLine)
 {
     // Return an empty vector, if the line is not valid
@@ -222,13 +311,32 @@ vector<unsigned short> TextManager::getRenderedColors(size_t viewLine)
 	return colors;
 }
 
-// Calculate the colors
+
+/////////////////////////////////////////////////
+/// \brief Helper function for converting the colors into a single int
+///
+/// \param fg int Color values ranging from 0-15
+/// \param bg int Color values ranging from 0-15
+/// \param flags int
+/// \return int
+///
+/////////////////////////////////////////////////
 int TextManager::calc_color( int fg, int bg, int flags )
 {
 	return (flags & 15) | (fg << 4) | (bg << 8);
 }
 
-// Update the colors for the current line
+
+/////////////////////////////////////////////////
+/// \brief Update the colors for the current line
+///
+/// \param isErrorLine bool
+/// \return void
+///
+/// This function determines the text snippets in
+/// the last line of the managed text and creates
+/// a color string for those snippets
+/////////////////////////////////////////////////
 void TextManager::updateColors(bool isErrorLine /*= false*/)
 {
     // Get a pointer to the current syntax lexer
@@ -259,14 +367,38 @@ void TextManager::updateColors(bool isErrorLine /*= false*/)
 	}
 }
 
-// Render the stored text lines into a terminal layout
+
+/////////////////////////////////////////////////
+/// \brief This function renders the layout
+///
+/// \return void
+///
+/// This function renders the layout for the
+/// current terminal size using the internally
+/// managed text. The rendered layout is cached,
+/// so only the missing lines have to be re-
+/// calculated
+/////////////////////////////////////////////////
 void TextManager::renderLayout()
 {
+	size_t lastRenderedLine = 0;
+
+	// Get the last rendered line of the current rendered
+	// block
 	if (m_renderedBlock.size())
-		m_renderedBlock.clear();
+        lastRenderedLine = m_renderedBlock.back().coords.back().line + 1;
+
+    // If the last rendered line is larger than the current
+    // available managed text, clear it completely and
+    // render a new layout
+    if (lastRenderedLine >= m_managedText.size())
+    {
+        lastRenderedLine = 0;
+        m_renderedBlock.clear();
+    }
 
 	// Go through the complete container
-	for (size_t i = 0; i < m_managedText.size(); i++)
+	for (size_t i = lastRenderedLine; i < m_managedText.size(); i++)
 	{
 		size_t breakpos;
 		size_t lastbreakpos = 0;
@@ -276,7 +408,7 @@ void TextManager::renderLayout()
 		// Break the text lines at reasonable locations
 		do
 		{
-			RenderedLine line;
+			RenderedLine rLine;
 
 			// If the last break position is non-zero, this is not a first line
 			if (lastbreakpos)
@@ -288,46 +420,119 @@ void TextManager::renderLayout()
 			// If it's not the first line, add the indent here
 			if (!firstline)
             {
-                line.sLine = "|   ";
-                line.colors.assign(m_indentDepth, calc_color(7, 0, 0));
-                line.coords.assign(m_indentDepth, LogicalCursor());
+                rLine.sLine = "|   ";
+                rLine.colors.assign(m_indentDepth, calc_color(7, 0, 0));
+                rLine.coords.assign(m_indentDepth, LogicalCursor());
             }
 
 			// Assign text and colors
-			line.sLine += m_managedText[i].substr(lastbreakpos, breakpos - lastbreakpos);
+			rLine.sLine += m_managedText[i].substr(lastbreakpos, breakpos - lastbreakpos);
 			vector<unsigned short> colors = m_managedText[i].subcolors(lastbreakpos, breakpos - lastbreakpos);
-			line.colors.insert(line.colors.end(), colors.begin(), colors.end());
+			rLine.colors.insert(rLine.colors.end(), colors.begin(), colors.end());
 
 			// The last line has an additional white space character,
 			// which is used as input location (to ensure that the cursor is valid)
 			if (i + 1 == m_managedText.size())
 			{
-				line.sLine += " ";
-				line.colors.push_back(calc_color(7, 0, 0));
+				rLine.sLine += " ";
+				rLine.colors.push_back(calc_color(7, 0, 0));
 			}
 
 			// Assign the logical cursors
-			for (size_t j = 0; j < line.sLine.length() - m_indentDepth*(!firstline); j++)
+			for (size_t j = 0; j < rLine.sLine.length() - m_indentDepth*(!firstline); j++)
 			{
 				cursor.pos = j + lastbreakpos;
-				line.coords.push_back(cursor);
+				rLine.coords.push_back(cursor);
 			}
 
 			lastbreakpos = breakpos;
 
 			// Store the rendered line
-			m_renderedBlock.push_back(line);
+			m_renderedBlock.push_back(rLine);
 		}
 		while (lastbreakpos < m_managedText[i].length());
 	}
 
 	// Calculate new topline, because it depends on the size of the rendered block
 	m_topLine = m_renderedBlock.size() - m_viewportHeight;
+
 	if (m_topLine < 0)
 		m_topLine = 0;
 }
 
-// Perform actual linebreaks
+
+/////////////////////////////////////////////////
+/// \brief Removes parts of the already rendered block
+///
+/// \param linesToDelete int
+/// \return void
+///
+/// This private member function removes parts of the already rendered
+/// block depending on the number of lines to delete. The number of lines
+/// corresponds to the text lines in the managed block. If the number is
+/// positive, the lines are deleted from the front, if the number is negative,
+/// then the lines are deleted from the back
+/////////////////////////////////////////////////
+void TextManager::synchronizeRenderedBlock(int linesToDelete)
+{
+    if (m_renderedBlock.size() && linesToDelete)
+    {
+        // If the number of lines are larger than the
+        // available lines, simply clear the whole block
+        if (m_renderedBlock.size() <= abs(linesToDelete))
+        {
+            m_renderedBlock.clear();
+            return;
+        }
+
+        if (linesToDelete > 0)
+        {
+            // Delete lines from the front
+            while (m_renderedBlock.size() && (!m_renderedBlock.front().coords.size() || m_renderedBlock.front().coords.back().line < linesToDelete))
+            {
+                m_renderedBlock.pop_front();
+            }
+
+            // Update the line numbers in the coords field,
+            // because the leading lines have been removed and
+            // the algorithm requires that the line numbering
+            // starts from zero
+            for (size_t i = 0; i < m_renderedBlock.size(); i++)
+            {
+                for (size_t j = 0; j < m_renderedBlock[i].coords.size(); j++)
+                {
+                    if (m_renderedBlock[i].coords[j].isValid)
+                        m_renderedBlock[i].coords[j].line -= linesToDelete;
+                }
+            }
+        }
+        else
+        {
+            // Delete lines from the back
+            //
+            // Find the corresponding line from the back
+            linesToDelete = (int)m_renderedBlock.back().coords.back().line + linesToDelete;
+
+            while (m_renderedBlock.size() && (!m_renderedBlock.back().coords.size() || m_renderedBlock.back().coords.back().line > linesToDelete))
+            {
+                m_renderedBlock.pop_back();
+            }
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Find the next linebreak position
+///
+/// \param currentLine const string&
+/// \param currentLinebreak size_t
+/// \return size_t
+///
+/// This function finds the next possible linebreak
+/// position from the current position using a simple
+/// heuristic
+/////////////////////////////////////////////////
 size_t TextManager::findNextLinebreak(const string& currentLine, size_t currentLinebreak)
 {
     // If the current line is shorter than the current viewport width,
@@ -351,7 +556,13 @@ size_t TextManager::findNextLinebreak(const string& currentLine, size_t currentL
 	return currentLinebreak + m_viewportWidth - m_indentDepth * (bool)currentLinebreak;
 }
 
-// Perform a tab character
+
+/////////////////////////////////////////////////
+/// \brief Insert a tab character at the current position
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t TextManager::tab()
 {
     // If the buffer is empty add an empty line first
@@ -369,29 +580,61 @@ size_t TextManager::tab()
     // whitespaces to the text buffer
     m_managedText.back().append(tabLength, ' ');
 
+    // Synchronize the rendered layout by deleting the
+	// current line
+	synchronizeRenderedBlock(-1);
+
     // Return the calculated tab length
     return tabLength;
 }
 
-// Adds a new line
+
+/////////////////////////////////////////////////
+/// \brief Adds a new line to the current managed text
+///
+/// \return void
+///
+/// This function adds a new line to the internally
+/// managed text. If the managed text grows larger
+/// than the selected size, the first lines are
+/// dropped.
+/////////////////////////////////////////////////
 void TextManager::newLine()
 {
     // Add a new line to all buffers and fill it with a reasonable value
 	m_managedText.push_back(CharacterVector("", EDITABLE_TEXT));
-	//m_color.push_back(vector<unsigned short>(1, calc_color(7, 0, 0)));
 
 	// Ensure that the buffer is not larger than the desired history length
 	while (m_managedText.size() > (size_t)m_maxHeight)
 	{
 		m_managedText.pop_front();
+
+		// Synchronize the rendered layout by deleting the
+        // first line
+        synchronizeRenderedBlock(1);
 	}
+
+	// Remove the last line due to the additional input character
+	synchronizeRenderedBlock(-1);
 
 	// render layout, get new top line and reset the virtual cursor line
 	renderLayout();
 	ResetVirtualCursorLine();
 }
 
-// This member function performs a backspace operation
+
+/////////////////////////////////////////////////
+/// \brief Performs a backspace operation
+///
+/// \param logCursor const LogicalCursor&
+/// \return void
+///
+/// This member function performs a backspace operation
+/// at the passed logical cursor position. Backspaces
+/// are only allowed in the current input line, which
+/// is the last line of the managed text (but not
+/// necessarily the last line of the viewport line)
+/////////////////////////////////////////////////
 void TextManager::backspace(const LogicalCursor& logCursor)
 {
     // Ensure that the cursor is valid
@@ -402,24 +645,34 @@ void TextManager::backspace(const LogicalCursor& logCursor)
 	if (logCursor.pos)
 	{
 	    // In the current line
-		//m_text[logCursor.line].erase(logCursor.pos - 1, 1);
 		m_managedText[logCursor.line].erase(m_managedText[logCursor.line].begin() + logCursor.pos - 1);
-		//m_color[logCursor.line].erase(m_color[logCursor.line].begin() + logCursor.pos - 1);
 	}
 	else
 	{
 	    // go to the previous line
-		//m_text[logCursor.line - 1].pop_back();
 		m_managedText[logCursor.line - 1].pop_back();
-		//m_color[logCursor.line - 1].pop_back();
 	}
+
+	// Synchronize the rendered layout by deleting the
+	// current line
+	synchronizeRenderedBlock(-1);
 
 	// Update the colors and render the layout
 	updateColors();
 	renderLayout();
 }
 
-// This member function completely erases the current line
+
+/////////////////////////////////////////////////
+/// \brief Erase the current line
+///
+/// \return void
+///
+/// This member function erases the current line
+/// (i.e. the last line of the managed text)
+/// completely. This is used, if the printed
+/// string starts with a carriage return character
+/////////////////////////////////////////////////
 void TextManager::eraseLine()
 {
     // Do nothing if the buffer is empty
@@ -430,20 +683,28 @@ void TextManager::eraseLine()
     // reasonable default content (just like in
     // the new line function)
     m_managedText.back().clear();
-    /*m_text.back() += "";
 
-    m_color.back().clear();
-    m_color.back().push_back(calc_color(7, 0, 0));
-
-    m_userText.back().clear();
-    m_userText.back().push_back(EDITABLE_TEXT);*/
+    // Synchronize the rendered layout by deleting the
+	// current line
+	synchronizeRenderedBlock(-1);
 
     // Render the layout
     renderLayout();
 }
 
-// This member function is used to clear the range between the two view cursors.
-// It may even clear the characters, which are spread across multiple lines
+
+/////////////////////////////////////////////////
+/// \brief Clears the range between two view cursors
+///
+/// \param cursor1 const ViewCursor&
+/// \param cursor2 const ViewCursor&
+/// \return bool
+///
+/// This member function is used to clear the range
+/// between the two view cursors. It may even clear
+/// the characters, which are spread across multiple
+/// lines
+/////////////////////////////////////////////////
 bool TextManager::clearRange(const ViewCursor& cursor1, const ViewCursor& cursor2)
 {
     // Transform the view cursors to logical cursors
@@ -462,6 +723,10 @@ bool TextManager::clearRange(const ViewCursor& cursor1, const ViewCursor& cursor
         logCursor2 = temp;
     }
 
+    // Synchronize the rendered layout by deleting the
+	// current line
+	synchronizeRenderedBlock(min(logCursor1.line, logCursor2.line) - m_managedText.size() - 1);
+
     // As long as the second cursor is at a larger position than the first character
     while (logCursor2 > logCursor1)
     {
@@ -469,17 +734,13 @@ bool TextManager::clearRange(const ViewCursor& cursor1, const ViewCursor& cursor
         {
             // The cursors are in different lines
             // Erase all from the first to the cursor's position
-            //m_text[logCursor2.line].erase(0, logCursor2.pos);
             m_managedText[logCursor2.line].erase(m_managedText[logCursor2].begin(), m_managedText[logCursor2].begin()+logCursor2.pos);
-            //m_color[logCursor2.line].erase(m_color[logCursor2].begin(), m_color[logCursor2].begin()+logCursor2.pos);
 
             // If the text buffer of the current line is empty,
             // erase the overall line from all three buffers
             if (!m_managedText[logCursor2.line].length())
             {
-                //m_text.erase(m_text.begin()+logCursor2.line);
                 m_managedText.erase(m_managedText.begin()+logCursor2.line);
-                //m_color.erase(m_color.begin()+logCursor2.line);
             }
 
             // set the cursor to the last position of the previous line
@@ -489,9 +750,7 @@ bool TextManager::clearRange(const ViewCursor& cursor1, const ViewCursor& cursor
         else
         {
             // The cursors are in the same line
-            //m_text[logCursor2.line].erase(logCursor1.pos, logCursor2.pos - logCursor1.pos);
             m_managedText[logCursor2.line].erase(m_managedText[logCursor2.line].begin() + logCursor1.pos, m_managedText[logCursor2.line].begin() + logCursor2.pos);
-            //m_color[logCursor2.line].erase(m_color[logCursor2.line].begin() + logCursor1.pos, m_color[logCursor2.line].begin() + logCursor2.pos);
             break;
         }
     }
@@ -503,8 +762,18 @@ bool TextManager::clearRange(const ViewCursor& cursor1, const ViewCursor& cursor
     return true;
 }
 
-// This member function is used to (de-)select the character at the position of
-// the passed view cursor
+
+/////////////////////////////////////////////////
+/// \brief Selects the text at the view cursor position
+///
+/// \param viewCursor const ViewCursor&
+/// \param true bool bSelect=
+/// \return void
+///
+/// This member function is used to (de-)select
+/// the character at the position of the passed
+/// view cursor
+/////////////////////////////////////////////////
 void TextManager::selectText(const ViewCursor& viewCursor, bool bSelect /*= true*/)
 {
     // Convert the view cursor to a logical cursor
@@ -521,7 +790,13 @@ void TextManager::selectText(const ViewCursor& viewCursor, bool bSelect /*= true
         m_managedText[cursor.line][cursor.pos].unselect();
 }
 
-// This member function unselects the whole text at once
+
+/////////////////////////////////////////////////
+/// \brief This member function unselects the whole text at once
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void TextManager::unselectAll()
 {
     for (size_t i = 0; i < m_managedText.size(); i++)
@@ -533,8 +808,16 @@ void TextManager::unselectAll()
     }
 }
 
-// This member function returns true if the character at the position of
-// the passed view cursor is selected
+
+/////////////////////////////////////////////////
+/// \brief Determines, whether the pointed character is selected
+///
+/// \param viewCursor const ViewCursor&
+/// \return bool
+///
+/// This member function returns true, if the character
+/// pointed by the passed view cursor is selected
+/////////////////////////////////////////////////
 bool TextManager::isSelected(const ViewCursor& viewCursor)
 {
     // Convert the view cursor into a logical cursor
@@ -548,7 +831,13 @@ bool TextManager::isSelected(const ViewCursor& viewCursor)
     return m_managedText[cursor.line][cursor.pos].isSelected();
 }
 
-// This member function returns the selected text
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the selected text
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string TextManager::getSelectedText()
 {
     string sText;
@@ -577,8 +866,15 @@ string TextManager::getSelectedText()
     return sText;
 }
 
-// This member function will return the contents of the current user
-// input line
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents of the input line
+///
+/// \return string
+///
+/// This member function will return the contents
+/// of the current user input line
+/////////////////////////////////////////////////
 string TextManager::getCurrentInputLine()
 {
     // Ensure that the buffer is available and that there's user text
@@ -600,6 +896,7 @@ string TextManager::getCurrentInputLine()
     return sInput;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public Reset
 ///  Clears out the text and resets everything
@@ -611,10 +908,7 @@ string TextManager::getCurrentInputLine()
 void TextManager::Reset()
 {
 	m_managedText.clear();
-	//m_color.clear();
-	//m_userText.clear();
 	m_renderedBlock.clear();
-
 
 	m_bottomLine = m_maxHeight - 1;
 	m_topLine = m_bottomLine - m_viewportHeight + 1;
@@ -625,6 +919,7 @@ void TextManager::Reset()
 	m_tabLength = 8;
 	m_indentDepth = 4;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public operator []
@@ -640,6 +935,7 @@ string TextManager::operator [](int index)
 {
 	return getRenderedString(index);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public Scroll
@@ -710,6 +1006,7 @@ bool TextManager::Scroll(int numLines, bool scrollUp)
 	return true;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetSize
 ///  Returns the number of lines stored
@@ -722,6 +1019,7 @@ int TextManager::GetSize()
 {
 	return m_managedText.size();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public Resize
@@ -745,7 +1043,9 @@ void TextManager::Resize(int width, int height)
 	m_viewportHeight = height;
 	m_viewportWidth = width;
 
-	// Render the new layout
+	// Clear the current layout and render
+	// the layout completely new
+	m_renderedBlock.clear();
 	renderLayout();
 
 	// If the terminal is scrolled up, get the corresponding top line
@@ -783,8 +1083,16 @@ void TextManager::Resize(int width, int height)
     }
 }
 
-// This member function gets the next history line
-// depending on the bool vcursorup
+
+/////////////////////////////////////////////////
+/// \brief Get the next history line
+///
+/// \param vcursorup bool
+/// \return string
+///
+/// This member function gets the next history line
+/// depending on the bool vcursorup
+/////////////////////////////////////////////////
 string TextManager::GetInputHistory(bool vcursorup)
 {
 	if (vcursorup)
@@ -863,7 +1171,16 @@ string TextManager::GetInputHistory(bool vcursorup)
 	return "";
 }
 
-// This member function extracts the text at the position (x0, y) until (x1, y)
+
+/////////////////////////////////////////////////
+/// \brief Extracts the text between the positions
+///
+/// \param y int
+/// \param x0 int
+/// \param x1 int
+/// \return string
+///
+/////////////////////////////////////////////////
 string TextManager::GetTextRange(int y, int x0, int x1)
 {
     // Convert the coordinates to a logical cursor
@@ -877,8 +1194,17 @@ string TextManager::GetTextRange(int y, int x0, int x1)
 	return m_managedText[cursor.line].substr(cursor.pos, x1 - x0);
 }
 
-// This member function returns the word, which
-// contains the character at (x,y)
+
+/////////////////////////////////////////////////
+/// \brief Returns the word at the passed position
+///
+/// \param y int
+/// \param x int
+/// \return string
+///
+/// This member function returns the word, which
+/// contains the character at (x,y)
+/////////////////////////////////////////////////
 string TextManager::GetWordAt(int y, int x)
 {
     // Convert the coordinates to a logical cursor
@@ -912,8 +1238,17 @@ string TextManager::GetWordAt(int y, int x)
 	return "";
 }
 
-// This member function returns the word start, which
-// contains the character at (x,y)
+
+/////////////////////////////////////////////////
+/// \brief Returns the word start at the passed position
+///
+/// \param y int
+/// \param x int
+/// \return string
+///
+/// This member function returns the word start, which
+/// contains the character at (x,y)
+/////////////////////////////////////////////////
 string TextManager::GetWordStartAt(int y, int x)
 {
     // Convert the coordinates to a logical cursor
@@ -939,7 +1274,6 @@ string TextManager::GetWordStartAt(int y, int x)
 }
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetCharAdjusted
 ///  Gets a character, adjusted for the viewport
@@ -957,6 +1291,14 @@ char TextManager::GetCharAdjusted(int y, int x)
 	return GetCharLogical(cursor);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns the character at the logical position
+///
+/// \param cursor const LogicalCursor&
+/// \return char
+///
+/////////////////////////////////////////////////
 char TextManager::GetCharLogical(const LogicalCursor& cursor)
 {
     if (!cursor)
@@ -966,8 +1308,15 @@ char TextManager::GetCharLogical(const LogicalCursor& cursor)
 	return m_managedText[cursor.line][cursor.pos].m_char;
 }
 
-// This member function evaluates, whether the character at (x,y)
-// belongs to a user text
+
+/////////////////////////////////////////////////
+/// \brief Determines, whether the character at (x,y) is a user text
+///
+/// \param y int
+/// \param x int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TextManager::IsUserText(int y, int x)
 {
 	LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
@@ -982,8 +1331,15 @@ bool TextManager::IsUserText(int y, int x)
 	return m_managedText[cursor.line][cursor.pos].userText();
 }
 
-// This member function evaluates, whether the character at (x,y)
-// is an editable text
+
+/////////////////////////////////////////////////
+/// \brief Determines, whether the character at (x,y) is editable text
+///
+/// \param y int
+/// \param x int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TextManager::IsEditable(int y, int x)
 {
 	LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
@@ -998,8 +1354,14 @@ bool TextManager::IsEditable(int y, int x)
 	return m_managedText[cursor.line][cursor.pos].editable();
 }
 
-// This member function evaluates, whether the character at the
-// logical cursor's position is an editable text
+
+/////////////////////////////////////////////////
+/// \brief Determines, whether the character at the logical position is editable text
+///
+/// \param logCursor LogicalCursor&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TextManager::IsEditableLogical(LogicalCursor& logCursor)
 {
     if (!logCursor)
@@ -1011,6 +1373,7 @@ bool TextManager::IsEditableLogical(LogicalCursor& logCursor)
 		return false;
 	return m_managedText[logCursor.line][logCursor.pos].editable();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetColor
@@ -1027,6 +1390,7 @@ unsigned short TextManager::GetColor(int y, int x)
 {
 	return m_managedText[y][x].getColor();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetColorAdjusted
@@ -1050,6 +1414,7 @@ unsigned short TextManager::GetColorAdjusted(int y, int x)
 		return 112; // default color
 	return m_managedText[cursor.line][cursor.pos].getColor();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public SetColorAdjusted
@@ -1075,8 +1440,15 @@ void TextManager::SetColorAdjusted(int y, int x, unsigned short value)
 	m_managedText[cursor.line][cursor.pos].setColor(value);
 }
 
-// This member function will switch every editable text to a
-// simple user text
+
+/////////////////////////////////////////////////
+/// \brief Removes the editable flag from the managed text
+///
+/// \return void
+///
+/// This member function will switch every editable
+/// text to a simple user text
+/////////////////////////////////////////////////
 void TextManager::ChangeEditableState()
 {
 	for (size_t i = 0; i < m_managedText.size(); i++)
@@ -1086,6 +1458,7 @@ void TextManager::ChangeEditableState()
 				m_managedText[i][j].makeUserText();
 	}
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private AdjustIndex
@@ -1103,6 +1476,7 @@ int TextManager::AdjustIndex(int index)
 	return adjustedIndex;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetNumLinesScrolled
 ///  Returns the number of lines scrolled upwards
@@ -1115,6 +1489,7 @@ int TextManager::GetNumLinesScrolled()
 {
 	return m_numLinesScrolledUp;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public SetMaxSize
@@ -1152,10 +1527,15 @@ void TextManager::SetMaxSize(int newSize)
 	m_maxHeight = newSize;
 	m_bottomLine = m_maxHeight - 1;
 	m_topLine = m_bottomLine - m_viewportHeight + 1;
+
 	if (m_linesReceived > m_maxHeight)
 		m_linesReceived = m_maxHeight;
+
 	if (m_numLinesScrolledUp > m_maxHeight)
 		m_numLinesScrolledUp = m_maxHeight;
+
+    // Clear the rendered block
+    m_renderedBlock.clear();
 }
 
 
@@ -1172,7 +1552,15 @@ int TextManager::GetLinesReceived()
 	return m_renderedBlock.size();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns the buffer size of the terminal
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int TextManager::GetMaxSize()
 {
 	return m_maxHeight;
 }
+

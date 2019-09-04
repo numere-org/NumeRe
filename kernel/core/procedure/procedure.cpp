@@ -2200,6 +2200,7 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 	_parser.mVarMapPntr = 0;
 	_localDef.reset();
 	nDebuggerCode = 0;
+	nFlags = 0;
 
 	// Delete the variable factory for the current procedure
 	if (_varFactory)
