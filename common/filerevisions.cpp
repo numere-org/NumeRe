@@ -513,7 +513,7 @@ void FileRevisions::fileMove(const wxString& newRevPath, const wxString& comment
 /////////////////////////////////////////////////
 size_t FileRevisions::getMaxDiffFileSize(size_t nFileSize)
 {
-    const size_t MINFILESIZE = 512;
+    const size_t MINFILESIZE = 1024;
     double dOffset = nFileSize > MINFILESIZE ? ((double)MINFILESIZE / (double)nFileSize) : 0.5;
     size_t nTargetFileSize = ((1.0 - dOffset) * 0.8 * exp(-(double)getRevisionCount() / 40.0) + dOffset) * nFileSize;
     return nTargetFileSize > (MINFILESIZE / 2) ? nTargetFileSize : (MINFILESIZE / 2);
