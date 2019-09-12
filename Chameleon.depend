@@ -2895,7 +2895,7 @@
 1490791550 d:\cpp\numere-source\trunk\gui\numerenotebook.h
 	<wx/notebook.h>
 
-1552085576 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
+1568188427 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
 	"wx/wxprec.h"
 	<wx/msw/private.h>
 	<wx/filename.h>
@@ -4008,7 +4008,7 @@
 
 1501083705 d:\cpp\numere-source\trunk\gui\icons\zoom_new.xpm
 
-1567584311 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
+1567943459 source:d:\cpp\numere-source\trunk\kernel\core\built-in.cpp
 	"built-in.hpp"
 	"../kernel.hpp"
 	"io/fileops.hpp"
@@ -4401,7 +4401,7 @@
 	"../../kernel.hpp"
 	<vector>
 
-1560502650 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
+1567850906 source:d:\cpp\numere-source\trunk\kernel\core\datamanagement\memory.cpp
 	"memory.hpp"
 	"../../kernel.hpp"
 
@@ -9710,7 +9710,7 @@
 	<wx/wx.h>
 	<wx/treectrl.h>
 
-1566200962 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
+1567752444 source:d:\cpp\numere-source\trunk\common\filerevisions.cpp
 	"filerevisions.hpp"
 	"dtl/dtl.hpp"
 	<wx/zipstrm.h>
@@ -9725,7 +9725,7 @@
 	<wx/filename.h>
 	<vector>
 
-1566200963 d:\cpp\numere-source\trunk\common\dtl\dtl.hpp
+1567584312 d:\cpp\numere-source\trunk\common\dtl\dtl.hpp
 	"variables.hpp"
 	"functors.hpp"
 	"Sequence.hpp"
@@ -9734,24 +9734,24 @@
 	"Diff.hpp"
 	"Diff3.hpp"
 
-1566200963 d:\cpp\numere-source\trunk\common\dtl\variables.hpp
+1567584312 d:\cpp\numere-source\trunk\common\dtl\variables.hpp
 	<vector>
 	<list>
 	<string>
 	<algorithm>
 	<iostream>
 
-1566200963 d:\cpp\numere-source\trunk\common\dtl\functors.hpp
+1567584312 d:\cpp\numere-source\trunk\common\dtl\functors.hpp
 
-1566200963 d:\cpp\numere-source\trunk\common\dtl\sequence.hpp
+1567584312 d:\cpp\numere-source\trunk\common\dtl\sequence.hpp
 
-1566200963 d:\cpp\numere-source\trunk\common\dtl\lcs.hpp
+1567584312 d:\cpp\numere-source\trunk\common\dtl\lcs.hpp
 
-1566200963 d:\cpp\numere-source\trunk\common\dtl\ses.hpp
+1567584312 d:\cpp\numere-source\trunk\common\dtl\ses.hpp
 
-1566200963 d:\cpp\numere-source\trunk\common\dtl\diff.hpp
+1567584312 d:\cpp\numere-source\trunk\common\dtl\diff.hpp
 
-1566200963 d:\cpp\numere-source\trunk\common\dtl\diff3.hpp
+1567584312 d:\cpp\numere-source\trunk\common\dtl\diff3.hpp
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\zipstrm.h
 	"wx/defs.h"

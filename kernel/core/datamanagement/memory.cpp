@@ -941,10 +941,13 @@ void Memory::deleteBulk(long long int i1, long long int i2, long long int j1, lo
 	//cerr << i1 << " " << i2 << " " << j1 << " " << j2 << endl;
 	if (!Memory::getCols(false))
 		return;
+
 	if (i2 == -1)
 		i2 = i1;
+
 	if (j2 == -1)
-		j2 = j1;
+        j2 = j1;
+
 	for (long long int i = i1; i <= i2; i++)
 	{
 		for (long long int j = j1; j <= j2; j++)
@@ -986,6 +989,10 @@ void Memory::deleteBulk(long long int i1, long long int i2, long long int j1, lo
 void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
 	bool bHasFirstLine = false;
+
+	if (!Memory::getCols(false))
+        return;
+
 	for (unsigned int i = 0; i < _vLine.size(); i++)
 	{
 		if (!_vLine[i])

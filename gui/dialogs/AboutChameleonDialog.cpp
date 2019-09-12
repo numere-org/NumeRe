@@ -24,17 +24,37 @@
 #pragma hdrstop
 #endif
 
-////@begin includes
-////@end includes
 
 #include "AboutChameleonDialog.h"
 #include "../../common/verinfo.h"
 #include "../../kernel/core/ui/language.hpp"
 
-////@begin XPM images
-//#include "chamlogo_1.xpm"
-//#include "team_1.xpm"
-////@end XPM images
+class AboutDialogTextCtrl : public wxTextCtrl
+{
+    public:
+        AboutDialogTextCtrl(wxWindow* parent, const wxString& contents) : wxTextCtrl(parent, wxID_ANY, contents, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY | wxTE_AUTO_URL)
+        {
+            SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, "Arial"));
+        }
+
+        void OnUrlClick(wxTextUrlEvent &event)
+        {
+            wxMouseEvent mouseEvent = event.GetMouseEvent();
+
+            if (mouseEvent.IsButton())
+            {
+                wxString url = GetRange(event.GetURLStart(), event.GetURLEnd());
+                wxLaunchDefaultBrowser(url);
+            }
+        }
+
+        DECLARE_EVENT_TABLE()
+};
+
+BEGIN_EVENT_TABLE(AboutDialogTextCtrl, wxTextCtrl)
+    EVT_TEXT_URL(-1, AboutDialogTextCtrl::OnUrlClick)
+END_EVENT_TABLE()
+
 
 /*!
  * AboutChameleonDialog type definition
@@ -118,121 +138,121 @@ bool AboutChameleonDialog::Create( wxWindow* parent, wxWindowID id, const wxStri
 
 void AboutChameleonDialog::CreateControls()
 {
-////@begin AboutChameleonDialog content construction
-    AboutChameleonDialog* itemDialog1 = this;
-
-    //this->SetBackgroundColour(wxColour(255, 255, 255));
     wxBoxSizer* itemBoxSizer2 = new wxBoxSizer(wxVERTICAL);
-    itemDialog1->SetSizer(itemBoxSizer2);
+    this->SetSizer(itemBoxSizer2);
 
-    wxNotebook* itemNotebook3 = new wxNotebook( itemDialog1, ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
-    //itemNotebook3->SetForegroundColour(wxColour(0, 0, 0));
-    //itemNotebook3->SetBackgroundColour(wxColour(255, 255, 255));
+    wxNotebook* aboutDialogNoteBook = new wxNotebook(this, ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
+
 #if !wxCHECK_VERSION(2,5,2)
-    wxNotebookSizer* itemNotebook3Sizer = new wxNotebookSizer(itemNotebook3);
+    wxNotebookSizer* itemNotebook3Sizer = new wxNotebookSizer(aboutDialogNoteBook);
 #endif
 
-    wxPanel* itemPanel4 = new wxPanel( itemNotebook3, ID_PROGPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    itemPanel4->SetForegroundColour(wxColour(0, 0, 0));
-    itemPanel4->SetBackgroundColour(wxColour(255, 255, 255));
+    // MAIN PAGE
+    wxPanel* mainAboutPanel = new wxPanel( aboutDialogNoteBook, ID_PROGPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    mainAboutPanel->SetForegroundColour(wxColour(0, 0, 0));
+    mainAboutPanel->SetBackgroundColour(wxColour(255, 255, 255));
     m_sizerProgram = new wxBoxSizer(wxVERTICAL);
-    itemPanel4->SetSizer(m_sizerProgram);
+    mainAboutPanel->SetSizer(m_sizerProgram);
 
-    wxBitmap itemStaticBitmap6Bitmap(itemDialog1->GetBitmapResource(wxT("chamlogo_1.xpm")));
-    wxStaticBitmap* itemStaticBitmap6 = new wxStaticBitmap( itemPanel4, wxID_STATIC, itemStaticBitmap6Bitmap, wxDefaultPosition, wxSize(300, 300), 0 );
+    wxBitmap itemStaticBitmap6Bitmap(this->GetBitmapResource(wxT("chamlogo_1.xpm")));
+    wxStaticBitmap* itemStaticBitmap6 = new wxStaticBitmap( mainAboutPanel, wxID_STATIC, itemStaticBitmap6Bitmap, wxDefaultPosition, wxSize(300, 300), 0 );
     itemStaticBitmap6->SetBackgroundColour(wxColour(255, 255, 255));
     m_sizerProgram->Add(itemStaticBitmap6, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 
-    wxStaticText* itemStaticText7 = new wxStaticText( itemPanel4, wxID_STATIC, _("NumeRe:\nFramework für Numerische Rechnungen"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
-    itemStaticText7->SetForegroundColour(wxColour(0, 0, 0));
-    itemStaticText7->SetBackgroundColour(wxColour(255, 255, 255));
-    itemStaticText7->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Arial")));
-    m_sizerProgram->Add(itemStaticText7, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
+    wxStaticText* mainStaticText = new wxStaticText( mainAboutPanel, wxID_STATIC, _("NumeRe:\nFramework für Numerische Rechnungen"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
+    mainStaticText->SetForegroundColour(wxColour(0, 0, 0));
+    mainStaticText->SetBackgroundColour(wxColour(255, 255, 255));
+    mainStaticText->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Arial")));
+    m_sizerProgram->Add(mainStaticText, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    m_lblVersion = new wxStaticText( itemPanel4, wxID_STATIC, _("Version 9.8.7.6"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE|wxNO_BORDER );
+    m_lblVersion = new wxStaticText( mainAboutPanel, wxID_STATIC, _("Version 9.8.7.6"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE|wxNO_BORDER );
     m_lblVersion->SetForegroundColour(wxColour(0, 0, 0));
     m_lblVersion->SetBackgroundColour(wxColour(255, 255, 255));
     m_lblVersion->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Arial")));
     m_sizerProgram->Add(m_lblVersion, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    wxStaticText* itemStaticText9 = new wxStaticText( itemPanel4, wxID_STATIC, _(_guilang.get("GUI_ABOUT_LICENCE_SHORT")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemStaticText9->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    m_sizerProgram->Add(itemStaticText9, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
+    wxStaticText* licenceStaticText = new wxStaticText( mainAboutPanel, wxID_STATIC, _(_guilang.get("GUI_ABOUT_LICENCE_SHORT")), wxDefaultPosition, wxDefaultSize, 0 );
+    licenceStaticText->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
+    m_sizerProgram->Add(licenceStaticText, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    itemNotebook3->AddPage(itemPanel4, _("NumeRe"));
+    aboutDialogNoteBook->AddPage(mainAboutPanel, "NumeRe");
 
-    wxPanel* itemPanel10 = new wxPanel( itemNotebook3, ID_TEAMPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    itemPanel10->SetForegroundColour(wxColour(255, 255, 255));
-    itemPanel10->SetBackgroundColour(wxColour(255, 255, 255));
-    wxBoxSizer* itemBoxSizer11 = new wxBoxSizer(wxVERTICAL);
-    itemPanel10->SetSizer(itemBoxSizer11);
+    // TEAM PAGE
+    wxPanel* teamPanel = new wxPanel( aboutDialogNoteBook, ID_TEAMPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    teamPanel->SetForegroundColour(wxColour(255, 255, 255));
+    teamPanel->SetBackgroundColour(wxColour(255, 255, 255));
+    wxBoxSizer* teamBoxSizer = new wxBoxSizer(wxVERTICAL);
+    teamPanel->SetSizer(teamBoxSizer);
 
-    wxStaticText* itemStaticText12 = new wxStaticText( itemPanel10, wxID_STATIC, _(_guilang.get("GUI_ABOUT_TEAM_INTRO")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemStaticText12->SetForegroundColour(wxColour(0, 0, 0));
-    itemStaticText12->SetBackgroundColour(wxColour(255, 255, 255));
-    itemStaticText12->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    itemBoxSizer11->Add(itemStaticText12, 0, wxALIGN_CENTER_HORIZONTAL|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
+    wxStaticText* teamStaticText = new wxStaticText( teamPanel, wxID_STATIC, _(_guilang.get("GUI_ABOUT_TEAM_INTRO")), wxDefaultPosition, wxDefaultSize, 0 );
+    teamStaticText->SetForegroundColour(wxColour(0, 0, 0));
+    teamStaticText->SetBackgroundColour(wxColour(255, 255, 255));
+    teamStaticText->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
+    teamBoxSizer->Add(teamStaticText, 0, wxALIGN_CENTER_HORIZONTAL|wxLEFT|wxRIGHT|wxTOP|wxADJUST_MINSIZE, 5);
 
-    wxTextCtrl* aboutTextCtrl = new wxTextCtrl(itemPanel10, wxID_ANY, _guilang.get("GUI_ABOUT_TEAM"), wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY);
-    aboutTextCtrl->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    itemBoxSizer11->Add(aboutTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
+    AboutDialogTextCtrl* aboutTextCtrl = new AboutDialogTextCtrl(teamPanel, _guilang.get("GUI_ABOUT_TEAM"));
+    teamBoxSizer->Add(aboutTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
-    itemNotebook3->AddPage(itemPanel10, _("Team"));
+    aboutDialogNoteBook->AddPage(teamPanel, "Team");
 
-    wxPanel* infoPanel = new wxPanel(itemNotebook3, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+    // INFO PAGE
+    wxPanel* infoPanel = new wxPanel(aboutDialogNoteBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
     infoPanel->SetForegroundColour(*wxBLACK);
     infoPanel->SetBackgroundColour(*wxWHITE);
     wxBoxSizer* infoBoxSizer = new wxBoxSizer(wxVERTICAL);
     infoPanel->SetSizer(infoBoxSizer);
 
-    wxTextCtrl* infoTextCtrl = new wxTextCtrl(infoPanel, wxID_ANY, _guilang.get("GUI_ABOUT_INFO"), wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY);
-    infoTextCtrl->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
+    AboutDialogTextCtrl* infoTextCtrl = new AboutDialogTextCtrl(infoPanel, _guilang.get("GUI_ABOUT_INFO"));
     infoBoxSizer->Add(infoTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
-    itemNotebook3->AddPage(infoPanel, "Info");
+    aboutDialogNoteBook->AddPage(infoPanel, "Info");
 
-    wxPanel* itemPanel15 = new wxPanel( itemNotebook3, ID_CREDITSPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    itemPanel15->SetForegroundColour(wxColour(0, 0, 0));
-    itemPanel15->SetBackgroundColour(wxColour(255, 255, 255));
-    wxBoxSizer* itemBoxSizer16 = new wxBoxSizer(wxVERTICAL);
-    itemPanel15->SetSizer(itemBoxSizer16);
+    // CREDITS PAGE
+    wxPanel* creditsPanel = new wxPanel(aboutDialogNoteBook, ID_CREDITSPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    creditsPanel->SetForegroundColour(wxColour(0, 0, 0));
+    creditsPanel->SetBackgroundColour(wxColour(255, 255, 255));
+    wxBoxSizer* creditsBoxSizer = new wxBoxSizer(wxVERTICAL);
+    creditsPanel->SetSizer(creditsBoxSizer);
 
-    wxTextCtrl* creditsTextCtrl = new wxTextCtrl(itemPanel15, wxID_ANY, _guilang.get("GUI_ABOUT_CREDITS"), wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY);
-    creditsTextCtrl->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    itemBoxSizer16->Add(creditsTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
+    AboutDialogTextCtrl* creditsTextCtrl = new AboutDialogTextCtrl(creditsPanel, _guilang.get("GUI_ABOUT_CREDITS"));
+    creditsBoxSizer->Add(creditsTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
-    /*wxStaticText* itemStaticText17 = new wxStaticText( itemPanel15, wxID_STATIC, _(_guilang.get("GUI_ABOUT_CREDITS")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemStaticText17->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    itemBoxSizer16->Add(itemStaticText17, 1, wxGROW|wxALL|wxADJUST_MINSIZE, 5);*/
+    aboutDialogNoteBook->AddPage(creditsPanel, "Credits");
 
-    itemNotebook3->AddPage(itemPanel15, _("Credits"));
+    // STATS PAGE
+    wxPanel* statsPanel = new wxPanel(aboutDialogNoteBook, ID_STATSPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    statsPanel->SetForegroundColour(wxColour(0, 0, 0));
+    statsPanel->SetBackgroundColour(wxColour(255, 255, 255));
+    wxBoxSizer* statsBoxSizer = new wxBoxSizer(wxVERTICAL);
+    statsPanel->SetSizer(statsBoxSizer);
 
-    wxPanel* itemPanel18 = new wxPanel( itemNotebook3, ID_STATSPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-    itemPanel18->SetForegroundColour(wxColour(0, 0, 0));
-    itemPanel18->SetBackgroundColour(wxColour(255, 255, 255));
-    wxBoxSizer* itemBoxSizer19 = new wxBoxSizer(wxVERTICAL);
-    itemPanel18->SetSizer(itemBoxSizer19);
+    AboutDialogTextCtrl* statsTextCtrl = new AboutDialogTextCtrl(statsPanel, _guilang.get("GUI_ABOUT_STATS"));
+    statsBoxSizer->Add(statsTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
 
-    wxTextCtrl* statsTextCtrl = new wxTextCtrl(itemPanel18, wxID_ANY, _guilang.get("GUI_ABOUT_STATS"), wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_BESTWRAP | wxTE_READONLY);
-    statsTextCtrl->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    itemBoxSizer19->Add(statsTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
+    aboutDialogNoteBook->AddPage(statsPanel, "Stats");
 
-    /*4wxStaticText* itemStaticText20 = new wxStaticText( itemPanel18, wxID_STATIC, _(_guilang.get("GUI_ABOUT_STATS")), wxDefaultPosition, wxDefaultSize, 0 );
-    itemStaticText20->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
-    itemBoxSizer19->Add(itemStaticText20, 1, wxGROW|wxALL|wxADJUST_MINSIZE, 5);*/
+    // JOIN PAGE
+    wxPanel* joinPanel = new wxPanel(aboutDialogNoteBook, ID_STATSPANEL, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    joinPanel->SetForegroundColour(wxColour(0, 0, 0));
+    joinPanel->SetBackgroundColour(wxColour(255, 255, 255));
+    wxBoxSizer* joinBoxSizer = new wxBoxSizer(wxVERTICAL);
+    joinPanel->SetSizer(joinBoxSizer);
 
-    itemNotebook3->AddPage(itemPanel18, _("Stats"));
+    AboutDialogTextCtrl* joinTextCtrl = new AboutDialogTextCtrl(joinPanel, _guilang.get("GUI_ABOUT_JOIN"));
+    joinBoxSizer->Add(joinTextCtrl, 1, wxGROW | wxEXPAND | wxALL, 5);
+
+    aboutDialogNoteBook->AddPage(joinPanel, "Contribute");
 
 #if !wxCHECK_VERSION(2,5,2)
     itemBoxSizer2->Add(itemNotebook3Sizer, 0, wxGROW|wxALL, 5);
 #else
-    itemBoxSizer2->Add(itemNotebook3, 0, wxGROW|wxALL, 5);
+    itemBoxSizer2->Add(aboutDialogNoteBook, 0, wxGROW|wxALL, 5);
 #endif
 
     wxBoxSizer* itemBoxSizer21 = new wxBoxSizer(wxHORIZONTAL);
     itemBoxSizer2->Add(itemBoxSizer21, 0, wxALIGN_RIGHT|wxALL, 0);
 
-    wxButton* itemButton22 = new wxButton( itemDialog1, ID_BUTTONOK, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton* itemButton22 = new wxButton(this, ID_BUTTONOK, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer21->Add(itemButton22, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
 ////@end AboutChameleonDialog content construction

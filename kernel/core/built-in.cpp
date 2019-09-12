@@ -3991,21 +3991,19 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 					while (!sArgument.length());
 
 					if (sArgument.substr(0, 1) == _lang.YES())
-						deleteCacheEntry(sCmd, _parser, _data, _option);
+                    {
+                        if (deleteCacheEntry(sCmd, _parser, _data, _option))
+                        {
+                            if (_option.getSystemPrintStatus())
+                                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_DELETE_SUCCESS"), _option) );
+                        }
+                        else
+                            throw SyntaxError(SyntaxError::CANNOT_DELETE_ELEMENTS, sCmd, SyntaxError::invalid_position);
+                    }
 					else
 					{
 						NumeReKernel::print(_lang.get("COMMON_CANCEL") );
 						return 1;
-					}
-				}
-
-				if (!_data.isValidCache())
-				{
-					sArgument = _option.getSavePath() + "/cache.tmp";
-
-					if (BI_FileExists(sArgument))
-					{
-						remove(sArgument.c_str());
 					}
 				}
 			}
