@@ -5125,7 +5125,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
             // Show the refactoring menu
             m_popupMenu.Insert(nINSERTIONPOINT, m_menuRefactoring);
 
-            if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos) || this->isStyleType(STYLE_FUNCTION, charpos))
+            if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_DATAOBJECT, charpos) || this->isStyleType(STYLE_FUNCTION, charpos))
                 m_refactoringMenu->Enable(ID_RENAME_SYMBOLS, true);
 
             if (HasSelection())
@@ -7463,7 +7463,7 @@ void NumeReEditor::OnRenameSymbols(wxCommandEvent& event)
 void NumeReEditor::OnRenameSymbolsFromMenu()
 {
     int charpos = GetCurrentPos();
-    if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_CUSTOMFUNCTION, charpos) || this->isStyleType(STYLE_FUNCTION, charpos))
+    if (this->isStyleType(STYLE_DEFAULT, charpos) || this->isStyleType(STYLE_IDENTIFIER, charpos) || this->isStyleType(STYLE_DATAOBJECT, charpos) || this->isStyleType(STYLE_FUNCTION, charpos))
         this->RenameSymbols(charpos);
 }
 

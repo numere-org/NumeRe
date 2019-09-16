@@ -2135,7 +2135,7 @@
 	"../gui/editor/editor.h"
 	"debug.h"
 
-1557380025 d:\cpp\numere-source\trunk\gui\editor\editor.h
+1568540410 d:\cpp\numere-source\trunk\gui\editor\editor.h
 	"../terminal/wxterm.h"
 	"../../common/datastructures.h"
 	"../../kernel/syntax.hpp"
@@ -2895,7 +2895,7 @@
 1490791550 d:\cpp\numere-source\trunk\gui\numerenotebook.h
 	<wx/notebook.h>
 
-1568188427 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
+1568205559 source:d:\cpp\numere-source\trunk\gui\dialogs\aboutchameleondialog.cpp
 	"wx/wxprec.h"
 	<wx/msw/private.h>
 	<wx/filename.h>
