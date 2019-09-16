@@ -164,6 +164,7 @@ value_type parser_cot(value_type);
 value_type parser_sleep(value_type);
 
 
+
 //value_type parser_SelfTest(Parser&);
 //int parser_Calc(Datafile&, Output&, Parser&, Settings&, Define&, PlotData&, Script&, Procedure&, ofstream&);
 value_type* parser_AddVariable(const char_type*, void*);

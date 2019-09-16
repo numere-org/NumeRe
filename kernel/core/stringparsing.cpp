@@ -117,6 +117,19 @@ enum StringParserFlags
 	KEEP_MASKED_CONTROL_CHARS = 8
 };
 
+// Structure containing the german umlauts. The
+// lower field will contain lower case umlauts,
+// upper field contains the upper case umlauts.
+struct Umlauts
+{
+    string lower;
+    string upper;
+
+    // Constructor fills the fields with the corresponding
+    // character codes (eg \x94 is a Hex value for (char)148)
+    Umlauts() : lower("äüöß\x84\x94\x81"), upper("ÄÖÜ\x8E\x99\x9A") {}
+};
+
 
 // Function handler:
 // ======================
@@ -159,7 +172,6 @@ static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, co
 static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, s_vect&, n_vect&, n_vect&);
 static size_t parser_StringFuncArgParser(Datafile&, Parser&, const Settings&, const string&, map<string, vector<string> >&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
 //
-
 
 // Function signatures
 // ====================
@@ -294,6 +306,254 @@ static string strfnc_ascii(StringFuncArgs& funcArgs)
 	return sCodes;
 }
 
+// is_blank
+//Determines for each character in sToParse, whether it is a blank character type, or not
+static string strfnc_isblank(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+	static Umlauts _umlauts;
+
+	for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (isblank(funcArgs.sArg1[i]) && _umlauts.lower.find(funcArgs.sArg1[i]) == string::npos && _umlauts.upper.find(funcArgs.sArg1[i]) == string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+//Determines for each character in sToParse, whether it is a alphanumeric  character type, or not
+static string strfnc_isalnum(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+	static Umlauts _umlauts;
+
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (isalnum(funcArgs.sArg1[i]) && _umlauts.lower.find(funcArgs.sArg1[i]) == string::npos && _umlauts.upper.find(funcArgs.sArg1[i]) == string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+//Determines for each character in sToParse, whether it is a alphabetic  character type, or not
+static string strfnc_isalpha(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+	static Umlauts _umlauts;
+
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (isalpha(funcArgs.sArg1[i]) || _umlauts.lower.find(funcArgs.sArg1[i]) != string::npos || _umlauts.upper.find(funcArgs.sArg1[i]) != string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+//Determines for each character in sToParse, whether it is a control  character type, or not
+static string strfnc_iscntrl(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+	static Umlauts _umlauts;
+
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (iscntrl(funcArgs.sArg1[i]) || _umlauts.lower.find(funcArgs.sArg1[i]) != string::npos || _umlauts.upper.find(funcArgs.sArg1[i]) != string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+//Determines for each character in sToParse, whether it is a decimal character type, or not
+static string strfnc_isdigit(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (isdigit(funcArgs.sArg1[i]))
+        {
+            sCodes += "1";
+        }
+        else
+        {
+            sCodes += "0";
+        }
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+//Determines for each character in sToParse, whether it is a graphical character type, or not
+static string strfnc_isgraph(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    static Umlauts _umlauts;
+
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (isgraph(funcArgs.sArg1[i]) || _umlauts.lower.find(funcArgs.sArg1[i]) != string::npos || _umlauts.upper.find(funcArgs.sArg1[i]) != string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+//Determines for each character in sToParse, whether it is a lowercase character type, or not
+static string strfnc_islower(StringFuncArgs& funcArgs)
+{
+    string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+	// Get an Umlauts structure instance and store it statically
+	// (this variable will only be instantiated once and kept in
+    // memory afterwards, which is more efficient)
+	static Umlauts _umlauts;
+
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        // If the current character is found by "islower()" or is
+        // part of the "lower" field of the "Umlauts" structure,
+        // then it is a lowercase letter. In all other cases, it
+        // is not
+        if (islower(funcArgs.sArg1[i]) || _umlauts.lower.find(funcArgs.sArg1[i]) != string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+
+//Determines for each character in sToParse, whether it is a printable character type, or not
+static string strfnc_isprint(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+	static Umlauts _umlauts;
+
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (isprint(funcArgs.sArg1[i]) || _umlauts.lower.find(funcArgs.sArg1[i]) != string::npos || _umlauts.upper.find(funcArgs.sArg1[i]) != string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+//Determines for each character in sToParse, whether it is a punctuation character type, or not
+static string strfnc_ispunct(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+
+	static Umlauts _umlauts;
+
+	for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (ispunct(funcArgs.sArg1[i]) && _umlauts.lower.find(funcArgs.sArg1[i]) == string::npos && _umlauts.upper.find(funcArgs.sArg1[i]) == string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+//Determines for each character in sToParse, whether it is a white-space character type, or not
+static string strfnc_isspace(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+
+	static Umlauts _umlauts;
+
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (isspace(funcArgs.sArg1[i]) && _umlauts.lower.find(funcArgs.sArg1[i]) == string::npos && _umlauts.upper.find(funcArgs.sArg1[i]) == string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+//Determines for each character in sToParse, whether it is a uppercase character type, or not
+static string strfnc_isupper(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+
+	static Umlauts _umlauts;
+
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (isupper(funcArgs.sArg1[i]) || _umlauts.upper.find(funcArgs.sArg1[i]) != string::npos)
+            sCodes += "1";
+        else
+            sCodes += "0";
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
+
+//Determines for each character in sToParse, whether it is a hexadecimal character type, or not
+static string strfnc_isxdigit(StringFuncArgs& funcArgs)
+{
+   string sCodes = "";
+	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        if (isxdigit(funcArgs.sArg1[i]))
+        {
+            sCodes += "1";
+        }
+        else
+        {
+            sCodes += "0";
+        }
+        if (i+1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
+}
 // LOG__STR
 // log = is_string(EXPR)
 // string strfnc_is_string(StringFuncArgs& funcArgs)
@@ -2508,6 +2768,20 @@ static map<string, StringFuncHandle> parser_getStringFuncHandles()
 	mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
 	mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
 	mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
+
+	mHandleTable["is_blank"]            = StringFuncHandle(STR, strfnc_isblank, false);
+	mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);
+    mHandleTable["is_alpha"]            = StringFuncHandle(STR, strfnc_isalpha, false);
+    mHandleTable["is_cntrl"]            = StringFuncHandle(STR, strfnc_iscntrl, false);
+    mHandleTable["is_digit"]            = StringFuncHandle(STR, strfnc_isdigit, false);
+    mHandleTable["is_graph"]            = StringFuncHandle(STR, strfnc_isgraph, false);
+    mHandleTable["is_lower"]            = StringFuncHandle(STR, strfnc_islower, false);
+    mHandleTable["is_print"]            = StringFuncHandle(STR, strfnc_isprint, false);
+    mHandleTable["is_punct"]            = StringFuncHandle(STR, strfnc_ispunct, false);
+    mHandleTable["is_space"]            = StringFuncHandle(STR, strfnc_isspace, false);
+    mHandleTable["is_upper"]            = StringFuncHandle(STR, strfnc_isupper, false);
+    mHandleTable["is_xdigit"]            = StringFuncHandle(STR, strfnc_isxdigit, false);
+
 
 	return mHandleTable;
 }

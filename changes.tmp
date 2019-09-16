@@ -75,6 +75,10 @@ New	The file and symbol trees and the documentation index feature now a search b
 Updated	The math style in the documentation articles was update to resemble a more TeX-like layout.
 Fixed	The crash upon removing the last item in the package creator was resolved.
 Fixed	The segmentation fault in the dependency viewer, which occured, if the procedure file lacks a main procedure, was removed.
+Added	Added String functions is_blank(), is_alphanum(), is_alnum(), is_cntrl(), is_digit(), is_graph(), is_lower(), is_print(), is_punct(), is_space(), is_upper(), is_xdigit()
 Applied	The "return" command can now be used in scripts as well.
+	
 New	NumeRe now features an internal version control system, which can be activated in the settings menu. The version control system allows displaying previous revisions, restoring and tagging them.
 Applied	The revision system is now more efficient regarding storage space: as long as the differences between two files are smaller than the actual file, only the differences are stored.
+	
+	
