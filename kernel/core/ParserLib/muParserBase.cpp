@@ -590,9 +590,8 @@ namespace mu
 						vResults.push_back(parser_Max(v, nResults));
 
                     // Store the result in a new temporary vector
-                    string sVectorVarName = "_~TMAFV[" + getNextVectorVarIndex() + "]";
+                    string sVectorVarName = CreateTempVectorVar(vResults);
 					sExpr.replace(nMultiArgParens - sMultiArgFunc.length(), nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(), sVectorVarName);
-					SetVectorVar(sVectorVarName, vResults);
 				}
 				else if (j != std::string::npos && sExpr.substr(i, j - i).find(':') != std::string::npos)
 				{
@@ -604,9 +603,8 @@ namespace mu
 					evaluateVectorExpansion(sSubExpr, vResults);
 
 					// Store the result in a new temporary vector
-                    string sVectorVarName = "_~TV[" + getNextVectorVarIndex() + "]";
+                    string sVectorVarName = CreateTempVectorVar(vResults);
 					sExpr.replace(i, j + 1 - i, sVectorVarName);
-					SetVectorVar(sVectorVarName, vResults);
 				}
 				else
 				{
@@ -645,9 +643,8 @@ namespace mu
 						{
 						    // This is a usual vector
 						    // Store the vector result as a new temporary vector variable
-                            string sVectorVarName = "_~TV[" + getNextVectorVarIndex() + "]";
+                            string sVectorVarName = CreateTempVectorVar(vResults);
 							sExpr.replace(i, j + 1 - i, sVectorVarName);
-							SetVectorVar(sVectorVarName, vResults);
 						}
 					}
 				}
@@ -3185,6 +3182,15 @@ namespace mu
 		}
 #endif
 
+	}
+
+	string_type ParserBase::CreateTempVectorVar(const std::vector<double>& vVar)
+	{
+	    string_type sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
+
+	    SetVectorVar(sTempVarName, vVar, false);
+
+	    return sTempVarName;
 	}
 
 	void ParserBase::SetVectorVar(const std::string& sVarName, const std::vector<double>& vVar, bool bAddVectorType)

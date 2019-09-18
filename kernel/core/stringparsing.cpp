@@ -336,7 +336,7 @@ static string strfnc_isalnum(StringFuncArgs& funcArgs)
 
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
-        if (isalnum(funcArgs.sArg1[i]) && _umlauts.lower.find(funcArgs.sArg1[i]) == string::npos && _umlauts.upper.find(funcArgs.sArg1[i]) == string::npos)
+        if (isalnum(funcArgs.sArg1[i]) || _umlauts.lower.find(funcArgs.sArg1[i]) != string::npos || _umlauts.upper.find(funcArgs.sArg1[i]) != string::npos)
             sCodes += "1";
         else
             sCodes += "0";
@@ -1818,10 +1818,8 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 		}
 	}
 
-	// Are there any vector braces left? We will only parse them, if they
-    // contain a string part or a string parser
-	if (sLine.find('{') != string::npos
-        && (sLine.find('"') != string::npos || sLine.find('#') != string::npos))
+	// Are there any vector braces left?
+	if (sLine.find('{') != string::npos)
 	{
 		n_pos = 0;
 		eq_pos = sLine.find('=');
@@ -1834,6 +1832,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
         size_t nQuotes = 0;
 
+        // Examine each vector brace
 		for (size_t i = n_pos; i < sLine.length(); i++)
         {
             if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
@@ -1843,18 +1842,24 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
             {
                 size_t nmatching = getMatchingParenthesis(sLine.substr(i));
                 string sVectorTemp = sLine.substr(i+1, nmatching-1);
+
+                // Does the vector brace contain colons? Then we ignore
+                // it for now, because it might be a vector expansion
+                if (sVectorTemp.find(':') != string::npos)
+                    continue;
+
                 StringResult tempres = parser_StringParserCore(sVectorTemp, "", _data, _parser, _option, mStringVectorVars);
 
                 if (!tempres.vResult.size())
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                 // Create a string vector variable from the returned vector
-                // if it is a string. Otherwise simple use the first return
-                // value, which already contains a numerical vector
+                // if it is a string. Otherwise we create a new temporary
+                // vector from the parser using the numerical results
                 if (!tempres.bOnlyLogicals)
                     sVectorTemp = parser_CreateStringVectorVar(tempres.vResult, mStringVectorVars);
                 else
-                    sVectorTemp = tempres.vResult.front();
+                    sVectorTemp = _parser.CreateTempVectorVar(tempres.vNumericalValues);
 
                 sLine.replace(i, nmatching+1, sVectorTemp);
             }
