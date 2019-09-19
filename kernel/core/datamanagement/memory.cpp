@@ -19,6 +19,8 @@
 
 #include "memory.hpp"
 #include "../../kernel.hpp"
+#include "../io/file.hpp"
+
 using namespace std;
 
 /*
@@ -818,82 +820,52 @@ void Memory::importTable(NumeRe::Table _table)
     }
 }
 
-bool Memory::save(string _sFileName)
+// This member function is used for saving the
+// contents of this memory page into a file. The
+// type of the file is selected by the name of the
+// file
+bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision)
 {
-	ofstream file_out;
-	if (file_out.is_open())
-		file_out.close();
-	file_out.open(_sFileName.c_str(), ios_base::binary | ios_base::trunc | ios_base::out);
+    // Get an instance of the desired file type
+    NumeRe::GenericFile<double>* file = NumeRe::getFileByType(_sFileName);
 
-	if (file_out.is_open() && file_out.good() && bValidData)
-	{
-		char** cHeadLine = new char* [nCols];
-		long int nMajor = AutoVersion::MAJOR;
-		long int nMinor = AutoVersion::MINOR;
-		long int nBuild = AutoVersion::BUILD;
-		long long int lines = getLines(false);
-		long long int cols = getCols(false);
-		long long int appendedzeroes[cols];
-		double dDataValues[cols];
-		bool bValidValues[cols];
-		for (long long int i = 0; i < cols; i++)
-		{
-			appendedzeroes[i] = nAppendedZeroes[i] - (nLines - lines);
-		}
+    // Ensure that a file was created
+    if (!file)
+        throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, _sFileName, SyntaxError::invalid_position, _sFileName);
 
-		for (long long int i = 0; i < cols; i++)
-		{
-			cHeadLine[i] = new char[sHeadLine[i].length() + 1];
-			for (unsigned int j = 0; j < sHeadLine[i].length(); j++)
-			{
-				cHeadLine[i][j] = sHeadLine[i][j];
-			}
-			cHeadLine[i][sHeadLine[i].length()] = '\0';
-		}
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
 
-		time_t tTime = time(0);
-		file_out.write((char*)&nMajor, sizeof(long));
-		file_out.write((char*)&nMinor, sizeof(long));
-		file_out.write((char*)&nBuild, sizeof(long));
-		file_out.write((char*)&tTime, sizeof(time_t));
-		file_out.write((char*)&lines, sizeof(long long int));
-		file_out.write((char*)&cols, sizeof(long long int));
-		//cerr << lines << " " << cols << endl;
-		for (long long int i = 0; i < cols; i++)
-		{
-			size_t nlength = sHeadLine[i].length() + 1;
-			//cerr << nlength << endl;
-			file_out.write((char*)&nlength, sizeof(size_t));
-			file_out.write(cHeadLine[i], sizeof(char)*sHeadLine[i].length() + 1);
-		}
-		file_out.write((char*)appendedzeroes, sizeof(long long int)*cols);
+    // Set the dimensions and the generic information
+    // in the file
+    file->setDimensions(lines, cols);
+    file->setColumnHeadings(sHeadLine, cols);
+    file->setData(dMemTable, lines, cols);
+    file->setTableName(sTableName);
+    file->setTextfilePrecision(nPrecision);
 
-		for (long long int i = 0; i < lines; i++)
-		{
-			for (long long int j = 0; j < cols; j++)
-				dDataValues[j] = dMemTable[i][j];
-			file_out.write((char*)dDataValues, sizeof(double)*cols);
-		}
-		for (long long int i = 0; i < lines; i++)
-		{
-			for (long long int j = 0; j < cols; j++)
-				bValidValues[j] = !isnan(dMemTable[i][j]);
-			file_out.write((char*)bValidValues, sizeof(bool)*cols);
-		}
-		file_out.close();
-		for (long long int i = 0; i < cols; i++)
-		{
-			delete[] cHeadLine[i];
-		}
-		delete[] cHeadLine;
+    // If the file type is a NumeRe data file, then
+    // we can also set the comment associated with
+    // this memory page
+    if (file->getExtension() == "ndat")
+        static_cast<NumeRe::NumeReDataFile*>(file)->setComment("");
 
-		return true;
-	}
-	else
-	{
-		file_out.close();
-		return false;
-	}
+    // Try to write the data to the file. This might
+    // either result in writing errors or the write
+    // function is not defined for this file type
+    try
+    {
+        if (!file->write())
+            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, _sFileName, SyntaxError::invalid_position, _sFileName);
+    }
+    catch (...)
+    {
+        delete file;
+        throw;
+    }
+
+    // Delete the created file instance
+    delete file;
 
 	return true;
 }
@@ -1078,6 +1050,26 @@ bool Memory::evaluateIndices(long long int& i1, long long int& i2, long long int
 	if (j2 >= getCols(false))
 		j2 = getCols(false) - 1;
 	return true;
+}
+
+// This member function counts the number of
+// appended zeroes, i.e. the number of invalid
+// values, which are appended at the end of the
+// columns
+void Memory::countAppendedZeroes()
+{
+    for (long long int i = 0; i < nCols; i++)
+    {
+        nAppendedZeroes[i] = 0;
+
+        for (long long int j = nLines-1; j >= 0; j--)
+        {
+            if (isnan(dMemTable[j][i]))
+                nAppendedZeroes[i]++;
+            else
+                break;
+        }
+    }
 }
 
 

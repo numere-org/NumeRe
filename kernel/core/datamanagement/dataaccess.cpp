@@ -58,7 +58,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     sDataObject = sCommand.substr(pos, i - pos);
 
                     // Ensure that the table exists
-                    if (!instance->getData().isCacheElement(sDataObject) && sDataObject != "data" && sDataObject != "string")
+                    if (!instance->getData().isTable(sDataObject) && sDataObject != "data" && sDataObject != "string")
                     {
                         sDataObject.clear();
                         pos = string::npos;
@@ -958,8 +958,8 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
     {
         for (long long int i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
-            _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col.last(), sTableName));
+            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
+            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col.last(), sTableName));
 
             if (!i)
             {
@@ -974,7 +974,7 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
         {
             for (long long int j = 0; j < _idx.col.size(); j++)
             {
-                _cache.writeToCache(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], sTableName));
+                _cache.writeToTable(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], sTableName));
 
                 if (!i)
                     _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], sTableName));
@@ -1095,24 +1095,24 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
 // This function will copy the contents to the target table and extract the table
 static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const Indices& _idx, int nDim)
 {
-    Cache _cache;
+    MemoryManager _cache;
     // Copy the contents of the data into the local cache object
     // The indices are vectors
     if (nDim == 2)
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
         }
     }
     else if (nDim == 3)
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToCache(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToCache(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
-            _cache.writeToCache(i, 2, "cache", _data.getElement(_idx.row[i], _idx.col[2], sDatatable));
+            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            _cache.writeToTable(i, 2, "cache", _data.getElement(_idx.row[i], _idx.col[2], sDatatable));
         }
     }
 
@@ -1121,7 +1121,7 @@ static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, c
 
 	// Rename the table
 	if (sDatatable != "cache")
-        _cache.renameCache("cache", sDatatable, true);
+        _cache.renameTable("cache", sDatatable, true);
 
 	// Return the extracted table object
 	return _cache.extractTable(sDatatable);

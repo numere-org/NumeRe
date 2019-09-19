@@ -210,7 +210,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
         return "\t1 x 1\t(...)\t";
 
     // Is the current argument value a table?
-    if (_data.isCacheElement(sArgumentValue) || sArgumentValue.substr(0, 5) == "data(")
+    if (_data.isTable(sArgumentValue) || sArgumentValue.substr(0, 5) == "data(")
     {
         string sCache = sArgumentValue.substr(0, sArgumentValue.find('('));
 

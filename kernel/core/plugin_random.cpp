@@ -32,7 +32,7 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
 	long long int nDataRows = 0;
 	long long int nFilledCols = 0;
 	if (_data.isValidCache() && !bAllowOverride)       // Frage die Zahl der (irgendwie) vollgeschriebenen Spalten ab
-        nFilledCols = _data.getCacheCols("cache", false);
+        nFilledCols = _data.getTableCols("cache", false);
 	double dDistributionWidth = 1.0; // Die Breite der Verteilung
 	double dDistributionMean = 0.0;	// Der Mittelwert der Verteilung
 	unsigned int nFreedoms = 1;
@@ -228,7 +228,7 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
                 dRandomNumber = binomialDistribution(randomGenerator);
             else if (nDistribution == 5)
                 dRandomNumber = studentTDistribution(randomGenerator);
-			_data.writeToCache(i, j+nFilledCols, "cache", dRandomNumber);
+			_data.writeToTable(i, j+nFilledCols, "cache", dRandomNumber);
 
 			if ((!i && !j) || dSeedBase == 0.0)
 			{

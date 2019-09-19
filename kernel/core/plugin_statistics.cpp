@@ -92,9 +92,9 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
         if (matchParams(sCmd, "save") || matchParams(sCmd, "export"))
             _out.setStatus(true);
         string sDatatable = "data";
-        if (_data.matchCache(sCmd).length())
+        if (_data.matchTableAsParameter(sCmd).length())
         {
-            sDatatable = _data.matchCache(sCmd);
+            sDatatable = _data.matchTableAsParameter(sCmd);
         }
         if (!_data.getLines(sDatatable) || !_data.getCols(sDatatable))
             throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);

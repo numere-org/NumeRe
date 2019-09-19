@@ -439,7 +439,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             cluster.assignResults(_idx, nNum, v);
         }
         else
-            _data.writeToCache(_idx, sCache, v, nNum);
+            _data.writeToTable(_idx, sCache, v, nNum);
     }
 
     // Clear the vector variables after the loop returned

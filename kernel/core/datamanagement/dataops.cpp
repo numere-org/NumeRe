@@ -868,12 +868,12 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
         if (!bTranspose)
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.row.size());
-            _iTargetIndex.col = VectorIndex(_data.getCacheCols(sTarget, false), _data.getCacheCols(sTarget, false) + _iSourceIndex.col.size());
+            _iTargetIndex.col = VectorIndex(_data.getTableCols(sTarget, false), _data.getTableCols(sTarget, false) + _iSourceIndex.col.size());
         }
         else
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.col.size());
-            _iTargetIndex.col = VectorIndex(_data.getCacheCols(sTarget, false), _data.getCacheCols(sTarget, false) + _iSourceIndex.row.size());
+            _iTargetIndex.col = VectorIndex(_data.getTableCols(sTarget, false), _data.getTableCols(sTarget, false) + _iSourceIndex.row.size());
         }
     }
     else if (_iTargetIndex.row.size())
@@ -920,7 +920,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 
             if (_data.isValidEntry(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource))
             {
-                _cache.writeToCache(i, j, "cache", _data.getElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource));
+                _cache.writeToTable(i, j, "cache", _data.getElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource));
 
                 if (bMove)
                     _data.deleteEntry(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource);
@@ -930,7 +930,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 
     // Second step: Copy the contents in "_cache" to the new location in the original Datafile object
 
-    for (long long int i = 0; i < _cache.getCacheLines("cache", false); i++)
+    for (long long int i = 0; i < _cache.getTableLines("cache", false); i++)
     {
         // Break the operation, if the indices are marking a smaller section
         if (!bTranspose)
@@ -943,7 +943,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
             if (i >= _iTargetIndex.col.size())
                 break;
         }
-        for (long long int j = 0; j < _cache.getCacheCols("cache", false); j++)
+        for (long long int j = 0; j < _cache.getTableCols("cache", false); j++)
         {
             if (!bTranspose)
             {
@@ -959,7 +959,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 
                 // Write the data. Invalid data is deleted explicitly, because it might already contain old data
                 if (_cache.isValidEntry(i, j, "cache"))
-                    _data.writeToCache(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget, _cache.getElement(i, j, "cache"));
+                    _data.writeToTable(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget, _cache.getElement(i, j, "cache"));
                 else if (_data.isValidEntry(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget))
                     _data.deleteEntry(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget);
             }
@@ -972,7 +972,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 
                 // Write the data. Invalid data is deleted explicitly, because it might already contain old data
                 if (_cache.isValidEntry(i, j, "cache"))
-                    _data.writeToCache(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget, _cache.getElement(i, j, "cache"));
+                    _data.writeToTable(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget, _cache.getElement(i, j, "cache"));
                 else if (_data.isValidEntry(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget))
                     _data.deleteEntry(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget);
             }
@@ -1445,7 +1445,7 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 		if (_idx.row[i] == VectorIndex::INVALID)
 			break;
 
-		_data.writeToCache(_idx.row[i], _idx.col.front(), sTargetCache, i + 1);
+		_data.writeToTable(_idx.row[i], _idx.col.front(), sTargetCache, i + 1);
 	}
 
 	for (int i = 0; i < nHeight; i++)
@@ -1453,7 +1453,7 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 		if (_idx.row[i] == VectorIndex::INVALID)
 			break;
 
-		_data.writeToCache(_idx.row[i] + i, _idx.col[1], sTargetCache, i + 1);
+		_data.writeToTable(_idx.row[i] + i, _idx.col[1], sTargetCache, i + 1);
 	}
 
 	// iData is a iterator over the image data
@@ -1474,7 +1474,7 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 
             // The actual copy process
             // Calculate the average of the three channels and store it in the target cache
-			_data.writeToCache(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache, imageData[j * 3 * nWidth + iData] / 3.0 + imageData[j * 3 * nWidth + iData + 1] / 3.0 + imageData[j * 3 * nWidth + iData + 2] / 3.0);
+			_data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache, imageData[j * 3 * nWidth + iData] / 3.0 + imageData[j * 3 * nWidth + iData + 1] / 3.0 + imageData[j * 3 * nWidth + iData + 2] / 3.0);
 
 			// Advance the iterator three channels
 			iData += 3;

@@ -432,8 +432,6 @@
 		<Unit filename="gui/dialogs/RemoteFileDialog.h" />
 		<Unit filename="gui/dialogs/dependencydialog.cpp" />
 		<Unit filename="gui/dialogs/dependencydialog.hpp" />
-		<Unit filename="gui/dialogs/dependencydialog.cpp" />
-		<Unit filename="gui/dialogs/dependencydialog.hpp" />
 		<Unit filename="gui/dialogs/duplicatecodedialog.cpp" />
 		<Unit filename="gui/dialogs/duplicatecodedialog.hpp" />
 		<Unit filename="gui/dialogs/fndrpldialog.cpp" />
@@ -542,6 +540,8 @@
 		<Unit filename="kernel/core/documentation/documentation.hpp" />
 		<Unit filename="kernel/core/filesystem.cpp" />
 		<Unit filename="kernel/core/filesystem.hpp" />
+		<Unit filename="kernel/core/io/file.cpp" />
+		<Unit filename="kernel/core/io/file.hpp" />
 		<Unit filename="kernel/core/io/fileops.cpp" />
 		<Unit filename="kernel/core/io/fileops.hpp" />
 		<Unit filename="kernel/core/io/output.cpp" />

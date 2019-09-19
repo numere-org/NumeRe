@@ -2462,7 +2462,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
         }
         else
         {
-            _dataRef->writeToCache(_idx, sCache, v, nNum);
+            _dataRef->writeToTable(_idx, sCache, v, nNum);
             bWriteToCache = false;
         }
     }

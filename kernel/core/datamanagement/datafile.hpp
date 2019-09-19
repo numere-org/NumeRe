@@ -30,6 +30,7 @@
 #include "../utils/zip++.hpp"
 #include "../utils/BasicExcel.hpp"
 #include "../utils/tinyxml2.h"
+#include "../io/file.hpp"
 
 #include "sorter.hpp"
 
@@ -53,7 +54,7 @@ int StrToInt(const string&);
  * Header zur Datafile-Klasse
  */
 
-class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von FileSystem und von Cache
+class Datafile : public MemoryManager, private Sorter		//	Diese Klasse ist ein CHILD von FileSystem und von Cache
 {
 	private:
 		long long int nLines;							// Zeilen des Datenfiles
@@ -76,130 +77,96 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
 		string getDate();
 
 		void Allocate();								// Methode, um dem Pointer dDatafile die finale Matrix zuzuweisen
+		void createTableHeaders();
 		void setLines(long long int _nLines);			// Methode, um nLines zu setzen
 		void setCols(long long int _nCols);				// Methode, um nCols zu setzen
-		inline void replaceDecimalSign(string& _sToReplace)
+
+		void replaceDecimalSign(string& _sToReplace)
+        {
+            if (_sToReplace.find(',') == string::npos)
+                return;
+            else
             {
-                if (_sToReplace.find(',') == string::npos)
-                    return;
-                else
+                for (unsigned int i = 0; i < _sToReplace.length(); i++)
                 {
-                    for (unsigned int i = 0; i < _sToReplace.length(); i++)
-                    {
-                        if (_sToReplace[i] == ',')
-                            _sToReplace[i] = '.';
-                    }
-                    return;
+                    if (_sToReplace[i] == ',')
+                        _sToReplace[i] = '.';
                 }
+                return;
             }
-        inline void replaceTabSign(string& _sToReplace, bool bAddPlaceholders = false)
+        }
+
+        void replaceTabSign(string& _sToReplace, bool bAddPlaceholders = false)
+        {
+            if (_sToReplace.find('\t') == string::npos)
+                return;
+            else
             {
-                if (_sToReplace.find('\t') == string::npos)
-                    return;
-                else
+                for (unsigned int i = 0; i < _sToReplace.length(); i++)
                 {
-                    for (unsigned int i = 0; i < _sToReplace.length(); i++)
+                    if (_sToReplace[i] == '\t')
                     {
-                        if (_sToReplace[i] == '\t')
+                        _sToReplace[i] = ' ';
+                        if (bAddPlaceholders)
                         {
-                            _sToReplace[i] = ' ';
-                            if (bAddPlaceholders)
-                            {
-                                if (!i)
-                                    _sToReplace.insert(0,1,'_');
-                                else if (_sToReplace[i-1] == ' ')
-                                    _sToReplace.insert(i,1,'_');
-                                if (i+1 == _sToReplace.length())
-                                    _sToReplace += "_";
-                            }
+                            if (!i)
+                                _sToReplace.insert(0,1,'_');
+                            else if (_sToReplace[i-1] == ' ')
+                                _sToReplace.insert(i,1,'_');
+                            if (i+1 == _sToReplace.length())
+                                _sToReplace += "_";
                         }
-                    }
-                    return;
-                }
-            }
-        inline void stripTrailingSpaces(string& _sToStrip)
-            {
-                if (_sToStrip.find(' ') == string::npos && _sToStrip.find('\t') == string::npos)
-                    return;
-                else
-                {
-                    while (_sToStrip[_sToStrip.length()-1] == ' ' || _sToStrip[_sToStrip.length()-1] == '\t')
-                    {
-                        _sToStrip = _sToStrip.substr(0,_sToStrip.length()-1);
                     }
                 }
                 return;
             }
+        }
+
+        void stripTrailingSpaces(string& _sToStrip)
+        {
+            if (_sToStrip.find(' ') == string::npos && _sToStrip.find('\t') == string::npos)
+                return;
+            else
+            {
+                while (_sToStrip[_sToStrip.length()-1] == ' ' || _sToStrip[_sToStrip.length()-1] == '\t')
+                {
+                    _sToStrip = _sToStrip.substr(0,_sToStrip.length()-1);
+                }
+            }
+            return;
+        }
+
         bool isNumeric(const string& _sString);
         virtual int compare(int i, int j, int col);
         virtual bool isValue(int line, int col);
-        void openLabx(Settings& _option);
-        void openCSV(Settings& _option);
-        void openNDAT(Settings& _option);
-        void openJDX(Settings& _option);
-        void openIBW(Settings& _option, bool bXZSlice = false, bool bYZSlice = false);
-        void openODS(Settings& _option);
-        void openXLS(Settings& _option);
-        void openXLSX(Settings& _option);
         void countAppendedZeroes(long long int nCol = -1);
         void condenseDataSet();
-        string expandODSLine(const string& sLine);
-        void evalExcelIndices(const string& sIndices, int& nLine, int& nCol);
-        vector<double> parseJDXLine(const string& sLine);
         vector<string> getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens);
         void reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 
-        inline void parseJDXDataLabel(string& sLine)
+        void parseEvery(long long int& nFirst, long long int& nEvery, string& sDir)
+        {
+            if (sDir.find("every=") != string::npos)
             {
-                if (sLine.find("##") == string::npos || sLine.find('=') == string::npos)
-                    return;
-                for (unsigned int i = 0; i < sLine.length(); i++)
+                string sEvery = getArgAtPos(sDir, sDir.find("every=")+6);
+                if (sEvery.find(',') != string::npos)
                 {
-                    if (sLine[i] == ' ')
-                    {
-                        sLine.erase(i,1);
-                        i--;
-                    }
-                    if (sLine[i] == '-')
-                    {
-                        sLine.erase(i,1);
-                        i--;
-                    }
-                    if (sLine[i] == '_')
-                    {
-                        sLine.erase(i,1);
-                        i--;
-                    }
-                    if (sLine[i] >= 'a' && sLine[i] <= 'z')
-                        sLine[i] += 'A'-'a';
-                    if (sLine[i] == '=')
-                        break;
+                    nFirst = StrToInt(sEvery.substr(0, sEvery.find(',')))-1;
+                    nEvery = StrToInt(sEvery.substr(sEvery.find(',')+1));
                 }
-                return;
-            }
-        inline void parseEvery(long long int& nFirst, long long int& nEvery, string& sDir)
-            {
-                if (sDir.find("every=") != string::npos)
+                else
                 {
-                    string sEvery = getArgAtPos(sDir, sDir.find("every=")+6);
-                    if (sEvery.find(',') != string::npos)
-                    {
-                        nFirst = StrToInt(sEvery.substr(0, sEvery.find(',')))-1;
-                        nEvery = StrToInt(sEvery.substr(sEvery.find(',')+1));
-                    }
-                    else
-                    {
-                        nEvery = StrToInt(sEvery);
-                        nFirst = nEvery-1;
-                    }
-                    sDir.erase(sDir.find("every="));
-                    if (nEvery < 1)
-                        nEvery = 1;
-                    if (nFirst < 0)
-                        nFirst = 0;
+                    nEvery = StrToInt(sEvery);
+                    nFirst = nEvery-1;
                 }
-                return;
+                sDir.erase(sDir.find("every="));
+                if (nEvery < 1)
+                    nEvery = 1;
+                if (nFirst < 0)
+                    nFirst = 0;
             }
+            return;
+        }
 
 	public:
 		Datafile();										// Standard-Konstruktor
@@ -225,11 +192,13 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
 		string getDataFileName(const string& sCache) const;					// gibt den Wert von sDataFile zurueck
 		string getDataFileNameShort() const;
 		string getHeadLineElement(long long int _i, const string& sCache) const;		// gibt das _i-te Element der Kopfzeile zurueck
-		inline string getTopHeadLineElement(long long int _i, const string& sCache) const
-            {
-                return getHeadLineElement(_i, sCache).substr(0, getHeadLineElement(_i, sCache).find("\\n"));
-            }
-		vector<string> getHeadLineElement(const VectorIndex& _vCol, const string& sCache) const;		// gibt das _i-te Element der Kopfzeile zurueck
+
+		string getTopHeadLineElement(long long int _i, const string& sCache) const
+        {
+            return getHeadLineElement(_i, sCache).substr(0, getHeadLineElement(_i, sCache).find("\\n"));
+        }
+
+        vector<string> getHeadLineElement(const VectorIndex& _vCol, const string& sCache) const;		// gibt das _i-te Element der Kopfzeile zurueck
 		bool setHeadLineElement(long long int _i, const string& sCache, string _sHead);	// setzt das _i-te Element der Kopfzeile auf _sHead
 		long long int getAppendedZeroes(long long int _i, const string& sCache) const;			// gibt die Zahl der angehaengten Nullen der _i-ten Spalte zurueck
 		int getHeadlineCount(const string& sCache) const;
@@ -246,937 +215,961 @@ class Datafile : public Cache, private Sorter		//	Diese Klasse ist ein CHILD von
 		bool updateDimensionVariables(const string& sTableName);
 		bool containsTablesOrClusters(const string& sCmdLine);
 
-        inline int getDataSize() const
-            {
-                if (bValidData)
-                    return nLines * nCols * sizeof(double);
-                else
-                    return 0;
-            }
+        int getDataSize() const
+        {
+            if (bValidData)
+                return nLines * nCols * sizeof(double);
+            else
+                return 0;
+        }
+
         NumeRe::Table extractTable(const string& _sTable);
-        bool saveFile(const string& sCache, string _sFileName);
-        inline string getOutputFileName() const
-            {
-                return sOutputFile;
-            }
-        inline void setSavePath(const string& _sPath)
+        bool saveFile(const string& sCache, string _sFileName, unsigned short nPrecision = 7);
+
+        string getOutputFileName() const
+        {
+            return sOutputFile;
+        }
+
+        void setSavePath(const string& _sPath)
         {
             sSavePath = _sPath;
             return;
         }
-        inline void setPrefix(const string& _sPrefix)
+
+        void setPrefix(const string& _sPrefix)
         {
             sPrefix = _sPrefix;
             return;
         }
-        inline void setbLoadEmptyCols(bool _bLoadEmptyCols)
-            {
-                bLoadEmptyCols = _bLoadEmptyCols;
-                return;
-            }
+
+        void setbLoadEmptyCols(bool _bLoadEmptyCols)
+        {
+            bLoadEmptyCols = _bLoadEmptyCols;
+            return;
+        }
+
         void generateFileName();
-        inline void setbLoadEmptyColsInNextFile(bool _bLoadEmptyCols)
-            {
-                bLoadEmptyColsInNextFile = _bLoadEmptyCols;
-                return;
-            }
+
+        void setbLoadEmptyColsInNextFile(bool _bLoadEmptyCols)
+        {
+            bLoadEmptyColsInNextFile = _bLoadEmptyCols;
+            return;
+        }
+
         void openFromCmdLine(Settings& _option, string sFile = "", bool bOpen = false);
-        inline bool pausedOpening() const
+
+        bool pausedOpening() const
+        {
+            return bPauseOpening;
+        }
+
+        vector<double> std(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
             {
-                return bPauseOpening;
-            }
-
-        inline vector<double> std(const string& sCache, string sDir)
-            {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
+                if (nFirst >= getCols(sCache))
                 {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(std(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(std(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(std(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(std(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(std(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(std(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                if (!vResults.size())
                     vResults.push_back(NAN);
-                return vResults;
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(std(sCache, 0, getLines(sCache), i));
             }
-        inline vector<double> avg(const string& sCache, string sDir)
+            else if (sDir == "lines")
             {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
+                if (nFirst >= getLines(sCache))
                 {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(avg(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(avg(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(avg(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(avg(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(avg(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(avg(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                if (!vResults.size())
                     vResults.push_back(NAN);
-                return vResults;
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(std(sCache, i,-1,0,getCols(sCache)));
             }
-        inline vector<double> max(const string& sCache, string sDir)
+            else if (sDir == "gridcols")
             {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
+                if (nFirst >= getCols(sCache)-2)
                 {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(max(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(max(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(max(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(max(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(max(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(max(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                if (!vResults.size())
                     vResults.push_back(NAN);
-                return vResults;
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(std(sCache, 0, getLines(sCache), i));
             }
-        inline vector<double> min(const string& sCache, string sDir)
+            else if (sDir == "gridlines")
             {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
+                if (nFirst >= getLines(sCache))
                 {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(min(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(min(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(min(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(min(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(min(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(min(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                if (!vResults.size())
                     vResults.push_back(NAN);
-                return vResults;
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(std(sCache, i,-1,2,getCols(sCache)));
             }
-        inline vector<double> prd(const string& sCache, string sDir)
+            else if (sDir == "grid")
             {
-                vector<double> vResults;
+                vResults.push_back(std(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(std(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
 
-                long long int nEvery = 1;
-                long long int nFirst = 0;
+        vector<double> avg(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
 
-                parseEvery(nFirst, nEvery, sDir);
+            long long int nEvery = 1;
+            long long int nFirst = 0;
 
-                if (sDir == "cols")
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
                 {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(prd(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(prd(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(prd(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(prd(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(prd(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(prd(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                if (!vResults.size())
                     vResults.push_back(NAN);
-                return vResults;
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(avg(sCache, 0, getLines(sCache), i));
             }
-        inline vector<double> sum(const string& sCache, string sDir)
+            else if (sDir == "lines")
             {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
+                if (nFirst >= getLines(sCache))
                 {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(sum(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(sum(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(sum(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(sum(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(sum(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(sum(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                if (!vResults.size())
                     vResults.push_back(NAN);
-                return vResults;
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(avg(sCache, i,-1,0,getCols(sCache)));
             }
-        inline vector<double> num(const string& sCache, string sDir)
+            else if (sDir == "gridcols")
             {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
+                if (nFirst >= getCols(sCache)-2)
                 {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(num(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(num(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(num(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(num(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(num(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(num(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                return vResults;
-            }
-        inline vector<double> and_func(const string& sCache, string sDir)
-            {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
-                {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(and_func(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(and_func(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(and_func(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(and_func(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(and_func(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(and_func(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                return vResults;
-            }
-        inline vector<double> or_func(const string& sCache, string sDir)
-            {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
-                {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(or_func(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(or_func(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(or_func(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(or_func(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(or_func(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(or_func(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                return vResults;
-            }
-        inline vector<double> xor_func(const string& sCache, string sDir)
-            {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
-                {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(xor_func(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(xor_func(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(xor_func(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(xor_func(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(xor_func(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(xor_func(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                return vResults;
-            }
-        inline vector<double> cnt(const string& sCache, string sDir)
-            {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
-                {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(cnt(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(cnt(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(cnt(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(cnt(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(cnt(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(cnt(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                if (!vResults.size())
                     vResults.push_back(NAN);
-                return vResults;
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(avg(sCache, 0, getLines(sCache), i));
             }
-        inline vector<double> norm(const string& sCache, string sDir)
+            else if (sDir == "gridlines")
             {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
+                if (nFirst >= getLines(sCache))
                 {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(norm(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(norm(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(norm(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(norm(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(norm(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(norm(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                if (!vResults.size())
                     vResults.push_back(NAN);
-                return vResults;
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(avg(sCache, i,-1,2,getCols(sCache)));
             }
-        inline vector<double> cmp(const string& sCache, string sDir, double dRef = 0.0, int nType = 0)
+            else if (sDir == "grid")
             {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
-                {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(cmp(sCache, 0, getLines(sCache), i, -1, dRef, nType));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(cmp(sCache, i,-1,0,getCols(sCache), dRef, nType));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(cmp(sCache, 0, getLines(sCache), i, -1, dRef, nType));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(cmp(sCache, i,-1,2,getCols(sCache), dRef, nType));
-                }
-                if (!vResults.size())
-                    vResults.push_back(NAN);
-                return vResults;
+                vResults.push_back(avg(sCache, 0,getLines(sCache),2,getCols(sCache)));
             }
-        inline vector<double> med(const string& sCache, string sDir)
+            else
             {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
-                {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(med(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(med(sCache, i,-1,0,getCols(sCache)));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(med(sCache, 0, getLines(sCache), i));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(med(sCache, i,-1,2,getCols(sCache)));
-                }
-                else if (sDir == "grid")
-                {
-                    vResults.push_back(med(sCache, 0,getLines(sCache),2,getCols(sCache)));
-                }
-                else
-                {
-                    vResults.push_back(med(sCache, 0,getLines(sCache),0,getCols(sCache)));
-                }
-                if (!vResults.size())
-                    vResults.push_back(NAN);
-                return vResults;
+                vResults.push_back(avg(sCache, 0,getLines(sCache),0,getCols(sCache)));
             }
-        inline vector<double> pct(const string& sCache, string sDir, double dPct = 0.5)
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
+        vector<double> max(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
             {
-                vector<double> vResults;
-
-                long long int nEvery = 1;
-                long long int nFirst = 0;
-
-                parseEvery(nFirst, nEvery, sDir);
-
-                if (sDir == "cols")
+                if (nFirst >= getCols(sCache))
                 {
-                    if (nFirst >= getCols(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(pct(sCache, 0, getLines(sCache), i, dPct));
-                }
-                else if (sDir == "lines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(pct(sCache, i,-1,0,getCols(sCache), dPct));
-                }
-                else if (sDir == "gridcols")
-                {
-                    if (nFirst >= getCols(sCache)-2)
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
-                        vResults.push_back(pct(sCache, 0, getLines(sCache), i, dPct));
-                }
-                else if (sDir == "gridlines")
-                {
-                    if (nFirst >= getLines(sCache))
-                    {
-                        vResults.push_back(NAN);
-                        return vResults;
-                    }
-                    for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
-                        vResults.push_back(pct(sCache, i,-1,2,getCols(sCache), dPct));
-                }
-                if (!vResults.size())
                     vResults.push_back(NAN);
-                return vResults;
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(max(sCache, 0, getLines(sCache), i));
             }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(max(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(max(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(max(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(max(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(max(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
+        vector<double> min(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(min(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(min(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(min(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(min(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(min(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(min(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
+        vector<double> prd(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(prd(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(prd(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(prd(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(prd(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(prd(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(prd(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
+        vector<double> sum(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(sum(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(sum(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(sum(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(sum(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(sum(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(sum(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
+        vector<double> num(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(num(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(num(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(num(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(num(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(num(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(num(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            return vResults;
+        }
+
+        vector<double> and_func(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(and_func(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(and_func(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(and_func(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(and_func(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(and_func(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(and_func(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            return vResults;
+        }
+
+        vector<double> or_func(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(or_func(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(or_func(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(or_func(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(or_func(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(or_func(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(or_func(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            return vResults;
+        }
+
+        vector<double> xor_func(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(xor_func(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(xor_func(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(xor_func(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(xor_func(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(xor_func(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(xor_func(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            return vResults;
+        }
+
+        vector<double> cnt(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(cnt(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(cnt(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(cnt(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(cnt(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(cnt(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(cnt(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
+        vector<double> norm(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(norm(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(norm(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(norm(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(norm(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(norm(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(norm(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
+        vector<double> cmp(const string& sCache, string sDir, double dRef = 0.0, int nType = 0)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(cmp(sCache, 0, getLines(sCache), i, -1, dRef, nType));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(cmp(sCache, i,-1,0,getCols(sCache), dRef, nType));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(cmp(sCache, 0, getLines(sCache), i, -1, dRef, nType));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(cmp(sCache, i,-1,2,getCols(sCache), dRef, nType));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
+        vector<double> med(const string& sCache, string sDir)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(med(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(med(sCache, i,-1,0,getCols(sCache)));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(med(sCache, 0, getLines(sCache), i));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(med(sCache, i,-1,2,getCols(sCache)));
+            }
+            else if (sDir == "grid")
+            {
+                vResults.push_back(med(sCache, 0,getLines(sCache),2,getCols(sCache)));
+            }
+            else
+            {
+                vResults.push_back(med(sCache, 0,getLines(sCache),0,getCols(sCache)));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
+        vector<double> pct(const string& sCache, string sDir, double dPct = 0.5)
+        {
+            vector<double> vResults;
+
+            long long int nEvery = 1;
+            long long int nFirst = 0;
+
+            parseEvery(nFirst, nEvery, sDir);
+
+            if (sDir == "cols")
+            {
+                if (nFirst >= getCols(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(pct(sCache, 0, getLines(sCache), i, dPct));
+            }
+            else if (sDir == "lines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(pct(sCache, i,-1,0,getCols(sCache), dPct));
+            }
+            else if (sDir == "gridcols")
+            {
+                if (nFirst >= getCols(sCache)-2)
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = 2+nFirst; i < getCols(sCache); i += nEvery)
+                    vResults.push_back(pct(sCache, 0, getLines(sCache), i, dPct));
+            }
+            else if (sDir == "gridlines")
+            {
+                if (nFirst >= getLines(sCache))
+                {
+                    vResults.push_back(NAN);
+                    return vResults;
+                }
+                for (long long int i = nFirst; i < getLines(sCache, false); i += nEvery)
+                    vResults.push_back(pct(sCache, i,-1,2,getCols(sCache), dPct));
+            }
+            if (!vResults.size())
+                vResults.push_back(NAN);
+            return vResults;
+        }
+
         double std(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double avg(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double max(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);

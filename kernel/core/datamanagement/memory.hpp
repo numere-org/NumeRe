@@ -41,6 +41,8 @@
 
 using namespace std;
 
+// forward declaration for using the memory manager as friend
+class MemoryManager;
 
 /*
  * Header zur Memory-Klasse
@@ -52,6 +54,8 @@ class Memory : public Sorter
         enum AppDir {LINES, COLS, GRID, ALL};
 
 	private:
+	    friend class MemoryManager;
+
 		long long int nLines;							// Zeilen des Caches
 		long long int nCols;							// Spalten des Caches
 		long long int nWrittenHeadlines;
@@ -74,6 +78,7 @@ class Memory : public Sorter
 		virtual int compare(int i, int j, int col);
         virtual bool isValue(int line, int col);
 		bool evaluateIndices(long long int& i1, long long int& i2, long long int& j1, long long int& j2);
+		void countAppendedZeroes();
 
     public:
 		Memory();										// Standard-Konstruktor
@@ -112,7 +117,7 @@ class Memory : public Sorter
 
 		bool setHeadLineElement(long long int _i, string _sHead);	        // setzt das _i-te Element der Kopfzeile auf _sHead
 
-		bool save(string _sFileName);
+		bool save(string _sFileName, const string& sTableName, unsigned short nPrecision);
         bool getSaveStatus() const;                     // gibt bIsSaved zurueck
         void setSaveStatus(bool _bIsSaved);             // setzt bIsSaved
         long long int getLastSaved() const;             // gibt nLastSaved zurueck

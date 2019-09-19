@@ -68,7 +68,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 				NumeReKernel::print(LineBreak(_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option));
 			}
 		}
-		else if (bUseCache || sCmd.find("-cache") != string::npos || _data.matchCache(sCmd).length())
+		else if (bUseCache || sCmd.find("-cache") != string::npos || _data.matchTableAsParameter(sCmd).length())
 		{
 			_data.setCacheStatus(true);
 		}
@@ -79,8 +79,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 		string** sOut;				// Ausgabe-Matrix
 		string sLegend = "";
 		string sDatatable = "data";
-		if (_data.matchCache(sCmd).length())
-			sDatatable = _data.matchCache(sCmd);
+		if (_data.matchTableAsParameter(sCmd).length())
+			sDatatable = _data.matchTableAsParameter(sCmd);
 		if (!_data.getCols(sDatatable) || !_data.getLines(sDatatable))
 			throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 		string sTargettable = "cache";
@@ -279,9 +279,9 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			sTargettable = getArgAtPos(sCmd, matchParams(sCmd, "tocache", '=') + 7);
 			if (sTargettable.find('(') == string::npos)
 				sTargettable += "()";
-			if (!_target.isCacheElement(sTargettable))
+			if (!_target.isTable(sTargettable))
 			{
-				_target.addCache(sTargettable, _option);
+				_target.addTable(sTargettable, _option);
 			}
 			sTargettable.erase(sTargettable.find('('));
 		}
@@ -956,14 +956,14 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			if (bWriteToCache)
 			{
 				_target.setCacheStatus(true);
-				int nFirstCol = _target.getCacheCols(sTargettable, false);
+				int nFirstCol = _target.getTableCols(sTargettable, false);
 
 				_target.setHeadLineElement(nFirstCol, sTargettable, "Bins");
 				//cerr << "error" << endl;
 
 				for (int i = 0; i < nBin; i++)
 				{
-					_target.writeToCache(i, nFirstCol, sTargettable, dMin + i * dIntervallLength + dIntervallLength / 2.0);
+					_target.writeToTable(i, nFirstCol, sTargettable, dMin + i * dIntervallLength + dIntervallLength / 2.0);
 					for (int j = 0; j < nDataRowFinal - nDataRow; j++)
 					{
 						if (!i)
@@ -971,7 +971,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 							//_data.setHeadLineElement(nFirstCol+j+1, "Counts_"+toString(j+nDataRow+1));
 							_target.setHeadLineElement(nFirstCol + j + 1, sTargettable, sOut[0][j + 1]);
 						}
-						_target.writeToCache(i, nFirstCol + j + 1, sTargettable, dHistMatrix[i][j]);
+						_target.writeToTable(i, nFirstCol + j + 1, sTargettable, dHistMatrix[i][j]);
 						//cerr << nFirstCol+j+1 << "  "  << (sDatatable == "data" ? "cache" : sDatatable) << endl;
 					}
 				}
@@ -1497,8 +1497,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 						_target.setHeadLineElement(nMax, sTargettable, "Bins_[x]");
 						_target.setHeadLineElement(nMax + 1, sTargettable, (bSum ? "Sum_[x]" : "Counts_[x]"));
 					}
-					_target.writeToCache(k, nMax, sTargettable, _mAxisVals[0].a[k]);
-					_target.writeToCache(k, nMax + 1, sTargettable, dSum);
+					_target.writeToTable(k, nMax, sTargettable, _mAxisVals[0].a[k]);
+					_target.writeToTable(k, nMax + 1, sTargettable, dSum);
 				}
 				/*for (int i = 0; i < nDataRowFinal-nDataRow-2; i++)
 				{
@@ -1728,8 +1728,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 						_target.setHeadLineElement(nMax, sTargettable, "Bins_[y]");
 						_target.setHeadLineElement(nMax + 1, sTargettable, (bSum ? "Sum_[y]" : "Counts_[y]"));
 					}
-					_target.writeToCache(k, nMax, sTargettable, _mAxisVals[1].a[k]);
-					_target.writeToCache(k, nMax + 1, sTargettable, dSum);
+					_target.writeToTable(k, nMax, sTargettable, _mAxisVals[1].a[k]);
+					_target.writeToTable(k, nMax + 1, sTargettable, dSum);
 				}
 				sOut[k + 1][2] = toString(_mAxisVals[1].a[k], _option);
 				sOut[k + 1][3] = toString(dSum, _option);

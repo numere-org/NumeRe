@@ -3579,7 +3579,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 					throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
 
 				if (_data.containsTablesOrClusters(sToken.substr(0, sToken.find_first_of("({") + 1))
-                    && !_data.isCacheElement(sToken.substr(0, sToken.find_first_of("({")))
+                    && !_data.isTable(sToken.substr(0, sToken.find_first_of("({")))
                     && !_data.isCluster(sToken.substr(0, sToken.find_first_of("({"))))
 					throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
 
@@ -4058,7 +4058,7 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 		string sTemp = sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos);
 
 		// Try to find a data object in the current label
-		if ((sTemp.find("data(") != string::npos || _data.containsCacheElements(sTemp.substr(1, sTemp.length()-2)))
+		if ((sTemp.find("data(") != string::npos || _data.containsTables(sTemp.substr(1, sTemp.length()-2)))
 				&& (sTemp.find(',') != string::npos || sTemp.substr(sTemp.find('('), 2) == "()")
 				&& sTemp.find(')') != string::npos)
 		{
