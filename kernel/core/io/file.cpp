@@ -1358,7 +1358,7 @@ namespace NumeRe
                 for (long long int j = 0; j < min(nElements, nRows); j++)
                 {
                     fileData[j][i] = extractValueFromTag(vCols[i].substr(vCols[i].find("<value"), vCols[i].find('<', vCols[i].find('/'))-vCols[i].find("<value")));
-                    vCols[i].erase(vCols[i].find('>', vCols[i].find('/'))+1);
+                    vCols[i].erase(0, vCols[i].find('>', vCols[i].find('/'))+1);
                 }
             }
         }

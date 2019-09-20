@@ -4,7 +4,7 @@
 	"kernel/core/version.h"
 	<wx/msw/wx.rc>
 
-1568890601 d:\cpp\numere-source\trunk\kernel\core\version.h
+1568932652 d:\cpp\numere-source\trunk\kernel\core\version.h
 
 1412507950 d:\tdm-gcc-32\wxwidgets-3.0.2\include\wx\msw\wx.rc
 	<windows.h>
@@ -10067,7 +10067,7 @@
 	"../ui/error.hpp"
 	"../filesystem.hpp"
 
-1568894560 source:d:\cpp\numere-source\trunk\kernel\core\io\file.cpp
+1568914505 source:d:\cpp\numere-source\trunk\kernel\core\io\file.cpp
 	"file.hpp"
 	"../IgorLib/ReadWave.h"
 	"../utils/tools.hpp"
