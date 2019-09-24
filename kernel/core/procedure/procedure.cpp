@@ -2127,6 +2127,25 @@ int Procedure::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
 	return _debugger.showBreakPoint();
 }
 
+
+int Procedure::getErrorInformationForDebugger()
+{
+    // if the stack is empty, it has to be a breakpoint from a script
+	// This is only valid, if the script contained flow control statements
+	if (!NumeReKernel::getInstance()->getDebugger().getStackSize())
+	{
+		return 0;
+	}
+
+	// Get a reference to the debugger object
+	NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+
+	// Gather all information needed by the debugger
+	_debugger.gatherInformations(_varFactory, "", sCurrentProcedureName, GetCurrentLine());
+
+	return 1;
+}
+
 // This member function will return the current line number
 // depending on whether a flow control statement is evaluated
 // or not

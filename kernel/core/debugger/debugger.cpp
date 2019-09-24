@@ -507,9 +507,9 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         // Extract the minimal and maximal values of the tables
         // to display them in the variable viewer panel
         sTableData = toString(instance->getData().getCluster(sLocalClusters[i][1]).size()) + " x 1";
-        sTableData += "\tcluster\t" + instance->getData().getCluster(sLocalClusters[i][1]).getShortVectorRepresentation() + "\t" + sLocalClusters[i][1] + "{}";
+        sTableData += "\tcluster\t" + instance->getData().getCluster(sLocalClusters[i][1]).getShortVectorRepresentation() + "\t" + sLocalClusters[i][1] + "}";
 
-        mLocalClusters[sLocalClusters[i][0] + "{}"] = sTableData;
+        mLocalClusters[sLocalClusters[i][0] + "}"] = sTableData;
     }
 
     // Store the arguments

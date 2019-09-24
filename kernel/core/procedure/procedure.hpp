@@ -101,6 +101,7 @@ class Procedure : public FlowCtrl, public Plugin
         bool writeProcedure(string sProcedureLine);
         virtual int isInline(const string& sProc) override;
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option) override;
+        virtual int getErrorInformationForDebugger() override;
 
         inline void setPredefinedFuncs(const string& sPredefined)
             {

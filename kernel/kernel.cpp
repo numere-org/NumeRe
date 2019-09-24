@@ -2721,8 +2721,8 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
         for (auto iter = clusterMap.begin(); iter != clusterMap.end(); ++iter)
         {
             sLocalClusters[i] = new string[2];
-            sLocalClusters[i][0] = iter->first;
-            sLocalClusters[i][1] = iter->first;
+            sLocalClusters[i][0] = iter->first + "{";
+            sLocalClusters[i][1] = iter->first + "{";
             i++;
         }
     }

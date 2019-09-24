@@ -2287,6 +2287,24 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
 	return;
 }
 
+static bool containsStringClusters(const string& sLine)
+{
+    const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getData().getClusterMap();
+
+    for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
+    {
+        if (iter->second.isString())
+        {
+            size_t pos = sLine.find(iter->first + "{");
+
+            if (pos != string::npos && (!pos || isDelimiter(sLine[pos-1])))
+                return true;
+        }
+    }
+
+    return false;
+}
+
 // This function checks, whether the passed expression contains strings or valtostring parser
 bool containsStrings(const string& sLine)
 {
@@ -2297,12 +2315,16 @@ bool containsStrings(const string& sLine)
     // All other string functions need strings as input
 	if (sLine.find('"') != string::npos
 			|| sLine.find('#') != string::npos
+			|| sLine.find("_~~READFILECLUSTER{}") != string::npos
 			|| sLine.find("string(") != string::npos
 			|| sLine.find("string_cast(") != string::npos
 			|| sLine.find("char(") != string::npos
 			|| sLine.find("valtostr(") != string::npos)
 		return true;
-	return false;
+
+    return containsStringClusters(sLine);
+
+	//return false;
 }
 
 // This function checks, whether the file with the passed file name exists

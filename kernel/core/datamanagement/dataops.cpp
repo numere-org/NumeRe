@@ -997,7 +997,7 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& 
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = _data.sortStringElements(_idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.row.back(), sCmd.substr(11));
+	vSortIndex = _data.sortStringElements(_idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), sCmd.substr(11));
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1501,6 +1501,10 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 	    // Parameter available
 		if (_data.containsStringVars(sParams))
 			_data.getStringValues(sParams);
+
+        if (_data.containsTablesOrClusters(sParams))
+        if (_data.containsTablesOrClusters(sParams))
+            getDataElements(sParams, _parser, _data, _option);
 		addArgumentQuotes(sParams, "file");
 
 		// Parse the string argument and return it in the second argument
@@ -1537,6 +1541,9 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 	    // Use the expression
 		if (_data.containsStringVars(sCmd))
 			_data.getStringValues(sCmd);
+
+        if (_data.containsTablesOrClusters(sCmd))
+            getDataElements(sCmd, _parser, _data, _option);
 
 		// Get the expression
 		if (sCmd.find(' ') != string::npos)
