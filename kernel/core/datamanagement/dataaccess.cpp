@@ -130,6 +130,7 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 static string getLastToken(const string& sLine);
 static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option);
 static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const Indices& _idx, int nDim);
+static bool findDataTable(const string& sLine);
 
 /* --> Diese Funktion durchsucht einen gegebenen String sLine nach den Elementen "data(" oder "cache(" und erstetzt diese
  *     entsprechend der Syntax durch Elemente (oder Vektoren) aus dem Datenfile oder dem Cache. Falls des Weiteren auch
@@ -277,10 +278,10 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 
 
 	// --> Findest du "data("? <--
-	if (sLine.find("data(") != string::npos)
+	if (findDataTable(sLine))
 	{
 		// --> Sind ueberhaupt Daten vorhanden? <--
-		if (!_data.isValid() && (!sLine.find("data(") || checkDelimiter(sLine.substr(sLine.find("data(") - 1, 6))))
+		if (!_data.isValid())
 		{
 			/* --> Nein? Mitteilen, BOOLEAN setzen (der die gesamte, weitere Auswertung abbricht)
 			 *     und zurueck zur aufrufenden Funktion <--
@@ -463,19 +464,30 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
             }
             else
             {
-                sEntityStringReplacement = "{";
-
-                // Create the string vector representation
-                // using the calculated indices
-                for (size_t i = 0; i < _idx.row.size(); i++)
+                if (_idx.row.size() == 1)
                 {
-                    if (cluster.getType(_idx.row[i]) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-                        sEntityStringReplacement += toCmdString(cluster.getDouble(_idx.row[i])) + ",";
+                    // Only a single element - needs no vector braces
+                    if (cluster.getType(_idx.row.front()) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                        vEntityContents.push_back(cluster.getDouble(_idx.row.front()));
                     else
-                        sEntityStringReplacement += cluster.getString(_idx.row[i]) + ",";
+                        sEntityStringReplacement = cluster.getString(_idx.row.front());
                 }
+                else
+                {
+                    sEntityStringReplacement = "{";
 
-                sEntityStringReplacement.back() = '}';
+                    // Create the string vector representation
+                    // using the calculated indices
+                    for (size_t i = 0; i < _idx.row.size(); i++)
+                    {
+                        if (cluster.getType(_idx.row[i]) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
+                            sEntityStringReplacement += toCmdString(cluster.getDouble(_idx.row[i])) + ",";
+                        else
+                            sEntityStringReplacement += cluster.getString(_idx.row[i]) + ",";
+                    }
+
+                    sEntityStringReplacement.back() = '}';
+                }
             }
 		}
 
@@ -1127,6 +1139,23 @@ static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, c
 	return _cache.extractTable(sDatatable);
 }
 
+// This is a static helper function to identify, whether "data(" is used in the
+// current expression
+static bool findDataTable(const string& sLine)
+{
+    size_t nQuotes = 0;
+
+    for (size_t i = 0; i < sLine.length(); i++)
+    {
+        if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
+            nQuotes++;
+
+        if (!(nQuotes % 2) && sLine.substr(i, 5) == "data(" && (!i || isDelimiter(sLine[i-1])))
+            return true;
+    }
+
+    return false;
+}
 
 // --> Prueft, ob ein Ausdruck Nicht-Leer ist (also auch, dass er nicht nur aus Leerzeichen besteht) <--
 bool isNotEmptyExpression(const string& sExpr)

@@ -1845,7 +1845,7 @@ static StringResult parser_StringParserCore(string& sLine, string sCache, Datafi
 
                 // Does the vector brace contain colons? Then we ignore
                 // it for now, because it might be a vector expansion
-                if (sVectorTemp.find(':') != string::npos)
+                if (sVectorTemp.find(':') != string::npos && sVectorTemp.front() != '"' && sVectorTemp.back() != '"')
                     continue;
 
                 StringResult tempres = parser_StringParserCore(sVectorTemp, "", _data, _parser, _option, mStringVectorVars);
@@ -2211,11 +2211,24 @@ static string parser_ApplySpecialStringFuncs(string sLine, Datafile& _data, Pars
 				if (!strRes.vResult.size())
 					throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
-				// use only the first one
-				sToValue = strRes.vResult[0];
+                vector<string> vToValueResults;
+
+				// Remove all quotation marks from the results TODO: Split the equations
+				for (size_t i = 0; i < strRes.vResult.size(); i++)
+                {
+                    strRes.vResult[i] = removeQuotationMarks(strRes.vResult[i]);
+
+                    while (strRes.vResult[i].length())
+                    {
+                        vToValueResults.push_back(getNextArgument(strRes.vResult[i], true));
+                    }
+                }
+
+                // Create a new string vector variable
+                sToValue = parser_CreateStringVectorVar(vToValueResults, mStringVectorVars);
 			}
 
-			sLine = sLine.substr(0, n_pos - 8) + removeQuotationMarks(sToValue) + sLine.substr(n_pos + nParPos + 1);
+			sLine = sLine.substr(0, n_pos - 8) + sToValue + sLine.substr(n_pos + nParPos + 1);
 			n_pos -= 7;
 		}
 	}
@@ -3756,7 +3769,34 @@ static string parser_GetDataForString(string sLine, Datafile& _data, Parser& _pa
 
 			if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, (iter->first).length() + 2))))
 			{
-				if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
+                NumeRe::Cluster& _currentCluster = _data.getCluster(iter->first);
+
+                // If the current cluster only contains strings
+                // we can speed up the copying process
+                if (_currentCluster.isString())
+                {
+                    string sData = sLine.substr(n_pos, nPos - n_pos + 1);
+                    Indices _idx = parser_getIndices(sData, _parser, _data, _option);
+
+                    if (!isValidIndexSet(_idx))
+                        throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
+
+                    if (_idx.row.isOpenEnd())
+                        _idx.row.setRange(0, _currentCluster.size()-1);
+
+                    vector<string> vClusterContents;
+
+                    // Create the vector using the indices
+                    for (size_t i = 0; i < _idx.row.size(); i++)
+                        vClusterContents.push_back(_currentCluster.getString(_idx.row[i]));
+
+                    sData = parser_CreateStringVectorVar(vClusterContents, mStringVectorVars);
+                    sLine = sLine.substr(0, n_pos) + sData + sLine.substr(nPos + 1);
+
+                    continue;
+                }
+
+                if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
 				{
 					if (n_pos > 4 && sLine.substr(sLine.rfind('(', n_pos) - 4, 5) == "norm(")
 						n_pos -= 5;

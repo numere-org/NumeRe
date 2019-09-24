@@ -685,6 +685,13 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
 
             try
             {
+                sVarValue = resolveLocalVars(sVarValue, i);
+
+                if (!containsStrings(sVarValue) && !_dataRef->containsStringVars(sVarValue) && (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue)))
+                {
+                    getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
+                }
+
                 if (containsStrings(sVarValue) || _dataRef->containsStringVars(sVarValue))
                 {
                     string sTemp;
@@ -705,13 +712,6 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                         _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sVarList, SyntaxError::invalid_position));
                     }
                 }
-
-                if (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue))
-                {
-                    getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
-                }
-
-                sVarValue = resolveLocalVars(sVarValue, i);
 
                 _parserRef->SetExpr(sVarValue);
                 sLocalVars[i][0] = sLocalVars[i][0].substr(0,sLocalVars[i][0].find('='));
@@ -835,6 +835,11 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
             try
             {
                 sVarValue = resolveLocalStrings(sVarValue, i);
+
+                if (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue))
+                {
+                    getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
+                }
 
                 if (containsStrings(sVarValue) || _dataRef->containsStringVars(sVarValue))
                 {

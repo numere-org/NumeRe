@@ -114,7 +114,7 @@ vector<int> StringInternalMemory::sortElements(long long int i1, long long int i
         {
             if (!qSort(&vIndex[0], i2-i1+1, i, 0, i2-i1, nSign))
             {
-                throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, "string() " + sSortingExpression, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::CANNOT_SORT_DATA, "sort string" + sSortingExpression, SyntaxError::invalid_position);
             }
 
             // If the sorting index is requested,
