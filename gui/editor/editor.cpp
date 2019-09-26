@@ -6496,7 +6496,7 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
 		if (ret != wxYES)
 			return;
 
-		m_mainFrame->NewFile(FILE_NPRC, procedurename);
+		m_mainFrame->NewFile(FILE_NPRC, pathname);
 	}
 	else
 		m_mainFrame->OpenSourceFile(pathnames);
