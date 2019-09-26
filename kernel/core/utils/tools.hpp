@@ -40,6 +40,7 @@ extern const string sVersion;
 extern int nLINE_LENGTH;
 using namespace std;
 
+
 /** \brief Macht aus einem Int ein String (mit Praezision)
  *
  * \param nNumber int
@@ -211,6 +212,8 @@ double intPower(double dNumber, int nExponent);
 
 string getNextArgument(string& sArgList, bool bCut = true);
 string getNextIndex(string& sArgList, bool bCut = true);
+EndlessVector<string> getAllArguments(string sArgList);
+EndlessVector<string> getAllIndices(string sArgList);
 /** \brief Transforms Windows-style filepaths to Unix-Style
  *
  * \param __sPath const string&

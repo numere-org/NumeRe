@@ -433,6 +433,34 @@ class VectorIndex
 
 
 
+/////////////////////////////////////////////////
+/// \brief This class extends the std::vector for endlessness.
+///
+/// This class template automatically creates empty elements,
+/// if the index operator access elements beyond its size.
+/////////////////////////////////////////////////
+template<class T>
+class EndlessVector : public vector<T>
+{
+    public:
+        EndlessVector() : vector<T>() {}
+        EndlessVector(const EndlessVector& vec) : vector<T>(vec) {}
+
+        EndlessVector& operator=(const EndlessVector& vec)
+        {
+            vector<T>::operator=(vec);
+            return *this;
+        }
+
+        T operator[](size_t n)
+        {
+            if (n < vector<T>::size())
+                return vector<T>::operator[](n);
+
+            return T();
+        }
+};
+
 // Structure for the indices
 struct Indices
 {

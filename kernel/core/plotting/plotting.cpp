@@ -4089,50 +4089,41 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 
 			// Expand empty parentheses
 			if (sArgs == "()")
-				sArgs = "(:,:)";
+				sArgs = ":,:";
+            else
+                sArgs = sArgs.substr(1, sArgs.length()-2);
 
-			string sArg_1 = "<<empty>>";
+			string sArg_1 = sArgs;
 			string sArg_2 = "<<empty>>";
 			string sArg_3 = "<<empty>>";
 
 			// Get the second dimension of the argument parentheses
-			parser_SplitArgs(sArgs, sArg_1, ',', _option);
+			getNextArgument(sArg_1, true);
+			StripSpaces(sArg_1);
 
 			// If the second dimension contains one or more colons,
 			// extract the individual columns here
-			if (sArg_1.find(':') != string::npos)
+			if (sArg_1 == ":")
+            {
+                sArg_1 = "";
+                sArg_2 = "";
+            }
+			else if (sArg_1.find(':') != string::npos)
 			{
-				// Ensure that splitting is possible
-				try
-				{
-					parser_SplitArgs(sArg_1, sArg_2, ':', _option, true);
-                    StripSpaces(sArg_2);
+			    auto indices = getAllIndices(sArg_1);
+                sArg_1 = indices[0];
 
-                    if (sArg_2.find(':') != string::npos)
-                    {
-                        parser_SplitArgs(sArg_2, sArg_3, ':', _option, true);
-                        StripSpaces(sArg_2);
+			    if (indices.size() > 1)
+                {
+                    sArg_2 = indices[1];
 
-                        if (sArg_3.find(':') != string::npos)
-                        {
-                            parser_SplitArgs(sArg_3, sArgs, ':', _option, true);
-                            StripSpaces(sArg_3);
-                        }
-                    }
-				}
-				catch (SyntaxError& e)
-				{
-					if (e.errorcode == SyntaxError::SEPARATOR_NOT_FOUND)
-					{
-					    if (sArg_1.find("data(") != string::npos || _data.containsTablesOrClusters(sArg_1))
-                        {
-                            getDataElements(sArg_1, _parser, _data, _option);
-                        }
-                    }
-					else
-						throw;
-				}
-
+                    if (indices.size() > 2)
+                        sArg_3 = indices[2];
+                }
+                else if (sArg_1.find("data(") != string::npos || _data.containsTablesOrClusters(sArg_1))
+                {
+                    getDataElements(sArg_1, _parser, _data, _option);
+                }
 			}
 
 			// Strip surrounding whitespaces

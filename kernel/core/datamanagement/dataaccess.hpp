@@ -44,7 +44,6 @@ double getDataFromObject(const string& sObject, long long int i, long long int j
 Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 
 Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis = false);
 
 inline bool isValidIndexSet(const Indices& _idx)
 {

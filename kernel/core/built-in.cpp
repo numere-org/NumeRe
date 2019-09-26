@@ -5605,11 +5605,9 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
             // replace it with a comma
             if (sTemp.find(':') != string::npos)
             {
-				string sTemp_2 = "";
-				sTemp = "(" + sTemp + ")";
-				parser_SplitArgs(sTemp, sTemp_2, ':', _option, false);
-
-                sTemp += ", " + sTemp_2;
+                string sTemp_2 = sTemp;
+				sTemp = getNextIndex(sTemp_2, true);
+				sTemp += ", " + sTemp_2;
             }
 
             // Set the expression and evaluate it numerically

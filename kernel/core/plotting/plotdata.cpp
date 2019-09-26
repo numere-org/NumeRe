@@ -395,16 +395,16 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     if (matchParams(sCmd, "t", '=') && (nType == ALL || nType & LOCAL))
     {
         int nPos = matchParams(sCmd, "t", '=')+1;
-        string sTemp_1 = "(" + getArgAtPos(__sCmd, nPos) + ")";
-        string sTemp_2 = "";
+        string sTemp_1 = getArgAtPos(__sCmd, nPos);
+
         if (sTemp_1.find(':') != string::npos)
         {
-            parser_SplitArgs(sTemp_1, sTemp_2, ':', _option, false);
-            _parser.SetExpr(sTemp_1);
+            auto indices = getAllIndices(sTemp_1);
+            _parser.SetExpr(indices[0]);
             dtParam[0] = _parser.Eval();
             if (isnan(dtParam[0]) || isinf(dtParam[0]))
                 dtParam[0] = 0;
-            _parser.SetExpr(sTemp_2);
+            _parser.SetExpr(indices[1]);
             dtParam[1] = _parser.Eval();
             if (isnan(dtParam[1]) || isinf(dtParam[1]))
                 dtParam[1] = 1;
@@ -413,14 +413,14 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     if (matchParams(sCmd, "colorrange", '=') && (nType == ALL || nType & GLOBAL))
     {
         unsigned int nPos = matchParams(sCmd, "colorrange", '=') + 10;
-        string sTemp_1 = "(" + getArgAtPos(__sCmd, nPos) + ")";
-        string sTemp_2 = "";
+        string sTemp_1 = getArgAtPos(__sCmd, nPos);
+
         if (sTemp_1.find(':') != string::npos)
         {
-            parser_SplitArgs(sTemp_1, sTemp_2, ':', _option, false);
-            _parser.SetExpr(sTemp_1);
+            auto indices = getAllIndices(sTemp_1);
+            _parser.SetExpr(indices[0]);
             dColorRange[0] = _parser.Eval();
-            _parser.SetExpr(sTemp_2);
+            _parser.SetExpr(indices[1]);
             dColorRange[1] = _parser.Eval();
             if (isnan(dColorRange[0]) || isnan(dColorRange[1]) || isinf(dColorRange[0]) || isinf(dColorRange[1]))
             {
@@ -1714,65 +1714,49 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
 
         if (nPos != string::npos && sCmd.find(']', nPos) != string::npos)
         {
-            string sRanges[3];
-            sRanges[0] = __sCmd.substr(nPos, sCmd.find(']', nPos) - nPos);
-            int i = 0;
-            while (sRanges[0].find(',') != string::npos)
+            auto args = getAllArguments(__sCmd.substr(nPos, sCmd.find(']', nPos) - nPos));
+
+            for (size_t i = 0; i < args.size(); i++)
             {
+                if (i >= 4)
+                    break;
+
+                if (args[i].find(':') == string::npos)
+                    continue;
+
+                auto indices = getAllIndices(args[i]);
+
                 if (i == 3)
                 {
-                    sRanges[0] = "(" + sRanges[0] + ")";
-                    parser_SplitArgs(sRanges[0], sRanges[2], ',', _option, false);
-                    if (sRanges[0].find(':') == string::npos)
+                    for (size_t j = 0; j < 2; j++)
                     {
-                        sRanges[0] = sRanges[2];
-                        i++;
-                        continue;
+                        if (!isNotEmptyExpression(indices[j]))
+                            continue;
+
+                        _parser.SetExpr(indices[j]);
+                        dColorRange[j] = _parser.Eval();
                     }
-                    sRanges[0] = "(" + sRanges[0] + ")";
-                    parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
-                    if (isNotEmptyExpression(sRanges[0]))
-                    {
-                        _parser.SetExpr(sRanges[0]);
-                        dColorRange[0] = (double)_parser.Eval();
-                    }
-                    if (isNotEmptyExpression(sRanges[1]))
-                    {
-                        _parser.SetExpr(sRanges[1]);
-                        dColorRange[1] = (double)_parser.Eval();
-                    }
+
                     if (isnan(dColorRange[0]) || isnan(dColorRange[1]) || isinf(dColorRange[0]) || isinf(dColorRange[1]))
                     {
                         dColorRange[0] = NAN;
                         dColorRange[1] = NAN;
                     }
                 }
-                else if (i == 4)
-                    return;
                 else
                 {
-                    sRanges[0] = "(" + sRanges[0] + ")";
-                    parser_SplitArgs(sRanges[0], sRanges[2], ',', _option, false);
-                    if (sRanges[0].find(':') == string::npos)
+                    for (size_t j = 0; j < 2; j++)
                     {
-                        sRanges[0] = sRanges[2];
-                        i++;
-                        continue;
+                        if (!isNotEmptyExpression(indices[j]))
+                            continue;
+
+                        _parser.SetExpr(indices[j]);
+                        dRanges[i][j] = _parser.Eval();
                     }
-                    sRanges[0] = "(" + sRanges[0] + ")";
-                    parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
-                    if (isNotEmptyExpression(sRanges[0]))
-                    {
-                        _parser.SetExpr(sRanges[0]);
-                        dRanges[i][0] = (double)_parser.Eval();
-                    }
-                    if (isNotEmptyExpression(sRanges[1]))
-                    {
-                        _parser.SetExpr(sRanges[1]);
-                        dRanges[i][1] = (double)_parser.Eval();
-                    }
-                    if (isNotEmptyExpression(sRanges[0]) || isNotEmptyExpression(sRanges[1]))
+
+                    if (isNotEmptyExpression(indices[0]) || isNotEmptyExpression(indices[1]))
                         bRanges[i] = true;
+
                     if (dRanges[i][0] > dRanges[i][1])
                     {
                         bMirror[i] = true;
@@ -1780,72 +1764,25 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                         dRanges[i][1] = dRanges[i][0];
                         dRanges[i][0] = dTemp;
                     }
-                    i++;
-                    sRanges[0] = sRanges[2];
-                    nRanges = i;
-                }
-            }
-            if (sRanges[0].find(':') != string::npos)
-            {
-                if (i == 3)
-                {
-                    sRanges[0] = "(" + sRanges[0] + ")";
-                    parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
-                    if (isNotEmptyExpression(sRanges[0]))
-                    {
-                        _parser.SetExpr(sRanges[0]);
-                        dColorRange[0] = (double)_parser.Eval();
-                    }
-                    if (isNotEmptyExpression(sRanges[1]))
-                    {
-                        _parser.SetExpr(sRanges[1]);
-                        dColorRange[1] = (double)_parser.Eval();
-                    }
-                    if (isnan(dColorRange[0]) || isnan(dColorRange[1]) || isinf(dColorRange[0]) || isinf(dColorRange[1]))
-                    {
-                        dColorRange[0] = NAN;
-                        dColorRange[1] = NAN;
-                    }
-                }
-                else if (i == 4)
-                    return;
-                else
-                {
-                    sRanges[0] = "(" + sRanges[0] + ")";
-                    parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
-                    if (isNotEmptyExpression(sRanges[0]))
-                    {
-                        _parser.SetExpr(sRanges[0]);
-                        dRanges[i][0] = (double)_parser.Eval();
-                    }
-                    if (isNotEmptyExpression(sRanges[1]))
-                    {
-                        _parser.SetExpr(sRanges[1]);
-                        dRanges[i][1] = (double)_parser.Eval();
-                    }
-                    if (isNotEmptyExpression(sRanges[0]) || isNotEmptyExpression(sRanges[1]))
-                        bRanges[i] = true;
-                    if (dRanges[i][0] > dRanges[i][1])
-                    {
-                        bMirror[i] = true;
-                        double dTemp = dRanges[i][1];
-                        dRanges[i][1] = dRanges[i][0];
-                        dRanges[i][0] = dTemp;
-                    }
+
                     nRanges = i+1;
                 }
             }
+
             for (unsigned int i = 0; i < 3; i++)
             {
                 if (isinf(dRanges[i][0]) || isnan(dRanges[i][0]))
                     dRanges[i][0] = -10.0;
+
                 if (isinf(dRanges[i][1]) || isnan(dRanges[i][1]))
                     dRanges[i][1] = 10.0;
             }
+
             for (int n = nRanges-1; n >= 0; n--)
             {
                 if (bRanges[n])
                     break;
+
                 if (!bRanges[n])
                     nRanges--;
             }
@@ -1853,6 +1790,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     }
     else if (nType == ALL || nType & GLOBAL)
         nRanges = 0;
+
     return;
 }
 

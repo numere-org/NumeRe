@@ -328,10 +328,9 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
 			StripSpaces(sInt_Line[0]);
 			if (sInt_Line[0].find(':') != string::npos)
 			{
-				sInt_Line[0] = "(" + sInt_Line[0] + ")";
-				parser_SplitArgs(sInt_Line[0], sInt_Line[1], ':', _option);
-				StripSpaces(sInt_Line[0]);
-				StripSpaces(sInt_Line[1]);
+			    sInt_Line[1] = sInt_Line[0];
+			    sInt_Line[0] = getNextIndex(sInt_Line[1], true);
+
 				if (isNotEmptyExpression(sInt_Line[0]))
 				{
 					_parser.SetExpr(sInt_Line[0]);
@@ -778,10 +777,9 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 			StripSpaces(sInt_Line[0][0]);
 			if (sInt_Line[0][0].find(':') != string::npos)
 			{
-				sInt_Line[0][0] = "(" + sInt_Line[0][0] + ")";
-				parser_SplitArgs(sInt_Line[0][0], sInt_Line[0][1], ':', _option);
-				StripSpaces(sInt_Line[0][0]);
-				StripSpaces(sInt_Line[0][1]);
+			    sInt_Line[0][1] = sInt_Line[0][0];
+			    sInt_Line[0][0] = getNextIndex(sInt_Line[0][1], true);
+
 				if (isNotEmptyExpression(sInt_Line[0][0]))
 				{
 					_parser.SetExpr(sInt_Line[0][0]);
@@ -829,10 +827,9 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 			StripSpaces(sInt_Line[1][0]);
 			if (sInt_Line[1][0].find(':') != string::npos)
 			{
-				sInt_Line[1][0] = "(" + sInt_Line[1][0] + ")";
-				parser_SplitArgs(sInt_Line[1][0], sInt_Line[1][1], ':', _option);
-				StripSpaces(sInt_Line[1][0]);
-				StripSpaces(sInt_Line[1][1]);
+			    sInt_Line[1][1] = sInt_Line[1][0];
+			    sInt_Line[1][0] = getNextIndex(sInt_Line[1][1], true);
+
 				if (isNotEmptyExpression(sInt_Line[1][0]))
 				{
 					_parser.SetExpr(sInt_Line[1][0]);
@@ -4876,18 +4873,9 @@ bool parser_datagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafi
 		StripSpaces(sXVals);
 		if (sXVals.find(',') != string::npos)
 		{
-			sXVals = "(" + sXVals + ")";
-			try
-			{
-				parser_SplitArgs(sXVals, sYVals, ',', _option);
-			}
-			catch (...)
-			{
-				sXVals.pop_back();
-				sXVals.erase(0, 1);
-			}
-			StripSpaces(sXVals);
-			StripSpaces(sYVals);
+		    auto args = getAllArguments(sXVals);
+		    sXVals = args[0];
+            sYVals = args[1];
 		}
 		if (sXVals == ":")
 			sXVals = "-10:10";
@@ -5396,7 +5384,12 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
 
 		// If the intervall contains a colon, split it there
 		if (sInterval[0].find(':') != string::npos)
-			parser_SplitArgs(sInterval[0], sInterval[1], ':', _option, true);
+        {
+            auto indices = getAllIndices(sInterval[0]);
+            sInterval[0] = indices[0];
+            sInterval[1] = indices[1];
+        }
+
 		if (isNotEmptyExpression(sInterval[0]))
 		{
 			_parser.SetExpr(sInterval[0]);
@@ -5427,7 +5420,11 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
 
 		// If the intervall contains a colon, split it there
 		if (sInterval[0].find(':') != string::npos)
-			parser_SplitArgs(sInterval[0], sInterval[1], ':', _option, true);
+		{
+		    auto indices = getAllIndices(sInterval[0]);
+		    sInterval[0] = indices[0];
+		    sInterval[1] = indices[1];
+		}
 		while (vInterval.size() < 2)
 		{
 			vInterval.push_back(NAN);
@@ -5462,7 +5459,11 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
 
 		// If the intervall contains a colon, split it there
 		if (sInterval[0].find(':') != string::npos)
-			parser_SplitArgs(sInterval[0], sInterval[1], ':', _option, true);
+		{
+		    auto indices = getAllIndices(sInterval[0]);
+		    sInterval[0] = indices[0];
+		    sInterval[1] = indices[1];
+		}
 		while (vInterval.size() < 4)
 			vInterval.push_back(NAN);
 		if (isNotEmptyExpression(sInterval[0]))
@@ -5508,60 +5509,29 @@ vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _
 			if (bEraseInterval)
 				sExpr.erase(nPos - 1, sExpr.find(']', nPos) - nPos + 2);
 
-			// As long as a comma is found in the interval
-			while (sRanges[0].find(',') != string::npos)
-			{
-				sRanges[0] = "(" + sRanges[0] + ")";
+            // Split the whole argument list
+            auto args = getAllArguments(sRanges[0]);
 
-				// Split at the comma
-				parser_SplitArgs(sRanges[0], sRanges[2], ',', _option, false);
-				if (sRanges[0].find(':') == string::npos)
-				{
-					sRanges[0] = sRanges[2];
+			// Try to split the indices in every argument
+			for (size_t i = 0; i < args.size(); i++)
+			{
+				if (args[i].find(':') == string::npos)
 					continue;
-				}
-				sRanges[0] = "(" + sRanges[0] + ")";
 
-				// Split at the colon
-				parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
+				auto indices = getAllIndices(args[i]);
 
 				// Set the intervals and parse them
-				if (isNotEmptyExpression(sRanges[0]))
+				if (isNotEmptyExpression(indices[0]))
 				{
-					_parser.SetExpr(sRanges[0]);
+					_parser.SetExpr(indices[0]);
 					vInterval.push_back(_parser.Eval());
 				}
 				else
 					vInterval.push_back(NAN);
-				if (isNotEmptyExpression(sRanges[1]))
-				{
-					_parser.SetExpr(sRanges[1]);
-					vInterval.push_back(_parser.Eval());
-				}
-				else
-					vInterval.push_back(NAN);
-				sRanges[0] = sRanges[2];
-			}
 
-			// If a colon is found in the first element
-			if (sRanges[0].find(':') != string::npos)
-			{
-				sRanges[0] = "(" + sRanges[0] + ")";
-
-				// Split at the colon
-				parser_SplitArgs(sRanges[0], sRanges[1], ':', _option, false);
-
-				// Set the intervals and parse them
-				if (isNotEmptyExpression(sRanges[0]))
+				if (isNotEmptyExpression(indices[1]))
 				{
-					_parser.SetExpr(sRanges[0]);
-					vInterval.push_back(_parser.Eval());
-				}
-				else
-					vInterval.push_back(NAN);
-				if (isNotEmptyExpression(sRanges[1]))
-				{
-					_parser.SetExpr(sRanges[1]);
+					_parser.SetExpr(indices[1]);
 					vInterval.push_back(_parser.Eval());
 				}
 				else

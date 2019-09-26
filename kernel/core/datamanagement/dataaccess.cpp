@@ -1245,66 +1245,6 @@ double getDataFromObject(const string& sObject, long long int i, long long int j
     return isCluster ? _data.getCluster(sObject).getDouble(i) : _data.getElement(i, j, sObject);
 }
 
-/* --> Diese Funktion teilt den String sToSplit am char cSep auf, wobei oeffnende und schliessende
- *     Klammern beruecksichtigt werden <--
- */
-int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis)
-{
-	size_t nFinalParenthesis = 0;
-	int nSep = -1;
-
-	StripSpaces(sToSplit);
-
-	if (!bIgnoreSurroundingParenthesis)
-	{
-		// Get the matchin parenthesis
-		// In this case is the opening parenthesis the first character
-		nFinalParenthesis = getMatchingParenthesis(sToSplit);
-		if (nFinalParenthesis == string::npos)
-            throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sToSplit, "(");
-
-        // remove the parentheses
-        sToSplit = sToSplit.substr(1, nFinalParenthesis - 1);
-	}
-	else
-	{
-	    // Assume that there would be surrounding parentheses
-	    nFinalParenthesis = sToSplit.length() + 1;
-	}
-
-	// --> Suchen wir nach dem char cSep <--
-	for (unsigned int i = 0; i < sToSplit.length(); i++)
-	{
-	    // search the matching parentheses
-	    if (sToSplit[i] == '(' || sToSplit[i] == '[' || sToSplit[i] == '{')
-        {
-            size_t nMatch = getMatchingParenthesis(sToSplit.substr(i));
-            if (nMatch == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sToSplit, i);
-            i += nMatch;
-        }
-		// If the separator character was found, stop the current loop
-		if (sToSplit[i] == cSep)
-		{
-			nSep = i;
-			break;
-		}
-	}
-
-	if (nSep == -1)
-	{
-		throw SyntaxError(SyntaxError::SEPARATOR_NOT_FOUND, sToSplit, SyntaxError::invalid_position);
-	}
-
-	// --> Teilen wir nun den string sToSplit in sSecArg und sToSplit auf <--
-	sSecArg = sToSplit.substr(nSep + 1);
-	sToSplit = sToSplit.substr(0, nSep);
-
-	// return the position of the final parenthesis
-	return nFinalParenthesis;
-}
-
-
 /* --> Diese Funktion prueft, ob das Argument, dass sich zwischen sLeft und sRight befindet, in einer
  *     Multi-Argument-Funktion steht <--
  */

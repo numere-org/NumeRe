@@ -39,7 +39,6 @@ using namespace mu;
  *     (da dieser Header bereits in den entsprechenden Header eingebunden
  *     wird) <--
  */
-int parser_SplitArgs(string& sToSplit, string& sSecArg, const char& cSep, const Settings& _option, bool bIgnoreSurroundingParenthesis);
 bool isNotEmptyExpression(const string& sExpr);
 
 class PlotData : public FileSystem  // CHILD von Filesystem

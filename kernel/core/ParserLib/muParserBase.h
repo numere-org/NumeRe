@@ -154,7 +154,7 @@ namespace mu
 
 			virtual ~ParserBase();
 
-			value_type  Eval() __attribute__((deprecated));
+			value_type  Eval();
 			value_type* Eval(int& nStackSize);
 			void Eval(value_type* results, int nBulkSize);
 

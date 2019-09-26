@@ -2280,6 +2280,40 @@ string getNextIndex(string& sArgList, bool bCut)
     return getNextCommandLineToken(sArgList, bCut, ':');
 }
 
+/////////////////////////////////////////////////
+/// \brief Splits up the complete argument list and returns them as an EndlessVector
+///
+/// \param sArgList string
+/// \return EndlessVector<string>
+///
+/////////////////////////////////////////////////
+EndlessVector<string> getAllArguments(string sArgList)
+{
+    EndlessVector<string> vArgs;
+
+    while (sArgList.length())
+        vArgs.push_back(getNextArgument(sArgList, true));
+
+    return vArgs;
+}
+
+/////////////////////////////////////////////////
+/// \brief Splits up the complete index list and returns them as an EndlessVector
+///
+/// \param sArgList string
+/// \return EndlessVector<string>
+///
+/////////////////////////////////////////////////
+EndlessVector<string> getAllIndices(string sArgList)
+{
+    EndlessVector<string> vIndices;
+
+    while (sArgList.length())
+        vIndices.push_back(getNextIndex(sArgList, true));
+
+    return vIndices;
+}
+
 // Wrapper for the static member function of the kernel
 void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
 {
