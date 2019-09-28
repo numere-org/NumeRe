@@ -44,30 +44,17 @@ class Options;
 class ProjectInfo;
 class DebugManager;
 class ProcedureViewer;
-
-/** \brief Stores the number of annotations for displaying a summary
- */
-struct AnnotationCount
-{
-	size_t nNotes;
-	size_t nWarnings;
-	size_t nErrors;
-
-	AnnotationCount() : nNotes(0), nWarnings(0), nErrors(0) {}
-	AnnotationCount& operator+= (const AnnotationCount& annotcount)
-	{
-		nNotes += annotcount.nNotes;
-		nWarnings += annotcount.nWarnings;
-		nErrors += annotcount.nErrors;
-		return *this;
-	}
-};
+class CodeAnalyzer;
+class SearchController;
 
 /** \brief The class of the editor window
  */
 class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 {
 	public:
+	    friend class CodeAnalyzer;
+	    friend class SearchController;
+
 		NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* project,
 					 wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal, const wxPoint& pos = wxDefaultPosition,
 					 const wxSize& size = wxDefaultSize, long style = 0,
@@ -197,10 +184,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		{
 			return m_project;
 		}
-		vector<wxString> getProceduresInFile();
 
-
-		//void SetFileNameAndPath(wxString path, wxString name, bool fileIsRemote);
 		void SetFilename(wxFileName filename, bool fileIsRemote);
 		void SetExecutableFilename(wxFileName filename);
 		void SetProject(ProjectInfo* project);
@@ -243,6 +227,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void AddBreakpoint( int linenum );
 		void RemoveBreakpoint( int linenum );
 		void SynchronizeBreakpoints();
+
 		void SetSyntax(NumeReSyntax* __syntax)
 		{
 			if (!_syntax)
@@ -261,8 +246,14 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void ApplyAutoIndentation(int nFirstLine = 0, int nLastLine = -1);
 		void ApplyAutoFormat(int nFirstLine = 0, int nLastLine = -1);
+
 		void ToggleSettings(int _setting);
 		bool getEditorSetting(EditorSettings _setting);
+		int getSettings()
+		{
+			return m_nEditorSetting;
+		}
+
 		void ToggleCommentLine();
 		void ToggleCommentSelection();
 		/** \brief Folds all fold markers
@@ -277,12 +268,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		 *
 		 */
 		void UnfoldAll();
-		/** \brief Main handling routine for the static code analyzer
-		 *
-		 * \return void
-		 *
-		 */
-		void AnalyseCode();
 		void MoveSelection(bool down = true)
 		{
 			if (down)
@@ -320,14 +305,12 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		 *
 		 */
 		void sortSelection(bool ascending = true);
+
 		FileFilterType getFileType()
 		{
 			return m_fileType;
 		}
-		int getSettings()
-		{
-			return m_nEditorSetting;
-		}
+
 		string GetStrippedLine(int nLine);
 		string GetStrippedRange(int nPos1, int nPos2, bool encode = true);
 		bool writeLaTeXFile(const string& sLaTeXFileName);
@@ -343,8 +326,11 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		    return m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_CPP || m_fileType == FILE_MATLAB;
 		}
 
+		void AnalyseCode();
+
 		void FindAndOpenProcedure(const wxString& procedurename);
 		void FindAndOpenInclude(const wxString& includename);
+		vector<wxString> getProceduresInFile();
 
 	protected:
 		Options* m_options;
@@ -391,10 +377,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		int countUmlauts(const string& sStr);
 		string realignLangString(string sLine, size_t& lastpos);
 		string addLinebreaks(const string& sLine, bool onlyDocumentation = false);
-		AnnotationCount addToAnnotation(string& sCurrentLine, string& sStyles, const string& sMessage, int nStyle);
 		string getTextCoordsAsString(int nPos);
-		string constructSyntaxElementForAnalyzer(const string& sElement, int nPos, int nLength);
-		bool containsAssignment(const string& sCurrentLine);
 
 		void markModified(int nLine);
 		void markSaved();
@@ -409,23 +392,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		int GetLineForMarkerOperation();
 		void ResetRightClickLocation();
-		wxString FindClickedWord();
-		wxString FindClickedInclude();
-		wxString FindMarkedInclude(int charpos);
-		wxString FindClickedProcedure();
-		wxString FindMarkedProcedure(int charpos, bool ignoreDefinitions = true);
-		wxString FindNameSpaceOfProcedure(int charpos);
-		wxString FindProceduresInCurrentFile(wxString sFirstChars, wxString sSelectedNameSpace);
-		wxString FindProcedureDefinition();
-		wxString FindProcedureDefinitionInLocalFile(const wxString& procedurename);
-		wxString FindProcedureDefinitionInOtherFile(const wxString& pathname, const wxString& procedurename);
-		wxString GetNameOfNamingProcedure();
-
-		void AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine);
-		string CleanDocumentation(const wxString& sDocumentation);
-		int FindCurrentProcedureHead(int pos);
-		int FindNamingProcedure();
-		vector<int> FindAll(const wxString& sSymbol, int nStyle, int nStartPos = 0, int nEndPos = -1, bool bSearchInComments = false);
 		void ReplaceMatches(const vector<int>& vMatches, const wxString& sSymbol, const wxString& sNewSymbol);
 		void RenameSymbols(int nPos);
 		void AbstrahizeSection();
@@ -440,17 +406,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void CreateBreakpointEvent(int linenumber, bool addBreakpoint);
 		bool MarkerOnLine(int linenum, int nMarker);
 
-		int calculateCyclomaticComplexity(int startline, int endline);
-		int calculateLinesOfCode(int startline, int endline);
-		int countNumberOfComments(int startline, int endline);
-
-		AnnotationCount analyseCommands(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, vector<pair<string,int> >& vLocalVariables, const string& sNote, const string& sWarn, const string& sError);
-        AnnotationCount analyseFunctions(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError, bool isContinuedLine);
-        AnnotationCount analyseProcedures(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
-        AnnotationCount analyseIdentifiers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, vector<pair<string,int> >& vLocalVariables, const string& sNote, const string& sWarn, const string& sError);
-        AnnotationCount analyseOperators(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
-        AnnotationCount analyseNumbers(int& nCurPos, int currentLine, bool& hasProcedureDefinition, string& sCurrentLine, string& sStyles, const string& sNote, const string& sWarn, const string& sError);
-
 		int insertTextAndMove(int nPosition, const wxString& sText);
 		void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags, int nNumDuplicatedLines);
 		double compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags);
@@ -463,8 +418,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		NumeReWindow* m_mainFrame;
 		ProcedureViewer* m_procedureViewer;
-		//ChameleonNotebook* m_parentNotebook;
 		ProjectInfo* m_project;
+		CodeAnalyzer* m_analyzer;
+		SearchController* m_search;
 
 		wxFileName m_fileNameAndPath;
 		wxFileName m_executableFilename;
