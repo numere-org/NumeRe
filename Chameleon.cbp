@@ -452,6 +452,8 @@
 		<Unit filename="gui/editor/NumeRePrintout.h" />
 		<Unit filename="gui/editor/codeanalyzer.cpp" />
 		<Unit filename="gui/editor/codeanalyzer.hpp" />
+		<Unit filename="gui/editor/codeformatter.cpp" />
+		<Unit filename="gui/editor/codeformatter.hpp" />
 		<Unit filename="gui/editor/editor.cpp" />
 		<Unit filename="gui/editor/editor.h" />
 		<Unit filename="gui/editor/history.cpp" />

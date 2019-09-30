@@ -46,6 +46,7 @@ class DebugManager;
 class ProcedureViewer;
 class CodeAnalyzer;
 class SearchController;
+class CodeFormatter;
 
 /** \brief The class of the editor window
  */
@@ -54,6 +55,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 	public:
 	    friend class CodeAnalyzer;
 	    friend class SearchController;
+	    friend class CodeFormatter;
 
 		NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* project,
 					 wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal, const wxPoint& pos = wxDefaultPosition,
@@ -364,20 +366,12 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void updateDefaultHighlightSettings();
 		void applyStrikeThrough();
-		int determineIndentationLevel(int nLine, int& singleLineIndent);
-		int determineIndentationLevelNSCR(int nLine, int& singleLineIndent);
-		int determineIndentationLevelMATLAB(int nLine, int& singleLineIndent);
-		int determineIndentationLevelCPP(int nLine, int& singleLineIndent);
 
 		bool isStyleType(StyleType _type, int nPos);
 
-		void ApplyAutoFormatNSCR(int nFirstLine = 0, int nLastLine = -1);
-		void ApplyAutoFormatMATLAB(int nFirstLine = 0, int nLastLine = -1);
-		void ApplyAutoFormatCPP(int nFirstLine = 0, int nLastLine = -1);
 		int countUmlauts(const string& sStr);
 		string realignLangString(string sLine, size_t& lastpos);
 		string addLinebreaks(const string& sLine, bool onlyDocumentation = false);
-		string getTextCoordsAsString(int nPos);
 
 		void markModified(int nLine);
 		void markSaved();
@@ -406,7 +400,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void CreateBreakpointEvent(int linenumber, bool addBreakpoint);
 		bool MarkerOnLine(int linenum, int nMarker);
 
-		int insertTextAndMove(int nPosition, const wxString& sText);
 		void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags, int nNumDuplicatedLines);
 		double compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags);
 		string getSemanticLine(int nLine, int nDuplicateFlags);
@@ -421,6 +414,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		ProjectInfo* m_project;
 		CodeAnalyzer* m_analyzer;
 		SearchController* m_search;
+		CodeFormatter* m_formatter;
 
 		wxFileName m_fileNameAndPath;
 		wxFileName m_executableFilename;
