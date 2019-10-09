@@ -102,16 +102,8 @@ bool parser_parseCmdArg(const string& sCmd, const string& sParam, Parser& _parse
 bool parser_evalIndices(const string& sCache, Indices& _idx, Datafile& _data);
 vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, bool bEraseInterval = false);
 void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize);
-
-
-// String-Parser
-int parser_StringParser(string&, string&, Datafile&, Parser&, const Settings&, bool bSilent = false);
 unsigned int parser_getDelimiterPos(const string&);
-// int parser_countStrings(const string& sCmd);
-// int parser_numStrings(const string& sCmd);
-// string parser_getMaxString(const string& sCmd);
-// string parser_getMinString(const string& sCmd);
-// string parser_getSumString(const string& sCmd);
+
 
 // Plotting
 void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData);

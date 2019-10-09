@@ -497,7 +497,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         {
             // The inner loop goes through the contained
             // commands
-            for (size_t __i = nth_Cmd+1; __i < vCmdArray.size(); __i++)
+            for (int __i = nth_Cmd+1; __i < (int)vCmdArray.size(); __i++)
             {
                 nCurrentCommand = __i;
 
@@ -613,7 +613,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
     }
 
     // This is the else-case, if it is available
-    for (size_t __i = nth_Cmd+1; __i < vCmdArray.size(); __i++)
+    for (int __i = nth_Cmd+1; __i < (int)vCmdArray.size(); __i++)
     {
         nCurrentCommand = __i;
 
@@ -749,7 +749,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 
     // The inner loop goes through the contained
     // commands
-    for (size_t __i = nth_Cmd+1; __i < vCmdArray.size(); __i++)
+    for (int __i = nth_Cmd+1; __i < (int)vCmdArray.size(); __i++)
     {
         nCurrentCommand = __i;
         // If we reach the end of the
@@ -873,8 +873,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
 	}
 
 	// Catch and evaluate all data and cache calls
-	if ((sHeadExpression.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sHeadExpression))
-			&& (!containsStrings(sHeadExpression) && !_dataRef->containsStringVars(sHeadExpression)))
+	if ((sHeadExpression.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sHeadExpression)) && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
 	{
 		if (!bLockedPauseMode && bUseLoopParsingMode)
 			_parserRef->PauseLoopMode();
@@ -938,46 +937,36 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
 	}
 
 	// Evaluate strings
-	if (containsStrings(sHeadExpression) || _dataRef->containsStringVars(sHeadExpression))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
 	{
 		if (!bLockedPauseMode && bUseLoopParsingMode)
 			_parserRef->PauseLoopMode();
 
         // Call the string parser
-		int nReturn = parser_StringParser(sHeadExpression, sCache, *_dataRef, *_parserRef, *_optionRef, true);
+        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true);
 
 		// Evaluate the return value
-		if (nReturn)
-		{
-			if (nReturn == 1)
-			{
-				StripSpaces(sHeadExpression);
+        if (retVal == NumeRe::StringParser::STRING_SUCCESS)
+        {
+            StripSpaces(sHeadExpression);
 
-				if (bIsForHead && containsStrings(sHeadExpression))
-				{
-					if (_optionRef->getUseDebugger())
-						NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+            if (bIsForHead && NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+            {
+                if (_optionRef->getUseDebugger())
+                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
 
-					NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::CANNOT_EVAL_FOR, sHeadExpression, SyntaxError::invalid_position));
-				}
-				else if (containsStrings(sHeadExpression))
-				{
-					StripSpaces(sHeadExpression);
+                NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::CANNOT_EVAL_FOR, sHeadExpression, SyntaxError::invalid_position));
+            }
+            else if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+            {
+                StripSpaces(sHeadExpression);
 
-					if (sHeadExpression != "\"\"" && sHeadExpression.length() > 2)
-						sHeadExpression = "true";
-					else
-						sHeadExpression = "false";
-				}
-			}
-		}
-		else
-		{
-			if (_optionRef->getUseDebugger())
-				NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
-
-			NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::STRING_ERROR, sHeadExpression, SyntaxError::invalid_position));
-		}
+                if (sHeadExpression != "\"\"" && sHeadExpression.length() > 2)
+                    sHeadExpression = "true";
+                else
+                    sHeadExpression = "false";
+            }
+        }
 
 		// It's possible that the user might have done
 		// something weird with string operations transformed
@@ -1909,14 +1898,14 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 		{
 			string sErrorToken;
 
-			if (sLine.length() > 6 && (containsStrings(sLine) || _dataRef->containsStringVars(sLine)))
+			if (sLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
 			{
-				if (_dataRef->containsStringVars(sLine))
-					_dataRef->getStringValues(sLine);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sLine))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sLine);
 
 				getStringArgument(sLine, sErrorToken);
 				sErrorToken += " -nq";
-				parser_StringParser(sErrorToken, sCache, *_dataRef, *_parserRef, *_optionRef, true);
+				NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true);
 			}
 
 			if (!nCurrentCalcType)
@@ -2071,10 +2060,10 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 				string sCmdString = sLine.substr(nPos + 1, nParPos - 1);
 				StripSpaces(sCmdString);
 
-				if (containsStrings(sCmdString) || _dataRef->containsStringVars(sCmdString))
+				if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
 				{
 					sCmdString += " -nq";
-					parser_StringParser(sCmdString, sCache, *_dataRef, *_parserRef, *_optionRef, true);
+					NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sCache, true);
 					sCache = "";
 				}
 
@@ -2104,7 +2093,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 			string sArgument;
 			int nArgument;
 
-			if (containsStrings(sLine) || _dataRef->containsStringVars(sLine))
+			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
 			{
 				if (bUseLoopParsingMode && !bLockedPauseMode)
 					_parserRef->PauseLoopMode();
@@ -2142,7 +2131,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 				{
 					sArgument = getArgAtPos(sArgument, matchParams(sArgument, "type", '=') + 4);
 
-					if (containsStrings(sArgument))
+					if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sArgument))
 					{
 						if (sArgument.front() != '"')
 							sArgument = "\"" + sArgument + "\" -nq";
@@ -2151,7 +2140,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 							_parserRef->PauseLoopMode();
 
 						string sDummy;
-						parser_StringParser(sArgument, sDummy, *_dataRef, *_parserRef, *_optionRef, true);
+						NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, true);
 
 						if (bUseLoopParsingMode && !bLockedPauseMode)
 							_parserRef->PauseLoopMode(false);
@@ -2322,8 +2311,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 	if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DATAACCESS)
 	{
 		// --> Datafile/Cache! <--
-		if (!containsStrings(sLine)
-            && !_dataRef->containsStringVars(sLine)
+		if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
             && (sLine.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sLine)))
 		{
 			if (!nCurrentCalcType)
@@ -2361,7 +2349,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 	if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_STRING)
 	{
 		// --> String-Parser <--
-		if (containsStrings(sLine) || _dataRef->containsStringVars(sLine))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
 		{
 			if (!nCurrentCalcType)
 				nCalcType[nthCmd] |= CALCTYPE_STRING | CALCTYPE_DATAACCESS;
@@ -2369,28 +2357,21 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 			if (!bLockedPauseMode && bUseLoopParsingMode)
 				_parserRef->PauseLoopMode();
 
-			int nReturn = parser_StringParser(sLine, sCache, *_dataRef, *_parserRef, *_optionRef, bLoopSupressAnswer);
+            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer);
 
-			if (nReturn)
-			{
-				if (nReturn == 1)
-				{
-					if (!bLockedPauseMode && bUseLoopParsingMode)
-						_parserRef->PauseLoopMode(false);
+            if (retVal == NumeRe::StringParser::STRING_SUCCESS)
+            {
+                if (!bLockedPauseMode && bUseLoopParsingMode)
+                    _parserRef->PauseLoopMode(false);
 
-					if (bReturnSignal)
-					{
-						ReturnVal.vStringVal.push_back(sLine);
-						return FLOWCTRL_RETURN;
-					}
+                if (bReturnSignal)
+                {
+                    ReturnVal.vStringVal.push_back(sLine);
+                    return FLOWCTRL_RETURN;
+                }
 
-					return FLOWCTRL_OK;
-				}
-			}
-			else
-			{
-				throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-			}
+                return FLOWCTRL_OK;
+            }
 
 			replaceLocalVars(sLine);
 
@@ -3069,7 +3050,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
 // "setCommand()"
 int FlowCtrl::getCurrentLineNumber() const
 {
-    if (vCmdArray.size() > nCurrentCommand)
+    if (vCmdArray.size() > (size_t)nCurrentCommand)
         return vCmdArray[nCurrentCommand].nInputLine;
 
     return 0;

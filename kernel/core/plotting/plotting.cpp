@@ -528,8 +528,8 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 		{
 			// Obtain the values of string variables, which are probably used
 			// as part of the legend strings
-			if (_data.containsStringVars(sFunc))
-				_data.getStringValues(sFunc);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sFunc))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sFunc);
 
 			// Add the legends to the function-and-data section
 			if (!addLegends(sFunc))
@@ -570,7 +570,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 
 		// Ensure that the functions do not contain any strings, because strings
 		// cannot be plotted
-		if ((containsStrings(sFunc) || _data.containsStringVars(sFunc)) && !(_pInfo.bDraw3D || _pInfo.bDraw))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFunc) && !(_pInfo.bDraw3D || _pInfo.bDraw))
 		{
 			clearData();
 			throw SyntaxError(SyntaxError::CANNOT_PLOT_STRINGS, sCmd, SyntaxError::invalid_position);
@@ -955,7 +955,7 @@ void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, cons
 		_mMaskData.Create(_pInfo.nSamples, _pInfo.nSamples);
 
 	mglData _mContVec(_pData.getNumContLines());
-	for (int nCont = 0; nCont < _pData.getNumContLines(); nCont++)
+	for (size_t nCont = 0; nCont < _pData.getNumContLines(); nCont++)
 	{
 		_mContVec.a[nCont] = nCont * (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / ((double)_pData.getNumContLines()-1) + _pInfo.dRanges[ZCOORD][0];
 	}
@@ -1055,7 +1055,7 @@ void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, cons
 				nPos[0] = sLabels.find(';');
 				sConvLegends = sLabels.substr(0, nPos[0]);
 				// --> Der String-Parser wertet Ausdruecke wie "Var " + #var aus <--
-				parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+				NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 				sLabels = sLabels.substr(nPos[0] + 1);
 				if (sConvLegends != "\"\"")
 				{
@@ -1084,7 +1084,7 @@ void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, cons
 				nPos[1] = sDataLabels.find(';');
 				sConvLegends = sDataLabels.substr(0, nPos[1]);
 				// --> Der String-Parser wertet Ausdruecke wie "Var " + #var aus <--
-				parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+				NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 				sDataLabels = sDataLabels.substr(nPos[1] + 1);
 				if (sConvLegends != "\"\"")
 				{
@@ -1512,7 +1512,7 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 					sLabels = sLabels.substr(nPos[0] + 1);
 
 					// Apply the string parser
-					parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+					NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 
 					// Add new surrounding quotation marks
 					sConvLegends = "\"" + sConvLegends + "\"";
@@ -1537,8 +1537,7 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
                 sLabels = sLabels.substr(nPos[0] + 1);
 
                 // Apply the string parser
-				parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
-
+				NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 
 				// While the legend string is not empty
 				while (sConvLegends.length())
@@ -1574,7 +1573,7 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 			sDataLabels = sDataLabels.substr(nPos[1] + 1);
 
 			// Apply the string parser
-			parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 
 			// While the legend string is not empty
 			while (sConvLegends.length())
@@ -1683,7 +1682,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
 		}
 		else if (!_pData.getxError() && !_pData.getyError())
 		{
-			if (_pData.getInterpolate() && countValidElements(_mData) >= _pInfo.nSamples)
+			if (_pData.getInterpolate() && countValidElements(_mData) >= (size_t)_pInfo.nSamples)
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion() && !_pData.getStepplot())
 					_graph->Plot(_mAxisVals, _mData, expandStyleForCurveArray(_pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1).c_str());
@@ -2040,7 +2039,7 @@ void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 		sTextString = "";
 		sDrawExpr = "";
 		sCurrentDrawingFunction = vDrawVector[v];
-		if (containsStrings(sCurrentDrawingFunction) || _data.containsStringVars(sCurrentDrawingFunction))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
 		{
 			for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
 			{
@@ -2053,9 +2052,9 @@ void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 				}
 			}
 			sStyle = sStyle.substr(0, sStyle.rfind(')')) + " -nq";
-			parser_StringParser(sStyle, sDummy, _data, _parser, _option, true);
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sStyle, sDummy, true);
 		}
-		if (containsStrings(sCurrentDrawingFunction) || _data.containsStringVars(sCurrentDrawingFunction))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
 		{
 			for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
 			{
@@ -2068,7 +2067,7 @@ void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 				}
 			}
 			sTextString += " -nq";
-			parser_StringParser(sTextString, sDummy, _data, _parser, _option, true);
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTextString, sDummy, true);
 		}
 		if (sCurrentDrawingFunction.back() == ')')
 			sDrawExpr = sCurrentDrawingFunction.substr(sCurrentDrawingFunction.find('(') + 1, sCurrentDrawingFunction.rfind(')') - sCurrentDrawingFunction.find('(') - 1);
@@ -2293,7 +2292,7 @@ void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 		sTextString = "";
 		sDrawExpr = "";
 		sCurrentDrawingFunction = vDrawVector[v];
-		if (containsStrings(sCurrentDrawingFunction) || _data.containsStringVars(sCurrentDrawingFunction))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
 		{
 			for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
 			{
@@ -2306,9 +2305,9 @@ void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 				}
 			}
 			sStyle = sStyle.substr(0, sStyle.rfind(')')) + " -nq";
-			parser_StringParser(sStyle, sDummy, _data, _parser, _option, true);
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sStyle, sDummy, true);
 		}
-		if (containsStrings(sCurrentDrawingFunction) || _data.containsStringVars(sCurrentDrawingFunction))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentDrawingFunction))
 		{
 			for (int n = (int)sCurrentDrawingFunction.length() - 1; n >= 0; n--)
 			{
@@ -2321,7 +2320,7 @@ void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 				}
 			}
 			sTextString += " -nq";
-			parser_StringParser(sTextString, sDummy, _data, _parser, _option, true);
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTextString, sDummy, true);
 		}
 		if (sCurrentDrawingFunction.back() == ')')
 			sDrawExpr = sCurrentDrawingFunction.substr(sCurrentDrawingFunction.find('(') + 1, sCurrentDrawingFunction.rfind(')') - sCurrentDrawingFunction.find('(') - 1);
@@ -2859,7 +2858,7 @@ void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, c
 				{
 					nPos[0] = sLabels.find(';');
 					sConvLegends = sLabels.substr(0, nPos[0]) + " -nq";
-					parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+					NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 					sConvLegends = "\"" + sConvLegends + "\"";
 					for (unsigned int l = 0; l < sConvLegends.length(); l++)
 					{
@@ -2888,7 +2887,7 @@ void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, c
 			{
 				nPos[0] = sLabels.find(';');
 				sConvLegends = sLabels.substr(0, nPos[0]) + " -nq";
-				parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+				NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 				sConvLegends = "\"" + sConvLegends + "\"";
 				sLabels = sLabels.substr(nPos[0] + 1);
 				if (sConvLegends != "\"\"")
@@ -2908,7 +2907,7 @@ void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, c
 		{
 			nPos[1] = sDataLabels.find(';');
 			sConvLegends = sDataLabels.substr(0, nPos[1]);
-			parser_StringParser(sConvLegends, sDummy, _data, _parser, _option, true);
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sConvLegends, sDummy, true);
 			sDataLabels = sDataLabels.substr(nPos[1] + 1);
 			if (sConvLegends != "\"\"")
 			{
@@ -2975,7 +2974,7 @@ bool Plot::plotstd3d(PlotData& _pData, mglData _mData[3], mglData _mData2[3], co
 		if (!_pData.getxError() && !_pData.getyError())
 		{
 			// --> Interpolate-Schalter. Siehe weiter oben fuer Details <--
-			if (_pData.getInterpolate() && countValidElements(_mData[0]) >= _pInfo.nSamples)
+			if (_pData.getInterpolate() && countValidElements(_mData[0]) >= (size_t)_pInfo.nSamples)
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
 					_graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
@@ -3049,12 +3048,11 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
 	}
 	if (!_functions.call(_pInfo.sPlotParams))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, _pInfo.sPlotParams, SyntaxError::invalid_position);
-	if ((containsStrings(_pInfo.sPlotParams) || _data.containsStringVars(_pInfo.sPlotParams))
-			&& _pInfo.sPlotParams.find('=') != string::npos)
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_pInfo.sPlotParams) && _pInfo.sPlotParams.find('=') != string::npos)
 	{
 		unsigned int nPos = 0;
-		if (_data.containsStringVars(_pInfo.sPlotParams))
-			_data.getStringValues(_pInfo.sPlotParams);
+		if (NumeReKernel::getInstance()->getStringParser().containsStringVars(_pInfo.sPlotParams))
+			NumeReKernel::getInstance()->getStringParser().getStringValues(_pInfo.sPlotParams);
 		while (_pInfo.sPlotParams.find('=', nPos) != string::npos)
 		{
 			nPos = _pInfo.sPlotParams.find('=', nPos) + 1;
@@ -3098,7 +3096,7 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
 			if (_pInfo.sPlotParams.substr(nPos, 4) == "min(" || _pInfo.sPlotParams.substr(nPos, 4) == "max(" || _pInfo.sPlotParams.substr(nPos, 4) == "sum(")
 			{
 				int nPos_temp = getMatchingParenthesis(_pInfo.sPlotParams.substr(nPos + 3)) + nPos + 3;
-				if (!containsStrings(_pInfo.sPlotParams.substr(nPos + 3, nPos_temp - nPos - 3)) && !_data.containsStringVars(_pInfo.sPlotParams.substr(nPos + 3, nPos_temp - nPos - 3)))
+				if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(_pInfo.sPlotParams.substr(nPos + 3, nPos_temp - nPos - 3)))
 					continue;
 			}
 			for (unsigned int i = nPos; i < _pInfo.sPlotParams.length(); i++)
@@ -3126,10 +3124,10 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
 					{
 						sCurrentString = getNextArgument(sToParse, true);
 						bool bVector = sCurrentString.find('{') != string::npos;
-						if (containsStrings(sCurrentString) && !parser_StringParser(sCurrentString, sDummy, _data, _parser, _option, true))
-						{
-							throw SyntaxError(SyntaxError::STRING_ERROR, sParsedString, SyntaxError::invalid_position);
-						}
+
+                        if (containsStrings(sCurrentString))
+                            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentString, sDummy, true);
+
 						if (bVector && sCurrentString.find('{') == string::npos)
 							sCurrentString = "{" + sCurrentString + "}";
 						if (sParsedString.length())
@@ -3207,7 +3205,7 @@ void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings
 	else if (_pData.getFileName().length() && !nPlotCompose)
 		bOutputDesired = true;
 
-	if ((containsStrings(_pData.getFileName()) || _data.containsStringVars(_pData.getFileName())) && !nPlotCompose)
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_pData.getFileName()) && !nPlotCompose)
 	{
 		string sTemp = _pData.getFileName();
 		string sTemp_2 = "";
@@ -3220,7 +3218,7 @@ void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings
 			sExtension = sExtension.substr(0, sExtension.length() - 1);
 		}
 
-		parser_StringParser(sTemp, sTemp_2, _data, _parser, _option, true);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTemp, sTemp_2, true);
 		_pData.setFileName(sTemp.substr(1, sTemp.length() - 2) + sExtension);
 	}
 
@@ -4562,7 +4560,7 @@ size_t Plot::countValidElements(const mglData& _mData)
     size_t nElements = 0;
 
     // Go through the array
-    for (size_t i = 0; i < _mData.nx; i++)
+    for (int i = 0; i < _mData.nx; i++)
     {
         // count only non-nans
         if (!isnan(_mData.a[i]))

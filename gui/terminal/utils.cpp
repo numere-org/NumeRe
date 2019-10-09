@@ -37,7 +37,7 @@ void GenericTerminal::update_changes ()
 	doing_update = 1;
 
 	// Go through the current height (number of lines) of the terminal
-	for (size_t i = 0; i < height; i++)
+	for (int i = 0; i < height; i++)
 	{
 	    // Get the rendered string and the rendered color bitlists for
 	    // the current line
@@ -119,7 +119,7 @@ void GenericTerminal::clear_area( int start_x, int start_y, int end_x, int end_y
 //////////////////////////////////////////////////////////////////////////////
 void GenericTerminal::move_cursor( int x, int y )
 {
-	if ( termCursor.x >= width )
+	if ( termCursor.x >= (size_t)width )
 		termCursor.x = width - 1;
 
     termCursor.move(x, y);

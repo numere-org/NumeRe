@@ -622,7 +622,7 @@ void wxMGL::Update()
 {
 	if (draw_func || draw_cl)
 	{
-	    if (!vAnimationBuffer.size() || vAnimationBuffer.size() < gr->GetNumFrame())
+	    if (!vAnimationBuffer.size() || vAnimationBuffer.size() < (size_t)gr->GetNumFrame())
         {
             if (bRotatingMode)
                 gr->Zoom(0,0,1,1);
@@ -1008,7 +1008,7 @@ void wxMGL::OnClose(wxCloseEvent& event)
 // object or by selecting an image from the buffer
 void wxMGL::setBitmap()
 {
-    if (animation && vAnimationBuffer.size() == gr->GetNumFrame())
+    if (animation && vAnimationBuffer.size() == (size_t)gr->GetNumFrame())
     {
         pic = wxBitmap(vAnimationBuffer[nFrameCounter]);
     }
@@ -1139,7 +1139,7 @@ void wxMGL::NextSlide()
 	if (gr->GetNumFrame() > 1)
 	{
         // Fill the animation buffer, if needed
-        if (vAnimationBuffer.size() < gr->GetNumFrame())
+        if (vAnimationBuffer.size() < (size_t)gr->GetNumFrame())
         {
             gr->GetFrame(nFrameCounter);
 

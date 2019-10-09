@@ -1527,6 +1527,8 @@ bool Datafile::saveFile(const string& sCache, string _sFileName, unsigned short 
     }
 
     delete file;
+
+    return true;
 }
 
 void Datafile::generateFileName()

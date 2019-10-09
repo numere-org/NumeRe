@@ -2286,9 +2286,9 @@ static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix
 
     // Calculate the elements of the matrix by applying
     // elementwise shifts to the matrices
-    for (int i1 = 0; i1 < mCorrelation.size(); i1++)
+    for (int i1 = 0; i1 < (int)mCorrelation.size(); i1++)
     {
-        for (int j1 = 0; j1 < mCorrelation[0].size(); j1++)
+        for (int j1 = 0; j1 < (int)mCorrelation[0].size(); j1++)
         {
             // These loops shall indicate the number of elements
             for (int i2 = 0; i2 < n + min(i1-n+1, n-i1-1); i2++)

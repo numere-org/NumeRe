@@ -143,7 +143,7 @@ bool Odesolver::solve(const string& sCmd)
     double dist[2] = {1.0e-6,0.0};
     double t = 0.0;
 
-    if (containsStrings(sCmd) || _odeData->containsStringVars(sCmd))
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
     {
         //sErrorToken = "odesolve";
         throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "odesolve");
@@ -400,7 +400,7 @@ bool Odesolver::solve(const string& sCmd)
     }
 
     // integrieren
-    for (int i = 0; i < nSamples; i++)
+    for (size_t i = 0; i < (size_t)nSamples; i++)
     {
         if (time(0) - tTimeControl > 1)
         {

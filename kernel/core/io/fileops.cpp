@@ -62,10 +62,10 @@ bool removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
         StripSpaces(sCmd);
     }
 
-    if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
     {
         string sDummy = "";
-        parser_StringParser(sCmd, sDummy, _data, _parser, _option, true);
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
     }
     if (sCmd[0] == '"')
         sCmd = sCmd.substr(1);
@@ -167,8 +167,8 @@ bool moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
     sCmd = replacePathSeparator(sCmd);
     sTarget = replacePathSeparator(sTarget);
 
-    if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
-        parser_StringParser(sCmd, sDummy, _data, _parser, _option, true);
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
 
     if (sCmd[0] == '"')
         sCmd = sCmd.substr(1);
@@ -238,12 +238,9 @@ bool moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
                     break;
             }
         }
-        if (containsStrings(_sTarget) || _data.containsStringVars(_sTarget))
-        {
-            //NumeReKernel::print("contains" );
-            parser_StringParser(_sTarget, sDummy, _data, _parser, _option, true);
-        }
-        //NumeReKernel::print(_sTarget );
+        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_sTarget))
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(_sTarget, sDummy, true);
+
         if (_sTarget[0] == '"')
             _sTarget.erase(0,1);
         if (_sTarget[_sTarget.length()-1] == '"')
@@ -351,17 +348,13 @@ bool copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
     sCmd = replacePathSeparator(sCmd);
     sTarget = replacePathSeparator(sTarget);
 
-    if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
-        parser_StringParser(sCmd, sDummy, _data, _parser, _option, true);
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
 
     if (sCmd[0] == '"')
         sCmd = sCmd.substr(1);
     if (sCmd[sCmd.length()-1] == '"')
         sCmd = sCmd.substr(0,sCmd.length()-1);
-    /*if (sTarget[0] == '"')
-        sTarget = sTarget.substr(1);
-    if (sTarget[sTarget.length()-1] == '"')
-        sTarget = sTarget.substr(0,sTarget.length()-1);*/
 
     vFileList = getFileList(sCmd, _option);
 
@@ -422,12 +415,9 @@ bool copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
                     break;
             }
         }
-        if (containsStrings(_sTarget) || _data.containsStringVars(_sTarget))
-        {
-            //NumeReKernel::print("contains" );
-            parser_StringParser(_sTarget, sDummy, _data, _parser, _option, true);
-        }
-        //NumeReKernel::print(_sTarget );
+        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_sTarget))
+            NumeReKernel::getInstance()->getStringParser().evalAndFormat(_sTarget, sDummy, true);
+
         if (_sTarget[0] == '"')
             _sTarget.erase(0,1);
         if (_sTarget[_sTarget.length()-1] == '"')

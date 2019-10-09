@@ -183,7 +183,7 @@ namespace NumeRe
         // parts
         for (int j = 0; j < getHeadCount(); j++)
         {
-            if (j == part)
+            if (j == (int)part)
                 head += _sHead + "\\n";
             else
                 head += getCleanHeadPart(i, j) + "\\n";
@@ -309,7 +309,7 @@ namespace NumeRe
     // Underscores and masked headlines are replaced on-the-fly
     string Table::getCleanHeadPart(size_t i, size_t part)
     {
-        if (vTableHeadings.size() > i || part >= getHeadCount())
+        if (vTableHeadings.size() > i || part >= (size_t)getHeadCount())
         {
             // get the cleaned headline
             string head = getCleanHead(i);

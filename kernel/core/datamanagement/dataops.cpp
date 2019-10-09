@@ -448,8 +448,8 @@ void append_data(const string& __sCmd, Datafile& _data, Settings& _option, Parse
 	string sArgument = "";
 
 	// Get string variable values, if needed
-	if (_data.containsStringVars(sCmd))
-		_data.getStringValues(sCmd);
+	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+		NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
     // Add quotation marks around the argument
     // Assuming that "app" is the relevant parameter in the command expression
@@ -1146,8 +1146,8 @@ bool writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opti
 		// Get the file name
 		if (matchParams(sParams, "file", '='))
 		{
-			if (_data.containsStringVars(sParams))
-				_data.getStringValues(sParams);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
 			addArgumentQuotes(sParams, "file");
 			BI_parseStringArgs(sParams, sFileName, _parser, _data, _option);
 			StripSpaces(sFileName);
@@ -1216,11 +1216,11 @@ bool writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opti
 	sExpression = sCmd.substr(findCommand(sCmd).nPos + findCommand(sCmd).sString.length());
 
 	// Parse the expression, which should be a string
-	if (containsStrings(sExpression) || _data.containsStringVars(sExpression) || _data.containsClusters(sExpression))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpression) || _data.containsClusters(sExpression))
 	{
 		sExpression += " -komq";
 		string sDummy = "";
-		parser_StringParser(sExpression, sDummy, _data, _parser, _option, true);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true);
 	}
 	else
 		throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, sCmd, SyntaxError::invalid_position);
@@ -1328,14 +1328,13 @@ bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sFileName);
 	}
 
-	// Get a reference to the special cluster
-	NumeRe::Cluster& readFileCluster = _data.newCluster("_~~READFILECLUSTER");
+	// create a new vector for the file's contents
+	vector<string> vFileContents;
 
 	// Read the complete file, where each line is a separate string expression
 	while (!fFile.eof())
 	{
 		getline(fFile, sInput);
-		//StripSpaces(sInput);
 
 		// Omit empty lines
 		if (!sInput.length() || sInput == "\"\"" || sInput == "\"")
@@ -1366,18 +1365,14 @@ bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 				sInput.insert(i, 1, '\\');
 		}
 
-		// Append the parsed string to the cluster
-		readFileCluster.push_back(sInput);
-
-		// Append a comma after each string expression
-		//sCmd += sInput + ",";
+		// Append the parsed string to the vector
+		vFileContents.push_back(sInput);
 	}
 
-	// Remove the last comma
-//	if (sCmd.length())
-//		sCmd.pop_back();
-    if (readFileCluster.size())
-        sCmd = "_~~READFILECLUSTER{}";
+    // Create a new temporary variable, if we actually
+    // read something from the file
+    if (vFileContents.size())
+        sCmd = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(vFileContents);
 	else
 		sCmd = "\"\"";
 
@@ -1499,8 +1494,8 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 	if (matchParams(sParams, "file", '='))
 	{
 	    // Parameter available
-		if (_data.containsStringVars(sParams))
-			_data.getStringValues(sParams);
+		if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))
+			NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
 
         if (_data.containsTablesOrClusters(sParams))
         if (_data.containsTablesOrClusters(sParams))
@@ -1539,8 +1534,8 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 	else
 	{
 	    // Use the expression
-		if (_data.containsStringVars(sCmd))
-			_data.getStringValues(sCmd);
+		if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+			NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
         if (_data.containsTablesOrClusters(sCmd))
             getDataElements(sCmd, _parser, _data, _option);
@@ -1557,11 +1552,11 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 			return false;
 
         // If there's a string in the file name, parse it here
-		if (containsStrings(sFileName))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFileName))
 		{
 			sFileName += " -nq";
 			string sDummy;
-			parser_StringParser(sFileName, sDummy, _data, _parser, _option, true);
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sFileName, sDummy, true);
 		}
 
 		// If the filename contains a extension, extract it here and declare it as a valid file type

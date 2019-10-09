@@ -203,6 +203,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
+    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 
     // Only try to decode the arguments, if the user decided to
     // do so
@@ -247,11 +248,11 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
     }
 
     // Is the current argument a string variable?
-    if (_data.getStringVars().find(sArgumentValue) != _data.getStringVars().end())
+    if (_stringParser.getStringVars().find(sArgumentValue) != _stringParser.getStringVars().end())
     {
         // Replace the value with its actual value and mark the
         // argument type as reference
-        sArgumentValue = "\"" + (_data.getStringVars().find(sArgumentValue)->second) + "\"";
+        sArgumentValue = "\"" + (_stringParser.getStringVars().find(sArgumentValue)->second) + "\"";
         return "\t1 x 1\t(&) string\t";
     }
 
@@ -459,7 +460,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
                 sErraticCommand.replace(sErraticCommand.find(sLocalStrings[i][1]), sLocalStrings[i][1].length(), sLocalStrings[i][0]);
         }
 
-        mLocalStrings[sLocalStrings[i][0] + "\t" + sLocalStrings[i][1]] = replaceControlCharacters(instance->getData().getStringVars().at(sLocalStrings[i][1]));
+        mLocalStrings[sLocalStrings[i][0] + "\t" + sLocalStrings[i][1]] = replaceControlCharacters(instance->getStringParser().getStringVars().at(sLocalStrings[i][1]));
     }
 
     // Store the local tables and replace their
@@ -682,6 +683,7 @@ vector<string> NumeReDebugger::getGlobals()
 
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
+    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 
     // Is there valid data?
     if (_data.isValid())
@@ -717,7 +719,7 @@ vector<string> NumeReDebugger::getGlobals()
     }
 
     // List all relevant string variables
-    for (auto iter = _data.getStringVars().begin(); iter != _data.getStringVars().end(); ++iter)
+    for (auto iter = _stringParser.getStringVars().begin(); iter != _stringParser.getStringVars().end(); ++iter)
     {
         if (iter->first.substr(0, 2) != "_~")
         {

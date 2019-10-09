@@ -123,9 +123,7 @@ void ProcedureVarFactory::reset()
     {
         for (size_t i = 0; i < nLocalStrMapSize; i++)
         {
-            if (_dataRef)
-                _dataRef->removeStringVar(sLocalStrings[i][1]);
-
+            NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[i][1]);
             delete[] sLocalStrings[i];
         }
 
@@ -280,23 +278,10 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
 
             try
             {
-                if (containsStrings(sVarValue) || _dataRef->containsStringVars(sVarValue))
+                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
                 {
                     string sTemp;
-
-                    if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
-                    {
-                        _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-                        for (unsigned int j = 0; j <= i; j++)
-                        {
-                            delete[] sLocalVars[j];
-                        }
-
-                        delete[] sLocalVars;
-                        nLocalVarMapSize = 0;
-                        _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sVarList, SyntaxError::invalid_position));
-                    }
+                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarList, sTemp, true);
                 }
 
                 if (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue))
@@ -390,15 +375,10 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
             {
                 sVarValue = resolveLocalStrings(sVarValue, i);
 
-                if (containsStrings(sVarValue) || _dataRef->containsStringVars(sVarValue))
+                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
                 {
                     string sTemp;
-
-                    if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
-                    {
-                        _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                        _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sStringList, SyntaxError::invalid_position));
-                    }
+                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarValue, sTemp, true);
                 }
 
                 sLocalStrings[i][0] = sLocalStrings[i][0].substr(0, sLocalStrings[i][0].find('='));
@@ -687,30 +667,15 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
             {
                 sVarValue = resolveLocalVars(sVarValue, i);
 
-                if (!containsStrings(sVarValue) && !_dataRef->containsStringVars(sVarValue) && (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue)))
+                if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue) && (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue)))
                 {
                     getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
                 }
 
-                if (containsStrings(sVarValue) || _dataRef->containsStringVars(sVarValue))
+                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
                 {
                     string sTemp;
-
-                    if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
-                    {
-                        _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                        for (unsigned int j = 0; j <= i; j++)
-                        {
-                            if (j < i)
-                                _parserRef->RemoveVar(sLocalVars[j][1]);
-
-                            delete[] sLocalVars[j];
-                        }
-
-                        delete[] sLocalVars;
-                        nLocalVarMapSize = 0;
-                        _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sVarList, SyntaxError::invalid_position));
-                    }
+                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarList, sTemp, true);
                 }
 
                 _parserRef->SetExpr(sVarValue);
@@ -790,7 +755,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                     for (unsigned int j = 0; j <= i; j++)
                     {
                         if (j < i)
-                            _dataRef->removeStringVar(sLocalStrings[j][1]);
+                            NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
 
                         delete[] sLocalStrings[j];
                     }
@@ -819,7 +784,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                     for (unsigned int j = 0; j <= i; j++)
                     {
                         if (j < i)
-                            _dataRef->removeStringVar(sLocalStrings[j][1]);
+                            NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
 
                         delete[] sLocalStrings[j];
                     }
@@ -841,15 +806,10 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                     getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
                 }
 
-                if (containsStrings(sVarValue) || _dataRef->containsStringVars(sVarValue))
+                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
                 {
                     string sTemp;
-
-                    if (!parser_StringParser(sVarValue, sTemp, *_dataRef, *_parserRef, *_optionRef, true))
-                    {
-                        _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                        _debugger.throwException(SyntaxError(SyntaxError::STRING_ERROR, sStringList, SyntaxError::invalid_position));
-                    }
+                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarValue, sTemp, true);
                 }
 
                 sLocalStrings[i][0] = sLocalStrings[i][0].substr(0,sLocalStrings[i][0].find('='));
@@ -860,7 +820,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
                 for (unsigned int j = 0; j <= i; j++)
                 {
                     if (j < i)
-                        _dataRef->removeStringVar(sLocalStrings[j][1]);
+                        NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
 
                     delete[] sLocalStrings[j];
                 }
@@ -878,7 +838,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
 
         try
         {
-            _dataRef->setStringValue(sLocalStrings[i][1], sLocalStrings[i][2]);
+            NumeReKernel::getInstance()->getStringParser().setStringValue(sLocalStrings[i][1], sLocalStrings[i][2]);
         }
         catch (...)
         {
@@ -887,7 +847,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
             for (unsigned int j = 0; j <= i; j++)
             {
                 if (j < i)
-                    _dataRef->removeStringVar(sLocalStrings[j][1]);
+                    NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
 
                 delete[] sLocalStrings[j];
             }
@@ -1023,10 +983,10 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
             if (_dataRef->containsTablesOrClusters(sCurrentValue) || sCurrentValue.find("data(") != string::npos)
                 getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
 
-            if (containsStrings(sCurrentValue) || _dataRef->containsStringVars(sCurrentValue))
+            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
             {
                 string sCluster = sLocalClusters[i][1] + "{}";
-                parser_StringParser(sCurrentValue, sCluster, *_dataRef, *_parserRef, *_optionRef, true);
+                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sCluster, true);
             }
             else
             {

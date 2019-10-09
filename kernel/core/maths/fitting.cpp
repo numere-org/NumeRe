@@ -658,7 +658,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 			getDataElements(fitData.sParams, _parser, _data, _option);
 		}
 
-		if (fitData.sParams.find("{") != string::npos && (containsStrings(fitData.sParams) || _data.containsStringVars(fitData.sParams)))
+		if (fitData.sParams.find("{") != string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(fitData.sParams))
 			parser_VectorToExpr(fitData.sParams, _option);
 	}
 

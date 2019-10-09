@@ -3,3 +3,5 @@ Removed	The "deprecated" warning of "Parser::Eval()" was removed
 Fixed	Procedures from the "this" namespace may now be created on-the-fly, if they're searched using the menu.
 Fixed	Global variable detector has been improved and should now return (mostly) correct results.
 Cleaned	Reworked and re-organized parts of the editor's code.
+Cleaned	Reworked and re-organized the string parser.
+Removed	Eliminated all unsigned comparision warnings.

@@ -977,16 +977,16 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		string sDefault = "";
 		if (matchParams(sCmd, "msg", '='))
 		{
-			if (_data.containsStringVars(sCmd))
-				_data.getStringValues(sCmd, nPos);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd, nPos);
 			//addArgumentQuotes(sCmd, "msg");
 			sCmd = sCmd.replace(nPos, sCommand.length(), BI_evalParamString(sCommand, _parser, _data, _option, _functions));
 			sCommand = BI_evalParamString(sCommand, _parser, _data, _option, _functions);
 		}
 		if (matchParams(sCmd, "dflt", '='))
 		{
-			if (_data.containsStringVars(sCmd))
-				_data.getStringValues(sCmd, nPos);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd, nPos);
 			//addArgumentQuotes(sCmd, "dflt");
 			sCmd = sCmd.replace(nPos, sCommand.length(), BI_evalParamString(sCommand, _parser, _data, _option, _functions));
 			sCommand = BI_evalParamString(sCommand, _parser, _data, _option, _functions);
@@ -1052,8 +1052,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (matchParams(sCmd, "load") || matchParams(sCmd, "load", '='))
 		{
-			if (_data.containsStringVars(sCmd))
-				_data.getStringValues(sCmd);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 			if (matchParams(sCmd, "load", '='))
 				addArgumentQuotes(sCmd, "load");
 			if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
@@ -1184,8 +1184,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !matchParams(sCmd, "reload", '='))
 				//throw CANNOT_RELOAD_DATA;
 				throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, "", SyntaxError::invalid_position);
-			if (_data.containsStringVars(sCmd))
-				_data.getStringValues(sCmd);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 			if (matchParams(sCmd, "reload", '='))
 				addArgumentQuotes(sCmd, "reload");
 			if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
@@ -1270,8 +1270,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (matchParams(sCmd, "save") || matchParams(sCmd, "save", '='))
 		{
-			if (_data.containsStringVars(sCmd))
-				_data.getStringValues(sCmd);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 			if (matchParams(sCmd, "save", '='))
 				addArgumentQuotes(sCmd, "save");
 			_data.setPrefix("data");
@@ -1318,8 +1318,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (matchParams(sCmd, "export") || matchParams(sCmd, "export", '='))
 		{
-			if (_data.containsStringVars(sCmd))
-				_data.getStringValues(sCmd);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 			if (matchParams(sCmd, "export", '='))
 				addArgumentQuotes(sCmd, "export");
 			if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
@@ -1619,7 +1619,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				|| sCmd.find('$', findCommand(sCmd).nPos + 3) != string::npos)
 		{
 			_data.setUserdefinedFuncs(_functions.getDefinesName());
-			if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 				sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 			if (!BI_newObject(sCmd, _parser, _data, _option))
 				doc_Help("new", _option);
@@ -1632,7 +1632,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	{
 		if (sCmd.length() > 5)
 		{
-			if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 			{
 				BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
 				sArgument = "edit " + sArgument;
@@ -1672,7 +1672,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 	{
 		if (sCmd.length() > 5)
 		{
-			if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 			{
 				BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
 				sArgument = "edit " + sArgument;
@@ -1759,8 +1759,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (matchParams(sCmd, "save") || matchParams(sCmd, "save", '='))
 		{
-			if (_data.containsStringVars(sCmd))
-				_data.getStringValues(sCmd);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 			if (matchParams(sCmd, "save", '='))
 				addArgumentQuotes(sCmd, "save");
 			_data.setPrefix(sCommand);
@@ -1810,8 +1810,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (matchParams(sCmd, "export") || matchParams(sCmd, "export", '='))
 		{
-			if (_data.containsStringVars(sCmd))
-				_data.getStringValues(sCmd);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 			if (matchParams(sCmd, "export", '='))
 				addArgumentQuotes(sCmd, "export");
 			if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
@@ -1825,7 +1825,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (matchParams(sCmd, "rename", '=')) //CACHE -rename=NEWNAME
 		{
-			if (_data.containsStringVars(sCmd) || containsStrings(sCmd))
+			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 				sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 
 			sArgument = getArgAtPos(sCmd, matchParams(sCmd, "rename", '=') + 6);
@@ -1836,7 +1836,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (matchParams(sCmd, "swap", '=')) //CACHE -swap=NEWCACHE
 		{
-			if (_data.containsStringVars(sCmd) || containsStrings(sCmd))
+			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 				sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 
 			sArgument = getArgAtPos(sCmd, matchParams(sCmd, "swap", '=') + 4);
@@ -2172,8 +2172,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (sCmd.find(' ') != string::npos)
 			{
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 				if (matchParams(sCmd, "comment", '='))
 					addArgumentQuotes(sCmd, "comment");
 
@@ -2195,8 +2195,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (!_script.isOpen())
 			{
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 				_script.setInstallProcedures();
 				if (containsStrings(sCmd))
 					BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
@@ -2257,8 +2257,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			else if (sCmd.length() > findCommand(sCmd).nPos + 7 && sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7) != string::npos)
 			{
 				NumeReKernel::printPreFmt("\r");
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 				if (sCmd[sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7)] != '"' && sCmd.find("string(") == string::npos)
 				{
 					sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7), 1, '"');
@@ -2431,8 +2431,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                             }
                         }
 
-						if (_data.containsStringVars(sCmd))
-							_data.getStringValues(sCmd);
+						if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+							NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
 						if (matchParams(sCmd, "export", '='))
 							addArgumentQuotes(sCmd, "export");
@@ -2485,8 +2485,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		}
 		else if (sCommand == "set")
 		{
-			if (_data.containsStringVars(sCmd))
-				_data.getStringValues(sCmd);
+			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+				NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 			if (matchParams(sCmd, "savepath") || matchParams(sCmd, "savepath", '='))
 			{
 				if (matchParams(sCmd, "savepath", '='))
@@ -3118,8 +3118,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			{
 			    // DEPRECATED: Declared at v1.1.2rc1
 			    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 				if (matchParams(sCmd, "install"))
 					_script.setInstallProcedures();
 				if (matchParams(sCmd, "script", '='))
@@ -3133,8 +3133,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			{
 				if (!_script.isOpen())
 				{
-					if (_data.containsStringVars(sCmd))
-						_data.getStringValues(sCmd);
+					if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+						NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 					if (containsStrings(sCmd))
 						BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
 					else
@@ -3165,8 +3165,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 				if (!_script.isOpen())
 				{
-					if (_data.containsStringVars(sCmd))
-						_data.getStringValues(sCmd);
+					if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+						NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 					if (matchParams(sCmd, "load", '='))
 						addArgumentQuotes(sCmd, "load");
 					if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
@@ -3207,8 +3207,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 				if (_script.isOpen())
 					//throw CANNOT_CALL_SCRIPT_RECURSIVELY;
 					throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, sCommand);
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 				if (matchParams(sCmd, "install"))
 					_script.setInstallProcedures();
 				if (matchParams(sCmd, "start", '='))
@@ -3424,8 +3424,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
                             }
                         }
 
-						if (_data.containsStringVars(sCmd))
-							_data.getStringValues(sCmd);
+						if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+							NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 						if (matchParams(sCmd, "export", '='))
 							addArgumentQuotes(sCmd, "export");
 
@@ -3532,8 +3532,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (sCmd.length() > sCommand.length() + 1)
 			{
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
 				if (matchParams(sCmd, "comment", '='))
 					addArgumentQuotes(sCmd, "comment");
@@ -3703,8 +3703,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
 			{
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 				if (matchParams(sCmd, "data", '='))
 					addArgumentQuotes(sCmd, "data");
 				if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
@@ -3851,8 +3851,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			if (sCmd.length() > 8)
 			{
 				_functions.setCacheList(_data.getTableNames());
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 				if (matchParams(sCmd, "comment", '='))
 					addArgumentQuotes(sCmd, "comment");
 				if (matchParams(sCmd, "save"))
@@ -4092,8 +4092,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			{
 			    // DEPRECATED: Declared at v1.1.2rc1
 			    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 				if (matchParams(sCmd, "data", '='))
 					addArgumentQuotes(sCmd, "data");
 				if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
@@ -4279,8 +4279,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 				if (!_script.isOpen())
 				{
-					if (_data.containsStringVars(sCmd))
-						_data.getStringValues(sCmd);
+					if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+						NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 					if (matchParams(sCmd, "script", '='))
 						addArgumentQuotes(sCmd, "script");
 					if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
@@ -4313,8 +4313,8 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 			}
 			else if (sCmd.length() > findCommand(sCmd).nPos + 5 && sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5) != string::npos)
 			{
-				if (_data.containsStringVars(sCmd))
-					_data.getStringValues(sCmd);
+				if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+					NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 				if (sCmd[sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5)] != '"' && sCmd.find("string(") == string::npos)
 				{
 					if (matchParams(sCmd, "slice")
@@ -4573,7 +4573,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 		{
 			value_type* vVals = 0;
 			string sExpr;
-			if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 				sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 			if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
 			{
@@ -4608,7 +4608,7 @@ int BI_CommandHandler(string& sCmd, Datafile& _data, Output& _out, Settings& _op
 						if (sArgument.front() != '"')
 							sArgument = "\"" + sArgument + "\" -nq";
 						string sDummy;
-						parser_StringParser(sArgument, sDummy, _data, _parser, _option, true);
+						NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, true);
 					}
 				}
 				else
@@ -4647,7 +4647,7 @@ static int swapTables(string& sCmd, Datafile& _data, Parser& _parser, Settings& 
 
     // If the current command line contains strings
     // handle them here
-    if (_data.containsStringVars(sCmd) || containsStrings(sCmd))
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
         sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 
     // Handle legacy and new syntax in these two cases
@@ -4705,7 +4705,7 @@ static int renameCaches(string& sCmd, Datafile& _data, Parser& _parser, Settings
 
     // If the current command line contains strings
     // handle them here
-    if (_data.containsStringVars(sCmd) || containsStrings(sCmd))
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
         sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
 
     // Handle legacy and new syntax in these two cases
@@ -4796,7 +4796,7 @@ static int showDialog(string& sCmd)
 
     // If the current command line contains strings in the option values
     // handle them here
-    if (kernel->getData().containsStringVars(sDialogSettings) || containsStrings(sDialogSettings))
+    if (kernel->getStringParser().isStringExpression(sDialogSettings))
         sDialogSettings = BI_evalParamString(sDialogSettings, kernel->getParser(), kernel->getData(), kernel->getSettings(), kernel->getDefinitions());
 
     // Extract the message for the user
@@ -4873,10 +4873,10 @@ static int showDialog(string& sCmd)
     // Handle strings in the default value
     // expression. This will include also possible path
     // tokens
-    if (kernel->getData().containsStringVars(sExpression) || containsStrings(sExpression))
+    if (kernel->getStringParser().isStringExpression(sExpression))
     {
         string sDummy;
-        parser_StringParser(sExpression, sDummy, kernel->getData(), kernel->getParser(), kernel->getSettings(), true);
+        kernel->getStringParser().evalAndFormat(sExpression, sDummy, true);
     }
 
     // Ensure that default values are available, if the user
@@ -5039,8 +5039,8 @@ static int showDataObject(string& sCmd)
                     }
                 }
 
-                if (_data.containsStringVars(sCmd))
-                    _data.getStringValues(sCmd);
+                if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+                    NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
                 // Redirect the control
                 show_data(_cache, _out, _option, "*" + _accessParser.getDataObject(), _option.getPrecision(), false, true);
@@ -5138,8 +5138,8 @@ static int saveDataObject(string& sCmd)
 
             // If the command line contains string variables
             // get those values here
-            if (_data.containsStringVars(sCmd))
-                _data.getStringValues(sCmd);
+            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+                NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
             if (matchParams(sCmd, "file", '='))
                 addArgumentQuotes(sCmd, "file");
@@ -5329,7 +5329,7 @@ static void BI_ListOptions(Settings& _option)
 bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, Datafile& _data, Settings& _option)
 {
     // Don't do anything, if no string is found in this expression
-	if (!containsStrings(sCmd) && !_data.containsStringVars(sCmd))
+	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 		return false;
 	string sTemp = sCmd;
 
@@ -5345,27 +5345,21 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 	    // Jump over this parenthesis, if its contents don't contain
 	    // strings or string variables
 		if (sTemp[i] == '('
-				&& !containsStrings(sTemp.substr(i, getMatchingParenthesis(sTemp.substr(i))))
-				&& !containsStrings(sTemp.substr(0, i))
-				&& !_data.containsStringVars(sTemp.substr(i, getMatchingParenthesis(sTemp.substr(i))))
-				&& !_data.containsStringVars(sTemp.substr(0, i)))
+				&& !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(i, getMatchingParenthesis(sTemp.substr(i))))
+				&& !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, i)))
 		{
 			i += getMatchingParenthesis(sTemp.substr(i));
 		}
 
 		// Evaluate parameter starts, i.e. the minus sign of the command line
-		if (sTemp[i] == '-'
-				&& !containsStrings(sTemp.substr(0, i))
-				&& !_data.containsStringVars(sTemp.substr(0, i)))
+		if (sTemp[i] == '-'	&& !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, i)))
 		{
 		    // No string left of the minus sign, erase this part
 		    // and break the loop
 			sTemp.erase(0, i);
 			break;
 		}
-		else if (sTemp[i] == '-'
-				 && (containsStrings(sTemp.substr(0, i))
-					 || _data.containsStringVars(sTemp.substr(0, i))))
+		else if (sTemp[i] == '-' && NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, i)))
 		{
 		    // There are strings left of the minus sign
 		    // Find now the last string element in this part of the expression
@@ -5383,8 +5377,7 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 
 				// This is now the location, where all string-related stuff is
 				// to the right and everything else is to the left
-				if ((!containsStrings(sTemp.substr(0, j)) && containsStrings(sTemp.substr(j, i - j)))
-						|| (!_data.containsStringVars(sTemp.substr(0, j)) && _data.containsStringVars(sTemp.substr(j, i - j))))
+				if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, j)) && NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(j, i - j)))
 				{
 				    // Erase the left part and break the loop
 					sTemp.erase(0, j);
@@ -5400,8 +5393,8 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 		return false;
 
     // Get the string variable values
-	if (_data.containsStringVars(sTemp))
-		_data.getStringValues(sTemp);
+	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sTemp))
+		NumeReKernel::getInstance()->getStringParser().getStringValues(sTemp);
 
     // Get now the string argument, which may contain pure
     // strings, string functions and concatenations
@@ -5438,13 +5431,9 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 	sTemp.clear();
 
 	// Parse the string expression
-	if (!parser_StringParser(sArgument, sTemp, _data, _parser, _option, true))
-		return false;
-	else
-	{
-		sArgument = sArgument.substr(1, sArgument.length() - 2);
-		return true;
-	}
+    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sTemp, true);
+    sArgument = sArgument.substr(1, sArgument.length() - 2);
+    return true;
 }
 
 // Returns a random greeting string, which may be printed to the terminal later
@@ -5522,8 +5511,8 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 	}
 
 	// Get the string var values, if any
-	if (_data.containsStringVars(sReturn))
-		_data.getStringValues(sReturn);
+	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sReturn))
+		NumeReKernel::getInstance()->getStringParser().getStringValues(sReturn);
 
 	// Repeat as long as an equal sign is found after
 	// the current position in the command line
@@ -5544,7 +5533,7 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 			nPos++;
 
         // Parse the parameter values into evaluated values for the commands
-		if (containsStrings(sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos)) || _data.containsStringVars(sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos)))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sReturn.substr(nPos, sReturn.find(' ', nPos) - nPos)))
 		{
 		    // This is a string value
 			if (!getStringArgument(sReturn.substr(nPos - 1), sTemp)) // mit "=" uebergeben => fixes getStringArgument issues
@@ -5555,8 +5544,7 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 			sTemp += " -kmq";
 
 			// Parse the string
-			if (!parser_StringParser(sTemp, sDummy, _data, _parser, _option, true))
-				return "";
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sTemp, sDummy, true);
 
             // Replace the parsed string
 			sReturn.replace(nPos, nLength, sTemp);
@@ -6186,8 +6174,8 @@ static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Setting
 	vector<string> vTokens;
 	FileSystem _fSys;
 	_fSys.setTokens(_option.getTokenPaths());
-	if (_data.containsStringVars(sCmd))
-		_data.getStringValues(sCmd);
+	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+		NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 	if (matchParams(sCmd, "dir", '='))
 	{
 		nType = 1;
@@ -6216,7 +6204,7 @@ static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Setting
 	else if (matchParams(sCmd, "cache", '='))
 	{
 		string sReturnVal = "";
-		if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 		{
 			if (!BI_parseStringArgs(sCmd, sObject, _parser, _data, _option))
 				return false;
@@ -6277,7 +6265,7 @@ static bool BI_newObject(string& sCmd, Parser& _parser, Datafile& _data, Setting
 		else if (sCmd.find("()", findCommand(sCmd).nPos + 3) != string::npos)
 		{
 			string sReturnVal = "";
-			if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 			{
 				if (!BI_parseStringArgs(sCmd, sObject, _parser, _data, _option))
 					return false;
@@ -6584,7 +6572,7 @@ static bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settin
 		nFileOpenFlag = 2 | 4;
 	}
 	string sObject;
-	if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 	{
 		BI_parseStringArgs(sCmd, sObject, _parser, _data, _option);
 	}
@@ -6790,7 +6778,7 @@ static bool BI_editObject(string& sCmd, Parser& _parser, Datafile& _data, Settin
 static string BI_getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
 {
 	mu::varmap_type mNumVars = _parser.GetVar();
-	map<string, string> mStringVars = _data.getStringVars();
+	map<string, string> mStringVars = NumeReKernel::getInstance()->getStringParser().getStringVars();
 	map<string, int> mVars;
 
 	string sSep = ", ";
@@ -6908,22 +6896,22 @@ static bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, De
 			throw SyntaxError(SyntaxError::EXECUTE_COMMAND_UNSUCCESSFUL, sCmd, "execute"); // throw an unsuccessful, if the parameters are not clearly identified
 	}
 
-	if (containsStrings(sObject) || _data.containsStringVars(sObject))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sObject))
 	{
 		string sDummy = "";
-		parser_StringParser(sObject, sDummy, _data, _parser, _option, true);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sObject, sDummy, true);
 	}
-	if (containsStrings(sParams) || _data.containsStringVars(sParams))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sParams))
 	{
 		string sDummy = "";
 		sParams += " -nq";
-		parser_StringParser(sParams, sDummy, _data, _parser, _option, true);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sParams, sDummy, true);
 	}
-	if (containsStrings(sWorkpath) || _data.containsStringVars(sWorkpath))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sWorkpath))
 	{
 		string sDummy = "";
 		sWorkpath += " -nq";
-		parser_StringParser(sWorkpath, sDummy, _data, _parser, _option, true);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sWorkpath, sDummy, true);
 	}
 
 	if (sObject.find('<') != string::npos && sObject.find('>', sObject.find('<') + 1) != string::npos)

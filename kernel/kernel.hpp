@@ -45,8 +45,13 @@
 #include "core/ui/language.hpp"
 #include "core/procedure/procedurelibrary.hpp"
 #include "core/ParserLib/muParser.h"
+#include "core/strings/stringparser.hpp"
 
 #include "windowmanager.hpp"
+
+#ifndef KERNEL_HPP
+#define KERNEL_HPP
+
 
 using namespace std;
 using namespace mu;
@@ -120,6 +125,7 @@ class NumeReKernel
         Output _out;
         Datafile _data;
         Parser _parser;
+        NumeRe::StringParser _stringParser;
         Define _functions;
         PlotData _pData;
         Script _script;
@@ -176,6 +182,16 @@ class NumeReKernel
         // Static member functions
         // can be called from everywhere without an explicit instance of the kernel
         // These functions are the interface for communication with the GUI
+        /////////////////////////////////////////////////
+        /// \brief This static member function returns a
+        /// a pointer to the singleton instance of the
+        /// kernel.
+        ///
+        /// \return NumeReKernel*
+        ///
+        /// Obtaining the pointer to the kernel allows
+        /// getting references to the main class objects.
+        /////////////////////////////////////////////////
         static NumeReKernel* getInstance()
         {
             return kernelInstance;
@@ -217,6 +233,11 @@ class NumeReKernel
         Parser& getParser()
         {
             return _parser;
+        }
+
+        NumeRe::StringParser& getStringParser()
+        {
+            return _stringParser;
         }
 
         Define& getDefinitions()
@@ -352,3 +373,5 @@ inline string pointToError(unsigned int nPos)
     return sErrorPointer;
 }
 
+
+#endif // KERNEL_HPP

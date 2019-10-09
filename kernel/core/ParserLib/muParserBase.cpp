@@ -2660,7 +2660,7 @@ namespace mu
                 nthStackPos++;
 
             // Ensure that we don't read wrong values
-            if (nthStackPos >= nFinalResults)
+            if (nthStackPos >= (size_t)nFinalResults)
                 break;
         }
 

@@ -2349,7 +2349,6 @@ bool containsStrings(const string& sLine)
     // All other string functions need strings as input
 	if (sLine.find('"') != string::npos
 			|| sLine.find('#') != string::npos
-			|| sLine.find("_~~READFILECLUSTER{}") != string::npos
 			|| sLine.find("string(") != string::npos
 			|| sLine.find("string_cast(") != string::npos
 			|| sLine.find("char(") != string::npos

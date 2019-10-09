@@ -123,12 +123,7 @@ const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)
 std::string replacePathSeparator(const std::string&);
 string toString(const vector<int>& vVector);
 vector<int> toVector(string sString);
-string removeQuotationMarks(const string& sString)
-{
-	if (sString.find('"') == string::npos || sString.front() != '"' || sString.back() != '"')
-		return sString;
-	return sString.substr(1, sString.length() - 2);
-}
+string removeQuotationMarks(const string& sString);
 // Create the stack trace object here
 Language _guilang;
 FindReplaceDialog* g_findReplace;

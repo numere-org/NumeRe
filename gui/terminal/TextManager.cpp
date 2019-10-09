@@ -488,7 +488,7 @@ void TextManager::synchronizeRenderedBlock(int linesToDelete)
         if (linesToDelete > 0)
         {
             // Delete lines from the front
-            while (m_renderedBlock.size() && (!m_renderedBlock.front().coords.size() || m_renderedBlock.front().coords.back().line < linesToDelete))
+            while (m_renderedBlock.size() && (!m_renderedBlock.front().coords.size() || m_renderedBlock.front().coords.back().line < (size_t)linesToDelete))
             {
                 m_renderedBlock.pop_front();
             }
@@ -513,7 +513,7 @@ void TextManager::synchronizeRenderedBlock(int linesToDelete)
             // Find the corresponding line from the back
             linesToDelete = (int)m_renderedBlock.back().coords.back().line + linesToDelete;
 
-            while (m_renderedBlock.size() && (!m_renderedBlock.back().coords.size() || m_renderedBlock.back().coords.back().line > linesToDelete))
+            while (m_renderedBlock.size() && (!m_renderedBlock.back().coords.size() || m_renderedBlock.back().coords.back().line > (size_t)linesToDelete))
             {
                 m_renderedBlock.pop_back();
             }
@@ -1163,7 +1163,7 @@ string TextManager::GetInputHistory(bool vcursorup)
 		}
 
 		// Return an empty string, if the virtual cursor is the lowest possible line
-		if (m_virtualCursor + 1 >= (int)m_managedText.size())
+		if (m_virtualCursor + 1u >= m_managedText.size())
 			return "";
 	}
 

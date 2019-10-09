@@ -225,7 +225,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 
         sOverview = new string*[nStatsFields-2 + nHeadlines];
 
-        for (unsigned int i = 0; i < nStatsFields-2+nHeadlines; i++)
+        for (int i = 0; i < nStatsFields-2+nHeadlines; i++)
             sOverview[i] = new string[nCol+1];
 
         sOverview[0][0] = " ";
@@ -282,7 +282,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
         make_hline();
         // --> Speicher wieder freigeben! <--
 
-        for (unsigned int i = 0; i < nStatsFields-2+nHeadlines; i++)
+        for (int i = 0; i < nStatsFields-2+nHeadlines; i++)
             delete[] sOverview[i];
 
         delete[] sOverview;

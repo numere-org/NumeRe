@@ -42,7 +42,6 @@ class StringInternalMemory : public Sorter
         StringInternalMemory() : bSortCaseInsensitive(false) {}
 
         vector<vector<string> > sStrings;
-		map<string, string> sStringVars;
 
 		vector<int> sortElements(long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression);
 };
@@ -54,8 +53,6 @@ class StringMemory
 {
     private:
         StringInternalMemory _stringIntMem;
-
-		bool checkStringvarDelimiter(const string& sToken) const;
 
     public:
 		bool writeString(const string& _sString, unsigned int _nthString = string::npos, unsigned int nCol = 0);
@@ -165,20 +162,6 @@ class StringMemory
 		{
 		    return _stringIntMem.sortElements(i1, i2, j1, j2, sSortingExpression);
 		}
-
-		// STRINGVARFUNCS
-		bool containsStringVars(const string& sLine) const;
-		void getStringValues(string& sLine, unsigned int nPos = 0);
-		void setStringValue(const string& sVar, const string& sValue);
-		void removeStringVar(const string& sVar);
-
-		// Returns a reference to the internal string variable map
-		inline const map<string, string>& getStringVars() const
-		{
-			return _stringIntMem.sStringVars;
-		}
-
-
 };
 
 #endif // STRINGMEMORY_HPP

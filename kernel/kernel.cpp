@@ -80,7 +80,7 @@ bool IsWow64()
 }
 
 // Constructor
-NumeReKernel::NumeReKernel()
+NumeReKernel::NumeReKernel() : _option(), _data(), _parser(), _stringParser(_parser, _data, _option)
 {
 	sCommandLine.clear();
 	sAnswer.clear();
@@ -784,9 +784,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			// Get data elements for the current command line or determine,
 			// if the target value of the current command line is a candidate
 			// for a cluster
-			if (!containsStrings(sLine)
-					&& !_data.containsStringVars(sLine)
-					&& (sLine.find("data(") != string::npos || _data.containsTablesOrClusters(sLine)))
+			if (!_stringParser.isStringExpression(sLine) && (sLine.find("data(") != string::npos || _data.containsTablesOrClusters(sLine)))
 			{
 				sCache = getDataElements(sLine, _parser, _data, _option);
 
@@ -1080,6 +1078,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
 			return NUMERE_ERROR;
 		}
+
+		_stringParser.removeTempStringVectorVars();
 
 		if (_script.wasLastCommand())
 		{
@@ -1516,10 +1516,10 @@ void NumeReKernel::handleToCmd(string& sLine, string& sCache, string& sCurrentCo
             StripSpaces(sCmdString);
 
             // Evaluate the string part
-            if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
+            if (_stringParser.isStringExpression(sCmdString))
             {
                 sCmdString += " -nq";
-                parser_StringParser(sCmdString, sCache, _data, _parser, _option, true);
+                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sCache, true);
                 sCache = "";
             }
             sLine = sLine.substr(0, nPos - 6) + sCmdString + sLine.substr(nPos + nParPos + 1);
@@ -1747,36 +1747,32 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
 // This private member function handles the evaluation of strings
 bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal)
 {
-    if (containsStrings(sLine) || _data.containsStringVars(sLine))
+    if (_stringParser.isStringExpression(sLine))
     {
-        int nReturn = parser_StringParser(sLine, sCache, _data, _parser, _option);
-        if (nReturn)
+        auto retVal = _stringParser.evalAndFormat(sLine, sCache, true);
+
+        if (retVal == NumeRe::StringParser::STRING_SUCCESS)
         {
-            if (nReturn == 1)
+            if (!sCmdCache.length() && !(_script.isValid() && _script.isOpen()))
             {
-                if (!sCmdCache.length() && !(_script.isValid() && _script.isOpen()))
+                if (_script.wasLastCommand())
                 {
-                    if (_script.wasLastCommand())
-                    {
-                        print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-                        _data.setPluginCommands(_procedure.getPluginNames());
-                    }
-                    sCommandLine.clear();
-                    bCancelSignal = false;
-                    nReturnVal = NUMERE_DONE_KEYWORD;
-                    return false;
+                    print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+                    _data.setPluginCommands(_procedure.getPluginNames());
                 }
-                else
-                    return false;
+                sCommandLine.clear();
+                bCancelSignal = false;
+                nReturnVal = NUMERE_DONE_KEYWORD;
+                return false;
             }
-            if (sCache.length() && _data.containsTablesOrClusters(sCache) && !bWriteToCache)
-                bWriteToCache = true;
+            else
+                return false;
         }
-        else
-        {
-            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-        }
+
+        if (sCache.length() && _data.containsTablesOrClusters(sCache) && !bWriteToCache)
+            bWriteToCache = true;
     }
+
     return true;
 }
 
@@ -1810,6 +1806,7 @@ void NumeReKernel::resetAfterError(string& sCmdCache)
     // Reset the debugger, if not already done
     _debugger.finalize();
     _procedure.reset();
+    _stringParser.removeTempStringVectorVars();
 }
 
 void NumeReKernel::updateLineLenght(int nLength)
@@ -1959,7 +1956,7 @@ NumeReVariables NumeReKernel::getVariableList()
     NumeReVariables vars;
 
     mu::varmap_type varmap = _parser.GetVar();
-    map<string, string> stringmap = _data.getStringVars();
+    map<string, string> stringmap = _stringParser.getStringVars();
     map<string, long long int> tablemap = _data.mCachesMap;
     const map<string, NumeRe::Cluster>& clustermap = _data.getClusterMap();
     string sCurrentLine;
@@ -2663,7 +2660,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     }
 
     // Get the string variable map
-    map<string, string> sStringMap = getInstance()->getData().getStringVars();
+    map<string, string> sStringMap = getInstance()->getStringParser().getStringVars();
 
     nLocalStringMapSize = sStringMap.size();
 

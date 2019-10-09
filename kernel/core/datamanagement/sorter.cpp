@@ -159,7 +159,7 @@ bool Sorter::sortSubList(int* nIndex, int nElements, ColumnKeys* KeyList, long l
     // Get the subkey list
 	ColumnKeys* subKeyList = KeyList->subkeys;
 	int nTopColumn = KeyList->nKey[0];
-	size_t nStart = i1;
+	int nStart = i1;
 
 	// If the subkey list is valid and contains further subkeys and the current
 	// column number is not larger than the maximal column number, search through
@@ -167,7 +167,7 @@ bool Sorter::sortSubList(int* nIndex, int nElements, ColumnKeys* KeyList, long l
 	// sorted using further columns
 	if (subKeyList && subKeyList->subkeys && j1 + nTopColumn < nColumns)
 	{
-		for (size_t k = i1 + 1; k <= i2 && k < nElements; k++)
+		for (int k = i1 + 1; k <= i2 && k < nElements; k++)
 		{
 		    // Is this the first element, which is not equal to the current
 		    // start element?

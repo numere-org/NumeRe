@@ -109,7 +109,7 @@ vector<double> parser_Integrate(const string& sCmd, Datafile& _data, Parser& _pa
 	parser_iVars.vValue[0][3] = 1e-3;
 
 	// It's not possible to calculate the integral of a string expression
-	if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 	{
 		throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "integrate");
 	}
@@ -665,7 +665,7 @@ vector<double> parser_Integrate_2(const string& sCmd, Datafile& _data, Parser& _
 	parser_iVars.vValue[1][3] = 1e-3;
 
 	// Strings may not be integrated
-	if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 	{
 		throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "integrate");
 	}
@@ -1603,7 +1603,7 @@ vector<double> parser_Diff(const string& sCmd, Parser& _parser, Datafile& _data,
 	vector<double> vResult;
 
 	// Strings cannot be differentiated
-	if (containsStrings(sExpr) || _data.containsStringVars(sExpr))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpr))
 	{
 		throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "diff");
 	}
@@ -1992,7 +1992,7 @@ void parser_ListVar(mu::ParserBase& _parser, const Settings& _option, const Data
 	mu::varmap_type variables = _parser.GetVar();
 
 	// Get the string variables
-	map<string, string> StringMap = _data.getStringVars();
+	map<string, string> StringMap = NumeReKernel::getInstance()->getStringParser().getStringVars();
 
 	// Get the current defined data tables
 	map<string, long long int> CacheMap = _data.getTableMap();
@@ -2396,11 +2396,7 @@ void parser_ListPlugins(Parser& _parser, Datafile& _data, const Settings& _optio
 				sLine += "$" + _plugin.getPluginDesc(i);
 			}
 			sLine = '"' + sLine + "\" -nq";
-			if (!parser_StringParser(sLine, sDummy, _data, _parser, _option, true))
-			{
-				NumeReKernel::toggleTableStatus();
-				throw SyntaxError(SyntaxError::STRING_ERROR, "", SyntaxError::invalid_position);
-			}
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDummy, true);
 			NumeReKernel::printPreFmt(LineBreak(sLine, _option, true, 0, 25) + "\n");
 		}
 	}
@@ -2828,7 +2824,7 @@ bool parser_findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Se
 	string sVar = "";
 
 	// We cannot search extrema in strings
-	if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 	{
 		throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "extrema");
 	}
@@ -3366,7 +3362,7 @@ bool parser_findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Set
 	string sVar = "";
 
 	// We cannot find zeroes in strings
-	if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 	{
 		throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "zeroes");
 	}
@@ -4689,7 +4685,7 @@ bool parser_evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Set
 	{
 		getDataElements(sParams, _parser, _data, _option);
 
-		if (sParams.find("{") != string::npos && (containsStrings(sParams) || _data.containsStringVars(sParams)))
+		if (sParams.find("{") != string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(sParams))
 			parser_VectorToExpr(sParams, _option);
 	}
 
@@ -5564,11 +5560,10 @@ bool parser_writeAudio(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	sCmd.erase(0, findCommand(sCmd).nPos + findCommand(sCmd).sString.length()); // Kommando entfernen
 
 	// Strings parsen
-	if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 	{
 		string sDummy = "";
-		if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
-			throw SyntaxError(SyntaxError::STRING_ERROR, sCmd, SyntaxError::invalid_position);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
 	}
 	// Funktionen aufrufen
 	if (!_functions.call(sCmd))
@@ -5681,11 +5676,10 @@ bool parser_regularize(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	sCmd.erase(0, findCommand(sCmd).nPos + findCommand(sCmd).sString.length()); // Kommando entfernen
 
 	// Strings parsen
-	if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 	{
 		string sDummy = "";
-		if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
-			throw SyntaxError(SyntaxError::STRING_ERROR, sCmd, SyntaxError::invalid_position);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
 	}
 	// Funktionen aufrufen
 	if (!_functions.call(sCmd))
@@ -5757,11 +5751,10 @@ bool parser_pulseAnalysis(string& _sCmd, Parser& _parser, Datafile& _data, Defin
 	string sCmd = _sCmd.substr(findCommand(_sCmd, "pulse").nPos + 5);
 
 	// Strings parsen
-	if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 	{
 		string sDummy = "";
-		if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
-			throw SyntaxError(SyntaxError::STRING_ERROR, _sCmd, SyntaxError::invalid_position);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
 	}
 	// Funktionen aufrufen
 	if (!_functions.call(sCmd))
@@ -5840,11 +5833,10 @@ bool parser_stfa(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& 
 	sCmd.erase(0, findCommand(sCmd).nPos + 4);
 
 	// Strings parsen
-	if (containsStrings(sCmd) || _data.containsStringVars(sCmd))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 	{
 		string sDummy = "";
-		if (!parser_StringParser(sCmd, sDummy, _data, _parser, _option, true))
-			throw SyntaxError(SyntaxError::STRING_ERROR, sCmd, SyntaxError::invalid_position);
+		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
 	}
 	// Funktionen aufrufen
 	if (!_functions.call(sCmd))

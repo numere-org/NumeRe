@@ -474,19 +474,20 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
                 }
                 else
                 {
-                    sEntityStringReplacement = "{";
+                    // Prepare a string vector
+                    vector<string> vStringContents;
 
                     // Create the string vector representation
                     // using the calculated indices
                     for (size_t i = 0; i < _idx.row.size(); i++)
                     {
                         if (cluster.getType(_idx.row[i]) == NumeRe::ClusterItem::ITEMTYPE_DOUBLE)
-                            sEntityStringReplacement += toCmdString(cluster.getDouble(_idx.row[i])) + ",";
+                            vStringContents.push_back(toCmdString(cluster.getDouble(_idx.row[i])));
                         else
-                            sEntityStringReplacement += cluster.getString(_idx.row[i]) + ",";
+                            vStringContents.push_back(cluster.getString(_idx.row[i]));
                     }
 
-                    sEntityStringReplacement.back() = '}';
+                    sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(vStringContents);
                 }
             }
 		}

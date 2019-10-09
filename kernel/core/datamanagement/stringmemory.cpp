@@ -25,18 +25,18 @@
 // Implementation for the "Sorter" object
 int StringInternalMemory::compare(int i, int j, int col)
 {
-    if (sStrings.size() <= col)
+    if (sStrings.size() <= (size_t)col)
         return 0;
 
     // Ensure that the coordinates reference a
     // valid string object
-    if (i <= j && sStrings[col].size() <= i)
+    if (i <= j && sStrings[col].size() <= (size_t)i)
         return 0;
-    else if (i < j && sStrings[col].size() <= j)
+    else if (i < j && sStrings[col].size() <= (size_t)j)
         return -1;
-    else if (i > j && sStrings[col].size() <= j)
+    else if (i > j && sStrings[col].size() <= (size_t)j)
         return 0;
-    else if (i > j && sStrings[col].size() <= i)
+    else if (i > j && sStrings[col].size() <= (size_t)i)
         return 1;
 
     // Comparsion currently done depending on the
@@ -61,9 +61,9 @@ int StringInternalMemory::compare(int i, int j, int col)
 // Implementation for the "Sorter" object
 bool StringInternalMemory::isValue(int line, int col)
 {
-    if (sStrings.size() <= col)
+    if (sStrings.size() <= (size_t)col)
         return false;
-    if (sStrings[col].size() <= line)
+    if (sStrings[col].size() <= (size_t)line)
         return false;
 
     return sStrings[col][line].length();
@@ -508,187 +508,3 @@ string StringMemory::sumString(VectorIndex _vLine, VectorIndex _vCol)
 
     return sSum;
 }
-
-// This private member function examines the first and
-// the last character of the passed string and determines,
-// whether it is a delimiter or not
-bool StringMemory::checkStringvarDelimiter(const string& sToken) const
-{
-    static const string sDELIMITER = "+-*/ ()={}^&|!<>,\\%#[]?:\";";
-
-    // The opening parenthesis at the end indicates a function.
-    // This is obviously not a string variable
-    if (sToken.back() == '(')
-        return false;
-
-    // If the first and the last character are part of the
-    // delimiter list (or the last character is a dot), then
-    // we indicate the current token as delimited.
-    return sDELIMITER.find(sToken.front()) != string::npos && (sDELIMITER.find(sToken.back()) != string::npos || sToken.back() == '.');
-}
-
-// This public member function determines, whether the passed
-// string line contains string variables as part of the expression
-bool StringMemory::containsStringVars(const string& _sLine) const
-{
-    // Do nothing, if no string variables were declared
-    if (!_stringIntMem.sStringVars.size())
-        return false;
-
-    // Add whitespaces for safety
-    string sLine = " " + _sLine + " ";
-
-    // Search for the first match of all declared string variables
-    for (auto iter = _stringIntMem.sStringVars.begin(); iter != _stringIntMem.sStringVars.end(); ++iter)
-    {
-        // Compare the located match to the delimiters and return
-        // true, if the match is delimited on both sides
-        if (sLine.find(iter->first) != string::npos
-            && sLine[sLine.find(iter->first)+(iter->first).length()] != '('
-            && checkStringvarDelimiter(sLine.substr(sLine.find(iter->first)-1, (iter->first).length()+2))
-            )
-            return true;
-    }
-
-    // No match found
-    return false;
-}
-
-// This public member function resolves all string variable
-// occurences and replaces them with their value or the standard
-// string function signature, if the string variable is connected
-// to a method.
-void StringMemory::getStringValues(string& sLine, unsigned int nPos)
-{
-    // Do nothing, if no string variables were declared
-    if (!_stringIntMem.sStringVars.size())
-        return;
-
-    unsigned int __nPos = nPos;
-    sLine += " ";
-
-    // Try to find every string variable into the passed string and
-    // replace it correspondingly
-    for (auto iter = _stringIntMem.sStringVars.begin(); iter != _stringIntMem.sStringVars.end(); ++iter)
-    {
-        __nPos = nPos;
-
-        // Examine all occurences of the current variable in the
-        // string
-        while (sLine.find(iter->first, __nPos) != string::npos)
-        {
-            __nPos = sLine.find(iter->first, __nPos)+1;
-
-            // Appended opening parenthesis indicates a function
-            if (sLine[__nPos+(iter->first).length()-1] == '(')
-                continue;
-
-            // Check, whether the found occurence is correctly
-            // delimited and replace it. If the match is at the
-            // beginning of the command line, it serves a special
-            // treatment
-            if (__nPos == 1)
-            {
-                // Check with delimiter
-                if (checkStringvarDelimiter(" " + sLine.substr(0, (iter->first).length()+1)) && !isInQuotes(sLine, 0, true))
-                {
-                    // Replace it with standard function signature or its value
-                    if (sLine[(iter->first).length()] == '.')
-                    {
-                        replaceStringMethod(sLine, 0, (iter->first).length(), "\"" + iter->second + "\"");
-                    }
-                    else
-                    {
-                        sLine.replace(0, (iter->first).length(), "\"" + iter->second + "\"");
-                    }
-                }
-
-                continue;
-            }
-
-            // Check with delimiter
-            if (checkStringvarDelimiter(sLine.substr(__nPos-2, (iter->first).length()+2)) && !isInQuotes(sLine, __nPos-1, true))
-            {
-                // Replace it with standard function signature or its value
-                if (sLine[__nPos+(iter->first).length()-1] == '.')
-                {
-                    replaceStringMethod(sLine, __nPos-1, (iter->first).length(), "\"" + iter->second + "\"");
-                }
-                else
-                    sLine.replace(__nPos-1, (iter->first).length(), "\"" + iter->second + "\"");
-            }
-        }
-    }
-
-    return;
-}
-
-// This public member function creates or updates a string variable
-// and fills it with the passed value
-void StringMemory::setStringValue(const string& sVar, const string& sValue)
-{
-    static const string sVALIDCHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_1234567890~";
-
-    // Variable names cannot start with a number
-    if (sVar[0] >= '0' && sVar[0] <= '9')
-        throw SyntaxError(SyntaxError::STRINGVARS_MUSTNT_BEGIN_WITH_A_NUMBER, "", SyntaxError::invalid_position, sVar);
-
-    // Compare every character to the list of valid characters,
-    // to ensure that the name is absolutly valid
-    for (unsigned int i = 0; i < sVar.length(); i++)
-    {
-        if (sVALIDCHARACTERS.find(sVar[i]) == string::npos)
-        {
-            throw SyntaxError(SyntaxError::STRINGVARS_MUSTNT_CONTAIN, "", SyntaxError::invalid_position, sVar.substr(i,1));
-        }
-    }
-
-    // Create or update the variable name with the passed value.
-    // Omit the surrounding quotation marks
-    if (sValue[0] == '"' && sValue[sValue.length()-1] == '"')
-        _stringIntMem.sStringVars[sVar] = sValue.substr(1,sValue.length()-2);
-    else
-        _stringIntMem.sStringVars[sVar] = sValue;
-
-    // If the current string variables value contains further
-    // quotation marks, mask them correctly
-    if (_stringIntMem.sStringVars[sVar].find('"') != string::npos)
-    {
-        unsigned int nPos = 0;
-
-        while (_stringIntMem.sStringVars[sVar].find('"', nPos) != string::npos)
-        {
-            nPos = _stringIntMem.sStringVars[sVar].find('"', nPos);
-
-            // Is the found quotation mark masked by a backslash?
-            if (_stringIntMem.sStringVars[sVar][nPos-1] == '\\')
-            {
-                nPos++;
-                continue;
-            }
-            else
-            {
-                _stringIntMem.sStringVars[sVar].insert(nPos,1,'\\');
-                nPos += 2;
-                continue;
-            }
-        }
-    }
-
-    return;
-}
-
-// This public member function removes the selected string variable
-// from memory
-void StringMemory::removeStringVar(const string& sVar)
-{
-    // Do nothing, if no string variables were declared
-    if (!_stringIntMem.sStringVars.size())
-        return;
-
-    // Delete the string variable, if it exists
-    auto iter = _stringIntMem.sStringVars.find(sVar);
-    if (iter != _stringIntMem.sStringVars.end())
-        _stringIntMem.sStringVars.erase(iter);
-}
-

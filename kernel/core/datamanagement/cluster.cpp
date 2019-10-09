@@ -83,7 +83,7 @@ namespace NumeRe
         // Assign the single results
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (nNum > 1 && nNum <= i)
+            if (nNum > 1 && (size_t)nNum <= i)
                 return;
 
             // Expand the current cluster on-the-fly
@@ -417,7 +417,7 @@ namespace NumeRe
     void Cluster::setDoubleArray(int nNum, double* data)
     {
         // Create new cluster items, if needed
-        while (vClusterArray.size() < nNum)
+        while (vClusterArray.size() < (size_t)nNum)
             push_back(new ClusterDoubleItem(NAN));
 
         for (int i = 0; i < nNum; i++)
@@ -444,7 +444,7 @@ namespace NumeRe
         // do that here and return
         if (_idx.row.isOpenEnd() && _idx.row.front() == 0)
         {
-            if (vClusterArray.size() > nNum)
+            if (vClusterArray.size() > (size_t)nNum)
                 clear();
 
             setDoubleArray(nNum, data);

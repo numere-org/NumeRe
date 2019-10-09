@@ -146,10 +146,10 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 StripSpaces(sCmdString);
 
                 // Parse strings, if the argument contains some
-                if (containsStrings(sCmdString) || _data.containsStringVars(sCmdString))
+                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmdString))
                 {
                     sCmdString += " -nq";
-                    parser_StringParser(sCmdString, sCache, _data, _parser, _option, true);
+                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmdString, sCache, true);
                     sCache = "";
                 }
 
@@ -174,14 +174,14 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         {
             string sErrorToken;
 
-            if (sLine.length() > 6 && (containsStrings(sLine) || _data.containsStringVars(sLine)))
+            if (sLine.length() > 6 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
             {
-                if (_data.containsStringVars(sLine))
-                    _data.getStringValues(sLine);
+                if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sLine))
+                    NumeReKernel::getInstance()->getStringParser().getStringValues(sLine);
 
                 getStringArgument(sLine, sErrorToken);
                 sErrorToken += " -nq";
-                parser_StringParser(sErrorToken, sCache, _data, _parser, _option, true);
+                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sCache, true);
             }
 
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
@@ -325,8 +325,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || nCurrentByteCode & ProcedureCommandLine::BYTECODE_DATAACCESS
         || nFlags & ProcedureCommandLine::FLAG_TEMPLATE)
     {
-        if (!containsStrings(sLine)
-            && !_data.containsStringVars(sLine)
+        if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
             && (sLine.find("data(") != string::npos || _data.containsTablesOrClusters(sLine)))
         {
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
@@ -352,24 +351,19 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || nCurrentByteCode & ProcedureCommandLine::BYTECODE_STRING
         || nFlags & ProcedureCommandLine::FLAG_TEMPLATE)
     {
-        if (containsStrings(sLine) || _data.containsStringVars(sLine))
+        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
         {
-            int nReturn = parser_StringParser(sLine, sCache, _data, _parser, _option, bProcSupressAnswer);
+            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bProcSupressAnswer);
 
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_STRING;
 
             // Handle the return value
-            if (nReturn == 1)
+            if (retVal == NumeRe::StringParser::STRING_SUCCESS)
             {
                 // Only strings
                 thisReturnVal.vStringVal.push_back(sLine);
                 return thisReturnVal;
-            }
-            else if (!nReturn)
-            {
-                // Error
-                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
             }
 
             // Other: numerical values
@@ -1016,15 +1010,15 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             {
                 string sErrorToken;
 
-                if (sProcCommandLine.length() > 7 && (containsStrings(sProcCommandLine) || _data.containsStringVars(sProcCommandLine)))
+                if (sProcCommandLine.length() > 7 && NumeReKernel::getInstance()->getStringParser().isStringExpression(sProcCommandLine))
                 {
-                    if (_data.containsStringVars(sProcCommandLine))
-                        _data.getStringValues(sProcCommandLine);
+                    if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sProcCommandLine))
+                        NumeReKernel::getInstance()->getStringParser().getStringValues(sProcCommandLine);
 
                     getStringArgument(sProcCommandLine, sErrorToken);
                     sErrorToken += " -nq";
                     string sDummy = "";
-                    parser_StringParser(sErrorToken, sDummy, _data, _parser, _option, true);
+                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sErrorToken, sDummy, true);
                 }
 
                 if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
