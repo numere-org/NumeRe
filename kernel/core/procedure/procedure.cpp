@@ -666,8 +666,19 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
     StripSpaces(sVarDeclarationList);
     StripSpaces(sVarList);
 
-    // Evaluate the argument list for the current procedure
-    mVarMap = _varFactory->createProcedureArguments(sVarDeclarationList, sVarList);
+    try
+    {
+        // Evaluate the argument list for the current procedure
+        mVarMap = _varFactory->createProcedureArguments(sVarDeclarationList, sVarList);
+    }
+    catch (...)
+    {
+        _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+        _debugger.showError(current_exception());
+
+        resetProcedure(_parser, bSupressAnswer_back);
+        throw;
+    }
 
     _parser.mVarMapPntr = &mVarMap;
 
@@ -874,6 +885,9 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
             }
             catch (...)
             {
+                _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+                _debugger.showError(current_exception());
+
                 resetProcedure(_parser, bSupressAnswer_back);
                 throw;
             }

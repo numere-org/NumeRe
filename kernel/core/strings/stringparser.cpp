@@ -62,85 +62,72 @@ namespace NumeRe
     {
         // Get the contents of "string()", "data()" and the other caches
         string sDummy;
+        size_t nEndPosition;
 
         // {str} = string(...)
-        while (sLine.find("string(", n_pos) != string::npos)
+        while ((n_pos = findNextFunction("string(", sLine, n_pos, nEndPosition)) != string::npos)
         {
-            n_pos = sLine.find("string(", n_pos);
+            string sString = getFunctionArgumentList("string(", sLine, n_pos, nEndPosition);
 
-            if (isInQuotes(sLine, n_pos, true))
+            // Check for arguments to parse
+            if (sString.length())
             {
-                n_pos++;
-                continue;
-            }
-
-            unsigned int nPos = n_pos + 6;
-
-            if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-
-            nPos += getMatchingParenthesis(sLine.substr(nPos));
-
-            if (!isInQuotes(sLine, n_pos, true) && !isInQuotes(sLine, nPos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, 8))))
-            {
-                string sString = "";
-
-                if (nPos - n_pos - 7 > 0)
-                {
-                    sString = sLine.substr(n_pos + 7, nPos - n_pos - 7);
-                    StripSpaces(sString);
-                }
-
+                StripSpaces(sString);
                 StringResult strRes = eval(sString, "", false);
 
                 if (!strRes.vResult.size())
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                 sString = strRes.vResult[0];
+            }
 
-                Indices _idx = parser_getIndices("string(" + sString + ")", _parser, _data, _option);
+            // Get the indices
+            Indices _idx = parser_getIndices("string(" + sString + ")", _parser, _data, _option);
 
-                if (_idx.col.isOpenEnd())
-                    _idx.col.back() = VectorIndex::INVALID;
+            // Pre-process the indices
+            if (_idx.col.isOpenEnd())
+                _idx.col.back() = VectorIndex::INVALID;
 
-                if (_idx.row.isOpenEnd())
-                    _idx.row.setRange(0, _data.getStringElements()-1);
+            if (_idx.row.isOpenEnd())
+                _idx.row.setRange(0, _data.getStringElements()-1);
 
-                if (!_idx.col.isValid())
-                    _idx.col.front() = 0;
+            if (!_idx.col.isValid())
+                _idx.col.front() = 0;
 
-                if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
+            // Handle multi-argument functions or return
+            // the stored strings directly
+            if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nEndPosition + 1)))
+            {
+                string sLeft = sLine.substr(0, n_pos);
+                StripSpaces(sLeft);
+
+                if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "num(")
+                    sLine = sLeft.substr(0, sLeft.length() - 4) + toString(_idx.row.size()) + sLine.substr(sLine.find(')', nEndPosition + 1) + 1);
+                else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "max(")
+                    sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.maxString(_idx.row, _idx.col) + "\"" + sLine.substr(sLine.find(')', nEndPosition + 1) + 1);
+                else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "min(")
+                    sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.minString(_idx.row, _idx.col) + "\"" + sLine.substr(sLine.find(')', nEndPosition + 1) + 1);
+                else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "sum(")
+                    sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.sumString(_idx.row, _idx.col) + "\"" + sLine.substr(sLine.find(')', nEndPosition + 1) + 1);
+            }
+            else
+            {
+                // Create the string vector
+                if (_data.getStringElements(_idx.col.front()))
                 {
-                    string sLeft = sLine.substr(0, n_pos);
-                    StripSpaces(sLeft);
+                    sString = "";
+                    vector<string> vStrings;
 
-                    if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "num(")
-                        sLine = sLeft.substr(0, sLeft.length() - 4) + toString(_idx.row.size()) + sLine.substr(sLine.find(')', nPos + 1) + 1);
-                    else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "max(")
-                        sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.maxString(_idx.row, _idx.col) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-                    else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "min(")
-                        sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.minString(_idx.row, _idx.col) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
-                    else if (sLeft.length() > 3 && sLeft.substr(sLeft.length() - 4) == "sum(")
-                        sLine = sLeft.substr(0, sLeft.length() - 4) + "\"" + _data.sumString(_idx.row, _idx.col) + "\"" + sLine.substr(sLine.find(')', nPos + 1) + 1);
+                    for (size_t i = 0; i < _idx.row.size(); i++)
+                    {
+                        vStrings.push_back("\"" +  _data.readString((unsigned int)_idx.row[i], _idx.col.front()) + "\"");
+                    }
+
+                    sString = createStringVectorVar(vStrings);
+                    sLine = sLine.substr(0, n_pos) + sString + sLine.substr(nEndPosition + 1);
                 }
                 else
-                {
-                    if (_data.getStringElements(_idx.col.front()))
-                    {
-                        sString = "";
-                        vector<string> vStrings;
-
-                        for (size_t i = 0; i < _idx.row.size(); i++)
-                        {
-                            vStrings.push_back("\"" +  _data.readString((unsigned int)_idx.row[i], _idx.col.front()) + "\"");
-                        }
-
-                        sString = createStringVectorVar(vStrings);
-                        sLine = sLine.substr(0, n_pos) + sString + sLine.substr(nPos + 1);
-                    }
-                    else
-                        sLine = sLine.substr(0, n_pos) + "\"\"" + sLine.substr(nPos + 1);
-                }
+                    sLine = sLine.substr(0, n_pos) + "\"\"" + sLine.substr(nEndPosition + 1);
             }
 
             n_pos++;
@@ -172,55 +159,42 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void StringParser::replaceDataOccurence(string& sLine, const string& sOccurence)
     {
-        size_t n_pos = 0;
+        size_t nStartPosition = 0;
+        size_t nEndPosition;
 
-        while (sLine.find(sOccurence, n_pos) != string::npos)
+        // Find the next occurence
+        while ((nStartPosition = findNextFunction(sOccurence, sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            n_pos = sLine.find(sOccurence, n_pos);
-
-            if (isInQuotes(sLine, n_pos, true))
+            // Handle multi-argument functions
+            if (parser_CheckMultArgFunc(sLine.substr(0, nStartPosition), sLine.substr(nEndPosition + 1)))
             {
-                n_pos++;
-                continue;
-            }
-
-            size_t nPos = n_pos + sOccurence.length()-1;
-
-            if (getMatchingParenthesis(sLine.substr(nPos)) == string::npos && !isInQuotes(sLine, nPos))
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-
-            nPos += getMatchingParenthesis(sLine.substr(nPos));
-
-            if (!isInQuotes(sLine, nPos, true) && !isInQuotes(sLine, n_pos, true) && (!n_pos || checkDelimiter(sLine.substr(n_pos - 1, sOccurence.length() + 1))))
-            {
-                if (parser_CheckMultArgFunc(sLine.substr(0, n_pos), sLine.substr(nPos + 1)))
-                {
-                    if (n_pos > 4 && sLine.substr(sLine.rfind('(', n_pos) - 4, 5) == "norm(")
-                        n_pos -= 5;
-                    else
-                        n_pos -= 4;
-
-                    nPos++;
-                }
-
-                string sData = sLine.substr(n_pos, nPos - n_pos + 1);
-                // Get the data and parse string expressions
-                getDataElements(sData, _parser, _data, _option);
-                StringResult strRes = eval(sData, "");
-
-                if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                // Create a string vector variable from the returned vector
-                // if it is a string. Otherwise simple use the first return
-                // value, which already contains a numerical vector
-                if (!strRes.bOnlyLogicals)
-                    sData = createStringVectorVar(strRes.vResult);
+                if (nStartPosition > 4 && sLine.substr(sLine.rfind('(', nStartPosition) - 4, 5) == "norm(")
+                    nStartPosition -= 5;
                 else
-                    sData = strRes.vResult.front();
+                    nStartPosition -= 4;
 
-                sLine = sLine.substr(0, n_pos) + sData + sLine.substr(nPos + 1);
+                nEndPosition++;
             }
+
+            string sData = sLine.substr(nStartPosition, nEndPosition - nStartPosition + 1);
+            // Get the data and parse string expressions
+            getDataElements(sData, _parser, _data, _option);
+            StringResult strRes = eval(sData, "");
+
+            if (!strRes.vResult.size())
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+            // Create a string vector variable from the returned vector
+            // if it is a string. Otherwise simple use the first return
+            // value, which already contains a numerical vector
+            if (!strRes.bOnlyLogicals)
+                sData = createStringVectorVar(strRes.vResult);
+            else
+                sData = strRes.vResult.front();
+
+            sLine = sLine.substr(0, nStartPosition) + sData + sLine.substr(nEndPosition + 1);
+
+            nStartPosition++;
         }
 
     }
@@ -1531,6 +1505,18 @@ namespace NumeRe
             // return with the onlyLogicals flag
             return StringResult(sLine, true);
         }
+        else if (!bObjectContainsTablesOrClusters && !sObject.length() && isSimpleString(sLine))
+        {
+            // After the data objects are resolved,
+            // it's quite possible that there are only
+            // simple strings left in this recursion
+            StripSpaces(sLine);
+
+            strRes.vResult.push_back(sLine);
+            strRes.vNoStringVal.push_back(false);
+
+            return strRes;
+        }
 
         n_pos = 0;
 
@@ -1653,10 +1639,11 @@ namespace NumeRe
                     string sVectorTemp = sLine.substr(i+1, nmatching-1);
 
                     // Does the vector brace contain colons? Then it
-                    // might be a numerical vector expansion
+                    // might be a numerical vector expansion if it
+                    // is not a string expression.
+                    // CAREFUL: Colons are also part of file paths!
                     if (sVectorTemp.find(':') != string::npos)
                     {
-                        // Is it NOT a string expression?
                         if (!isStringExpression(sVectorTemp))
                         {
                             // Try to evaluate the vector as
@@ -1669,9 +1656,11 @@ namespace NumeRe
                             // create a temporary vector variable
                             vector<double> vRes(res, res + nRes);
                             sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
-                        }
 
-                        continue;
+                            continue;
+                        }
+                        else if (sVectorTemp.front() != '"' && sVectorTemp.back() != '"')
+                            continue;
                     }
 
                     StringResult tempres = eval(sVectorTemp, "");

@@ -100,127 +100,190 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void StringFuncHandler::evalFunction(string& sLine, const string& sFuncName, StringFuncHandle funcHandle)
     {
-        size_t n_pos = 0;
-        size_t nParensMatch = 0;
+        size_t nStartPosition = 0;
+        size_t nEndPosition = 0;
 
         // While the function signature can be found
-        while (sLine.find(sFuncName + "(", n_pos) != string::npos)
+        while ((nStartPosition = findNextFunction(sFuncName + "(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            n_pos = sLine.find(sFuncName + "(", n_pos);
-
-            // Ignore false positives
-            if (isInQuotes(sLine, n_pos, true))
-            {
-                n_pos++;
-                continue;
-            }
-
-            size_t nPos = n_pos + sFuncName.length();
-
-            // If no matching parenthesis is found, throw an error
-            if ((nParensMatch = getMatchingParenthesis(sLine.substr(nPos))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-
-            nPos += nParensMatch;
-
             // Extract the argument of the current found function and process it
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
+            string sFunctionArgument = getFunctionArgumentList(sFuncName + "(", sLine, nStartPosition, nEndPosition);
+            vector<string> vReturnValues;
+            StringFuncArgs stringArgs;
+            stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
+            bool bLogicalOnly = false;
+
+            // Apply the parser as specified by the function signature. After that call the corresponding
+            // string function with the returned arguments as many times as it's needed
+            if (funcHandle.fType >= PARSER_INT && funcHandle.fType < PARSER_STRING)
             {
-                string sFunctionArgument = sLine.substr(n_pos + sFuncName.length() + 1, nPos - n_pos - sFuncName.length() - 1);
-                vector<string> vReturnValues;
-                StringFuncArgs stringArgs;
-                stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
-                bool bLogicalOnly = false;
-
-                // Apply the parser as specified by the function signature. After that call the corresponding
-                // string function with the returned arguments as many times as it's needed
-                if (funcHandle.fType >= PARSER_INT && funcHandle.fType < PARSER_STRING)
+                n_vect nIntArg;
+                size_t nMaxArgs = argumentParser(sFunctionArgument, nIntArg);
+                if (!nMaxArgs)
                 {
-                    n_vect nIntArg;
-                    size_t nMaxArgs = argumentParser(sFunctionArgument, nIntArg);
-                    if (!nMaxArgs)
-                    {
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                    }
-                    if (funcHandle.bTakesMultiArguments)
-                    {
-                        stringArgs.nMultiArg = nIntArg;
-                        vReturnValues.push_back(funcHandle.fHandle(stringArgs));
-                    }
-                    else
-                    {
-                        for (size_t i = 0; i < nMaxArgs; i++)
-                        {
-                            stringArgs.nArg1 = nIntArg[i];
-                            vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                        }
-                    }
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
                 }
-                else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_INT_INT)
+                if (funcHandle.bTakesMultiArguments)
                 {
-                    s_vect sStringArg;
-                    size_t nMaxArgs = 0;
-
-                    if (sFuncName == "to_string" && !containsStrings(sFunctionArgument))
-                    {
-                        sStringArg.push_back(sFunctionArgument);
-                        nMaxArgs = 1;
-                    }
-                    else
-                        nMaxArgs = argumentParser(sFunctionArgument, sStringArg, bLogicalOnly);
-
-                    if (!nMaxArgs)
-                    {
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                    }
-
-                    // These five multiargument functions are also defined for numerical values.
-                    // If the return value for the current functions arguments is an only logical
-                    // value, ignore the current function call
-                    if (bLogicalOnly
-                        && (sFuncName == "min" || sFuncName == "max" || sFuncName == "cnt" || sFuncName == "num" || sFuncName == "sum"))
-                    {
-                        n_pos++;
-                        continue;
-                    }
-
-                    if (funcHandle.bTakesMultiArguments)
-                    {
-                        stringArgs.sMultiArg = sStringArg;
-                        vReturnValues.push_back(funcHandle.fHandle(stringArgs));
-                    }
-                    else
-                    {
-                        for (size_t i = 0; i < nMaxArgs; i++)
-                        {
-                            stringArgs.sArg1 = sStringArg[i];
-                            vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                        }
-                    }
+                    stringArgs.nMultiArg = nIntArg;
+                    vReturnValues.push_back(funcHandle.fHandle(stringArgs));
                 }
-                else if (funcHandle.fType >= PARSER_STRING_INT_INT && funcHandle.fType < PARSER_STRING_INT_INT_STRING)
+                else
                 {
-                    s_vect sStringArg;
-                    n_vect nIntArg1, nIntArg2;
-                    size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg, nIntArg1, nIntArg2);
-                    if (!nMaxArgs)
-                    {
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                    }
                     for (size_t i = 0; i < nMaxArgs; i++)
                     {
-                        if (i < sStringArg.size())
-                            stringArgs.sArg1 = sStringArg[i];
-                        else if (sStringArg.size() == 1)
-                            stringArgs.sArg1 = sStringArg[0];
+                        stringArgs.nArg1 = nIntArg[i];
+                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                    }
+                }
+            }
+            else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_INT_INT)
+            {
+                s_vect sStringArg;
+                size_t nMaxArgs = 0;
+
+                if (sFuncName == "to_string" && !containsStrings(sFunctionArgument))
+                {
+                    sStringArg.push_back(sFunctionArgument);
+                    nMaxArgs = 1;
+                }
+                else
+                    nMaxArgs = argumentParser(sFunctionArgument, sStringArg, bLogicalOnly);
+
+                if (!nMaxArgs)
+                {
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                }
+
+                // These five multiargument functions are also defined for numerical values.
+                // If the return value for the current functions arguments is an only logical
+                // value, ignore the current function call
+                if (bLogicalOnly
+                    && (sFuncName == "min" || sFuncName == "max" || sFuncName == "cnt" || sFuncName == "num" || sFuncName == "sum"))
+                {
+                    nStartPosition++;
+                    continue;
+                }
+
+                if (funcHandle.bTakesMultiArguments)
+                {
+                    stringArgs.sMultiArg = sStringArg;
+                    vReturnValues.push_back(funcHandle.fHandle(stringArgs));
+                }
+                else
+                {
+                    for (size_t i = 0; i < nMaxArgs; i++)
+                    {
+                        stringArgs.sArg1 = sStringArg[i];
+                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                    }
+                }
+            }
+            else if (funcHandle.fType >= PARSER_STRING_INT_INT && funcHandle.fType < PARSER_STRING_INT_INT_STRING)
+            {
+                s_vect sStringArg;
+                n_vect nIntArg1, nIntArg2;
+                size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg, nIntArg1, nIntArg2);
+                if (!nMaxArgs)
+                {
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                }
+                for (size_t i = 0; i < nMaxArgs; i++)
+                {
+                    if (i < sStringArg.size())
+                        stringArgs.sArg1 = sStringArg[i];
+                    else if (sStringArg.size() == 1)
+                        stringArgs.sArg1 = sStringArg[0];
+                    else
+                        stringArgs.sArg1 = "";
+                    if (i < nIntArg1.size())
+                        stringArgs.nArg1 = nIntArg1[i];
+                    else if (nIntArg1.size() == 1)
+                        stringArgs.nArg1 = nIntArg1[0];
+                    else
+                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
+                    if (i < nIntArg2.size())
+                        stringArgs.nArg2 = nIntArg2[i];
+                    else if (nIntArg2.size() == 1)
+                        stringArgs.nArg2 = nIntArg2[0];
+                    else
+                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                }
+
+            }
+            else if (funcHandle.fType >= PARSER_STRING_INT_INT_STRING && funcHandle.fType < PARSER_STRING_STRING_INT_INT)
+            {
+                s_vect sStringArg1, sStringArg2;
+                n_vect nIntArg1, nIntArg2;
+                size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, nIntArg1, nIntArg2, sStringArg2);
+                if (!nMaxArgs)
+                {
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                }
+                for (size_t i = 0; i < nMaxArgs; i++)
+                {
+                    if (i < sStringArg1.size())
+                        stringArgs.sArg1 = sStringArg1[i];
+                    else if (sStringArg1.size() == 1)
+                        stringArgs.sArg1 = sStringArg1[0];
+                    else
+                        stringArgs.sArg1 = "";
+                    if (i < sStringArg2.size())
+                        stringArgs.sArg2 = sStringArg2[i];
+                    else if (sStringArg2.size() == 1)
+                        stringArgs.sArg2 = sStringArg2[0];
+                    else
+                        stringArgs.sArg2 = "";
+                    if (i < nIntArg1.size())
+                        stringArgs.nArg1 = nIntArg1[i];
+                    else if (nIntArg1.size() == 1)
+                        stringArgs.nArg1 = nIntArg1[0];
+                    else
+                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
+                    if (i < nIntArg2.size())
+                        stringArgs.nArg2 = nIntArg2[i];
+                    else if (nIntArg2.size() == 1)
+                        stringArgs.nArg2 = nIntArg2[0];
+                    else
+                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                }
+            }
+            else if (funcHandle.fType >= PARSER_STRING_STRING_INT_INT && funcHandle.fType < PARSER_STRING_STRING_STRING_INT_INT)
+            {
+                s_vect sStringArg1, sStringArg2;
+                n_vect nIntArg1, nIntArg2;
+                size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, nIntArg1, nIntArg2);
+
+                if (!nMaxArgs)
+                {
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                }
+
+                if (funcHandle.bTakesMultiArguments)
+                {
+                    stringArgs.sMultiArg = sStringArg1;
+                    nMaxArgs = max(max(sStringArg2.size(), nIntArg1.size()), nIntArg2.size());
+
+                    for (size_t i = 0; i < nMaxArgs; i++)
+                    {
+                        if (i < sStringArg2.size())
+                            stringArgs.sArg2 = sStringArg2[i];
+                        else if (sStringArg2.size() == 1)
+                            stringArgs.sArg2 = sStringArg2[0];
                         else
-                            stringArgs.sArg1 = "";
+                            stringArgs.sArg2 = "";
+
                         if (i < nIntArg1.size())
                             stringArgs.nArg1 = nIntArg1[i];
                         else if (nIntArg1.size() == 1)
                             stringArgs.nArg1 = nIntArg1[0];
                         else
                             stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
                         if (i < nIntArg2.size())
                             stringArgs.nArg2 = nIntArg2[i];
                         else if (nIntArg2.size() == 1)
@@ -230,17 +293,9 @@ namespace NumeRe
 
                         vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
                     }
-
                 }
-                else if (funcHandle.fType >= PARSER_STRING_INT_INT_STRING && funcHandle.fType < PARSER_STRING_STRING_INT_INT)
+                else
                 {
-                    s_vect sStringArg1, sStringArg2;
-                    n_vect nIntArg1, nIntArg2;
-                    size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, nIntArg1, nIntArg2, sStringArg2);
-                    if (!nMaxArgs)
-                    {
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                    }
                     for (size_t i = 0; i < nMaxArgs; i++)
                     {
                         if (i < sStringArg1.size())
@@ -249,18 +304,21 @@ namespace NumeRe
                             stringArgs.sArg1 = sStringArg1[0];
                         else
                             stringArgs.sArg1 = "";
+
                         if (i < sStringArg2.size())
                             stringArgs.sArg2 = sStringArg2[i];
                         else if (sStringArg2.size() == 1)
                             stringArgs.sArg2 = sStringArg2[0];
                         else
                             stringArgs.sArg2 = "";
+
                         if (i < nIntArg1.size())
                             stringArgs.nArg1 = nIntArg1[i];
                         else if (nIntArg1.size() == 1)
                             stringArgs.nArg1 = nIntArg1[0];
                         else
                             stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
                         if (i < nIntArg2.size())
                             stringArgs.nArg2 = nIntArg2[i];
                         else if (nIntArg2.size() == 1)
@@ -271,144 +329,66 @@ namespace NumeRe
                         vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
                     }
                 }
-                else if (funcHandle.fType >= PARSER_STRING_STRING_INT_INT && funcHandle.fType < PARSER_STRING_STRING_STRING_INT_INT)
+            }
+            else if (funcHandle.fType >= PARSER_STRING_STRING_STRING_INT_INT)
+            {
+                s_vect sStringArg1, sStringArg2, sStringArg3;
+                n_vect nIntArg1, nIntArg2;
+                size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
+                if (!nMaxArgs)
                 {
-                    s_vect sStringArg1, sStringArg2;
-                    n_vect nIntArg1, nIntArg2;
-                    size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, nIntArg1, nIntArg2);
-
-                    if (!nMaxArgs)
-                    {
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                    }
-
-                    if (funcHandle.bTakesMultiArguments)
-                    {
-                        stringArgs.sMultiArg = sStringArg1;
-                        nMaxArgs = max(max(sStringArg2.size(), nIntArg1.size()), nIntArg2.size());
-
-                        for (size_t i = 0; i < nMaxArgs; i++)
-                        {
-                            if (i < sStringArg2.size())
-                                stringArgs.sArg2 = sStringArg2[i];
-                            else if (sStringArg2.size() == 1)
-                                stringArgs.sArg2 = sStringArg2[0];
-                            else
-                                stringArgs.sArg2 = "";
-
-                            if (i < nIntArg1.size())
-                                stringArgs.nArg1 = nIntArg1[i];
-                            else if (nIntArg1.size() == 1)
-                                stringArgs.nArg1 = nIntArg1[0];
-                            else
-                                stringArgs.nArg1 = DEFAULT_NUM_ARG;
-
-                            if (i < nIntArg2.size())
-                                stringArgs.nArg2 = nIntArg2[i];
-                            else if (nIntArg2.size() == 1)
-                                stringArgs.nArg2 = nIntArg2[0];
-                            else
-                                stringArgs.nArg2 = DEFAULT_NUM_ARG;
-
-                            vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                        }
-                    }
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                }
+                for (size_t i = 0; i < nMaxArgs; i++)
+                {
+                    if (i < sStringArg1.size())
+                        stringArgs.sArg1 = sStringArg1[i];
+                    else if (sStringArg1.size() == 1)
+                        stringArgs.sArg1 = sStringArg1[0];
                     else
-                    {
-                        for (size_t i = 0; i < nMaxArgs; i++)
-                        {
-                            if (i < sStringArg1.size())
-                                stringArgs.sArg1 = sStringArg1[i];
-                            else if (sStringArg1.size() == 1)
-                                stringArgs.sArg1 = sStringArg1[0];
-                            else
-                                stringArgs.sArg1 = "";
+                        stringArgs.sArg1 = "";
+                    if (i < sStringArg2.size())
+                        stringArgs.sArg2 = sStringArg2[i];
+                    else if (sStringArg2.size() == 1)
+                        stringArgs.sArg2 = sStringArg2[0];
+                    else
+                        stringArgs.sArg2 = "";
+                    if (i < sStringArg3.size())
+                        stringArgs.sArg3 = sStringArg3[i];
+                    else if (sStringArg3.size() == 1)
+                        stringArgs.sArg3 = sStringArg3[0];
+                    else
+                        stringArgs.sArg3 = "";
+                    if (i < nIntArg1.size())
+                        stringArgs.nArg1 = nIntArg1[i];
+                    else if (nIntArg1.size() == 1)
+                        stringArgs.nArg1 = nIntArg1[0];
+                    else
+                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
+                    if (i < nIntArg2.size())
+                        stringArgs.nArg2 = nIntArg2[i];
+                    else if (nIntArg2.size() == 1)
+                        stringArgs.nArg2 = nIntArg2[0];
+                    else
+                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
 
-                            if (i < sStringArg2.size())
-                                stringArgs.sArg2 = sStringArg2[i];
-                            else if (sStringArg2.size() == 1)
-                                stringArgs.sArg2 = sStringArg2[0];
-                            else
-                                stringArgs.sArg2 = "";
-
-                            if (i < nIntArg1.size())
-                                stringArgs.nArg1 = nIntArg1[i];
-                            else if (nIntArg1.size() == 1)
-                                stringArgs.nArg1 = nIntArg1[0];
-                            else
-                                stringArgs.nArg1 = DEFAULT_NUM_ARG;
-
-                            if (i < nIntArg2.size())
-                                stringArgs.nArg2 = nIntArg2[i];
-                            else if (nIntArg2.size() == 1)
-                                stringArgs.nArg2 = nIntArg2[0];
-                            else
-                                stringArgs.nArg2 = DEFAULT_NUM_ARG;
-
-                            vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                        }
-                    }
+                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
                 }
-                else if (funcHandle.fType >= PARSER_STRING_STRING_STRING_INT_INT)
-                {
-                    s_vect sStringArg1, sStringArg2, sStringArg3;
-                    n_vect nIntArg1, nIntArg2;
-                    size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
-                    if (!nMaxArgs)
-                    {
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                    }
-                    for (size_t i = 0; i < nMaxArgs; i++)
-                    {
-                        if (i < sStringArg1.size())
-                            stringArgs.sArg1 = sStringArg1[i];
-                        else if (sStringArg1.size() == 1)
-                            stringArgs.sArg1 = sStringArg1[0];
-                        else
-                            stringArgs.sArg1 = "";
-                        if (i < sStringArg2.size())
-                            stringArgs.sArg2 = sStringArg2[i];
-                        else if (sStringArg2.size() == 1)
-                            stringArgs.sArg2 = sStringArg2[0];
-                        else
-                            stringArgs.sArg2 = "";
-                        if (i < sStringArg3.size())
-                            stringArgs.sArg3 = sStringArg3[i];
-                        else if (sStringArg3.size() == 1)
-                            stringArgs.sArg3 = sStringArg3[0];
-                        else
-                            stringArgs.sArg3 = "";
-                        if (i < nIntArg1.size())
-                            stringArgs.nArg1 = nIntArg1[i];
-                        else if (nIntArg1.size() == 1)
-                            stringArgs.nArg1 = nIntArg1[0];
-                        else
-                            stringArgs.nArg1 = DEFAULT_NUM_ARG;
-                        if (i < nIntArg2.size())
-                            stringArgs.nArg2 = nIntArg2[i];
-                        else if (nIntArg2.size() == 1)
-                            stringArgs.nArg2 = nIntArg2[0];
-                        else
-                            stringArgs.nArg2 = DEFAULT_NUM_ARG;
-
-                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                    }
-                }
-
-                // copy the return values to the final variable
-                string sFuncReturnValue = "";
-
-                // Expand the string vector component, if needed
-                expandStringVectorComponents(vReturnValues);
-
-                // Create a string vector variable for the function output
-                sFuncReturnValue = createStringVectorVar(vReturnValues);
-
-                // replace the function with the return value
-                sLine.replace(n_pos, nPos + 1 - n_pos, sFuncReturnValue);
             }
 
-            n_pos++;
+            // copy the return values to the final variable
+            string sFuncReturnValue = "";
+
+            // Expand the string vector component, if needed
+            expandStringVectorComponents(vReturnValues);
+
+            // Create a string vector variable for the function output
+            sFuncReturnValue = createStringVectorVar(vReturnValues);
+
+            // replace the function with the return value
+            sLine.replace(nStartPosition, nEndPosition + 1 - nStartPosition, sFuncReturnValue);
+
+            nStartPosition++;
         }
     }
 
@@ -855,623 +835,475 @@ namespace NumeRe
         Parser& _parser = NumeReKernel::getInstance()->getParser();
         Datafile& _data = NumeReKernel::getInstance()->getData();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
-        size_t n_pos = 0;
-        size_t nParensMatch;
+        size_t nStartPosition = 0;
+        size_t nEndPosition;
 
         // str string_cast(EXPR)
-        while (sLine.find("string_cast(", n_pos) != string::npos)
+        while ((nStartPosition = findNextFunction("string_cast(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            n_pos = sLine.find("string_cast(", n_pos);
+            string sToString = getFunctionArgumentList("string_cast(", sLine, nStartPosition, nEndPosition);
 
-            if (isInQuotes(sLine, n_pos, true))
+            if (sToString.find('"') != string::npos || sToString.find('#') != string::npos)
             {
-                n_pos++;
-                continue;
+                StringResult strRes = eval(sToString, "");
+
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                sToString = createStringVectorVar(strRes.vResult);
             }
-
-            unsigned int nPos = n_pos + 11;
-
-            if ((nParensMatch = getMatchingParenthesis(sLine.substr(nPos))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-            nPos += nParensMatch;
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
-            {
-                string sToString = sLine.substr(n_pos + 12, nPos - n_pos - 12);
-                if (sToString.find('"') != string::npos || sToString.find('#') != string::npos)
-                {
-                    StringResult strRes = eval(sToString, "");
-                    if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                    sToString = createStringVectorVar(strRes.vResult);
-                }
-                else
-                    sToString = "\"" + sToString + "\"";
-                sLine = sLine.substr(0, n_pos) + sToString + sLine.substr(nPos + 1);
-            }
-            n_pos++;
-        }
-
-        n_pos = 0;
-        // cmd to_cmd(str)
-        while (sLine.find("to_cmd(", n_pos) != string::npos)
-        {
-            n_pos = sLine.find("to_cmd(", n_pos);
-
-            if (isInQuotes(sLine, n_pos, true))
-            {
-                n_pos++;
-                continue;
-            }
-
-            unsigned int nParPos = getMatchingParenthesis(sLine.substr(n_pos));
-
-            if (nParPos == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, n_pos);
-
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
-            {
-                n_pos += 6;
-                nParPos -= 6;
-                string sCmdString = sLine.substr(n_pos + 1, nParPos - 1);
-                StripSpaces(sCmdString);
-
-                if (isStringExpression(sCmdString))
-                {
-                    StringResult strRes = eval(sCmdString, "");
-
-                    if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                    // use only the first one
-                    sCmdString = strRes.vResult[0];
-                }
-
-                sLine = sLine.substr(0, n_pos - 6) + removeQuotationMarks(sCmdString) + sLine.substr(n_pos + nParPos + 1);
-                n_pos -= 5;
-            }
-        }
-
-        n_pos = 0;
-        // val to_value(str)
-        while (sLine.find("to_value(", n_pos) != string::npos)
-        {
-            n_pos = sLine.find("to_value(", n_pos);
-
-            if (isInQuotes(sLine, n_pos, true))
-            {
-                n_pos++;
-                continue;
-            }
-
-            unsigned int nParPos = getMatchingParenthesis(sLine.substr(n_pos));
-
-            if (nParPos == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, n_pos);
-
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
-            {
-                n_pos += 8;
-                nParPos -= 8;
-                string sToValue = sLine.substr(n_pos + 1, nParPos - 1);
-                StripSpaces(sToValue);
-
-                if (isStringExpression(sToValue))
-                {
-                    StringResult strRes = eval(sToValue, "");
-
-                    if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                    vector<string> vToValueResults;
-
-                    // Remove all quotation marks from the results TODO: Split the equations
-                    for (size_t i = 0; i < strRes.vResult.size(); i++)
-                    {
-                        strRes.vResult[i] = removeQuotationMarks(strRes.vResult[i]);
-
-                        while (strRes.vResult[i].length())
-                        {
-                            vToValueResults.push_back(getNextArgument(strRes.vResult[i], true));
-                        }
-                    }
-
-                    // Create a new string vector variable
-                    sToValue = createStringVectorVar(vToValueResults);
-                }
-
-                sLine = sLine.substr(0, n_pos - 8) + sToValue + sLine.substr(n_pos + nParPos + 1);
-                n_pos -= 7;
-            }
-        }
-
-        n_pos = 0;
-        // log is_string(EXPR)
-        while (sLine.find("is_string(", n_pos) != string::npos)
-        {
-            n_pos = sLine.find("is_string(", n_pos);
-
-            if (isInQuotes(sLine, n_pos, true))
-            {
-                n_pos++;
-                continue;
-            }
-
-            unsigned int nPos = n_pos + 9;
-
-            if ((nParensMatch = getMatchingParenthesis(sLine.substr(nPos))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-
-            nPos += nParensMatch;
-
-            if ((!n_pos || isDelimiter(sLine[n_pos-1]))
-                    && (containsStrings(sLine.substr(n_pos + 10, nPos - n_pos - 10))
-                        || containsStringVars(sLine.substr(n_pos + 10, nPos - n_pos - 10))))
-                sLine = sLine.substr(0, n_pos) + "true" + sLine.substr(nPos + 1);
-            else if (isInQuotes(sLine, nPos)
-                     || isInQuotes(sLine, n_pos))
-                n_pos++;
             else
-                sLine = sLine.substr(0, n_pos) + "false" + sLine.substr(nPos + 1);
+                sToString = "\"" + sToString + "\"";
+
+            sLine = sLine.substr(0, nStartPosition) + sToString + sLine.substr(nEndPosition + 1);
+
+            nStartPosition++;
         }
 
-        n_pos = 0;
-        // {val} = getindices(str, [val])
-        while (sLine.find("getindices(", n_pos) != string::npos)
+        nStartPosition = 0;
+        // cmd to_cmd(str)
+        while ((nStartPosition = findNextFunction("to_cmd(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            n_pos = sLine.find("getindices(", n_pos);
+            string sCmdString = getFunctionArgumentList("to_cmd(", sLine, nStartPosition, nEndPosition);
+            StripSpaces(sCmdString);
 
-            if (isInQuotes(sLine, n_pos, true))
+            if (isStringExpression(sCmdString))
             {
-                n_pos++;
+                StringResult strRes = eval(sCmdString, "");
+
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                // use only the first one
+                sCmdString = strRes.vResult[0];
+            }
+
+            sLine = sLine.substr(0, nStartPosition) + removeQuotationMarks(sCmdString) + sLine.substr(nEndPosition + 1);
+            nStartPosition++;
+        }
+
+        nStartPosition = 0;
+        // val to_value(str)
+        while ((nStartPosition = findNextFunction("to_value(", sLine, nStartPosition, nEndPosition)) != string::npos)
+        {
+            string sToValue = getFunctionArgumentList("to_value(", sLine, nStartPosition, nEndPosition);
+            StripSpaces(sToValue);
+
+            if (isStringExpression(sToValue))
+            {
+                StringResult strRes = eval(sToValue, "");
+
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                vector<string> vToValueResults;
+
+                // Remove all quotation marks from the results TODO: Split the equations
+                for (size_t i = 0; i < strRes.vResult.size(); i++)
+                {
+                    strRes.vResult[i] = removeQuotationMarks(strRes.vResult[i]);
+
+                    while (strRes.vResult[i].length())
+                    {
+                        vToValueResults.push_back(getNextArgument(strRes.vResult[i], true));
+                    }
+                }
+
+                // Create a new string vector variable
+                sToValue = createStringVectorVar(vToValueResults);
+            }
+
+            sLine = sLine.substr(0, nStartPosition) + sToValue + sLine.substr(nEndPosition + 1);
+            nStartPosition++;
+        }
+
+        nStartPosition = 0;
+        // log is_string(EXPR)
+        while ((nStartPosition = findNextFunction("is_string(", sLine, nStartPosition, nEndPosition)) != string::npos)
+        {
+            string sArgument = getFunctionArgumentList("is_string(", sLine, nStartPosition, nEndPosition);
+
+            if (containsStrings(sArgument) || containsStringVars(sArgument))
+                sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
+            else
+                sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);
+
+            nStartPosition++;
+        }
+
+        nStartPosition = 0;
+        // {val} = getindices(str, [val])
+        while ((nStartPosition = findNextFunction("getindices(", sLine, nStartPosition, nEndPosition)) != string::npos)
+        {
+            string _sObject = getFunctionArgumentList("getindices(", sLine, nStartPosition, nEndPosition);
+            StringResult strRes = eval(_sObject, "");
+
+            if (!strRes.vResult.size())
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+            // use only first one
+            string sType = strRes.vResult[0];
+            int nType = 0;
+            _sObject = getNextArgument(sType, true);
+
+            if (!sType.length())
+            {
+                sType = "0";
+            }
+
+            if (_sObject[0] == '"')
+                _sObject.erase(0, 1);
+
+            if (_sObject[_sObject.length() - 1] == '"')
+                _sObject.erase(_sObject.length() - 1);
+
+            StripSpaces(_sObject);
+
+            if (isStringExpression(sType))
+            {
+                StringResult strRes = eval(sType, "");
+
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                sType = strRes.vResult[0];
+            }
+
+            _parser.SetExpr(sType);
+            nType = (int)_parser.Eval();
+
+            if (nType < -1 || nType > 2)
+                nType = 0;
+
+            DataAccessParser _accessParser(_sObject);
+
+            if (!_accessParser.getDataObject().length() || !isValidIndexSet(_accessParser.getIndices()))
+            {
+                sLine = sLine.substr(0, nStartPosition) + "nan" + sLine.substr(nEndPosition + 1);
+                nStartPosition++;
                 continue;
             }
 
-            unsigned int nPos = n_pos + 10;
-
-            if ((nParensMatch = getMatchingParenthesis(sLine.substr(nPos))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-
-            nPos += nParensMatch;
-
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
+            if (nType > -1)
             {
-                string _sObject = sLine.substr(n_pos + 11, nPos - n_pos - 11);
-                StringResult strRes = eval(_sObject, "");
+                if (nType == 2 && _accessParser.getIndices().row.isOpenEnd())
+                {
+                    _accessParser.getIndices().row.setRange(_accessParser.getIndices().row.front(), _accessParser.getIndices().row.front() + 1);
+                }
+                else if (nType == 1 && _accessParser.getIndices().col.isOpenEnd())
+                {
+                    _accessParser.getIndices().col.setRange(_accessParser.getIndices().col.front(), _accessParser.getIndices().col.front() + 1);
+                }
+                else if (!nType)
+                {
+                    if (_accessParser.isCluster())
+                    {
+                        if (_accessParser.getIndices().row.isOpenEnd())
+                            _accessParser.getIndices().row.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
+
+                        if (_accessParser.getIndices().col.isOpenEnd())
+                            _accessParser.getIndices().col.back() = VectorIndex::INVALID;
+                    }
+                    else if (_accessParser.getDataObject() == "string")
+                    {
+                        if (_accessParser.getIndices().row.isOpenEnd())
+                        {
+                            if (_accessParser.getIndices().col.size() == 1)
+                            {
+                                if (_data.getStringElements(_accessParser.getIndices().col.front()))
+                                    _accessParser.getIndices().row.setRange(0, _data.getStringElements(_accessParser.getIndices().col.front())-1);
+                                else
+                                    _accessParser.getIndices().row.setRange(0, 0);
+                            }
+                            else
+                            {
+                                if (_data.getStringElements())
+                                    _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
+                                else
+                                    _accessParser.getIndices().row.setRange(0, 0);
+                            }
+                        }
+
+                        if (_accessParser.getIndices().col.isOpenEnd())
+                            _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
+                    }
+                    else
+                    {
+                        if (_accessParser.getIndices().row.isOpenEnd())
+                            _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
+
+                        if (_accessParser.getIndices().col.isOpenEnd())
+                            _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
+                    }
+                }
+            }
+
+            _accessParser.getIndices().row.linearize();
+            _accessParser.getIndices().col.linearize();
+
+            vector<double> vIndices;
+            vIndices.push_back(_accessParser.getIndices().row.front() + 1);
+            vIndices.push_back(_accessParser.getIndices().row.last() + 1);
+            vIndices.push_back(_accessParser.getIndices().col.front() + 1);
+            vIndices.push_back(_accessParser.getIndices().col.last() + 1);
+            _parser.SetVectorVar("_~indices[" + replaceToVectorname(_sObject) + "]", vIndices);
+            sLine = sLine.substr(0, nStartPosition) + "_~indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nEndPosition + 1);
+
+            nStartPosition++;
+        }
+
+        nStartPosition = 0;
+        // log = is_data(EXPR)
+        while ((nStartPosition = findNextFunction("is_data(", sLine, nStartPosition, nEndPosition)) != string::npos)
+        {
+            string sData = getFunctionArgumentList("is_data(", sLine, nStartPosition, nEndPosition);
+
+            if (isStringExpression(sData))
+            {
+                StringResult strRes = eval(sData, "");
 
                 if (!strRes.vResult.size())
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                 // use only first one
-                string sType = strRes.vResult[0];
-                int nType = 0;
-                _sObject = getNextArgument(sType, true);
-
-                if (!sType.length())
-                {
-                    sType = "0";
-                }
-
-                if (_sObject[0] == '"')
-                    _sObject.erase(0, 1);
-
-                if (_sObject[_sObject.length() - 1] == '"')
-                    _sObject.erase(_sObject.length() - 1);
-
-                StripSpaces(_sObject);
-
-                if (isStringExpression(sType))
-                {
-                    StringResult strRes = eval(sType, "");
-
-                    if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                    sType = strRes.vResult[0];
-                }
-
-                _parser.SetExpr(sType);
-                nType = (int)_parser.Eval();
-
-                if (nType < -1 || nType > 2)
-                    nType = 0;
-
-                DataAccessParser _accessParser(_sObject);
-
-                if (!_accessParser.getDataObject().length() || !isValidIndexSet(_accessParser.getIndices()))
-                {
-                    sLine = sLine.substr(0, n_pos) + "nan" + sLine.substr(nPos + 1);
-                    n_pos++;
-                    continue;
-                }
-
-                if (nType > -1)
-                {
-                    if (nType == 2 && _accessParser.getIndices().row.isOpenEnd())
-                    {
-                        _accessParser.getIndices().row.setRange(_accessParser.getIndices().row.front(), _accessParser.getIndices().row.front() + 1);
-                    }
-                    else if (nType == 1 && _accessParser.getIndices().col.isOpenEnd())
-                    {
-                        _accessParser.getIndices().col.setRange(_accessParser.getIndices().col.front(), _accessParser.getIndices().col.front() + 1);
-                    }
-                    else if (!nType)
-                    {
-                        if (_accessParser.isCluster())
-                        {
-                            if (_accessParser.getIndices().row.isOpenEnd())
-                                _accessParser.getIndices().row.setRange(0, _data.getCluster(_accessParser.getDataObject()).size()-1);
-
-                            if (_accessParser.getIndices().col.isOpenEnd())
-                                _accessParser.getIndices().col.back() = VectorIndex::INVALID;
-                        }
-                        else if (_accessParser.getDataObject() == "string")
-                        {
-                            if (_accessParser.getIndices().row.isOpenEnd())
-                            {
-                                if (_accessParser.getIndices().col.size() == 1)
-                                {
-                                    if (_data.getStringElements(_accessParser.getIndices().col.front()))
-                                        _accessParser.getIndices().row.setRange(0, _data.getStringElements(_accessParser.getIndices().col.front())-1);
-                                    else
-                                        _accessParser.getIndices().row.setRange(0, 0);
-                                }
-                                else
-                                {
-                                    if (_data.getStringElements())
-                                        _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
-                                    else
-                                        _accessParser.getIndices().row.setRange(0, 0);
-                                }
-                            }
-
-                            if (_accessParser.getIndices().col.isOpenEnd())
-                                _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
-                        }
-                        else
-                        {
-                            if (_accessParser.getIndices().row.isOpenEnd())
-                                _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
-
-                            if (_accessParser.getIndices().col.isOpenEnd())
-                                _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
-                        }
-                    }
-                }
-
-                _accessParser.getIndices().row.linearize();
-                _accessParser.getIndices().col.linearize();
-
-                vector<double> vIndices;
-                vIndices.push_back(_accessParser.getIndices().row.front() + 1);
-                vIndices.push_back(_accessParser.getIndices().row.last() + 1);
-                vIndices.push_back(_accessParser.getIndices().col.front() + 1);
-                vIndices.push_back(_accessParser.getIndices().col.last() + 1);
-                _parser.SetVectorVar("_~indices[" + replaceToVectorname(_sObject) + "]", vIndices);
-                sLine = sLine.substr(0, n_pos) + "_~indices[" + replaceToVectorname(_sObject) + "]" + sLine.substr(nPos + 1);
+                sData = strRes.vResult[0];
             }
 
-            n_pos++;
+            if (sData[0] == '"')
+                sData.erase(0, 1);
+
+            if (sData[sData.length() - 1] == '"')
+                sData.erase(sData.length() - 1);
+
+            StripSpaces(sData);
+
+            if (sData.substr(0, 5) == "data(" || _data.isTable(sData) || _data.isCluster(sData))
+                sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
+            else
+                sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);
+
+            nStartPosition++;
         }
 
-        n_pos = 0;
-        // log = is_data(EXPR)
-        while (sLine.find("is_data(", n_pos) != string::npos)
-        {
-            n_pos = sLine.find("is_data(", n_pos);
-
-            if (isInQuotes(sLine, n_pos, true))
-            {
-                n_pos++;
-                continue;
-            }
-
-            unsigned int nPos = n_pos + 7;
-
-            if ((nParensMatch = getMatchingParenthesis(sLine.substr(nPos))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-
-            nPos += nParensMatch;
-
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
-            {
-                string sData = sLine.substr(n_pos + 8, nPos - n_pos - 8);
-
-                if (isStringExpression(sData))
-                {
-                    StringResult strRes = eval(sData, "");
-
-                    if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                    // use only first one
-                    sData = strRes.vResult[0];
-                }
-
-                if (sData[0] == '"')
-                    sData.erase(0, 1);
-
-                if (sData[sData.length() - 1] == '"')
-                    sData.erase(sData.length() - 1);
-
-                StripSpaces(sData);
-
-                if (sData.substr(0, 5) == "data(" || _data.isTable(sData) || _data.isCluster(sData))
-                    sLine = sLine.substr(0, n_pos) + "true" + sLine.substr(nPos + 1);
-                else
-                    sLine = sLine.substr(0, n_pos) + "false" + sLine.substr(nPos + 1);
-            }
-
-            n_pos++;
-        }
-
-        n_pos = 0;
+        nStartPosition = 0;
         // log = is_table(EXPR)
-        while (sLine.find("is_table(", n_pos) != string::npos)
+        while ((nStartPosition = findNextFunction("is_table(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            n_pos = sLine.find("is_table(", n_pos);
+            string sData = getFunctionArgumentList("is_table(", sLine, nStartPosition, nEndPosition);
 
-            if (isInQuotes(sLine, n_pos, true))
+            if (isStringExpression(sData))
             {
-                n_pos++;
-                continue;
-            }
+                StringResult strRes = eval(sData, "");
 
-            unsigned int nPos = n_pos + 8;
-
-            if ((nParensMatch = getMatchingParenthesis(sLine.substr(nPos))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-
-            nPos += nParensMatch;
-
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
-            {
-                string sData = sLine.substr(n_pos + 9, nPos - n_pos - 9);
-
-                if (isStringExpression(sData))
-                {
-                    StringResult strRes = eval(sData, "");
-
-                    if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                    // use only first one
-                    sData = strRes.vResult[0];
-                }
-
-                if (sData[0] == '"')
-                    sData.erase(0, 1);
-
-                if (sData[sData.length() - 1] == '"')
-                    sData.erase(sData.length() - 1);
-
-                StripSpaces(sData);
-
-                if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
-                    sLine = sLine.substr(0, n_pos) + "true" + sLine.substr(nPos + 1);
-                else
-                    sLine = sLine.substr(0, n_pos) + "false" + sLine.substr(nPos + 1);
-            }
-
-            n_pos++;
-        }
-
-        n_pos = 0;
-        // log = is_cluster(EXPR)
-        while (sLine.find("is_cluster(", n_pos) != string::npos)
-        {
-            n_pos = sLine.find("is_cluster(", n_pos);
-
-            if (isInQuotes(sLine, n_pos, true))
-            {
-                n_pos++;
-                continue;
-            }
-
-            unsigned int nPos = n_pos + 10;
-
-            if ((nParensMatch = getMatchingParenthesis(sLine.substr(nPos))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-
-            nPos += nParensMatch;
-
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
-            {
-                string sData = sLine.substr(n_pos + 11, nPos - n_pos - 11);
-
-                if (isStringExpression(sData))
-                {
-                    StringResult strRes = eval(sData, "");
-
-                    if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                    // use only first one
-                    sData = strRes.vResult[0];
-                }
-
-                if (sData[0] == '"')
-                    sData.erase(0, 1);
-
-                if (sData[sData.length() - 1] == '"')
-                    sData.erase(sData.length() - 1);
-
-                StripSpaces(sData);
-
-                if (_data.isCluster(sData))
-                    sLine = sLine.substr(0, n_pos) + "true" + sLine.substr(nPos + 1);
-                else
-                    sLine = sLine.substr(0, n_pos) + "false" + sLine.substr(nPos + 1);
-            }
-
-            n_pos++;
-        }
-
-        n_pos = 0;
-        // {var} = findcolumn("data","header")
-        while (sLine.find("findcolumn(", n_pos) != string::npos)
-        {
-            n_pos = sLine.find("findcolumn(", n_pos);
-            if (isInQuotes(sLine, n_pos, true))
-            {
-                n_pos++;
-                continue;
-            }
-            unsigned int nPos = n_pos + 10;
-            if ((nParensMatch = getMatchingParenthesis(sLine.substr(nPos))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
-            nPos += nParensMatch;
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
-            {
-                string sData = sLine.substr(n_pos + 11, nPos - n_pos - 11);
-                string sHeadline;
-                if (isStringExpression(sData))
-                {
-                    StringResult strRes = eval(sData, "");
-                    if (!strRes.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                    // use only first one
-                    sData = strRes.vResult[0];
-                    sHeadline = strRes.vResult[1];
-                }
-                if (!sHeadline.length())
+                if (!strRes.vResult.size())
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                if (sData[0] == '"')
-                    sData.erase(0, 1);
-                if (sData[sData.length() - 1] == '"')
-                    sData.erase(sData.length() - 1);
-                StripSpaces(sData);
-                if (sHeadline.front() == '"')
-                    sHeadline.erase(0, 1);
-                if (sHeadline.back() == '"')
-                    sHeadline.erase(sHeadline.length() - 1);
-                StripSpaces(sHeadline);
-                if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
-                {
-                    sData.erase(sData.find("("));
-                    string sResult;
-                    for (long long int i = 0; i < _data.getCols(sData, false); i++)
-                    {
-                        if (_data.getHeadLineElement(i, sData) == sHeadline)
-                        {
-                            if (sResult.length())
-                                sResult += ", ";
-                            sResult += toString(i + 1);
-                        }
-                    }
-                    if (!sResult.length())
-                        sResult = "nan";
-                    if (sResult.find(',') != string::npos)
-                        sResult = "{" + sResult + "}";
-                    sLine = sLine.substr(0, n_pos) + sResult + sLine.substr(nPos + 1);
-                }
-                else
-                    sLine = sLine.substr(0, n_pos) + "nan" + sLine.substr(nPos + 1);
+
+                // use only first one
+                sData = strRes.vResult[0];
             }
-            n_pos++;
+
+            if (sData[0] == '"')
+                sData.erase(0, 1);
+
+            if (sData[sData.length() - 1] == '"')
+                sData.erase(sData.length() - 1);
+
+            StripSpaces(sData);
+
+            if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
+                sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
+            else
+                sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);
+
+            nStartPosition++;
         }
 
-        n_pos = 0;
-        // str = valtostr(EXPR, [str])
-        while (sLine.find("valtostr(", n_pos) != string::npos)
+        nStartPosition = 0;
+        // log = is_cluster(EXPR)
+        while ((nStartPosition = findNextFunction("is_cluster(", sLine, nStartPosition, nEndPosition)) != string::npos)
         {
-            n_pos = sLine.find("valtostr(", n_pos);
+            string sData = getFunctionArgumentList("is_cluster(", sLine, nStartPosition, nEndPosition);
 
-            if (isInQuotes(sLine, n_pos, true))
+            if (isStringExpression(sData))
             {
-                n_pos++;
-                continue;
+                StringResult strRes = eval(sData, "");
+
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                // use only first one
+                sData = strRes.vResult[0];
             }
 
-            unsigned int nPos = n_pos + 8;
+            if (sData[0] == '"')
+                sData.erase(0, 1);
 
-            if ((nParensMatch = getMatchingParenthesis(sLine.substr(nPos))) == string::npos)
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nPos);
+            if (sData[sData.length() - 1] == '"')
+                sData.erase(sData.length() - 1);
 
-            nPos += nParensMatch;
+            StripSpaces(sData);
 
-            if (!n_pos || isDelimiter(sLine[n_pos-1]))
+            if (_data.isCluster(sData))
+                sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
+            else
+                sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);
+
+            nStartPosition++;
+        }
+
+        nStartPosition = 0;
+        // {var} = findcolumn("data","header")
+        while ((nStartPosition = findNextFunction("findcolumn(", sLine, nStartPosition, nEndPosition)) != string::npos)
+        {
+            string sData = getFunctionArgumentList("findcolumn(", sLine, nStartPosition, nEndPosition);
+            string sHeadline;
+
+            if (isStringExpression(sData))
             {
-                string sToString = sLine.substr(n_pos + 9, nPos - n_pos - 9);
-                string sExpr = getNextArgument(sToString, true);
-                string sChar = "";
-                unsigned int nCount = 0;
+                StringResult strRes = eval(sData, "");
 
-                if (sToString.length())
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                // use only first one
+                sData = strRes.vResult[0];
+                sHeadline = strRes.vResult[1];
+            }
+
+            if (!sHeadline.length())
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+            if (sData[0] == '"')
+                sData.erase(0, 1);
+
+            if (sData[sData.length() - 1] == '"')
+                sData.erase(sData.length() - 1);
+
+            StripSpaces(sData);
+
+            if (sHeadline.front() == '"')
+                sHeadline.erase(0, 1);
+
+            if (sHeadline.back() == '"')
+                sHeadline.erase(sHeadline.length() - 1);
+
+            StripSpaces(sHeadline);
+
+            if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
+            {
+                sData.erase(sData.find("("));
+                string sResult;
+
+                for (long long int i = 0; i < _data.getCols(sData, false); i++)
                 {
-                    sChar = getNextArgument(sToString, true);
-
-                    if (isStringExpression(sChar))
+                    if (_data.getHeadLineElement(i, sData) == sHeadline)
                     {
-                        StringResult strRes = eval(sChar, "");
+                        if (sResult.length())
+                            sResult += ", ";
 
-                        if (!strRes.vResult.size())
-                            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                        // use only first one
-                        sChar = removeQuotationMarks(strRes.vResult[0]);
-                    }
-
-                    string sCnt = getNextArgument(sToString, true);
-
-                    if (sCnt.length())
-                    {
-                        _parser.SetExpr(sCnt);
-                        nCount = (unsigned int)fabs(_parser.Eval());
+                        sResult += toString(i + 1);
                     }
                 }
 
-                if (!isStringExpression(sExpr))
+                if (!sResult.length())
+                    sResult = "nan";
+
+                if (sResult.find(',') != string::npos)
+                    sResult = "{" + sResult + "}";
+
+                sLine = sLine.substr(0, nStartPosition) + sResult + sLine.substr(nEndPosition + 1);
+            }
+            else
+                sLine = sLine.substr(0, nStartPosition) + "nan" + sLine.substr(nEndPosition + 1);
+
+            nStartPosition++;
+        }
+
+        nStartPosition = 0;
+        // str = valtostr(EXPR, [str])
+        while ((nStartPosition = findNextFunction("valtostr(", sLine, nStartPosition, nEndPosition)) != string::npos)
+        {
+            string sToString = getFunctionArgumentList("valtostr(", sLine, nStartPosition, nEndPosition);
+            string sExpr = getNextArgument(sToString, true);
+            string sChar = "";
+            unsigned int nCount = 0;
+
+            if (sToString.length())
+            {
+                sChar = getNextArgument(sToString, true);
+
+                if (isStringExpression(sChar))
                 {
-                    // check for data sets in the evaluation of the `valtostr()` arguments
-                    if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
-                        getDataElements(sExpr, _parser, _data, _option);
-
-                    int nResults = 0;
-                    value_type* v = 0;
-                    _parser.SetExpr(sExpr);
-                    v = _parser.Eval(nResults);
-                    vector<string> vToString;
-                    string sElement = "";
-
-                    for (int n = 0; n < nResults; n++)
-                    {
-                        if (fabs(rint(v[n]) - v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
-                            sElement = toString((long long int)rint(v[n]));
-                        else
-                            sElement = toString(v[n], _option);
-
-                        while (sElement.length() < nCount && sChar.length())
-                            sElement.insert(0, sChar);
-
-                        vToString.push_back("\"" + sElement + "\"");
-                    }
-
-                    sToString = createStringVectorVar(vToString);
-                }
-                else
-                {
-                    StringResult strRes = eval(sExpr, "");
+                    StringResult strRes = eval(sChar, "");
 
                     if (!strRes.vResult.size())
                         throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
-                    for (size_t i = 0; i < strRes.vResult.size(); i++)
-                    {
-                        while (strRes.vResult[i].length() < nCount && sChar.length())
-                            strRes.vResult[i].insert(0, sChar);
-
-                        // add quotation marks, if they are missing
-                        strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
-                    }
-
-                    sToString = createStringVectorVar(strRes.vResult);
+                    // use only first one
+                    sChar = removeQuotationMarks(strRes.vResult[0]);
                 }
 
-                sLine = sLine.substr(0, n_pos) + sToString + sLine.substr(nPos + 1);
+                string sCnt = getNextArgument(sToString, true);
+
+                if (sCnt.length())
+                {
+                    _parser.SetExpr(sCnt);
+                    nCount = (unsigned int)fabs(_parser.Eval());
+                }
             }
-            n_pos++;
+
+            if (!isStringExpression(sExpr))
+            {
+                // check for data sets in the evaluation of the `valtostr()` arguments
+                if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+                    getDataElements(sExpr, _parser, _data, _option);
+
+                int nResults = 0;
+                value_type* v = 0;
+                _parser.SetExpr(sExpr);
+                v = _parser.Eval(nResults);
+                vector<string> vToString;
+                string sElement = "";
+
+                for (int n = 0; n < nResults; n++)
+                {
+                    if (fabs(rint(v[n]) - v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
+                        sElement = toString((long long int)rint(v[n]));
+                    else
+                        sElement = toString(v[n], _option);
+
+                    while (sElement.length() < nCount && sChar.length())
+                        sElement.insert(0, sChar);
+
+                    vToString.push_back("\"" + sElement + "\"");
+                }
+
+                sToString = createStringVectorVar(vToString);
+            }
+            else
+            {
+                StringResult strRes = eval(sExpr, "");
+
+                if (!strRes.vResult.size())
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                for (size_t i = 0; i < strRes.vResult.size(); i++)
+                {
+                    while (strRes.vResult[i].length() < nCount && sChar.length())
+                        strRes.vResult[i].insert(0, sChar);
+
+                    // add quotation marks, if they are missing
+                    strRes.vResult[i] = addQuotationMarks(strRes.vResult[i]);
+                }
+
+                sToString = createStringVectorVar(strRes.vResult);
+            }
+
+            sLine = sLine.substr(0, nStartPosition) + sToString + sLine.substr(nEndPosition + 1);
+
+            nStartPosition++;
         }
+
         return sLine;
     }
 
@@ -1513,6 +1345,63 @@ namespace NumeRe
     {
         if (!m_mStringFuncs.size())
             m_mStringFuncs = mStringFuncs;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Finds the position of the next function
+    /// occurence in the passed string including the
+    /// position of the closing parenthesis.
+    ///
+    /// \param sFunc const string&
+    /// \param sLine const string&
+    /// \param nStartPos size_t
+    /// \param nEndPosition size_t&
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t StringFuncHandler::findNextFunction(const string& sFunc, const string& sLine, size_t nStartPos, size_t& nEndPosition)
+    {
+        // Search for occurences of the passed function
+        while ((nStartPos = sLine.find(sFunc, nStartPos)) != string::npos)
+        {
+            // Ignore false positives
+            if ((nStartPos && !isDelimiter(sLine[nStartPos-1])) || isInQuotes(sLine, nStartPos, true))
+            {
+                nStartPos++;
+                continue;
+            }
+
+            // Find the matching parenthesis
+            if ((nEndPosition = getMatchingParenthesis(sLine.substr(nStartPos + sFunc.length() - 1))) == string::npos)
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nStartPos + sFunc.length() - 1);
+
+            // Update the end position and return the
+            // starting position
+            nEndPosition += nStartPos + sFunc.length() - 1;
+            return nStartPos;
+        }
+
+        // Return string::npos, if nothing was found
+        return string::npos;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the contents of the argument
+    /// parentheses of the function starting at
+    /// nStartPosition.
+    ///
+    /// \param sFunc const string&
+    /// \param sLine const string&
+    /// \param nStartPosition size_t First character of the function
+    /// \param nEndPosition size_t Position of the closing parenthesis
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
+    string StringFuncHandler::getFunctionArgumentList(const string& sFunc, const string& sLine, size_t nStartPosition, size_t nEndPosition)
+    {
+        return sLine.substr(nStartPosition + sFunc.length(), nEndPosition - nStartPosition - sFunc.length());
     }
 
 }

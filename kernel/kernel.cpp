@@ -1749,7 +1749,7 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
 {
     if (_stringParser.isStringExpression(sLine))
     {
-        auto retVal = _stringParser.evalAndFormat(sLine, sCache, true);
+        auto retVal = _stringParser.evalAndFormat(sLine, sCache);
 
         if (retVal == NumeRe::StringParser::STRING_SUCCESS)
         {

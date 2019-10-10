@@ -468,9 +468,23 @@ double StrToDb(const string& sString)
 	return dReturn;
 }
 
-// Liefert die aeusserste, schliessende Klammer.
-//
-// This is also one of the most important functions
+
+/////////////////////////////////////////////////
+/// \brief Returns the position of the closing
+/// parenthesis.
+///
+/// \param sLine const string&
+/// \return unsigned int The position of the closing parenthesis
+///
+/// This function determines the type of the
+/// desired parenthesis by itself by using the
+/// first parenthesis-like character that might be
+/// found in the passed string. This function also
+/// considers quotation marks, so that parentheses
+/// in strings are not considered as matching. If
+/// the function does not find the matching
+/// parenthesis, it returns string::npos
+/////////////////////////////////////////////////
 unsigned int getMatchingParenthesis(const string& sLine)
 {
     // Get the opening parenthesis
@@ -502,26 +516,38 @@ unsigned int getMatchingParenthesis(const string& sLine)
 	// If the opening or the closing parenthesis are not found, return string::npos
 	if (sLine.find(cParenthesis) == string::npos && sLine.find(cClosingParenthesis) == string::npos)
 		return string::npos;
+
 	int nOpenParenthesis = 0;
+	size_t nQuotes = 0;
+	size_t nStart = 0;
+
+	// Find a reasonable starting position
+	if (sLine.find(cParenthesis))
+        nStart = sLine.find(cParenthesis);
+
+    // Consider the case that the starting
+    // position might be part of a string
+    if (isInQuotes(sLine, nStart, true))
+        nQuotes++;
 
 	// Go through the string and count the opening and closing parentheses
 	// Consider also whether the the current position is part of a larger string
-	for (unsigned int i = 0; i < sLine.length(); i++)
+	for (size_t i = nStart; i < sLine.length(); i++)
 	{
-		/* --> Zaehle oeffnende und schliessende Klammern und gib die Position der
-		 *     Klammer zurueck, bei der dein Counter == 0 ist <--
-		 */
-		if (sLine.find(cParenthesis) && i < sLine.find(cParenthesis))
-			i = sLine.find(cParenthesis);
-		if (sLine[i] == cParenthesis && !isInQuotes(sLine, i))
-		{
+	    // Count unmasked quotation marks
+		if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
+            nQuotes++;
+
+        // Increment the counter at opening paretheses
+		if (sLine[i] == cParenthesis && !(nQuotes % 2))
 			nOpenParenthesis++;
-		}
-		if (sLine[i] == cClosingParenthesis && !isInQuotes(sLine, i))
+
+        // Decrement the counter at closing parentheses
+		if (sLine[i] == cClosingParenthesis && !(nQuotes % 2))
 			nOpenParenthesis--;
 
         // All parentheses are closed -> Return the position of this parenthesis
-		if (!nOpenParenthesis && !isInQuotes(sLine, i, true))
+		if (!nOpenParenthesis && !(nQuotes % 2))
 			return i;
 	}
 
