@@ -5,3 +5,5 @@ Fixed	Global variable detector has been improved and should now return (mostly) 
 Cleaned	Reworked and re-organized parts of the editor's code.
 Cleaned	Reworked and re-organized the string parser.
 Removed	Eliminated all unsigned comparision warnings.
+Fixed	Enabled vector expansions ("{A:B}") in string expressions.
+Added	Enabled string expressions as index expressions for data objects.

@@ -67,22 +67,9 @@ namespace NumeRe
         // {str} = string(...)
         while ((n_pos = findNextFunction("string(", sLine, n_pos, nEndPosition)) != string::npos)
         {
-            string sString = getFunctionArgumentList("string(", sLine, n_pos, nEndPosition);
-
-            // Check for arguments to parse
-            if (sString.length())
-            {
-                StripSpaces(sString);
-                StringResult strRes = eval(sString, "", false);
-
-                if (!strRes.vResult.size())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                sString = strRes.vResult[0];
-            }
-
-            // Get the indices
-            Indices _idx = parser_getIndices("string(" + sString + ")", _parser, _data, _option);
+            // Check for arguments to parse and
+            // get the indices afterwards
+            Indices _idx = parser_getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition)) + ")", _parser, _data, _option);
 
             // Pre-process the indices
             if (_idx.col.isOpenEnd())
@@ -115,7 +102,7 @@ namespace NumeRe
                 // Create the string vector
                 if (_data.getStringElements(_idx.col.front()))
                 {
-                    sString = "";
+                    string sString = "";
                     vector<string> vStrings;
 
                     for (size_t i = 0; i < _idx.row.size(); i++)
@@ -149,6 +136,81 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Parses the string expressions in index
+    /// expressions so that they may used as numerical
+    /// index expressions.
+    ///
+    /// \param sIndexExpression string
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
+    string StringParser::parseStringsInIndices(string sIndexExpression)
+    {
+        // Ensure that this is an expression,
+        // which actually contains strings
+        if (!isStringExpression(sIndexExpression))
+            return sIndexExpression;
+
+        string sParsedIndices;
+
+        // As long as the passed index expression
+        // still has a length
+        while (sIndexExpression.length())
+        {
+            // Get the next index pair and evaluate
+            // its strings
+            string sIndexPairs = getNextArgument(sIndexExpression, true);
+
+            // If the current set of indices is
+            // only the value parser, then ignore
+            // that it is a string functionality,
+            // because the user tries to access
+            // the headlines of a table
+            if (sIndexPairs == "#")
+            {
+                if (sParsedIndices.length())
+                    sParsedIndices += ",#";
+                else
+                    sParsedIndices = "#";
+
+                continue;
+            }
+
+            StringResult strRes = eval(sIndexPairs, "", false);
+
+            if (!strRes.vResult.size())
+                throw SyntaxError(SyntaxError::STRING_ERROR, sIndexPairs, SyntaxError::invalid_position);
+
+            // Check, if the return values are
+            // only strings
+            if (strRes.bOnlyLogicals && strRes.vResult.size() > 1)
+            {
+                vector<double> vIndices;
+
+                // Convert the strings to doubles
+                for (size_t i = 0; i < strRes.vResult.size(); i++)
+                    vIndices.push_back(StrToDb(strRes.vResult[i]));
+
+                // Create a temporary vector
+                if (sParsedIndices.length())
+                    sParsedIndices += ", " + _parser.CreateTempVectorVar(vIndices);
+                else
+                    sParsedIndices = _parser.CreateTempVectorVar(vIndices);
+            }
+            else
+            {
+                if (sParsedIndices.length())
+                    sParsedIndices += ", " + strRes.vResult[0];
+                else
+                    sParsedIndices = strRes.vResult[0];
+            }
+        }
+
+        return sParsedIndices;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief Replaces all occurences of the passed
     /// data access occurence in the passed string.
     ///
@@ -165,18 +227,22 @@ namespace NumeRe
         // Find the next occurence
         while ((nStartPosition = findNextFunction(sOccurence, sLine, nStartPosition, nEndPosition)) != string::npos)
         {
+            size_t nStartPos = nStartPosition;
+            size_t nEndPos = nEndPosition;
             // Handle multi-argument functions
             if (parser_CheckMultArgFunc(sLine.substr(0, nStartPosition), sLine.substr(nEndPosition + 1)))
             {
                 if (nStartPosition > 4 && sLine.substr(sLine.rfind('(', nStartPosition) - 4, 5) == "norm(")
-                    nStartPosition -= 5;
+                    nStartPos -= 5;
                 else
-                    nStartPosition -= 4;
+                    nStartPos -= 4;
 
-                nEndPosition++;
+                nEndPos++;
             }
 
-            string sData = sLine.substr(nStartPosition, nEndPosition - nStartPosition + 1);
+            string sData = sLine.substr(nStartPos, nEndPos - nStartPos + 1);
+            sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
+
             // Get the data and parse string expressions
             getDataElements(sData, _parser, _data, _option);
             StringResult strRes = eval(sData, "");
@@ -192,9 +258,9 @@ namespace NumeRe
             else
                 sData = strRes.vResult.front();
 
-            sLine = sLine.substr(0, nStartPosition) + sData + sLine.substr(nEndPosition + 1);
+            sLine = sLine.substr(0, nStartPos) + sData + sLine.substr(nEndPos + 1);
 
-            nStartPosition++;
+            nStartPosition = nStartPos+1;
         }
 
     }

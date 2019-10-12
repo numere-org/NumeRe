@@ -51,6 +51,7 @@ namespace NumeRe
             Settings& _option;
 
             string getDataForString(string sLine, size_t n_pos);
+            string parseStringsInIndices(string sIndexExpression);
             void replaceDataOccurence(string& sLine, const string& sOccurence);
             string numToString(const string& sLine);
             int storeStringResults(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject);
