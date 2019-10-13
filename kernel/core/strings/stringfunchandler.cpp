@@ -923,7 +923,7 @@ namespace NumeRe
         {
             string sArgument = getFunctionArgumentList("is_string(", sLine, nStartPosition, nEndPosition);
 
-            if (containsStrings(sArgument) || containsStringVars(sArgument))
+            if (isStringExpression(sArgument))
                 sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
             else
                 sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);

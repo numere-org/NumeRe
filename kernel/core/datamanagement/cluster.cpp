@@ -1306,6 +1306,9 @@ namespace NumeRe
     {
         size_t nQuotes = 0;
 
+        if (sCmdLine.find('{') == string::npos)
+            return false;
+
         // Search through the expression
         for (size_t i = 0; i < sCmdLine.length(); i++)
         {

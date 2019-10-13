@@ -58,10 +58,10 @@ namespace NumeRe
             {
                 return m_mStringFuncs.size();
             }
+            virtual StringResult eval(string& sLine, string sCache, bool bParseNumericals = true) = 0;
 
         public:
             virtual ~StringFuncHandler() {}
-            virtual StringResult eval(string& sLine, string sCache, bool bParseNumericals = true) = 0;
             virtual bool isStringExpression(const string& sExpression) = 0;
 
     };

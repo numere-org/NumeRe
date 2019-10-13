@@ -244,19 +244,23 @@ namespace NumeRe
             sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
 
             // Get the data and parse string expressions
-            getDataElements(sData, _parser, _data, _option);
-            StringResult strRes = eval(sData, "");
+            replaceDataEntities(sData, sOccurence, _data, _parser, _option, true);
 
-            if (!strRes.vResult.size())
-                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-            // Create a string vector variable from the returned vector
-            // if it is a string. Otherwise simple use the first return
-            // value, which already contains a numerical vector
-            if (!strRes.bOnlyLogicals)
-                sData = createStringVectorVar(strRes.vResult);
-            else
-                sData = strRes.vResult.front();
+            // NOTE: Explicit parsing of the result is not necessary any more,
+            // because replaceDataEntities will either return vectors or
+            // plain strings or numerical values!
+            //
+            //StringResult strRes = eval(sData, "");
+            //if (!strRes.vResult.size())
+            //    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+            //
+            //// Create a string vector variable from the returned vector
+            //// if it is a string. Otherwise simple use the first return
+            //// value, which already contains a numerical vector
+            //if (!strRes.bOnlyLogicals)
+            //    sData = createStringVectorVar(strRes.vResult);
+            //else
+            //    sData = strRes.vResult.front();
 
             sLine = sLine.substr(0, nStartPos) + sData + sLine.substr(nEndPos + 1);
 
@@ -894,9 +898,17 @@ namespace NumeRe
         vector<string>& vFinal = StrRes.vResult;
         vector<bool>& vIsNoStringValue = StrRes.vNoStringVal;
 
-        // remove the quotation marks
-        for (size_t i = 0; i < vFinal.size(); i++)
-            vFinal[i] = removeQuotationMarks(vFinal[i]);
+        // Catch the cases, where the results are
+        // numerical only here
+        if (StrRes.bOnlyLogicals)
+        {
+            for (size_t i = 0; i < vFinal.size(); i++)
+                sLine += removeQuotationMarks(vFinal[i]) + ",";
+
+            sLine.pop_back();
+
+            return sLine;
+        }
 
         string sConsoleOut = "|-> ";
         static const string sConsoleIndent = "|   ";
@@ -906,6 +918,8 @@ namespace NumeRe
         // is a single string result
         for (size_t j = 0; j < vFinal.size(); j++)
         {
+            vFinal[j] = removeQuotationMarks(vFinal[j]);
+
             // In this case, no conversions are done
             // the results are simply put together and returned
             if (parserFlags & KEEP_MASKED_CONTROL_CHARS && parserFlags & KEEP_MASKED_QUOTES)
@@ -913,18 +927,17 @@ namespace NumeRe
                 if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
                     sLine += "\"" + vFinal[j] + "\"";
                 else
-                {
                     sLine += vFinal[j];
-                }
 
                 if (j < vFinal.size() - 1)
                     sLine += ",";
+
                 continue;
             }
 
             // Start the current string value with a quotation mark
             // if it is not a special case
-            if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !StrRes.bOnlyLogicals && !vIsNoStringValue[j])
+            if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
             {
                 sConsoleOut += "\"";
                 sLine += "\"";
@@ -937,54 +950,56 @@ namespace NumeRe
                 {
                     // If there are escaped control characters,
                     // Replace them with their actual value here
-                    if (k + 1 < vFinal[j].length()
-                            && vFinal[j][k] == '\\'
-                            && (vFinal[j][k + 1] == 'n' || vFinal[j][k + 1] == 't' || vFinal[j][k + 1] == '"' || vFinal[j][k + 1] == ' ')
-                            && !(vFinal[j].substr(k + 1, 3) == "tau"
-                                 && ((checkDelimiter(vFinal[j].substr(k, 5)) && vFinal[j].length() >= k + 5) || (vFinal[j].length() == k + 4)))
-                            && !(vFinal[j].substr(k + 1, 5) == "theta"
-                                 && ((checkDelimiter(vFinal[j].substr(k, 7)) && vFinal[j].length() >= k + 7) || (vFinal[j].length() == k + 6)))
-                            && !(vFinal[j].substr(k + 1, 2) == "nu"
-                                 && ((checkDelimiter(vFinal[j].substr(k, 4)) && vFinal[j].length() >= k + 4) || (vFinal[j].length() == k + 3)))
-                            && !(vFinal[j].substr(k + 1, 3) == "neq"
-                                 && ((checkDelimiter(vFinal[j].substr(k, 5)) && vFinal[j].length() >= k + 5) || (vFinal[j].length() == k + 4)))
-                       )
+                    if (k + 1 < vFinal[j].length() && vFinal[j][k] == '\\')
                     {
                         //\not\neq\ni
-                        if (vFinal[j][k + 1] == 'n') // Line break
+                        if (vFinal[j][k + 1] == 'n' && !isToken("nu", vFinal[j], k+1) && !isToken("neq", vFinal[j], k+1)) // Line break
                         {
                             sConsoleOut += "\n";
                             sLine += "\n";
                             bLineBreaks = true;
+                            k++;
                         }
-                        else if (vFinal[j][k + 1] == 't') // tabulator
+                        else if (vFinal[j][k + 1] == 't' && !isToken("tau", vFinal[j], k+1) && !isToken("theta", vFinal[j], k+1)) // tabulator
                         {
                             sConsoleOut += "\t";
                             sLine += "\t";
+                            k++;
                         }
                         else if (vFinal[j][k + 1] == '"') // quotation mark
                         {
                             sConsoleOut += "\"";
+
                             if (!(parserFlags & KEEP_MASKED_QUOTES))
                                 sLine += "\"";
                             else
                                 sLine += "\\\"";
+
+                            k++;
                         }
                         else if (vFinal[j][k + 1] == ' ') // backslash itself
                         {
                             sConsoleOut += "\\";
+
                             if (!(parserFlags & KEEP_MASKED_CONTROL_CHARS))
                                 sLine += "\\";
                             else
                                 sLine += "\\ ";
+
+                            k++;
                         }
-                        k += 1;
+                        else
+                        {
+                            sConsoleOut += "\\";
+                            sLine += "\\";
+                        }
                     }
                     else
                     {
                         // Otherwise simply append the current character
                         if (vFinal[j][k] == '\n')
                             bLineBreaks = true;
+
                         sConsoleOut += vFinal[j][k];
                         sLine += vFinal[j][k];
                     }
@@ -1008,9 +1023,10 @@ namespace NumeRe
                 sLine += stres;
                 sConsoleOut += stres;
             }
+
             // End the current string value with a quotation mark
             // if it is not a special case
-            if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !StrRes.bOnlyLogicals && !vIsNoStringValue[j])
+            if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
             {
                 sConsoleOut += "\"";
                 sLine += "\"";
@@ -1028,12 +1044,14 @@ namespace NumeRe
                 if (sLine.find_last_not_of("\" ") != string::npos && sLine[sLine.find_last_not_of("\" ")] == '\n')
                 {
                     sLine += ", ";
+
                     if (sConsoleOut.back() == '"')
                     {
                         sConsoleOut[sConsoleOut.rfind('\n')] = '"';
                         sConsoleOut.back() = '\n';
                         bLineBreaks = true;
                     }
+
                     continue;
                 }
 
@@ -1144,11 +1162,33 @@ namespace NumeRe
             }
 
             // Not in quotes and not a space?
-            if (!(nQuotes % 2) && !isspace(sLine[i]))
+            if (!(nQuotes % 2) && !isspace(sLine[i]) && sLine[i] != ',')
                 return false;
         }
 
         return true;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Determines, whether the passed token
+    /// can be found at the passed position.
+    ///
+    /// \param sToken const string&
+    /// \param sLine const string&
+    /// \param pos size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    bool StringParser::isToken(const string& sToken, const string& sLine, size_t pos)
+    {
+        if (sLine.length() < pos + sToken.length())
+            return false;
+
+        if (sLine.substr(pos, sToken.length()) == sToken && (sLine.length() == pos+sToken.length() || isDelimiter(sLine[pos+sToken.length()])))
+            return true;
+
+        return false;
     }
 
 
@@ -1189,6 +1229,7 @@ namespace NumeRe
             // Strip whitespaces and ensure that the
             // current component is not empy
             StripSpaces(vFinal[n]);
+
             if (!vFinal[n].length())
                 continue;
 
@@ -1202,9 +1243,7 @@ namespace NumeRe
 
             // Concatenate the strings
             if (vFinal[n].front() == '"' || vFinal[n].back() == '"')
-            {
                 vFinal[n] = concatenateStrings(vFinal[n]);
-            }
 
             // Determine, whether the current component is a string
             // or a numerical expression
@@ -1214,9 +1253,6 @@ namespace NumeRe
                 // string and store it correspondingly
                 try
                 {
-    //                _parser.SetExpr(vFinal[n]);
-    //                if (vFinal[n].find('{') == string::npos)
-    //                    vFinal[n] = toCmdString(_parser.Eval());
                     vIsNoStringValue.push_back(true);
                 }
                 catch (...)
@@ -1232,6 +1268,7 @@ namespace NumeRe
 
         // check, whether there's a string left
         bReturningLogicals = true;
+
         for (size_t i = 0; i < vIsNoStringValue.size(); i++)
         {
             if (!vIsNoStringValue[i])
@@ -1240,6 +1277,7 @@ namespace NumeRe
                 break;
             }
         }
+
         return vIsNoStringValue;
     }
 
@@ -1328,12 +1366,15 @@ namespace NumeRe
         // If the current line is a simple string,
         // Strip the surrounding spaces and return directly
         // This saves between 30-70% of the evaluation time
-        if (isSimpleString(sLine))
+        if (!sCache.length() && isSimpleString(sLine))
         {
             StripSpaces(sLine);
 
-            strRes.vResult.push_back(sLine);
-            strRes.vNoStringVal.push_back(false);
+            while (sLine.length())
+            {
+                strRes.vResult.push_back(getNextArgument(sLine, true));
+                strRes.vNoStringVal.push_back(false);
+            }
 
             return strRes;
         }
@@ -1427,7 +1468,7 @@ namespace NumeRe
 
         // Recurse for multiple store targets
         // Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
-        if (sLine.find(',') != string::npos && eq_pos != string::npos && !isInQuotes(sLine, eq_pos))
+        if (eq_pos != string::npos && sLine.find(',') != string::npos && !isInQuotes(sLine, eq_pos))
         {
             // Get the left part of the assignment
             string sStringObject = sLine.substr(0, eq_pos);
@@ -1578,8 +1619,11 @@ namespace NumeRe
             // simple strings left in this recursion
             StripSpaces(sLine);
 
-            strRes.vResult.push_back(sLine);
-            strRes.vNoStringVal.push_back(false);
+            while (sLine.length())
+            {
+                strRes.vResult.push_back(getNextArgument(sLine, true));
+                strRes.vNoStringVal.push_back(false);
+            }
 
             return strRes;
         }
@@ -1727,6 +1771,22 @@ namespace NumeRe
                         }
                         else if (sVectorTemp.front() != '"' && sVectorTemp.back() != '"')
                             continue;
+                    }
+
+                    if (!isStringExpression(sVectorTemp))
+                    {
+                        // Try to evaluate the vector as
+                        // vector expansion
+                        _parser.SetExpr(sVectorTemp);
+                        int nRes = 0;
+                        double* res = _parser.Eval(nRes);
+
+                        // Store the result in a vector and
+                        // create a temporary vector variable
+                        vector<double> vRes(res, res + nRes);
+                        sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
+
+                        continue;
                     }
 
                     StringResult tempres = eval(sVectorTemp, "");

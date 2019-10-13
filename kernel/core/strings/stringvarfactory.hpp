@@ -40,7 +40,8 @@ namespace NumeRe
 
             bool isNumericCandidate(const string& sComponent);
             bool checkStringvarDelimiter(const string& sToken) const;
-            void replaceStringVectorVars(map<string,vector<string> >& m_mVectorVarMap, string& currentline, size_t nCurrentComponent, bool& bHasComponents);
+            void replaceStringVectorVars(map<string,vector<string> >& mVectorVarMap, string& currentline, size_t nCurrentComponent, bool& bHasComponents);
+            string findVectorInMap(const map<string,vector<string> >& mVectorVarMap, const vector<string>& vStringVector);
 
         protected:
             vector<string> evaluateStringVectors(string sLine);

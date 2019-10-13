@@ -116,7 +116,7 @@ bool DataAccessParser::isCluster()
 
 
 
-
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs);
 static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option);
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
 static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option, bool isCluster);
@@ -132,13 +132,24 @@ static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, co
 static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const Indices& _idx, int nDim);
 static bool findDataTable(const string& sLine);
 
-/* --> Diese Funktion durchsucht einen gegebenen String sLine nach den Elementen "data(" oder "cache(" und erstetzt diese
- *     entsprechend der Syntax durch Elemente (oder Vektoren) aus dem Datenfile oder dem Cache. Falls des Weiteren auch
- *     noch Werte in den Cache geschrieben werden sollen (das Datenfile ist READ-ONLY), wird dies von dieser Funktion
- *     ebenfalls determiniert. <--
- * --> Um die ggf. ersetzten Vektoren weiterverwenden zu koennen, muss die Funktion parser_VectorToExpr() auf den String
- *     sLine angewendet werden. <--
- */
+
+/////////////////////////////////////////////////
+/// \brief Searches the passed string for calls
+/// to any table or cluster and replaces them with
+/// internal vectors or their respective values.
+///
+/// \param sLine string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \param bReplaceNANs bool
+/// \return string
+///
+/// This function actually delegates the hard work
+/// to replaceDataEntities(), which is itself
+/// public and replaces all calls to a single
+/// data entity.
+/////////////////////////////////////////////////
 string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs)
 {
 	string sCache = "";             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
@@ -147,9 +158,7 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 
 	// Evaluate possible cached equations
 	if (_parser.HasCachedAccess() && !_parser.IsCompiling())
-	{
 		return handleCachedDataAccess(sLine, _parser, _data, _option);
-	}
 
 	// Validate the number of parentheses
 	if (!validateParenthesisNumber(sLine))
@@ -166,43 +175,12 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 
 		// --> Ist links vom ersten "cache(" ein "=" oder ueberhaupt ein "=" im gesamten Ausdruck? <--
 		eq_pos = sLine.find("=");
+
 		if (eq_pos == string::npos              // gar kein "="?
-				|| !_data.containsTablesOrClusters(sLine.substr(0, eq_pos))   // nur links von "cache("?
-				|| (_data.containsTablesOrClusters(sLine.substr(0, eq_pos))  // wenn rechts von "cache(", dann nur Logikausdruecke...
-					&& (sLine[eq_pos + 1] == '='
-						|| sLine[eq_pos - 1] == '<'
-						|| sLine[eq_pos - 1] == '>'
-						|| sLine[eq_pos - 1] == '!'
-					   )
-				   )
-		   )
+            || !_data.containsTablesOrClusters(sLine.substr(0, eq_pos))   // nur links von "cache("?
+            || (sLine[eq_pos + 1] == '=' || sLine[eq_pos - 1] == '<' || sLine[eq_pos - 1] == '>' || sLine[eq_pos - 1] == '!')) // wenn rechts von "cache(", dann nur Logikausdruecke...
 		{
-			// --> Cache-Lese-Status aktivieren! <--
-			_data.setCacheStatus(true);
-
-			try
-			{
-				// Try to find every cache and handle its contents
-				for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); iter++)
-				{
-					if (sLine.find((iter->first) + "(") != string::npos)
-						replaceDataEntities(sLine, (iter->first) + "(", _data, _parser, _option, bReplaceNANs);
-				}
-
-				// Try to find every cluster and handle its contents
-				for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); iter++)
-				{
-					if (sLine.find((iter->first) + "{") != string::npos)
-						replaceDataEntities(sLine, (iter->first) + "{", _data, _parser, _option, bReplaceNANs);
-				}
-			}
-			catch (...)
-			{
-				_data.setCacheStatus(false);
-				throw;
-			}
-			// --> Cache-Lese-Status deaktivieren <--
-			_data.setCacheStatus(false);
+            resolveTablesAndClusters(sLine, _parser, _data, _option, bReplaceNANs);
 		}
 		else
 		{
@@ -220,25 +198,11 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 			// --> Gibt's innerhalb von "cache()" nochmal einen Ausdruck "cache("? <--
 			if (_data.containsTablesOrClusters(sCache.substr(sCache.find_first_of("({") + 1)))
 			{
-				_data.setCacheStatus(true);
-
 				sLine_Temp = sCache.substr(sCache.find_first_of("({") + 1);
-
-				for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-				{
-					if (sLine_Temp.find(iter->first + "(") != string::npos)
-						replaceDataEntities(sLine_Temp, iter->first + "(", _data, _parser, _option, bReplaceNANs);
-				}
-
-				for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
-				{
-					if (sLine_Temp.find(iter->first + "{") != string::npos)
-						replaceDataEntities(sLine_Temp, iter->first + "{", _data, _parser, _option, bReplaceNANs);
-				}
-
+                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, bReplaceNANs);
 				sCache = sCache.substr(0, sCache.find_first_of("({") + 1) + sLine_Temp;
-				_data.setCacheStatus(false);
 			}
+
 			sLine_Temp = sLine.substr(eq_pos + 1);
 
 			// --> Gibt es rechts von "=" nochmals "cache("? <--
@@ -247,30 +211,9 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 				/* --> Ja? Geht eigentlich trotzdem wie oben, mit Ausnahme, dass ueberall wo "sLine" aufgetreten ist,
 				 *     nun "sLine_Temp" auftritt <--
 				 */
-				_data.setCacheStatus(true);
-
-				try
-				{
-					// Try to find each cache and handle its content
-					for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
-					{
-						if (sLine_Temp.find(iter->first + "(") != string::npos)
-							replaceDataEntities(sLine_Temp, iter->first + "(", _data, _parser, _option, bReplaceNANs);
-					}
-					// Try to find each cluster and handle its content
-					for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
-					{
-						if (sLine_Temp.find(iter->first + "{") != string::npos)
-							replaceDataEntities(sLine_Temp, iter->first + "{", _data, _parser, _option, bReplaceNANs);
-					}
-				}
-				catch (...)
-				{
-					_data.setCacheStatus(false);
-					throw;
-				}
-				_data.setCacheStatus(false);
+                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, bReplaceNANs);
 			}
+
 			// --> sLine_Temp an sLine zuweisen <--
 			sLine = sLine_Temp;
 		}
@@ -288,8 +231,10 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 			 */
 			throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sLine, SyntaxError::invalid_position);
 		}
+
 		// --> Ist rechts von "data(" noch ein "=" und gehoert das nicht zu einem Logik-Ausdruck? <--
 		eq_pos = sLine.find("=", sLine.find("data(") + 5);
+
 		if (eq_pos != string::npos
 				&& sLine[eq_pos + 1] != '='
 				&& sLine[eq_pos - 1] != '<'
@@ -309,6 +254,7 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 				throw SyntaxError(SyntaxError::READ_ONLY_DATA, sLine, SyntaxError::invalid_position);
 			}
 		}
+
 		/* --> Diese Schleife ersetzt nacheinander alle Stellen, in denen "data(" auftritt, durch "Vektoren", die
 		 *     in einer anderen Funktion weiterverarbeitet werden koennen. Eine aehnliche Schleife findet sich
 		 *     auch fuer "cache(" etwas weiter unten. <--
@@ -322,19 +268,70 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 	return sCache;
 }
 
-/* --> Diese Funktion ersetzt in einem gegebenen String sLine alle Entities (sEntity) von "data(" oder "cache(" und bricht
- *     ab, sobald ein Fehler auftritt. Der Fehler wird in der Referenz von bSegmentationFault gespeichert und kann in
- *     in der aufrufenden Funktion weiterverarbeitet werden <--
- */
+
+/////////////////////////////////////////////////
+/// \brief Resolves every call to a cluster or a
+/// table.
+///
+/// \param sLine string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \param bReplaceNANs bool
+/// \return void
+///
+/////////////////////////////////////////////////
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs)
+{
+    // Try to find every cache and handle its contents
+    if (_data.containsTables(sLine))
+    {
+        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); iter++)
+        {
+            if (sLine.find((iter->first) + "(") != string::npos)
+                replaceDataEntities(sLine, iter->first + "(", _data, _parser, _option, bReplaceNANs);
+        }
+    }
+
+    // Try to find every cluster and handle its contents
+    if (_data.containsClusters(sLine))
+    {
+        for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); iter++)
+        {
+            if (sLine.find((iter->first) + "{") != string::npos)
+                replaceDataEntities(sLine, iter->first + "{", _data, _parser, _option, bReplaceNANs);
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function replaces all calls to a
+/// single data entity with an internal vector or
+/// its value, respectively.
+///
+/// \param sLine string&
+/// \param sEntity const string&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _option const Settings&
+/// \param bReplaceNANs bool
+/// \return void
+///
+/// Because this function calls the index parser,
+/// it will automatically resolve all nested calls
+/// to any data entity included in the current call
+/// to the specified data entity.
+/////////////////////////////////////////////////
 void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
 {
 	Indices _idx;
 	string sEntityOccurence = "";
-	string sEntityName = sEntity.substr(0, sEntity.find_first_of("({"));
+	string sEntityName = sEntity.substr(0, sEntity.length()-1);
 	unsigned int nPos = 0;
 	bool bWriteStrings = false;
 	bool bWriteFileName = false;
-	bool isCluster = sEntity[sEntity.find_first_of("({")] == '{';
+	bool isCluster = sEntity.back() == '{';
 	vector<double> vEntityContents;
 	string sEntityReplacement = "";
 	string sEntityStringReplacement = "";
@@ -384,7 +381,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 		sEntityOccurence = sLine.substr(sLine.find(sEntity, nPos));
 		nPos = sLine.find(sEntity, nPos);
 
-		if (nPos && !checkDelimiter(sLine.substr(nPos - 1, sEntity.length() + 1)))
+		if (nPos && !isDelimiter(sLine[nPos-1]))
 		{
 			nPos++;
 			continue;
@@ -426,21 +423,20 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 			bWriteFileName = true;
 
 		// Handle the filename and headline access different from the usual data access
-		if (bWriteFileName)
+		if (!isCluster && bWriteFileName)
 		{
 			// Get the file name (or the cache table name)
 			sEntityStringReplacement = "\"" + _data.getDataFileName(sEntityName) + "\"";
 		}
-		else if (bWriteStrings)
+		else if (!isCluster && bWriteStrings)
 		{
+		    vector<string> vStringContents;
+
 			// Get the headlines
             for (size_t j = 0; j < _idx.col.size(); j++)
-            {
-                sEntityStringReplacement += "\"" + _data.getHeadLineElement(_idx.col[j], sEntityName) + "\", ";
-            }
+                vStringContents.push_back("\"" + _data.getHeadLineElement(_idx.col[j], sEntityName) + "\"");
 
-			if (sEntityStringReplacement.length())
-				sEntityStringReplacement.erase(sEntityStringReplacement.rfind(','));
+            sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(vStringContents);
 		}
 		else if (!isCluster)
 		{

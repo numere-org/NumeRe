@@ -2358,6 +2358,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 				_parserRef->PauseLoopMode();
 
             auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bLoopSupressAnswer);
+            NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
             if (retVal == NumeRe::StringParser::STRING_SUCCESS)
             {

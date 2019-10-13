@@ -67,16 +67,6 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 
 	sArgument = sCmd.substr(nPos + 1, nClosingParens - 1);
 
-	// If the argument contains tables, get their values. This leads to a recursion!
-	if (sArgument.find("data(") != string::npos || _data.containsTablesOrClusters(sArgument))
-		getDataElements(sArgument, _parser, _data, _option);
-
-    // update the dimension variables
-    if (sCmd[nPos] == '(')
-        _data.updateDimensionVariables(sTableName);
-    else
-        _data.updateClusterSizeVariables(sTableName);
-
 	// Remove not necessary white spaces
 	StripSpaces(sArgument);
 
@@ -87,6 +77,16 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 		_idx.col = VectorIndex(0LL, VectorIndex::OPEN_END);
 		return _idx;
 	}
+
+	// If the argument contains tables, get their values. This leads to a recursion!
+	if (sArgument.find("data(") != string::npos || _data.containsTablesOrClusters(sArgument))
+		getDataElements(sArgument, _parser, _data, _option);
+
+    // update the dimension variables
+    if (sCmd[nPos] == '(')
+        _data.updateDimensionVariables(sTableName);
+    else
+        _data.updateClusterSizeVariables(sTableName);
 
 	// Store the obtained argument (this will contain the results from the recursion)
 	_idx.sCompiledAccessEquation = sArgument;

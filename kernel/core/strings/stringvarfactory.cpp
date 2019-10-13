@@ -268,11 +268,13 @@ namespace NumeRe
         if (!vStringVector.size())
             return "";
 
-        string strVectName = "_~TEMPSTRVECT[" + toString((int)m_mTempStringVectorVars.size()) + "]";
-
         // Does it already exist?
-        if (m_mTempStringVectorVars.find(strVectName) != m_mTempStringVectorVars.end())
-            throw SyntaxError(SyntaxError::STRING_ERROR, strVectName, SyntaxError::invalid_position);
+        string strVectName = findVectorInMap(m_mTempStringVectorVars, vStringVector);
+
+        if (strVectName.length())
+            return strVectName;
+
+        strVectName = "_~TEMPSTRVECT[" + toString((int)m_mTempStringVectorVars.size()) + "]";
 
         // save the vector
         m_mTempStringVectorVars[strVectName] = vStringVector;
@@ -329,17 +331,17 @@ namespace NumeRe
     /// passed map with their nCurrentComponent
     /// component.
     ///
-    /// \param m_mVectorVarMap map<string,vector<string> >&
+    /// \param mVectorVarMap map<string,vector<string> >&
     /// \param currentline string&
     /// \param nCurrentComponent size_t
     /// \param bHasComponents bool&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void StringVarFactory::replaceStringVectorVars(map<string,vector<string> >& m_mVectorVarMap, string& currentline, size_t nCurrentComponent, bool& bHasComponents)
+    void StringVarFactory::replaceStringVectorVars(map<string,vector<string> >& mVectorVarMap, string& currentline, size_t nCurrentComponent, bool& bHasComponents)
     {
         // Replace all found vectors with their nCurrentComponent-th component
-        for (auto iter = m_mVectorVarMap.begin(); iter != m_mVectorVarMap.end(); ++iter)
+        for (auto iter = mVectorVarMap.begin(); iter != mVectorVarMap.end(); ++iter)
         {
             size_t nMatch = 0;
 
@@ -367,6 +369,46 @@ namespace NumeRe
                     currentline.replace(nMatch, (iter->first).length(), "\"\"");
             }
         }
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Searches for the passed string in the
+    /// passed map and returns the key string from the
+    /// map, if anything found, otherwise an empty
+    /// string.
+    ///
+    /// \param mVectorVarMap map<string,vector<string> >&
+    /// \param vStringVector const vector<string>&
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
+    string StringVarFactory::findVectorInMap(const map<string,vector<string> >& mVectorVarMap, const vector<string>& vStringVector)
+    {
+        // Go through the map
+        for (auto iter = mVectorVarMap.begin(); iter != mVectorVarMap.end(); ++iter)
+        {
+            // Compare first size and the first component
+            if (iter->second.size() == vStringVector.size() && iter->second[0] == vStringVector[0])
+            {
+                // If both appear similar, compare every
+                // component
+                for (size_t i = 1; i < vStringVector.size(); i++)
+                {
+                    // Break if a component is not equal
+                    if (vStringVector[i] != iter->second[i])
+                        break;
+
+                    // Return the vector name, if all components
+                    // appear equal
+                    if (i == vStringVector.size()-1)
+                        return iter->first;
+                }
+            }
+        }
+
+        // Return an empty string, if nothing was found
+        return "";
     }
 
 

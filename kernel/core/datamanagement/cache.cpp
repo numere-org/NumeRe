@@ -470,6 +470,9 @@ bool MemoryManager::containsTables(const string& sExpression)
 {
     size_t nQuotes = 0;
 
+    if (sExpression.find('(') == string::npos)
+        return false;
+
     // Search through the expression
     for (size_t i = 0; i < sExpression.length(); i++)
     {

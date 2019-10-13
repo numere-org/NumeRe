@@ -354,6 +354,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
         {
             auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sCache, bProcSupressAnswer);
+            NumeReKernel::getInstance()->getStringParser().removeTempStringVectorVars();
 
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_STRING;

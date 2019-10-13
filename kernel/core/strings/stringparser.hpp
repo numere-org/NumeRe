@@ -63,7 +63,9 @@ namespace NumeRe
             int decodeStringParams(string& sLine);
             bool isAssignmentOperator(const string& sLine, size_t eq_pos);
             bool isSimpleString(const string& sLine);
+            bool isToken(const string& sToken, const string& sLine, size_t pos);
             string maskControlCharacters(string sString);
+            virtual StringResult eval(string& sLine, string sCache, bool bParseNumericals = true) override;
 
         public:
             enum StringParserRetVal
@@ -74,7 +76,6 @@ namespace NumeRe
 
             StringParser(mu::Parser& parser, Datafile& data, Settings& option);
             virtual ~StringParser() {}
-            virtual StringResult eval(string& sLine, string sCache, bool bParseNumericals = true) override;
             StringParserRetVal evalAndFormat(string& sLine, string& sCache, bool bSilent = false);
             virtual bool isStringExpression(const string& sExpression) override;
     };
