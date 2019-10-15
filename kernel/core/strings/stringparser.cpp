@@ -246,6 +246,10 @@ namespace NumeRe
             // Get the data and parse string expressions
             replaceDataEntities(sData, sOccurence, _data, _parser, _option, true);
 
+            // Strip the spaces, which have been added during the
+            // calls to the data entities
+            StripSpaces(sData);
+
             // NOTE: Explicit parsing of the result is not necessary any more,
             // because replaceDataEntities will either return vectors or
             // plain strings or numerical values!
@@ -937,7 +941,7 @@ namespace NumeRe
 
             // Start the current string value with a quotation mark
             // if it is not a special case
-            if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
+            if (/*vFinal[j] != "\\n" && vFinal[j] != "\\t" &&*/ !(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
             {
                 sConsoleOut += "\"";
                 sLine += "\"";
@@ -1026,7 +1030,7 @@ namespace NumeRe
 
             // End the current string value with a quotation mark
             // if it is not a special case
-            if (vFinal[j] != "\\n" && vFinal[j] != "\\t" && !(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
+            if (/*vFinal[j] != "\\n" && vFinal[j] != "\\t" &&*/ !(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
             {
                 sConsoleOut += "\"";
                 sLine += "\"";
@@ -1038,10 +1042,10 @@ namespace NumeRe
 
             // Add a comma, if neither the next nor the current string
             // is a special case
-            if (vFinal[j] != "\\n" && vFinal[j + 1] != "\\n" && vFinal[j] != "\\t" && vFinal[j + 1] != "\\t")
+            if (true)//vFinal[j] != "\\n" && vFinal[j + 1] != "\\n" && vFinal[j] != "\\t" && vFinal[j + 1] != "\\t")
             {
                 // If the last character was a line break
-                if (sLine.find_last_not_of("\" ") != string::npos && sLine[sLine.find_last_not_of("\" ")] == '\n')
+                /*if (sLine.find_last_not_of("\" ") != string::npos && sLine[sLine.find_last_not_of("\" ")] == '\n')
                 {
                     sLine += ", ";
 
@@ -1053,7 +1057,7 @@ namespace NumeRe
                     }
 
                     continue;
-                }
+                }*/
 
                 // Append the commas
                 sConsoleOut += ", ";
@@ -1094,6 +1098,11 @@ namespace NumeRe
             if (vPositions.back())
                 parserFlags |= iter->second;
         }
+
+        // Return, if no flags were attached
+        // to the current expression
+        if (!vPositions.size())
+            return parserFlags;
 
         // Sort the vector (only about 6 elements,
         // should be quite fast) to obtain the
@@ -1248,20 +1257,7 @@ namespace NumeRe
             // Determine, whether the current component is a string
             // or a numerical expression
             if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
-            {
-                // Try to evaluate the numerical expression, parse it as
-                // string and store it correspondingly
-                try
-                {
-                    vIsNoStringValue.push_back(true);
-                }
-                catch (...)
-                {
-                    // The parser was not able to parse the expression,
-                    // we keep it as a string
-                    vIsNoStringValue.push_back(false);
-                }
-            }
+                vIsNoStringValue.push_back(true);
             else
                 vIsNoStringValue.push_back(false);
         }
