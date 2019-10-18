@@ -418,11 +418,14 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 	{
 		thisReturnVal.vNumVal.push_back(v[0]);
 	}
+
 	vAns = v[0];
+	NumeReKernel::getInstance()->getAns().clear();
+	NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
 
 	// Print the output to the console, if it isn't suppressed
 	if (!bProcSupressAnswer)
-        NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v, _option));
+        NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
 
     // Write the return values to cache
 	if (bWriteToCache)

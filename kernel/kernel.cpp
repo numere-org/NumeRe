@@ -58,6 +58,15 @@ ofstream NumeReKernel::oLogFile;
 ProcedureLibrary NumeReKernel::ProcLibrary;
 
 typedef BOOL (WINAPI* LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns true, if we're
+/// currently running on Win x64.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool IsWow64()
 {
 	BOOL bIsWow64 = false;
@@ -79,7 +88,10 @@ bool IsWow64()
 	return (bool)bIsWow64;
 }
 
-// Constructor
+
+/////////////////////////////////////////////////
+/// \brief Constructor of the kernel.
+/////////////////////////////////////////////////
 NumeReKernel::NumeReKernel() : _option(), _data(), _parser(), _stringParser(_parser, _data, _option)
 {
 	sCommandLine.clear();
@@ -88,27 +100,51 @@ NumeReKernel::NumeReKernel() : _option(), _data(), _parser(), _stringParser(_par
 	kernelInstance = this;
 }
 
-// Destructor
+
+/////////////////////////////////////////////////
+/// \brief Destructor of the kernel.
+/////////////////////////////////////////////////
 NumeReKernel::~NumeReKernel()
 {
 	CloseSession();
 	kernelInstance = nullptr;
 }
 
-// Get the settings available in the options
+
+/////////////////////////////////////////////////
+/// \brief Get the settings available in the
+/// Settings class.
+///
+/// \return Settings
+///
+/////////////////////////////////////////////////
 Settings NumeReKernel::getKernelSettings()
 {
 	return _option.sendSettings();
 }
 
-// Change the internal settings
+
+/////////////////////////////////////////////////
+/// \brief Update the internal settings.
+///
+/// \param _settings const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::setKernelSettings(const Settings& _settings)
 {
 	_option.copySettings(_settings);
 	_debugger.setActive(_settings.getUseDebugger());
 }
 
-// Save the cache in its current state automatically
+
+/////////////////////////////////////////////////
+/// \brief Saves the allocated memories by the
+/// tables automatically.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::Autosave()
 {
 	if (!_data.getSaveStatus())
@@ -116,7 +152,20 @@ void NumeReKernel::Autosave()
 	return;
 }
 
-// "Boot" the kernel
+
+/////////////////////////////////////////////////
+/// \brief This is the kernel "booting" function.
+///
+/// \param _parent wxTerm*
+/// \param __sPath const string&
+/// \param sPredefinedFunctions const string&
+/// \return void
+///
+/// This function sets all parameters, functions
+/// and constants used for the numerical parser.
+/// loads possible available autosaves and
+/// definition files for functions and plugins.
+/////////////////////////////////////////////////
 void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string& sPredefinedFunctions)
 {
 	if (_parent && m_parent == nullptr)
@@ -185,6 +234,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 
 	_data.setPath(_option.getLoadPath(), true, sPath);
 	_data.createRevisionsFolder();
+	_data.newCluster("ans").setDouble(0, NAN);
 
 	_data.setSavePath(_option.getSavePath());
 	_data.setbLoadEmptyCols(_option.getbLoadEmptyCols());
@@ -295,7 +345,14 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	defineFunctions();
 }
 
-// This member function declares all operators
+
+/////////////////////////////////////////////////
+/// \brief This member function declares all
+/// numerical operators.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::defineOperators()
 {
 	// --> Syntax fuer die Umrechnungsfunktionen definieren und die zugehoerigen Funktionen deklarieren <--
@@ -346,7 +403,14 @@ void NumeReKernel::defineOperators()
 	_parser.DefineOprt(_nrT("&"), parser_BinAND, prLOGIC, oaLEFT, true);
 }
 
-// This member function declares all constants
+
+/////////////////////////////////////////////////
+/// \brief This member function declares all
+/// numerical constants.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::defineConst()
 {
 	// --> Eigene Konstanten <--
@@ -398,7 +462,14 @@ void NumeReKernel::defineConst()
 	_parser.DefineConst(_nrT("void"), NAN);
 }
 
-// This member function declares all mathematical functions
+
+/////////////////////////////////////////////////
+/// \brief This member function declares all
+/// mathematical functions.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::defineFunctions()
 {
 	// --> mathemat. Funktion deklarieren <--
@@ -474,7 +545,15 @@ void NumeReKernel::defineFunctions()
 	_parser.DefineFun("Li2", parser_dilogarithm, true);                         // Li2(x)
 }
 
-// This member function prints the version headline and the version information to the console
+
+/////////////////////////////////////////////////
+/// \brief This member function prints the version
+/// headline and the version information to the
+/// console.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::printVersionInfo()
 {
     // measure the current stack position
@@ -503,8 +582,21 @@ void NumeReKernel::printVersionInfo()
 
 }
 
-// --> Main Loop <--
-// This function is called from the terminal to process the operations done in the kernel
+
+/////////////////////////////////////////////////
+/// \brief This is the main loop for the core of
+/// NumeRe.
+///
+/// \param sCommand const string&
+/// \return NumeReKernel::KernelStatus
+///
+/// This function is called by the terminal to
+/// process the desired operations using the core
+/// of this application. It features an inner
+/// loop, which will process a whole script or a
+/// semicolon-separated list of commands
+/// automatically.
+/////////////////////////////////////////////////
 NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 {
 	if (!m_parent)
@@ -1110,7 +1202,18 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
 }
 
-// This private member function will handle the command line input source and validate it
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// handle the command line input source and
+/// validate it, before the core will evaluate it.
+///
+/// \param sLine string&
+/// \param sCmdCache const string&
+/// \param sKeep string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCache, string& sKeep)
 {
     if (!sCmdCache.length())
@@ -1207,7 +1310,19 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
     return true;
 }
 
-// This private member function returns the current command line from the command cache
+
+/////////////////////////////////////////////////
+/// \brief This private member function returns
+/// the current command line from the command
+/// cache (i.e. the list of commands separated by
+/// semicolons).
+///
+/// \param sLine string&
+/// \param sCmdCache string&
+/// \param sCurrentCommand const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::getLineFromCommandCache(string& sLine, string& sCmdCache, const string& sCurrentCommand)
 {
     // Only do something if the command cache is not empty or the current line contains a semicolon
@@ -1283,7 +1398,20 @@ bool NumeReKernel::getLineFromCommandCache(string& sLine, string& sCmdCache, con
     return true;
 }
 
-// This private member function will handle the compose block
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// handle the compose block (i.e. store the
+/// different commands and return them, once the
+/// block is finished).
+///
+/// \param sLine string&
+/// \param sCmdCache const string&
+/// \param sCurrentCommand const string&
+/// \param nReturnVal KernelStatus&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::handleComposeBlock(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
 {
     // Only do something, if the current command contains
@@ -1418,7 +1546,19 @@ bool NumeReKernel::handleComposeBlock(string& sLine, const string& sCmdCache, co
     return true;
 }
 
-// This private member function will handle the writing of procedure lines to the corresponding file
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// handle the writing of procedure lines to the
+/// corresponding file.
+///
+/// \param sLine const string&
+/// \param sCmdCache const string&
+/// \param sCurrentCommand const string&
+/// \param nReturnVal KernelStatus&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::handleProcedureWrite(const string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
 {
     if (_procedure.is_writing() || sCurrentCommand == "procedure")
@@ -1463,7 +1603,16 @@ bool NumeReKernel::handleProcedureWrite(const string& sLine, const string& sCmdC
     return true;
 }
 
-// This private member function uninstalls a installed plugin
+
+/////////////////////////////////////////////////
+/// \brief This private member function uninstalls
+/// a previously installed plugin.
+///
+/// \param sLine const string&
+/// \param sCurrentCommand const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCommand)
 {
     if (sCurrentCommand == "uninstall")
@@ -1495,7 +1644,18 @@ bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCo
     return false;
 }
 
-// This private member function handles the "to_cmd()" function, if it is part of the command line
+
+/////////////////////////////////////////////////
+/// \brief This private member function handles
+/// the "to_cmd()" function, if it is part of
+/// the current command line.
+///
+/// \param sLine string&
+/// \param sCache string&
+/// \param sCurrentCommand string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::handleToCmd(string& sLine, string& sCache, string& sCurrentCommand)
 {
     // Do only something, if "to_cmd()" is located
@@ -1531,7 +1691,16 @@ void NumeReKernel::handleToCmd(string& sLine, string& sCache, string& sCurrentCo
     }
 }
 
-// This private member function will evaluate the procedure calls and replace their results
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// evaluate any calls to procedurs and replace
+/// their results in the current command line.
+///
+/// \param sLine string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::evaluateProcedureCalls(string& sLine)
 {
     // Only if there's a candidate for a procedure
@@ -1612,7 +1781,15 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
     return true;
 }
 
-// This private member function will execute the plugins
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// execute any call to a plugin.
+///
+/// \param sLine string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::executePlugins(string& sLine)
 {
     // If there's a plugin command
@@ -1638,7 +1815,6 @@ bool NumeReKernel::executePlugins(string& sLine)
             else if (_rTemp.isNumeric() && sLine.find("<<RETURNVAL>>") != string::npos)
             {
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]");
-                vAns = _rTemp.vNumVal[0];
                 _parser.SetVectorVar("_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]", _rTemp.vNumVal);
             }
             _option.setSystemPrintStatus(true);
@@ -1653,7 +1829,18 @@ bool NumeReKernel::executePlugins(string& sLine)
     return true;
 }
 
-// This private member function will handle the flow controls
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// handle used flow controls.
+///
+/// \param sLine string&
+/// \param sCmdCache const string&
+/// \param sCurrentCommand const string&
+/// \param nReturnVal KernelStatus&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, const string& sCurrentCommand, KernelStatus& nReturnVal)
 {
     if (_procedure.getLoop() || sCurrentCommand == "for" || sCurrentCommand == "if" || sCurrentCommand == "while" || sCurrentCommand == "switch")
@@ -1744,7 +1931,19 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
     return true;
 }
 
-// This private member function handles the evaluation of strings
+
+/////////////////////////////////////////////////
+/// \brief This private member function redirects
+/// the processing of strings to the string parser.
+///
+/// \param sLine string&
+/// \param sCache string&
+/// \param sCmdCache const string&
+/// \param bWriteToCache bool&
+/// \param nReturnVal KernelStatus&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal)
 {
     if (_stringParser.isStringExpression(sLine))
@@ -1776,17 +1975,38 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
     return true;
 }
 
-// This private member function will create the answer line for the parser
-// which is then passed to printResult
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// create the answer line for the parser which is
+/// then passed to NumeReKernel::printResult().
+///
+/// \param nNum int
+/// \param v value_type*
+/// \param sCmdCache const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::createCalculationAnswer(int nNum, value_type* v, const string& sCmdCache)
 {
     vAns = v[0];
+    getAns().clear();
+    getAns().setDoubleArray(nNum, v);
 
     if (!bSupressAnswer)
-        printResult(formatResultOutput(nNum, v, _option), sCmdCache, _script.isValid() && _script.isOpen());
+        printResult(formatResultOutput(nNum, v), sCmdCache, _script.isValid() && _script.isOpen());
 }
 
-// This private member function will reset the kernel variables after an error
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// reset the kernel variables after an error had
+/// been handled.
+///
+/// \param sCmdCache string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::resetAfterError(string& sCmdCache)
 {
     _pData.setFileName("");
@@ -1809,6 +2029,16 @@ void NumeReKernel::resetAfterError(string& sCmdCache)
     _stringParser.removeTempStringVectorVars();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to update
+/// the internal terminal line length information
+/// after the terminal had been resized.
+///
+/// \param nLength int
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::updateLineLenght(int nLength)
 {
 	if (nLength > 0)
@@ -1818,22 +2048,41 @@ void NumeReKernel::updateLineLenght(int nLength)
 	}
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function performs the
+/// autosaving of tables at application shutdown.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::saveData()
 {
-	if (!_data.getSaveStatus()) // MAIN_UNSAVED_CACHE
+	if (!_data.getSaveStatus())
 	{
-		_data.saveToCacheFile(); // MAIN_CACHE_SAVED
+		_data.saveToCacheFile();
 		print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
 		Sleep(500);
 	}
 
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function shuts the kernel
+/// down and terminates the kernel instance. Every
+/// call to NumeReKernel::getInstance() after a
+/// call to this function will produce a
+/// segmentation fault.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::CloseSession()
 {
 	saveData();
 	_data.clearCache();
-	_data.removeData(false); // MAIN_BYE
+	_data.removeData(false);
 
 	// --> Konfiguration aus den Objekten zusammenfassen und anschliessend speichern <--
 	_option.setSavePath(_out.getPath());
@@ -1863,6 +2112,15 @@ void NumeReKernel::CloseSession()
 	m_parent = nullptr;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function is a simple
+/// wrapper to read the kernel answer and reset
+/// it automatically.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReKernel::ReadAnswer()
 {
 	string sAns = sAnswer;
@@ -1870,6 +2128,15 @@ string NumeReKernel::ReadAnswer()
 	return sAns;
 }
 
+/////////////////////////////////////////////////
+/// \brief This member function returns a map of
+/// language strings for the installed plugins,
+/// which will be used by the global language
+/// object in the editor and the symbols browser.
+///
+/// \return map<string, string>
+///
+/////////////////////////////////////////////////
 map<string, string> NumeReKernel::getPluginLanguageStrings()
 {
 	map<string, string> mPluginLangStrings;
@@ -1884,6 +2151,16 @@ map<string, string> NumeReKernel::getPluginLanguageStrings()
 	return mPluginLangStrings;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a map of
+/// language strings for the declared functions,
+/// which will be used by the global language
+/// object in the editor and the symbols browser.
+///
+/// \return map<string, string>
+///
+/////////////////////////////////////////////////
 map<string, string> NumeReKernel::getFunctionLanguageStrings()
 {
 	map<string, string> mFunctionLangStrings;
@@ -1898,6 +2175,15 @@ map<string, string> NumeReKernel::getFunctionLanguageStrings()
 	return mFunctionLangStrings;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function is used by the
+/// syntax highlighter to hightlight the plugin
+/// commands.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReKernel::getPluginCommands()
 {
 	vector<string> vPluginCommands;
@@ -1907,24 +2193,15 @@ vector<string> NumeReKernel::getPluginCommands()
 	return vPluginCommands;
 }
 
-string NumeReKernel::ReadFileName()
-{
-	//string sFile = sFileToEdit;
-	//sFileToEdit.clear();
-	//return sFile;
 
-	return "";
-}
-
-unsigned int NumeReKernel::ReadLineNumber()
-{
-	//unsigned int nLine = nLineToGoTo;
-	//nLineToGoTo = 0;
-	//return nLine;
-
-	return 0;
-}
-
+/////////////////////////////////////////////////
+/// \brief This member function returns the mode,
+/// how a file shall be opened in the editor, when
+/// called by the kernel-
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int NumeReKernel::ReadOpenFileFlag()
 {
 	int nFlag = nOpenFileFlag;
@@ -1932,25 +2209,45 @@ int NumeReKernel::ReadOpenFileFlag()
 	return nFlag;
 }
 
-string NumeReKernel::ReadDoc()
-{
-	//string Doc = sDocumentation;
-	//sDocumentation.clear();
-	//return Doc;
 
-	return "";
-}
-
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// documentation for the passed command string
+/// as HTML string prepared for the help browser.
+///
+/// \param sCommand const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReKernel::getDocumentation(const string& sCommand)
 {
 	return doc_HelpAsHTML(sCommand, false, _option);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// documentation index as a string vector, which
+/// can be used to fill the tree in the
+/// documentation browser.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReKernel::getDocIndex()
 {
     return _option.getDocIndex();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a structure
+/// containing all currently declared variables,
+/// which can be displayed in the variable viewer.
+///
+/// \return NumeReVariables
+///
+/////////////////////////////////////////////////
 NumeReVariables NumeReKernel::getVariableList()
 {
     NumeReVariables vars;
@@ -1966,6 +2263,7 @@ NumeReVariables NumeReKernel::getVariableList()
     if (_data.getStringElements())
         tablemap["string"] = -2;
 
+    // Gather all (global) numerical variables
 	for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
     {
         if ((iter->first).substr(0, 2) == "_~")
@@ -1977,6 +2275,7 @@ NumeReVariables NumeReKernel::getVariableList()
 
     vars.nNumerics = vars.vVariables.size();
 
+    // Gather all (global) string variables
 	for (auto iter = stringmap.begin(); iter != stringmap.end(); ++iter)
     {
         if ((iter->first).substr(0, 2) == "_~")
@@ -1988,6 +2287,7 @@ NumeReVariables NumeReKernel::getVariableList()
 
     vars.nStrings = vars.vVariables.size() - vars.nNumerics;
 
+    // Gather all (global) tables
     for (auto iter = tablemap.begin(); iter != tablemap.end(); ++iter)
     {
         if ((iter->first).substr(0, 2) == "_~")
@@ -2009,6 +2309,7 @@ NumeReVariables NumeReKernel::getVariableList()
 
     vars.nTables = vars.vVariables.size() - vars.nNumerics - vars.nStrings;
 
+    // Gather all (global) clusters
     for (auto iter = clustermap.begin(); iter != clustermap.end(); ++iter)
     {
         if ((iter->first).substr(0, 2) == "_~")
@@ -2025,6 +2326,15 @@ NumeReVariables NumeReKernel::getVariableList()
     return vars;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns \c true, if the user changed
+/// any internal settings using the \c set
+/// command.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::SettingsModified()
 {
 	bool modified = modifiedSettings;
@@ -2032,6 +2342,15 @@ bool NumeReKernel::SettingsModified()
 	return modified;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a vector
+/// containing all currently declared paths in a
+/// distinct order.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReKernel::getPathSettings() const
 {
 	vector<string> vPaths;
@@ -2046,20 +2365,36 @@ vector<string> NumeReKernel::getPathSettings() const
 	return vPaths;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function appends the
+/// formatted string to the buffer and informs the
+/// terminal that we have a new string to print.
+///
+/// \param sLine const string&
+/// \param sCmdCache const string&
+/// \param bScriptRunning bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::printResult(const string& sLine, const string& sCmdCache, bool bScriptRunning)
 {
 	if (!m_parent)
 		return;
+
 	if (sCmdCache.length() || bScriptRunning )
 	{
 		if (bSupressAnswer)
 			return;
+
 		{
 			wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 			m_parent->m_sAnswer += "|-> " + sLine + "\n";
+
 			if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
 				m_parent->m_KernelStatus = NumeReKernel::NUMERE_CALC_UPDATE;
 		}
+
 		wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
 		Sleep(5);
 	}
@@ -2067,6 +2402,17 @@ void NumeReKernel::printResult(const string& sLine, const string& sCmdCache, boo
 		sAnswer = sLine;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function masks the dollar
+/// signs in the strings to avoid that the line
+/// breaking functions uses them as aliases for
+/// line breaks.
+///
+/// \param sLine string
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReKernel::maskProcedureSigns(string sLine)
 {
 	for (size_t i = 0; i < sLine.length(); i++)
@@ -2074,11 +2420,22 @@ string NumeReKernel::maskProcedureSigns(string sLine)
 		if (sLine[i] == '$' && (!i || sLine[i - 1] != '\\'))
 			sLine.insert(i, 1, '\\');
 	}
+
 	return sLine;
 }
 
 
-// This is the virtual cout function. The port from the kernel of course needs some tweaking
+/////////////////////////////////////////////////
+/// \brief This member function appends the
+/// passed string as a new output line to the
+/// buffer and informs the terminal that we have
+/// a new string to print.
+///
+/// \param __sLine const string&
+/// \param printingEnabled bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::print(const string& __sLine, bool printingEnabled)
 {
 	if (!m_parent || !printingEnabled)
@@ -2086,20 +2443,24 @@ void NumeReKernel::print(const string& __sLine, bool printingEnabled)
 	else
 	{
 		string sLine = __sLine;
+
 		if (bErrorNotification)
 		{
 			if (sLine.front() == '\r')
 				sLine.insert(1, 1, (char)15);
 			else
 				sLine.insert(0, 1, (char)15);
+
 			for (size_t i = 0; i < sLine.length(); i++)
 			{
 				if (sLine[i] == '\n' && i < sLine.length() - 2)
 					sLine.insert(i + 1, 1, (char)15);
 			}
 		}
+
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 		m_parent->m_sAnswer += "|-> " + sLine + "\n";
+
 		if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
 			m_parent->m_KernelStatus = NumeReKernel::NUMERE_PRINTLINE;
 	}
@@ -2111,7 +2472,17 @@ void NumeReKernel::print(const string& __sLine, bool printingEnabled)
 	Sleep(KERNEL_PRINT_SLEEP);
 }
 
-// This is the virtual cout function. The port from the kernel of course needs some tweaking
+
+/////////////////////////////////////////////////
+/// \brief  This member function appends the pre-
+/// formatted string to the buffer and informs the
+/// terminal that we have a new string to print.
+///
+/// \param __sLine const string&
+/// \param printingEnabled bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::printPreFmt(const string& __sLine, bool printingEnabled)
 {
 	if (!m_parent || !printingEnabled)
@@ -2137,7 +2508,7 @@ void NumeReKernel::printPreFmt(const string& __sLine, bool printingEnabled)
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 		m_parent->m_sAnswer += sLine;
 
-		if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)//m_parent->m_KernelStatus != NumeReKernel::NUMERE_PRINTLINE_PREFMT)
+		if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
 			m_parent->m_KernelStatus = NumeReKernel::NUMERE_PRINTLINE_PREFMT;
 	}
 
@@ -2148,27 +2519,41 @@ void NumeReKernel::printPreFmt(const string& __sLine, bool printingEnabled)
 	Sleep(KERNEL_PRINT_SLEEP);
 }
 
-// This static function is used to format the result output
-// for the terminal
-string NumeReKernel::formatResultOutput(int nNum, value_type* v, const Settings& _option)
+
+/////////////////////////////////////////////////
+/// \brief This static function is used to format
+/// the result output in the terminal for
+/// numerical-only results.
+///
+/// \param nNum int
+/// \param v value_type*
+/// \return string
+///
+/////////////////////////////////////////////////
+string NumeReKernel::formatResultOutput(int nNum, value_type* v)
 {
+    Settings& _option = getInstance()->getSettings();
+
     if (nNum > 1)
     {
         // More than one result
         //
         // How many fit into one line?
-        int nLineBreak = numberOfNumbersPerLine(_option);
+        int nLineBreak = numberOfNumbersPerLine();
         string sAns = "ans = {";
 
         // compose the result
         for (int i = 0; i < nNum; ++i)
         {
             sAns += strfill(toString(v[i], _option), _option.getPrecision() + 7);
+
             if (i < nNum - 1)
                 sAns += ", ";
+
             if (nNum + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < nNum - 1)
                 sAns += "...\n|          ";
         }
+
         sAns += "}";
 
         // return the composed result
@@ -2178,14 +2563,76 @@ string NumeReKernel::formatResultOutput(int nNum, value_type* v, const Settings&
     {
         // Only one result
         // return the answer
-        return "ans = " + toString(vAns, _option);
+        return "ans = " + toString(v[0], _option);
     }
 
     // fallback
     return "";
 }
 
-// This static function may be used to issue a warning to the user
+
+/////////////////////////////////////////////////
+/// \brief This static function is used to format
+/// the result output in the terminal for string
+/// and numerical results converted to a string
+/// vector.
+///
+/// \param vStringResults const vector<string>&
+/// \return string
+///
+/////////////////////////////////////////////////
+string NumeReKernel::formatResultOutput(const vector<string>& vStringResults)
+{
+    Settings& _option = getInstance()->getSettings();
+
+    if (vStringResults.size() > 1)
+    {
+        // More than one result
+        //
+        // How many fit into one line?
+        size_t nLineBreak = numberOfNumbersPerLine();
+        string sAns = "ans = {";
+        size_t nNum = vStringResults.size();
+
+        // compose the result
+        for (size_t i = 0; i < nNum; ++i)
+        {
+            sAns += strfill(truncString(vStringResults[i], _option.getPrecision()+6), _option.getPrecision() + 7);
+
+            if (i < nNum - 1)
+                sAns += ", ";
+
+            if (nNum + 1 > nLineBreak && !((i + 1) % nLineBreak) && i < nNum - 1)
+                sAns += "...\n|          ";
+        }
+
+        sAns += "}";
+
+        // return the composed result
+        return sAns;
+    }
+    else
+    {
+        // Only one result
+        // return the answer
+        return "ans = " + vStringResults.front();
+    }
+
+    // fallback
+    return "";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function may be used to
+/// issue a warning to the user. The warning will
+/// be printed by the terminal in a separate
+/// colour.
+///
+/// \param sWarningMessage string
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::issueWarning(string sWarningMessage)
 {
     if (!m_parent)
@@ -2208,21 +2655,51 @@ void NumeReKernel::issueWarning(string sWarningMessage)
     Sleep(KERNEL_PRINT_SLEEP);
 }
 
-int NumeReKernel::numberOfNumbersPerLine(const Settings& _option)
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// count of numbers fitting into a single
+/// terminal line depending on its line length.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReKernel::numberOfNumbersPerLine()
 {
 	/* --> Wir berechnen die Anzahl an Zahlen, die in eine Zeile passen, automatisch <--
 	 * Links: 11 Zeichen bis [; rechts: vier Zeichen mit EOL;
 	 * Fuer jede Zahl: 1 Vorzeichen, 1 Dezimalpunkt, 5 Exponentenstellen, Praezision Ziffern, 1 Komma und 1 Leerstelle
 	 */
-	return (_option.getWindow() - 1 - 15) / (_option.getPrecision() + 9);
+	return (getInstance()->getSettings().getWindow() - 1 - 15) / (getInstance()->getSettings().getPrecision() + 9);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to toggle
+/// the error notification status. The error
+/// notification is used to style text as error
+/// messages.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::sendErrorNotification()
 {
 	bErrorNotification = !bErrorNotification;
 }
 
-// This shall replace the corresponding function from "tools.hpp"
+
+/////////////////////////////////////////////////
+/// \brief This function displays a progress bar
+/// constructed from characters in the terminal.
+///
+/// \param nStep int
+/// \param nFirstStep int
+/// \param nFinalStep int
+/// \param sType const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
 {
 	int nStatusVal = 0;
@@ -2344,8 +2821,17 @@ void NumeReKernel::progressBar(int nStep, int nFirstStep, int nFinalStep, const 
 	toggleTableStatus();
 }
 
-// This member function handles opening files and jumping to lines as
-// requested by the kernel
+
+/////////////////////////////////////////////////
+/// \brief This member function handles opening
+/// files and jumping to lines as requested by the
+/// kernel.
+///
+/// \param sFile const string&
+/// \param nLine unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::gotoLine(const string& sFile, unsigned int nLine)
 {
 	if (!m_parent)
@@ -2368,8 +2854,16 @@ void NumeReKernel::gotoLine(const string& sFile, unsigned int nLine)
 	Sleep(10);
 }
 
-// This member function handles the display of a documentation window
-// as requested by the kernel
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// display of a documentation window as requested
+/// by the kernel.
+///
+/// \param _sDocumentation const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::setDocumentation(const string& _sDocumentation)
 {
 	if (!m_parent)
@@ -2391,9 +2885,18 @@ void NumeReKernel::setDocumentation(const string& _sDocumentation)
 	Sleep(10);
 }
 
-// This member function passes a table to the GUI to be displayed
-// in the table viewer. It also allows to create a table editor
-// window
+
+/////////////////////////////////////////////////
+/// \brief This member function passes a table to
+/// the GUI to be displayed in the table viewer.
+/// It also allows to create a table editor window.
+///
+/// \param _table NumeRe::Table
+/// \param __name string
+/// \param openeditable bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::showTable(NumeRe::Table _table, string __name, bool openeditable)
 {
 	if (!m_parent)
@@ -2421,8 +2924,18 @@ void NumeReKernel::showTable(NumeRe::Table _table, string __name, bool openedita
 	Sleep(10);
 }
 
-// This member function passes a string table to the GUI to be displayed
-// in the table viewer
+
+/////////////////////////////////////////////////
+/// \brief This member function passes a string
+/// table to the GUI to be displayed in the table
+/// viewer.
+///
+/// \param _stringtable NumeRe::Container<string>
+/// \param __name string
+/// \param openeditable bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::showStringTable(NumeRe::Container<string> _stringtable, string __name, bool openeditable)
 {
 	if (!m_parent)
@@ -2450,9 +2963,16 @@ void NumeReKernel::showStringTable(NumeRe::Container<string> _stringtable, strin
 	Sleep(10);
 }
 
-// This member function passes a window object to the
-// user interface, which will then converted into a real
-// window
+
+/////////////////////////////////////////////////
+/// \brief This member function passes a window
+/// object to the user interface, which will then
+/// converted into a real window.
+///
+/// \param window const NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::showWindow(const NumeRe::Window& window)
 {
 	if (!m_parent)
@@ -2476,8 +2996,15 @@ void NumeReKernel::showWindow(const NumeRe::Window& window)
 }
 
 
-// This member function is used by the kernel to be notified
-// when the user finished the table edit process
+/////////////////////////////////////////////////
+/// \brief This member function is used by the
+/// kernel to be notified when the user finished
+/// the table edit process and the table may be
+/// updated internally.
+///
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 NumeRe::Table NumeReKernel::getTable()
 {
 	if (!m_parent)
@@ -2505,8 +3032,15 @@ NumeRe::Table NumeReKernel::getTable()
 	return table;
 }
 
-// This member function creates the table container for the
-// selected string table
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the table
+/// container for the selected numerical table.
+///
+/// \param sTableName const string&
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 NumeRe::Table NumeReKernel::getTable(const string& sTableName)
 {
     string sSelectedTable = sTableName;
@@ -2520,8 +3054,15 @@ NumeRe::Table NumeReKernel::getTable(const string& sTableName)
     return _data.extractTable(sSelectedTable);
 }
 
-// This member function creates the table container for the
-// string table or the clusters
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the table
+/// container for the string table or the clusters.
+///
+/// \param sStringTableName const string&
+/// \return NumeRe::Container<string>
+///
+/////////////////////////////////////////////////
 NumeRe::Container<string> NumeReKernel::getStringTable(const string& sStringTableName)
 {
     if (sStringTableName == "string()")
@@ -2559,8 +3100,17 @@ NumeRe::Container<string> NumeReKernel::getStringTable(const string& sStringTabl
     return NumeRe::Container<string>();
 }
 
-// This member function passes the debugging informations to the
-// GUI to be displayed in the debugger window
+
+/////////////////////////////////////////////////
+/// \brief This member function passes the
+/// debugging information to the GUI to be
+/// displayed in the debugger window.
+///
+/// \param sTitle const string&
+/// \param vStacktrace const vector<string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vStacktrace)
 {
 	if (!m_parent)
@@ -2585,9 +3135,16 @@ void NumeReKernel::showDebugEvent(const string& sTitle, const vector<string>& vS
 	Sleep(10);
 }
 
-// This static function waits until the user sends a
-// continuation command via the debugger and returns the
-// corresponding debugger code
+
+/////////////////////////////////////////////////
+/// \brief This static function waits until the
+/// user sends a continuation command via the
+/// debugger and returns the corresponding
+/// debugger code.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int NumeReKernel::waitForContinue()
 {
 	if (!m_parent)
@@ -2611,9 +3168,17 @@ int NumeReKernel::waitForContinue()
 	return nDebuggerCode;
 }
 
-// This member function handles the creation of the debugger
-// information for a script debugger breakpoint and returns the
-// obtained debugger code
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of the debugger information for a
+/// script debugger breakpoint and returns the
+/// obtained debugger code.
+///
+/// \param sCurrentCommand const string&
+/// \return int
+///
+/////////////////////////////////////////////////
 int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 {
     if (!getInstance())
@@ -2719,7 +3284,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
         {
             sLocalClusters[i] = new string[2];
             sLocalClusters[i][0] = iter->first + "{";
-            sLocalClusters[i][1] = iter->first + "{";
+            sLocalClusters[i][1] = iter->first;
             i++;
         }
     }
@@ -2768,21 +3333,48 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 	return _debugger.showBreakPoint();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function appends the passed
+/// string to the command log.
+///
+/// \param sLogMessage const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::addToLog(const string& sLogMessage)
 {
     if (oLogFile.is_open())
         oLogFile << toString(time(0) - tTimeZero, true) << "> " << sLogMessage << endl;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function is an implementation
+/// replacing the std::getline() function.
+///
+/// \param sLine string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::getline(string& sLine)
 {
 	if (!m_parent)
 		return;
+
+	// Inform the terminal that we'd like to get
+	// a textual input from the user through the
+	// terminal and that this is not to be noted
+	// in the history.
 	{
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 		bGettingLine = true;
 	}
+
 	bool bgotline = false;
+
+	// Check regularily, if the user provided
+	// some input
 	do
 	{
 		Sleep(100);
@@ -2795,6 +3387,9 @@ void NumeReKernel::getline(string& sLine)
 		}
 	}
 	while (!bgotline);
+
+	// Inform the terminal that we're finished with
+	// getline()
 	{
 		wxCriticalSectionLocker lock(m_parent->m_kernelCS);
 		bGettingLine = false;
@@ -2803,48 +3398,77 @@ void NumeReKernel::getline(string& sLine)
 	StripSpaces(sLine);
 }
 
-void NumeReKernel::setFileName(const string& sFileName)
-{
-	//sFileToEdit = sFileName;
-}
 
-void make_hline(int nLength)
-{
-	if (nLength == -1)
-	{
-		NumeReKernel::printPreFmt("\r" + strfill(string(1, '='), NumeReKernel::nLINE_LENGTH - 1, '=') + "\n");
-	}
-	else if (nLength < -1)
-	{
-		NumeReKernel::printPreFmt("\r" + strfill(string(1, '-'), NumeReKernel::nLINE_LENGTH - 1, '-') + "\n");
-	}
-	else
-	{
-		NumeReKernel::printPreFmt("\r" + strfill(string(1, '='), nLength, '=') + "\n");
-	}
-	return;
-}
-
+/////////////////////////////////////////////////
+/// \brief Toggles the table writing status, which
+/// will reduce the number or events send to the
+/// terminal.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::toggleTableStatus()
 {
 	bWritingTable = !bWritingTable;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Inform the terminal to write the
+/// current output buffer as soon as possible.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReKernel::flush()
 {
 	if (!m_parent)
 		return;
+
 	wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
 	Sleep(1);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function is used by the kernel to
+/// get informed, when the user pressed ESC or
+/// used other means of aborting the current
+/// calculation process.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReKernel::GetAsyncCancelState()
 {
 	bool bCancel = bCancelSignal;
 	bCancelSignal = false;
+
 	if (bCancel || GetAsyncKeyState(VK_ESCAPE))
 		return true;
+
 	return false;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function prints a horizontal line
+/// to the terminal using either minus or equal
+/// signs.
+///
+/// \param nLength int
+/// \return void
+///
+/////////////////////////////////////////////////
+void make_hline(int nLength)
+{
+	if (nLength == -1)
+		NumeReKernel::printPreFmt("\r" + strfill(string(1, '='), NumeReKernel::nLINE_LENGTH - 1, '=') + "\n");
+	else if (nLength < -1)
+		NumeReKernel::printPreFmt("\r" + strfill(string(1, '-'), NumeReKernel::nLINE_LENGTH - 1, '-') + "\n");
+	else
+		NumeReKernel::printPreFmt("\r" + strfill(string(1, '='), nLength, '=') + "\n");
+
+	return;
+}
 

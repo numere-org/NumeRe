@@ -1106,7 +1106,7 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
 // and cluster tables
 void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
 {
-    if (!_stringTable.getCols())
+    if (!_stringTable.getCols() || !_stringTable.getRows())
     {
         createZeroElementTable();
         return;

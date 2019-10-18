@@ -23,12 +23,8 @@
 
 #include "functionimplementation.hpp"
 
-extern value_type vAns;
-bool bSupressAnswer = false;
-//extern Integration_Vars parser_iVars;
 int nErrorIndices[2] = {-1,-1};
 string sErrorToken = "";
-//extern Plugin _plugin;
 extern time_t tTimeZero;
 volatile sig_atomic_t exitsignal = 0;
 
@@ -1383,57 +1379,19 @@ value_type parser_cot(value_type x)
     return cos(x) / sin(x);
 }
 
-/*
-// --> Diese Funktion wird zu Beginn von NumeRe aufgerufen und testet den muParser <--
-value_type parser_SelfTest(Parser& _parser)
-{
-    mu::Test::ParserTester pt;
-    pt.Run();
-    return 0;
-}
-*/
-
 // --> Var-Factory: Hier werden die physikalischen Adressen der Variablen generiert <--
 value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
 {
     // --> Wir verwenden ein static-Array (~ globales Array), dessen Adressen fuer die Variablen verwendet werden <--
     static value_type afValBuf[200];
     static int iVal = 0;
+
     if (iVal >= 199)
         throw mu::ParserError( _nrT(toSystemCodePage(_lang.get("PARSER_ADD_VAR_ERROR"))) );
 
-    if (!bSupressAnswer)
-    {
-        if (199-iVal < 10)
-        {
-            cerr << "|-> " << toSystemCodePage(_lang.get("PARSER_ADD_VAR_1", a_szName)) << endl;
-            cerr << "|   " << toSystemCodePage(_lang.get("PARSER_ADD_VAR_2", toString(199-iVal))) << endl;
-        }
-    }
     afValBuf[iVal] = 0;
 
     return &afValBuf[iVal++];
 }
-/*
-// --> Zeigt eine Kurzuebersicht an <--
-void parser_Help(const Settings& _option)
-{
-    make_hline();
-    cerr << LineBreak("|-> NUMERE: " + toUpperCase(_lang.get("PARSER_HELP_HEAD")), _option) << endl;
-    make_hline();
-    cerr << LineBreak("|-> "+_lang.get("PARSER_HELP_INTRO"), _option) << endl;
-    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_1"), _option, false, 0, 22) << endl;
-    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_2"), _option, false, 0, 22) << endl;
-    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_3"), _option, false, 0, 22) << endl;
-    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_4"), _option, false, 0, 22) << endl;
-    cerr << LineBreak("|   "+_lang.get("PARSER_HELP_ITEM_5"), _option, false, 0, 22) << endl;
-    make_hline();
-    return;
-}
 
-void parser_FirstStart(const Settings& _option)
-{
-    doc_FirstStart(_option);
-    return;
-}*/
 

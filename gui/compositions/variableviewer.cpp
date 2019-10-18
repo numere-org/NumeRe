@@ -120,7 +120,7 @@ bool VariableViewer::checkSpecialVals(const std::string& sVar)
         return true;
     else if (sVar.substr(0, sVar.find('\t')) == "nlen")
         return true;
-    else if (sVar.substr(0, sVar.find('\t')) == "ans")
+    else if (sVar.substr(0, sVar.find('\t')) == "ans" || sVar.substr(0, sVar.find('\t')) == "ans{}")
         return true;
 
     return false;

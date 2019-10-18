@@ -24,7 +24,6 @@
 
 value_type vAns;
 Integration_Vars parser_iVars;
-//extern bool bSupressAnswer;
 extern mglGraph _fontData;
 Plugin _plugin;
 

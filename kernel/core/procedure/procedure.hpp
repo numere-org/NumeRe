@@ -49,7 +49,6 @@ using namespace mu;
 // forward declaration of the var factory
 class ProcedureVarFactory;
 
-//extern bool bSupressAnswer;
 
 class Procedure : public FlowCtrl, public Plugin
 {

@@ -7,3 +7,5 @@ Cleaned	Reworked and re-organized the string parser.
 Removed	Eliminated all unsigned comparision warnings.
 Fixed	Enabled vector expansions ("{A:B}") in string expressions.
 Added	Enabled string expressions as index expressions for data objects.
+Cleaned	String outputs and numerical outputs are now formatted similiar.
+Cleaned	"ans" is now a cluster and capable of storing multiple mixed return values.

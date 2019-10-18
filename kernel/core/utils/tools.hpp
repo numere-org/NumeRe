@@ -135,6 +135,8 @@ vector<int> toVector(string sString);
  */
 string condenseText(const string& sText);
 
+string truncString(const string& sText, size_t nMaxChars);
+
 
 
 long long int intCast(double number);

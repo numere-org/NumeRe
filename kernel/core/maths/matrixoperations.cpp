@@ -81,9 +81,6 @@ static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const str
 static std::vector<double> parser_getUniqueList(std::list<double>& _list);
 static void parser_fillMissingMatrixElements(Matrix& _mMatrix);
 
-//extern bool bSupressAnswer;
-
-
 // This is the main interface to the matrix operations
 bool parser_matrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {

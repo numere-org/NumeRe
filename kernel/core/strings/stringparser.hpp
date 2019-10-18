@@ -55,7 +55,8 @@ namespace NumeRe
             void replaceDataOccurence(string& sLine, const string& sOccurence);
             string numToString(const string& sLine);
             int storeStringResults(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject);
-            string createStringOutput(StringResult& strRes, string& sLine, int parserFlags);
+            string createStringOutput(StringResult& strRes, string& sLine, int parserFlags, bool bSilent);
+            string createTerminalOutput(StringResult& strRes, int parserFlags);
             vector<bool> applyElementaryStringOperations(vector<string>& vFinal, bool& bReturningLogicals);
             string concatenateStrings(const string& sExpr);
             void storeStringToDataObjects(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings);

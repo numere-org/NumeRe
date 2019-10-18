@@ -191,6 +191,26 @@ string condenseText(const string& sText)
 	return sReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function truncates the string to
+/// the passed max length (including a trailing
+/// ellipsis) or returns it unmodified, if it is
+/// shorter.
+///
+/// \param sText const string&
+/// \param nMaxChars size_t
+/// \return string
+///
+/////////////////////////////////////////////////
+string truncString(const string& sText, size_t nMaxChars)
+{
+    if (sText.length() <= nMaxChars)
+        return sText;
+
+    return sText.substr(0, nMaxChars-3) + "...";
+}
+
 // Diese Funktion vergleicht ganz einfach einen gegebenen Parameter mit der Eingabe. Wird der Parameter gefunden, gibt diese
 // Funktion die Position des ersten char des Parameters +1 zurueck!
 //

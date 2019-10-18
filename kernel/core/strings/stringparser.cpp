@@ -825,6 +825,8 @@ namespace NumeRe
                         if (nResults)
                         {
                             vAns = v[0];
+                            NumeReKernel::getInstance()->getAns().clear();
+                            NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
                             string sValues;
 
                             // Transform the results into a string
@@ -892,12 +894,15 @@ namespace NumeRe
     /// \param StrRes StringResult&
     /// \param sLine string&
     /// \param parserFlags int
+    /// \param bSilent bool
     /// \return string
     ///
     /////////////////////////////////////////////////
-    string StringParser::createStringOutput(StringResult& StrRes, string& sLine, int parserFlags)
+    string StringParser::createStringOutput(StringResult& StrRes, string& sLine, int parserFlags, bool bSilent)
     {
         sLine.clear();
+        NumeRe::Cluster& ans = NumeReKernel::getInstance()->getAns();
+        ans.clear();
 
         vector<string>& vFinal = StrRes.vResult;
         vector<bool>& vIsNoStringValue = StrRes.vNoStringVal;
@@ -914,9 +919,11 @@ namespace NumeRe
             return sLine;
         }
 
-        string sConsoleOut = "|-> ";
-        static const string sConsoleIndent = "|   ";
-        bool bLineBreaks = false;
+        string sConsoleOut;
+        string sCurrentComponent;
+
+        if (parserFlags & PEEK || !(NumeReKernel::bSupressAnswer || bSilent))
+            sConsoleOut = createTerminalOutput(StrRes, parserFlags);
 
         // Every result in the current return values
         // is a single string result
@@ -939,16 +946,14 @@ namespace NumeRe
                 continue;
             }
 
-            // Start the current string value with a quotation mark
-            // if it is not a special case
-            if (/*vFinal[j] != "\\n" && vFinal[j] != "\\t" &&*/ !(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
-            {
-                sConsoleOut += "\"";
-                sLine += "\"";
-            }
-
             if (!vIsNoStringValue[j])
             {
+                sCurrentComponent.clear();
+                // Start the current string value with a quotation mark
+                // if it is not a special case
+                if (!(parserFlags & NO_QUOTES))
+                    sCurrentComponent += "\"";
+
                 // Go through the current string value
                 for (size_t k = 0; k < vFinal[j].length(); k++)
                 {
@@ -959,55 +964,51 @@ namespace NumeRe
                         //\not\neq\ni
                         if (vFinal[j][k + 1] == 'n' && !isToken("nu", vFinal[j], k+1) && !isToken("neq", vFinal[j], k+1)) // Line break
                         {
-                            sConsoleOut += "\n";
-                            sLine += "\n";
-                            bLineBreaks = true;
+                            sCurrentComponent += "\n";
                             k++;
                         }
                         else if (vFinal[j][k + 1] == 't' && !isToken("tau", vFinal[j], k+1) && !isToken("theta", vFinal[j], k+1)) // tabulator
                         {
-                            sConsoleOut += "\t";
-                            sLine += "\t";
+                            sCurrentComponent += "\t";
                             k++;
                         }
                         else if (vFinal[j][k + 1] == '"') // quotation mark
                         {
-                            sConsoleOut += "\"";
-
                             if (!(parserFlags & KEEP_MASKED_QUOTES))
-                                sLine += "\"";
+                                sCurrentComponent += "\"";
                             else
-                                sLine += "\\\"";
+                                sCurrentComponent += "\\\"";
 
                             k++;
                         }
                         else if (vFinal[j][k + 1] == ' ') // backslash itself
                         {
-                            sConsoleOut += "\\";
-
                             if (!(parserFlags & KEEP_MASKED_CONTROL_CHARS))
-                                sLine += "\\";
+                                sCurrentComponent += "\\";
                             else
-                                sLine += "\\ ";
+                                sCurrentComponent += "\\ ";
 
                             k++;
                         }
                         else
                         {
-                            sConsoleOut += "\\";
-                            sLine += "\\";
+                            sCurrentComponent += "\\";
                         }
                     }
                     else
                     {
                         // Otherwise simply append the current character
-                        if (vFinal[j][k] == '\n')
-                            bLineBreaks = true;
-
-                        sConsoleOut += vFinal[j][k];
-                        sLine += vFinal[j][k];
+                        sCurrentComponent += vFinal[j][k];
                     }
                 }
+
+                // End the current string value with a quotation mark
+                // if it is not a special case
+                if (!(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
+                    sCurrentComponent += "\"";
+
+                ans.push_back(sCurrentComponent);
+                sLine += sCurrentComponent;
             }
             else
             {
@@ -1018,22 +1019,14 @@ namespace NumeRe
 
                 for (int k = 0; k < nResults-1; k++)
                 {
+                    ans.push_back(v[k]);
                     stres = toCmdString(v[k]);
                     sLine += stres + ", ";
-                    sConsoleOut += stres + ", ";
                 }
 
+                ans.push_back(v[nResults-1]);
                 stres = toCmdString(v[nResults-1]);
                 sLine += stres;
-                sConsoleOut += stres;
-            }
-
-            // End the current string value with a quotation mark
-            // if it is not a special case
-            if (/*vFinal[j] != "\\n" && vFinal[j] != "\\t" &&*/ !(parserFlags & NO_QUOTES) && !vIsNoStringValue[j])
-            {
-                sConsoleOut += "\"";
-                sLine += "\"";
             }
 
             // Break the loop, if this was the last string value
@@ -1042,35 +1035,167 @@ namespace NumeRe
 
             // Add a comma, if neither the next nor the current string
             // is a special case
-            if (true)//vFinal[j] != "\\n" && vFinal[j + 1] != "\\n" && vFinal[j] != "\\t" && vFinal[j + 1] != "\\t")
-            {
-                // If the last character was a line break
-                /*if (sLine.find_last_not_of("\" ") != string::npos && sLine[sLine.find_last_not_of("\" ")] == '\n')
-                {
-                    sLine += ", ";
-
-                    if (sConsoleOut.back() == '"')
-                    {
-                        sConsoleOut[sConsoleOut.rfind('\n')] = '"';
-                        sConsoleOut.back() = '\n';
-                        bLineBreaks = true;
-                    }
-
-                    continue;
-                }*/
-
-                // Append the commas
-                sConsoleOut += ", ";
-                sLine += ", ";
-            }
+            sLine += ", ";
         }
 
-        // Replace all line break characters with the console
-        // indentation, if that is needed
-        if (bLineBreaks)
-            replaceAll(sConsoleOut, "\n", "\n" + sConsoleIndent);
-
         return sConsoleOut;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This private member function creates
+    /// the output specialized for the terminal
+    ///
+    /// \param strRes StringResult&
+    /// \param parserFlags int
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
+    string StringParser::createTerminalOutput(StringResult& strRes, int parserFlags)
+    {
+        // Shall the output be printed?
+        if (parserFlags & NO_QUOTES && parserFlags & PEEK)
+        {
+            string sConsoleOut = "|-> ";
+            static const string sConsoleIndent = "|   ";
+            bool bLineBreaks = false;
+
+            // Every result in the current return values
+            // is a single string result
+            for (size_t j = 0; j < strRes.vResult.size(); j++)
+            {
+                strRes.vResult[j] = removeQuotationMarks(strRes.vResult[j]);
+
+                if (!strRes.vNoStringVal[j])
+                {
+                    // Go through the current string value
+                    for (size_t k = 0; k < strRes.vResult[j].length(); k++)
+                    {
+                        // If there are escaped control characters,
+                        // Replace them with their actual value here
+                        if (k + 1 < strRes.vResult[j].length() && strRes.vResult[j][k] == '\\')
+                        {
+                            //\not\neq\ni
+                            if (strRes.vResult[j][k + 1] == 'n' && !isToken("nu", strRes.vResult[j], k+1) && !isToken("neq", strRes.vResult[j], k+1)) // Line break
+                            {
+                                sConsoleOut += "\n";
+                                bLineBreaks = true;
+                                k++;
+                            }
+                            else if (strRes.vResult[j][k + 1] == 't' && !isToken("tau", strRes.vResult[j], k+1) && !isToken("theta", strRes.vResult[j], k+1)) // tabulator
+                            {
+                                sConsoleOut += "\t";
+                                k++;
+                            }
+                            else if (strRes.vResult[j][k + 1] == '"') // quotation mark
+                            {
+                                sConsoleOut += "\"";
+                                k++;
+                            }
+                            else if (strRes.vResult[j][k + 1] == ' ') // backslash itself
+                            {
+                                sConsoleOut += "\\";
+                                k++;
+                            }
+                            else
+                            {
+                                sConsoleOut += "\\";
+                            }
+                        }
+                        else
+                        {
+                            // Otherwise simply append the current character
+                            if (strRes.vResult[j][k] == '\n')
+                                bLineBreaks = true;
+
+                            sConsoleOut += strRes.vResult[j][k];
+                        }
+                    }
+                }
+                else
+                {
+                    _parser.SetExpr(strRes.vResult[j]);
+                    int nResults = 0;
+                    value_type* v = _parser.Eval(nResults);
+                    string stres;
+
+                    for (int k = 0; k < nResults-1; k++)
+                    {
+                        stres = toString(v[k], _option);
+                        sConsoleOut += stres + ", ";
+                    }
+
+                    stres = toString(v[nResults-1], _option);
+                    sConsoleOut += stres;
+                }
+
+                // Break the loop, if this was the last string value
+                if (j + 1 == strRes.vResult.size())
+                    break;
+
+                // Add a comma, if neither the next nor the current string
+                // is a special case
+                sConsoleOut += ", ";
+            }
+
+            // Replace all line break characters with the console
+            // indentation, if that is needed
+            if (bLineBreaks)
+                replaceAll(sConsoleOut, "\n", "\n" + sConsoleIndent);
+
+            return sConsoleOut;
+
+        }
+        else
+        {
+            vector<string> vStringResult;
+            // Every result in the current return values
+            // is a single string result
+            for (size_t j = 0; j < strRes.vResult.size(); j++)
+            {
+                if (parserFlags & NO_QUOTES)
+                    vStringResult.push_back(removeQuotationMarks(strRes.vResult[j]));
+                else
+                    vStringResult.push_back(strRes.vResult[j]);
+
+                if (!strRes.vNoStringVal[j])
+                {
+                    // Go through the current string value
+                    for (size_t k = 0; k < vStringResult[j].length(); k++)
+                    {
+                        // If there are escaped control characters,
+                        // Replace them with their actual value here
+                        if (k + 1 < vStringResult[j].length() && vStringResult[j][k] == '\\')
+                        {
+                            if (vStringResult[j][k + 1] == '"') // quotation mark
+                                vStringResult[j].erase(k, 1);
+                            else if (vStringResult[j][k + 1] == ' ') // backslash itself
+                                vStringResult[j].erase(k+1, 1);
+                        }
+                    }
+                }
+                else
+                {
+                    _parser.SetExpr(vStringResult[j]);
+                    vStringResult.pop_back();
+                    int nResults = 0;
+                    value_type* v = _parser.Eval(nResults);
+                    string stres;
+
+                    for (int k = 0; k < nResults-1; k++)
+                    {
+                        vStringResult.push_back(toString(v[k], _option));
+                    }
+
+                    vStringResult.push_back(toString(v[nResults-1], _option));
+
+                }
+
+            }
+
+            return "|-> " + NumeReKernel::formatResultOutput(vStringResult);
+        }
+
     }
 
 
@@ -1590,6 +1715,8 @@ namespace NumeRe
                 _parser.SetExpr(sLine);
                 v = _parser.Eval(nResults);
                 vAns = v[0];
+                NumeReKernel::getInstance()->getAns().clear();
+                NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
                 eq_pos = sLine.find('=');
 
                 // Remove the left part of the assignment, because it's already assigned
@@ -1886,7 +2013,7 @@ namespace NumeRe
         // The result of the string parser core has to be parsed, so that
         // it is readable in the terminal. This is done here in this
         // function
-        string sConsoleOut = createStringOutput(StrRes, sLine, parserFlags);
+        string sConsoleOut = createStringOutput(StrRes, sLine, parserFlags, bSilent);
 
         // The output is probably not desired
         if (NumeReKernel::bSupressAnswer)

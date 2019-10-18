@@ -63,6 +63,14 @@ class wxTerm;
 struct NumeReTask;
 
 
+/////////////////////////////////////////////////
+/// \brief This structure combines a vector of
+/// declared variables including their values and
+/// respective sizes with a set of variable type
+/// counts, which can be used to separate the
+/// single vector in multiple vectors containing
+/// only a single type of variables.
+/////////////////////////////////////////////////
 struct NumeReVariables
 {
     vector<string> vVariables;
@@ -73,9 +81,13 @@ struct NumeReVariables
 };
 
 
-// This class provides the interface to the kernel of NumeRe
-// It provides all functionalities, which was done by the main
-// function before.
+/////////////////////////////////////////////////
+/// \brief This class provides the interface to
+/// the core of NumeRe. It provides all
+/// functionalities, which was done by the main
+/// function before and handles the communication
+/// to the graphical user interface.
+/////////////////////////////////////////////////
 class NumeReKernel
 {
     public:
@@ -201,10 +213,10 @@ class NumeReKernel
         static void flush();
         static void print(const string& sLine, bool printingEnabled = true);
         static void printPreFmt(const string& sLine, bool printingEnabled = true);
-        static string formatResultOutput(int nNum, value_type* v, const Settings& _option);
+        static string formatResultOutput(int nNum, value_type* v);
+        static string formatResultOutput(const vector<string>& vStringResults);
         static void issueWarning(string sWarningMessage);
-        static void setFileName(const string& sFileName);
-        static int numberOfNumbersPerLine(const Settings& _option);
+        static int numberOfNumbersPerLine();
         static void progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
         static void getline(string& sLine);
         static void gotoLine(const string& sFile, unsigned int nLine = 0);
@@ -228,6 +240,11 @@ class NumeReKernel
         Datafile& getData()
         {
             return _data;
+        }
+
+        NumeRe::Cluster& getAns()
+        {
+            return _data.getCluster("ans");
         }
 
         Parser& getParser()
@@ -288,11 +305,8 @@ class NumeReKernel
         map<string,string> getPluginLanguageStrings();
         map<string,string> getFunctionLanguageStrings();
         vector<string> getPluginCommands();
-        string ReadFileName();
-        unsigned int ReadLineNumber();
         int ReadOpenFileFlag();
         string ReadAnswer();
-        string ReadDoc();
         string getDocumentation(const string& sCommand);
         vector<string> getDocIndex();
         NumeReVariables getVariableList();
@@ -316,7 +330,11 @@ class NumeReKernel
 };
 
 
-// Definition of the task container
+/////////////////////////////////////////////////
+/// \brief This structure abstracts the necessary
+/// information for a task to be done by the
+/// graphical user interface.
+/////////////////////////////////////////////////
 struct NumeReTask
 {
     string sString;
@@ -328,8 +346,19 @@ struct NumeReTask
     int taskType;
 };
 
-// This function fills the passed string up to the width nWidth with the characters cFill
-// The characters are inserted on the right
+
+/////////////////////////////////////////////////
+/// \brief This function fills the passed string
+/// up to the width nWidth with the characters
+/// cFill. The characters are inserted on the
+/// right.
+///
+/// \param sString const string&
+/// \param nWidth unsigned int
+/// \param char cFill = ' '
+/// \return string
+///
+/////////////////////////////////////////////////
 inline string strfill(const string& sString, unsigned int nWidth, char cFill = ' ')
 {
     if (!nWidth)
@@ -340,8 +369,19 @@ inline string strfill(const string& sString, unsigned int nWidth, char cFill = '
     return sReturn;
 }
 
-// This function fills the passed string up to the width nWidth with the characters cFill
-// The characters are inserted on the left
+
+/////////////////////////////////////////////////
+/// \brief This function fills the passed string
+/// up to the width nWidth with the characters
+/// cFill. The characters are inserted on the
+/// left.
+///
+/// \param sString const string&
+/// \param nWidth unsigned int
+/// \param char cFill = ' '
+/// \return string
+///
+/////////////////////////////////////////////////
 inline string strlfill(const string& sString, unsigned int nWidth, char cFill = ' ')
 {
     if (!nWidth)
@@ -352,7 +392,16 @@ inline string strlfill(const string& sString, unsigned int nWidth, char cFill = 
     return sReturn;
 }
 
-// This function provides a headline for the "windows" in the console
+
+/////////////////////////////////////////////////
+/// \brief This function provides a headline for
+/// the "windows" in the console.
+///
+/// \param sString const string&
+/// \param '-' char cHeadLineSep=
+/// \return string
+///
+/////////////////////////////////////////////////
 inline string sectionHeadline(const string& sString, char cHeadLineSep = '-')
 {
     string sSectionHeadline = "|\n|   " + toUpperCase(sString);
@@ -365,7 +414,16 @@ inline string sectionHeadline(const string& sString, char cHeadLineSep = '-')
     return sSectionHeadline;
 }
 
-// This function points to the error indicated by nPos
+
+/////////////////////////////////////////////////
+/// \brief This function points to the error
+/// indicated by nPos. It draws three circumflexes
+/// below the error location.
+///
+/// \param nPos unsigned int
+/// \return string
+///
+/////////////////////////////////////////////////
 inline string pointToError(unsigned int nPos)
 {
     string sErrorPointer = "|   ";
@@ -375,3 +433,4 @@ inline string pointToError(unsigned int nPos)
 
 
 #endif // KERNEL_HPP
+

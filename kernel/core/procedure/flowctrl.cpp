@@ -1971,6 +1971,8 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
             v = _parserRef->Eval(nNum);
             vAns = v[0];
+            NumeReKernel::getInstance()->getAns().clear();
+            NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
 
 			if (!bLoopSupressAnswer)
 			{
@@ -1980,7 +1982,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 				 *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
 				 *     Parsers einmal aufgerufen werden <--
 				 */
-                NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v, *_optionRef));
+                NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
 			}
 
 			return FLOWCTRL_OK;
@@ -2445,6 +2447,8 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 	// Calculate the result
 	v = _parserRef->Eval(nNum);
 	vAns = v[0];
+	NumeReKernel::getInstance()->getAns().clear();
+	NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
 
 	if (!nCurrentCalcType && !(nCalcType[nthCmd] & CALCTYPE_DATAACCESS || nCalcType[nthCmd] & CALCTYPE_STRING))
 		nCalcType[nthCmd] |= CALCTYPE_NUMERICAL;
@@ -2457,7 +2461,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 		 *     mehrere Ausdruecke auszuwerten hat, muss man die Auswerte-Funktion des
 		 *     Parsers einmal aufgerufen werden <--
 		 */
-		NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v, *_optionRef));
+		NumeReKernel::print(NumeReKernel::formatResultOutput(nNum, v));
 	}
 
 	// Write the result to a table or a cluster
