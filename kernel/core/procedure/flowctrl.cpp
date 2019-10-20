@@ -2261,9 +2261,9 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 			string sPreCommandLine = sLine;
 			NumeReKernel::bSupressAnswer = bLoopSupressAnswer;
 
-			switch (BI_CommandHandler(sLine, *_dataRef, *_outRef, *_optionRef, *_parserRef, *_functionRef, *_pDataRef, *_scriptRef, true))
+			switch (commandHandler(sLine))
 			{
-				case  0:
+				case NO_COMMAND:
 					if (!nCurrentCalcType)
 					{
 						StripSpaces(sPreCommandLine);
@@ -2275,21 +2275,21 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 					}
 
 					break;
-				case  1:
+				case COMMAND_PROCESSED:
 					NumeReKernel::bSupressAnswer = bSupressAnswer_back;
 
 					if (!nCurrentCalcType)
 						nCalcType[nthCmd] |= CALCTYPE_COMMAND;
 
 					return FLOWCTRL_OK;
-				case -1:
+				case NUMERE_QUIT:
 					NumeReKernel::bSupressAnswer = bSupressAnswer_back;
 
 					if (!nCurrentCalcType)
 						nCalcType[nthCmd] |= CALCTYPE_COMMAND;
 
 					return FLOWCTRL_OK;
-				case  2:
+				case COMMAND_HAS_RETURNVALUE:
 					NumeReKernel::bSupressAnswer = bSupressAnswer_back;
 
 					if (!nCurrentCalcType)

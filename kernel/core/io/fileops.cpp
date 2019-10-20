@@ -262,7 +262,7 @@ bool moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
             _sTarget = _sTarget.substr(0, _sTarget.rfind('.')) + sFile.substr(sFile.rfind('.'));
         }
 
-        if (!BI_FileExists(sFile))
+        if (!fileExists(sFile))
             continue;
 
         //NumeReKernel::print(sFile );
@@ -439,7 +439,7 @@ bool copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
             _sTarget = _sTarget.substr(0, _sTarget.rfind('.')) + sFile.substr(sFile.rfind('.'));
         }
 
-        if (!BI_FileExists(sFile))
+        if (!fileExists(sFile))
             continue;
 
         //NumeReKernel::print(sFile );

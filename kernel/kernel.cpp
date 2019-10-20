@@ -262,7 +262,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	addToLog("> SYSTEM: Documentation index was loaded.");
 
 	// Update the documentation index file
-	if (BI_FileExists(_option.getExePath() + "/update.hlpidx"))
+	if (fileExists(_option.getExePath() + "/update.hlpidx"))
 	{
 		_option.updateDocIndex();
 		addToLog("> SYSTEM: Documentation index was updated.");
@@ -284,7 +284,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	string sCacheFile = _option.getExePath() + "/numere.cache";
 
 	// Load the plugin informations
-	if (BI_FileExists(_procedure.getPluginInfoPath()))
+	if (fileExists(_procedure.getPluginInfoPath()))
 	{
 		_procedure.loadPlugins();
 		_plugin = _procedure;
@@ -293,7 +293,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	}
 
 	// Load the function definitions
-	if (_option.getbDefineAutoLoad() && BI_FileExists(_option.getExePath() + "\\functions.def"))
+	if (_option.getbDefineAutoLoad() && fileExists(_option.getExePath() + "\\functions.def"))
 	{
 		_functions.load(_option, true);
 		addToLog("> SYSTEM: Function definitions were loaded.");
@@ -303,9 +303,9 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	_fontData.LoadFont(_option.getDefaultPlotFont().c_str(), (_option.getExePath() + "\\fonts").c_str());
 
 	// Load the autosave file
-	if (BI_FileExists(sAutosave) || BI_FileExists(sCacheFile))
+	if (fileExists(sAutosave) || fileExists(sCacheFile))
 	{
-		if (BI_FileExists(sAutosave))
+		if (fileExists(sAutosave))
 		{
 			_data.openAutosave(sAutosave, _option);
 			_data.setSaveStatus(true);
@@ -571,10 +571,9 @@ void NumeReKernel::printVersionInfo()
 
 	printPreFmt("|\n");
 
-	if (_option.getbGreeting() && BI_FileExists(_option.getExePath() + "\\numere.ini"))
-	{
+	if (_option.getbGreeting() && fileExists(_option.getExePath() + "\\numere.ini"))
 		printPreFmt(toSystemCodePage(BI_Greeting(_option)) + "|\n");
-	}
+
 	print(LineBreak(_lang.get("PARSER_INTRO"), _option));;
 	printPreFmt("|\n|<- ");
 	flush();
@@ -796,11 +795,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 					|| sCurrentCommand == "search")
 			{
 				//print("Debug: Keywords");
-				switch (BI_CommandHandler(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
+				switch (commandHandler(sLine))
 				{
-					case  0:
+					case NO_COMMAND:
+					case COMMAND_HAS_RETURNVALUE:
 						break; // Kein Keyword: Mit dem Parser auswerten
-					case  1:        // Keyword: Naechster Schleifendurchlauf!
+					case COMMAND_PROCESSED:        // Keyword: Naechster Schleifendurchlauf!
 						if (!sCmdCache.length() && !(_script.isValid() && _script.isOpen()))
 						{
 							if (_script.wasLastCommand())
@@ -814,7 +814,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 						}
 						else
 							continue;
-					case -1:
+					case NUMERE_QUIT:
 						// --> Sind ungesicherte Daten im Cache? Dann moechte der Nutzer diese vielleicht speichern <--
 						if (!_data.getSaveStatus()) // MAIN_UNSAVED_CACHE
 						{

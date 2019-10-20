@@ -1232,7 +1232,7 @@ bool writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opti
 		fFile.open(sFileName.c_str(), ios_base::trunc | ios_base::out);
 	else
 	{
-		if (!BI_FileExists(sFileName))
+		if (!fileExists(sFileName))
 			ofstream fTemp(sFileName.c_str());
 		fFile.open(sFileName.c_str());
 	}

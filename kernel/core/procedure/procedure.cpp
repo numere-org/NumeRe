@@ -225,9 +225,10 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         {
             NumeReKernel::bSupressAnswer = bProcSupressAnswer;
             string sCommandBack = sLine;
-            switch (BI_CommandHandler(sLine, _data, _out, _option, _parser, _functions, _pData, _script, true))
+            switch (commandHandler(sLine))
             {
-                case  0:
+                case COMMAND_HAS_RETURNVALUE:
+                case NO_COMMAND:
                     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                     {
                         StripSpaces(sCommandBack);
@@ -237,14 +238,16 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                             nByteCode |= ProcedureCommandLine::BYTECODE_COMMAND;
                     }
                     break; // Kein Keywort: Mit dem Parser auswerten
-                case  1:        // Keywort: Naechster Schleifendurchlauf!
+                case COMMAND_PROCESSED:        // Keywort: Naechster Schleifendurchlauf!
                     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                         nByteCode |= ProcedureCommandLine::BYTECODE_COMMAND;
+
                     thisReturnVal.vNumVal.push_back(NAN);
                     return thisReturnVal;
                 default:
                     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                         nByteCode |= ProcedureCommandLine::BYTECODE_COMMAND;
+
                     thisReturnVal.vNumVal.push_back(NAN);
                     return thisReturnVal;  // Keywort "mode"
             }
