@@ -73,7 +73,7 @@ class Plot
         void setStyles(PlotData& _pData);
         string expandStyleForCurveArray(const string& sCurrentStyle, bool expand);
         void evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
-        void displayMessage(PlotData& _pData, const Settings& _option);
+        void displayMessage(PlotData& _pData, const Settings& _option, bool bAnimateVar);
         void evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2]);
         void createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data, const Settings& _option);
         string constructDataLegendElement(Parser& _parser, Datafile& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName);

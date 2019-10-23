@@ -184,7 +184,7 @@ class Datafile : public MemoryManager, private Sorter		//	Diese Klasse ist ein C
 		double getElement(long long int _nLine, long long int _nCol, const string& sCache) const;	// Methode, um auf ein Element von dDatafile zuzugreifen
 		vector<double> getElement(const VectorIndex& _vLine, const VectorIndex& _vCol, const string& sCache) const;
 		void copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const string& sCache) const;
-		void openFile(string _sFile, Settings& _option, bool bAutoSave = false, bool bIgnore = false, int _nHeadline = 0);	                // zentrale Methode: Oeffnet ein Datenfile, liest die Daten und interpretiert sie als double.
+		NumeRe::FileHeaderInfo openFile(string _sFile, Settings& _option, bool bAutoSave = false, bool bIgnore = false, int _nHeadline = 0);	                // zentrale Methode: Oeffnet ein Datenfile, liest die Daten und interpretiert sie als double.
                                                         //		Ist auch in der Lage, Tabellenkoepfe aus Kommentarzeilen zu extrahieren.
         void pasteLoad(const Settings& _option);
 		void openAutosave(string _sFile, Settings& _option);

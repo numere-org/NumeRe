@@ -31,6 +31,22 @@
 
 namespace NumeRe
 {
+    struct FileHeaderInfo
+    {
+        std::string sFileExtension;
+        std::string sFileName;
+        std::string sTableName;
+        std::string sComment;
+        long long int nRows;
+        long long int nCols;
+        long int versionMajor;
+        long int versionMinor;
+        long int versionBuild;
+        time_t timeStamp;
+
+        FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0) {}
+    };
+
     // Template class representing a generic file. This class may be specified
     // for the main data type contained in the read or written table. All other
     // file classes are derived from this class. This class cannot be instantiated
@@ -702,6 +718,21 @@ namespace NumeRe
                 return nCols;
             }
 
+            // Returns the file header information
+            // structure
+            virtual FileHeaderInfo getFileHeaderInformation()
+            {
+                FileHeaderInfo info;
+
+                info.nCols = nCols;
+                info.nRows = nRows;
+                info.sFileExtension = sFileExtension;
+                info.sFileName = sFileName;
+                info.sTableName = getTableName();
+
+                return info;
+            }
+
             // Pure virtual declaration of read and write
             // access methods. These have to be implemented in all
             // derived classes
@@ -925,6 +956,25 @@ namespace NumeRe
             {
                 return timeStamp;
             }
+
+            virtual FileHeaderInfo getFileHeaderInformation() override
+            {
+                FileHeaderInfo info;
+
+                info.nCols = nCols;
+                info.nRows = nRows;
+                info.sFileExtension = sFileExtension;
+                info.sFileName = sFileName;
+                info.sTableName = getTableName();
+                info.sComment = sComment;
+                info.versionMajor = versionMajor;
+                info.versionMinor = versionMinor;
+                info.versionBuild = versionBuild;
+                info.timeStamp = timeStamp;
+
+                return info;
+            }
+
 
             std::string getVersionString();
             std::string getComment()

@@ -9,3 +9,4 @@ Fixed	Enabled vector expansions ("{A:B}") in string expressions.
 Added	Enabled string expressions as index expressions for data objects.
 Cleaned	String outputs and numerical outputs are now formatted similiar.
 Cleaned	"ans" is now a cluster and capable of storing multiple mixed return values.
+Cleaned	"load DATAFILE -tocache" uses now the table name stored in DATAFILE, if any, or creates a corresponding one based upon the file name.

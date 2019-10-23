@@ -1578,6 +1578,50 @@ static bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, De
 
 
 /////////////////////////////////////////////////
+/// \brief This static function loads a single
+/// file directly to a cache and returns the name
+/// of the target cache.
+///
+/// \param sFileName const string&
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \return string
+///
+/// The cache name is either extracted from the
+/// file header or constructed from the file name.
+/////////////////////////////////////////////////
+static string loadToCache(const string& sFileName, Datafile& _data, Settings& _option)
+{
+    Datafile _cache;
+    _cache.setTokens(_option.getTokenPaths());
+    _cache.setPath(_option.getLoadPath(), false, _option.getExePath());
+    NumeRe::FileHeaderInfo info = _cache.openFile(sFileName, _option, false, true);
+
+    if (info.sTableName == "data")
+        info.sTableName = "loaded_data";
+
+    if (!_data.isTable(info.sTableName + "()"))
+        _data.addTable(info.sTableName + "()", _option);
+
+    long long int nFirstColumn = _data.getCols(info.sTableName, false);
+
+    for (long long int i = 0; i < _cache.getLines("data", false); i++)
+    {
+        for (long long int j = 0; j < _cache.getCols("data", false); j++)
+        {
+            if (!i)
+                _data.setHeadLineElement(j + nFirstColumn, info.sTableName, _cache.getHeadLineElement(j, "data"));
+
+            if (_cache.isValidEntry(i, j, "data"))
+                _data.writeToTable(i, j + nFirstColumn, info.sTableName, _cache.getElement(i, j, "data"));
+        }
+    }
+
+    return info.sTableName;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function handles the
 /// swapping of the data of the values of two
 /// tables.
@@ -7109,7 +7153,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         else
             NumeReKernel::print( _lang.get("BUILTIN_CHECKKEYWORD_DEF_EMPTY") );
     }
-    else if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
+    else if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '=')) // deprecated
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
@@ -7294,7 +7338,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         else
             load_data(_data, _option, _parser);
     }
-    else if (matchParams(sCmd, "script") || matchParams(sCmd, "script", '='))
+    else if (matchParams(sCmd, "script") || matchParams(sCmd, "script", '=')) // deprecated
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
@@ -7337,6 +7381,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
+        // Add quotation marks around the object, if there aren't any
         if (sCmd[sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5)] != '"' && sCmd.find("string(") == string::npos)
         {
             if (matchParams(sCmd, "slice")
@@ -7388,79 +7433,27 @@ static CommandReturnValues cmd_load(string& sCmd)
 
             if (matchParams(sCmd, "tocache") && !matchParams(sCmd, "all"))
             {
-                Datafile _cache;
-                _cache.setTokens(_option.getTokenPaths());
-                _cache.setPath(_option.getLoadPath(), false, _option.getExePath());
-                _cache.openFile(sArgument, _option, false, true, nArgument);
-                sArgument = generateCacheName(sArgument, _option);
-
-                if (!_data.isTable(sArgument + "()"))
-                    _data.addTable(sArgument + "()", _option);
-
-                nArgument = _data.getCols(sArgument, false);
-
-                for (long long int i = 0; i < _cache.getLines("data", false); i++)
-                {
-                    for (long long int j = 0; j < _cache.getCols("data", false); j++)
-                    {
-                        if (!i)
-                            _data.setHeadLineElement(j + nArgument, sArgument, _cache.getHeadLineElement(j, "data"));
-
-                        if (_cache.isValidEntry(i, j, "data"))
-                            _data.writeToTable(i, j + nArgument, sArgument, _cache.getElement(i, j, "data"));
-                    }
-                }
+                // Single file directly to cache
+                sArgument = loadToCache(sArgument, _data, _option);
 
                 if (_data.isValidCache() && _data.getCols(sArgument, false))
-                    NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))));
+                    NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", sArgument + "()", toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))));
 
                 return COMMAND_PROCESSED;
             }
             else if (matchParams(sCmd, "tocache") && matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
             {
+                // multiple files directly to cache
                 if (sArgument.find('/') == string::npos)
                     sArgument = "<loadpath>/" + sArgument;
 
-                vector<string> vFilelist = getFileList(sArgument, _option);
+                vector<string> vFilelist = getFileList(sArgument, _option, 1);
 
                 if (!vFilelist.size())
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
 
-                string sPath = "<loadpath>/";
-
-                if (sArgument.find('/') != string::npos)
-                    sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-
-                string sTarget = generateCacheName(sPath + vFilelist[0], _option);
-                Datafile _cache;
-                _cache.setTokens(_option.getTokenPaths());
-                _cache.setPath(_data.getPath(), false, _data.getProgramPath());
-
-                for (unsigned int i = 0; i < vFilelist.size(); i++)
-                {
-                    _cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
-                    sTarget = generateCacheName(sPath + vFilelist[i], _option);
-
-                    if (!_data.isTable(sTarget + "()"))
-                        _data.addTable(sTarget + "()", _option);
-
-                    nArgument = _data.getCols(sTarget, false);
-
-                    for (long long int i = 0; i < _cache.getLines("data", false); i++)
-                    {
-                        for (long long int j = 0; j < _cache.getCols("data", false); j++)
-                        {
-                            if (!i)
-                                _data.setHeadLineElement(j + nArgument, sTarget, _cache.getHeadLineElement(j, "data"));
-
-                            if (_cache.isValidEntry(i, j, "data"))
-                                _data.writeToTable(i, j + nArgument, sTarget, _cache.getElement(i, j, "data"));
-                        }
-                    }
-
-                    _cache.removeData(false);
-                    nArgument = -1;
-                }
+                for (size_t i = 0; i < vFilelist.size(); i++)
+                    loadToCache(vFilelist[i], _data, _option);
 
                 if (_data.isValidCache())
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument));
@@ -7468,91 +7461,31 @@ static CommandReturnValues cmd_load(string& sCmd)
                 return COMMAND_PROCESSED;
             }
 
-            if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
+            if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore") || !_data.isValid())
             {
                 if (_data.isValid())
-                {
-                    if (_option.getSystemPrintStatus())
-                        _data.removeData(false);
-                    else
-                        _data.removeData(true);
-                }
+                    _data.removeData();
 
+                // multiple files
                 if (matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
                 {
                     if (sArgument.find('/') == string::npos)
                         sArgument = "<loadpath>/" + sArgument;
 
-                    vector<string> vFilelist = getFileList(sArgument, _option);
+                    vector<string> vFilelist = getFileList(sArgument, _option, 1);
 
                     if (!vFilelist.size())
                         throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
 
-                    string sPath = "<loadpath>/";
-
-                    if (sArgument.find('/') != string::npos)
-                        sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-
-                    _data.openFile(sPath + vFilelist[0], _option, false, true, nArgument);
+                    _data.openFile(vFilelist[0], _option, false, true, nArgument);
                     Datafile _cache;
                     _cache.setTokens(_option.getTokenPaths());
                     _cache.setPath(_data.getPath(), false, _data.getProgramPath());
 
-                    for (unsigned int i = 1; i < vFilelist.size(); i++)
+                    for (size_t i = 1; i < vFilelist.size(); i++)
                     {
                         _cache.removeData(false);
-                        _cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
-                        _data.melt(_cache);
-                    }
-
-                    if (_data.isValid())
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))));
-
-                    return COMMAND_PROCESSED;
-                }
-
-                if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
-                {
-                    if (matchParams(sCmd, "head", '='))
-                        nArgument = matchParams(sCmd, "head", '=') + 4;
-                    else
-                        nArgument = matchParams(sCmd, "h", '=') + 1;
-
-                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, _option, false, true, nArgument);
-                }
-                else
-                    _data.openFile(sArgument, _option, false, true, nArgument);
-
-                if (_data.isValid() && _option.getSystemPrintStatus())
-                    NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
-            }
-            else if (!_data.isValid())
-            {
-                if (matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
-                {
-                    if (sArgument.find('/') == string::npos)
-                        sArgument = "<loadpath>/" + sArgument;
-
-                    vector<string> vFilelist = getFileList(sArgument, _option);
-
-                    if (!vFilelist.size())
-                        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
-
-                    string sPath = "<loadpath>/";
-
-                    if (sArgument.find('/') != string::npos)
-                        sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-
-                    _data.openFile(sPath + vFilelist[0], _option, false, true, nArgument);
-                    Datafile _cache;
-                    _cache.setTokens(_option.getTokenPaths());
-                    _cache.setPath(_data.getPath(), false, _data.getProgramPath());
-
-                    for (unsigned int i = 1; i < vFilelist.size(); i++)
-                    {
-                        _cache.removeData(false);
-                        _cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
+                        _cache.openFile(vFilelist[i], _option, false, true, nArgument);
                         _data.melt(_cache);
                     }
 
@@ -7562,6 +7495,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     return COMMAND_PROCESSED;
                 }
 
+                // Provide headline
                 if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
                 {
                     if (matchParams(sCmd, "head", '='))
@@ -7573,7 +7507,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     _data.openFile(sArgument, _option, false, true, nArgument);
                 }
                 else
-                    _data.openFile(sArgument, _option, false, false, nArgument);
+                    _data.openFile(sArgument, _option, false, true, nArgument);
 
                 if (_data.isValid() && _option.getSystemPrintStatus())
                     NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));

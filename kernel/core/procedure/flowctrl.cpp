@@ -2295,7 +2295,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 					if (!nCurrentCalcType)
 						nCalcType[nthCmd] |= CALCTYPE_COMMAND;
 
-					return FLOWCTRL_OK;
+					break;
 			}
 
 			NumeReKernel::bSupressAnswer = bSupressAnswer_back;

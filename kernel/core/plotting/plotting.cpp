@@ -510,7 +510,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 			continue; // Ignore the "subplot" command, if we have no multiplot layout
 
         // Display the "Calculating data for SOME PLOT" message
-		displayMessage(_pData, _option);
+		displayMessage(_pData, _option, _pData.getAnimateSamples() && parser_findVariable(sFunc, "t") != string::npos);
 
 		// Apply the logic and the transformation for logarithmic
 		// plotting axes
@@ -3445,7 +3445,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
 }
 
 
-void Plot::displayMessage(PlotData& _pData, const Settings& _option)
+void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnimateVar)
 {
 	if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
 		NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("PLOT_CALCULATING_DATA_FOR") + " "));
@@ -3536,11 +3536,11 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option)
 		if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
 			NumeReKernel::printPreFmt("3D-");
 	}
-	if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !_pData.getAnimateSamples() && !(_pInfo.bDraw3D || _pInfo.bDraw))
+	if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !bAnimateVar && !(_pInfo.bDraw3D || _pInfo.bDraw))
     {
 		NumeReKernel::printPreFmt("Plot ... ");
     }
-	else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !_pData.getAnimateSamples())
+	else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !bAnimateVar)
     {
 		NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_DRAWING")) + " ... ");
     }

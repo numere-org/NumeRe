@@ -186,8 +186,10 @@ void Datafile::countAppendedZeroes(long long int nCol)
 
 // This function opens the desired file and stores its
 // contents in the internal storage
-void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool bIgnore, int _nHeadline)
+NumeRe::FileHeaderInfo Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool bIgnore, int _nHeadline)
 {
+    NumeRe::FileHeaderInfo info;
+
     if (!bValidData)
     {
         // Ensure that the file name is valid
@@ -230,6 +232,9 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
         nLines = file->getRows();
         nCols = file->getCols();
 
+        // Get the header informaion structure
+        info = file->getFileHeaderInformation();
+
         // Create the internal memory
         Allocate();
 
@@ -269,7 +274,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 		if (cReplace == _lang.YES())
 		{
 			removeData();				// Zuerst mal die Daten loeschen
-			openFile(_sFile, _option, bAutoSave, bIgnore);	// Jetzt die Methode erneut aufrufen
+			return openFile(_sFile, _option, bAutoSave, bIgnore);	// Jetzt die Methode erneut aufrufen
 		}
 		else
 		{
@@ -278,7 +283,7 @@ void Datafile::openFile(string _sFile, Settings& _option, bool bAutoSave, bool b
 
 	}
 
-	return;
+	return info;
 }
 
 vector<string> Datafile::getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens)
