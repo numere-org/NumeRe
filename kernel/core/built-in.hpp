@@ -41,8 +41,8 @@
 #include "documentation/documentation.hpp"
 #include "maths/odesolver.hpp"
 
-#ifndef BUILT_IN_HPP
-#define BUILT_IN_HPP
+#ifndef COMMANDHANDLER_HPP
+#define COMMANDHANDLER_HPP
 
 using namespace std;
 using namespace mu;
@@ -68,26 +68,10 @@ enum CommandReturnValues
  * Built-In-Funktionen
  * -> Diese Funktionen setzen die Basisfunktionen dieses Frameworks um
  */
-void BI_splash();
-/** \brief Central command handler
- *
- * \param sCmd string&
- * \param _data Datafile&
- * \param _out Output&
- * \param _option Settings&
- * \param _parser Parser&
- * \param _functions Define&
- * \param _pData PlotData&
- * \param _script Script&
- * \param bParserActive bool
- * \return int
- *
- */
 CommandReturnValues commandHandler(string& sCmd);
-void BI_Autosave(Datafile&, Output&, Settings&);
-string BI_Greeting(Settings& _option);
-string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions);
-bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, Datafile& _data, Settings& _option);
+string evaluateParameterValues(const string& sCmd);
+bool extractFirstParameterStringValue(const string& sCmd, string& sArgument);
 
 
 #endif
+

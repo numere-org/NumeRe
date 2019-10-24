@@ -563,7 +563,7 @@ void NumeReKernel::printVersionInfo()
 	bWritingTable = true;
 	make_hline(80);
 	printPreFmt("| ");
-	BI_splash();
+	displaySplash();
 	printPreFmt("                                  |\n");
 	printPreFmt("| Version: " + sVersion + strfill("Build: ", 79 - 22 - sVersion.length()) + AutoVersion::YEAR + "-" + AutoVersion::MONTH + "-" + AutoVersion::DATE + " |\n");
 	printPreFmt("| Copyright (c) 2013-" + string(AutoVersion::YEAR) + toSystemCodePage(", Erik A. Hänel et al.") + strfill(toSystemCodePage(_lang.get("MAIN_ABOUT_NBR")), 79 - 48) + " |\n");
@@ -572,7 +572,7 @@ void NumeReKernel::printVersionInfo()
 	printPreFmt("|\n");
 
 	if (_option.getbGreeting() && fileExists(_option.getExePath() + "\\numere.ini"))
-		printPreFmt(toSystemCodePage(BI_Greeting(_option)) + "|\n");
+		printPreFmt(toSystemCodePage(getGreeting()) + "|\n");
 
 	print(LineBreak(_lang.get("PARSER_INTRO"), _option));;
 	printPreFmt("|\n|<- ");
@@ -2031,6 +2031,44 @@ void NumeReKernel::resetAfterError(string& sCmdCache)
 
 
 /////////////////////////////////////////////////
+/// \brief Returns a random greeting string,
+/// which may be printed to the terminal later.
+///
+/// \param _option Settings&
+/// \return string
+///
+/////////////////////////////////////////////////
+string NumeReKernel::getGreeting()
+{
+	unsigned int nth_Greeting = 0;
+	vector<string> vGreetings;
+
+	// Get the greetings from the database file
+	if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/greetings.ndb", ".ndb")))
+		vGreetings = getDBFileContent("<>/user/docs/greetings.ndb", _option);
+	else
+		vGreetings = getDBFileContent("<>/docs/greetings.ndb", _option);
+
+	string sLine;
+
+	if (!vGreetings.size())
+		return "|-> ERROR: GREETINGS FILE IS EMPTY.\n";
+
+	// --> Einen Seed (aus der Zeit generiert) an die rand()-Funktion zuweisen <--
+	srand(time(NULL));
+
+	// --> Die aktuelle Begruessung erhalten wir als modulo(nGreetings)-Operation auf rand() <--
+	nth_Greeting = (rand() % vGreetings.size());
+
+	if (nth_Greeting >= vGreetings.size())
+		nth_Greeting = vGreetings.size() - 1;
+
+	// --> Gib die zufaellig ausgewaehlte Begruessung zurueck <--
+	return "|-> \"" + vGreetings[nth_Greeting] + "\"\n";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function is used to update
 /// the internal terminal line length information
 /// after the terminal had been resized.
@@ -2127,6 +2165,20 @@ string NumeReKernel::ReadAnswer()
 	sAnswer.clear();
 	return sAns;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This function displays the intro text.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::displaySplash()
+{
+	printPreFmt("NUMERE: FRAMEWORK FÜR NUMERISCHE RECHNUNGEN");
+	return;
+}
+
 
 /////////////////////////////////////////////////
 /// \brief This member function returns a map of

@@ -350,108 +350,112 @@ bool getStringArgument(const string& sCmd, string& sArgument)
 	// --> Wenn kein '"' oder kein '#' zu finden ist, gibt es auch kein String-Argument: FALSE zurueckgeben <--
 	if (!containsStrings(sCmd))
 		return false;
-	else
-	{
-		if (sCmd.front() != '=')
-		{
-		    // If the first character is not an equal sign, then try to find the first string operation part
-		    // This block only handles a small set of all available string functions
-		    // TODO to be investigated
-			nPos = sCmd.find('"');
-			if (sCmd.find('#') != string::npos && (sCmd.find('#') < nPos || nPos == string::npos))
-				nPos = sCmd.find('#');
-			if (sCmd.find("to_string(") != string::npos && (sCmd.find("to_string(") < nPos || nPos == string::npos))
-				nPos = sCmd.find("to_string(");
-			if (sCmd.find("string(") != string::npos && (sCmd.find("string(") < nPos || nPos == string::npos))
-				nPos = sCmd.find("string(");
-			if (sCmd.find("substr(") != string::npos && (sCmd.find("substr(") < nPos || nPos == string::npos))
-				nPos = sCmd.find("substr(");
-			if (sCmd.find("strlen(") != string::npos && (sCmd.find("strlen(") < nPos || nPos == string::npos))
-				nPos = sCmd.find("strlen(");
-			if (sCmd.find("strfnd(") != string::npos && (sCmd.find("strfnd(") < nPos || nPos == string::npos))
-				nPos = sCmd.find("strfnd(");
-			if (sCmd.find("ascii(") != string::npos && (sCmd.find("ascii(") < nPos || nPos == string::npos))
-				nPos = sCmd.find("ascii(");
-			if (sCmd.find("to_char(") != string::npos && (sCmd.find("to_char(") < nPos || nPos == string::npos))
-				nPos = sCmd.find("to_char(");
-			if (sCmd.find("char(") != string::npos && (sCmd.find("char(") < nPos || nPos == string::npos))
-				nPos = sCmd.find("char(");
-		}
 
-		// Try to find the end of the string block
-		for (unsigned int i = nPos; i < sCmd.length(); i++)
-		{
-		    // Jump over each parenthesis block
-		    if (!isInQuotes(sCmd, i) && (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{'))
-                i += getMatchingParenthesis(sCmd.substr(i));
+    if (sCmd.front() != '=')
+    {
+        // If the first character is not an equal sign, then try to find the first string operation part
+        // This block only handles a small set of all available string functions
+        // TODO to be investigated
+        nPos = sCmd.find('"');
 
-			// Handle the variable to string parser
-			if (sCmd[i] == '#')
-			{
-				for (unsigned int j = i; j < sCmd.length(); j++)
-				{
-					if (sCmd[j] == ' ')
-					{
-						i = j;
-						break;
-					}
-					// jump over parentheses
-					if (sCmd[j] == '(')
-					{
-						j += getMatchingParenthesis(sCmd.substr(j));
-					}
-					if (j == sCmd.length() - 1)
-					{
-						i = j;
-						break;
-					}
-				}
-			}
+        if (sCmd.find('#') != string::npos && (sCmd.find('#') < nPos || nPos == string::npos))
+            nPos = sCmd.find('#');
 
-			// If there's a whitepace and it is not part of a quotation marks pair
-			if (sCmd[i] == ' ' && !isInQuotes(sCmd, i))
-			{
-			    // Try to find a trailing plus sign
-				if (sCmd.find_first_not_of(' ', i) != string::npos && sCmd[sCmd.find_first_not_of(' ', i)] != '+')
-				{
-				    // None was found - break the loop
-					nPos_2 = i - 1;
-					break;
-				}
-				else
-				{
-				    // A plus sign was found
-					i = sCmd.find_first_not_of(' ', i);
+        if (sCmd.find("to_string(") != string::npos && (sCmd.find("to_string(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("to_string(");
 
-					// Jump over the following whitespaces around the plus sign
-					if (i < sCmd.length() - 1 && sCmd[i] == '+' && sCmd[i + 1] == ' ')
-						i++;
-					while (i < sCmd.length() - 1 && sCmd[i] == ' ' && sCmd[i + 1] == ' ')
-						i++;
-				}
-			}
+        if (sCmd.find("string(") != string::npos && (sCmd.find("string(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("string(");
 
-			// If it's the last character or the current character is a minus sign
-			if (i >= sCmd.length() - 1 || (sCmd[i] == '-' && !isInQuotes(sCmd, i)))
-			{
-				if (i == string::npos)
-					nPos_2 = sCmd.length();
-				else
-					nPos_2 = i;
-				break;
-			}
-		}
-		// Increment the first position, if the command string begins with an equal sign
-		if (sCmd.front() == '=')
-			nPos++;
+        if (sCmd.find("substr(") != string::npos && (sCmd.find("substr(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("substr(");
 
-        // Cut out the identified argument
-		sArgument = sCmd.substr(nPos, nPos_2 - nPos + 1);
-		return true;
-	}
+        if (sCmd.find("strlen(") != string::npos && (sCmd.find("strlen(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("strlen(");
 
-	// --> Falls du durch alles durchmarschiert bist, gab es einen Fehler: gib sicherheitshalber FALSE zurueck <--
-	return false;
+        if (sCmd.find("strfnd(") != string::npos && (sCmd.find("strfnd(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("strfnd(");
+
+        if (sCmd.find("ascii(") != string::npos && (sCmd.find("ascii(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("ascii(");
+
+        if (sCmd.find("to_char(") != string::npos && (sCmd.find("to_char(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("to_char(");
+
+        if (sCmd.find("char(") != string::npos && (sCmd.find("char(") < nPos || nPos == string::npos))
+            nPos = sCmd.find("char(");
+    }
+
+    // Try to find the end of the string block
+    for (unsigned int i = nPos; i < sCmd.length(); i++)
+    {
+        // Jump over each parenthesis block
+        if (!isInQuotes(sCmd, i) && (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{'))
+            i += getMatchingParenthesis(sCmd.substr(i));
+
+        // Handle the variable to string parser
+        if (sCmd[i] == '#')
+        {
+            for (unsigned int j = i; j < sCmd.length(); j++)
+            {
+                if (sCmd[j] == ' ')
+                {
+                    i = j;
+                    break;
+                }
+                // jump over parentheses
+                if (sCmd[j] == '(')
+                {
+                    j += getMatchingParenthesis(sCmd.substr(j));
+                }
+                if (j == sCmd.length() - 1)
+                {
+                    i = j;
+                    break;
+                }
+            }
+        }
+
+        // If there's a whitepace and it is not part of a quotation marks pair
+        if (sCmd[i] == ' ' && !isInQuotes(sCmd, i))
+        {
+            // Try to find a trailing plus sign
+            if (sCmd.find_first_not_of(' ', i) != string::npos && sCmd[sCmd.find_first_not_of(' ', i)] != '+')
+            {
+                // None was found - break the loop
+                nPos_2 = i - 1;
+                break;
+            }
+            else
+            {
+                // A plus sign was found
+                i = sCmd.find_first_not_of(' ', i);
+
+                // Jump over the following whitespaces around the plus sign
+                if (i < sCmd.length() - 1 && sCmd[i] == '+' && sCmd[i + 1] == ' ')
+                    i++;
+                while (i < sCmd.length() - 1 && sCmd[i] == ' ' && sCmd[i + 1] == ' ')
+                    i++;
+            }
+        }
+
+        // If it's the last character or the current character is a minus sign
+        if (i >= sCmd.length() - 1 || (sCmd[i] == '-' && !isInQuotes(sCmd, i)))
+        {
+            if (i == string::npos)
+                nPos_2 = sCmd.length();
+            else
+                nPos_2 = i;
+            break;
+        }
+    }
+    // Increment the first position, if the command string begins with an equal sign
+    if (sCmd.front() == '=')
+        nPos++;
+
+    // Cut out the identified argument
+    sArgument = sCmd.substr(nPos, nPos_2 - nPos + 1);
+    return true;
 }
 
 // Entfernt fuehrende und angehaengte Leerstellen/Tabulatoren

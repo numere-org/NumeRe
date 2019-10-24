@@ -2100,7 +2100,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 				if (bUseLoopParsingMode && !bLockedPauseMode)
 					_parserRef->PauseLoopMode();
 
-				sLine = BI_evalParamString(sLine, *_parserRef, *_dataRef, *_optionRef, *_functionRef);
+				sLine = evaluateParameterValues(sLine);
 
 				if (bUseLoopParsingMode && !bLockedPauseMode)
 					_parserRef->PauseLoopMode(false);

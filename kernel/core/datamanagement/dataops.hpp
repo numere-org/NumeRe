@@ -34,13 +34,13 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 void load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFileName = "");
 void show_data(Datafile& _data, Output& _out, Settings& _option, const string& sCache, size_t nPrecision, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
 void remove_data(Datafile& _data, Settings& _option, bool bIgnore = false);
-void append_data(const string& sCmd, Datafile& _data, Settings& _option, Parser& _parser);
+void append_data(const string& sCmd, Datafile& _data, Settings& _option);
 void clear_cache(Datafile& _data, Settings& _option, bool bIgnore = false);
 bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
 bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
 bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
 bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-bool writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+bool writeToFile(string& sCmd, Datafile& _data, Settings& _option);
 bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 

@@ -23,18 +23,6 @@
 #include "datamanagement/dataops.hpp"
 #include "commandfunctions.hpp"
 
-/////////////////////////////////////////////////
-/// \brief This function displays the intro text.
-///
-/// \return void
-///
-/////////////////////////////////////////////////
-void BI_splash()
-{
-	NumeReKernel::printPreFmt("NUMERE: FRAMEWORK FÜR NUMERISCHE RECHNUNGEN");
-	return;
-}
-
 
 /////////////////////////////////////////////////
 /// \brief This function is the main command
@@ -109,68 +97,32 @@ CommandReturnValues commandHandler(string& sCmd)
 
 
 /////////////////////////////////////////////////
-/// \brief This function performs the autosave at
-/// the application termination.
-///
-/// \param _data Datafile&
-/// \param _out Output&
-/// \param _option Settings&
-/// \return void
-///
-/////////////////////////////////////////////////
-void BI_Autosave(Datafile& _data, Output& _out, Settings& _option)
-{
-    // Only do something, if there's unsaved and valid data
-	if (_data.isValidCache() && !_data.getSaveStatus())
-	{
-	    // Inform the user
-		if (_option.getSystemPrintStatus())
-			NumeReKernel::printPreFmt(toSystemCodePage(  _lang.get("BUILTIN_AUTOSAVE") + " ... "));
-
-		// Try to save the cache
-		if (_data.saveToCacheFile())
-		{
-			if (_option.getSystemPrintStatus())
-				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS") + ".") );
-		}
-		else
-		{
-			if (_option.getSystemPrintStatus())
-				NumeReKernel::printPreFmt("\n");
-			throw SyntaxError(SyntaxError::CANNOT_SAVE_CACHE, "", SyntaxError::invalid_position);
-		}
-	}
-	return;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function returns the string
 /// argument for a single parameter in the
 /// command line.
 ///
 /// \param sCmd const string&
 /// \param sArgument string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option Settings&
 /// \return bool
 ///
 /// It will also parse it directly, which means
 /// that it won't contain further string operations.
 /////////////////////////////////////////////////
-bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, Datafile& _data, Settings& _option)
+bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 {
     // Don't do anything, if no string is found in this expression
 	if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 		return false;
+
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    Datafile& _data = NumeReKernel::getInstance()->getData();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+
 	string sTemp = sCmd;
 
     // Get the contents of the contained data tables
 	if (sTemp.find("data(") != string::npos || _data.containsTablesOrClusters(sTemp))
-	{
 		getDataElements(sTemp, _parser, _data, _option);
-	}
 
 	//
 	for (unsigned int i = 0; i < sTemp.length(); i++)
@@ -178,11 +130,9 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 	    // Jump over this parenthesis, if its contents don't contain
 	    // strings or string variables
 		if (sTemp[i] == '('
-				&& !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(i, getMatchingParenthesis(sTemp.substr(i))))
-				&& !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, i)))
-		{
+            && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(i, getMatchingParenthesis(sTemp.substr(i))))
+            && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, i)))
 			i += getMatchingParenthesis(sTemp.substr(i));
-		}
 
 		// Evaluate parameter starts, i.e. the minus sign of the command line
 		if (sTemp[i] == '-'	&& !NumeReKernel::getInstance()->getStringParser().isStringExpression(sTemp.substr(0, i)))
@@ -203,9 +153,7 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 				if (sTemp[j] == '(' && j && (isalnum(sTemp[j - 1]) || sTemp[j - 1] == '_'))
 				{
 					while (j && (isalnum(sTemp[j - 1]) || sTemp[j - 1] == '_'))
-					{
 						j--;
-					}
 				}
 
 				// This is now the location, where all string-related stuff is
@@ -217,6 +165,7 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 					break;
 				}
 			}
+
 			break;
 		}
 	}
@@ -242,19 +191,21 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 		{
 			if (sArgument.find('<', i) == string::npos)
 				break;
+
 			if (sArgument[i] == '<' && sArgument.find('>', i) != string::npos)
 			{
 				string sToken = sArgument.substr(i, sArgument.find('>', i) + 1 - i);
+
 				if (sToken == "<this>")
 					sToken = _option.getExePath();
+
 				if (sToken.find('/') == string::npos)
 				{
 				    // Is the token valid?
 					if (_option.getTokenPaths().find(sToken) == string::npos)
-					{
 						throw SyntaxError(SyntaxError::UNKNOWN_PATH_TOKEN, sCmd, sToken, sToken);
-					}
 				}
+
 				i = sArgument.find('>', i);
 			}
 		}
@@ -271,56 +222,22 @@ bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, 
 
 
 /////////////////////////////////////////////////
-/// \brief Returns a random greeting string,
-/// which may be printed to the terminal later.
-///
-/// \param _option Settings&
-/// \return string
-///
-/////////////////////////////////////////////////
-string BI_Greeting(Settings& _option)
-{
-	unsigned int nth_Greeting = 0;
-	vector<string> vGreetings;
-
-	// Get the greetings from the database file
-	if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/greetings.ndb", ".ndb")))
-		vGreetings = getDBFileContent("<>/user/docs/greetings.ndb", _option);
-	else
-		vGreetings = getDBFileContent("<>/docs/greetings.ndb", _option);
-	string sLine;
-	if (!vGreetings.size())
-		return "|-> ERROR: GREETINGS FILE IS EMPTY.\n";
-
-	// --> Einen Seed (aus der Zeit generiert) an die rand()-Funktion zuweisen <--
-	srand(time(NULL));
-
-	// --> Die aktuelle Begruessung erhalten wir als modulo(nGreetings)-Operation auf rand() <--
-	nth_Greeting = (rand() % vGreetings.size());
-	if (nth_Greeting >= vGreetings.size())
-		nth_Greeting = vGreetings.size() - 1;
-
-	// --> Gib die zufaellig ausgewaehlte Begruessung zurueck <--
-	return "|-> \"" + vGreetings[nth_Greeting] + "\"\n";
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function evaluates a passed
 /// parameter string, so that the values of the
 /// parameters are only values. No expressions
 /// exist after this call anymore.
 ///
 /// \param sCmd const string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
-/// \param _functions Define&
 /// \return string
 ///
 /////////////////////////////////////////////////
-string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions)
+string evaluateParameterValues(const string& sCmd)
 {
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    Datafile& _data = NumeReKernel::getInstance()->getData();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+
 	string sReturn = sCmd;
 	string sTemp = "";
 	string sDummy = "";
@@ -334,10 +251,10 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 
     // Try to detect the interval syntax
 	if (sReturn.find('-') != string::npos
-			&& (sReturn.find('[') != string::npos
-				|| matchParams(sReturn, "x", '=')
-				|| matchParams(sReturn, "y", '=')
-				|| matchParams(sReturn, "z", '=')))
+        && (sReturn.find('[') != string::npos
+            || matchParams(sReturn, "x", '=')
+            || matchParams(sReturn, "y", '=')
+            || matchParams(sReturn, "z", '=')))
 	{
 	    // Get the parameter part of the string and remove
 	    // the parameter string part from the original expression
@@ -404,7 +321,7 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 			sReturn.replace(nPos, nLength, sTemp);
 		}
 		else if ((nPos > 5 && sReturn.substr(nPos - 5, 5) == "save=")
-				 || (nPos > 7 && sReturn.substr(nPos - 7, 7) == "export="))
+			|| (nPos > 7 && sReturn.substr(nPos - 7, 7) == "export="))
 		{
 		    // This is a path value without quotation marks
 		    // (otherwise it would be catched by the previous block)
@@ -416,9 +333,9 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 			sReturn.replace(nPos, nLength, sTemp);
 		}
 		else if ((nPos > 8 && sReturn.substr(nPos - 8, 8) == "tocache=")
-				 || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "type=")
-                 || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "icon=")
-                 || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "buttons="))
+			|| (nPos > 5 && sReturn.substr(nPos - 5, 5) == "type=")
+            || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "icon=")
+            || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "buttons="))
 		{
 		    // do nothing here
 			nPos++;
@@ -461,9 +378,8 @@ string BI_evalParamString(const string& sCmd, Parser& _parser, Datafile& _data, 
 
             // convert the doubles into strings and remove the trailing comma
             for (int i = 0; i < nResult; i++)
-            {
                 sTemp += toString(v[i], _option) + ":";
-            }
+
             sTemp.pop_back();
 
             // Replace the string

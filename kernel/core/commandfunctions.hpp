@@ -229,7 +229,7 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 
 		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 		{
-			if (!BI_parseStringArgs(sCmd, sObject, _parser, _data, _option))
+			if (!extractFirstParameterStringValue(sCmd, sObject))
 				return false;
 		}
 		else
@@ -304,7 +304,7 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 
 			if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
 			{
-				if (!BI_parseStringArgs(sCmd, sObject, _parser, _data, _option))
+				if (!extractFirstParameterStringValue(sCmd, sObject))
 					return false;
 			}
 			else
@@ -370,7 +370,7 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 	if (!nType)
 		return false;
 
-	BI_parseStringArgs(sCmd, sObject, _parser, _data, _option);
+	extractFirstParameterStringValue(sCmd, sObject);
 	StripSpaces(sObject);
 
 	if (!sObject.length())
@@ -635,7 +635,7 @@ static bool editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings&
 	string sObject;
 
 	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-		BI_parseStringArgs(sCmd, sObject, _parser, _data, _option);
+		extractFirstParameterStringValue(sCmd, sObject);
 	else
 	{
 		sObject = sCmd.substr(findCommand(sCmd).sString.length());
@@ -849,7 +849,7 @@ static bool editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings&
 /// \deprecated Will be removed at v1.1.3rc1
 ///
 /////////////////////////////////////////////////
-static void BI_ListOptions(Settings& _option)
+static void listOptions(Settings& _option)
 {
 	make_hline();
 	NumeReKernel::print("NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTOPT_SETTINGS")) );
@@ -968,7 +968,7 @@ static void BI_ListOptions(Settings& _option)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool BI_ListDirectory(const string& sDir, const string& sParams, const Settings& _option)
+static bool listDirectory(const string& sDir, const string& sParams, const Settings& _option)
 {
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hFind = INVALID_HANDLE_VALUE;
@@ -1281,7 +1281,7 @@ static string createListDirectoryHeader(const string& sPathName, const string& s
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool BI_ListFiles(const string& sCmd, const Settings& _option)
+static bool listFiles(const string& sCmd, const Settings& _option)
 {
 	string sConnect = "";
 	string sSpecified = "";
@@ -1345,7 +1345,7 @@ static bool BI_ListFiles(const string& sCmd, const Settings& _option)
 		{
 		    NumeReKernel::print(createListDirectoryHeader(_option.getLoadPath(), _lang.get("BUILTIN_LISTFILES_LOADPATH"), _option.getWindow()));
 
-			if (!BI_ListDirectory("LOADPATH", __sCmd, _option))
+			if (!listDirectory("LOADPATH", __sCmd, _option))
 				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
 		}
 
@@ -1356,7 +1356,7 @@ static bool BI_ListFiles(const string& sCmd, const Settings& _option)
 
 		    NumeReKernel::print(createListDirectoryHeader(_option.getSavePath(), _lang.get("BUILTIN_LISTFILES_SAVEPATH"), _option.getWindow()));
 
-			if (!BI_ListDirectory("SAVEPATH", __sCmd, _option))
+			if (!listDirectory("SAVEPATH", __sCmd, _option))
 				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
 		}
 
@@ -1367,7 +1367,7 @@ static bool BI_ListFiles(const string& sCmd, const Settings& _option)
 
 		    NumeReKernel::print(createListDirectoryHeader(_option.getScriptPath(), _lang.get("BUILTIN_LISTFILES_SCRIPTPATH"), _option.getWindow()));
 
-			if (!BI_ListDirectory("SCRIPTPATH", __sCmd, _option))
+			if (!listDirectory("SCRIPTPATH", __sCmd, _option))
 				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
 		}
 
@@ -1378,7 +1378,7 @@ static bool BI_ListFiles(const string& sCmd, const Settings& _option)
 
 		    NumeReKernel::print(createListDirectoryHeader(_option.getProcsPath(), _lang.get("BUILTIN_LISTFILES_PROCPATH"), _option.getWindow()));
 
-			if (!BI_ListDirectory("PROCPATH", __sCmd, _option))
+			if (!listDirectory("PROCPATH", __sCmd, _option))
 				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
 		}
 
@@ -1389,7 +1389,7 @@ static bool BI_ListFiles(const string& sCmd, const Settings& _option)
 
 		    NumeReKernel::print(createListDirectoryHeader(_option.getPlotOutputPath(), _lang.get("BUILTIN_LISTFILES_PLOTPATH"), _option.getWindow()));
 
-			if (!BI_ListDirectory("PLOTPATH", __sCmd, _option))
+			if (!listDirectory("PLOTPATH", __sCmd, _option))
 				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
 		}
 
@@ -1400,7 +1400,7 @@ static bool BI_ListFiles(const string& sCmd, const Settings& _option)
 
 		    NumeReKernel::print(createListDirectoryHeader(_option.getWorkPath(), _lang.get("BUILTIN_LISTFILES_WORKPATH"), _option.getWindow()));
 
-			if (!BI_ListDirectory("WORKPATH", __sCmd, _option))
+			if (!listDirectory("WORKPATH", __sCmd, _option))
 				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
 		}
 	}
@@ -1413,7 +1413,7 @@ static bool BI_ListFiles(const string& sCmd, const Settings& _option)
 	    else
             NumeReKernel::print(createListDirectoryHeader(sSpecified, _lang.get("BUILTIN_LISTFILES_CUSTOMPATH"), _option.getWindow()));
 
-		if (!BI_ListDirectory(sSpecified, __sCmd, _option))
+		if (!listDirectory(sSpecified, __sCmd, _option))
 			NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
 	}
 
@@ -1440,12 +1440,12 @@ static bool BI_ListFiles(const string& sCmd, const Settings& _option)
 /// chekbox. There's no command available to enable
 /// this command.
 /////////////////////////////////////////////////
-static bool BI_executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
 	if (!_option.getUseExecuteCommand())
 		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
 
-	sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+	sCmd = evaluateParameterValues(sCmd);
 	FileSystem _fSys;
 	_fSys.setTokens(_option.getTokenPaths());
 	_fSys.setPath(_option.getExePath(), false, _option.getExePath());
@@ -1622,26 +1622,60 @@ static string loadToCache(const string& sFileName, Datafile& _data, Settings& _o
 
 
 /////////////////////////////////////////////////
+/// \brief This function performs the autosave at
+/// the application termination.
+///
+/// \param _data Datafile&
+/// \param _out Output&
+/// \param _option Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void autoSave(Datafile& _data, Output& _out, Settings& _option)
+{
+    // Only do something, if there's unsaved and valid data
+	if (_data.isValidCache() && !_data.getSaveStatus())
+	{
+	    // Inform the user
+		if (_option.getSystemPrintStatus())
+			NumeReKernel::printPreFmt(toSystemCodePage(  _lang.get("BUILTIN_AUTOSAVE") + " ... "));
+
+		// Try to save the cache
+		if (_data.saveToCacheFile())
+		{
+			if (_option.getSystemPrintStatus())
+				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS") + ".") );
+		}
+		else
+		{
+			if (_option.getSystemPrintStatus())
+				NumeReKernel::printPreFmt("\n");
+			throw SyntaxError(SyntaxError::CANNOT_SAVE_CACHE, "", SyntaxError::invalid_position);
+		}
+	}
+	return;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function handles the
 /// swapping of the data of the values of two
 /// tables.
 ///
 /// \param sCmd string&
 /// \param _data Datafile&
-/// \param _parser Parser&
 /// \param _option Settings&
-/// \param _functions Define&
 /// \return CommandReturnValues
 ///
 /////////////////////////////////////////////////
-static CommandReturnValues swapTables(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions)
+static CommandReturnValues swapTables(string& sCmd, Datafile& _data, Settings& _option)
 {
     string sArgument;
 
     // If the current command line contains strings
     // handle them here
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+        sCmd = evaluateParameterValues(sCmd);
 
     // Handle legacy and new syntax in these two cases
     if (_data.matchTableAsParameter(sCmd, '=').length())
@@ -1786,7 +1820,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
                 addArgumentQuotes(sCmd, "file");
 
             // Try to extract the file name, if it was passed
-            if (containsStrings(sCmd) && BI_parseStringArgs(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument, _parser, _data, _option))
+            if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument))
             {
                 if (_cache.saveFile(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), sArgument, nPrecision))
                 {
@@ -1872,7 +1906,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
     else
         sArgument = "<<ANS>>";
 
-    sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+    sCmd = evaluateParameterValues(sCmd);
 
     StripSpaces(sCmd);
 
@@ -2177,7 +2211,7 @@ static CommandReturnValues cmd_dialog(string& sCmd)
     // If the current command line contains strings in the option values
     // handle them here
     if (kernel->getStringParser().isStringExpression(sDialogSettings))
-        sDialogSettings = BI_evalParamString(sDialogSettings, kernel->getParser(), kernel->getData(), kernel->getSettings(), kernel->getDefinitions());
+        sDialogSettings = evaluateParameterValues(sDialogSettings);
 
     // Extract the message for the user
     if (matchParams(sDialogSettings, "msg", '='))
@@ -3141,10 +3175,7 @@ static CommandReturnValues cmd_undefine(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_readline(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "readline").nPos;
     string sCommand = extractCommandString(sCmd, findCommand(sCmd, "readline"));
@@ -3156,8 +3187,8 @@ static CommandReturnValues cmd_readline(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd, nPos);
 
-        sCmd = sCmd.replace(nPos, sCommand.length(), BI_evalParamString(sCommand, _parser, _data, _option, _functions));
-        sCommand = BI_evalParamString(sCommand, _parser, _data, _option, _functions);
+        sCmd = sCmd.replace(nPos, sCommand.length(), evaluateParameterValues(sCommand));
+        sCommand = evaluateParameterValues(sCommand);
     }
 
     if (matchParams(sCmd, "dflt", '='))
@@ -3165,8 +3196,8 @@ static CommandReturnValues cmd_readline(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd, nPos);
 
-        sCmd = sCmd.replace(nPos, sCommand.length(), BI_evalParamString(sCommand, _parser, _data, _option, _functions));
-        sCommand = BI_evalParamString(sCommand, _parser, _data, _option, _functions);
+        sCmd = sCmd.replace(nPos, sCommand.length(), evaluateParameterValues(sCommand));
+        sCommand = evaluateParameterValues(sCommand);
         sDefault = getArgAtPos(sCmd, matchParams(sCmd, "dflt", '=') + 4);
     }
 
@@ -3282,7 +3313,7 @@ static CommandReturnValues cmd_data(string& sCmd)
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
         if (matchParams(sCmd, "load", '='))
             addArgumentQuotes(sCmd, "load");
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
         {
             if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
@@ -3414,7 +3445,7 @@ static CommandReturnValues cmd_data(string& sCmd)
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
         if (matchParams(sCmd, "reload", '='))
             addArgumentQuotes(sCmd, "reload");
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
         {
             if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
@@ -3456,7 +3487,7 @@ static CommandReturnValues cmd_data(string& sCmd)
     }
     else if (matchParams(sCmd, "app") || matchParams(sCmd, "app", '='))
     {
-        append_data(sCmd, _data, _option, _parser);
+        append_data(sCmd, _data, _option);
         return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "showf"))
@@ -3476,7 +3507,7 @@ static CommandReturnValues cmd_data(string& sCmd)
     }
     else if (matchParams(sCmd, "stats"))
     {
-        sArgument = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+        sArgument = evaluateParameterValues(sCmd);
         if (_data.isValid())
             plugin_statistics(sArgument, _data, _out, _option, false, true);
         else
@@ -3486,7 +3517,7 @@ static CommandReturnValues cmd_data(string& sCmd)
     }
     else if (matchParams(sCmd, "hist"))
     {
-        sArgument = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+        sArgument = evaluateParameterValues(sCmd);
         if (_data.isValid())
             plugin_histogram(sArgument, _data, _data, _out, _option, _pData, false, true);
         else
@@ -3501,7 +3532,7 @@ static CommandReturnValues cmd_data(string& sCmd)
         if (matchParams(sCmd, "save", '='))
             addArgumentQuotes(sCmd, "save");
         _data.setPrefix("data");
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
         {
             if (_data.saveFile("data", sArgument))
             {
@@ -3548,7 +3579,7 @@ static CommandReturnValues cmd_data(string& sCmd)
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
         if (matchParams(sCmd, "export", '='))
             addArgumentQuotes(sCmd, "export");
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
         {
             _out.setFileName(sArgument);
             show_data(_data, _out, _option, "data", _option.getPrecision(), true, false, true, false);
@@ -3862,7 +3893,7 @@ static CommandReturnValues cmd_new(string& sCmd)
         _data.setUserdefinedFuncs(_functions.getDefinesName());
 
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-            sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+            sCmd = evaluateParameterValues(sCmd);
 
         if (!newObject(sCmd, _parser, _data, _option))
             doc_Help("new", _option);
@@ -3893,7 +3924,7 @@ static CommandReturnValues cmd_edit(string& sCmd)
         string sArgument;
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
         {
-            BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
+            extractFirstParameterStringValue(sCmd, sArgument);
             sArgument = "edit " + sArgument;
             editObject(sArgument, _parser, _data, _option);
         }
@@ -3946,7 +3977,7 @@ static CommandReturnValues cmd_quit(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (matchParams(sCmd, "as"))
-        BI_Autosave(_data, _out, _option);
+        autoSave(_data, _out, _option);
 
     if (matchParams(sCmd, "i"))
         _data.setSaveStatus(true);
@@ -4047,7 +4078,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     }
     else if (matchParams(sCmd, "hist"))
     {
-        sArgument = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+        sArgument = evaluateParameterValues(sCmd);
         if (_data.isValidCache())
             plugin_histogram(sArgument, _data, _data, _out, _option, _pData, true, false);
         else
@@ -4057,12 +4088,12 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     }
     else if (matchParams(sCmd, "stats"))
     {
-        sArgument = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+        sArgument = evaluateParameterValues(sCmd);
         if (matchParams(sCmd, "save", '='))
         {
             if (sCmd[sCmd.find("save=") + 5] == '"' || sCmd[sCmd.find("save=") + 5] == '#')
             {
-                if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+                if (!extractFirstParameterStringValue(sCmd, sArgument))
                     sArgument = "";
             }
             else
@@ -4083,7 +4114,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
         if (matchParams(sCmd, "save", '='))
             addArgumentQuotes(sCmd, "save");
         _data.setPrefix(sCommand);
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
         {
             _data.setCacheStatus(true);
             if (_data.saveFile(sCommand, sArgument))
@@ -4133,7 +4164,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
         if (matchParams(sCmd, "export", '='))
             addArgumentQuotes(sCmd, "export");
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
         {
             _out.setFileName(sArgument);
             show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true, true, false);
@@ -4145,7 +4176,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     else if (matchParams(sCmd, "rename", '=')) //CACHE -rename=NEWNAME
     {
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-            sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+            sCmd = evaluateParameterValues(sCmd);
 
         sArgument = getArgAtPos(sCmd, matchParams(sCmd, "rename", '=') + 6);
         _data.renameTable(sCommand, sArgument);
@@ -4156,7 +4187,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     else if (matchParams(sCmd, "swap", '=')) //CACHE -swap=NEWCACHE
     {
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-            sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+            sCmd = evaluateParameterValues(sCmd);
 
         sArgument = getArgAtPos(sCmd, matchParams(sCmd, "swap", '=') + 4);
         _data.swapTables(sCommand, sArgument);
@@ -4542,9 +4573,6 @@ static CommandReturnValues cmd_ifndefined(string& sCmd)
 static CommandReturnValues cmd_install(string& sCmd)
 {
     Script& _script = NumeReKernel::getInstance()->getScript();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
 
@@ -4556,7 +4584,7 @@ static CommandReturnValues cmd_install(string& sCmd)
         _script.setInstallProcedures();
 
         if (containsStrings(sCmd))
-            BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
+            extractFirstParameterStringValue(sCmd, sArgument);
         else
             sArgument = sCmd.substr(findCommand(sCmd).nPos + 8);
 
@@ -4634,7 +4662,7 @@ static CommandReturnValues cmd_credits(string& sCmd)
 	NumeReKernel::toggleTableStatus();
 	make_hline();
 	NumeReKernel::printPreFmt("|-> ");
-	BI_splash();
+	NumeReKernel::getInstance()->displaySplash();
 	NumeReKernel::printPreFmt("\n");
 	make_hline();
 	NumeReKernel::printPreFmt("|-> Version: " + sVersion);
@@ -4672,7 +4700,7 @@ static CommandReturnValues cmd_append(string& sCmd)
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
         sCmd.replace(sCmd.find("data"), 4, "app");
-        append_data(sCmd, _data, _option, _parser);
+        append_data(sCmd, _data, _option);
     }
     else if (sCmd.length() > findCommand(sCmd).nPos + 7 && sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7) != string::npos)
     {
@@ -4710,7 +4738,7 @@ static CommandReturnValues cmd_append(string& sCmd)
         }
 
         sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7), "-app=");
-        append_data(sCmd, _data, _option, _parser);
+        append_data(sCmd, _data, _option);
     }
 
     return COMMAND_PROCESSED;
@@ -4775,7 +4803,7 @@ static CommandReturnValues cmd_write(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (sCmd.length() > 6 && matchParams(sCmd, "file", '='))
-        writeToFile(sCmd, _parser, _data, _option);
+        writeToFile(sCmd, _data, _option);
     else
         doc_Help("write", _option);
 
@@ -4794,7 +4822,6 @@ static CommandReturnValues cmd_write(string& sCmd)
 static CommandReturnValues cmd_workpath(string& sCmd)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
@@ -4815,7 +4842,7 @@ static CommandReturnValues cmd_workpath(string& sCmd)
     while (sCmd.find('\\') != string::npos)
         sCmd[sCmd.find('\\')] = '/';
 
-    if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+    if (!extractFirstParameterStringValue(sCmd, sArgument))
         return COMMAND_PROCESSED;
 
     FileSystem _fSys;
@@ -4840,7 +4867,6 @@ static CommandReturnValues cmd_workpath(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_warn(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -4848,19 +4874,19 @@ static CommandReturnValues cmd_warn(string& sCmd)
 
     if (sCmd.length() > 5)
     {
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             sArgument = sCmd.substr(sCmd.find("warn")+5);
             _parser.SetExpr(sArgument);
             int nResults = 0;
             value_type* v = _parser.Eval(nResults);
+
             if (nResults > 1)
             {
                 sArgument = "{";
                 for (int i = 0; i < nResults; i++)
-                {
                     sArgument += " " + toString(v[i], _option) + ",";
-                }
+
                 sArgument.pop_back();
                 sArgument += "}";
             }
@@ -4890,10 +4916,9 @@ static CommandReturnValues cmd_stats(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
     Output& _out = NumeReKernel::getInstance()->getOutput();
 
-    string sArgument = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+    string sArgument = evaluateParameterValues(sCmd);
 
     if (matchParams(sCmd, "data") && _data.isValid())
         plugin_statistics(sArgument, _data, _out, _option, false, true);
@@ -4954,7 +4979,7 @@ static CommandReturnValues cmd_stats(string& sCmd)
 
                 _data.setCacheStatus(false);
                 sArgument = "stats -cache " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-                sArgument = BI_evalParamString(sArgument, _parser, _data, _option, _functions);
+                sArgument = evaluateParameterValues(sArgument);
                 plugin_statistics(sArgument, _cache, _out, _option, true, false);
                 return COMMAND_PROCESSED;
             }
@@ -5073,7 +5098,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         }
         while (sCmd.find('\\') != string::npos)
             sCmd[sCmd.find('\\')] = '/';
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
             //NumeReKernel::print("|-> Einen Pfad eingeben:" );
@@ -5102,7 +5127,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         while (sCmd.find('\\') != string::npos)
             sCmd[sCmd.find('\\')] = '/';
 
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
             //NumeReKernel::print("|-> Einen Pfad eingeben:" );
@@ -5130,7 +5155,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         while (sCmd.find('\\') != string::npos)
             sCmd[sCmd.find('\\')] = '/';
 
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
             //NumeReKernel::print("|-> Einen Pfad eingeben:" );
@@ -5157,7 +5182,7 @@ static CommandReturnValues cmd_set(string& sCmd)
             addArgumentQuotes(sCmd, "viewer");
         while (sCmd.find('\\') != string::npos)
             sCmd[sCmd.find('\\')] = '/';
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
             //NumeReKernel::print("|-> Einen Pfad eingeben:" );
@@ -5180,7 +5205,7 @@ static CommandReturnValues cmd_set(string& sCmd)
             addArgumentQuotes(sCmd, "editor");
         while (sCmd.find('\\') != string::npos)
             sCmd[sCmd.find('\\')] = '/';
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
             //NumeReKernel::print("|-> Einen Pfad eingeben:" );
@@ -5205,7 +5230,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         }
         while (sCmd.find('\\') != string::npos)
             sCmd[sCmd.find('\\')] = '/';
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
             //NumeReKernel::print("|-> Einen Pfad eingeben:" );
@@ -5230,7 +5255,7 @@ static CommandReturnValues cmd_set(string& sCmd)
             addArgumentQuotes(sCmd, "plotpath");
         while (sCmd.find('\\') != string::npos)
             sCmd[sCmd.find('\\')] = '/';
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
             //NumeReKernel::print("|-> Einen Pfad eingeben:" );
@@ -5255,7 +5280,7 @@ static CommandReturnValues cmd_set(string& sCmd)
             addArgumentQuotes(sCmd, "procpath");
         while (sCmd.find('\\') != string::npos)
             sCmd[sCmd.find('\\')] = '/';
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
             //NumeReKernel::print("|-> Einen Pfad eingeben:" );
@@ -5277,7 +5302,7 @@ static CommandReturnValues cmd_set(string& sCmd)
     {
         if (matchParams(sCmd, "plotfont", '='))
             addArgumentQuotes(sCmd, "plotfont");
-        if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_DEFAULTFONT"))) );
             //NumeReKernel::print("|-> Standardschriftart angeben:" );
@@ -5433,7 +5458,7 @@ static CommandReturnValues cmd_set(string& sCmd)
     {
         if (matchParams(sCmd, "mode", '='))
             addArgumentQuotes(sCmd, "mode");
-        BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
+        extractFirstParameterStringValue(sCmd, sArgument);
         if (sArgument.length() && sArgument == "debug")
         {
             if (_option.getUseDebugger())
@@ -5700,9 +5725,6 @@ static CommandReturnValues cmd_set(string& sCmd)
 static CommandReturnValues cmd_start(string& sCmd)
 {
     Script& _script = NumeReKernel::getInstance()->getScript();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
 
@@ -5723,7 +5745,7 @@ static CommandReturnValues cmd_start(string& sCmd)
         if (matchParams(sCmd, "script", '='))
             addArgumentQuotes(sCmd, "script");
 
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
             _script.openScript(sArgument);
         else
             _script.openScript();
@@ -5736,7 +5758,7 @@ static CommandReturnValues cmd_start(string& sCmd)
                 NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
             if (containsStrings(sCmd))
-                BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option);
+                extractFirstParameterStringValue(sCmd, sArgument);
             else
                 sArgument = sCmd.substr(findCommand(sCmd).nPos + 6);
 
@@ -5772,8 +5794,6 @@ static CommandReturnValues cmd_start(string& sCmd)
 static CommandReturnValues cmd_script(string& sCmd)
 {
     Script& _script = NumeReKernel::getInstance()->getScript();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
@@ -5791,7 +5811,7 @@ static CommandReturnValues cmd_script(string& sCmd)
             if (matchParams(sCmd, "load", '='))
                 addArgumentQuotes(sCmd, "load");
 
-            if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+            if (!extractFirstParameterStringValue(sCmd, sArgument))
             {
                 do
                 {
@@ -5837,7 +5857,7 @@ static CommandReturnValues cmd_script(string& sCmd)
         if (matchParams(sCmd, "start", '='))
             addArgumentQuotes(sCmd, "start");
 
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
             _script.openScript(sArgument);
         else
             _script.openScript();
@@ -6144,12 +6164,7 @@ static CommandReturnValues cmd_string(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_swap(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
-
-    return swapTables(sCmd, _data, _parser, _option, _functions);
+    return swapTables(sCmd, NumeReKernel::getInstance()->getData(), NumeReKernel::getInstance()->getSettings());
 }
 
 
@@ -6166,11 +6181,10 @@ static CommandReturnValues cmd_hist(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
 
-    string sArgument = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+    string sArgument = evaluateParameterValues(sCmd);
     string sCommand = findCommand(sCmd).sString;
 
     if (matchParams(sCmd, "data") && _data.isValid())
@@ -6245,7 +6259,7 @@ static CommandReturnValues cmd_hist(string& sCmd)
                 else
                     sArgument = "hist -cache c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
 
-                sArgument = BI_evalParamString(sArgument, _parser, _data, _option, _functions);
+                sArgument = evaluateParameterValues(sArgument);
                 plugin_histogram(sArgument, _cache, _data, _out, _option, _pData, true, false);
                 break;
             }
@@ -6610,16 +6624,14 @@ static CommandReturnValues cmd_remove(string& sCmd)
 static CommandReturnValues cmd_rename(string& sCmd)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
 
     // If the current command line contains strings
     // handle them here
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+        sCmd = evaluateParameterValues(sCmd);
 
     // Handle legacy and new syntax in these two cases
     if (_data.matchTableAsParameter(sCmd, '=').length())
@@ -6694,7 +6706,7 @@ static CommandReturnValues cmd_reload(string& sCmd)
         if (matchParams(sCmd, "data", '='))
             addArgumentQuotes(sCmd, "data");
 
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
         {
             if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
@@ -7056,7 +7068,7 @@ static CommandReturnValues cmd_list(string& sCmd)
     string sArgument;
 
     if (matchParams(sCmd, "files") || (matchParams(sCmd, "files", '=')))
-        BI_ListFiles(sCmd, _option);
+        listFiles(sCmd, _option);
     else if (matchParams(sCmd, "var"))
         parser_ListVar(_parser, _option, _data);
     else if (matchParams(sCmd, "const"))
@@ -7114,7 +7126,7 @@ static CommandReturnValues cmd_list(string& sCmd)
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
-        BI_ListOptions(_option);
+        listOptions(_option);
     }
     else if (matchParams(sCmd, "units"))
         parser_ListUnits(_option);
@@ -7161,7 +7173,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
         if (matchParams(sCmd, "data", '='))
             addArgumentQuotes(sCmd, "data");
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
         {
             if (matchParams(sCmd, "slice", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slice", '=') + 5) == "xz")
                 nArgument = -1;
@@ -7348,7 +7360,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
             if (matchParams(sCmd, "script", '='))
                 addArgumentQuotes(sCmd, "script");
-            if (!BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+            if (!extractFirstParameterStringValue(sCmd, sArgument))
             {
                 do
                 {
@@ -7415,11 +7427,11 @@ static CommandReturnValues cmd_load(string& sCmd)
         if (matchParams(sCmd, "app"))
         {
             sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5), "-app=");
-            append_data(sCmd, _data, _option, _parser);
+            append_data(sCmd, _data, _option);
             return COMMAND_PROCESSED;
         }
 
-        if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+        if (extractFirstParameterStringValue(sCmd, sArgument))
         {
             if (matchParams(sCmd, "slice", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slice", '=') + 5) == "xz")
                 nArgument = -1;
@@ -7540,7 +7552,7 @@ static CommandReturnValues cmd_execute(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    BI_executeCommand(sCmd, _parser, _data, _functions, _option);
+    executeCommand(sCmd, _parser, _data, _functions, _option);
     return COMMAND_PROCESSED;
 }
 
@@ -7585,10 +7597,7 @@ static CommandReturnValues cmd_paste(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_progress(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
     int nArgument;
@@ -7596,7 +7605,7 @@ static CommandReturnValues cmd_progress(string& sCmd)
     string sExpr;
 
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        sCmd = BI_evalParamString(sCmd, _parser, _data, _option, _functions);
+        sCmd = evaluateParameterValues(sCmd);
 
     if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
     {

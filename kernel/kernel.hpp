@@ -160,6 +160,7 @@ class NumeReKernel
         bool evaluateStrings(string& sLine, string& sCache, const string& sCmdCache, bool& bWriteToCache, KernelStatus& nReturnVal);
         void createCalculationAnswer(int nNum, value_type* v, const string& sCmdCache);
         void resetAfterError(string& sCmdCache);
+        string getGreeting();
 
         // Functions for initializing the numerical parser
         void defineOperators();
@@ -302,6 +303,7 @@ class NumeReKernel
             return _manager;
         }
 
+        void displaySplash();
         map<string,string> getPluginLanguageStrings();
         map<string,string> getFunctionLanguageStrings();
         vector<string> getPluginCommands();

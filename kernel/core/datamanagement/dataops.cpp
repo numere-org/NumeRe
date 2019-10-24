@@ -25,9 +25,9 @@
 #include "../utils/BasicExcel.hpp"
 #include "../ui/error.hpp"
 #include "../structures.hpp"
+#include "../built-in.hpp"
 
 
-bool BI_parseStringArgs(const string& sCmd, string& sArgument, Parser& _parser, Datafile& _data, Settings& _option);
 string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option);
 static string getSourceForDataOperation(const string& sExpression, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option);
 static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const Datafile& _data, bool bTranspose);
@@ -144,7 +144,7 @@ void load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFile
 		else if (c == _lang.YES())		// Anhaengen?
 		{
 		    // append the data -> hand the control over to the corresponding function
-			append_data("data -app=\"" + sFileName + "\" i", _data, _option, _parser);
+			append_data("data -app=\"" + sFileName + "\" i", _data, _option);
 		}
 		else				// Nein? Dann vielleicht ueberschreiben?
 		{
@@ -436,7 +436,7 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 }
 
 // 4. Sehr spannend: Einzelne Datenreihen zu einer einzelnen Tabelle verknuepfen
-void append_data(const string& __sCmd, Datafile& _data, Settings& _option, Parser& _parser)
+void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
 {
 	string sCmd = __sCmd;
 	Datafile _cache;
@@ -457,7 +457,7 @@ void append_data(const string& __sCmd, Datafile& _data, Settings& _option, Parse
 
 	// Parse the arguments if they contain strings. The argument is returned
 	// in the corresponding passed argument string variable
-	if (BI_parseStringArgs(sCmd, sArgument, _parser, _data, _option))
+	if (extractFirstParameterStringValue(sCmd, sArgument))
 	{
 	    // If the command expression contains the parameter "all" and the
 	    // argument (i.e. the filename) contains wildcards
@@ -1112,7 +1112,7 @@ bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions
 }
 
 // This function writes the string contents in the command to a file
-bool writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
+bool writeToFile(string& sCmd, Datafile& _data, Settings& _option)
 {
 	fstream fFile;
 	string sFileName = "";
@@ -1149,7 +1149,7 @@ bool writeToFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opti
 			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))
 				NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
 			addArgumentQuotes(sParams, "file");
-			BI_parseStringArgs(sParams, sFileName, _parser, _data, _option);
+			extractFirstParameterStringValue(sParams, sFileName);
 			StripSpaces(sFileName);
 			if (!sFileName.length())
 				return false;
@@ -1503,7 +1503,7 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 		addArgumentQuotes(sParams, "file");
 
 		// Parse the string argument and return it in the second argument
-		BI_parseStringArgs(sParams, sFileName, _parser, _data, _option);
+		extractFirstParameterStringValue(sParams, sFileName);
 
 		// Strip the spaces and ensure that there are other characters
 		StripSpaces(sFileName);
