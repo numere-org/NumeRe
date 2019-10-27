@@ -417,3 +417,54 @@ string evaluateParameterValues(const string& sCmd)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function finds the numerical
+/// argument to the selected command line
+/// parameter and evaluates it.
+///
+/// \param sCmd const string&
+/// \param sParam const string&
+/// \param _parser Parser&
+/// \param nArgument int&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool parseCmdArg(const string& sCmd, const string& sParam, Parser& _parser, int& nArgument)
+{
+	if (!sCmd.length() || !sParam.length())
+		return false;
+
+	unsigned int nPos = 0;
+
+	if (matchParams(sCmd, sParam) || matchParams(sCmd, sParam, '='))
+	{
+		if (matchParams(sCmd, sParam))
+			nPos = matchParams(sCmd, sParam) + sParam.length();
+		else
+			nPos = matchParams(sCmd, sParam, '=') + sParam.length();
+
+		while (sCmd[nPos] == ' ' && nPos < sCmd.length() - 1)
+			nPos++;
+
+		if (sCmd[nPos] == ' ' || nPos >= sCmd.length() - 1)
+			return false;
+
+		string sArg = sCmd.substr(nPos);
+
+		if (sArg[0] == '(')
+			sArg = sArg.substr(1, getMatchingParenthesis(sArg) - 1);
+		else
+			sArg = sArg.substr(0, sArg.find(' '));
+
+		_parser.SetExpr(sArg);
+
+		if (isnan(_parser.Eval()) || isinf(_parser.Eval()))
+			return false;
+
+		nArgument = intCast(_parser.Eval());
+		return true;
+	}
+
+	return false;
+}
+

@@ -1658,6 +1658,84 @@ static void autoSave(Datafile& _data, Output& _out, Settings& _option)
 
 
 /////////////////////////////////////////////////
+/// \brief This static function extracts the path
+/// from the selected parameter. It is only used
+/// by cmd_set().
+///
+/// \param sCmd string&
+/// \param sPathParameter const string&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string getPathForSetting(string& sCmd, const string& sPathParameter)
+{
+    string sPath;
+
+    if (matchParams(sCmd, sPathParameter, '='))
+        addArgumentQuotes(sCmd, sPathParameter);
+
+    while (sCmd.find('\\') != string::npos)
+        sCmd[sCmd.find('\\')] = '/';
+
+    if (!extractFirstParameterStringValue(sCmd, sPath))
+    {
+        NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
+
+        do
+        {
+            NumeReKernel::printPreFmt("|\n|<- ");
+            NumeReKernel::getline(sPath);
+        }
+        while (!sPath.length());
+    }
+
+    return sPath;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function copies the contents
+/// of the selected table to the provided temporary
+/// Datafile object. This function evaluates user-
+/// provided indices during the copy process.
+///
+/// \param sCmd const string&
+/// \param _accessParser DataAccessParser&
+/// \param _data Datafile&
+/// \param _cache Datafile&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _accessParser, Datafile& _data, Datafile& _cache)
+{
+    // Validize the obtained index sets
+    if (!isValidIndexSet(_accessParser.getIndices()))
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
+
+    // Copy the target data to a new table
+    if (_accessParser.getIndices().row.isOpenEnd())
+        _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
+
+    if (_accessParser.getIndices().col.isOpenEnd())
+        _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
+
+    _cache.setCacheSize(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
+
+    for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
+    {
+        for (size_t j = 0; j < _accessParser.getIndices().col.size(); j++)
+        {
+            if (!i)
+                _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_accessParser.getIndices().col[j], _accessParser.getDataObject()));
+
+            if (_data.isValidEntry(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
+                _cache.writeToTable(i, j, "cache", _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function handles the
 /// swapping of the data of the values of two
 /// tables.
@@ -1743,9 +1821,6 @@ static CommandReturnValues saveDataObject(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
-    // Create the caches map
-    map<string, long long int> mCaches = _data.getTableMap();
-	mCaches["data"] = -1;
 	string sArgument;
 
     size_t nPrecision = _option.getPrecision();
@@ -1762,91 +1837,61 @@ static CommandReturnValues saveDataObject(string& sCmd)
 
     // Copy the selected data into another datafile instance and
     // save the copied data
-    for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
+    DataAccessParser _access(sCmd);
+
+    if (_access.getDataObject().length())
     {
-        if (sCmd.find(iter->first + "(") != string::npos
-                && (!sCmd.find(iter->first + "(")
-                    || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
+        // Create the new instance
+        Datafile _cache;
+
+        // Update the necessary parameters
+        _cache.setTokens(_option.getTokenPaths());
+        _cache.setPath(_data.getPath(), false, _option.getExePath());
+        _cache.setCacheStatus(true);
+
+        copyDataToTemporaryTable(sCmd, _access, _data, _cache);
+
+        // Update the name of the  cache table (force it)
+        if (_access.getDataObject() != "cache")
+            _cache.renameTable("cache", (_access.getDataObject() == "data" ? "copy_of_data" : _access.getDataObject()), true);
+
+        // If the command line contains string variables
+        // get those values here
+        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
+
+        if (matchParams(sCmd, "file", '='))
+            addArgumentQuotes(sCmd, "file");
+
+        // Try to extract the file name, if it was passed
+        if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument))
         {
-            // Create the new instance
-            Datafile _cache;
-
-            // Update the necessary parameters
-            _cache.setTokens(_option.getTokenPaths());
-            _cache.setPath(_data.getPath(), false, _option.getExePath());
-            _cache.setCacheStatus(true);
-
-            // Get the indices passed with the selected table
-            Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
-
-            // Ensure that the indices are valid
-            if (!isValidIndexSet(_idx))
-                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
-
-            // Set the maximal dimensions, if they were
-            // selected as open end
-            if (_idx.row.isOpenEnd())
-                _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
-
-            if (_idx.col.isOpenEnd())
-                _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
-
-            // Set the target size
-            _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
-
-            // Write the data to the temporary datafile object
-            for (size_t i = 0; i < _idx.row.size(); i++)
-            {
-                for (size_t j = 0; j < _idx.col.size(); j++)
-                {
-                    if (!i)
-                        _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], iter->first));
-
-                    if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                        _cache.writeToTable(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
-                }
-            }
-
-            // Update the name of the  cache table (force it)
-            if (iter->first != "cache")
-                _cache.renameTable("cache", (iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first)), true);
-
-            // If the command line contains string variables
-            // get those values here
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-            if (matchParams(sCmd, "file", '='))
-                addArgumentQuotes(sCmd, "file");
-
-            // Try to extract the file name, if it was passed
-            if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument))
-            {
-                if (_cache.saveFile(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), sArgument, nPrecision))
-                {
-                    if (_option.getSystemPrintStatus())
-                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
-
-                    return COMMAND_PROCESSED;
-                }
-                else
-                    throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
-            }
-            else
-                _cache.setPrefix(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first));
-
-            // Auto-generate a file name during saving
-            if (_cache.saveFile(iter->second == -1 ? "copy_of_" + (iter->first) : (iter->first), "", nPrecision))
+            if (_cache.saveFile(_access.getDataObject() == "data" ? "copy_of_data" : _access.getDataObject(), sArgument, nPrecision))
             {
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
+
+                return COMMAND_PROCESSED;
             }
             else
-                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
-
-            return COMMAND_PROCESSED;
+                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
         }
+        else
+            _cache.setPrefix(_access.getDataObject() == "data" ? "copy_of_data" : _access.getDataObject());
+
+        // Auto-generate a file name during saving
+        if (_cache.saveFile(_access.getDataObject() == "data" ? "copy_of_data" : _access.getDataObject(), "", nPrecision))
+        {
+            if (_option.getSystemPrintStatus())
+                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
+        }
+        else
+            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
+
+        return COMMAND_PROCESSED;
     }
+    else
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
     return NO_COMMAND;
 }
@@ -4732,9 +4777,7 @@ static CommandReturnValues cmd_append(string& sCmd)
                 sCmd.insert(nPos + 1, 1, '"');
             }
             else
-            {
                 sCmd.insert(sCmd.find_last_not_of(' ') + 1, 1, '"');
-            }
         }
 
         sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7), "-app=");
@@ -4914,76 +4957,47 @@ static CommandReturnValues cmd_warn(string& sCmd)
 static CommandReturnValues cmd_stats(string& sCmd)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Output& _out = NumeReKernel::getInstance()->getOutput();
 
     string sArgument = evaluateParameterValues(sCmd);
 
     if (matchParams(sCmd, "data") && _data.isValid())
+    {
+        // DEPRECATED: Declared at v1.1.2rc2
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
         plugin_statistics(sArgument, _data, _out, _option, false, true);
+    }
     else if (_data.matchTableAsParameter(sCmd).length() && _data.isValidCache())
+    {
+        // DEPRECATED: Declared at v1.1.2rc2
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
         plugin_statistics(sArgument, _data, _out, _option, true, false);
+    }
     else
     {
-        // Create the caches map
-        map<string, long long int> mCaches = _data.getTableMap();
-        mCaches["data"] = -1;
+        DataAccessParser _accessParser(sCmd);
 
-        for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
+        if (_accessParser.getDataObject().length())
         {
-            if (matchParams(sCmd, iter->first) && _data.isValidCache())
-            {
-                plugin_statistics(sArgument, _data, _out, _option, true, false);
-                break;
-            }
-            else if (sCmd.find(iter->first + "(") != string::npos
-                     && (!sCmd.find(iter->first + "(")
-                         || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-            {
-                Datafile _cache;
-                _cache.setCacheStatus(true);
-                Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
+            Datafile _cache;
 
-                if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
-                    _data.setCacheStatus(true);
+            copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
 
-                if (!isValidIndexSet(_idx))
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+                NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-                if (_idx.row.isOpenEnd())
-                    _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
+            if (matchParams(sCmd, "export", '='))
+                addArgumentQuotes(sCmd, "export");
 
-                if (_idx.col.isOpenEnd())
-                    _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
+            sArgument = "stats -cache " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+            sArgument = evaluateParameterValues(sArgument);
+            plugin_statistics(sArgument, _cache, _out, _option, true, false);
 
-                _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
-
-                for (size_t i = 0; i < _idx.row.size(); i++)
-                {
-                    for (size_t j = 0; j < _idx.col.size(); j++)
-                    {
-                        if (!i)
-                            _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], iter->first));
-
-                        if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                            _cache.writeToTable(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
-                    }
-                }
-
-                if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-                    NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-                if (matchParams(sCmd, "export", '='))
-                    addArgumentQuotes(sCmd, "export");
-
-                _data.setCacheStatus(false);
-                sArgument = "stats -cache " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-                sArgument = evaluateParameterValues(sArgument);
-                plugin_statistics(sArgument, _cache, _out, _option, true, false);
-                return COMMAND_PROCESSED;
-            }
+            return COMMAND_PROCESSED;
         }
+        else
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
     }
 
     return COMMAND_PROCESSED;
@@ -5092,220 +5106,97 @@ static CommandReturnValues cmd_set(string& sCmd)
 
     if (matchParams(sCmd, "savepath") || matchParams(sCmd, "savepath", '='))
     {
-        if (matchParams(sCmd, "savepath", '='))
-        {
-            addArgumentQuotes(sCmd, "savepath");
-        }
-        while (sCmd.find('\\') != string::npos)
-            sCmd[sCmd.find('\\')] = '/';
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
-            //NumeReKernel::print("|-> Einen Pfad eingeben:" );
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-            }
-            while (!sArgument.length());
-        }
+        sArgument = getPathForSetting(sCmd, "savepath");
         _out.setPath(sArgument, true, _out.getProgramPath());
         _option.setSavePath(_out.getPath());
         _data.setSavePath(_option.getSavePath());
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-        //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+
         NumeReKernel::modifiedSettings = true;
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "loadpath") || matchParams(sCmd, "loadpath", '='))
     {
-        if (matchParams(sCmd, "loadpath", '='))
-        {
-            addArgumentQuotes(sCmd, "loadpath");
-        }
-        while (sCmd.find('\\') != string::npos)
-            sCmd[sCmd.find('\\')] = '/';
-
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
-            //NumeReKernel::print("|-> Einen Pfad eingeben:" );
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-            }
-            while (!sArgument.length());
-        }
+        sArgument = getPathForSetting(sCmd, "loadpath");
         _data.setPath(sArgument, true, _data.getProgramPath());
         _option.setLoadPath(_data.getPath());
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-        //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+
         NumeReKernel::modifiedSettings = true;
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "workpath") || matchParams(sCmd, "workpath", '='))
     {
-        if (matchParams(sCmd, "workpath", '='))
-        {
-            addArgumentQuotes(sCmd, "workpath");
-        }
-        while (sCmd.find('\\') != string::npos)
-            sCmd[sCmd.find('\\')] = '/';
-
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
-            //NumeReKernel::print("|-> Einen Pfad eingeben:" );
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-            }
-            while (!sArgument.length());
-        }
+        sArgument = getPathForSetting(sCmd, "workpath");
         FileSystem _fSys;
         _fSys.setTokens(_option.getTokenPaths());
         _fSys.setPath(sArgument, true, _data.getProgramPath());
         _option.setWorkPath(_fSys.getPath());
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-        //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+
         NumeReKernel::modifiedSettings = true;
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "viewer") || matchParams(sCmd, "viewer", '='))
     {
-        if (matchParams(sCmd, "viewer", '='))
-            addArgumentQuotes(sCmd, "viewer");
-        while (sCmd.find('\\') != string::npos)
-            sCmd[sCmd.find('\\')] = '/';
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
-            //NumeReKernel::print("|-> Einen Pfad eingeben:" );
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-            }
-            while (!sArgument.length());
-        }
+        sArgument = getPathForSetting(sCmd, "viewer");
         _option.setViewerPath(sArgument);
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage(  _lang.get("BUILTIN_CHECKKEYWORD_SET_PROGRAM", "Imageviewer")) );
-        //NumeReKernel::print("|-> Imageviewer erfolgreich deklariert." );
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "editor") || matchParams(sCmd, "editor", '='))
     {
-        if (matchParams(sCmd, "editor", '='))
-            addArgumentQuotes(sCmd, "editor");
-        while (sCmd.find('\\') != string::npos)
-            sCmd[sCmd.find('\\')] = '/';
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
-            //NumeReKernel::print("|-> Einen Pfad eingeben:" );
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-            }
-            while (!sArgument.length());
-        }
+        sArgument = getPathForSetting(sCmd, "editor");
         _option.setEditorPath(sArgument);
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage(  _lang.get("BUILTIN_CHECKKEYWORD_SET_PROGRAM", "Texteditor")) );
-        //NumeReKernel::print("|-> Texteditor erfolgreich deklariert." );
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "scriptpath") || matchParams(sCmd, "scriptpath", '='))
     {
-        if (matchParams(sCmd, "scriptpath", '='))
-        {
-            addArgumentQuotes(sCmd, "scriptpath");
-        }
-        while (sCmd.find('\\') != string::npos)
-            sCmd[sCmd.find('\\')] = '/';
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
-            //NumeReKernel::print("|-> Einen Pfad eingeben:" );
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-            }
-            while (!sArgument.length());
-        }
+        sArgument = getPathForSetting(sCmd, "scriptpath");
         _script.setPath(sArgument, true, _script.getProgramPath());
         _option.setScriptPath(_script.getPath());
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-        //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+
         NumeReKernel::modifiedSettings = true;
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "plotpath") || matchParams(sCmd, "plotpath", '='))
     {
-        if (matchParams(sCmd, "plotpath", '='))
-            addArgumentQuotes(sCmd, "plotpath");
-        while (sCmd.find('\\') != string::npos)
-            sCmd[sCmd.find('\\')] = '/';
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
-            //NumeReKernel::print("|-> Einen Pfad eingeben:" );
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-            }
-            while (!sArgument.length());
-        }
+        sArgument = getPathForSetting(sCmd, "plotpath");
         _pData.setPath(sArgument, true, _pData.getProgramPath());
         _option.setPlotOutputPath(_pData.getPath());
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-        //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+
         NumeReKernel::modifiedSettings = true;
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "procpath") || matchParams(sCmd, "procpath", '='))
     {
-        if (matchParams(sCmd, "procpath", '='))
-            addArgumentQuotes(sCmd, "procpath");
-        while (sCmd.find('\\') != string::npos)
-            sCmd[sCmd.find('\\')] = '/';
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_GIVEPATH") + ":") );
-            //NumeReKernel::print("|-> Einen Pfad eingeben:" );
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-            }
-            while (!sArgument.length());
-        }
+        sArgument = getPathForSetting(sCmd, "procpath");
         _option.setProcPath(sArgument);
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-        //NumeReKernel::print("|-> Dateipfad erfolgreich aktualisiert." );
+
         NumeReKernel::modifiedSettings = true;
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "plotfont") || matchParams(sCmd, "plotfont", '='))
     {
         if (matchParams(sCmd, "plotfont", '='))
             addArgumentQuotes(sCmd, "plotfont");
+
         if (!extractFirstParameterStringValue(sCmd, sArgument))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_DEFAULTFONT"))) );
-            //NumeReKernel::print("|-> Standardschriftart angeben:" );
+
             do
             {
                 NumeReKernel::printPreFmt("|\n|<- ");
@@ -5313,24 +5204,26 @@ static CommandReturnValues cmd_set(string& sCmd)
             }
             while (!sArgument.length());
         }
+
         if (sArgument[0] == '"')
             sArgument.erase(0, 1);
+
         if (sArgument[sArgument.length() - 1] == '"')
             sArgument.erase(sArgument.length() - 1);
+
         _option.setDefaultPlotFont(sArgument);
         _fontData.LoadFont(_option.getDefaultPlotFont().c_str(), _option.getExePath().c_str());
         _pData.setFont(_option.getDefaultPlotFont());
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_DEFAULTFONT"))) );
-        //NumeReKernel::print("|-> Standardschriftart wurde erfolgreich eingestellt." );
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "precision") || matchParams(sCmd, "precision", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "precision", _parser, nArgument) || (!nArgument || nArgument > 14))
+        if (!parseCmdArg(sCmd, "precision", _parser, nArgument) || (!nArgument || nArgument > 14))
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_PRECISION")) + " (1-14)") );
-            //NumeReKernel::print(toSystemCodePage("|-> Präzision eingeben: (1-14)") );
+
             do
             {
                 NumeReKernel::printPreFmt("|\n|<- ");
@@ -5338,133 +5231,88 @@ static CommandReturnValues cmd_set(string& sCmd)
                 nArgument = StrToInt(sArgument);
             }
             while (!nArgument || nArgument > 14);
-
         }
+
         _option.setprecision(nArgument);
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_PRECISION"))) );
-        //NumeReKernel::print("|-> Präzision wurde erfolgreich eingestellt." );
-        return COMMAND_PROCESSED;
-    }
-    else if (matchParams(sCmd, "faststart") || matchParams(sCmd, "faststart", '='))
-    {
-        if (!parser_parseCmdArg(sCmd, "faststart", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
-            nArgument = !_option.getbFastStart();
-            /*NumeReKernel::print("|-> Schneller Start? (1 = ja, 0 = nein)" );
-            do
-            {
-                NumeReKernel::print("|" );
-                NumeReKernel::print("|<- ";
-                getline(cin, sArgument);
-                nArgument = StrToInt(sArgument);
-            }
-            while (nArgument != 0 && nArgument != 1);*/
-        }
-        _option.setbFastStart((bool)nArgument);
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_PARSERTEST", _lang.get("COMMON_WITHOUT")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_PARSERTEST", _lang.get("COMMON_WITH")), _option) );
-        }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "draftmode") || matchParams(sCmd, "draftmode", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "draftmode", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "draftmode", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbUseDraftMode();
-        }
+
         _option.setbUseDraftMode((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DRAFTMODE"), _lang.get("COMMON_ACTIVE")), _option) );
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DRAFTMODE"), _lang.get("COMMON_INACTIVE")), _option) );
-            /*if (nArgument)
-                NumeReKernel::print(LineBreak("|-> Entwurfsmodus aktiviert.", _option) );
-            else
-                NumeReKernel::print(LineBreak("|-> Entwurfsmodus deaktiviert.", _option) );*/
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "extendedfileinfo") || matchParams(sCmd, "extendedfileinfo", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "extendedfileinfo", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "extendedfileinfo", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbShowExtendedFileInfo();
-        }
+
         _option.setbExtendedFileInfo((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_EXTENDEDINFO"), _lang.get("COMMON_ACTIVE")), _option) );
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_EXTENDEDINFO"), _lang.get("COMMON_INACTIVE")), _option) );
-            /*if (nArgument)
-                NumeReKernel::print(LineBreak("|-> Erweiterte Dateiinformationen aktiviert.", _option) );
-            else
-                NumeReKernel::print(LineBreak("|-> Erweiterte Dateiinformationen deaktiviert.", _option) );*/
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "loademptycols") || matchParams(sCmd, "loademptycols", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "loademptycols", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "loademptycols", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbLoadEmptyCols();
-        }
+
         _option.setbLoadEmptyCols((bool)nArgument);
         _data.setbLoadEmptyCols((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOADEMPTYCOLS"), _lang.get("COMMON_ACTIVE")), _option) );
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOADEMPTYCOLS"), _lang.get("COMMON_INACTIVE")), _option) );
-            /*if (nArgument)
-                NumeReKernel::print(LineBreak("|-> Laden leerer Spalten aktiviert.", _option) );
-            else
-                NumeReKernel::print(LineBreak("|-> Laden leerer Spalten deaktiviert.", _option) );*/
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "logfile") || matchParams(sCmd, "logfile", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "logfile", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "logfile", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbUseLogFile();
-        }
+
         _option.setbUseLogFile((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOGFILE"), _lang.get("COMMON_ACTIVE")), _option) );
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOGFILE"), _lang.get("COMMON_INACTIVE")), _option) );
-            /*if (nArgument)
-                NumeReKernel::print(LineBreak("|-> Protokollierung aktiviert.", _option) );
-            else
-                NumeReKernel::print(LineBreak("|-> Protokollierung deaktiviert.", _option) );*/
+
             NumeReKernel::print(LineBreak("|   (" + _lang.get("BUILTIN_CHECKKEYWORD_SET_RESTART_REQUIRED") + ")", _option) );
-            //NumeReKernel::print(LineBreak("|   (Einstellung wird zum nächsten Start aktiv)", _option) );
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "mode") || matchParams(sCmd, "mode", '='))
     {
         if (matchParams(sCmd, "mode", '='))
             addArgumentQuotes(sCmd, "mode");
+
         extractFirstParameterStringValue(sCmd, sArgument);
+
         if (sArgument.length() && sArgument == "debug")
         {
             if (_option.getUseDebugger())
             {
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEBUGGER"), _lang.get("COMMON_INACTIVE")), _option) );
-                //NumeReKernel::print(LineBreak("|-> Debugger wurde deaktiviert.", _option) );
                 _option.setDebbuger(false);
                 NumeReKernel::getInstance()->getDebugger().setActive(false);
             }
@@ -5473,9 +5321,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 _option.setDebbuger(true);
                 NumeReKernel::getInstance()->getDebugger().setActive(true);
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEBUGGER"), _lang.get("COMMON_ACTIVE")), _option) );
-                //NumeReKernel::print(LineBreak("|-> Debugger wurde aktiviert.", _option) );
             }
-            return COMMAND_PROCESSED;
         }
         else if (sArgument.length() && sArgument == "developer")
         {
@@ -5489,12 +5335,14 @@ static CommandReturnValues cmd_set(string& sCmd)
             {
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_ACTIVE"), _option) );
                 sArgument = "";
+
                 do
                 {
                     NumeReKernel::printPreFmt("|\n|<- ");
                     NumeReKernel::getline(sArgument);
                 }
                 while (!sArgument.length());
+
                 if (sArgument == AutoVersion::STATUS)
                 {
                     _option.setbDebug(true);
@@ -5502,21 +5350,17 @@ static CommandReturnValues cmd_set(string& sCmd)
                     _parser.EnableDebugDump(true, true);
                 }
                 else
-                {
                     NumeReKernel::print(toSystemCodePage( _lang.get("COMMON_CANCEL")) );
-                }
             }
-            return COMMAND_PROCESSED;
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "compact") || matchParams(sCmd, "compact", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "compact", _parser, nArgument) || !(nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "compact", _parser, nArgument) || !(nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbCompact();
-        }
+
         _option.setbCompact((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
@@ -5524,15 +5368,14 @@ static CommandReturnValues cmd_set(string& sCmd)
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_COMPACT"), _lang.get("COMMON_INACTIVE")), _option) );
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "greeting") || matchParams(sCmd, "greeting", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "greeting", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "greeting", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbGreeting();
-        }
+
         _option.setbGreeting((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
@@ -5540,15 +5383,14 @@ static CommandReturnValues cmd_set(string& sCmd)
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_GREETING"), _lang.get("COMMON_INACTIVE")), _option) );
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "hints") || matchParams(sCmd, "hints", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "hints", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "hints", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbShowHints();
-        }
+
         _option.setbShowHints((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
@@ -5556,15 +5398,14 @@ static CommandReturnValues cmd_set(string& sCmd)
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_HINTS"), _lang.get("COMMON_INACTIVE")), _option) );
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "useescinscripts") || matchParams(sCmd, "useescinscripts", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "useescinscripts", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "useescinscripts", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbUseESCinScripts();
-        }
+
         _option.setbUseESCinScripts((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
@@ -5572,15 +5413,14 @@ static CommandReturnValues cmd_set(string& sCmd)
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_INACTIVE")), _option) );
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "usecustomlang") || matchParams(sCmd, "usecustomlang", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "usecustomlang", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "usecustomlang", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getUseCustomLanguageFiles();
-        }
+
         _option.setUserLangFiles((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
@@ -5588,15 +5428,14 @@ static CommandReturnValues cmd_set(string& sCmd)
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_CUSTOM_LANG"), _lang.get("COMMON_INACTIVE")), _option) );
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "externaldocwindow") || matchParams(sCmd, "externaldocwindow", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "externaldocwindow", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "externaldocwindow", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getUseExternalViewer();
-        }
+
         _option.setExternalDocViewer((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
@@ -5604,15 +5443,14 @@ static CommandReturnValues cmd_set(string& sCmd)
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DOC_VIEWER"), _lang.get("COMMON_INACTIVE")), _option) );
         }
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "defcontrol") || matchParams(sCmd, "defcontrol", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "defcontrol", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-        {
+        if (!parseCmdArg(sCmd, "defcontrol", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbDefineAutoLoad();
-        }
+
         _option.setbDefineAutoLoad((bool)nArgument);
+
         if (_option.getSystemPrintStatus())
         {
             if (nArgument)
@@ -5620,16 +5458,16 @@ static CommandReturnValues cmd_set(string& sCmd)
             else
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEFCONTROL"), _lang.get("COMMON_INACTIVE")), _option) );
         }
+
         if (_option.getbDefineAutoLoad() && !_functions.getDefinedFunctions() && fileExists(_option.getExePath() + "\\functions.def"))
             _functions.load(_option);
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "autosave") || matchParams(sCmd, "autosave", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "autosave", _parser, nArgument) && !nArgument)
+        if (!parseCmdArg(sCmd, "autosave", _parser, nArgument) && !nArgument)
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_AUTOSAVE") + "? [sec]") );
-            //NumeReKernel::print(toSystemCodePage("|-> Intervall für automatische Speicherung? [sec]") );
+
             do
             {
                 NumeReKernel::printPreFmt("|\n|<- ");
@@ -5638,18 +5476,18 @@ static CommandReturnValues cmd_set(string& sCmd)
             }
             while (!nArgument);
         }
+
         _option.setAutoSaveInterval(nArgument);
+
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_AUTOSAVE"))) );
-        //NumeReKernel::print("|-> Automatische Speicherung alle " + _option.getAutoSaveInterval() + " sec." );
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "buffersize") || matchParams(sCmd, "buffersize", '='))
     {
-        if (!parser_parseCmdArg(sCmd, "buffersize", _parser, nArgument) || nArgument < 300)
+        if (!parseCmdArg(sCmd, "buffersize", _parser, nArgument) || nArgument < 300)
         {
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_BUFFERSIZE") + "? (>= 300)") );
-            //NumeReKernel::print(toSystemCodePage("|-> Buffergröße? (Größer oder gleich 300)") );
+
             do
             {
                 NumeReKernel::printPreFmt("|\n|<- ");
@@ -5658,59 +5496,42 @@ static CommandReturnValues cmd_set(string& sCmd)
             }
             while (nArgument < 300);
         }
+
         _option.setWindowBufferSize(0, (unsigned)nArgument);
-        //if (ResizeConsole(_option))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_BUFFERSIZE"))) );
-            //NumeReKernel::print("|-> Buffer erfolgreich aktualisiert." );
-        }
-        /*else
-            throw;*/
+
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_BUFFERSIZE"))) );
+
         NumeReKernel::modifiedSettings = true;
-        return COMMAND_PROCESSED;
     }
     else if (matchParams(sCmd, "windowsize"))
     {
         if (matchParams(sCmd, "x", '='))
         {
-            parser_parseCmdArg(sCmd, "x", _parser, nArgument);
-            //nArgument = matchParams(sCmd, "x", '=')+1;
+            parseCmdArg(sCmd, "x", _parser, nArgument);
             _option.setWindowSize((unsigned)nArgument, 0);
             _option.setWindowBufferSize(_option.getWindow() + 1, 0);
             NumeReKernel::nLINE_LENGTH = _option.getWindow();
-            //NumeReKernel::print(nArgument );
-
         }
+
         if (matchParams(sCmd, "y", '='))
         {
-            parser_parseCmdArg(sCmd, "y", _parser, nArgument);
-            //nArgument = matchParams(sCmd, "y", '=')+1;
+            parseCmdArg(sCmd, "y", _parser, nArgument);
             _option.setWindowSize(0, (unsigned)nArgument);
+
             if (_option.getWindow(1) + 1 > _option.getBuffer(1))
                 _option.setWindowBufferSize(0, _option.getWindow(1) + 1);
-            //NumeReKernel::print(nArgument );
         }
-        //if (ResizeConsole(_option))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_WINDOWSIZE"))) );
-            //NumeReKernel::print(LineBreak("|-> Fenstergröße erfolgreich aktualisiert.", _option) );
-        }
-        //else
-        //    throw; //NumeReKernel::print(LineBreak("|-> Ein Fehler ist aufgetreten!", _option) );
-        return COMMAND_PROCESSED;
+
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_WINDOWSIZE"))) );
     }
     else if (matchParams(sCmd, "save"))
-    {
         _option.save(_option.getExePath());
-        return COMMAND_PROCESSED;
-    }
     else
-    {
         doc_Help("set", _option);
-        return COMMAND_PROCESSED;
-    }
+
+    return COMMAND_PROCESSED;
 }
 
 
@@ -5884,7 +5705,6 @@ static CommandReturnValues cmd_show(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
 
     // Handle the compact mode (probably not needed any more)
     if (sCmd.substr(0, 5) == "showf")
@@ -6049,69 +5869,62 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     if (!_data.containsTablesOrClusters(sCmd))
         return COMMAND_PROCESSED;
 
-    for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
+    DataAccessParser _access(sCmd);
+
+    if (_access.getDataObject().length())
     {
-        if (sCmd.find(iter->first + "(") != string::npos
-                && (!sCmd.find(iter->first + "(")
-                    || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2))))
-                && iter->second >= 0)
+        if (!isValidIndexSet(_access.getIndices()))
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject());
+
+        if (_access.getIndices().row.isOpenEnd())
+            _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
+
+        if (_access.getIndices().col.isOpenEnd())
+            _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
+
+        if (matchParams(sCmd, "grid"))
         {
-            sArgument = sCmd.substr(sCmd.find(iter->first + "("), (iter->first).length() + getMatchingParenthesis(sCmd.substr(sCmd.find(iter->first + "(") + (iter->first).length())) + 1);
-            break;
+            if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::GRID))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + _access.getDataObject() + "\""));
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+        }
+        else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
+        {
+            if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::ALL))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + _access.getDataObject() + "\""));
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+        }
+        else if (matchParams(sCmd, "lines"))
+        {
+            if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::LINES))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_LINES")));
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+        }
+        else if (matchParams(sCmd, "cols"))
+        {
+            if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::COLS))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_COLS")));
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
     }
-
-    Indices _idx = parser_getIndices(sArgument, _parser, _data, _option);
-
-    if (!isValidIndexSet(_idx))
-        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument);
-
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _data.getLines(sArgument.substr(0, sArgument.find('(')), false)-1);
-
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _data.getCols(sArgument.substr(0, sArgument.find('(')))-1);
-
-    if (matchParams(sCmd, "grid"))
-    {
-        if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::GRID))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""));
-        }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
-    }
-    else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
-    {
-        if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::ALL))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""));
-        }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
-    }
-    else if (matchParams(sCmd, "lines"))
-    {
-        if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::LINES))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_LINES")));
-        }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
-    }
-    else if (matchParams(sCmd, "cols"))
-    {
-        if (_data.smooth(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::COLS))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_COLS")));
-        }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, sArgument, sArgument);
-    }
+    else
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
     return COMMAND_PROCESSED;
 }
@@ -6179,7 +5992,6 @@ static CommandReturnValues cmd_swap(string& sCmd)
 static CommandReturnValues cmd_hist(string& sCmd)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
@@ -6193,77 +6005,40 @@ static CommandReturnValues cmd_hist(string& sCmd)
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRACATED"));
         plugin_histogram(sArgument, _data, _data, _out, _option, _pData, false, true);
     }
-    else if (matchParams(sCmd, "cache") && _data.isValidCache())
+    else if (_data.matchTableAsParameter(sCmd).length())
     {
-        // DEPRECATED: Declared at v1.1.2rc1
+        // a cache as object, passed as parameter
+        // DEPRECATED: Declared at v1.1.2rc2
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
         plugin_histogram(sArgument, _data, _data, _out, _option, _pData, true, false);
     }
     else
     {
-        // Create the caches map
-        map<string, long long int> mCaches = _data.getTableMap();
-        mCaches["data"] = -1;
+        DataAccessParser _accessParser(sCmd);
 
-        for (auto iter = mCaches.begin(); iter != mCaches.end(); ++iter)
+        if (_accessParser.getDataObject().length())
         {
-            if (matchParams(sCmd, iter->first) && _data.isValidCache())
-            {
-                plugin_histogram(sArgument, _data, _data, _out, _option, _pData, true, false);
-                break;
-            }
-            else if (sCmd.find(iter->first + "(") != string::npos
-                     && (!sCmd.find(iter->first + "(")
-                         || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-            {
-                Datafile _cache;
-                _cache.setCacheStatus(true);
-                Indices _idx = parser_getIndices(sCmd, _parser, _data, _option);
+            Datafile _cache;
 
-                if (sCmd.find(iter->first + "(") != string::npos && iter->second != -1)
-                    _data.setCacheStatus(true);
+            copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
 
-                if (!isValidIndexSet(_idx))
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, iter->first + "(", iter->first);
+            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+                NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-                if (_idx.row.isOpenEnd())
-                    _idx.row.setRange(0, _data.getLines(iter->first, false)-1);
+            if (matchParams(sCmd, "export", '='))
+                addArgumentQuotes(sCmd, "export");
 
-                if (_idx.col.isOpenEnd())
-                    _idx.col.setRange(0, _data.getCols(iter->first, false)-1);
+            if (sCommand == "hist2d")
+                sArgument = "hist2d -cache c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+            else
+                sArgument = "hist -cache c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
 
-                _cache.setCacheSize(_idx.row.size(), _idx.col.size(), "cache");
-
-                for (unsigned int i = 0; i < _idx.row.size(); i++)
-                {
-                    for (unsigned int j = 0; j < _idx.col.size(); j++)
-                    {
-                        if (!i)
-                            _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], iter->first));
-
-                        if (_data.isValidEntry(_idx.row[i], _idx.col[j], iter->first))
-                            _cache.writeToTable(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], iter->first));
-                    }
-                }
-
-                if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-                    NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-                if (matchParams(sCmd, "export", '='))
-                    addArgumentQuotes(sCmd, "export");
-
-                _data.setCacheStatus(false);
-
-                if (sCommand == "hist2d")
-                    sArgument = "hist2d -cache c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-                else
-                    sArgument = "hist -cache c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-
-                sArgument = evaluateParameterValues(sArgument);
-                plugin_histogram(sArgument, _cache, _data, _out, _option, _pData, true, false);
-                break;
-            }
+            sArgument = evaluateParameterValues(sArgument);
+            plugin_histogram(sArgument, _cache, _data, _out, _option, _pData, true, false);
+            return COMMAND_PROCESSED;
         }
+        else
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
     }
 
     return COMMAND_PROCESSED;
@@ -6460,89 +6235,83 @@ static CommandReturnValues cmd_resample(string& sCmd)
     if (!_data.containsTablesOrClusters(sCmd))
         return COMMAND_PROCESSED;
 
-    for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
+    DataAccessParser _access(sCmd);
+
+    if (_access.getDataObject().length())
     {
-        if (sCmd.find(iter->first + "(") != string::npos
-                && (!sCmd.find(iter->first + "(")
-                    || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
+        if (matchParams(sCmd, "samples", '='))
         {
-            sArgument = sCmd.substr(sCmd.find(iter->first + "("), (iter->first).length() + getMatchingParenthesis(sCmd.substr(sCmd.find(iter->first + "(") + (iter->first).length())) + 1);
-            break;
-        }
-    }
+            nArgument = matchParams(sCmd, "samples", '=') + 7;
 
-    if (matchParams(sCmd, "samples", '='))
-    {
-        nArgument = matchParams(sCmd, "samples", '=') + 7;
-        if (_data.containsTablesOrClusters(getArgAtPos(sCmd, nArgument)) || getArgAtPos(sCmd, nArgument).find("data(") != string::npos)
+            if (_data.containsTablesOrClusters(getArgAtPos(sCmd, nArgument)) || getArgAtPos(sCmd, nArgument).find("data(") != string::npos)
+            {
+                sArgument = getArgAtPos(sCmd, nArgument);
+                getDataElements(sArgument, _parser, _data, _option);
+
+                if (sArgument.find("{") != string::npos)
+                    parser_VectorToExpr(sArgument, _option);
+
+                sCmd.replace(nArgument, getArgAtPos(sCmd, nArgument).length(), sArgument);
+            }
+
+            _parser.SetExpr(getArgAtPos(sCmd, nArgument));
+            nArgument = intCast(_parser.Eval());
+        }
+        else
+            nArgument = _data.getTableLines(_access.getDataObject(), false);
+
+        if (!isValidIndexSet(_access.getIndices()))
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getDataObject());
+
+        if (_access.getIndices().row.isOpenEnd())
+            _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
+
+        if (_access.getIndices().col.isOpenEnd())
+            _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
+
+        if (matchParams(sCmd, "grid"))
         {
-            sArgument = getArgAtPos(sCmd, nArgument);
-            getDataElements(sArgument, _parser, _data, _option);
-
-            if (sArgument.find("{") != string::npos)
-                parser_VectorToExpr(sArgument, _option);
-
-            sCmd.replace(nArgument, getArgAtPos(sCmd, nArgument).length(), sArgument);
+            if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::GRID))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + _access.getDataObject() + "\""), _option) );
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-
-        _parser.SetExpr(getArgAtPos(sCmd, nArgument));
-        nArgument = (int)_parser.Eval();
+        else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
+        {
+            if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::ALL))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + _access.getDataObject() + "\""), _option) );
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+        }
+        else if (matchParams(sCmd, "cols"))
+        {
+            if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::COLS))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_COLS")), _option) );
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+        }
+        else if (matchParams(sCmd, "lines"))
+        {
+            if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::LINES))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) );
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+        }
     }
     else
-        nArgument = _data.getTableLines(sArgument.substr(0, sArgument.find('(')), false);
-
-
-    Indices _idx = parser_getIndices(sArgument, _parser, _data, _option);
-
-    if (!isValidIndexSet(_idx))
-        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
-
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _data.getLines(sArgument.substr(0, sArgument.find('(')), false)-1);
-
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _data.getCols(sArgument.substr(0, sArgument.find('(')))-1);
-
-    if (matchParams(sCmd, "grid"))
-    {
-        if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::GRID))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
-        }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-    }
-    else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
-    {
-        if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::ALL))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
-        }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-    }
-    else if (matchParams(sCmd, "cols"))
-    {
-        if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::COLS))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_COLS")), _option) );
-        }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-    }
-    else if (matchParams(sCmd, "lines"))
-    {
-        if (_data.resample(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, nArgument, MemoryManager::LINES))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) );
-        }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-    }
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
     return COMMAND_PROCESSED;
 }
@@ -6768,81 +6537,71 @@ static CommandReturnValues cmd_reload(string& sCmd)
 static CommandReturnValues cmd_retouch(string& sCmd)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-
-    string sArgument;
 
     if (!_data.containsTablesOrClusters(sCmd))
         return COMMAND_PROCESSED;
-
-    for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
-    {
-        if (sCmd.find(iter->first + "(") != string::npos
-                && (!sCmd.find(iter->first + "(")
-                    || (sCmd.find(iter->first + "(") && checkDelimiter(sCmd.substr(sCmd.find(iter->first + "(") - 1, (iter->first).length() + 2))))
-                && iter->second >= 0)
-        {
-            sArgument = sCmd.substr(sCmd.find(iter->first + "("), (iter->first).length() + getMatchingParenthesis(sCmd.substr(sCmd.find(iter->first + "(") + (iter->first).length())) + 1);
-            break;
-        }
-    }
 
     // DEPRECATED: Declared at v1.1.2rc1
     if (findCommand(sCmd).sString == "retoque")
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
 
-    Indices _idx = parser_getIndices(sArgument, _parser, _data, _option);
+    DataAccessParser _access(sCmd);
 
-    if (!isValidIndexSet(_idx))
-        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sArgument, sArgument);
+    if (_access.getDataObject().length())
+    {
+        if (!isValidIndexSet(_access.getIndices()))
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getDataObject());
 
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _data.getLines(sArgument.substr(0, sArgument.find('(')), false)-1);
+        if (_access.getIndices().row.isOpenEnd())
+            _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
 
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _data.getCols(sArgument.substr(0, sArgument.find('(')))-1);
+        if (_access.getIndices().col.isOpenEnd())
+            _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
 
-    if (matchParams(sCmd, "grid"))
-    {
-        if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, MemoryManager::GRID))
+        if (matchParams(sCmd, "grid"))
         {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
+            if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::GRID))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-    }
-    else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
-    {
-        if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, MemoryManager::ALL))
+        else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
         {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + sArgument.substr(0, sArgument.find('(')) + "\""), _option) );
+            if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::ALL))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-    }
-    else if (matchParams(sCmd, "lines"))
-    {
-        if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, MemoryManager::LINES))
+        else if (matchParams(sCmd, "lines"))
         {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_LINES")), _option) );
+            if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::LINES))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_LINES")), _option) );
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
-    }
-    else if (matchParams(sCmd, "cols"))
-    {
-        if (_data.retoque(sArgument.substr(0, sArgument.find('(')), _idx.row, _idx.col, MemoryManager::COLS))
+        else if (matchParams(sCmd, "cols"))
         {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
+            if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::COLS))
+            {
+                if (_option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
+            }
+            else
+                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, sArgument.substr(0, sArgument.find('(')), sArgument.substr(0, sArgument.find('(') - 1));
     }
+    else
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
     return COMMAND_PROCESSED;
 }

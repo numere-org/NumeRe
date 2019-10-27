@@ -59,9 +59,9 @@ Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, 
 
     sTableName = sCmd.substr(0, sCmd.find_first_of("({"));
 
-    // Remove leading whitespaces
-    if (sTableName.find(' ') != string::npos)
-        sTableName.erase(0, sTableName.rfind(' ')+1);
+    // Remove leading whitespaces and operators
+    if (sTableName.find_first_of(" +-*/!=&|<>^?:%") != string::npos)
+        sTableName.erase(0, sTableName.find_last_of(" +-*/!=&|<>^?:%")+1);
 
     StripSpaces(sTableName);
 

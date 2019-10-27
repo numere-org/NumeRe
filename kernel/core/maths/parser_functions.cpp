@@ -4259,40 +4259,6 @@ int int_faculty(int nNumber)
 	return nNumber;
 }
 
-bool parser_parseCmdArg(const string& sCmd, const string& sParam, Parser& _parser, int& nArgument)
-{
-	if (!sCmd.length() || !sParam.length())
-		return false;
-
-	unsigned int nPos = 0;
-	if (matchParams(sCmd, sParam) || matchParams(sCmd, sParam, '='))
-	{
-		if (matchParams(sCmd, sParam))
-		{
-			nPos = matchParams(sCmd, sParam) + sParam.length();
-		}
-		else
-		{
-			nPos = matchParams(sCmd, sParam, '=') + sParam.length();
-		}
-		while (sCmd[nPos] == ' ' && nPos < sCmd.length() - 1)
-			nPos++;
-		if (sCmd[nPos] == ' ' || nPos >= sCmd.length() - 1)
-			return false;
-
-		string sArg = sCmd.substr(nPos);
-		if (sArg[0] == '(')
-			sArg = sArg.substr(1, getMatchingParenthesis(sArg) - 1);
-		else
-			sArg = sArg.substr(0, sArg.find(' '));
-		_parser.SetExpr(sArg);
-		if (isnan(_parser.Eval()) || isinf(_parser.Eval()))
-			return false;
-		nArgument = (int)_parser.Eval();
-		return true;
-	}
-	return false;
-}
 
 // fft data(:,:) -set inverse complex
 bool parser_fft(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)

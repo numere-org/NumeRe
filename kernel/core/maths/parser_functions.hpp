@@ -98,7 +98,6 @@ double* parser_GetVarAdress(const string& sVarName, Parser& _parser);
 string parser_Prompt(const string& __sCommand);
 int int_faculty(int nNumber);
 Indices parser_getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, const Settings& _option);
-bool parser_parseCmdArg(const string& sCmd, const string& sParam, Parser& _parser, int& nArgument);
 bool parser_evalIndices(const string& sCache, Indices& _idx, Datafile& _data);
 vector<double> parser_IntervalReader(string& sExpr, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, bool bEraseInterval = false);
 void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize);
