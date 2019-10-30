@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "dependencydialog.hpp"
+#include "../NumeReWindow.h"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/ui/language.hpp"
 
@@ -24,7 +25,23 @@ extern Language _guilang;
 
 using namespace std;
 
-// Constructor. Creates the UI elements and calls the dependency walker
+BEGIN_EVENT_TABLE(DependencyDialog, wxDialog)
+    EVT_TREE_ITEM_ACTIVATED(-1, DependencyDialog::OnItemActivate)
+END_EVENT_TABLE()
+
+
+/////////////////////////////////////////////////
+/// \brief Constructor. Creates the UI elements
+/// and calls the dependency walker.
+///
+/// \param parent wxWindow*
+/// \param id wxWindowID
+/// \param title const wxString&
+/// \param mainfile const std::string&
+/// \param lib ProcedureLibrary&
+/// \param style long
+///
+/////////////////////////////////////////////////
 DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxString& title, const std::string& mainfile, ProcedureLibrary& lib, long style) : wxDialog(parent, id, title, wxDefaultPosition, wxSize(-1, 450), style)
 {
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
@@ -46,9 +63,20 @@ DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxStri
     fillDependencyTree(sMainProc, mDeps);
 }
 
-// This private member function calculates the dependencies of
-// the current selected main file. It will fill the map with additional
-// items calculated from the called procedures
+
+/////////////////////////////////////////////////
+/// \brief This private member function calculates
+/// the dependencies of the current selected main
+/// file. It will fill the map with additional
+/// items calculated from the called procedures.
+///
+/// \param lib ProcedureLibrary&
+/// \param mainfile const std::string&
+/// \param std::map<std::string
+/// \param mDeps DependencyList>&
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const std::string& mainfile, std::map<std::string, DependencyList>& mDeps)
 {
     // Get the dependencies
@@ -93,10 +121,20 @@ std::string DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const
     return sMainProc;
 }
 
-// This private member function fills the tree in the UI
-// with the calculated dependencies. It will call the function
-// DependencyDialog::insertChilds() recursively to fill the childs
-// of a procedure call
+
+/////////////////////////////////////////////////
+/// \brief This private member function fills the
+/// tree in the UI with the calculated dependencies.
+/// It will call the function
+/// DependencyDialog::insertChilds() recursively
+/// to fill the childs of a procedure call.
+///
+/// \param sMainProcedure const std::string&
+/// \param std::map<std::string
+/// \param mDeps DependencyList>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DependencyDialog::fillDependencyTree(const std::string& sMainProcedure, std::map<std::string, DependencyList>& mDeps)
 {
     // Find the current main procedure
@@ -132,9 +170,21 @@ void DependencyDialog::fillDependencyTree(const std::string& sMainProcedure, std
     m_dependencyTree->Expand(root);
 }
 
-// This private member function is called recursively to fill
-// the childs of a procedure call. The recursion is stopped at
-// the end of a branch or if the branch itself is a recursion
+
+/////////////////////////////////////////////////
+/// \brief This private member function is called
+/// recursively to fill the childs of a procedure
+/// call. The recursion is stopped at the end of
+/// a branch or if the branch itself is a
+/// recursion.
+///
+/// \param item wxTreeItemId
+/// \param sParentProcedure const std::string&
+/// \param std::map<std::string
+/// \param mDeps DependencyList>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DependencyDialog::insertChilds(wxTreeItemId item, const std::string& sParentProcedure, std::map<std::string, DependencyList>& mDeps)
 {
     // Find the current main procedure
@@ -168,8 +218,17 @@ void DependencyDialog::insertChilds(wxTreeItemId item, const std::string& sParen
     }
 }
 
-// This private member function searches the procedure call in
-// the parents of the current branch
+
+/////////////////////////////////////////////////
+/// \brief This private member function searches
+/// the procedure call in the parents of the
+/// current branch.
+///
+/// \param item wxTreeItemId
+/// \param sCurrProc const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool DependencyDialog::findInParents(wxTreeItemId item, const std::string& sCurrProc)
 {
     // Is the current node already equal?
@@ -190,5 +249,30 @@ bool DependencyDialog::findInParents(wxTreeItemId item, const std::string& sCurr
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This private member function is the
+/// event handler for double clicking on an item
+/// in the dependency tree.
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DependencyDialog::OnItemActivate(wxTreeEvent& event)
+{
+    NumeReWindow* main = static_cast<NumeReWindow*>(this->GetParent());
 
+    wxString procedureName = m_dependencyTree->GetItemText(event.GetItem());
+    procedureName.erase(procedureName.find('('));
+
+    // Procedures in the "thisfile" namespace can be found by first calling the main
+    // procedure and then jumping to the correct local routine
+    if (procedureName.find("::thisfile~") != string::npos)
+    {
+        main->FindAndOpenProcedure(procedureName.substr(0, procedureName.find("::thisfile~")));
+        main->FindAndOpenProcedure("$" + procedureName.substr(procedureName.find("::thisfile~")+2));
+    }
+    else
+        main->FindAndOpenProcedure(procedureName);
+}
 

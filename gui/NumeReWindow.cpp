@@ -144,9 +144,6 @@ BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
 	EVT_CLOSE						(NumeReWindow::OnClose)
 
 	EVT_NOTEBOOK_PAGE_CHANGED		(ID_NOTEBOOK_ED, NumeReWindow::OnPageChange)
-	EVT_SPLITTER_SASH_POS_CHANGED	(ID_SPLITEDITOROUTPUT, NumeReWindow::OnTermResize)
-
-	EVT_SIZE						(NumeReWindow::OnSize)
 
 	EVT_SPLITTER_DCLICK				(ID_SPLITPROJECTEDITOR, NumeReWindow::OnSplitterDoubleClick)
 	EVT_SPLITTER_DCLICK				(ID_SPLITEDITOROUTPUT, NumeReWindow::OnSplitterDoubleClick)
@@ -167,8 +164,13 @@ END_EVENT_TABLE()
 
 IMPLEMENT_APP(MyApp)
 //----------------------------------------------------------------------
-// `Main program' equivalent: the program execution "starts" here
-
+/////////////////////////////////////////////////
+/// \brief "Main program" equivalent: the program
+/// execution "starts" here.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MyApp::OnInit()
 {
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
@@ -495,13 +497,12 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	showTipAtStartup = _option.getbShowHints();
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public destructor ~ChameleonWindow
 ///  Responsible for cleaning up almost everything.
 ///
 ///  @return void
-///
-///  @remarks Networking needs to be deleted last, since several other classes refer to it in their destructors.
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
@@ -530,34 +531,38 @@ NumeReWindow::~NumeReWindow()
         m_fileEventTimer = nullptr;
     }
 
-	// (hopefully) fixes some issues with widgets not getting deleted for some reason
-	///m_noteTerm->DestroyChildren();
-
-	//CleanupDropMenu();
-
-
     if (m_optionsDialog)
         delete m_optionsDialog;
-//    if (m_compiler)
-//        delete m_compiler;
+
     if (m_config)
         delete m_config;
+
     if (m_options)
         delete m_options;
-//    if (m_debugger)
-//        delete m_debugger;
+
     if (m_network)
         delete m_network;
+
     if (m_iconManager)
         delete m_iconManager;
-//    if (m_debugManager)
-//        delete m_debugManager;
+
     if (m_projectManager)
         delete m_projectManager;
+
     if (m_watcher)
         delete m_watcher;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function can be used to deactivate
+/// the "Tip of the day" functionality directly
+/// from the dialog.
+///
+/// \param bTipAtStartup bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::updateTipAtStartupSetting(bool bTipAtStartup)
 {
     Settings _option = m_terminal->getKernelSettings();
@@ -567,6 +572,14 @@ void NumeReWindow::updateTipAtStartupSetting(bool bTipAtStartup)
     m_terminal->setKernelSettings(_option);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// application's root path.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString NumeReWindow::getProgramFolder()
 {
     wxStandardPaths systemPaths = wxStandardPaths::Get();
@@ -575,32 +588,88 @@ wxString NumeReWindow::getProgramFolder()
 	return fullProgramPath.GetPath();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function is a wrapper for the
+/// corresponding function from the history
+/// widget and stores the passed string in the
+/// history file.
+///
+/// \param sCommand const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::AddToHistory(const wxString& sCommand)
 {
     m_history->AddToHistory(sCommand);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the HTML
+/// string containing the documentation for the
+/// selected topic/doc id.
+///
+/// \param docid wxString
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString NumeReWindow::GetDocContent(wxString docid)
 {
     return m_terminal->getDocumentation(docid.ToStdString());
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// documentation index as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReWindow::GetDocIndex()
 {
     return m_terminal->getDocIndex();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function is a simple helper
+/// to force that the history displays the last
+/// line at start-up.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::forceHistoryPageDown()
 {
     m_history->PageDown();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// standard path definitions as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReWindow::getPathDefs()
 {
     return m_terminal->getPathSettings();
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function adds the passed
+/// file name to the list of files, which shall
+/// not be reloaded automatically, if a file is
+/// changed from the outside.
+///
+/// \param sFilename const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::addToReloadBlackList(const wxString& sFilename)
 {
     for (size_t i = 0; i < vReloadBlackList.size(); i++)
@@ -608,9 +677,20 @@ void NumeReWindow::addToReloadBlackList(const wxString& sFilename)
         if (vReloadBlackList[i] == sFilename)
             return;
     }
+
     vReloadBlackList.push_back(sFilename);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function removes the passed
+/// file name from the list of files, which shall
+/// not be reloaded automatically.
+///
+/// \param sFilename const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::removeFromReloadBlackList(const wxString& sFilename)
 {
     for (size_t i = 0; i < vReloadBlackList.size(); i++)
@@ -623,21 +703,42 @@ void NumeReWindow::removeFromReloadBlackList(const wxString& sFilename)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns \c true,
+/// if the passed file name is currently part of
+/// the list of files, which shall not be reloaded
+/// automatically.
+///
+/// \param sFilename wxString
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReWindow::isOnReloadBlackList(wxString sFilename)
 {
     sFilename = replacePathSeparator(sFilename.ToStdString());
+
     for (size_t i = 0; i < vReloadBlackList.size(); i++)
     {
         if (vReloadBlackList[i] == sFilename)
             return true;
     }
+
     return false;
 }
 
-// This member function loads the configuration file available
-// for the graphical user interface. If no configuration file is
-// available or if the config file is of an older version, default
-// values are used
+
+/////////////////////////////////////////////////
+/// \brief This member function loads the
+/// configuration file available for the graphical
+/// user interface.
+///
+/// \return void
+///
+/// If no configuration file is available or if
+/// the config file is of an older version,
+/// default values are used.
+/////////////////////////////////////////////////
 void NumeReWindow::InitializeProgramOptions()
 {
 	// Open up the configuration file, assumed to be located
@@ -755,9 +856,16 @@ void NumeReWindow::InitializeProgramOptions()
 	}
 }
 
-// This member function recreates the last session by reading
-// the session file or creates a new empty session, if the corresponding
-// setting was set to false
+
+/////////////////////////////////////////////////
+/// \brief This member function recreates the last
+/// session by reading the session file or creates
+/// a new empty session, if the corresponding
+/// setting was set to \c false.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::prepareSession()
 {
 	// create the initial blank open file or recreate the last session
@@ -908,6 +1016,7 @@ void NumeReWindow::prepareSession()
 	}
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnClose
 ///  Called whenever the main frame is about to close.  Handles initial resource cleanup.
@@ -966,7 +1075,6 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
 	Destroy();
 }
 
-// Main menu and debug stuff begins here
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnMenuEvent
@@ -1384,7 +1492,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 		case ID_MENU_COPY:
 		{
             if (m_currentEd->HasFocus())
-                OnCopy();
+                m_currentEd->Copy();
             else
                 event.Skip();
 			break;
@@ -1542,12 +1650,22 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 	}
 }
 
-// This member function handles all events, which result from
-// changes in the file system. Because it is likely that multiple
-// of them are fired, if whole folders are moved, we only cache
-// the paths and the event types here and start a one shot
-// timer. If this timer has ran (it will be resetted for each
-// incoming event), the cached changes will be processed
+
+/////////////////////////////////////////////////
+/// \brief This member function handles all
+/// events, which result from changes in the file
+/// system.
+///
+/// \param event wxFileSystemWatcherEvent&
+/// \return void
+///
+/// Because it is likely that multiple of them are
+/// fired, if whole folders are moved, we only
+/// cache the paths and the event types here and
+/// start a one shot timer. If this timer has ran
+/// (it will be resetted for each incoming event),
+/// the cached changes will be processed.
+/////////////////////////////////////////////////
 void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
 {
     if (!m_fileTree || m_appStarting)
@@ -1569,6 +1687,17 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function finds every
+/// procedure in the default search path and adds
+/// them to the syntax autocompletion of the
+/// terminal.
+///
+/// \param sProcedurePath const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::CreateProcedureTree(const string& sProcedurePath)
 {
     vector<string> vProcedureTree;
@@ -1576,21 +1705,24 @@ void NumeReWindow::CreateProcedureTree(const string& sProcedurePath)
     string sPath = sProcedurePath;
     Settings _option = m_terminal->getKernelSettings();
 
+    // Find every procedure
     do
     {
         sPath += "/*";
         vCurrentTree = getFileList(sPath, _option, 1);
+
         if (vCurrentTree.size())
             vProcedureTree.insert(vProcedureTree.end(), vCurrentTree.begin(), vCurrentTree.end());
     }
     while (vCurrentTree.size());
 
+    // Remove the leading path part of the procedure path,
+    // which is the procedure default path
     for (size_t i = 0; i < vProcedureTree.size(); i++)
     {
         if (vProcedureTree[i].substr(0, sProcedurePath.length()) == sProcedurePath)
-        {
             vProcedureTree[i].erase(0, sProcedurePath.length());
-        }
+
         while (vProcedureTree[i].front() == '/' || vProcedureTree[i].front() == '\\')
             vProcedureTree[i].erase(0, 1);
     }
@@ -1598,6 +1730,15 @@ void NumeReWindow::CreateProcedureTree(const string& sProcedurePath)
     m_terminal->getSyntax()->setProcedureTree(vProcedureTree);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function opens the selected
+/// image in the image viewer window.
+///
+/// \param filename wxFileName
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::openImage(wxFileName filename)
 {
 	wxString programPath = getProgramFolder();
@@ -1606,6 +1747,8 @@ void NumeReWindow::openImage(wxFileName filename)
     wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
 
     ImagePanel* _panel = nullptr;
+
+    // Create the image panel
     if (filename.GetExt() == "png")
         _panel = new ImagePanel(frame, filename.GetFullPath(), wxBITMAP_TYPE_PNG);
     else if (filename.GetExt() == "bmp")
@@ -1620,6 +1763,8 @@ void NumeReWindow::openImage(wxFileName filename)
         delete sizer;
         return;
     }
+
+    // Apply the settings for the image viewer
     sizer->Add(_panel, 1, wxEXPAND);
     _panel->SetSize(_panel->getRelation()*600,600);
     frame->SetSizer(sizer);
@@ -1630,11 +1775,30 @@ void NumeReWindow::openImage(wxFileName filename)
     frame->SetFocus();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function opens a PDF
+/// document using the windows shell.
+///
+/// \param filename wxFileName
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::openPDF(wxFileName filename)
 {
     ShellExecuteA(NULL, "open", filename.GetFullPath().ToStdString().c_str(), "", "", SW_SHOW);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function opens a HTML
+/// document (a documentation article) in the
+/// documentation viewer.
+///
+/// \param HTMLcontent wxString
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::openHTML(wxString HTMLcontent)
 {
 	wxString programPath = getProgramFolder();
@@ -1653,10 +1817,16 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
     frame->SetFocus();
 }
 
-//
-// Table Viewer and Editor functions
-//
-//
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// contents of the "string()" table or a cluster.
+///
+/// \param _stringTable NumeRe::Container<string>
+/// \param sTableName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
@@ -1669,6 +1839,16 @@ void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const strin
     frame->SetFocus();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// contents of a usual table.
+///
+/// \param _table NumeRe::Table
+/// \param sTableName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
@@ -1681,6 +1861,17 @@ void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
     frame->SetFocus();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// contents of the "string()" table or a cluster
+/// and enables editing its contents.
+///
+/// \param _stringTable NumeRe::Container<string>
+/// \param sTableName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName);
@@ -1695,6 +1886,17 @@ void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const strin
     frame->SetFocus();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// contents of a usual table and enables editing
+/// its contents.
+///
+/// \param _table NumeRe::Table
+/// \param sTableName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, _guilang.get("GUI_TABLEEDITOR") + " " + sTableName);
@@ -1709,7 +1911,17 @@ void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
     frame->SetFocus();
 }
 
-// simple wrapper for the variable viewer
+
+/////////////////////////////////////////////////
+/// \brief This member function is a wrapper for
+/// an event handler of the variable viewer to
+/// display the contents of the selected item.
+///
+/// \param tableName const wxString&
+/// \param tableDisplayName const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDisplayName)
 {
     if (tableDisplayName == "string()" || tableDisplayName.find("{}") != string::npos)
@@ -1718,12 +1930,16 @@ void NumeReWindow::showTable(const wxString& tableName, const wxString& tableDis
         openTable(m_terminal->getTable(tableName.ToStdString()), tableDisplayName.ToStdString());
 }
 
-//
-// Kernel window creation functions
-//
-//
-// This public member function handles the creation of windows
-// requested by the kernel
+
+/////////////////////////////////////////////////
+/// \brief This public member function handles
+/// the creation of windows requested by the
+/// kernel.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showWindow(NumeRe::Window& window)
 {
     if (window.getType() == NumeRe::WINDOW_GRAPH)
@@ -1759,7 +1975,15 @@ void NumeReWindow::showWindow(NumeRe::Window& window)
     }
 }
 
-// This private member function displays a graph
+
+/////////////////////////////////////////////////
+/// \brief This private member function displays
+/// a graph.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showGraph(NumeRe::Window& window)
 {
     GraphViewer* viewer = new GraphViewer(this, "NumeRe: " + window.getGraph()->getTitle(), window.getGraph(), m_terminal);
@@ -1769,7 +1993,15 @@ void NumeReWindow::showGraph(NumeRe::Window& window)
     viewer->SetFocus();
 }
 
-// This private member function displays a file dialog
+
+/////////////////////////////////////////////////
+/// \brief This private member function displays
+/// a file dialog.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showFileDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
@@ -1785,7 +2017,15 @@ void NumeReWindow::showFileDialog(NumeRe::Window& window)
     }
 }
 
-// This private member function displays a directory dialog
+
+/////////////////////////////////////////////////
+/// \brief This private member function displays
+/// a directory dialog.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showDirDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
@@ -1801,7 +2041,15 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
     }
 }
 
-// This private member function displays a text entry dialog
+
+/////////////////////////////////////////////////
+/// \brief This private member function displays
+/// a text entry dialog.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showTextEntry(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
@@ -1817,7 +2065,15 @@ void NumeReWindow::showTextEntry(NumeRe::Window& window)
     }
 }
 
-// This private member function displays a message box
+
+/////////////////////////////////////////////////
+/// \brief This private member function displays
+/// a message box.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showMessageBox(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
@@ -1857,7 +2113,15 @@ void NumeReWindow::showMessageBox(NumeRe::Window& window)
         window.updateWindowInformation(NumeRe::STATUS_CANCEL, "no");
 }
 
-// This private member function shows a list dialog
+
+/////////////////////////////////////////////////
+/// \brief This private member function shows a
+/// list dialog.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showListDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
@@ -1880,7 +2144,15 @@ void NumeReWindow::showListDialog(NumeRe::Window& window)
     }
 }
 
-// This private member function shows a selection dialog
+
+/////////////////////////////////////////////////
+/// \brief This private member function shows a
+/// selection dialog.
+///
+/// \param window NumeRe::Window&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
@@ -1916,15 +2188,31 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
 }
 
 
-
+/////////////////////////////////////////////////
+/// \brief This member function is a wrapper for
+/// the corresponding terminal function to pass
+/// a command to the kernel.
+///
+/// \param command const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::pass_command(const wxString& command)
 {
     m_terminal->pass_command(command.ToStdString());
 }
 
-// This function will pass the obtained debugging information to
-// the debug viewer. If this object does not yet exist, it will be
-// created on-the-fly
+
+/////////////////////////////////////////////////
+/// \brief This function will pass the obtained
+/// debugging information to the debug viewer. If
+/// this object does not yet exist, it will be
+/// created on-the-fly.
+///
+/// \param vDebugInfo const vector<string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
 {
     // initialize the debugger, if necessary and pass the new contents
@@ -1953,22 +2241,38 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
 }
 
 
-//
-// LaTeX handler functions
-//
-//
+/////////////////////////////////////////////////
+/// \brief This member function uses the parsed
+/// contents from the current editor to create a
+/// new LaTeX file from them.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::createLaTeXFile()
 {
     wxFileName filename = m_currentEd->GetFileName();
     filename.SetName(filename.GetName() + "_" + filename.GetExt());
     filename.SetExt("tex");
     filename.SetPath(m_terminal->getPathSettings()[SAVEPATH] + "/docs");
+
     if (m_currentEd->writeLaTeXFile(filename.GetFullPath().ToStdString()))
         wxMessageBox(_guilang.get("GUI_DLG_LATEX_SUCCESS_MESSAGE", filename.GetFullPath().ToStdString()), _guilang.get("GUI_DLG_LATEX_SUCCESS"), wxCENTER | wxOK, this);
     else
         wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", filename.GetFullPath().ToStdString()), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function creates a main
+/// LaTeX file including the perviously created
+/// LaTeX documentation file.
+///
+/// \param sRootPath const string&
+/// \param sIncludes const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReWindow::createLaTeXMain(const string& sRootPath, const string& sIncludes)
 {
     ofstream fMain;
@@ -1976,9 +2280,12 @@ string NumeReWindow::createLaTeXMain(const string& sRootPath, const string& sInc
     createLaTeXHeader(sRootPath);
 
     fMain.open((sRootPath + "/" + sIncludes + "_main.tex").c_str());
+
     if (!fMain.good())
         return "";
+
     string sHeadLine = sIncludes;
+
     for (size_t i = 0; i < sHeadLine.length(); i++)
     {
         if (sHeadLine[i] == '_' && (!i || sHeadLine[i-1] != '\\'))
@@ -1987,36 +2294,64 @@ string NumeReWindow::createLaTeXMain(const string& sRootPath, const string& sInc
             i++;
         }
     }
+
     fMain << "\\documentclass[DIV=17]{scrartcl}" << endl;
     fMain << "% Main file for the documentation file " << sIncludes << endl << endl;
     fMain << "\\input{numereheader}" << endl << endl;
     fMain << "\\title{Documentation: " << sHeadLine << "}" << endl;
     fMain << "\\begin{document}" << endl;
     fMain << "    \\maketitle" << endl;
+
     if (sIncludes.length())
         fMain << "    \\input{" << sIncludes << "}" << endl;
+
     fMain << "\\end{document}" << endl;
 
     return sRootPath + "/" + sIncludes + "_main.tex";
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function replaces the
+/// passed whitespace-separated keyword list with
+/// a comma-separated list.
+///
+/// \param sKeywordList const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReWindow::constructLaTeXHeaderKeywords(const string& sKeywordList)
 {
     string _sKeywordList = sKeywordList;
+
     for (size_t i = 0; i < _sKeywordList.length(); i++)
     {
         if (_sKeywordList[i] == ' ')
             _sKeywordList[i] = ',';
     }
+
     if (_sKeywordList.back() == ',')
         _sKeywordList.erase(_sKeywordList.length()-1);
+
     return _sKeywordList;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function writes the LaTeX
+/// header file used to highlight the code
+/// snippets, which are part of the created code
+/// documentation.
+///
+/// \param sRootPath const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::createLaTeXHeader(const string& sRootPath)
 {
     ofstream fHeader;
     fHeader.open((sRootPath + "/numereheader.tex").c_str());
+
     if (!fHeader.good())
         return;
 
@@ -2118,29 +2453,49 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
 
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// LaTeX documentation files and uses the Windows
+/// shell to run the XeLaTeX compiler.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::runLaTeX()
 {
     wxFileName filename = m_currentEd->GetFileName();
     filename.SetName(filename.GetName() + "_" + filename.GetExt());
     filename.SetExt("tex");
     filename.SetPath(m_terminal->getPathSettings()[SAVEPATH] + "/docs");
+
     if (!m_currentEd->writeLaTeXFile(filename.GetFullPath().ToStdString()))
     {
         wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", filename.GetFullPath().ToStdString()), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
         return;
     }
+
     string sMain = createLaTeXMain(filename.GetPath().ToStdString(), filename.GetName().ToStdString());
+
     if (fileExists((m_options->GetLaTeXRoot() + "/xelatex.exe").ToStdString()))
-    {
         ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), sMain.c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
-    }
     else
         wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot().ToStdString()), _guilang.get("GUI_DLG_NOTEXBIN"), wxCENTER | wxOK | wxICON_ERROR, this);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function runs the XeLaTeX
+/// compiler on the TeX source in the current
+/// editor (if it is a TeX source).
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::compileLaTeX()
 {
     FileFilterType fileType = m_currentEd->getFileType();
+
     if (fileType == FILE_TEXSOURCE)
     {
         wxFileName filename = m_currentEd->GetFileName();
@@ -2149,22 +2504,38 @@ void NumeReWindow::compileLaTeX()
 }
 
 
-//
-// File tree handler functions
-//
-//
+/////////////////////////////////////////////////
+/// \brief This member function moves the selected
+/// file from the file tree directly to the
+/// Windows trash bin, if the user confirms the
+/// opened dialog.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::deleteFile()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+
     if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename.ToStdString()), _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
         return;
+
     if (m_clickedTreeItem == m_copiedTreeItem)
         m_copiedTreeItem = 0;
+
     Recycler _recycler;
     _recycler.recycle(data->filename.c_str());
-    //wxRemoveFile(data->filename);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function copies the
+/// selected file in the file tree to the target
+/// location in the file tree.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::insertCopiedFile()
 {
     FileNameTreeData* target_data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
@@ -2174,31 +2545,42 @@ void NumeReWindow::insertCopiedFile()
 
     target_filename.SetName(source_filename.GetName());
     target_filename.SetExt(source_filename.GetExt());
+
     if (wxFileExists(target_filename.GetFullPath()))
     {
         wxMessageBox(_guilang.get("GUI_DLG_COPY_ERROR"), _guilang.get("GUI_DLG_COPY"), wxCENTRE | wxICON_ERROR | wxOK, this);
         return;
     }
+
     wxCopyFile(source_filename.GetFullPath(), target_filename.GetFullPath());
     m_copiedTreeItem = 0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function renames the
+/// selected file in the file tree with a new name
+/// provided by the user in a text entry dialog.
+///
+/// \return void
+///
+/// If the file has internal revisions, the
+/// version control system manager keeps track on
+/// the renaming of the corresponding revisions
+/// file.
+/////////////////////////////////////////////////
 void NumeReWindow::renameFile()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
     wxFileName target_filename = data->filename;
     wxFileName source_filename = target_filename;
-    wxTextEntryDialog* textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_RENAME_QUESTION"), _guilang.get("GUI_DLG_RENAME"), target_filename.GetName());
-    int retval = textentry->ShowModal();
+    wxTextEntryDialog textentry(this, _guilang.get("GUI_DLG_RENAME_QUESTION"), _guilang.get("GUI_DLG_RENAME"), target_filename.GetName());
+    int retval = textentry.ShowModal();
 
     if (retval == wxID_CANCEL)
-    {
-        delete textentry;
         return;
-    }
-    target_filename.SetName(textentry->GetValue());
 
-    delete textentry;
+    target_filename.SetName(textentry.GetValue());
 
     if (wxFileExists(target_filename.GetFullPath()))
     {
@@ -2219,6 +2601,15 @@ void NumeReWindow::renameFile()
     wxRenameFile(source_filename.GetFullPath(), target_filename.GetFullPath());
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function uses the Windows
+/// shell to open the selected folder in the
+/// Windows explorer.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnOpenInExplorer()
 {
     wxString fileName = getTreeFolderPath(m_clickedTreeItem);
@@ -2229,7 +2620,8 @@ void NumeReWindow::OnOpenInExplorer()
 
 
 /////////////////////////////////////////////////
-/// \brief This method displays the revision dialog for the selected tree item.
+/// \brief This method displays the revision
+/// dialog for the selected tree item.
 ///
 /// \return void
 ///
@@ -2249,8 +2641,10 @@ void NumeReWindow::OnShowRevisions()
     }
 }
 
+
 /////////////////////////////////////////////////
-/// \brief This method allows the user to tag the current active revision of a file.
+/// \brief This method allows the user to tag the
+/// current active revision of a file.
 ///
 /// \return void
 ///
@@ -2278,6 +2672,16 @@ void NumeReWindow::OnTagCurrentRevision()
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function creates a new
+/// folder below the currently selected folder.
+/// The name is supplied by the user via a text
+/// entry dialog.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnCreateNewFolder()
 {
     wxString fileName = getTreeFolderPath(m_clickedTreeItem);
@@ -2285,49 +2689,70 @@ void NumeReWindow::OnCreateNewFolder()
     if (!fileName.length())
         return;
 
-    wxTextEntryDialog* textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWFOLDER_QUESTION"), _guilang.get("GUI_DLG_NEWFOLDER"), _guilang.get("GUI_DLG_NEWFOLDER_DFLT"));
-    int retval = textentry->ShowModal();
+    wxTextEntryDialog textentry(this, _guilang.get("GUI_DLG_NEWFOLDER_QUESTION"), _guilang.get("GUI_DLG_NEWFOLDER"), _guilang.get("GUI_DLG_NEWFOLDER_DFLT"));
+    int retval = textentry.ShowModal();
 
     if (retval == wxID_CANCEL)
-    {
-        delete textentry;
         return;
-    }
 
-    if (textentry->GetValue().length())
+    if (textentry.GetValue().length())
     {
-        wxString foldername = fileName + "\\" + textentry->GetValue();
+        wxString foldername = fileName + "\\" + textentry.GetValue();
         wxMkdir(foldername);
     }
-    delete textentry;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function moves the selected
+/// directory directly to the Windows trash bin,
+/// if the user confirms the opened dialog.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnRemoveFolder()
 {
     FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
+
     if (wxYES != wxMessageBox(_guilang.get("GUI_DLG_DELETE_QUESTION", data->filename.ToStdString()), _guilang.get("GUI_DLG_DELETE"), wxCENTRE | wxICON_QUESTION | wxYES_NO, this))
         return;
+
     if (m_clickedTreeItem == m_copiedTreeItem)
         m_copiedTreeItem = 0;
+
     Recycler _recycler;
-    /*int error = */_recycler.recycle(data->filename.ToStdString().c_str());
-    //error;
+    _recycler.recycle(data->filename.ToStdString().c_str());
     return;
 }
 
 
-
+/////////////////////////////////////////////////
+/// \brief This member function evaluates the
+/// command line passed to this application at
+/// startup and evaluates, what to do with the
+/// passed arguments.
+///
+/// \param wxArgV wxArrayString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
 {
     wxArrayString filestoopen;
     wxString ext;
+
     for (size_t i = 1; i < wxArgV.size(); i++)
     {
         if (wxArgV[i].find('.') == string::npos)
             continue;
+
         if (wxArgV[i].find(".exe") != string::npos)
             continue;
+
         ext = toLowerCase(wxArgV[i].substr(wxArgV[i].rfind('.')).ToStdString());
+
+        // Scripts: run or open?
         if (ext == ".nscr")
         {
             if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
@@ -2338,6 +2763,8 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
             else
                 filestoopen.Add(wxArgV[i]);
         }
+
+        // Procedures: run or open?
         if (ext == ".nprc")
         {
             if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
@@ -2348,10 +2775,14 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
             else
                 filestoopen.Add(wxArgV[i]);
         }
+
+        // Usual text files
         if (ext == ".dat"
             || ext == ".txt"
             || ext == ".tex")
             filestoopen.Add(wxArgV[i]);
+
+        // Data files
         if (ext == ".ods"
             || ext == ".ibw"
             || ext == ".csv"
@@ -2364,12 +2795,11 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
             || ext == ".ndat")
             m_terminal->pass_command("append \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"");
     }
+
     if (filestoopen.size())
         OpenSourceFile(filestoopen);
 }
 
-
-// File and editor manipulation code begins here
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private NewFile
@@ -2556,6 +2986,17 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function creates a new
+/// editor page and copies the passed revision
+/// contents to this page.
+///
+/// \param revisionName const wxString&
+/// \param revisionContent const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::ShowRevision(const wxString& revisionName, const wxString& revisionContent)
 {
     NewFile(FILE_NOTYPE, revisionName);
@@ -2563,15 +3004,27 @@ void NumeReWindow::ShowRevision(const wxString& revisionName, const wxString& re
     m_currentEd->UpdateSyntaxHighlighting(true);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function copies the settings
+/// from the current editor to the passed editor.
+///
+/// \param edit NumeReEditor*
+/// \param _fileType FileFilterType
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileType)
 {
     if (m_currentEd && edit && !m_loadingFilesDuringStartup)
     {
         int settings = m_currentEd->getSettings();
+
         if (_fileType != FILE_NSCR && _fileType != FILE_NPRC && _fileType != FILE_MATLAB && _fileType != FILE_PLUGIN)
         {
             if (settings & NumeReEditor::SETTING_INDENTONTYPE)
                 settings &= ~NumeReEditor::SETTING_INDENTONTYPE;
+
             if (settings & NumeReEditor::SETTING_USEANALYZER)
                 settings &= ~NumeReEditor::SETTING_USEANALYZER;
         }
@@ -2580,10 +3033,20 @@ void NumeReWindow::CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileTy
             if (settings & NumeReEditor::SETTING_USETXTADV)
                 settings &= ~NumeReEditor::SETTING_USETXTADV;
         }
+
         edit->ToggleSettings(settings);
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function creates a new
+/// editor page and copies the contents of the
+/// default page template to this page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::DefaultPage()
 {
     wxString template_file, dummy;
@@ -2613,6 +3076,7 @@ void NumeReWindow::DefaultPage()
     m_currentPage = m_book->GetPageCount();
     m_book->AddPage (edit, _guilang.get("GUI_EDITOR_TAB_WELCOMEPAGE"), true);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private PageHasChanged
@@ -2699,6 +3163,7 @@ void NumeReWindow::PageHasChanged (int pageNr)
 	}
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private CloseTab
 ///  Closes a tab after the user right-clicks it and selects "Close"
@@ -2713,19 +3178,43 @@ void NumeReWindow::CloseTab()
 	CloseFile(tab);
 	m_book->Refresh();
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This member function closes all other
+/// editor tabs except of the current selected
+/// one.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::CloseOtherTabs()
 {
 	int tab = GetIntVar(VN_CLICKEDTAB);
+
+	// Close all pages left from the current tab
 	while (tab)
 	{
         CloseFile(0);
         tab--;
 	}
+
+	// Close all pages right from the current tab
 	while (m_book->GetPageCount() > 1)
         CloseFile(1);
+
 	m_book->Refresh();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function uses the Windows
+/// shell to open the containing folder of the
+/// selected tab in the Windows Explorer.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OpenContainingFolder()
 {
     int tab = GetIntVar(VN_CLICKEDTAB);
@@ -2734,22 +3223,32 @@ void NumeReWindow::OpenContainingFolder()
     wxExecute("explorer " + filename.GetPath(), wxEXEC_ASYNC, nullptr, nullptr);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function executes the
+/// contents of the editor page connected to the
+/// selected tab.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::EvaluateTab()
 {
 	int tab = GetIntVar(VN_CLICKEDTAB);
 	NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(tab));
-    if(!edit->HasBeenSaved() || edit->Modified())
+
+    if (!edit->HasBeenSaved() || edit->Modified())
     {
         int result = HandleModifiedFile(tab, MODIFIEDFILE_COMPILE);
 
         if (result == wxCANCEL)
-        {
             return;
-        }
     }
+
     string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
     OnExecuteFile(command);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private CloseFile
@@ -2814,6 +3313,7 @@ void NumeReWindow::CloseFile (int pageNr, bool askforsave)
 	}
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private CloseAllFiles
 ///  Closes all open files
@@ -2875,6 +3375,7 @@ bool NumeReWindow::CloseAllFiles()
 	return true;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private GetPageNum
 ///  Searches through the open editors to find an editor with the given name
@@ -2916,6 +3417,7 @@ int NumeReWindow::GetPageNum(wxFileName fn,  bool compareWholePath, int starting
 	return -1;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnPageChange
 ///  Event handler called when the user clicks a different tab
@@ -2934,6 +3436,7 @@ void NumeReWindow::OnPageChange (wxNotebookEvent &WXUNUSED(event))
 		PageHasChanged();
 	}
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private HandleModifiedFile
@@ -3045,6 +3548,7 @@ int NumeReWindow::HandleModifiedFile(int pageNr, ModifiedFileAction fileAction)
 	return wxNO;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OpenFile
 ///  Shows a file dialog and returns a list of files to open.  Abstracts out local/remote file dialogs.
@@ -3063,70 +3567,34 @@ int NumeReWindow::HandleModifiedFile(int pageNr, ModifiedFileAction fileAction)
 wxArrayString NumeReWindow::OpenFile(FileFilterType filterType)
 {
 	wxArrayString fnames;
+
 	if (!m_currentEd)
-	{
 		return fnames;
-	}
 
 	wxString filterString = ConstructFilterString(filterType);
 
-	if(!m_remoteMode)
-	{
-		wxFileDialog dlg (this, _(_guilang.get("GUI_DLG_OPEN")), "", "", filterString,
-			wxFD_OPEN | wxFD_FILE_MUST_EXIST  | wxFD_CHANGE_DIR);
-		if (dlg.ShowModal() != wxID_OK)
-		{
-			return fnames;
-		}
-		m_currentEd->SetFocus();
-		dlg.GetPaths (fnames);
-	}
-	else
-	{
-		if(!CheckForBlankPassword())
-		{
-			return wxArrayString();
-		}
+    wxFileDialog dlg (this, _(_guilang.get("GUI_DLG_OPEN")), "", "", filterString, wxFD_OPEN | wxFD_FILE_MUST_EXIST  | wxFD_CHANGE_DIR);
 
-		SetStatusText("Doing network operation...", 3);
+    if (dlg.ShowModal() != wxID_OK)
+        return fnames;
 
-		wxBusyCursor busyCursor;
-		if(m_remoteFileDialog->Prepare(true, filterString))
-		{
-			int result = m_remoteFileDialog->ShowModal();
-			SetStatusText(wxEmptyString, 3);
-			m_currentEd->SetFocus();
-
-			if(result != wxOK)
-			{
-				return fnames;
-			}
-
-			wxString remoteFileName = m_remoteFileDialog->GetRemoteFileNameAndPath();
-
-			wxString userHome;
-			if(!m_network->GetHomeDirPath(userHome))
-			{
-				CheckNetworkStatus();
-			}
-			else
-			{
-				remoteFileName.Replace("~", userHome);
-				fnames.Add(remoteFileName);
-			}
-		}
-		else
-		{
-			CheckNetworkStatus();
-			SetStatusText(wxEmptyString, 3);
-			return fnames;
-		}
-	}
+    m_currentEd->SetFocus();
+    dlg.GetPaths (fnames);
 
 	return fnames;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function opens the file
+/// with the passed name in the corresponding
+/// widget (either editor, ImageViewer or
+/// externally).
+///
+/// \param filename const wxFileName&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OpenFileByType(const wxFileName& filename)
 {
     if (filename.GetExt() == "nscr"
@@ -3171,6 +3639,16 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function opens a list of
+/// files depending on their type in the correct
+/// widget.
+///
+/// \param filenameslist const wxArrayString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OpenFilesFromList(const wxArrayString& filenameslist)
 {
     for (size_t i = 0; i < filenameslist.size(); i++)
@@ -3332,7 +3810,6 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 }
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 ///  private GetFileContents
 ///  Gets the text of a source file.  Abstracts out opening local / remote files.
@@ -3379,6 +3856,14 @@ bool NumeReWindow::GetFileContents(wxString fileToLoad, wxString &fileContents, 
 	return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function gets the drag-drop
+/// source item, if the source was the file tree.
+///
+/// \return wxTreeItemId
+///
+/////////////////////////////////////////////////
 wxTreeItemId NumeReWindow::getDragDropSourceItem()
 {
     wxTreeItemId retVal = m_dragDropSourceItem;
@@ -3386,6 +3871,16 @@ wxTreeItemId NumeReWindow::getDragDropSourceItem()
     return retVal;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the paths
+/// connected to a specific directory in the file
+/// tree.
+///
+/// \param itemId const wxTreeItemId&
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
 {
     if (!itemId.IsOk())
@@ -3397,6 +3892,7 @@ wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
     if (!data)
     {
         vector<string> vPaths = m_terminal->getPathSettings();
+
         for (size_t i = 0; i <= PLOTPATH-2; i++)
         {
             if (itemId == m_projectFileFolders[i])
@@ -3407,15 +3903,19 @@ wxString NumeReWindow::getTreeFolderPath(const wxTreeItemId& itemId)
         }
     }
     else if (data->isDir)
-    {
         pathName = data->filename;
-    }
 
     return pathName;
 }
 
-// This member function tells NumeRe that
-// it should display the "ready" state to the user
+
+/////////////////////////////////////////////////
+/// \brief This member function tells NumeRe that
+/// it shall display the "ready" state to the user.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::Ready()
 {
     if (m_statusBar)
@@ -3428,20 +3928,27 @@ void NumeReWindow::Ready()
     tb->EnableTool(ID_MENU_EXECUTE, true);
     tb->EnableTool(ID_MENU_STOP_EXECUTION, false);
 
-    //UpdateVarViewer();
     CallAfter(NumeReWindow::UpdateVarViewer);
 }
 
-// This member function tells NumeRe that
-// it should display the "busy" state to the user
+
+/////////////////////////////////////////////////
+/// \brief This member function tells NumeRe that
+/// it shall display the "busy" state to the user.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::Busy()
 {
     if (m_statusBar)
         m_statusBar->Busy();
+
     wxToolBar* tb = GetToolBar();
     tb->EnableTool(ID_MENU_EXECUTE, false);
     tb->EnableTool(ID_MENU_STOP_EXECUTION, true);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private SaveFile
@@ -3463,7 +3970,6 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 	wxString filename;
 	wxString fileContents;
 
-	//bool originalRemoteMode = m_remoteMode;
     m_remoteMode = false;
 	bool doSaveAs = saveas || !m_currentEd->HasBeenSaved() /*|| (m_remoteMode != m_currentEd->LastSavedRemotely())*/;
 
@@ -3473,213 +3979,126 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 
 
 	if (isSourceFile)
-	{
 		fileContents = m_currentEd->GetText();
-	}
 	// we must be saving a new project
 	else
-	{
 		fileContents = "[Headers]\n\n[Sources]\n\n[Libraries]\n\n[Other]";
-	}
 
-	//if(true)
-	{
-		if(doSaveAs)
-		{
-			// the last item in a filter's list will be the default extension if none is given
-			// ie, right now, .cpp is the default extension for C++ files
+    if(doSaveAs)
+    {
+        // the last item in a filter's list will be the default extension if none is given
+        // ie, right now, .cpp is the default extension for C++ files
 
 
-			wxString title = _guilang.get("GUI_DLG_SAVEAS");
-			vector<string> vPaths = m_terminal->getPathSettings();
-			int i = 0;
+        wxString title = _guilang.get("GUI_DLG_SAVEAS");
+        vector<string> vPaths = m_terminal->getPathSettings();
+        int i = 0;
 
+        if (m_currentEd->getFileType() == FILE_NSCR)
+            i = SCRIPTPATH;
+        else if (m_currentEd->getFileType() == FILE_NPRC)
+            i = PROCPATH;
+        else if (m_currentEd->getFileType() == FILE_DATAFILES
+            || m_currentEd->getFileType() == FILE_TEXSOURCE
+            || m_currentEd->getFileType() == FILE_NONSOURCE)
+            i = SAVEPATH;
+        wxFileDialog dlg (this, title, vPaths[i], "", filterString,
+            wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
+
+        if (m_currentEd->getFileType() == FILE_DATAFILES)
+        {
+            if (m_currentEd->GetFileName().GetExt() == "dat")
+                dlg.SetFilterIndex(0);
+            else if (m_currentEd->GetFileName().GetExt() == "txt")
+                dlg.SetFilterIndex(1);
+            else if (m_currentEd->GetFileName().GetExt() == "csv")
+                dlg.SetFilterIndex(2);
+            else if (m_currentEd->GetFileName().GetExt() == "jdx"
+                || m_currentEd->GetFileName().GetExt() == "dx"
+                || m_currentEd->GetFileName().GetExt() == "jcm")
+                dlg.SetFilterIndex(3);
+        }
+        if (m_currentEd->getFileType() == FILE_NONSOURCE)
+        {
+            if (m_currentEd->GetFileName().GetExt() == "txt")
+                dlg.SetFilterIndex(0);
+            else if (m_currentEd->GetFileName().GetExt() == "log")
+                dlg.SetFilterIndex(1);
+        }
+        // ie, user clicked cancel
+        if(dlg.ShowModal() != wxID_OK)
+        {
+            return false;
+        }
+        if (m_currentEd->GetFileName().IsOk())
+            m_watcher->Remove(m_currentEd->GetFileName());
+        filename = dlg.GetPath();
+        m_watcher->Add(wxFileName(filename));
+        if (filename.find('.') == string::npos || filename.find('.', filename.rfind('\\')) == string::npos)
+        {
             if (m_currentEd->getFileType() == FILE_NSCR)
-                i = SCRIPTPATH;
+                filename += ".nscr";
             else if (m_currentEd->getFileType() == FILE_NPRC)
-                i = PROCPATH;
-            else if (m_currentEd->getFileType() == FILE_DATAFILES
-                || m_currentEd->getFileType() == FILE_TEXSOURCE
-                || m_currentEd->getFileType() == FILE_NONSOURCE)
-                i = SAVEPATH;
-			wxFileDialog dlg (this, title, vPaths[i], "", filterString,
-				wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
-
-            if (m_currentEd->getFileType() == FILE_DATAFILES)
+                filename += ".nprc";
+            else if (m_currentEd->getFileType() == FILE_DATAFILES)
             {
-                if (m_currentEd->GetFileName().GetExt() == "dat")
-                    dlg.SetFilterIndex(0);
-                else if (m_currentEd->GetFileName().GetExt() == "txt")
-                    dlg.SetFilterIndex(1);
-                else if (m_currentEd->GetFileName().GetExt() == "csv")
-                    dlg.SetFilterIndex(2);
-                else if (m_currentEd->GetFileName().GetExt() == "jdx"
-                    || m_currentEd->GetFileName().GetExt() == "dx"
-                    || m_currentEd->GetFileName().GetExt() == "jcm")
-                    dlg.SetFilterIndex(3);
+                if (m_currentEd->GetFilenameString().find('.') != string::npos)
+                    filename += m_currentEd->GetFilenameString().substr(m_currentEd->GetFilenameString().rfind('.'));
+                else
+                    filename += ".dat";
             }
-            if (m_currentEd->getFileType() == FILE_NONSOURCE)
+            else if (m_currentEd->getFileType() == FILE_TEXSOURCE)
+                filename += ".tex";
+            else if (m_currentEd->getFileType() == FILE_NONSOURCE)
             {
-                if (m_currentEd->GetFileName().GetExt() == "txt")
-                    dlg.SetFilterIndex(0);
-                else if (m_currentEd->GetFileName().GetExt() == "log")
-                    dlg.SetFilterIndex(1);
+                if (m_currentEd->GetFilenameString().find('.') != string::npos)
+                    filename += m_currentEd->GetFilenameString().substr(m_currentEd->GetFilenameString().rfind('.'));
+                else
+                    filename += ".txt";
             }
-			// ie, user clicked cancel
-			if(dlg.ShowModal() != wxID_OK)
-			{
-				return false;
-			}
-			if (m_currentEd->GetFileName().IsOk())
-                m_watcher->Remove(m_currentEd->GetFileName());
-			filename = dlg.GetPath();
-			m_watcher->Add(wxFileName(filename));
-			if (filename.find('.') == string::npos || filename.find('.', filename.rfind('\\')) == string::npos)
-			{
-                if (m_currentEd->getFileType() == FILE_NSCR)
-                    filename += ".nscr";
-                else if (m_currentEd->getFileType() == FILE_NPRC)
-                    filename += ".nprc";
-                else if (m_currentEd->getFileType() == FILE_DATAFILES)
-                {
-                    if (m_currentEd->GetFilenameString().find('.') != string::npos)
-                        filename += m_currentEd->GetFilenameString().substr(m_currentEd->GetFilenameString().rfind('.'));
-                    else
-                        filename += ".dat";
-                }
-                else if (m_currentEd->getFileType() == FILE_TEXSOURCE)
-                    filename += ".tex";
-                else if (m_currentEd->getFileType() == FILE_NONSOURCE)
-                {
-                    if (m_currentEd->GetFilenameString().find('.') != string::npos)
-                        filename += m_currentEd->GetFilenameString().substr(m_currentEd->GetFilenameString().rfind('.'));
-                    else
-                        filename += ".txt";
-                }
-			}
-		}
-		else
-		{
-			filename = m_currentEd->GetFileNameAndPath();
-			string sPath = filename.ToStdString();
-			sPath = replacePathSeparator(sPath);
-			sPath.erase(sPath.rfind('/'));
-			FileSystem _fSys;
-			// Make the folder, if it doesn't exist
-			_fSys.setPath(sPath, true, replacePathSeparator(getProgramFolder().ToStdString()));
-		}
+        }
+    }
+    else
+    {
+        filename = m_currentEd->GetFileNameAndPath();
+        string sPath = filename.ToStdString();
+        sPath = replacePathSeparator(sPath);
+        sPath.erase(sPath.rfind('/'));
+        FileSystem _fSys;
+        // Make the folder, if it doesn't exist
+        _fSys.setPath(sPath, true, replacePathSeparator(getProgramFolder().ToStdString()));
+    }
 
-		if (isSourceFile)
-		{
-			m_currentEd->SetFocus();
+    if (isSourceFile)
+    {
+        m_currentEd->SetFocus();
 
-			wxFileName fn(filename);
-			m_currentEd->SetFilename(fn, false);
-			m_currentSavedFile = toString((int)time(0)) + "|" +filename;
-			if (!m_currentEd->SaveFile(filename))
-            {
-                wxMessageBox(_guilang.get("GUI_DLG_SAVE_ERROR"), _guilang.get("GUI_DLG_SAVE"), wxCENTRE | wxOK | wxICON_ERROR, this);
-                return false;
-            }
-			wxString simpleFileName = m_currentEd->GetFilenameString();
+        wxFileName fn(filename);
+        m_currentEd->SetFilename(fn, false);
+        m_currentSavedFile = toString((int)time(0)) + "|" +filename;
+        if (!m_currentEd->SaveFile(filename))
+        {
+            wxMessageBox(_guilang.get("GUI_DLG_SAVE_ERROR"), _guilang.get("GUI_DLG_SAVE"), wxCENTRE | wxOK | wxICON_ERROR, this);
+            return false;
+        }
+        wxString simpleFileName = m_currentEd->GetFilenameString();
 
-			int currentTab = m_book->GetSelection();
+        int currentTab = m_book->GetSelection();
 
-			wxString locationPrefix = "(L) ";
-			m_book->SetPageText(currentTab, simpleFileName);
-			m_book->Refresh();
-			UpdateWindowTitle(simpleFileName);
+        wxString locationPrefix = "(L) ";
+        m_book->SetPageText(currentTab, simpleFileName);
+        m_book->Refresh();
+        UpdateWindowTitle(simpleFileName);
 
-		}
-		else
-		{
-			wxFile newProjectFile(filename, wxFile::write);
-			newProjectFile.Write(fileContents);
-			newProjectFile.Close();
-		}
+    }
+    else
+    {
+        wxFile newProjectFile(filename, wxFile::write);
+        newProjectFile.Write(fileContents);
+        newProjectFile.Close();
+    }
 
-	}
-	// remote mode
-	/*else
-	{
-		wxString remotePath, remoteFile;
-
-		if(!CheckForBlankPassword())
-		{
-			return false;
-		}
-
-
-		if(doSaveAs)
-		{
-			SetStatusText("Doing network operation...", 3);
-			if(m_remoteFileDialog->Prepare(false, filterString))
-			{
-				int result = m_remoteFileDialog->ShowModal();
-				SetStatusText(wxEmptyString, 3);
-				m_currentEd->SetFocus();
-
-				if(result != wxOK)
-				{
-					return false;
-				}
-
-				remotePath = m_remoteFileDialog->GetRemotePath();
-				remoteFile = m_remoteFileDialog->GetRemoteFileName();
-
-				wxString userHome;
-				if(!m_network->GetHomeDirPath(userHome))
-				{
-					CheckNetworkStatus();
-				}
-				else
-				{
-					remotePath.Replace("~", userHome);
-				}
-			}
-			else
-			{
-				CheckNetworkStatus();
-				SetStatusText(wxEmptyString, 3);
-				return false;
-			}
-		}
-		else
-		{
-			remoteFile = m_currentEd->GetFilenameString();
-			remotePath = m_currentEd->GetFilePath();
-		}
-
-		wxFileName remoteFN(remotePath, remoteFile);
-		wxBeginBusyCursor();
-		if(!m_network->SendFileContents(fileContents, remoteFN))
-		{
-			CheckNetworkStatus();
-		}
-		wxEndBusyCursor();
-
-		if(isSourceFile)
-		{
-			wxString currentFilenameAndPath = m_currentEd->GetFileNameAndPath();
-			if((currentFilenameAndPath == wxEmptyString) ||
-				(currentFilenameAndPath != wxFileName(remotePath, remoteFile, wxPATH_UNIX).GetFullPath()))
-			{
-				int currentTab = m_book->GetSelection();
-				wxString locationPrefix = "(R) ";
-				m_book->SetPageText(currentTab, locationPrefix + remoteFile);
-			}
-
-			wxFileName fn(remotePath, remoteFile, wxPATH_UNIX);
-			m_currentEd->SetFilename(fn, true);
-		}
-		else
-		{
-			// store the name so we can set the name in the project tree
-			filename = wxFileName(remotePath, remoteFile, wxPATH_UNIX).GetFullPath();
-		}
-	}*/
-
-	if(isSourceFile)
+	if (isSourceFile)
 	{
 		m_currentEd->SetSavePoint();
         m_currentEd->UpdateSyntaxHighlighting();
@@ -3687,10 +4106,8 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 	}
 	else
 	{
-		if(m_projMultiFiles != NULL)
-		{
+		if (m_projMultiFiles != NULL)
 			CloseProjectFile();
-		}
 
 		m_projMultiFiles = new ProjectInfo(false);
 		m_projMultiFiles->SetRemote(m_remoteMode);
@@ -3703,10 +4120,22 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 		m_fileTree->SetItemText(rootItem, m_projMultiFiles->GetProjectName());
 
 	}
+
 	return true;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function obtains the
+/// contents of a procedure file and transforms
+/// them to be used by an installer script (i.e.
+/// prepending the target namespace).
+///
+/// \param sProcFileName const string&
+/// \param sDefaultPath const string&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFileName, const string& sDefaultPath)
 {
     ifstream fProc;
@@ -3715,6 +4144,7 @@ vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFil
     vector<string> vProc;
     bool foundMainProcedure = false;
 
+    // Decode the procedure file name
     if (sProcFileName.find(sDefaultPath) != string::npos)
     {
         sNameSpace = sProcFileName.substr(0, sProcFileName.rfind('/')+1);
@@ -3727,19 +4157,23 @@ vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFil
             sNameSpace[sNameSpace.find('/')] = '~';
     }
 
+    // Open the procedure file
     fProc.open(sProcFileName.c_str());
 
     if (!fProc.good())
         return vProc;
 
+    // Read the contents of the procedure file
     while (!fProc.eof())
     {
         getline(fProc, sLine);
 
+        // Transform procedure heads
         if (sLine.find_first_not_of(" \t") != string::npos && sLine.substr(sLine.find_first_not_of(" \t"), 10) == "procedure ")
         {
             string sProcName = sLine.substr(sLine.find('$'), sLine.find('(') - sLine.find('$'));
 
+            // Insert namespaces
             if ("$" + sProcFileName.substr(sProcFileName.rfind('/')+1) == sProcName + ".nprc")
             {
                 sLine.insert(sLine.find('$')+1, sNameSpace);
@@ -3819,13 +4253,12 @@ wxString NumeReWindow::ConstructFilterString(FileFilterType filterType)
 	return filterString;
 }
 
+
 // my "I need to try something out, I'll stick it in here" function
 void NumeReWindow::Test(wxCommandEvent& WXUNUSED(event))
 {
 }
 
-
-// UI update code begins here
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnIdle
@@ -3847,6 +4280,7 @@ void NumeReWindow::OnIdle(wxIdleEvent &event)
 	event.Skip();
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnStatusTimer
 ///  Initiates UI updates based on the internal timer
@@ -3867,6 +4301,7 @@ void NumeReWindow::OnStatusTimer(wxTimerEvent &WXUNUSED(event))
 		ToolbarStatusUpdate();
 	}
 }
+
 
 /////////////////////////////////////////////////
 /// \brief This member function handles the events from the file event timer.
@@ -4041,6 +4476,7 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
     m_book->SetSelection(selection);
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnUpdateDebugUI
 ///  Updates the debug-related toolbar items
@@ -4166,6 +4602,7 @@ void NumeReWindow::UpdateStatusBar()
     m_statusBar->SetStatus(NumeReStatusbar::STATUS_DEBUGGER, sDebuggerMode);
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnUpdateSaveUI
 ///  Updates the status of the active tab if modified, as well as enabling the save items.
@@ -4217,8 +4654,6 @@ void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
 }
 
 
-// Gets / sets begin here
-
 //////////////////////////////////////////////////////////////////////////////
 ///  public SetIntVar
 ///  A "one-size-fits-all" integer Set routine, to avoid pointless duplication
@@ -4241,6 +4676,7 @@ void NumeReWindow::SetIntVar(int variableName, int value)
 		*target = value;
 	}
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetIntVar
@@ -4265,6 +4701,7 @@ int NumeReWindow::GetIntVar(int variableName)
 		return 0;
 	}
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private SelectIntVar
@@ -4297,6 +4734,7 @@ int* NumeReWindow::SelectIntVar(int variableName)
 	}
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public PassImageList
 ///  Allows the RemoteFileDialog to pass along its imagelist for use in the project tree
@@ -4312,7 +4750,6 @@ void NumeReWindow::PassImageList(wxImageList* imagelist)
 	m_fileTree->AssignImageList(imagelist);
 }
 
-// Options evaluation and GUI reconfiguration code begins here
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public EvaluateOptions
@@ -4435,6 +4872,7 @@ void NumeReWindow::EvaluateOptions()
     // Write the configuration to its file
 	m_config->Flush();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private UpdateMenuBar
@@ -4620,6 +5058,7 @@ void NumeReWindow::UpdateMenuBar()
 
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private UpdateToolbar
 ///  Recreates the toolbar, based on the current permissions
@@ -4727,6 +5166,7 @@ void NumeReWindow::UpdateToolbar()
 	m_config->Write("Interface/ShowToolbarText", showText ? "true" : "false");
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private UpdateTerminalNotebook
 ///  Recreates the notebook containing the terminal and other related widgets
@@ -4762,6 +5202,15 @@ void NumeReWindow::UpdateTerminalNotebook()
 	m_noteTerm->Refresh();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function gets the current
+/// variable list from the kernel and updates the
+/// variable viewer widget correspondingly.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::UpdateVarViewer()
 {
     if (m_varViewer)
@@ -4771,12 +5220,30 @@ void NumeReWindow::UpdateVarViewer()
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function updates the
+/// application's window title using the current
+/// opened file's name.
+///
+/// \param filename const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::UpdateWindowTitle(const wxString& filename)
 {
     wxTopLevelWindow::SetTitle(filename + " - NumeRe: Framework für Numerische Rechnungen (v " + sVersion + ")");
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function toggles the
+/// bottom part of the window containing the
+/// terminal and the list view widgets.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::toggleConsole()
 {
     if (m_termContainer->IsShown())
@@ -4792,18 +5259,27 @@ void NumeReWindow::toggleConsole()
         m_splitEditorOutput->SetMinimumPaneSize(20);
         m_terminal->UpdateSize();
         m_termContainer->Show();
+
         if (m_splitCommandHistory->IsSplit())
             m_noteTerm->Show();
     }
+
     m_book->Refresh();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function toggles the left
+/// sidebar of the window containing both trees.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::toggleFiletree()
 {
     if (m_treeBook->IsShown())
     {
         m_treeBook->Hide();
-        //fSplitPercentage = m_splitEditorOutput->GetSplitPercentage();
         m_splitProjectEditor->Unsplit(m_treeBook);
     }
     else
@@ -4812,10 +5288,21 @@ void NumeReWindow::toggleFiletree()
         m_splitProjectEditor->SetMinimumPaneSize(30);
         m_treeBook->Show();
     }
+
     m_terminal->UpdateSize();
     m_book->Refresh();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function toggles the
+/// rightmost part of the lower window section
+/// containing the history and the list view
+/// widgets.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::toggleHistory()
 {
     if (m_noteTerm->IsShown())
@@ -4829,36 +5316,46 @@ void NumeReWindow::toggleHistory()
         m_splitCommandHistory->SplitVertically(m_termContainer, m_noteTerm, fVerticalSplitPercentage);
         m_noteTerm->Show();
     }
+
     m_terminal->UpdateSize();
     m_termContainer->Refresh();
     m_noteTerm->Refresh();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function unhides the
+/// terminal, if it was hidden before.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::showConsole()
 {
     if (!m_termContainer->IsShown())
-    {
-        m_splitEditorOutput->SplitHorizontally(m_book, m_splitCommandHistory, fSplitPercentage);
-        m_splitEditorOutput->SetMinimumPaneSize(20);
-        m_terminal->UpdateSize();
-        m_termContainer->Show();
-        if (m_splitCommandHistory->IsSplit())
-            m_noteTerm->Show();
-        m_book->Refresh();
-    }
+        toggleConsole();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function opens a text
+/// entry dialog, where the user can enter the
+/// target line number, he wants to jump to. After
+/// confirming, the editor jumps to this line.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::gotoLine()
 {
-    wxTextEntryDialog* dialog = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_GOTO_QUESTION", toString(m_currentEd->GetLineCount())), _guilang.get("GUI_DLG_GOTO"));
-    int ret = dialog->ShowModal();
+    wxTextEntryDialog dialog(this, _guilang.get("GUI_DLG_GOTO_QUESTION", toString(m_currentEd->GetLineCount())), _guilang.get("GUI_DLG_GOTO"));
+    int ret = dialog.ShowModal();
+
     if (ret == wxID_CANCEL)
-    {
-        delete dialog;
         return;
-    }
-    int line = StrToInt(dialog->GetValue().ToStdString())-1;
-    delete dialog;
+
+    int line = StrToInt(dialog.GetValue().ToStdString())-1;
+
     if (line < 0 || line >= m_currentEd->GetLineCount())
         wxMessageBox(_guilang.get("GUI_DLG_GOTO_ERROR"), _guilang.get("GUI_DLG_GOTO"), wxCENTRE | wxICON_ERROR);
     else
@@ -4868,21 +5365,47 @@ void NumeReWindow::gotoLine()
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function focuses the
+/// editor widget.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::setEditorFocus()
 {
     m_currentEd->SetFocus();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function focuses the last
+/// opened ImageViewer window.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::setViewerFocus()
 {
     m_currentView->SetFocus();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// contents of the symbols tree.
+///
+/// \return void
+/// \todo Rework this function. It contains duplicates.
+///
+/////////////////////////////////////////////////
 void NumeReWindow::prepareFunctionTree()
 {
     vector<string> vDirList;
     vector<string> vKeyList;
     string sKeyList = _guilang.get("GUI_TREE_CMD_KEYLIST");
+
     while (sKeyList.length())
     {
         vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
@@ -4890,6 +5413,7 @@ void NumeReWindow::prepareFunctionTree()
         while (sKeyList.front() == ' ')
             sKeyList.erase(0,1);
     }
+
     int idxFolderOpen = m_iconManager->GetIconIndex("FOLDEROPEN");
     int idxFunctions = m_iconManager->GetIconIndex("FUNCTIONS");
     int idxCommands = m_iconManager->GetIconIndex("COMMANDS");
@@ -4903,13 +5427,14 @@ void NumeReWindow::prepareFunctionTree()
 	wxTreeItemId constNode = m_functionTree->AppendItem(rootNode, _guilang.get("GUI_TREE_CONSTANTS"), m_iconManager->GetIconIndex("WORKPLACE"), -1, root);
 	wxTreeItemId currentNode;
 
-	/// commands
+	// commands
 	for (size_t i = 0; i < vKeyList.size(); i++)
 	{
         FileNameTreeData* dir = new FileNameTreeData();
         dir->isDir = true;
         currentNode = m_functionTree->AppendItem(commandNode, _guilang.get("PARSERFUNCS_LISTCMD_TYPE_" + toUpperCase(vKeyList[i])), idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("PARSERFUNCS_LISTCMD_CMD_*_[" + toUpperCase(vKeyList[i]) + "]");
+
         for (size_t j = 0; j < vDirList.size(); j++)
         {
             FileNameTreeData* data = new FileNameTreeData();
@@ -4918,15 +5443,18 @@ void NumeReWindow::prepareFunctionTree()
             m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find(' ')), idxCommands, -1, data);
         }
 	}
+
     m_functionTree->Toggle(commandNode);
 
-	/// functions
+	// functions
     sKeyList = _guilang.get("GUI_TREE_FUNC_KEYLIST");
     vKeyList.clear();
+
     while (sKeyList.length())
     {
         vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
         sKeyList.erase(0, sKeyList.find(' '));
+
         while (sKeyList.front() == ' ')
             sKeyList.erase(0,1);
     }
@@ -4937,6 +5465,7 @@ void NumeReWindow::prepareFunctionTree()
         dir->isDir = true;
         currentNode = m_functionTree->AppendItem(functionNode, _guilang.get("PARSERFUNCS_LISTFUNC_TYPE_" + toUpperCase(vKeyList[i])), idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[" + toUpperCase(vKeyList[i]) + "]");
+
         for (size_t j = 0; j < vDirList.size(); j++)
         {
             FileNameTreeData* data = new FileNameTreeData();
@@ -4945,15 +5474,18 @@ void NumeReWindow::prepareFunctionTree()
             m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find(')')+1), idxFunctions, -1, data);
         }
 	}
+
     m_functionTree->Toggle(functionNode);
 
-    /// Constants
+    // Constants
     sKeyList = _guilang.get("GUI_TREE_CONST_KEYLIST");
     vKeyList.clear();
+
     while (sKeyList.length())
     {
         vKeyList.push_back(sKeyList.substr(0, sKeyList.find(' ')));
         sKeyList.erase(0, sKeyList.find(' '));
+
         while (sKeyList.front() == ' ')
             sKeyList.erase(0,1);
     }
@@ -4964,6 +5496,7 @@ void NumeReWindow::prepareFunctionTree()
         dir->isDir = true;
         currentNode = m_functionTree->AppendItem(constNode, _guilang.get("PARSERFUNCS_LISTCONST_TYPE_" + toUpperCase(vKeyList[i])), idxFolderOpen, -1, dir);
         vDirList = _guilang.getList("GUI_EDITOR_CALLTIP_CONST_*_[" + toUpperCase(vKeyList[i]) + "]");
+
         for (size_t j = 0; j < vDirList.size(); j++)
         {
             FileNameTreeData* data = new FileNameTreeData();
@@ -4972,10 +5505,20 @@ void NumeReWindow::prepareFunctionTree()
             m_functionTree->AppendItem(currentNode, vDirList[j].substr(0, vDirList[j].find(" = ")), idxConstants, -1, data);
         }
 	}
+
     m_functionTree->Toggle(constNode);
 
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function prepares the
+/// tooltip shown by the symbols tree.
+///
+/// \param sTooltiptext const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReWindow::prepareTooltip(const string& sTooltiptext)
 {
     size_t nClosingParens = sTooltiptext.find(')');
@@ -4988,9 +5531,18 @@ string NumeReWindow::prepareTooltip(const string& sTooltiptext)
     }
     else
         sTooltip.replace(nClosingParens+1, sTooltip.find_first_not_of(' ', nClosingParens+1)-nClosingParens-1, "  ->  ");
+
     return sTooltip;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function sets the default
+/// printer settings.
+///
+/// \return wxPrintData*
+///
+/////////////////////////////////////////////////
 wxPrintData* NumeReWindow::setDefaultPrinterSettings()
 {
     wxPrintData* printdata = new wxPrintData();
@@ -5002,7 +5554,6 @@ wxPrintData* NumeReWindow::setDefaultPrinterSettings()
     return printdata;
 }
 
-// Project code begins here
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnTreeItemRightClick
@@ -5190,6 +5741,7 @@ void NumeReWindow::OpenProjectFile(bool isRemote)
 	m_fileTree->Thaw();
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private AddFileToProject
 ///  Adds a file to the current multi-file project
@@ -5255,6 +5807,7 @@ void NumeReWindow::AddFileToProject()
 
 	SaveProjectFile();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnTreeItemActivated
@@ -5328,6 +5881,16 @@ void NumeReWindow::OnTreeItemActivated(wxTreeEvent &event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// tooltip requested for the item below the mouse
+/// cursor.
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
 {
     if (m_treeBook->GetCurrentPage() == m_functionPanel)
@@ -5335,6 +5898,7 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
         wxTreeItemId item = event.GetItem();
 
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
+
         if (data->isDir)
             return;
         else if (data->isFunction || data->isCommand)
@@ -5355,10 +5919,9 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
         wxString tooltip = _guilang.get("COMMON_FILETYPE_" + toUpperCase(pathname.GetExt().ToStdString()));
 
         if (pathname.GetExt() == "ndat")
-        {
             tooltip += getFileDetails(pathname);
-        }
 
+        // Show revision count (if any)
         VersionControlSystemManager manager(this);
 
         if (manager.hasRevisions(pathname.GetFullPath()))
@@ -5373,20 +5936,33 @@ void NumeReWindow::OnTreeItemToolTip(wxTreeEvent& event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function prepares the data
+/// to be dragged from one of the both trees.
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
 {
     if (m_treeBook->GetCurrentPage() == m_functionPanel)
     {
         wxTreeItemId item = event.GetItem();
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_functionTree->GetItemData(item));
+
         if (!data->isCommand && !data->isFunction && !data->isConstant)
             return;
+
         wxString token = data->tooltip;
         token.erase(token.find(' '));
+
         if (token.find('(') != string::npos)
             token.erase(token.find('(')+1);
         else
             token += " ";
+
         wxTextDataObject _dataObject(token);
         wxDropSource dragSource(this);
         dragSource.SetData(_dataObject);
@@ -5394,14 +5970,16 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
     }
     else
     {
-        //event.Allow();
         wxTreeItemId item = event.GetItem();
         m_dragDropSourceItem = item;
         FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(item));
+
         if (!data || data->isDir)
             return;
+
         wxFileName pathname = data->filename;
         wxString dragableExtensions = ";nscr;nprc;ndat;txt;dat;log;tex;csv;xls;xlsx;ods;jdx;jcm;dx;labx;ibw;png;jpg;jpeg;gif;bmp;eps;svg;m;cpp;cxx;c;hpp;hxx;h;";
+
         if (dragableExtensions.find(";" + pathname.GetExt() + ";") != string::npos)
         {
             wxFileDataObject _dataObject;
@@ -5414,24 +5992,37 @@ void NumeReWindow::OnTreeDragDrop(wxTreeEvent& event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function adds line break
+/// characters to the passed string to stick below
+/// a line length of 70 characters. Used by the
+/// tree tooltips.
+///
+/// \param sLine const wxString&
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString NumeReWindow::addLinebreaks(const wxString& sLine)
 {
     const unsigned int nMAXLINE = 70;
-    /*if (sLine.length() < nMAXLINE)
-        return sLine;*/
 
     wxString sReturn = sLine;
+
     while (sReturn.find("\\$") != string::npos)
         sReturn.erase(sReturn.find("\\$"),1);
+
     unsigned int nDescStart = sReturn.find("- ");
     unsigned int nIndentPos = 6;//
     unsigned int nLastLineBreak = 0;
     sReturn.replace(nDescStart, 2,"\n      ");
     nLastLineBreak = nDescStart;
+
     for (unsigned int i = nDescStart; i < sReturn.length(); i++)
     {
         if (sReturn[i] == '\n')
             nLastLineBreak = i;
+
         if ((i == nMAXLINE && !nLastLineBreak)
             || (nLastLineBreak && i - nLastLineBreak == nMAXLINE))
         {
@@ -5457,6 +6048,7 @@ wxString NumeReWindow::addLinebreaks(const wxString& sLine)
                         || (sReturn[j+1] == '"' && sReturn[j-1] == '"')
                         ))
                         continue;
+
                     sReturn.insert(j+1, "\n");
                     sReturn.insert(j+2, nIndentPos, ' ');
                     nLastLineBreak = j+1;
@@ -5472,9 +6064,20 @@ wxString NumeReWindow::addLinebreaks(const wxString& sLine)
             }
         }
     }
+
     return sReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays extended
+/// file informations of NDAT files, if this was
+/// enabled in the settings.
+///
+/// \param filename const wxFileName&
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString NumeReWindow::getFileDetails(const wxFileName& filename)
 {
     if (m_terminal->getKernelSettings().getbShowExtendedFileInfo())
@@ -5482,6 +6085,7 @@ wxString NumeReWindow::getFileDetails(const wxFileName& filename)
     else
         return "NOTHING";
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private CloseProjectFile
@@ -5550,6 +6154,7 @@ void NumeReWindow::CloseProjectFile(bool canUserCancel)
 	delete m_projMultiFiles;
 	m_projMultiFiles = NULL;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private SaveProjectFile
@@ -5639,6 +6244,7 @@ void NumeReWindow::SaveProjectFile()
 	}
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private LoadFilesIntoProjectTree
 ///  Loads the given files into the project tree
@@ -5692,25 +6298,25 @@ void NumeReWindow::LoadFilesIntoProjectTree(wxString configPath,  FileFilterType
 	m_fileTree->SortChildren(treeid);
 }
 
-/*enum FileFilterType
-{
-	FILE_ALLSOURCETYPES,
-	FILE_NUMERE,
-	FILE_DATAFILES,
-	FILE_NSCR,
-	FILE_NPRC,
-	FILE_ALLFILES,
-	FILE_NONSOURCE,
-	FILE_LASTTYPE,
-};*/
 
-
+/////////////////////////////////////////////////
+/// \brief This member function loads the file
+/// details to the file tree.
+///
+/// \param fromPath wxString
+/// \param fileType FileFilterType
+/// \param treeid wxTreeItemId
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid)
 {
     wxDir currentDir(fromPath);
     DirTraverser _traverser(m_fileTree, m_iconManager, treeid, fromPath, fileType);
     currentDir.Traverse(_traverser);
 }
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private RemoveFileFromProject
 ///  Removes a file from the current multi-file project
@@ -5743,7 +6349,6 @@ void NumeReWindow::RemoveFileFromProject()
 	}
 }
 
-// Other major functions
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public CheckNetworkStatus
@@ -5799,7 +6404,7 @@ NetworkCallResult NumeReWindow::CheckNetworkStatus()
 				m_options->GetHostname() != "127.0.0.1" &&
 				m_options->GetUsername() != "username")
 			{
-				if(AskUserForPassword())
+				//if(AskUserForPassword())
 				{
 					return NETCALL_REDO;
 				}
@@ -5827,6 +6432,7 @@ NetworkCallResult NumeReWindow::CheckNetworkStatus()
 		break;
 	}
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public FocusOnLine
@@ -5880,7 +6486,6 @@ void NumeReWindow::FocusOnLine(wxString filename, int linenumber, bool showMarke
 	}
 }
 
-// Find/replace code begins here
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnFindEvent
@@ -5950,6 +6555,7 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
 	}
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private FindString
 ///  Looks for a given string in the current editor
@@ -6018,6 +6624,7 @@ int NumeReWindow::FindString(const wxString &findString, int start_pos, int flag
 	return pos;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private ReplaceAllStrings
 ///  Replaces all occurrences of the given string in the current editor
@@ -6066,7 +6673,6 @@ int NumeReWindow::ReplaceAllStrings(const wxString &findString, const wxString &
 	return count;
 }
 
-// Various utility functions and random other stuff
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private DeterminePrintSize
@@ -6090,6 +6696,21 @@ wxRect NumeReWindow::DeterminePrintSize ()
 	return rect;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Wrapper for the corresponding function
+/// of the editor.
+///
+/// \param procedureName const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::FindAndOpenProcedure(const wxString& procedureName)
+{
+    m_currentEd->FindAndOpenProcedure(procedureName);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnSplitterDoubleClick
 ///  Cancels the ability to "close" a split window by double-clicking the splitter bar
@@ -6105,143 +6726,135 @@ void NumeReWindow::OnSplitterDoubleClick(wxSplitterEvent &event)
 	event.Veto();
 }
 
-//////////////////////////////////////////////////////////////////////////////
-///  private OnSize
-///  Not actually used at the moment - could be used to cleanly resize the terminal notebook
+
+/////////////////////////////////////////////////
+/// \brief This member function opens a file
+/// dialog to let the user choose the files to
+/// open in the editor.
 ///
-///  @param  event wxSizeEvent & The generated size event
+/// \param id int
+/// \return void
 ///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OnSize(wxSizeEvent &event)
-{
-	event.Skip();
-}
-
-void NumeReWindow::OnTermResize(wxSplitterEvent &event)
-{
-}
-
-bool NumeReWindow::CheckForBlankPassword()
-{
-	wxString password = m_options->GetPassphrase();
-	if(password.IsEmpty())
-	{
-		bool passwordEntered = AskUserForPassword();
-		if(!passwordEntered)
-		{
-			return false;
-		}
-
-		m_network->GetStatus();
-	}
-
-	return true;
-}
-
-bool NumeReWindow::AskUserForPassword()
-{
-	wxTextEntryDialog getPW(this, "Please enter your password and try again.", "Missing Password", "", wxTE_PASSWORD | wxOK | wxCANCEL);
-	int oked = getPW.ShowModal();
-	if(oked == wxID_OK)
-	{
-		m_options->SetPassphrase(getPW.GetValue());
-		return true;
-	}
-
-	return false;
-}
-
+/////////////////////////////////////////////////
 void NumeReWindow::OnOpenSourceFile(int id )
 {
 	if( id == ID_MENU_OPEN_SOURCE_LOCAL)
-	{
 		m_remoteMode = false;
-	}
 	else if(id == ID_MENU_OPEN_SOURCE_REMOTE)
-	{
 		m_remoteMode = true;
-	}
 
 	wxArrayString fnames = OpenFile(FILE_SUPPORTEDFILES);
 
 	if(fnames.Count() > 0)
-	{
 		OpenFilesFromList(fnames);
-	}
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function saves the file in
+/// the current editor.
+///
+/// \param id int
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnSaveSourceFile( int id )
 {
 	if( id == ID_MENU_SAVE_SOURCE_LOCAL)
-	{
 		m_remoteMode = false;
-	}
 	else if(id == ID_MENU_SAVE_SOURCE_REMOTE)
-	{
 		m_remoteMode = true;
-	}
+
 	SaveFile(true, false, FILE_ALLSOURCETYPES);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function executes the file in the
+/// current editor.
+///
+/// \param sFileName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnExecuteFile(const string& sFileName)
 {
     if (!sFileName.length())
         return;
-    //wxToolBar* tb = GetToolBar();
+
     string command = replacePathSeparator(sFileName);
     vector<string> vPaths = m_terminal->getPathSettings();
+
     if (command.rfind(".nprc") != string::npos)
     {
         command.erase(command.rfind(".nprc"));
+
         if (command.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
         {
             command.erase(0, vPaths[PROCPATH].length());
+
             while (command.front() == '/')
                 command.erase(0, 1);
+
             while (command.find('/') != string::npos)
                 command[command.find('/')] = '~';
         }
         else
             command = "'" + command + "'";
+
         command = "$" + command + "()";
         Busy();
     }
     else if (command.rfind(".nscr") != string::npos)
     {
         command.erase(command.rfind(".nscr"));
+
         if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
             command.erase(0, vPaths[SCRIPTPATH].length());
+
         while (command.front() == '/')
             command.erase(0, 1);
+
         if (command.find(' ') != string::npos)
             command = "\"" + command + "\"";
+
         command = "start " + command;
         Busy();
     }
     else
-    {
         command = "load \"" + command + "\" -app -ignore";
-    }
+
     showConsole();
     m_terminal->pass_command(command);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function runs the dependency
+/// calculating process in the procedure library.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnCalculateDependencies()
 {
     if (m_currentEd->getFileType() != FILE_NPRC)
         return;
 
     ProcedureLibrary& procLib = m_terminal->getKernel().getProcedureLibrary();
-
     DependencyDialog dlg(this, wxID_ANY, _guilang.get("GUI_DEPDLG_HEAD", m_currentEd->GetFilenameString().ToStdString()), m_currentEd->GetFileNameAndPath().ToStdString(), procLib);
-
     dlg.ShowModal();
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function launches the
+/// package creator dialog and creates the install
+/// file, if the user confirms his selection.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnCreatePackage()
 {
     if (m_currentEd->getFileType() != FILE_NPRC)
@@ -6291,57 +6904,28 @@ void NumeReWindow::OnCreatePackage()
     }
 }
 
-void NumeReWindow::OnCopy()
-{
-	/* HACK !!!
-	* Okay, here's the problem.  When keyboard shortcuts like CTRL-C are listed in the text
-	* of a menu item, that shortcut is automatically assigned.  But, this means that the menu's
-	* enclosing frame will always capture that shortcut.
-	*
-	* I'd really like to have CTRL-C available to the editor for "Copy", but also available to
-	* the terminal for killing programs.  My initial experiments didn't come up with anything,
-	* but I did come up with this workaround.  It'll do for now.  Basically, if we detect a
-	* CTRL-C, we check to see if a terminal is active.  If it is, we fake a CTRL-C keyboard
-	* event, and pass it on to the terminal.  Otherwise, we just copy text as usual.
-	*/
-	/*wxWindow* focusedWindow = wxWindow::FindFocus();
 
-	if(focusedWindow == m_terminal || focusedWindow == m_debugTerminal)
-	{
-		wxSSH* focusedTerminal = (focusedWindow == m_terminal) ? m_terminal : m_debugTerminal;
-
-		// magic codes copied from a real CTRL-C event.
-		wxKeyEvent ctrlCEvent(wxEVT_CHAR);
-		ctrlCEvent.m_controlDown = true;
-		ctrlCEvent.m_keyCode = 3;
-		ctrlCEvent.m_rawCode = 3;
-		ctrlCEvent.m_rawFlags = 3014657;
-
-		focusedTerminal->SafelyProcessEvent(ctrlCEvent);
-	}
-	else*/
-	{
-		m_currentEd->Copy();
-	}
-}
-
+/////////////////////////////////////////////////
+/// \brief This member function displays the find
+/// and replace dialog.
+///
+/// \param id int
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnFindReplace(int id)
 {
     if (m_currentEd->HasSelection())
         m_findData.SetFindString(m_currentEd->GetSelectedText());
+
 	if (g_findReplace != nullptr)
 	{
 		bool isReplaceDialog = g_findReplace->GetWindowStyle() & wxFR_REPLACEDIALOG;
 
-		if( (isReplaceDialog && (id == ID_MENU_REPLACE)) ||
-			(!isReplaceDialog && (id == ID_MENU_FIND)) )
-		{
+		if ((isReplaceDialog && (id == ID_MENU_REPLACE)) || (!isReplaceDialog && (id == ID_MENU_FIND)))
 			return;
-		}
 		else
-		{
 			delete g_findReplace;
-		}
 	}
 	else
         m_findData.SetFlags(wxFR_DOWN | wxFR_WRAPAROUND);
@@ -6350,12 +6934,20 @@ void NumeReWindow::OnFindReplace(int id)
 	int dialogFlags = showFind ? 0 : wxFR_REPLACEDIALOG;
 	wxString title = showFind ? _guilang.get("GUI_DLG_FIND") : _guilang.get("GUI_DLG_REPLACE");
 
-
 	g_findReplace = new FindReplaceDialog(this,	&m_findData, title, dialogFlags);
 	g_findReplace->Show(true);
 	g_findReplace->SetFocus();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// settings dialog and performs all necessary
+/// updates, if the user confirms his changes.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnOptions()
 {
 	Settings _option = m_terminal->getKernelSettings();
@@ -6368,103 +6960,108 @@ void NumeReWindow::OnOptions()
 	if (result == wxID_OK)
 	{
         m_terminal->setKernelSettings(_option);
-        //Permission* perms = m_options->GetPerms();
-        // because the authorization could be updated and followed by a cancel,
-        // go ahead and write the authcode out.  Odds are it hasn't changed, but
-        // it's worth doing anyway to make sure it's current.
-        //m_config->Write("Permissions/authorized", perms->GetAuthCode());
-
-        // For the same reason, ALWAYS re-evaluate the options.  If the user canceled
-        // the dialog, things won't have changed.
         EvaluateOptions();
         m_history->UpdateSyntaxHighlighting();
         m_terminal->UpdateColors();
         m_termContainer->SetBackgroundColour(m_options->GetSyntaxStyle(Options::CONSOLE_STD).background);
         m_termContainer->Refresh();
+
         for (size_t i = 0; i < m_book->GetPageCount(); i++)
         {
             NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
             edit->UpdateSyntaxHighlighting(true);
             edit->SetEditorFont(m_options->GetEditorFont());
         }
-        /*wxWindowList children = this->GetChildren();
-        for (size_t i = 0; i < children.size(); i++)
-        {
-            children[i]->SetBackgroundColour(*wxBLACK);
-            children[i]->SetForegroundColour(*wxWHITE);
-            wxWindowList subchildren = children[i]->GetChildren();
-            for (size_t j = 0; j < subchildren.size(); j++)
-            {
-                subchildren[j]->SetBackgroundColour(*wxBLACK);
-                subchildren[j]->SetForegroundColour(*wxWHITE);
-                wxWindowList subsubchildren = subchildren[j]->GetChildren();
-                for (size_t k = 0; k < subsubchildren.size(); k++)
-                {
-                    subsubchildren[k]->SetBackgroundColour(*wxBLACK);
-                    subsubchildren[k]->SetForegroundColour(*wxWHITE);
-                }
-            }
-        }*/
     }
+
 	m_currentEd->SetFocus();
 }
 
-void NumeReWindow::OnProjectIncludeExcludeFile( int id )
+
+/////////////////////////////////////////////////
+/// \brief Legacy project handling function.
+///
+/// \param id int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnProjectIncludeExcludeFile(int id)
 {
 	bool include = (id == ID_PROJECT_INCLUDE_FILE);
-	FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(m_clickedTreeItem));
+	FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
 	m_projMultiFiles->SetFileBuildInclusion(data->filename, m_projectSelectedFolderType, include);
 
 	wxString extension = wxFileName(data->filename).GetExt();
 	int iconIndex;
-	if(include)
-	{
+
+	if (include)
 		iconIndex = m_extensionMappings[extension];
-	}
 	else
 	{
 		extension += "_disabled";
 		iconIndex = m_extensionMappings[extension];
 	}
+
 	m_fileTree->SetItemImage(m_clickedTreeItem, iconIndex);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function prints the styled
+/// text of the current editor.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnPrintPage()
 {
 	m_currentEd->SetPrintColourMode(m_options->GetPrintStyle());
+
     if (!g_printData->IsOk())
         this->OnPrintSetup();
+
 	wxPrintDialogData printDialogData( *g_printData);
 	wxPrinter printer (&printDialogData);
 	NumeRePrintout printout (m_currentEd, m_options);
+
 	if (!printer.Print (this, &printout, true))
 	{
 		if (wxPrinter::GetLastError() == wxPRINTER_ERROR)
 		{
-			wxMessageBox (_guilang.get("GUI_PRINT_ERROR"),
-				_guilang.get("GUI_PRINT_ERROR_HEAD"), wxOK | wxICON_WARNING);
+			wxMessageBox (_guilang.get("GUI_PRINT_ERROR"), _guilang.get("GUI_PRINT_ERROR_HEAD"), wxOK | wxICON_WARNING);
 			return;
 		}
 	}
+
 	(*g_printData) = printer.GetPrintDialogData().GetPrintData();
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// styled text of the current editor in the print
+/// preview window.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnPrintPreview()
 {
 	m_currentEd->SetPrintColourMode(m_options->GetPrintStyle());
+
 	if (!g_printData->IsOk())
         this->OnPrintSetup();
+
 	wxPrintDialogData printDialogData( *g_printData);
-	//printDialogData.SetToPage(999);
 	wxPrintPreview *preview = new wxPrintPreview (new NumeRePrintout (m_currentEd, m_options), new NumeRePrintout (m_currentEd, m_options), &printDialogData);
+
 	if (!preview->Ok())
 	{
 		delete preview;
-		wxMessageBox (_guilang.get("GUI_PREVIEW_ERROR"),
-			_guilang.get("GUI_PREVIEW_ERROR_HEAD"), wxOK | wxICON_WARNING);
+		wxMessageBox (_guilang.get("GUI_PREVIEW_ERROR"), _guilang.get("GUI_PREVIEW_ERROR_HEAD"), wxOK | wxICON_WARNING);
 		return;
 	}
+
 	wxRect rect = DeterminePrintSize();
 	wxPreviewFrame *frame = new wxPreviewFrame (preview, this, _guilang.get("GUI_PREVIEW_HEAD"));
 	frame->SetSize (rect);
@@ -6474,30 +7071,62 @@ void NumeReWindow::OnPrintPreview()
 	frame->Maximize();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// printing page setup dialog.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnPrintSetup()
 {
-	(*g_pageSetupData) = * g_printData;
+	(*g_pageSetupData) = *g_printData;
 	wxPageSetupDialog pageSetupDialog(this, g_pageSetupData);
 	pageSetupDialog.ShowModal();
 	(*g_printData) = pageSetupDialog.GetPageSetupData().GetPrintData();
 	(*g_pageSetupData) = pageSetupDialog.GetPageSetupData();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the help
+/// root page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnHelp()
 {
     ShowHelp("numere");
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the help
+/// page for the selected documentation ID.
+///
+/// \param sDocId const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReWindow::ShowHelp(const wxString& sDocId)
 {
     DocumentationBrowser* browser = new DocumentationBrowser(this, _guilang.get("DOC_HELP_HEADLINE", "%s"), this);
     return browser->SetStartPage(sDocId);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// "About" dialog.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReWindow::OnAbout()
 {
 	AboutChameleonDialog acd(this, 10000, _guilang.get("GUI_ABOUT_TITLE"));
 	acd.ShowModal();
-	//m_watchPanel->TestParsing();
 }
 

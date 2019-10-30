@@ -26,6 +26,10 @@
 #include "../../kernel/core/procedure/procedurelibrary.hpp"
 #include "../../kernel/core/procedure/dependency.hpp"
 
+/////////////////////////////////////////////////
+/// \brief This class represents a dialog showing
+/// the dependencies of a selected procedure file.
+/////////////////////////////////////////////////
 class DependencyDialog : public wxDialog
 {
     private:
@@ -36,8 +40,12 @@ class DependencyDialog : public wxDialog
         void insertChilds(wxTreeItemId item, const std::string& sParentProcedure, std::map<std::string, DependencyList>& mDeps);
         bool findInParents(wxTreeItemId item, const std::string& sCurrProc);
 
+        void OnItemActivate(wxTreeEvent& event);
+
     public:
         DependencyDialog(wxWindow* parent, wxWindowID id, const wxString& title, const std::string& mainfile, ProcedureLibrary& lib, long style = wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+
+        DECLARE_EVENT_TABLE();
 };
 
 

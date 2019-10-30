@@ -230,6 +230,7 @@ class NumeReWindow : public wxFrame
         void OnPrintSetup();
         wxRect DeterminePrintSize();
         Options* getOptions() {return m_options;}
+        void FindAndOpenProcedure(const wxString& procedureName);
 
 
     private:
@@ -249,7 +250,6 @@ class NumeReWindow : public wxFrame
         void OnProjectIncludeExcludeFile( int id );
         void OnOptions();
         void OnFindReplace(int id );
-        void OnCopy();
         void OnOpenInExplorer();
         void OnShowRevisions();
         void OnTagCurrentRevision();
@@ -273,8 +273,6 @@ class NumeReWindow : public wxFrame
         void OnFileEventTimer(wxTimerEvent& event);
 
         void OnSplitterDoubleClick(wxSplitterEvent &event);
-        void OnTermResize(wxSplitterEvent &event);
-        void OnSize(wxSizeEvent &event);
 
         void OnTreeItemRightClick(wxTreeEvent& event);
         void OnTreeItemActivated(wxTreeEvent& event);
@@ -287,8 +285,6 @@ class NumeReWindow : public wxFrame
         void OnPageChange(wxBookCtrlEvent& event);
 
         void OnFindEvent(wxFindDialogEvent& event);
-        /*void addFileToTree(const std::string& sFilePath);
-        void removeFileFromTree(const std::string& sFilePath);*/
 
         void OnFileSystemEvent(wxFileSystemWatcherEvent& event);
         void CreateProcedureTree(const string& sProcedurePath);
@@ -332,9 +328,6 @@ class NumeReWindow : public wxFrame
         void insertCopiedFile();
         void renameFile();
 
-        bool CheckForBlankPassword();
-        bool AskUserForPassword();
-
         void UpdateMenuBar();
         void UpdateToolbar();
         void UpdateTerminalNotebook();
@@ -353,10 +346,6 @@ class NumeReWindow : public wxFrame
         string prepareTooltip(const string& sTooltiptext);
 
         wxPrintData* setDefaultPrinterSettings();
-
-
-        //void CleanupDropMenu();
-
         int* SelectIntVar(int variableName);
 
         /*! Displays the output from wxLogDebug calls */
