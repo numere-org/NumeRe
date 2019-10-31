@@ -128,28 +128,25 @@ int CompareInts(int n1, int n2)
 extern Language _guilang;
 using namespace std;
 
-//////////////////////////////////////////////////////////////////////////////
-///  public constructor ChameleonEditor
-///  General-purpose editor creation and stuff
+/////////////////////////////////////////////////
+/// \brief Editor constructor.
 ///
-///  @param  mframe  ChameleonWindow * A pointer to the main application frame
-///  @param  options Options *         A pointer to the main Options object
-///  @param  project ProjectInfo *     A pointer to this editor's project
-///  @param  parent  wxWindow *        The editor's parent window
+/// \param mframe NumeReWindow*
+/// \param options Options*
+/// \param project ProjectInfo*
+/// \param parent wxWindow*
+/// \param id wxWindowID
+/// \param __syntax NumeReSyntax*
+/// \param __terminal wxTerm*
+/// \param pos const wxPoint&
+/// \param size const wxSize&
+/// \param style long
+/// \param name const wxString&
 ///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-NumeReEditor::NumeReEditor( NumeReWindow* mframe,
-							Options* options,
-							ProjectInfo* project,
-							wxWindow* parent,     wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal,
-							const wxPoint& pos /* = wxDefaultPosition */,
-							const wxSize& size /* = wxDefaultSize */,
-							long style /* = 0 */, const
-							wxString& name /* = wxSTCNameStr */ ) :
-	wxStyledTextCtrl(parent, id, pos, size, style, name)
+/////////////////////////////////////////////////
+NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* project, wxWindow* parent, wxWindowID id,
+                           NumeReSyntax* __syntax, wxTerm* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
+                               wxStyledTextCtrl(parent, id, pos, size, style, name)
 {
 	defaultPage = false;
 	m_mainFrame = mframe;
@@ -7895,7 +7892,7 @@ string NumeReEditor::realignLangString(string sLine, size_t& lastpos)
 /// strings.
 ///
 /// \param sLine const string&
-/// \param bool onlyDocumentation  = false
+/// \param onlyDocumentation bool
 /// \return string
 ///
 /// This member function adds linebreaks at the

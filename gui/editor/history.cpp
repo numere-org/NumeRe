@@ -62,28 +62,25 @@ END_EVENT_TABLE()
 extern Language _guilang;
 using namespace std;
 
-//////////////////////////////////////////////////////////////////////////////
-///  public constructor ChameleonEditor
-///  General-purpose editor creation and stuff
+/////////////////////////////////////////////////
+/// \brief History constructor
 ///
-///  @param  mframe  ChameleonWindow * A pointer to the main application frame
-///  @param  options Options *         A pointer to the main Options object
-///  @param  project ProjectInfo *     A pointer to this editor's project
-///  @param  parent  wxWindow *        The editor's parent window
+/// \param mframe NumeReWindow*
+/// \param options Options*
+/// \param project ProjectInfo*
+/// \param parent wxWindow*
+/// \param id wxWindowID
+/// \param __syntax NumeReSyntax*
+/// \param __terminal wxTerm*
+/// \param pos const wxPoint&
+/// \param size const wxSize&
+/// \param style long
+/// \param name const wxString&
 ///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-NumeReHistory::NumeReHistory( NumeReWindow *mframe,
-								 Options* options,
-								 ProjectInfo* project,
-                                  wxWindow *parent,     wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal,
-                                  const wxPoint & pos /* = wxDefaultPosition */,
-                                  const wxSize & size /* = wxDefaultSize */,
-                                  long style /* = 0 */, const
-                                      wxString & name /* = wxSTCNameStr */ ) :
-    NumeReEditor(mframe, options, project, parent, id, __syntax, __terminal, pos, size, style, name)
+/////////////////////////////////////////////////
+NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, ProjectInfo* project, wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax,
+                             wxTerm* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
+                                 NumeReEditor(mframe, options, project, parent, id, __syntax, __terminal, pos, size, style, name)
 {
 	_syntax = __syntax;
 	m_mainframe = mframe;

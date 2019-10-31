@@ -357,7 +357,7 @@ struct NumeReTask
 ///
 /// \param sString const string&
 /// \param nWidth unsigned int
-/// \param char cFill = ' '
+/// \param cFill char
 /// \return string
 ///
 /////////////////////////////////////////////////
@@ -380,7 +380,7 @@ inline string strfill(const string& sString, unsigned int nWidth, char cFill = '
 ///
 /// \param sString const string&
 /// \param nWidth unsigned int
-/// \param char cFill = ' '
+/// \param cFill char
 /// \return string
 ///
 /////////////////////////////////////////////////
@@ -400,7 +400,7 @@ inline string strlfill(const string& sString, unsigned int nWidth, char cFill = 
 /// the "windows" in the console.
 ///
 /// \param sString const string&
-/// \param '-' char cHeadLineSep=
+/// \param cHeadLineSep char
 /// \return string
 ///
 /////////////////////////////////////////////////

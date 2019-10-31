@@ -1640,8 +1640,8 @@ void wxTerm::UpdateColors()
 ///  public virtual ResizeTerminal
 ///  <Resizes the terminal to a given number of characters high and wide
 ///
-///  @param  w    int  The new number of characters wide
-///  @param  h    int  The new number of characters high
+///  @param  width    int  The new number of characters wide
+///  @param  height    int  The new number of characters high
 ///
 ///  @return void
 ///

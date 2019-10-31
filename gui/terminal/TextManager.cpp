@@ -110,7 +110,7 @@ void TextManager::printOutput(const string& _sLine)
 /// \brief This is the user input function
 ///
 /// \param sLine const string&
-/// \param string::npos size_t logicalpos=
+/// \param logicalpos size_t
 /// \return void
 ///
 /// Adds the passed stringt to the internal managed
@@ -767,7 +767,7 @@ bool TextManager::clearRange(const ViewCursor& cursor1, const ViewCursor& cursor
 /// \brief Selects the text at the view cursor position
 ///
 /// \param viewCursor const ViewCursor&
-/// \param true bool bSelect=
+/// \param bSelect bool
 /// \return void
 ///
 /// This member function is used to (de-)select

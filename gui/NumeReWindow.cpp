@@ -3250,17 +3250,16 @@ void NumeReWindow::EvaluateTab()
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-///  private CloseFile
-///  Closes a given editor, based on its index in the editor notebook
+/////////////////////////////////////////////////
+/// \brief Closes a given editor, based on its
+/// index in the editor notebook.
 ///
-///  @param  pageNr int  [=-1] The index of the editor to close
+/// \param pageNr int
+/// \param askforsave bool
+/// \return void
 ///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::CloseFile (int pageNr, bool askforsave)
+/////////////////////////////////////////////////
+void NumeReWindow::CloseFile(int pageNr, bool askforsave)
 {
 	if (pageNr == -1)
 	{
@@ -3438,17 +3437,16 @@ void NumeReWindow::OnPageChange (wxNotebookEvent &WXUNUSED(event))
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-///  private HandleModifiedFile
-///  Handle user interaction when closing or reloading an editor
+/////////////////////////////////////////////////
+/// \brief Handle user interaction when closing
+/// or reloading an editor.
 ///
-///  @param  pageNr      int   The index of the editor being closed or reloaded
-///  @param  closingFile bool  True if the file is being closed, false if it's being reloaded
+/// \param pageNr int
+/// \param fileAction ModifiedFileAction
+/// \return int What the user chose to do. The
+/// only real meaningful return value is wxCANCEL.
 ///
-///  @return int         What the user chose to do.  The only real meaningful return value is wxCANCEL.
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////
 int NumeReWindow::HandleModifiedFile(int pageNr, ModifiedFileAction fileAction)
 {
 	NumeReEditor *edit = static_cast <NumeReEditor * > (m_book->GetPage (pageNr));
@@ -3658,16 +3656,16 @@ void NumeReWindow::OpenFilesFromList(const wxArrayString& filenameslist)
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-///  public OpenSourceFile
-///  Opens the given list of source files in the editor
+/////////////////////////////////////////////////
+/// \brief Opens the given list of source files
+/// in the editor.
 ///
-///  @param  fnames wxArrayString  The source files to open
+/// \param fnames wxArrayString
+/// \param nLine unsigned int The line to jump to
+/// \param nOpenFileFlag int
+/// \return void
 ///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////
 void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int nOpenFileFlag)
 {
 	int firstPageNr = -1;

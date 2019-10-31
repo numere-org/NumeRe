@@ -37,12 +37,12 @@ END_EVENT_TABLE()
 /// \param parent wxWindow*
 /// \param id wxWindowID
 /// \param title const wxString&
-/// \param mainfile const std::string&
+/// \param mainfile const string&
 /// \param lib ProcedureLibrary&
 /// \param style long
 ///
 /////////////////////////////////////////////////
-DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxString& title, const std::string& mainfile, ProcedureLibrary& lib, long style) : wxDialog(parent, id, title, wxDefaultPosition, wxSize(-1, 450), style)
+DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxString& title, const string& mainfile, ProcedureLibrary& lib, long style) : wxDialog(parent, id, title, wxDefaultPosition, wxSize(-1, 450), style)
 {
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
 
@@ -71,13 +71,12 @@ DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxStri
 /// items calculated from the called procedures.
 ///
 /// \param lib ProcedureLibrary&
-/// \param mainfile const std::string&
-/// \param std::map<std::string
-/// \param mDeps DependencyList>&
-/// \return std::string
+/// \param mainfile const string&
+/// \param mDeps map<string, DependencyList>&
+/// \return string
 ///
 /////////////////////////////////////////////////
-std::string DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const std::string& mainfile, std::map<std::string, DependencyList>& mDeps)
+string DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const string& mainfile, map<string, DependencyList>& mDeps)
 {
     // Get the dependencies
     Dependencies* dep = lib.getProcedureContents(replacePathSeparator(mainfile))->getDependencies();
@@ -129,13 +128,12 @@ std::string DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const
 /// DependencyDialog::insertChilds() recursively
 /// to fill the childs of a procedure call.
 ///
-/// \param sMainProcedure const std::string&
-/// \param std::map<std::string
-/// \param mDeps DependencyList>&
+/// \param sMainProcedure const string&
+/// \param mDeps map<string,DependencyList>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DependencyDialog::fillDependencyTree(const std::string& sMainProcedure, std::map<std::string, DependencyList>& mDeps)
+void DependencyDialog::fillDependencyTree(const string& sMainProcedure, map<string, DependencyList>& mDeps)
 {
     // Find the current main procedure
     auto iter = mDeps.find(sMainProcedure);
@@ -179,13 +177,12 @@ void DependencyDialog::fillDependencyTree(const std::string& sMainProcedure, std
 /// recursion.
 ///
 /// \param item wxTreeItemId
-/// \param sParentProcedure const std::string&
-/// \param std::map<std::string
-/// \param mDeps DependencyList>&
+/// \param sParentProcedure const string&
+/// \param mDeps map<string, DependencyList>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DependencyDialog::insertChilds(wxTreeItemId item, const std::string& sParentProcedure, std::map<std::string, DependencyList>& mDeps)
+void DependencyDialog::insertChilds(wxTreeItemId item, const string& sParentProcedure, map<string, DependencyList>& mDeps)
 {
     // Find the current main procedure
     auto iter = mDeps.find(sParentProcedure);
@@ -225,11 +222,11 @@ void DependencyDialog::insertChilds(wxTreeItemId item, const std::string& sParen
 /// current branch.
 ///
 /// \param item wxTreeItemId
-/// \param sCurrProc const std::string&
+/// \param sCurrProc const string&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool DependencyDialog::findInParents(wxTreeItemId item, const std::string& sCurrProc)
+bool DependencyDialog::findInParents(wxTreeItemId item, const string& sCurrProc)
 {
     // Is the current node already equal?
     if (m_dependencyTree->GetItemText(item) == sCurrProc)

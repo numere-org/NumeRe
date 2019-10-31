@@ -79,7 +79,7 @@ string toString(int);
 /** \brief Transforms a time_t into a string (formatted as time)
  *
  * \param tTime time_t
- * \param onlyTime bool
+ * \param bOnlyTime bool
  * \return string
  *
  */

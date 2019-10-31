@@ -92,7 +92,6 @@ namespace mu
 
 	//------------------------------------------------------------------------------
 	/** \brief Constructor.
-	    \param a_szFormula the formula to interpret.
 	    \throw ParserException if a_szFormula is null.
 	*/
 	ParserBase::ParserBase()
@@ -1227,7 +1226,7 @@ namespace mu
 
 	//---------------------------------------------------------------------------
 	/** \brief Apply a function token.
-	    \param iArgCount Number of Arguments actually gathered used only for multiarg functions.
+	    \param iArgCount int Number of Arguments actually gathered used only for multiarg functions.
 	    \post The result is pushed to the value stack
 	    \post The function token is removed from the stack
 	    \throw exception_type if Argument count does not mach function requirements.

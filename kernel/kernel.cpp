@@ -2034,7 +2034,6 @@ void NumeReKernel::resetAfterError(string& sCmdCache)
 /// \brief Returns a random greeting string,
 /// which may be printed to the terminal later.
 ///
-/// \param _option Settings&
 /// \return string
 ///
 /////////////////////////////////////////////////
