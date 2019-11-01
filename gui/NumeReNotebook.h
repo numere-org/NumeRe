@@ -9,19 +9,18 @@
 
 class NumeReWindow;
 
-class NumeReNotebook : public wxNotebook
+class EditorNotebook : public wxNotebook
 {
 public:
-	NumeReNotebook(wxWindow* parent, wxWindowID id,
+	EditorNotebook(wxWindow* parent, wxWindowID id,
 						const wxPoint& pos = wxDefaultPosition,
 						const wxSize& size = wxDefaultSize, long style = 0,
 						const wxString& name = "notebook");
-	~NumeReNotebook();
+	~EditorNotebook();
 
 	void SetTopParent(NumeReWindow* window)
         {m_top_parent = window;}
 
-	//int HitTest(const wxPoint& pt, long& flags);
 	int FindPagePosition(wxNotebookPage* page);
 
 	void OnTabRightClicked (wxMouseEvent &event);
@@ -35,7 +34,6 @@ public:
 	bool GetMouseFocus() {return m_mouseFocus;}
 
 private:
-	//void CreateBookMenus();
 
 	NumeReWindow* m_top_parent;
 	bool m_mouseFocus;

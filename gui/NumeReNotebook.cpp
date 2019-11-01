@@ -3,6 +3,8 @@
 #include "NumeReWindow.h"
 
 #include "../common/debug.h"
+#include "../common/vcsmanager.hpp"
+#include "editor/editor.h"
 
 #include <wx/wx.h>
 #include <wx/msgdlg.h>
@@ -17,50 +19,40 @@
 #define new DEBUG_NEW
 #endif
 
-BEGIN_EVENT_TABLE(NumeReNotebook, wxNotebook)
-//EVT_CONTEXT_MENU(ChameleonNotebook::TestMenu)
-	EVT_MIDDLE_UP	(NumeReNotebook::OnTabMiddleClicked)
-	EVT_RIGHT_UP	(NumeReNotebook::OnTabRightClicked)
-	EVT_MOUSEWHEEL  (NumeReNotebook::OnTabScroll)
-	EVT_ENTER_WINDOW(NumeReNotebook::OnEnter)
-	EVT_LEAVE_WINDOW(NumeReNotebook::OnLeave)
-	EVT_SIZE        (NumeReNotebook::OnSize)
+BEGIN_EVENT_TABLE(EditorNotebook, wxNotebook)
+	EVT_MIDDLE_UP	(EditorNotebook::OnTabMiddleClicked)
+	EVT_RIGHT_UP	(EditorNotebook::OnTabRightClicked)
+	EVT_MOUSEWHEEL  (EditorNotebook::OnTabScroll)
+	EVT_ENTER_WINDOW(EditorNotebook::OnEnter)
+	EVT_LEAVE_WINDOW(EditorNotebook::OnLeave)
+	EVT_SIZE        (EditorNotebook::OnSize)
 END_EVENT_TABLE()
 
-NumeReNotebook::NumeReNotebook(wxWindow* parent, wxWindowID id,
-									 const wxPoint& pos /* = wxDefaultPosition */,
-									 const wxSize& size /* = wxDefaultSize */,
-									 long style /* = 0 */,
-									 const wxString& name /* = "notebook" */)
-:wxNotebook(parent, id, pos, size, style, name)
+/////////////////////////////////////////////////
+/// \brief Constructor.
+///
+/// \param parent wxWindow*
+/// \param id wxWindowID
+/// \param pos const wxPoint&
+/// \param size const wxSize&
+/// \param style long
+/// \param name const wxString&
+///
+/////////////////////////////////////////////////
+EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxNotebook(parent, id, pos, size, style, name)
 {
     m_mouseFocus = false;
 	//m_top_parent = static_cast<NumeReWindow*>(parent);//(NumeReWindow*)wxTheApp->GetTopWindow();
 }
 
-NumeReNotebook::~NumeReNotebook ()
+
+/////////////////////////////////////////////////
+/// \brief Empty destructor.
+/////////////////////////////////////////////////
+EditorNotebook::~EditorNotebook()
 {
 }
 
-/*
-int ChameleonNotebook::HitTest(const wxPoint& pt, long& flags)
-{
-	TC_HITTESTINFO hitTestInfo;
-	hitTestInfo.pt.x = pt.x;
-	hitTestInfo.pt.y = pt.y;
-	int item = TabCtrl_HitTest( (HWND) GetHWND(), & hitTestInfo ) ;
-	flags = 0;
-
-	if ((hitTestInfo.flags & TCHT_NOWHERE) == TCHT_NOWHERE)
-		flags |= wxTAB_HITTEST_NOWHERE;
-	if ((hitTestInfo.flags & TCHT_ONITEMICON) == TCHT_ONITEMICON)
-		flags |= wxTAB_HITTEST_ONICON;
-	if ((hitTestInfo.flags & TCHT_ONITEMLABEL) == TCHT_ONITEMLABEL)
-		flags |= wxTAB_HITTEST_ONLABEL;
-
-	return item;
-}
-*/
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public OnTabActivate
@@ -72,18 +64,20 @@ int ChameleonNotebook::HitTest(const wxPoint& pt, long& flags)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReNotebook::OnTabRightClicked (wxMouseEvent &event)
+void EditorNotebook::OnTabRightClicked(wxMouseEvent &event)
 {
 	wxPoint pt;
 	pt.x = event.GetX();
 	pt.y = event.GetY();
 
 	long flags = 0;
-	int pageNum = this->HitTest (pt, &flags);
+	int pageNum = this->HitTest(pt, &flags);
+
 	if (pageNum < 0)
-	{
 		return;
-	}
+
+    VersionControlSystemManager manager(m_top_parent);
+    wxString filename = static_cast<NumeReEditor*>(GetPage(pageNum))->GetFileNameAndPath();
 
 	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
 	wxMenu popupMenu;
@@ -94,10 +88,28 @@ void NumeReNotebook::OnTabRightClicked (wxMouseEvent &event)
 	popupMenu.Append(ID_MENU_OPEN_FOLDER, _guilang.get("GUI_EDITOR_TAB_OPENFOLDER"));
 	popupMenu.AppendSeparator();
 	popupMenu.Append(ID_MENU_RUN_FROM_TAB, _guilang.get("GUI_TB_RUN"));
+
+	// Append the file revision menu, if the file has revisions
+	if (manager.hasRevisions(filename))
+    {
+        popupMenu.AppendSeparator();
+        popupMenu.Append(ID_MENU_SHOW_REVISIONS_FROM_TAB, _guilang.get("GUI_TREE_PUP_SHOWREVISIONS"));
+    }
+
 	PopupMenu(&popupMenu, pt);
 }
 
-void NumeReNotebook::OnTabScroll(wxMouseEvent &event)
+
+/////////////////////////////////////////////////
+/// \brief Scrolls through the notebook pages, if
+/// the user hovers over the tabs and uses the
+/// mouse wheel.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::OnTabScroll(wxMouseEvent &event)
 {
 	wxPoint pt;
 	pt.x = event.GetX();
@@ -105,11 +117,12 @@ void NumeReNotebook::OnTabScroll(wxMouseEvent &event)
 
 	long flags = 0;
 	int pageNum = this->HitTest (pt, &flags);
+
 	if (pageNum < 0 || GetPageCount() <= 1)
-	{
 		return;
-	}
+
 	size_t currentPage = GetSelection();
+
 	if (event.GetWheelRotation() < 0)
 	{
         if (currentPage + 1 == GetPageCount())
@@ -126,65 +139,50 @@ void NumeReNotebook::OnTabScroll(wxMouseEvent &event)
 	}
 }
 
-void NumeReNotebook::OnEnter(wxMouseEvent& event)
+
+/////////////////////////////////////////////////
+/// \brief Focuses the tabs, if the user hovers
+/// over them.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::OnEnter(wxMouseEvent& event)
 {
     this->SetFocus();
     m_mouseFocus = true;
     event.Skip();
 }
 
-void NumeReNotebook::OnLeave(wxMouseEvent& event)
+
+/////////////////////////////////////////////////
+/// \brief Deactivates the internal mouse focus
+/// state.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::OnLeave(wxMouseEvent& event)
 {
     m_mouseFocus = false;
     event.Skip();
 }
 
-/*
-void ChameleonNotebook::CreateBookMenus () {
 
-	wxMenuBar *menuBar = m_parent->GetMenuBar();
-	wxString label;
-
-
-	//m_nonActiveMenu->Append(-1, "Non-active menu");
-	m_activeMenu->Append(ID_CLOSETAB, "Close");
-	//m_activeMenu->Append(9997, "Active menu");
-	//m_activeMenu->Append(9998, "Active menu - 2");
-
-	// create menu 1
-
-	if (menuBar->FindItem (wxID_SAVE)) {
-		label = menuBar->GetLabel (wxID_SAVE);
-		m_bookMenu1->Append (wxID_SAVE, label);
-	}
-	if (menuBar->FindItem (wxID_SAVEAS)) {
-		label = menuBar->GetLabel (wxID_SAVEAS);
-		m_bookMenu1->Append (wxID_SAVEAS, label);
-	}
-	if (menuBar->FindItem (wxID_CLOSE)) {
-		label = menuBar->GetLabel (wxID_CLOSE);
-		m_bookMenu1->Append (wxID_CLOSE, label);
-	}
-	m_bookMenu1->AppendSeparator();
-	if (menuBar->FindItem (wxID_PRINT)) {
-		label = menuBar->GetLabel (wxID_PRINT);
-		m_bookMenu1->Append (wxID_PRINT, label);
-	}
-
-	// create menu 2
-	m_bookMenu2->Append (myID_PAGEACTIVE, _("Activate"));
-#if NOTEBOOK_DELETEPAGE
-	m_bookMenu2->Append (myID_PAGECLOSE, _("Close"));
-#endif
-
-
-}
-*/
-
-void NumeReNotebook::OnSize(wxSizeEvent &event)
+/////////////////////////////////////////////////
+/// \brief Size event handling function.
+///
+/// \param event wxSizeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::OnSize(wxSizeEvent &event)
 {
 	event.Skip();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public FindPagePosition
@@ -196,7 +194,7 @@ void NumeReNotebook::OnSize(wxSizeEvent &event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-int NumeReNotebook::FindPagePosition(wxNotebookPage* page)
+int EditorNotebook::FindPagePosition(wxNotebookPage* page)
 {
 	int nPageCount = GetPageCount();
 	int nPage;
@@ -206,7 +204,17 @@ int NumeReNotebook::FindPagePosition(wxNotebookPage* page)
 	return -1;
 }
 
-void NumeReNotebook::OnTabMiddleClicked( wxMouseEvent &event )
+
+/////////////////////////////////////////////////
+/// \brief Executes the closing command, if the
+/// user clickes with the middle mouse button on
+/// a tab.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::OnTabMiddleClicked( wxMouseEvent &event )
 {
 	wxPoint pt;
 	pt.x = event.GetX();
@@ -214,17 +222,16 @@ void NumeReNotebook::OnTabMiddleClicked( wxMouseEvent &event )
 
 	long flags = 0;
 	int pageNum = this->HitTest (pt, &flags);
+
 	if (pageNum < 0)
-	{
 		return;
-	}
 
 	m_top_parent->SetIntVar(VN_CLICKEDTAB, pageNum);
-
 
 	wxCommandEvent command;
 	command.SetId(ID_MENU_CLOSETAB);
 	command.SetEventType(wxEVT_MENU); //10019//wxEVT_MIDDLE_UP
 	m_top_parent->GetEventHandler()->ProcessEvent(command);
-
 }
+
+

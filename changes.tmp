@@ -11,3 +11,4 @@ Cleaned	String outputs and numerical outputs are now formatted similiar.
 Cleaned	"ans" is now a cluster and capable of storing multiple mixed return values.
 Cleaned	"load DATAFILE -tocache" uses now the table name stored in DATAFILE, if any, or creates a corresponding one based upon the file name.
 Added	It's now possible to jump directly to a procedure by double-clicking on its name in the dependency viewer dialog.
+Added	It's now possible to open the revision list from the tab popup menu.

@@ -304,7 +304,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 	m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
 	m_splitEditorOutput = new wxProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
 	m_splitCommandHistory = new wxProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
-	m_book = new NumeReNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
+	m_book = new EditorNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
 	m_book->SetTopParent(this);
 	m_noteTerm = new ViewerBook(m_splitCommandHistory, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
 
@@ -1178,6 +1178,9 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             break;
         case ID_MENU_SHOW_REVISIONS:
             OnShowRevisions();
+            break;
+        case ID_MENU_SHOW_REVISIONS_FROM_TAB:
+            OnShowRevisionsFromTab();
             break;
         case ID_MENU_TAG_CURRENT_REVISION:
             OnTagCurrentRevision();
@@ -2637,6 +2640,29 @@ void NumeReWindow::OnShowRevisions()
     if (revisions)
     {
         RevisionDialog* dialog = new RevisionDialog(this, revisions, m_fileTree->GetItemText(m_clickedTreeItem));
+        dialog->Show();
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method displays the revision
+/// dialog for the selected tab item.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnShowRevisionsFromTab()
+{
+    NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(GetIntVar(VN_CLICKEDTAB)));
+    wxString filename = edit->GetFileNameAndPath();
+    VersionControlSystemManager manager(this);
+    FileRevisions* revisions = manager.getRevisions(filename);
+
+    // Only display the dialog, if the FileRevisions object exists
+    if (revisions)
+    {
+        RevisionDialog* dialog = new RevisionDialog(this, revisions, edit->GetFilenameString());
         dialog->Show();
     }
 }

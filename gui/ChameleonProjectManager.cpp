@@ -2,7 +2,7 @@
 #include "NumeReNotebook.h"
 #include "editor/editor.h"
 
-ChameleonProjectManager::ChameleonProjectManager( NumeReNotebook* notebook )
+ChameleonProjectManager::ChameleonProjectManager( EditorNotebook* notebook )
 {
 	m_book = notebook;
 }

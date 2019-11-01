@@ -2,18 +2,18 @@
 #define INTERFACE_MANAGER_H
 
 
-class NumeReNotebook;
+class EditorNotebook;
 
 class ChameleonProjectManager
 {
 public:
-	ChameleonProjectManager(NumeReNotebook* notebook);
+	ChameleonProjectManager(EditorNotebook* notebook);
 
 
 	void ClearDebugFocus();
 
 private:
-	NumeReNotebook* m_book;
+	EditorNotebook* m_book;
 };
 
 

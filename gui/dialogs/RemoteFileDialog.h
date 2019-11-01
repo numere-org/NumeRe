@@ -55,7 +55,7 @@ class NumeReWindow;
 class Networking;
 class wxListEvent;
 class wxFileConfig;
-class NumeReNotebook;
+class EditorNotebook;
 class wxTreeCtrl;
 class wxTextCtrl;
 class wxLogWindow;

@@ -38,7 +38,7 @@
 #define RM_WS_BACK 2
 
 class NumeReWindow;
-class NumeReNotebook;
+class EditorNotebook;
 class wxFileName;
 class Options;
 class ProjectInfo;

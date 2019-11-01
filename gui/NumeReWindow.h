@@ -97,7 +97,7 @@
 // forward declarations
 
 class wxFileConfig;
-class NumeReNotebook;
+class EditorNotebook;
 class wxTreeCtrl;
 class wxTextCtrl;
 class NumeReEditor;
@@ -252,6 +252,7 @@ class NumeReWindow : public wxFrame
         void OnFindReplace(int id );
         void OnOpenInExplorer();
         void OnShowRevisions();
+        void OnShowRevisionsFromTab();
         void OnTagCurrentRevision();
         void OnCreateNewFolder();
         void OnRemoveFolder();
@@ -353,7 +354,7 @@ class NumeReWindow : public wxFrame
 
         // main widgets
         /*! Main editor notebook */
-        NumeReNotebook* m_book;
+        EditorNotebook* m_book;
         /*! Notebook for the terminal and debug-related widgets */
         ViewerBook*  m_noteTerm;
         /*! Notebook for the tree controls on the right side */
