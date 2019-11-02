@@ -13,3 +13,4 @@ Cleaned	"load DATAFILE -tocache" uses now the table name stored in DATAFILE, if 
 Added	It's now possible to jump directly to a procedure by double-clicking on its name in the dependency viewer dialog.
 Added	It's now possible to open the revision list from the tab popup menu.
 New	It's now possible to compare two revisions with each other. A corresponding *.diff file is opened in the editor using the standard DIFF lexer.
+Applied	The package creator now launches even if the current active file in the editor is not a procedure file.

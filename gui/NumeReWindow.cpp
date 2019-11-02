@@ -6910,11 +6910,10 @@ void NumeReWindow::OnCalculateDependencies()
 /////////////////////////////////////////////////
 void NumeReWindow::OnCreatePackage()
 {
-    if (m_currentEd->getFileType() != FILE_NPRC)
-        return;
-
     PackageDialog dlg(this, m_terminal, m_iconManager);
-    dlg.setMainFile(m_currentEd->GetFileNameAndPath());
+
+    if (m_currentEd->getFileType() == FILE_NPRC)
+        dlg.setMainFile(m_currentEd->GetFileNameAndPath());
 
     if (dlg.ShowModal() == wxID_OK)
     {
