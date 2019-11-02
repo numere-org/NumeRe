@@ -2866,6 +2866,31 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_currentPage = m_book->GetPageCount();
         m_book->AddPage (edit, noname, true);
     }
+    else if (_filetype == FILE_DIFF)
+    {
+        wxString filename = defaultfilename;
+
+        vector<string> vPaths = m_terminal->getPathSettings();
+
+        m_fileNum += 1;
+
+        // Create a new editor
+        ProjectInfo* singleFileProject = new ProjectInfo();
+        NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        edit->SetText("DIFF");
+        CopyEditorSettings(edit, _filetype);
+
+        m_currentEd = edit;
+
+        // Set the corresponding full file name
+        m_currentEd->SetFilename(wxFileName(vPaths[SAVEPATH], filename), false);
+
+        m_currentPage = m_book->GetPageCount();
+        m_currentEd->UpdateSyntaxHighlighting();
+
+        // Add a new tab for the editor
+        m_book->AddPage (edit, filename, true);
+    }
     else
     {
         wxString filename;
@@ -2995,8 +3020,10 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Set the corresponding full file name
         if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN)
             m_currentEd->SetFilename(wxFileName(vPaths[SCRIPTPATH] + folder, filename), false);
-        else
+        else if (_filetype == FILE_NPRC)
             m_currentEd->SetFilename(wxFileName(vPaths[PROCPATH] + folder, filename), false);
+        else
+            m_currentEd->SetFilename(wxFileName(vPaths[SAVEPATH] + folder, filename), false);
 
         m_currentPage = m_book->GetPageCount();
         m_currentEd->UpdateSyntaxHighlighting();
@@ -3025,8 +3052,10 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 /////////////////////////////////////////////////
 void NumeReWindow::ShowRevision(const wxString& revisionName, const wxString& revisionContent)
 {
-    NewFile(FILE_NOTYPE, revisionName);
+    NewFile(FILE_DIFF, revisionName);
     m_currentEd->SetText(revisionContent);
+    m_currentEd->EmptyUndoBuffer();
+    m_currentEd->SetUnsaved();
     m_currentEd->UpdateSyntaxHighlighting(true);
 }
 

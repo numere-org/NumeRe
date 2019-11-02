@@ -56,6 +56,8 @@ class FileRevisions
         wxString getRevision(size_t nRevision);
         wxString getRevision(wxString revString);
 
+        wxString compareRevisions(const wxString& rev1, const wxString& rev2);
+
         void restoreRevision(size_t nRevision, const wxString& targetFile);
         void restoreRevision(const wxString& revString, const wxString& targetFile);
 

@@ -3925,47 +3925,47 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 
 
 	// make it for both: NSCR and NPRC
-	if (filetype == FILE_NSCR || filetype == FILE_NPRC || filetype == FILE_MATLAB || filetype == FILE_CPP)
+	if (filetype == FILE_NSCR || filetype == FILE_NPRC || filetype == FILE_MATLAB || filetype == FILE_CPP || filetype == FILE_DIFF)
 	{
-		this->SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
+		SetFoldFlags(wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
 
-		this->SetMarginType(MARGIN_FOLD, wxSTC_MARGIN_SYMBOL);
-		this->SetMarginWidth(MARGIN_FOLD, 13);
-		this->SetMarginMask(MARGIN_FOLD, wxSTC_MASK_FOLDERS);
-		this->SetMarginSensitive(MARGIN_FOLD, true);
-		this->StyleSetBackground(MARGIN_FOLD, wxColor(200, 200, 200) );
-		this->SetMarginSensitive(MARGIN_FOLD, true);
+		SetMarginType(MARGIN_FOLD, wxSTC_MARGIN_SYMBOL);
+		SetMarginWidth(MARGIN_FOLD, 13);
+		SetMarginMask(MARGIN_FOLD, wxSTC_MASK_FOLDERS);
+		SetMarginSensitive(MARGIN_FOLD, true);
+		StyleSetBackground(MARGIN_FOLD, wxColor(200, 200, 200) );
+		SetMarginSensitive(MARGIN_FOLD, true);
 
 		wxColor grey( 100, 100, 100 );
-		this->MarkerDefine (wxSTC_MARKNUM_FOLDER, wxSTC_MARK_BOXPLUS);
-		this->MarkerSetForeground (wxSTC_MARKNUM_FOLDER, "WHITE");
-		this->MarkerSetBackground (wxSTC_MARKNUM_FOLDER, grey);
+		MarkerDefine (wxSTC_MARKNUM_FOLDER, wxSTC_MARK_BOXPLUS);
+		MarkerSetForeground (wxSTC_MARKNUM_FOLDER, "WHITE");
+		MarkerSetBackground (wxSTC_MARKNUM_FOLDER, grey);
 
-		this->MarkerDefine (wxSTC_MARKNUM_FOLDEROPEN,    wxSTC_MARK_BOXMINUS);
-		this->MarkerSetForeground (wxSTC_MARKNUM_FOLDEROPEN, "WHITE");
-		this->MarkerSetBackground (wxSTC_MARKNUM_FOLDEROPEN, grey);
+		MarkerDefine (wxSTC_MARKNUM_FOLDEROPEN,    wxSTC_MARK_BOXMINUS);
+		MarkerSetForeground (wxSTC_MARKNUM_FOLDEROPEN, "WHITE");
+		MarkerSetBackground (wxSTC_MARKNUM_FOLDEROPEN, grey);
 
-		this->MarkerDefine (wxSTC_MARKNUM_FOLDERSUB,     wxSTC_MARK_VLINE);
-		this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERSUB, grey);
-		this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERSUB, grey);
+		MarkerDefine (wxSTC_MARKNUM_FOLDERSUB,     wxSTC_MARK_VLINE);
+		MarkerSetForeground (wxSTC_MARKNUM_FOLDERSUB, grey);
+		MarkerSetBackground (wxSTC_MARKNUM_FOLDERSUB, grey);
 
-		this->MarkerDefine (wxSTC_MARKNUM_FOLDEREND,     wxSTC_MARK_BOXPLUSCONNECTED);
-		this->MarkerSetForeground (wxSTC_MARKNUM_FOLDEREND, "WHITE");
-		this->MarkerSetBackground (wxSTC_MARKNUM_FOLDEREND, grey);
+		MarkerDefine (wxSTC_MARKNUM_FOLDEREND,     wxSTC_MARK_BOXPLUSCONNECTED);
+		MarkerSetForeground (wxSTC_MARKNUM_FOLDEREND, "WHITE");
+		MarkerSetBackground (wxSTC_MARKNUM_FOLDEREND, grey);
 
-		this->MarkerDefine (wxSTC_MARKNUM_FOLDEROPENMID, wxSTC_MARK_BOXMINUSCONNECTED);
-		this->MarkerSetForeground (wxSTC_MARKNUM_FOLDEROPENMID, "WHITE");
-		this->MarkerSetBackground (wxSTC_MARKNUM_FOLDEROPENMID, grey);
+		MarkerDefine (wxSTC_MARKNUM_FOLDEROPENMID, wxSTC_MARK_BOXMINUSCONNECTED);
+		MarkerSetForeground (wxSTC_MARKNUM_FOLDEROPENMID, "WHITE");
+		MarkerSetBackground (wxSTC_MARKNUM_FOLDEROPENMID, grey);
 
-		this->MarkerDefine (wxSTC_MARKNUM_FOLDERMIDTAIL, wxSTC_MARK_TCORNER);
-		this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERMIDTAIL, grey);
-		this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERMIDTAIL, grey);
+		MarkerDefine (wxSTC_MARKNUM_FOLDERMIDTAIL, wxSTC_MARK_TCORNER);
+		MarkerSetForeground (wxSTC_MARKNUM_FOLDERMIDTAIL, grey);
+		MarkerSetBackground (wxSTC_MARKNUM_FOLDERMIDTAIL, grey);
 
-		this->MarkerDefine (wxSTC_MARKNUM_FOLDERTAIL,    wxSTC_MARK_LCORNER);
-		this->MarkerSetForeground (wxSTC_MARKNUM_FOLDERTAIL, grey);
-		this->MarkerSetBackground (wxSTC_MARKNUM_FOLDERTAIL, grey);
+		MarkerDefine (wxSTC_MARKNUM_FOLDERTAIL,    wxSTC_MARK_LCORNER);
+		MarkerSetForeground (wxSTC_MARKNUM_FOLDERTAIL, grey);
+		MarkerSetBackground (wxSTC_MARKNUM_FOLDERTAIL, grey);
 
-		this->MarkerEnableHighlight(true);
+		MarkerEnableHighlight(true);
 	}
 
 	if (filetype == FILE_NSCR)
@@ -4155,21 +4155,21 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 	}
 	else if (filetype == FILE_TEXSOURCE)
 	{
-		this->SetLexer(wxSTC_LEX_TEX);
-		this->StyleSetForeground(wxSTC_TEX_DEFAULT, wxColor(0, 128, 0)); //Comment
-		this->StyleSetForeground(wxSTC_TEX_COMMAND, wxColor(0, 0, 255)); //Command
-		this->StyleSetBold(wxSTC_TEX_COMMAND, true);
-		this->StyleSetUnderline(wxSTC_TEX_COMMAND, false);
-		this->StyleSetForeground(wxSTC_TEX_TEXT, wxColor(0, 0, 0)); // Actual text
-		this->StyleSetForeground(wxSTC_TEX_GROUP, wxColor(0, 128, 0)); // Grouping elements like $ $ or { }
-		this->StyleSetBackground(wxSTC_TEX_GROUP, wxColor(255, 255, 183)); // Grouping elements like $ $ or { }
-		this->StyleSetBold(wxSTC_TEX_GROUP, true);
-		this->StyleSetForeground(wxSTC_TEX_SPECIAL, wxColor(255, 0, 196)); // Parentheses/Brackets
-		this->StyleSetItalic(wxSTC_TEX_SPECIAL, false);
-		this->StyleSetBold(wxSTC_TEX_SPECIAL, true);
-		this->StyleSetForeground(wxSTC_TEX_SYMBOL, wxColor(255, 0, 0)); // Operators
-		this->StyleSetBackground(wxSTC_TEX_SYMBOL, wxColor(255, 255, 255));
-		this->StyleSetBold(wxSTC_TEX_SYMBOL, false);
+		SetLexer(wxSTC_LEX_TEX);
+		StyleSetForeground(wxSTC_TEX_DEFAULT, wxColor(0, 128, 0)); //Comment
+		StyleSetForeground(wxSTC_TEX_COMMAND, wxColor(0, 0, 255)); //Command
+		StyleSetBold(wxSTC_TEX_COMMAND, true);
+		StyleSetUnderline(wxSTC_TEX_COMMAND, false);
+		StyleSetForeground(wxSTC_TEX_TEXT, wxColor(0, 0, 0)); // Actual text
+		StyleSetForeground(wxSTC_TEX_GROUP, wxColor(0, 128, 0)); // Grouping elements like $ $ or { }
+		StyleSetBackground(wxSTC_TEX_GROUP, wxColor(255, 255, 183)); // Grouping elements like $ $ or { }
+		StyleSetBold(wxSTC_TEX_GROUP, true);
+		StyleSetForeground(wxSTC_TEX_SPECIAL, wxColor(255, 0, 196)); // Parentheses/Brackets
+		StyleSetItalic(wxSTC_TEX_SPECIAL, false);
+		StyleSetBold(wxSTC_TEX_SPECIAL, true);
+		StyleSetForeground(wxSTC_TEX_SYMBOL, wxColor(255, 0, 0)); // Operators
+		StyleSetBackground(wxSTC_TEX_SYMBOL, wxColor(255, 255, 255));
+		StyleSetBold(wxSTC_TEX_SYMBOL, false);
 	}
 	else if (filetype == FILE_DATAFILES)
 	{
@@ -4290,29 +4290,25 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 			this->StyleSetItalic(i, _style.italics);
 			this->StyleSetUnderline(i, _style.underline);
 		}
-
-		/*this->StyleSetForeground(wxSTC_C_IDENTIFIER, wxColor(0,0,0));
-		this->StyleSetForeground(wxSTC_C_COMMENT, wxColor(0,128,0));
-		this->StyleSetItalic(wxSTC_C_COMMENT, true);
-		this->StyleSetForeground(wxSTC_C_COMMENTLINE, wxColor(0,128,0));
-		this->StyleSetItalic(wxSTC_C_COMMENTLINE, true);
-
-		this->StyleSetForeground(wxSTC_C_OPERATOR, wxColor(255,0,0));
-
-		this->StyleSetForeground(wxSTC_C_WORD, wxColor(0,0,255));
-		this->StyleSetBold(wxSTC_C_WORD, true);
-
-		this->StyleSetForeground(wxSTC_C_WORD2, wxColor(0,0,128));
-		this->StyleSetBold(wxSTC_C_WORD2, true);
-
-		this->StyleSetForeground(wxSTC_C_STRING, wxColor(64,64,255));
-
-		this->StyleSetForeground(wxSTC_C_CHARACTER, wxColor(128,128,128));
-
-		this->StyleSetForeground(wxSTC_C_PREPROCESSOR, wxColor(128,0,0));
-
-		this->StyleSetForeground(wxSTC_C_NUMBER, wxColor(255,128,128));*/
 	}
+	else if (filetype == FILE_DIFF)
+    {
+        SetLexer(wxSTC_LEX_DIFF);
+        SetProperty("fold", "1");
+        StyleSetForeground(wxSTC_DIFF_ADDED, wxColour(0, 128, 0));
+        StyleSetBackground(wxSTC_DIFF_ADDED, wxColour(210, 255, 210));
+        StyleSetForeground(wxSTC_DIFF_CHANGED, wxColour(128, 0, 0));
+        StyleSetBackground(wxSTC_DIFF_CHANGED, wxColour(255, 210, 210));
+        StyleSetForeground(wxSTC_DIFF_DELETED, wxColour(128, 0, 0));
+        StyleSetBackground(wxSTC_DIFF_DELETED, wxColour(255, 210, 210));
+        StyleSetForeground(wxSTC_DIFF_DEFAULT, *wxBLACK);
+        StyleSetBackground(wxSTC_DIFF_DEFAULT, *wxWHITE);
+        StyleSetForeground(wxSTC_DIFF_HEADER, *wxBLUE);
+        StyleSetBackground(wxSTC_DIFF_HEADER, *wxWHITE);
+        StyleSetForeground(wxSTC_DIFF_POSITION, wxColour(255, 128, 0));
+        StyleSetBackground(wxSTC_DIFF_POSITION, *wxWHITE);
+        StyleSetBold(wxSTC_DIFF_POSITION, true);
+    }
 	else
 	{
 		if (!getEditorSetting(SETTING_USETXTADV))

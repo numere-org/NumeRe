@@ -419,6 +419,10 @@ FileFilterType ProjectInfo::GetFileType(wxString filename)
     {
         fileType = FILE_CPP;
     }
+	else if (extension == "diff" || extension == "patch")
+    {
+        fileType = FILE_DIFF;
+    }
 
 
 	/*

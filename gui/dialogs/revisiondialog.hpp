@@ -37,6 +37,7 @@ class RevisionDialog : public wxDialog
 
         void populateRevisionList();
         void showRevision(const wxString& revString);
+        void compareRevisions(const wxString& rev1, const wxString& rev2);
 
         // Event handling functions
         void OnRightClick(wxTreeEvent& event);

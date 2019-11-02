@@ -641,6 +641,22 @@ wxString FileRevisions::getRevision(wxString revString)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function compares two
+/// revisions with each other and returns the
+/// differnces as unified diff.
+///
+/// \param rev1 const wxString&
+/// \param rev2 const wxString&
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString FileRevisions::compareRevisions(const wxString& rev1, const wxString& rev2)
+{
+    return diff(getRevision(rev1), rev1, getRevision(rev2), rev2);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This method will restore the contents of the selected revision.
 ///
 /// \param nRevision size_t

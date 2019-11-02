@@ -130,6 +130,22 @@ void RevisionDialog::showRevision(const wxString& revString)
 
 
 /////////////////////////////////////////////////
+/// \brief This method compares two defined
+/// revisions and opens them as a diff file in the
+/// editor.
+///
+/// \param rev1 const wxString&
+/// \param rev2 const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void RevisionDialog::compareRevisions(const wxString& rev1, const wxString& rev2)
+{
+    mainWindow->ShowRevision(rev1 + "-" + rev2 + "-" + currentFile + ".diff", revisions->compareRevisions(rev1, rev2));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This method displays the context menu containing the actions.
 ///
 /// \param event wxTreeEvent&
@@ -151,6 +167,14 @@ void RevisionDialog::OnRightClick(wxTreeEvent& event)
     // Append commons
     popUpmenu.Append(ID_REVISIONDIALOG_SHOW, _guilang.get("GUI_DLG_REVISIONDIALOG_SHOW"));
     popUpmenu.AppendSeparator();
+    wxArrayTreeItemIds selection;
+
+    if (revisionList->GetSelections(selection) >= 2)
+    {
+        popUpmenu.Append(ID_REVISIONDIALOG_COMPARE, _guilang.get("GUI_DLG_REVISIONDIALOG_COMPARE", revisionList->GetItemText(selection[0]).ToStdString(), revisionList->GetItemText(selection[1]).ToStdString()));
+        popUpmenu.AppendSeparator();
+    }
+
     popUpmenu.Append(ID_REVISIONDIALOG_TAG, _guilang.get("GUI_DLG_REVISIONDIALOG_TAG"));
     popUpmenu.Append(ID_REVISIONDIALOG_RESTORE, _guilang.get("GUI_DLG_REVISIONDIALOG_RESTORE"));
     popUpmenu.Append(ID_REVISIONDIALOG_REFRESH, _guilang.get("GUI_DLG_REVISIONDIALOG_REFRESH"));
@@ -199,6 +223,15 @@ void RevisionDialog::OnMenuEvent(wxCommandEvent& event)
             // Show the right-clicked revision
             showRevision(revID);
             break;
+        case ID_REVISIONDIALOG_COMPARE:
+            {
+                wxArrayTreeItemIds selectedIds;
+
+                if (revisionList->GetSelections(selectedIds) >= 2)
+                    compareRevisions(revisionList->GetItemText(selectedIds[0]), revisionList->GetItemText(selectedIds[1]));
+
+                break;
+            }
         case ID_REVISIONDIALOG_TAG:
             {
                 // Tag the right-clicked revision. Display
