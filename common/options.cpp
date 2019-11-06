@@ -46,6 +46,7 @@ Options::Options()
 	m_formatBeforeSaving = false;
 	m_keepBackupFile = true;
 	m_foldDuringLoading = false;
+	m_highlightLocalVariables = false;
 
 	m_mingwProgramNames.Add("g++.exe");
 	m_mingwProgramNames.Add("cc1plus.exe");

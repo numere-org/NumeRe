@@ -73,6 +73,7 @@ class Options
 		void SetShowProcedureArguments(bool show) {m_showProcedureArguments = show;}
 		void SetShowGlobalVariables(bool show) {m_showGlobalVariables = show;}
 		void SetFoldDuringLoading(bool fold) {m_foldDuringLoading = fold;}
+		void SetHighlightLocalVariables(bool highlight) {m_highlightLocalVariables = highlight;}
 
 		// Accessors:  (inlined)
 		wxString GetPscpApp() { return m_pscpProg; }
@@ -101,6 +102,7 @@ class Options
 		bool GetShowProcedureArguments() {return m_showProcedureArguments;}
 		bool GetShowGlobalVariables() {return m_showGlobalVariables;}
 		bool GetFoldDuringLoading() {return m_foldDuringLoading;}
+		bool GetHighlightLocalVariables() {return m_highlightLocalVariables;}
 		wxArrayString GetMingwProgramNames() { return m_mingwProgramNames; }
 		StringFilenameHash GetMingwExecutables() { return m_mingwExecutableNames; }
 		wxArrayString GetMingwBinPaths() { return m_mingwBinPaths; }
@@ -218,6 +220,7 @@ class Options
 		bool m_formatBeforeSaving;
 		bool m_keepBackupFile;
 		bool m_foldDuringLoading;
+		bool m_highlightLocalVariables;
 
 		StringFilenameHash m_mingwExecutableNames;
 		wxArrayString m_mingwBinPaths;

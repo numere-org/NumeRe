@@ -67,6 +67,7 @@
 #define HIGHLIGHT_DIFFERENCES 10
 #define HIGHLIGHT_DIFFERENCE_SOURCE 11
 #define HIGHLIGHT_ANNOTATION 12
+#define HIGHLIGHT_LOCALVARIABLES 13
 #define ANNOTATION_NOTE 22
 #define ANNOTATION_WARN 23
 #define ANNOTATION_ERROR 24
@@ -4342,9 +4343,10 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 		//this->ClearDocumentStyle();
 	}
 
-	applyStrikeThrough();
 	updateDefaultHighlightSettings();
 	Colourise(0, -1);
+	applyStrikeThrough();
+	markLocalVariables(true);
 }
 
 
@@ -5038,6 +5040,135 @@ void NumeReEditor::markSections(bool bForceRefresh)
 
 
 /////////////////////////////////////////////////
+/// \brief This method wraps the detection of
+/// local variables.
+///
+/// \param bForceRefresh bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::markLocalVariables(bool bForceRefresh)
+{
+    if (m_fileType != FILE_NPRC || !m_options->GetHighlightLocalVariables())
+        return;
+
+    SetIndicatorCurrent(HIGHLIGHT_LOCALVARIABLES);
+
+    // We clean everything, if need to refresh the indicators
+    if (bForceRefresh)
+        IndicatorClearRange(0, GetLastPosition());
+    else if (GetStyleAt(GetLineIndentPosition(GetCurrentLine())) != wxSTC_NPRC_COMMAND)
+        return;
+
+	IndicatorSetStyle(HIGHLIGHT_LOCALVARIABLES, wxSTC_INDIC_DOTS);
+	IndicatorSetForeground(HIGHLIGHT_LOCALVARIABLES, *wxBLACK);
+
+	// Run the algorithm for every possible local variable declarator
+	markLocalVariableOfType("var", bForceRefresh);
+	markLocalVariableOfType("cst", bForceRefresh);
+	markLocalVariableOfType("tab", bForceRefresh);
+	markLocalVariableOfType("str", bForceRefresh);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method finds all local variables
+/// of the selected type and highlights their
+/// definitions.
+///
+/// \param command const wxString&
+/// \param bForceRefresh bool
+/// \return void
+///
+/// If the refresh flag is not set, then the
+/// alogrithm will only update the current edited
+/// line of the editor.
+/////////////////////////////////////////////////
+void NumeReEditor::markLocalVariableOfType(const wxString& command, bool bForceRefresh)
+{
+    vector<int> matches;
+
+    // Find the occurences of the variable declaration commands
+    // in the corresponding scope
+    if (!bForceRefresh)
+    {
+        matches = m_search->FindAll(command, wxSTC_NPRC_COMMAND, PositionFromLine(GetCurrentLine()), GetLineEndPosition(GetCurrentLine()), false);
+
+        if (matches.size())
+            IndicatorClearRange(PositionFromLine(GetCurrentLine()), GetLineEndPosition(GetCurrentLine()));
+    }
+    else
+        matches = m_search->FindAll(command, wxSTC_NPRC_COMMAND, 0, GetLastPosition(), false);
+
+    // Run through all found occurences and extract the definitions
+    // of the local variables
+    for (size_t i = 0; i < matches.size(); i++)
+    {
+        wxString line = GetTextRange(matches[i]+command.length(), GetLineEndPosition(LineFromPosition(matches[i])));
+        int nPos = line.find_first_not_of(' ') + matches[i] + command.length();
+
+        for (int j = nPos; j < GetLineEndPosition(LineFromPosition(matches[i])) + 1; j++)
+        {
+            char currentChar = GetCharAt(j);
+
+            // If a separator character was found, highlight
+            // the current word and find the next candidate
+            if (currentChar == ' ' || currentChar == '=' || currentChar == ',' || currentChar == '\r' || currentChar == '\n')
+            {
+                IndicatorFillRange(nPos, j - nPos);
+
+                if (currentChar == ',')
+                {
+                    // Only a declaration, find the next one
+                    while (GetCharAt(j) == ',' || GetCharAt(j) == ' ')
+                        j++;
+                }
+                else
+                {
+                    // This is also an initialization. Find the
+                    // next declaration by jumping over the assigned
+                    // value.
+                    for (int l = j; l < GetLineEndPosition(LineFromPosition(matches[i])); l++)
+                    {
+                        if (GetCharAt(l) == ',' && GetStyleAt(l) == wxSTC_NPRC_OPERATORS)
+                        {
+                            while (GetCharAt(l) == ',' || GetCharAt(l) == ' ')
+                                l++;
+
+                            j = l;
+                            break;
+                        }
+                        else if (GetStyleAt(l) == wxSTC_NPRC_OPERATORS && (GetCharAt(l) == '(' || GetCharAt(l) == '{'))
+                        {
+                            j = -1;
+                            l = BraceMatch(l);
+
+                            if (l == -1)
+                                break;
+                        }
+                        else if (l+1 == GetLineEndPosition(LineFromPosition(matches[i])))
+                            j = -1;
+                    }
+                }
+
+                if (j == -1)
+                    break;
+
+                nPos = j;
+            }
+            else if (GetStyleAt(j) == wxSTC_NPRC_OPERATORS && (currentChar == '(' || currentChar == '{'))
+            {
+                j = BraceMatch(j);
+
+                if (j == -1)
+                    break;
+            }
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Performs asynchronous actions and is
 /// called automatically.
 ///
@@ -5074,6 +5205,7 @@ void NumeReEditor::AsynchEvaluations()
 		m_analyzer->run();
 
 	markSections();
+	markLocalVariables();
 }
 
 

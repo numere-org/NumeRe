@@ -315,6 +315,7 @@ void OptionsDialog::CreateStylePage()
     fontStyleSize->Add(m_underlineCheck, 1, wxALIGN_LEFT | wxALL, 0);
 
     group->Add(fontStyleSize, 0, wxALIGN_LEFT | wxALL, ELEMENT_BORDER);
+    m_highlightLocalVariables = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HIGHLIGHTLOCALVARIABLES"));
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_FONTS"), wxHORIZONTAL);
@@ -716,6 +717,7 @@ bool OptionsDialog::EvaluateOptions()
     m_options->SetShowLinesInStackTrace(m_debuggerShowLineNumbers->GetValue());
     m_options->SetShowModulesInStackTrace(m_debuggerShowModules->GetValue());
     m_options->SetShowProcedureArguments(m_debuggerShowProcedureArguments->GetValue());
+    m_options->SetHighlightLocalVariables(m_highlightLocalVariables->GetValue());
 
 
     for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
@@ -804,6 +806,7 @@ void OptionsDialog::InitializeDialog()
     m_LaTeXRoot->SetValue(m_options->GetLaTeXRoot());
     m_keepBackupFiles->SetValue(m_options->GetKeepBackupFile());
     m_foldDuringLoading->SetValue(m_options->GetFoldDuringLoading());
+    m_highlightLocalVariables->SetValue(m_options->GetHighlightLocalVariables());
 
     m_debuggerFocusLine->SetValue(m_options->GetDebuggerFocusLine());
     m_debuggerDecodeArguments->SetValue(_option->getTryToDecodeProcedureArguments());

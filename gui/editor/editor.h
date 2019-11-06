@@ -361,6 +361,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void FoldCurrentBlock(int nLine);
 
 		void markSections(bool bForceRefresh = false);
+		void markLocalVariables(bool bForceRefresh = false);
+		void markLocalVariableOfType(const wxString& command, bool bForceRefresh);
 		void AsynchActions();
 		void AsynchEvaluations();
 

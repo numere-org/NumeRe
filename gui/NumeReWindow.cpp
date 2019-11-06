@@ -780,6 +780,9 @@ void NumeReWindow::InitializeProgramOptions()
 		bool foldDuringLoading = (m_config->Read("Interface/FoldDuringLoading", "false") == "true");
 		m_options->SetFoldDuringLoading(foldDuringLoading);
 
+		bool highlightVariables = (m_config->Read("Styles/HighlightLocalVariables", "false") == "true");
+		m_options->SetHighlightLocalVariables(highlightVariables);
+
 		int terminalHistory = 300;
 		m_config->Read("Miscellaneous/TerminalHistory", &terminalHistory, 300);
 		if (terminalHistory >= 100 && terminalHistory <= 1000)
@@ -838,6 +841,7 @@ void NumeReWindow::InitializeProgramOptions()
 		m_config->Write("Miscellaneous/TerminalHistory", m_options->GetTerminalHistorySize());
 		m_config->Write("Interface/CaretBlinkTime", m_options->GetCaretBlinkTime());
 		m_config->Write("Interface/FoldDuringLoading", m_options->GetFoldDuringLoading() ? "true" : "false");
+		m_config->Write("Styles/HighlightLocalVariables", m_options->GetHighlightLocalVariables() ? "true" : "false");
 		m_config->Write("Miscellaneous/LaTeXRoot", m_options->GetLaTeXRoot());
 		m_config->Write("Miscellaneous/PrintInColor", m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE ? "true" : "false");
 		m_config->Write("Miscellaneous/PrintLineNumbers", m_options->GetLineNumberPrinting() ? "true" : "false");
@@ -4891,6 +4895,9 @@ void NumeReWindow::EvaluateOptions()
 
 	bool foldDuringLoading = m_options->GetFoldDuringLoading();
 	m_config->Write("Interface/FoldDuringLoading", foldDuringLoading ? "true" : "false");
+
+	bool highlightVariables = m_options->GetHighlightLocalVariables();
+	m_config->Write("Styles/HighlightLocalVariables", highlightVariables ? "true" : "false");
 
 	bool printInColor = (m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE);
 	m_config->Write("Miscellaneous/PrintInColor", printInColor ? "true" : "false");

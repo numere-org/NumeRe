@@ -165,6 +165,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_italicsCheck;
         wxCheckBox* m_underlineCheck;
         wxFontPickerCtrl* m_fontPicker;
+        wxCheckBox* m_highlightLocalVariables;
 
         wxCheckBox* m_ExtendedInfo;
         wxCheckBox* m_ShowHints;
