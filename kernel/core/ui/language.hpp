@@ -28,6 +28,12 @@
 
 #include "../filesystem.hpp"
 
+/////////////////////////////////////////////////
+/// \brief This class handles the internal
+/// language system and returns the language
+/// strings of the selected language based upon
+/// the language files.
+/////////////////////////////////////////////////
 class Language : public FileSystem
 {
     private:
@@ -36,32 +42,75 @@ class Language : public FileSystem
         string sNO;
 
         map<string,string> getLangFileContent(const string& sFile);
+        void loadAndInsert(const string& sLanguageFileName);
 
     public:
         Language();
         void loadStrings(bool bloadUserFiles = true);
         void addToLanguage(const map<string,string>& _langstrings);
-        string getKey(const string& sMessage);
-        string get(const string& sMessage, const vector<string>& vTokens); //_lang.get("GREETING",vTokens);
-        inline string get(const string& sMessage)
+        string getKey(const string& sMessage) const;
+        string get(const string& sMessage, const vector<string>& vTokens) const; //_lang.get("GREETING",vTokens);
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience wrapper for a defined
+        /// number of tokens.
+        ///
+        /// \param sMessage const string&
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        string get(const string& sMessage) const
         {
             vector<string> vTokens;
             return get(sMessage, vTokens);
         }
-        inline string get(const string& sMessage, const string& sTok1)
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience wrapper for a defined
+        /// number of tokens.
+        ///
+        /// \param sMessage const string&
+        /// \param sTok1 const string&
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        string get(const string& sMessage, const string& sTok1) const
         {
             vector<string> vTokens;
             vTokens.push_back(sTok1);
             return get(sMessage, vTokens);
         }
-        inline string get(const string& sMessage, const string& sTok1, const string& sTok2)
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience wrapper for a defined
+        /// number of tokens.
+        ///
+        /// \param sMessage const string&
+        /// \param sTok1 const string&
+        /// \param sTok2 const string&
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        string get(const string& sMessage, const string& sTok1, const string& sTok2) const
         {
             vector<string> vTokens;
             vTokens.push_back(sTok1);
             vTokens.push_back(sTok2);
             return get(sMessage, vTokens);
         }
-        inline string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3)
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience wrapper for a defined
+        /// number of tokens.
+        ///
+        /// \param sMessage const string&
+        /// \param sTok1 const string&
+        /// \param sTok2 const string&
+        /// \param sTok3 const string&
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3) const
         {
             vector<string> vTokens;
             vTokens.push_back(sTok1);
@@ -69,7 +118,20 @@ class Language : public FileSystem
             vTokens.push_back(sTok3);
             return get(sMessage, vTokens);
         }
-        inline string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3, const string& sTok4)
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience wrapper for a defined
+        /// number of tokens.
+        ///
+        /// \param sMessage const string&
+        /// \param sTok1 const string&
+        /// \param sTok2 const string&
+        /// \param sTok3 const string&
+        /// \param sTok4 const string&
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3, const string& sTok4) const
         {
             vector<string> vTokens;
             vTokens.push_back(sTok1);
@@ -78,7 +140,21 @@ class Language : public FileSystem
             vTokens.push_back(sTok4);
             return get(sMessage, vTokens);
         }
-        inline string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3, const string& sTok4, const string& sTok5)
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience wrapper for a defined
+        /// number of tokens.
+        ///
+        /// \param sMessage const string&
+        /// \param sTok1 const string&
+        /// \param sTok2 const string&
+        /// \param sTok3 const string&
+        /// \param sTok4 const string&
+        /// \param sTok5 const string&
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3, const string& sTok4, const string& sTok5) const
         {
             vector<string> vTokens;
             vTokens.push_back(sTok1);
@@ -88,7 +164,22 @@ class Language : public FileSystem
             vTokens.push_back(sTok5);
             return get(sMessage, vTokens);
         }
-        inline string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3, const string& sTok4, const string& sTok5, const string& sTok6)
+
+        /////////////////////////////////////////////////
+        /// \brief Convenience wrapper for a defined
+        /// number of tokens.
+        ///
+        /// \param sMessage const string&
+        /// \param sTok1 const string&
+        /// \param sTok2 const string&
+        /// \param sTok3 const string&
+        /// \param sTok4 const string&
+        /// \param sTok5 const string&
+        /// \param sTok6 const string&
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3, const string& sTok4, const string& sTok5, const string& sTok6) const
         {
             vector<string> vTokens;
             vTokens.push_back(sTok1);
@@ -99,13 +190,13 @@ class Language : public FileSystem
             vTokens.push_back(sTok6);
             return get(sMessage, vTokens);
         }
-        vector<string> getList(const string& sMessageScheme);
+        vector<string> getList(const string& sMessageScheme) const;
 
-        inline string YES()
+        inline string YES() const
         {
             return sYES;
         }
-        inline string NO()
+        inline string NO() const
         {
             return sNO;
         }

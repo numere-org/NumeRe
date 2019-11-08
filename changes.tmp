@@ -15,3 +15,4 @@ Added	It's now possible to open the revision list from the tab popup menu.
 New	It's now possible to compare two revisions with each other. A corresponding *.diff file is opened in the editor using the standard DIFF lexer.
 Applied	The package creator now launches even if the current active file in the editor is not a procedure file.
 Added	It's now possible to highlight the definitions of local variables, which may enhance the readability of procedures.
+Fixed	The endless loop occuring, if one has a language-like feature like "%%1%%" in an expression, has been resolved.

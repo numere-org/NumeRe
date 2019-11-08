@@ -25,6 +25,9 @@ string toString(int);
 bool fileExists(const string&);
 string toString(unsigned int nInt);
 
+/////////////////////////////////////////////////
+/// \brief Contructor of the language class.
+/////////////////////////////////////////////////
 Language::Language() : FileSystem()
 {
     mLangStrings.clear();
@@ -32,6 +35,16 @@ Language::Language() : FileSystem()
     sNO = "n";
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This private member function decodes a
+/// single language file into a map and returns
+/// it.
+///
+/// \param sFile const string&
+/// \return map<string,string>
+///
+/////////////////////////////////////////////////
 map<string,string> Language::getLangFileContent(const string& sFile)
 {
     map<string,string> mLangFileContent;
@@ -39,25 +52,38 @@ map<string,string> Language::getLangFileContent(const string& sFile)
     string sLine;
 
     fFile_in.open(FileSystem::ValidFileName(sFile, ".nlng").c_str());
+
+    // Check, if file has been successfully opened
     if (fFile_in.fail())
     {
         fFile_in.close();
         return mLangFileContent;
     }
 
+    // Read the complete file
     while (!fFile_in.eof())
     {
         getline(fFile_in, sLine);
         StripSpaces(sLine);
+
+        // Ignore empty lines
         if (!sLine.length())
             continue;
+
+        // Ignore comments
         if (sLine.front() == '#')
             continue;
-        for (unsigned int i = 0; i < sLine.length(); i++)
+
+        // Replace included tab characters with
+        // whitespaces
+        for (size_t i = 0; i < sLine.length(); i++)
         {
             if (sLine[i] == '\t')
                 sLine[i] = ' ';
         }
+
+        // Remove whitespaces in front of the first
+        // equal sign
         for (unsigned int i = 1; i < sLine.find('='); i++)
         {
             if (sLine[i] == ' ')
@@ -66,76 +92,99 @@ map<string,string> Language::getLangFileContent(const string& sFile)
                 i--;
             }
         }
+
+        // Replace tabs
         while (sLine.find("%%TAB%%") != string::npos)
             sLine.replace(sLine.find("%%TAB%%"), 7, "\t");
+
+        // Replace linebreaks
         while (sLine.find("%%LINEBREAK%%") != string::npos)
             sLine.replace(sLine.find("%%LINEBREAK%%"), 13, "\n");
-        mLangFileContent[sLine.substr(0,sLine.find('='))] = sLine.substr(sLine.find_first_not_of(' ', sLine.find('=')+1));
+
+        // Store the token in the map
+        mLangFileContent[sLine.substr(0, sLine.find('='))] = sLine.substr(sLine.find_first_not_of(' ', sLine.find('=')+1));
     }
 
     return mLangFileContent;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This private member function is a
+/// simple helper for Language::loadStrings().
+///
+/// \param sLanguageFileName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Language::loadAndInsert(const string& sLanguageFileName)
+{
+    // Load language file
+    map<string,string> mLangFileContent = getLangFileContent(sLanguageFileName);
+
+    // Insert the strings
+    for (auto iter = mLangFileContent.begin(); iter != mLangFileContent.end(); ++iter)
+        mLangStrings[iter->first] = iter->second;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function loads the language
+/// files to the internal map and replaces the
+/// named tokens with the corresponding language
+/// strings afterwards.
+///
+/// \param bloadUserFiles bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void Language::loadStrings(bool bloadUserFiles)
 {
-    //string sMainStrings = "<>/lang/main.nlng";
-    //string sErrorStrings = "<>/lang/error.nlng";
-    //ifstream fStrings_in;
     string sLine;
     map<string,string> mLangFileContent;
+
+    // Clear already existing strings first
     if (mLangStrings.size())
         mLangStrings.clear();
 
+    // Load main file
     mLangFileContent = getLangFileContent("<>/lang/main.nlng");
     mLangStrings.insert(mLangFileContent.begin(), mLangFileContent.end());
-    mLangFileContent.clear();
 
-    mLangFileContent = getLangFileContent("<>/lang/error.nlng");
-    for (auto iter = mLangFileContent.begin(); iter != mLangFileContent.end(); ++iter)
-        mLangStrings[iter->first] = iter->second;
-    mLangFileContent.clear();
+    // Load errors file
+    loadAndInsert("<>/lang/error.nlng");
 
+    // Shall user language files be loaded?
     if (bloadUserFiles)
     {
+        // Load user main language file, if it exists
         if (fileExists(FileSystem::ValidFileName("<>/user/lang/main.nlng", ".nlng")))
-        {
-            mLangFileContent = getLangFileContent("<>/user/lang/main.nlng");
-            if (mLangFileContent.size())
-            {
-                for (auto iter = mLangFileContent.begin(); iter != mLangFileContent.end(); ++iter)
-                    mLangStrings[iter->first] = iter->second;
-                //mLangStrings.insert(mLangFileContent.begin(), mLangFileContent.end());
-                mLangFileContent.clear();
-            }
-        }
-        if (fileExists(FileSystem::ValidFileName("<>/user/lang/error.nlng", ".nlng")))
-        {
-            mLangFileContent = getLangFileContent("<>/user/lang/error.nlng");
-            if (mLangFileContent.size())
-            {
-                for (auto iter = mLangFileContent.begin(); iter != mLangFileContent.end(); ++iter)
-                    mLangStrings[iter->first] = iter->second;
-                //mLangStrings.insert(mLangFileContent.begin(), mLangFileContent.end());
-                mLangFileContent.clear();
-            }
-        }
+            loadAndInsert("<>/user/lang/main.nlng");
 
+        // Load user error language file, if it exists
+        if (fileExists(FileSystem::ValidFileName("<>/user/lang/error.nlng", ".nlng")))
+            loadAndInsert("<>/user/lang/error.nlng");
     }
 
+    // Replace all named tokens with their corresponding
+    // language string
     for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
     {
+        // Ignore too short strings
         if ((iter->second).length() < 5)
             continue;
-        for (unsigned int i = 0; i < (iter->second).length()-3; i++)
+
+        // Search tokens, check, whether they exist
+        // and replace them with their corresponding
+        // strings
+        for (size_t i = 0; i < (iter->second).length()-3; i++)
         {
-            if ((iter->second).substr(i,2) == "%%" && isalpha((iter->second)[i+3]) && (iter->second).find("%%", i+3) != string::npos)
+            if ((iter->second).substr(i, 2) == "%%" && isalpha((iter->second)[i+3]) && (iter->second).find("%%", i+3) != string::npos)
             {
                 sLine = (iter->second).substr(i+2, (iter->second).find("%%", i+3)-i-2);
-                //cerr << sLine << endl;
+
                 if (mLangStrings.find(sLine) != mLangStrings.end())
-                {
                     (iter->second).replace(i, (iter->second).find("%%", i+3)-i+2, mLangStrings[sLine]);
-                }
             }
         }
     }
@@ -146,25 +195,48 @@ void Language::loadStrings(bool bloadUserFiles)
     return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function adds the contents
+/// of the passed language file into the internal
+/// map.
+///
+/// \param _langstrings const map<string,string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Language::addToLanguage(const map<string,string>& _langstrings)
 {
-    if (!_langstrings.size())
-        return;
     for (auto iter = _langstrings.begin(); iter != _langstrings.end(); ++iter)
-    {
         mLangStrings[iter->first] = iter->second;
-    }
 }
 
-string Language::getKey(const string& sMessage)
+
+/////////////////////////////////////////////////
+/// \brief This member function searches the
+/// internal language map for an identifier, which
+/// starts similar with the passed identifier and
+/// returns the found identifier.
+///
+/// \param sMessage const string&
+/// \return string
+///
+/// The passed language identifier has to contain
+/// an asteriks as a wildcard.
+/////////////////////////////////////////////////
+string Language::getKey(const string& sMessage) const
 {
     string sKey = sMessage;
+
+    // Do only something, when a wildcard is available
     if (sKey.find('*') != string::npos)
     {
         sKey.erase(sKey.find('*'));
+
+        // Find a candidate for the passed token
         for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
         {
-            if ((iter->first).substr(0,sKey.length()) == sKey)
+            if ((iter->first).substr(0, sKey.length()) == sKey)
             {
                 sKey = iter->first;
                 return sKey;
@@ -175,49 +247,83 @@ string Language::getKey(const string& sMessage)
     return sMessage;
 }
 
-string Language::get(const string& sMessage, const vector<string>& vTokens)
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// language string for the passed language
+/// identifier and replaces all enumerated tokens
+/// with the passed token list.
+///
+/// \param sMessage const string&
+/// \param vTokens const vector<string>&
+/// \return string
+///
+/////////////////////////////////////////////////
+string Language::get(const string& sMessage, const vector<string>& vTokens) const
 {
     if (!mLangStrings.size())
         return sMessage;
+
     string sLangString = sMessage;
+
+    // Search for the language string
     if (sLangString.find('*') != string::npos)
     {
         sLangString.erase(sLangString.find('*'));
+
+        // Find a candidate for the passed identifier
+        // containing an asteriks
         for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
         {
             if ((iter->first).substr(0,sLangString.length()) == sLangString)
-            {
                 sLangString = iter->second;
-            }
         }
-        if (sMessage.substr(0,sLangString.length()) == sLangString)
+
+        if (sMessage.substr(0, sLangString.length()) == sLangString)
             return sMessage;
     }
     else if (mLangStrings.find(sMessage) != mLangStrings.end())
-    {
-        sLangString = mLangStrings[sMessage];
-    }
+        sLangString = mLangStrings.at(sMessage);
     else
         return sMessage;
-    //string sLangString = mLangStrings[sMessage];
+
     string sToken;
-    for (unsigned int i = 0; i < vTokens.size(); i++)
+
+    // Replace all enumerated tokens
+    for (size_t i = 0; i < vTokens.size(); i++)
     {
         sToken = "%%" + toString(i+1) + "%%";
-        while (sLangString.find(sToken) != string::npos)
+        size_t pos = 0;
+
+        // As long as further tokens can be found
+        while ((pos = sLangString.find(sToken, pos)) != string::npos)
         {
-            sLangString.replace(sLangString.find(sToken), sToken.size(), vTokens[i]);
+            sLangString.replace(pos, sToken.length(), vTokens[i]);
+            pos += vTokens[i].length();
         }
     }
+
     return sLangString;
 }
 
-vector<string> Language::getList(const string& sMessageScheme)
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a vector
+/// of language strings matching to the passed
+/// identifier containing wildcards.
+///
+/// \param sMessageScheme const string&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
+vector<string> Language::getList(const string& sMessageScheme) const
 {
     vector<string> vListResults;
-    string sPrefix = sMessageScheme.substr(0,sMessageScheme.find('*'));
+    string sPrefix = sMessageScheme.substr(0, sMessageScheme.find('*'));
     string sType = "";
 
+    // Extract the type (available in command and function
+    // documentations, for example)
     if (sPrefix.find('[') != string::npos)
     {
         sPrefix.erase(sPrefix.find('['));
@@ -228,14 +334,20 @@ vector<string> Language::getList(const string& sMessageScheme)
 
     for (auto iter = mLangStrings.begin(); iter != mLangStrings.end(); ++iter)
     {
-        if ((iter->first).substr(0,sPrefix.length()) != sPrefix)
+        if ((iter->first).substr(0, sPrefix.length()) != sPrefix)
             continue;
+
+        // Ensure that the found identifier has the
+        // the correct type if a type was selected
         if (sType.length() && (iter->first).find('[') != string::npos)
         {
             string sCurrentType = (iter->first).substr((iter->first).find('['), (iter->first).find(']')+1-(iter->first).find('['));
+
             if (sCurrentType.find(sType) == string::npos)
                 continue;
         }
+
+        // Append the found occurence to the vector
         vListResults.push_back(iter->second);
     }
 
