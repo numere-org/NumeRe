@@ -508,6 +508,7 @@ void NumeReKernel::defineFunctions()
 	_parser.DefineFun("and", parser_and, true);                                 // and(x,y,z,...)
 	_parser.DefineFun("or", parser_or, true);                                   // or(x,y,z,...)
 	_parser.DefineFun("xor", parser_xor, true);                                 // xor(x,y,z,...)
+	_parser.DefineFun("polynomial", parser_polynomial, true);                    // polynomial(x,a0,a1,a2,a3,...)
 	_parser.DefineFun("rand", parser_Random, false);                            // rand(left,right)
 	_parser.DefineFun("gauss", parser_gRandom, false);                          // gauss(mean,std)
 	_parser.DefineFun("erf", parser_erf, false);                                // erf(x)
@@ -768,7 +769,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
 			// --> Gibt es "??"? Dann rufe die Prompt-Funktion auf <--
 			if (!_procedure.getLoop() && sLine.find("??") != string::npos && sCurrentCommand != "help")
-				sLine = parser_Prompt(sLine);
+				sLine = promptForUserInput(sLine);
 
             // Handle plugin commands
             // Will return false, if the command line was cleared completely
@@ -871,7 +872,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
 			// --> Gibt es "??" ggf. nochmal? Dann rufe die Prompt-Funktion auf <--
 			if (sLine.find("??") != string::npos)
-				sLine = parser_Prompt(sLine);
+				sLine = promptForUserInput(sLine);
 
 			// Get data elements for the current command line or determine,
 			// if the target value of the current command line is a candidate
@@ -909,7 +910,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 			if (bWriteToCache)
 			{
 				// Get the indices from the corresponding function
-				_idx = parser_getIndices(sCache, _parser, _data, _option);
+				_idx = getIndices(sCache, _parser, _data, _option);
 
                 if (sCache[sCache.find_first_of("({")] == '{')
                 {

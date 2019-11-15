@@ -16,3 +16,4 @@ New	It's now possible to compare two revisions with each other. A corresponding 
 Applied	The package creator now launches even if the current active file in the editor is not a procedure file.
 Added	It's now possible to highlight the definitions of local variables, which may enhance the readability of procedures.
 Fixed	The endless loop occuring, if one has a language-like feature like "%%1%%" in an expression, has been resolved.
+New	Added the function "polynomial(x,a0,a1,a2,...)"

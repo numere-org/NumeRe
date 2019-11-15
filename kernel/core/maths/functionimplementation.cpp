@@ -521,6 +521,22 @@ value_type parser_xor(const value_type* vElements, int nElements)
     return 0.0;
 }
 
+// polynomial(x,1,2,3,4)
+value_type parser_polynomial(const value_type* vElements, int nElements)
+{
+    if (!nElements)
+        return NAN;
+    else if (nElements == 1)
+        return 0.0;
+
+    value_type dResult = vElements[1];
+
+    for (int i = 2; i < nElements; i++)
+        dResult += vElements[i] * intPower(vElements[0], i-1);
+
+    return dResult;
+}
+
 
 value_type parser_Sum(const value_type* vElements, int nElements)
 {
