@@ -37,7 +37,7 @@ static bool isCandidateForCasuals(vector<string>& vLines, vector<string>& vCols)
  * --> Index = -3, falls der Index eine Stringreferenz ist <--
  * --> Gibt alle angegeben Indices-1 zurueck <--
  */
-Indices parser_getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+Indices getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	Indices _idx;
 

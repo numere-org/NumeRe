@@ -507,7 +507,7 @@ namespace NumeRe
         // distribute it to the components of the argument vector
         if (sFuncArgument.find('{') != string::npos || sFuncArgument.find(',') != string::npos)
         {
-            parser_VectorToExpr(sFuncArgument, _option);
+            convertVectorToExpression(sFuncArgument, _option);
 
             // As long as the function argument has a length,
             // get the next argument and store it in the vector

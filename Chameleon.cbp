@@ -553,6 +553,8 @@
 		<Unit filename="kernel/core/io/fileops.hpp" />
 		<Unit filename="kernel/core/io/output.cpp" />
 		<Unit filename="kernel/core/io/output.hpp" />
+		<Unit filename="kernel/core/maths/command_implementations.cpp" />
+		<Unit filename="kernel/core/maths/command_implementations.hpp" />
 		<Unit filename="kernel/core/maths/define.cpp" />
 		<Unit filename="kernel/core/maths/define.hpp" />
 		<Unit filename="kernel/core/maths/fitcontroller.cpp" />
@@ -561,6 +563,7 @@
 		<Unit filename="kernel/core/maths/functionimplementation.cpp" />
 		<Unit filename="kernel/core/maths/functionimplementation.hpp" />
 		<Unit filename="kernel/core/maths/matrixoperations.cpp" />
+		<Unit filename="kernel/core/maths/matrixoperations.hpp" />
 		<Unit filename="kernel/core/maths/odesolver.cpp" />
 		<Unit filename="kernel/core/maths/odesolver.hpp" />
 		<Unit filename="kernel/core/maths/parser_functions.cpp" />

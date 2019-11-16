@@ -26,9 +26,9 @@
 #include "../ui/error.hpp"
 #include "../structures.hpp"
 #include "../built-in.hpp"
+#include "../maths/parser_functions.hpp"
 
 
-string parser_evalTargetExpression(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option);
 static string getSourceForDataOperation(const string& sExpression, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option);
 static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const Datafile& _data, bool bTranspose);
 static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, Datafile& _data, bool bMove, bool bTranspose);
@@ -652,7 +652,7 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, Datafile
         {
             // Cache was found
             // Get the indices from the cache expression
-            Indices _iDeleteIndex = parser_getIndices(sCache, _parser, _data, _option);
+            Indices _iDeleteIndex = getIndices(sCache, _parser, _data, _option);
 
             // Check the indices
             if (!isValidIndexSet(_iDeleteIndex))
@@ -688,7 +688,7 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Data
         {
             // Cache was found
             // Get the indices from the cache expression
-            Indices _iDeleteIndex = parser_getIndices(sCluster, _parser, _data, _option);
+            Indices _iDeleteIndex = getIndices(sCluster, _parser, _data, _option);
 
             // Check the indices
             if (!isValidIndexSet(_iDeleteIndex))
@@ -759,7 +759,7 @@ bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 		bTranspose = true;
 
     // Get the target from the option or use the default one
-    sTarget = parser_evalTargetExpression(sCmd, "cache", _iTargetIndex, _parser, _data, _option);
+    sTarget = evaluateTargetOptionInCommand(sCmd, "cache", _iTargetIndex, _parser, _data, _option);
 
     // Avoid data as target for this operation
     if (sTarget == "data")
@@ -798,7 +798,7 @@ bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 		bTranspose = true;
 
     // Get the target expression from the option. The default one is empty and will raise an error
-	sTarget = parser_evalTargetExpression(sCmd, "", _iTargetIndex, _parser, _data, _option);
+	sTarget = evaluateTargetOptionInCommand(sCmd, "", _iTargetIndex, _parser, _data, _option);
 
 	// If the target cache name is empty, raise an error
 	if (!sTarget.length())
@@ -1393,7 +1393,7 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 	Indices _idx;
 
 	// Get the target cache from the command line or use the default one
-	sTargetCache = parser_evalTargetExpression(sCmd, "image", _idx, _parser, _data, _option);
+	sTargetCache = evaluateTargetOptionInCommand(sCmd, "image", _idx, _parser, _data, _option);
 
 	// Separate the parameter list from the command expression
 	if (sCmd.rfind('-') != string::npos && !isInQuotes(sCmd, sCmd.rfind('-')))

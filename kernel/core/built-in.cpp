@@ -275,7 +275,7 @@ string evaluateParameterValues(const string& sCmd)
 		}
 
 		// Parse the interval syntax
-		vInterval = parser_IntervalReader(sTemp, _parser, _data, _functions, _option, true);
+		vInterval = readAndParseIntervals(sTemp, _parser, _data, _functions, _option, true);
 
 		// Append the remaining part of the parameter string to the expression
 		sReturn += sTemp;

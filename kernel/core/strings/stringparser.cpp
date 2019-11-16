@@ -69,7 +69,7 @@ namespace NumeRe
         {
             // Check for arguments to parse and
             // get the indices afterwards
-            Indices _idx = parser_getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition)) + ")", _parser, _data, _option);
+            Indices _idx = getIndices("string(" + parseStringsInIndices(getFunctionArgumentList("string(", sLine, n_pos, nEndPosition)) + ")", _parser, _data, _option);
 
             // Pre-process the indices
             if (_idx.col.isOpenEnd())
@@ -359,8 +359,8 @@ namespace NumeRe
                             sLineToParsedTemp += sExpr;
 
                             // Get the next part of the command line
-                            if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
-                                sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
+                            if (getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
+                                sLineToParsed = sLineToParsed.substr(getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
                             else
                                 sLineToParsed.clear();
 
@@ -446,10 +446,10 @@ namespace NumeRe
                     nPos = 0;
                     continue;
                 }
-                else if (containsStringVectorVars(sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos)))))
+                else if (containsStringVectorVars(sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)))))
                 {
                     // Here are string vector variables
-                    string sExpr = sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
+                    string sExpr = sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
 
                     // Parse the current line
                     StringResult strRes = eval(sExpr, "");
@@ -467,15 +467,15 @@ namespace NumeRe
                     // Create a new string vector var, append it to the string and continue
                     sExpr = createStringVectorVar(strRes.vResult);
                     sLineToParsedTemp += sExpr;
-                    if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
-                        sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
+                    if (getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
+                        sLineToParsed = sLineToParsed.substr(getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
                     else
                         sLineToParsed.clear();
 
                     continue;
                 }
                 else // Set the expression
-                    _parser.SetExpr(sLineToParsed.substr(0, parser_getDelimiterPos(sLineToParsed.substr(n_pos))));
+                    _parser.SetExpr(sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos))));
 
                 int nResults = 0;
                 value_type* v = 0;
@@ -503,8 +503,8 @@ namespace NumeRe
                 sLineToParsedTemp += sElement;
 
                 // Search for the next delimiter
-                if (parser_getDelimiterPos(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
-                    sLineToParsed = sLineToParsed.substr(parser_getDelimiterPos(sLineToParsed.substr(n_pos)));
+                if (getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)) < sLineToParsed.length())
+                    sLineToParsed = sLineToParsed.substr(getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos)));
                 else
                     sLineToParsed.clear();
 
@@ -521,7 +521,7 @@ namespace NumeRe
         // Handle remaining vector braces
         if (sLineToParsedTemp.find('{') != string::npos)
         {
-            parser_VectorToExpr(sLineToParsedTemp, _option);
+            convertVectorToExpression(sLineToParsedTemp, _option);
         }
 
         // Determine the return value
@@ -710,7 +710,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void StringParser::storeStringToStringObject(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings)
     {
-        Indices _idx = parser_getIndices(sObject, _parser, _data, _option);
+        Indices _idx = getIndices(sObject, _parser, _data, _option);
 
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _idx.row.front()+nStrings-nCurrentComponent-1);
@@ -748,7 +748,7 @@ namespace NumeRe
 
         // Handle remaining vector braces
         if (__sObject.find('{') != string::npos)
-            parser_VectorToExpr(__sObject, _option);
+            convertVectorToExpression(__sObject, _option);
 
         string sObject;
         size_t nStrings = vFinal.size();
@@ -800,7 +800,7 @@ namespace NumeRe
                 }
 
                 // Search for the adress of the current variable
-                if (parser_GetVarAdress(sObject, _parser))
+                if (getPointerToVariable(sObject, _parser))
                 {
                     if (vIsNoStringValue.size() > nCurrentComponent && !vIsNoStringValue[nCurrentComponent])
                     {
@@ -851,7 +851,7 @@ namespace NumeRe
                 {
                     // Fallback: try to find the variable address
                     // although it doesn't seem to be a numerical value
-                    if (!parser_GetVarAdress(sObject, _parser))
+                    if (!getPointerToVariable(sObject, _parser))
                     {
                         try
                         {
@@ -1578,7 +1578,7 @@ namespace NumeRe
                     else
                     {
                         // Otherwise parse as a vector expression
-                        parser_VectorToExpr(sLine, _option);
+                        convertVectorToExpression(sLine, _option);
                         break;
                     }
                 }

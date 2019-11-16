@@ -2186,7 +2186,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 			if (bPrintedStatus)
 				NumeReKernel::printPreFmt("\n");
 
-			sLine = parser_Prompt(sLine);
+			sLine = promptForUserInput(sLine);
 			bPrintedStatus = false;
 		}
 	}
@@ -2400,7 +2400,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
                     bWriteToCluster = true;
 
 				_parserRef->SetCompiling(true);
-				_idx = parser_getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
+				_idx = getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
 
 				if (!isValidIndexSet(_idx))
 					throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
@@ -2420,7 +2420,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 			}
 			else
 			{
-				_idx = parser_getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
+				_idx = getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
 
 				if (sCache[sCache.find_first_of("({")] == '{')
                     bWriteToCluster = true;
@@ -3002,8 +3002,8 @@ void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
 		StripSpaces(sVarArray[i]);
 
 		// Is it already defined?
-		if (parser_GetVarAdress(sVarArray[i], *_parserRef))
-			vVars[sVarArray[i]] = parser_GetVarAdress(sVarArray[i], *_parserRef);
+		if (getPointerToVariable(sVarArray[i], *_parserRef))
+			vVars[sVarArray[i]] = getPointerToVariable(sVarArray[i], *_parserRef);
 		else
 		{
 		    // Create a local variable otherwise

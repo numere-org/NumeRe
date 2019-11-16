@@ -37,7 +37,6 @@
 #include "../settings.hpp"
 
 extern const string sVersion;
-extern int nLINE_LENGTH;
 using namespace std;
 
 

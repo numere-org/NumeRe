@@ -23,13 +23,19 @@
 #include <vector>
 #include <map>
 #include "built-in.hpp"
+#include "maths/command_implementations.hpp"
+#include "maths/matrixoperations.hpp"
+#include "plotting/plotting.hpp"
 #include "../kernel.hpp"
+
 using namespace std;
 using namespace mu;
 
 typedef CommandReturnValues (*CommandFunc)(string&);
 
 extern mglGraph _fontData;
+/// \todo Move this global instance to the kernel or remove it completely.
+extern Plugin _plugin;
 
 string removeQuotationMarks(const string& sString);
 static CommandReturnValues cmd_data(string& sCmd) __attribute__ ((deprecated));
@@ -1423,6 +1429,578 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 
 
 /////////////////////////////////////////////////
+/// \brief This function lists all known
+/// functions in the terminal.
+///
+/// \param _option const Settings&
+/// \param sType const string&
+/// \return void
+///
+/// It is more or less a legacy function, because
+/// the functions are now listed in the sidebar.
+/////////////////////////////////////////////////
+static void listFunctions(const Settings& _option, const string& sType) //PRSRFUNC_LISTFUNC_[TYPES]_*
+{
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	NumeReKernel::printPreFmt("|-> NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_HEADLINE")));
+	if (sType != "all")
+	{
+		NumeReKernel::printPreFmt("  [" + toUpperCase(_lang.get("PARSERFUNCS_LISTFUNC_TYPE_" + toUpperCase(sType))) + "]");
+	}
+	NumeReKernel::printPreFmt("\n");
+	make_hline();
+	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PARSERFUNCS_LISTFUNC_TABLEHEAD"), _option, false, 0, 28) + "\n|\n");
+	vector<string> vFuncs;
+
+	// Get the list of functions from the language file
+	// depending on the selected type
+	if (sType == "all")
+		vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*");
+	else
+		vFuncs = _lang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[" + toUpperCase(sType) + "]");
+
+    // Print the obtained function list on the terminal
+	for (unsigned int i = 0; i < vFuncs.size(); i++)
+	{
+		NumeReKernel::printPreFmt(LineBreak("|   " + vFuncs[i], _option, false, 0, 60) + "\n");
+	}
+	NumeReKernel::printPreFmt("|\n");
+	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE1"), _option));
+	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTFUNC_FOOTNOTE2"), _option));
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	return;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function lists all custom defined
+/// functions.
+///
+/// \param _functions const Define&
+/// \param _option const Settings&
+/// \return void
+///
+/// It is more or less also a legacy function,
+/// because the custom defined functions are also
+/// listed in the sidebar.
+/////////////////////////////////////////////////
+static void listDefinitions(const Define& _functions, const Settings& _option)
+{
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	NumeReKernel::print("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTDEFINE_HEADLINE")));
+	make_hline();
+	if (!_functions.getDefinedFunctions())
+	{
+		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_EMPTY")));
+	}
+	else
+	{
+	    // Print all custom defined functions on the terminal
+		for (unsigned int i = 0; i < _functions.getDefinedFunctions(); i++)
+		{
+		    // Print first the name of the function
+			NumeReKernel::printPreFmt(sectionHeadline(_functions.getFunction(i).substr(0, _functions.getFunction(i).rfind('('))));
+
+			// Print the comment, if it is available
+			if (_functions.getComment(i).length())
+			{
+				NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DESCRIPTION", _functions.getComment(i)), _option, true, 0, 25) + "\n"); //10
+			}
+
+			// Print the actual implementation of the function
+			NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunction(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
+        }
+		NumeReKernel::printPreFmt("|   -- " + toString((int)_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
+	}
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	return;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function lists all logical
+/// expressions.
+///
+/// \param _option const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void listLogicalOperators(const Settings& _option)
+{
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTLOGICAL_HEADLINE"))));
+	make_hline();
+	NumeReKernel::printPreFmt(toSystemCodePage("|   " + _lang.get("PARSERFUNCS_LISTLOGICAL_TABLEHEAD")) + "\n|\n");
+
+	// Get the list of all logical expressions
+	vector<string> vLogicals = _lang.getList("PARSERFUNCS_LISTLOGICAL_ITEM*");
+
+	// Print the list on the terminal
+	for (unsigned int i = 0; i < vLogicals.size(); i++)
+		NumeReKernel::printPreFmt(toSystemCodePage("|   " + vLogicals[i]) + "\n");
+
+	NumeReKernel::printPreFmt(toSystemCodePage("|\n"));
+	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE1"), _option));
+	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTLOGICAL_FOOTNOTE2"), _option));
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	return;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function lists all declared
+/// variables, which are known by the numerical
+/// and the string parser as well as the current
+/// declared data tables and clusters.
+///
+/// \param _parser Parser&
+/// \param _option const Settings&
+/// \param _data const Datafile&
+/// \return void
+///
+/// It is more or less also a legacy function,
+/// because the declared variables are also
+/// listed in the variables widget.
+/////////////////////////////////////////////////
+static void listDeclaredVariables(Parser& _parser, const Settings& _option, const Datafile& _data)
+{
+	int nDataSetNum = 1;
+	map<string, int> VarMap;
+	int nBytesSum = 0;
+
+	// Query the used variables
+	//
+	// Get the numerical variables
+	mu::varmap_type variables = _parser.GetVar();
+
+	// Get the string variables
+	map<string, string> StringMap = NumeReKernel::getInstance()->getStringParser().getStringVars();
+
+	// Get the current defined data tables
+	map<string, long long int> CacheMap = _data.getTableMap();
+
+	const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
+
+	// Combine string and numerical variables to have
+	// them sorted after their name
+	for (auto iter = variables.begin(); iter != variables.end(); ++iter)
+	{
+		VarMap[iter->first] = 0;
+	}
+	for (auto iter = StringMap.begin(); iter != StringMap.end(); ++iter)
+	{
+		VarMap[iter->first] = 1;
+	}
+
+	// Get data table and string table sizes
+	string sDataSize = toString(_data.getLines("data", false)) + " x " + toString(_data.getCols("data"));
+	string sStringSize = toString((int)_data.getStringElements()) + " x " + toString((int)_data.getStringCols());
+
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	NumeReKernel::print("NUMERE: " + toUpperCase(toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_HEADLINE"))));
+	make_hline();
+
+	// Print all defined caches first
+	for (auto iter = CacheMap.begin(); iter != CacheMap.end(); ++iter)
+	{
+		string sCacheSize = toString(_data.getTableLines(iter->first, false)) + " x " + toString(_data.getTableCols(iter->first, false));
+		NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sCacheSize, (_option.getWindow(0) - 50) / 2) + strfill("[double x double]", 19));
+
+		if (_data.getSize(iter->second) >= 1024 * 1024)
+			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second) / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+		else if (_data.getSize(iter->second) >= 1024)
+			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second) / (1024.0), 4), 9) + " KBytes\n");
+		else
+			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second)), 9) + "  Bytes\n");
+
+		nBytesSum += _data.getSize(iter->second);
+	}
+
+	NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+
+	// Print all defined cluster
+	for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
+	{
+		string sClusterSize = toString(iter->second.size()) + " x 1";
+		NumeReKernel::printPreFmt("|   " + iter->first + "{}" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sClusterSize, (_option.getWindow(0) - 50) / 2) + strfill("[cluster]", 19));
+
+		if (iter->second.getBytes() >= 1024 * 1024)
+			NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+		else if (iter->second.getBytes() >= 1024)
+			NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes() / (1024.0), 4), 9) + " KBytes\n");
+		else
+			NumeReKernel::printPreFmt(strfill(toString(iter->second.getBytes()), 9) + "  Bytes\n");
+
+		nBytesSum += iter->second.getBytes();
+	}
+
+	if (mClusterMap.size())
+        NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+
+
+	// Print now the dimension of the data table
+	if (_data.isValid())
+	{
+		NumeReKernel::printPreFmt("|   data()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - 4 + _option.getWindow(0) % 2) + strfill(sDataSize, (_option.getWindow(0) - 50) / 2) + strfill("[double x double]", 19));
+		if (_data.getDataSize() >= 1024 * 1024)
+			NumeReKernel::printPreFmt(strfill(toString(_data.getDataSize() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+		else if (_data.getDataSize() >= 1024)
+			NumeReKernel::printPreFmt(strfill(toString(_data.getDataSize() / (1024.0), 4), 9) + " KBytes\n");
+		else
+			NumeReKernel::printPreFmt(strfill(toString(_data.getDataSize()), 9) + "  Bytes\n");
+		nBytesSum += _data.getDataSize();
+
+		NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+    }
+
+	// Print now the dimension of the string table
+	if (_data.getStringElements())
+	{
+		NumeReKernel::printPreFmt("|   string()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - 6 + _option.getWindow(0) % 2) + strfill(sStringSize, (_option.getWindow(0) - 50) / 2) + strfill("[string x string]", 19));
+		if (_data.getStringSize() >= 1024 * 1024)
+			NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+		else if (_data.getStringSize() >= 1024)
+			NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize() / (1024.0), 4), 9) + " KBytes\n");
+		else
+			NumeReKernel::printPreFmt(strfill(toString(_data.getStringSize()), 9) + "  Bytes\n");
+		nBytesSum += _data.getStringSize();
+
+		NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
+    }
+
+    // Print now the set of variables
+	for (auto item = VarMap.begin(); item != VarMap.end(); ++item)
+	{
+	    // The second member indicates, whether a
+	    // variable is a string or a numerical variable
+		if (item->second)
+		{
+		    // This is a string
+			NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2));
+			if (StringMap[item->first].length() > (unsigned int)_option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 4)
+				NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first].substr(0, _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 7) + "...\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
+			else
+				NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first] + "\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
+			NumeReKernel::printPreFmt(strfill("[string]", 19) + strfill(toString((int)StringMap[item->first].size()), 9) + "  Bytes\n");
+			nBytesSum += StringMap[item->first].size();
+		}
+		else
+		{
+		    // This is a numerical variable
+			NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2) + strfill(toString(*variables[item->first], _option), (_option.getWindow(0) - 60) / 2 + _option.getPrecision()) + strfill("[double]", 19) + strfill("8", 9) + "  Bytes\n");
+			nBytesSum += sizeof(double);
+		}
+	}
+
+	// Create now the footer of the list:
+	// Combine the number of variables and data
+	// tables first
+	NumeReKernel::printPreFmt("|   -- " + toString((int)VarMap.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
+	if (_data.isValid() || _data.isValidCache() || _data.getStringElements())
+	{
+		if (_data.isValid() && _data.isValidCache() && _data.getStringElements())
+		{
+			NumeReKernel::printPreFmt(toString(2 + CacheMap.size()));
+			nDataSetNum = CacheMap.size() + 2;
+		}
+		else if ((_data.isValid() && _data.isValidCache())
+				 || (_data.isValidCache() && _data.getStringElements()))
+		{
+			NumeReKernel::printPreFmt(toString(1 + CacheMap.size()));
+			nDataSetNum = CacheMap.size() + 1;
+		}
+		else if (_data.isValid() && _data.getStringElements())
+		{
+			NumeReKernel::printPreFmt("2");
+			nDataSetNum = 2;
+		}
+		else if (_data.isValidCache())
+		{
+			NumeReKernel::printPreFmt(toString((int)CacheMap.size()));
+			nDataSetNum = CacheMap.size();
+		}
+		else
+			NumeReKernel::printPreFmt("1");
+	}
+	else
+		NumeReKernel::printPreFmt("0");
+	NumeReKernel::printPreFmt(" " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_DATATABLES")) + " --");
+
+	// Calculate now the needed memory for the stored values and print it at the
+	// end of the footer line
+	if (VarMap.size() > 9 && nDataSetNum > 9)
+		NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 32 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+	else if (VarMap.size() > 9 || nDataSetNum > 9)
+		NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 31 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+	else
+		NumeReKernel::printPreFmt(strfill("Total: ", (_option.getWindow(0) - 30 - _lang.get("PARSERFUNCS_LISTVAR_VARS_AND").length() - _lang.get("PARSERFUNCS_LISTVAR_DATATABLES").length())));
+	if (nBytesSum >= 1024 * 1024)
+		NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0 * 1024.0), 4), 8) + " MBytes\n");
+	else if (nBytesSum >= 1024)
+		NumeReKernel::printPreFmt(strfill(toString(nBytesSum / (1024.0), 4), 8) + " KBytes\n");
+	else
+		NumeReKernel::printPreFmt(strfill(toString(nBytesSum), 8) + "  Bytes\n");
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	return;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function lists all known
+/// constants.
+///
+/// \param _parser const Parser&
+/// \param _option const Settings&
+/// \return void
+/// It is more or less a legacy function, because
+/// the constants are now listed in the sidebar.
+/////////////////////////////////////////////////
+static void listConstants(const Parser& _parser, const Settings& _option)
+{
+	const int nUnits = 20;
+	// Define a set of units including a simple
+	// heuristic, which defines, which constant
+	// needs which unit
+	static string sUnits[nUnits] =
+	{
+		"_G[m^3/(kg s^2)]",
+		"_R[J/(mol K)]",
+		"_coul_norm[V m/(A s)]",
+		"_c[m/s]",
+		"_elek[A s/(V m)]",
+		"_elem[A s]",
+		"_gamma[1/(T s)]",
+		"_g[m/s^2]",
+		"_hartree[J]",
+		"_h[J s]",
+		"_k[J/K]",
+		"_m_[kg]",
+		"_magn[V s/(A m)]",
+		"_mu_[J/T]",
+		"_n[1/mol]",
+		"_rydberg[1/m]",
+		"_r[m]",
+		"_stefan[J/(m^2 s K^4)]",
+		"_wien[m K]",
+		"_[---]"
+	};
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTCONST_HEADLINE"))));
+	make_hline();
+
+	// Get the map of all defined constants from the parser
+	mu::valmap_type cmap = _parser.GetConst();
+    valmap_type::const_iterator item = cmap.begin();
+
+    // Print all constants, their values and their unit on
+    // the terminal
+    for (; item != cmap.end(); ++item)
+    {
+        if (item->first[0] != '_')
+            continue;
+        NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow() - 10) / 2 + 2 - _option.getPrecision() - (item->first).length() + _option.getWindow() % 2) + strfill(toString(item->second, _option), _option.getPrecision() + (_option.getWindow() - 50) / 2));
+        for (int i = 0; i < nUnits; i++)
+        {
+            if (sUnits[i].substr(0, sUnits[i].find('[')) == (item->first).substr(0, sUnits[i].find('[')))
+            {
+                NumeReKernel::printPreFmt(strfill(sUnits[i].substr(sUnits[i].find('[')), 24) + "\n");
+                break;
+            }
+        }
+    }
+    NumeReKernel::printPreFmt("|\n");
+    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE1"), _option));
+    NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCONST_FOOTNOTE2"), _option));
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	return;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function lists all defined
+/// commands.
+///
+/// \param _option const Settings&
+/// \return void
+///
+/// It is more or less a legacy function, because
+/// the commands are now listed in the sidebar.
+/////////////////////////////////////////////////
+static void listCommands(const Settings& _option)
+{
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTCMD_HEADLINE")))); //PRSRFUNC_LISTCMD_*
+	make_hline();
+	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PARSERFUNCS_LISTCMD_TABLEHEAD"), _option, 0) + "\n|\n");
+
+    // Get the list of all defined commands
+    // from the language files
+	vector<string> vCMDList = _lang.getList("PARSERFUNCS_LISTCMD_CMD_*");
+
+	// Print the complete list on the terminal
+	for (unsigned int i = 0; i < vCMDList.size(); i++)
+	{
+		NumeReKernel::printPreFmt(LineBreak("|   " + vCMDList[i], _option, false, 0, 42) + "\n");
+	}
+
+	NumeReKernel::printPreFmt("|\n");
+	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE1"), _option));
+	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTCMD_FOOTNOTE2"), _option));
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function prints the
+/// selected unit, its description, its dimension
+/// and its value conversion to the terminal.
+///
+/// \param sUnit const string&
+/// \param sDesc const string&
+/// \param sDim const string&
+/// \param sValues const string&
+/// \param nWindowsize unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
+static void printUnits(const string& sUnit, const string& sDesc, const string& sDim, const string& sValues, unsigned int nWindowsize)
+{
+	NumeReKernel::printPreFmt("|     " + strlfill(sUnit, 11) + strlfill(sDesc, (nWindowsize - 17) / 3 + (nWindowsize + 1) % 3) + strlfill(sDim, (nWindowsize - 35) / 3) + "=" + strfill(sValues, (nWindowsize - 2) / 3) + "\n");
+	return;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function lists all unit
+/// conversions and their result, if applied on 1.
+///
+/// \param _option const Settings&
+/// \return void
+///
+/// The units are partly physcially units, partly
+/// magnitudes.
+/////////////////////////////////////////////////
+static void listUnitConversions(const Settings& _option) //PRSRFUNC_LISTUNITS_*
+{
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("PARSERFUNCS_LISTUNITS_HEADLINE")))); //(_option.getWindow()-x)/3
+	make_hline(); // 11       21  x=17             15   x=35      1               x=2      26
+	printUnits(_lang.get("PARSERFUNCS_LISTUNITS_SYMBOL"), _lang.get("PARSERFUNCS_LISTUNITS_DESCRIPTION"), _lang.get("PARSERFUNCS_LISTUNITS_DIMENSION"), _lang.get("PARSERFUNCS_LISTUNITS_UNIT"), _option.getWindow());
+	NumeReKernel::printPreFmt("|\n");
+	printUnits("1'A",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ANGSTROEM"),        "L",           "1e-10      [m]", _option.getWindow());
+	printUnits("1'AU",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ASTRO_UNIT"),       "L",           "1.4959787e11      [m]", _option.getWindow());
+	printUnits("1'b",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_BARN"),             "L^2",         "1e-28    [m^2]", _option.getWindow());
+	printUnits("1'cal", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CALORY"),           "M L^2 / T^2", "4.1868      [J]", _option.getWindow());
+	printUnits("1'Ci",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CURIE"),            "1 / T",       "3.7e10     [Bq]", _option.getWindow());
+	printUnits("1'eV",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_ELECTRONVOLT"),     "M L^2 / T^2", "1.60217657e-19      [J]", _option.getWindow());
+	printUnits("1'fm",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FERMI"),            "L",           "1e-15      [m]", _option.getWindow());
+	printUnits("1'ft",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FOOT"),             "L",           "0.3048      [m]", _option.getWindow());
+	printUnits("1'Gs",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_GAUSS"),            "M / (T^2 I)", "1e-4      [T]", _option.getWindow());
+	printUnits("1'in",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_INCH"),             "L",           "0.0254      [m]", _option.getWindow());
+	printUnits("1'kmh", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_VELOCITY"),         "L / T",       "0.2777777...    [m/s]", _option.getWindow());
+	printUnits("1'kn",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_KNOTS"),            "L / T",       "0.5144444...    [m/s]", _option.getWindow());
+	printUnits("1'l",   _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LITERS"),           "L^3",         "1e-3    [m^3]", _option.getWindow());
+	printUnits("1'ly",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_LIGHTYEAR"),        "L",           "9.4607305e15      [m]", _option.getWindow());
+	printUnits("1'mile", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MILE"),             "L",           "1609.344      [m]", _option.getWindow());
+	printUnits("1'mol", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_MOL"),              "N",           "6.022140857e23      ---", _option.getWindow());
+	printUnits("1'mph", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_VELOCITY"),         "L / T",       "0.44703722    [m/s]", _option.getWindow());
+	printUnits("1'Ps",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_POISE"),            "M / (L T)",   "0.1   [Pa s]", _option.getWindow());
+	printUnits("1'pc",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_PARSEC"),           "L",           "3.0856776e16      [m]", _option.getWindow());
+	printUnits("1'psi", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_PSI"),              "M / (L T^2)", "6894.7573     [Pa]", _option.getWindow());
+	printUnits("1'TC",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_CELSIUS"),          "Theta",       "274.15      [K]", _option.getWindow());
+	printUnits("1'TF",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_FAHRENHEIT"),       "Theta",       "255.92778      [K]", _option.getWindow());
+	printUnits("1'Torr", _lang.get("PARSERFUNCS_LISTUNITS_UNIT_TORR"),             "M / (L T^2)", "133.322     [Pa]", _option.getWindow());
+	printUnits("1'yd",  _lang.get("PARSERFUNCS_LISTUNITS_UNIT_YARD"),             "L",           "0.9144      [m]", _option.getWindow());
+	NumeReKernel::printPreFmt("|\n");
+	printUnits("1'G",   "(giga)",             "---",           "1e9      ---", _option.getWindow());
+	printUnits("1'M",   "(mega)",             "---",           "1e6      ---", _option.getWindow());
+	printUnits("1'k",   "(kilo)",             "---",           "1e3      ---", _option.getWindow());
+	printUnits("1'm",   "(milli)",            "---",           "1e-3      ---", _option.getWindow());
+	printUnits("1'mu",  "(micro)",            "---",           "1e-6      ---", _option.getWindow());
+	printUnits("1'n",   "(nano)",             "---",           "1e-9      ---", _option.getWindow());
+
+	NumeReKernel::printPreFmt("|\n");
+	NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_LISTUNITS_FOOTNOTE"), _option));
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+
+	return;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function lists all declared
+/// plugins including their name, their command
+/// and their description.
+///
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return void
+///
+/// It is more or less a legacy function, because
+/// the plugins are also listed in the sidebar.
+/////////////////////////////////////////////////
+static void listInstalledPlugins(Parser& _parser, Datafile& _data, const Settings& _option)
+{
+	string sDummy = "";
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTPLUGINS_HEADLINE"))));
+	make_hline();
+
+	// Probably there's no plugin defined
+	if (!_plugin.getPluginCount())
+		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
+	else
+	{
+		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PARSERFUNCS_LISTPLUGINS_TABLEHEAD"), _option, 0) + "\n");
+		NumeReKernel::printPreFmt("|\n");
+
+		// Print all plugins (name, command and description)
+		// on the terminal
+		for (unsigned int i = 0; i < _plugin.getPluginCount(); i++)
+		{
+			string sLine = "|   ";
+			if (_plugin.getPluginCommand(i).length() > 18)
+				sLine += _plugin.getPluginCommand(i).substr(0, 15) + "...";
+			else
+				sLine += _plugin.getPluginCommand(i);
+			sLine.append(23 - sLine.length(), ' ');
+
+			// Print basic information about the plugin
+			sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _plugin.getPluginName(i), _plugin.getPluginVersion(i), _plugin.getPluginAuthor(i));
+
+			// Print the description
+			if (_plugin.getPluginDesc(i).length())
+			{
+				sLine += "$" + _plugin.getPluginDesc(i);
+			}
+			sLine = '"' + sLine + "\" -nq";
+			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDummy, true);
+			NumeReKernel::printPreFmt(LineBreak(sLine, _option, true, 0, 25) + "\n");
+		}
+	}
+	NumeReKernel::toggleTableStatus();
+	make_hline();
+	return;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function implements the
 /// possibility to call the Windows shell directly
 /// from the code.
@@ -1958,7 +2536,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
     if ((findCommand(sCmd, "integrate").sString.length() >= 10 && findCommand(sCmd, "integrate").sString.substr(0, 10) == "integrate2")
         || (matchParams(sCmd, "x", '=') && matchParams(sCmd, "y", '=')))
     {
-        vIntegrate = parser_Integrate_2(sCmd, _data, _parser, _option, _functions);
+        vIntegrate = integrate2d(sCmd, _data, _parser, _option, _functions);
         sCmd = sArgument;
         sCmd.replace(sCmd.find("<<ANS>>"), 7, "_~integrate2[~_~]");
         _parser.SetVectorVar("_~integrate2[~_~]", vIntegrate);
@@ -1966,7 +2544,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
     }
     else
     {
-        vIntegrate = parser_Integrate(sCmd, _data, _parser, _option, _functions);
+        vIntegrate = integrate(sCmd, _data, _parser, _option, _functions);
         sCmd = sArgument;
         sCmd.replace(sCmd.find("<<ANS>>"), 7, "_~integrate[~_~]");
         _parser.SetVectorVar("_~integrate[~_~]", vIntegrate);
@@ -2010,7 +2588,7 @@ static CommandReturnValues cmd_diff(string& sCmd)
 
     if (sCmd.length() > 5)
     {
-        vDiff = parser_Diff(sCmd, _parser, _data, _option, _functions);
+        vDiff = differentiate(sCmd, _parser, _data, _option, _functions);
         sCmd = sArgument;
         sCmd.replace(sCmd.find("<<ANS>>"), 7, "_~diff[~_~]");
         _parser.SetVectorVar("_~diff[~_~]", vDiff);
@@ -2052,7 +2630,7 @@ static CommandReturnValues cmd_extrema(string& sCmd)
 
     if (sCmd.length() > 8)
     {
-        if (parser_findExtrema(sCmd, _data, _parser, _option, _functions))
+        if (findExtrema(sCmd, _data, _parser, _option, _functions))
         {
             if (sCmd[0] != '"')
             {
@@ -2089,7 +2667,7 @@ static CommandReturnValues cmd_pulse(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    if (!parser_pulseAnalysis(sCmd, _parser, _data, _functions, _option))
+    if (!analyzePulse(sCmd, _parser, _data, _functions, _option))
     {
         doc_Help("pulse", _option);
         return COMMAND_PROCESSED;
@@ -2126,7 +2704,7 @@ static CommandReturnValues cmd_eval(string& sCmd)
     else
         sArgument = "<<ans>>";
 
-    if (parser_evalPoints(sCmd, _data, _parser, _option, _functions))
+    if (evalPoints(sCmd, _data, _parser, _option, _functions))
     {
         if (sCmd[0] != '"')
         {
@@ -2172,7 +2750,7 @@ static CommandReturnValues cmd_zeroes(string& sCmd)
 
     if (sCmd.length() > 7)
     {
-        if (parser_findZeroes(sCmd, _data, _parser, _option, _functions))
+        if (findZeroes(sCmd, _data, _parser, _option, _functions))
         {
             if (sCmd[0] != '"')
             {
@@ -2426,10 +3004,10 @@ static CommandReturnValues cmd_plotting(string& sCmd)
 
             }
             else
-                parser_Plot(sCmd, _data, _parser, _option, _functions, _pData);
+                createPlot(sCmd, _data, _parser, _option, _functions, _pData);
         }
         else
-            parser_Plot(sCmd, _data, _parser, _option, _functions, _pData);
+            createPlot(sCmd, _data, _parser, _option, _functions, _pData);
 
     }
     else
@@ -2455,7 +3033,7 @@ static CommandReturnValues cmd_fit(string& sCmd)
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (_data.isValid() || _data.isValidCache())
-        parser_fit(sCmd, _parser, _data, _functions, _option);
+        fitDataSet(sCmd, _parser, _data, _functions, _option);
     else
         doc_Help("fit", _option);
 
@@ -2477,7 +3055,7 @@ static CommandReturnValues cmd_fft(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    parser_fft(sCmd, _parser, _data, _option);
+    fastFourierTransform(sCmd, _parser, _data, _option);
     return COMMAND_PROCESSED;
 }
 
@@ -2496,7 +3074,7 @@ static CommandReturnValues cmd_fwt(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    parser_wavelet(sCmd, _parser, _data, _option);
+    fastWaveletTransform(sCmd, _parser, _data, _option);
     return COMMAND_PROCESSED;
 }
 
@@ -3999,7 +4577,7 @@ static CommandReturnValues cmd_taylor(string& sCmd)
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (sCmd.length() > 7)
-        parser_Taylor(sCmd, _parser, _option, _functions);
+        taylor(sCmd, _parser, _option, _functions);
     else
         doc_Help("taylor", _option);
 
@@ -4803,7 +5381,7 @@ static CommandReturnValues cmd_audio(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    if (!parser_writeAudio(sCmd, _parser, _data, _functions, _option))
+    if (!writeAudioFile(sCmd, _parser, _data, _functions, _option))
         throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
     else if (_option.getSystemPrintStatus())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_AUDIO_SUCCESS"));
@@ -5021,7 +5599,7 @@ static CommandReturnValues cmd_stfa(string& sCmd)
 
     string sArgument;
 
-    if (!parser_stfa(sCmd, sArgument, _parser, _data, _functions, _option))
+    if (!shortTimeFourierAnalysis(sCmd, sArgument, _parser, _data, _functions, _option))
         doc_Help("stfa", _option);
     else
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_STFA_SUCCESS", sArgument));
@@ -5045,7 +5623,7 @@ static CommandReturnValues cmd_spline(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    if (!parser_spline(sCmd, _parser, _data, _functions, _option))
+    if (!calculateSplines(sCmd, _parser, _data, _functions, _option))
         doc_Help("spline", _option);
 
     return COMMAND_PROCESSED;
@@ -5857,7 +6435,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
             sArgument = sCmd.substr(nArgument);
             getDataElements(sArgument, _parser, _data, _option);
             if (sArgument.find("{") != string::npos)
-                parser_VectorToExpr(sArgument, _option);
+                convertVectorToExpression(sArgument, _option);
             sCmd = sCmd.substr(0, nArgument) + sArgument;
         }
         _parser.SetExpr(getArgAtPos(sCmd, nArgument));
@@ -6154,7 +6732,7 @@ static CommandReturnValues cmd_matop(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    parser_matrixOperations(sCmd, _parser, _data, _functions, _option);
+    performMatrixOperation(sCmd, _parser, _data, _functions, _option);
     return COMMAND_PROCESSED;
 }
 
@@ -6249,7 +6827,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
                 getDataElements(sArgument, _parser, _data, _option);
 
                 if (sArgument.find("{") != string::npos)
-                    parser_VectorToExpr(sArgument, _option);
+                    convertVectorToExpression(sArgument, _option);
 
                 sCmd.replace(nArgument, getArgAtPos(sCmd, nArgument).length(), sArgument);
             }
@@ -6622,7 +7200,7 @@ static CommandReturnValues cmd_regularize(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    if (!parser_regularize(sCmd, _parser, _data, _functions, _option))
+    if (!regularizeDataSet(sCmd, _parser, _data, _functions, _option))
         throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, SyntaxError::invalid_position);
     else if (_option.getSystemPrintStatus())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REGULARIZE"));
@@ -6800,7 +7378,7 @@ static CommandReturnValues cmd_datagrid(string& sCmd)
 
     string sArgument = "grid";
 
-    if (!parser_datagrid(sCmd, sArgument, _parser, _data, _functions, _option))
+    if (!createDatagrid(sCmd, sArgument, _parser, _data, _functions, _option))
         doc_Help("datagrid", _option);
     else if (_option.getSystemPrintStatus())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DATAGRID_SUCCESS", sArgument));
@@ -6829,58 +7407,58 @@ static CommandReturnValues cmd_list(string& sCmd)
     if (matchParams(sCmd, "files") || (matchParams(sCmd, "files", '=')))
         listFiles(sCmd, _option);
     else if (matchParams(sCmd, "var"))
-        parser_ListVar(_parser, _option, _data);
+        listDeclaredVariables(_parser, _option, _data);
     else if (matchParams(sCmd, "const"))
-        parser_ListConst(_parser, _option);
+        listConstants(_parser, _option);
     else if ((matchParams(sCmd, "func") || matchParams(sCmd, "func", '=')))
     {
         if (matchParams(sCmd, "func", '='))
             sArgument = getArgAtPos(sCmd, matchParams(sCmd, "func", '=') + 4);
         else
-            parser_ListFunc(_option, "all");
+            listFunctions(_option, "all");
 
         if (sArgument == "num" || sArgument == "numerical")
-            parser_ListFunc(_option, "num");
+            listFunctions(_option, "num");
         else if (sArgument == "mat" || sArgument == "matrix" || sArgument == "vec" || sArgument == "vector")
-            parser_ListFunc(_option, "mat");
+            listFunctions(_option, "mat");
         else if (sArgument == "string")
-            parser_ListFunc(_option, "string");
+            listFunctions(_option, "string");
         else if (sArgument == "trigonometric")
-            parser_ListFunc(_option, "trigonometric");
+            listFunctions(_option, "trigonometric");
         else if (sArgument == "hyperbolic")
-            parser_ListFunc(_option, "hyperbolic");
+            listFunctions(_option, "hyperbolic");
         else if (sArgument == "logarithmic")
-            parser_ListFunc(_option, "logarithmic");
+            listFunctions(_option, "logarithmic");
         else if (sArgument == "polynomial")
-            parser_ListFunc(_option, "polynomial");
+            listFunctions(_option, "polynomial");
         else if (sArgument == "stats" || sArgument == "statistical")
-            parser_ListFunc(_option, "stats");
+            listFunctions(_option, "stats");
         else if (sArgument == "angular")
-            parser_ListFunc(_option, "angular");
+            listFunctions(_option, "angular");
         else if (sArgument == "physics" || sArgument == "physical")
-            parser_ListFunc(_option, "physics");
+            listFunctions(_option, "physics");
         else if (sArgument == "logic" || sArgument == "logical")
-            parser_ListFunc(_option, "logic");
+            listFunctions(_option, "logic");
         else if (sArgument == "time")
-            parser_ListFunc(_option, "time");
+            listFunctions(_option, "time");
         else if (sArgument == "distrib")
-            parser_ListFunc(_option, "distrib");
+            listFunctions(_option, "distrib");
         else if (sArgument == "random")
-            parser_ListFunc(_option, "random");
+            listFunctions(_option, "random");
         else if (sArgument == "coords")
-            parser_ListFunc(_option, "coords");
+            listFunctions(_option, "coords");
         else if (sArgument == "draw")
-            parser_ListFunc(_option, "draw");
+            listFunctions(_option, "draw");
         else
-            parser_ListFunc(_option, "all");
+            listFunctions(_option, "all");
 
     }
     else if (matchParams(sCmd, "logic"))
-        parser_ListLogical(_option);
+        listLogicalOperators(_option);
     else if (matchParams(sCmd, "cmd"))
-        parser_ListCmd(_option);
+        listCommands(_option);
     else if (matchParams(sCmd, "define"))
-        parser_ListDefine(_functions, _option);
+        listDefinitions(_functions, _option);
     else if (matchParams(sCmd, "settings"))
     {
         // DEPRECATED: Declared at v1.1.2rc1
@@ -6888,9 +7466,9 @@ static CommandReturnValues cmd_list(string& sCmd)
         listOptions(_option);
     }
     else if (matchParams(sCmd, "units"))
-        parser_ListUnits(_option);
+        listUnitConversions(_option);
     else if (matchParams(sCmd, "plugins"))
-        parser_ListPlugins(_parser, _data, _option);
+        listInstalledPlugins(_parser, _data, _option);
     else
         doc_Help("list", _option);
 

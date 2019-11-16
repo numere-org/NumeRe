@@ -66,7 +66,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     }
 
                     // Calculate the indices
-                    idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
                     break;
                 }
                 else if (sCommand[i] == '{')
@@ -85,7 +85,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     // Calculate the indices and switch the access
                     // to a cluster access
                     bIsCluster = true;
-                    idx = parser_getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
                     break;
                 }
                 else
@@ -394,7 +394,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 		sEntityStringReplacement.clear();
 
 		// Reading the indices happens in this function
-		_idx = parser_getIndices(sEntityOccurence, _parser, _data, _option);
+		_idx = getIndices(sEntityOccurence, _parser, _data, _option);
 
 		// check the indices, whether they are possible in the current context
 		if (!isValidIndexSet(_idx))
@@ -540,7 +540,7 @@ static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _
 		}
 
 		// Read the indices
-		_idx = parser_getIndices(_access.sAccessEquation, _parser, _data, _option);
+		_idx = getIndices(_access.sAccessEquation, _parser, _data, _option);
 
 		// check the indices
 		if (!isValidIndexSet(_idx))

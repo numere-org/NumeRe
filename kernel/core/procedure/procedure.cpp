@@ -198,7 +198,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     {
         if (!getLoop() && sLine.find("??") != string::npos && sCurrentCommand != "help")
         {
-            sLine = parser_Prompt(sLine);
+            sLine = promptForUserInput(sLine);
 
             if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 nByteCode |= ProcedureCommandLine::BYTECODE_PROMPT;
@@ -256,7 +256,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             // command (i.e. "readline"). We'll handle this string at this
             // place
             if (sLine.find("??") != string::npos)
-                sLine = parser_Prompt(sLine);
+                sLine = promptForUserInput(sLine);
         }
 
     }
@@ -389,7 +389,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         if (bWriteToCache)
         {
             // Get the indices from the corresponding function
-            _idx = parser_getIndices(sCache, _parser, _data, _option);
+            _idx = getIndices(sCache, _parser, _data, _option);
 
             if (sCache[sCache.find_first_of("({")] == '{')
                 bWriteToCluster = true;

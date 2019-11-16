@@ -41,12 +41,6 @@ using namespace std;
  * Headerdatei fuer alle Plugins!
  */
 
-// --> Mach' dem Compiler klar, dass benoetigte strings und Funktionen woanders deklariert werden <--
-extern const string PI_MED;
-extern const string PI_HIST;
-extern const string PI_RAND;
-/* TODO (#1#): Plugins: Abbruch-Moeglichkeit einbinden. */
-
 // --> Prototypen der plugin_*-Funktionen. Nur fuer den Compiler <--
 void plugin_statistics(string& sCmd, Datafile& _data, Output& _out, Settings& _option, bool bUseCache = false, bool bUseData = false);
 void plugin_histogram(string& sCmd, Datafile& _data, Datafile& _target, Output& _out, Settings& _option, PlotData& _pData, bool bUseCache = false, bool bUseData = false);

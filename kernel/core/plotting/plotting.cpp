@@ -35,7 +35,7 @@ extern Plugin _plugin;
 #define APPR_TWO 1.9999999
 
 
-void parser_Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData)
+void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData)
 {
 	Plot graph(sCmd, _data, _parser, _option, _functions, _pData);
 
@@ -411,7 +411,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 
 		// --> Ruf' ggf. den Prompt auf <--
 		if (sFunc.find("??") != string::npos)
-			sFunc = parser_Prompt(sFunc);
+			sFunc = promptForUserInput(sFunc);
 
 		// Get the plotting parameters for the current command
 		if (sCmd.find("-set") != string::npos && !isInQuotes(sCmd, sCmd.find("-set")) && _pInfo.sCommand != "subplot")
@@ -510,7 +510,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 			continue; // Ignore the "subplot" command, if we have no multiplot layout
 
         // Display the "Calculating data for SOME PLOT" message
-		displayMessage(_pData, _option, _pData.getAnimateSamples() && parser_findVariable(sFunc, "t") != string::npos);
+		displayMessage(_pData, _option, _pData.getAnimateSamples() && findVariableInExpression(sFunc, "t") != string::npos);
 
 		// Apply the logic and the transformation for logarithmic
 		// plotting axes
@@ -540,7 +540,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 
 		// Call the input prompt, if one of the function definition requires this
 		if (sFunc.find("??") != string::npos)
-			sFunc = parser_Prompt(sFunc);
+			sFunc = promptForUserInput(sFunc);
 
 		// Split the function-and-data section into functions and data sets,
 		// evaluate the indices of the data sets and store the values of the
@@ -564,7 +564,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 		// Legacy vector to multi-expression conversion. Is quite probable not
 		// needed any more
 		if (sFunc.find("{") != string::npos && !_pInfo.bDraw3D && !_pInfo.bDraw)
-			parser_VectorToExpr(sFunc, _option);
+			convertVectorToExpression(sFunc, _option);
 
 		// Ensure that the functions do not contain any strings, because strings
 		// cannot be plotted
@@ -585,7 +585,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 				_parser.Eval(nFunctions);
 
 				// Search for the animation time variable "t"
-				if (parser_CheckVarOccurence(_parser, "t"))
+				if (isVariableInAssignedExpression(_parser, "t"))
 					bAnimateVar = true;
 
 				// Check, whether the number of functions correspond to special
@@ -618,7 +618,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 					continue;
 
                 // Try to detect the occurence of the animation variable
-                if (parser_findVariable(sArgument, "t") != string::npos)
+                if (findVariableInExpression(sArgument, "t") != string::npos)
                     bAnimateVar = true;
 
 				vDrawVector.push_back(sArgument);
@@ -2072,7 +2072,7 @@ void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 		else
 			sDrawExpr = sCurrentDrawingFunction.substr(sCurrentDrawingFunction.find('(') + 1);
 		if (sDrawExpr.find('{') != string::npos)
-			parser_VectorToExpr(sDrawExpr, _option);
+			convertVectorToExpression(sDrawExpr, _option);
 		_parser.SetExpr(sDrawExpr);
 		vResults = _parser.Eval(nFunctions);
 
@@ -2325,7 +2325,7 @@ void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 		else
 			sDrawExpr = sCurrentDrawingFunction.substr(sCurrentDrawingFunction.find('(') + 1);
 		if (sDrawExpr.find('{') != string::npos)
-			parser_VectorToExpr(sDrawExpr, _option);
+			convertVectorToExpression(sDrawExpr, _option);
 		_parser.SetExpr(sDrawExpr);
 		vResults = _parser.Eval(nFunctions);
 		if (sCurrentDrawingFunction.substr(0, 6) == "trace(" || sCurrentDrawingFunction.substr(0, 5) == "line(")
@@ -3042,7 +3042,7 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
 	string sDummy;
 	if (_pInfo.sPlotParams.find("??") != string::npos)
 	{
-		_pInfo.sPlotParams = parser_Prompt(_pInfo.sPlotParams);
+		_pInfo.sPlotParams = promptForUserInput(_pInfo.sPlotParams);
 	}
 	if (!_functions.call(_pInfo.sPlotParams))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, _pInfo.sPlotParams, SyntaxError::invalid_position);

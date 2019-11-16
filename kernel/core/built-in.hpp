@@ -47,14 +47,7 @@
 using namespace std;
 using namespace mu;
 
-
 extern const string sVersion;
-extern int nLINE_LENGTH;
-extern const string PI_TT;
-extern const string PI_HIST;
-extern const string PI_MED;
-extern const string PI_RAND;
-extern const string sParserVersion;
 
 enum CommandReturnValues
 {

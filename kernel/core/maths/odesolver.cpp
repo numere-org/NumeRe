@@ -193,7 +193,7 @@ bool Odesolver::solve(const string& sCmd)
     if (!_odeData->isTable(sTarget))
         _odeData->addTable(sTarget, *_odeSettings);
 
-    _idx = parser_getIndices(sTarget, *_odeParser, *_odeData, *_odeSettings);
+    _idx = getIndices(sTarget, *_odeParser, *_odeData, *_odeSettings);
 
     if (!isValidIndexSet(_idx))
         return false;
@@ -296,7 +296,7 @@ bool Odesolver::solve(const string& sCmd)
             nLyapuSamples = nSamples / 100;
     }
     //cerr << 5 << endl;
-    vInterval = parser_IntervalReader(sParams, *_odeParser, *_odeData, *_odeFunctions, *_odeSettings, false);
+    vInterval = readAndParseIntervals(sParams, *_odeParser, *_odeData, *_odeFunctions, *_odeSettings, false);
     //cerr << 6 << endl;
     if (!vInterval.size() || isnan(vInterval[0]) || isinf(vInterval[0]) || isnan(vInterval[1]) || isinf(vInterval[1]))
         throw SyntaxError(SyntaxError::NO_INTERVAL_FOR_ODE, sCmd, SyntaxError::invalid_position);

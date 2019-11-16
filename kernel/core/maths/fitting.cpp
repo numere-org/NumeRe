@@ -18,6 +18,7 @@
 
 #include "parser_functions.hpp"
 #include "../../kernel.hpp"
+#include "fitcontroller.hpp"
 
 // This structure combines all main fitting
 // parameter and storage objects to simplify
@@ -70,7 +71,7 @@ static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, dou
 static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFile, const string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const vector<double>& vInitialVals, size_t nSize, const string& sFitAnalysis, const string& sFuncDisplay, const string& sFittedFunction, double dChisq);
 
 // This is the fitting main routine
-bool parser_fit(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     // Declare the FittingData object first
     FittingData fitData;
@@ -426,7 +427,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 			if (fitData.sChiMap.substr(0, fitData.sChiMap.find('(')) == "data")
 				throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
 
-			_idx = parser_getIndices(fitData.sChiMap, _parser, _data, _option);
+			_idx = getIndices(fitData.sChiMap, _parser, _data, _option);
 
 			if (!isValidIndexSet(_idx))
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
@@ -434,7 +435,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 			if (_idx.col.size() < 2)
 				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
-			parser_evalIndices(fitData.sChiMap, _idx, _data);
+			evaluateIndices(fitData.sChiMap, _idx, _data);
 			fitData.sChiMap.erase(fitData.sChiMap.find('('));
             fitData.sChiMap_Vars[0] = _data.getHeadLineElement(_idx.col[0], fitData.sChiMap);
             fitData.sChiMap_Vars[1] = _data.getHeadLineElement(_idx.col[1], fitData.sChiMap);
@@ -478,7 +479,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
 	// Decode possible interval definitions in the command
 	// line option list
-	vInterVal = parser_IntervalReader(sCmd, _parser, _data, _functions, _option, true);
+	vInterVal = readAndParseIntervals(sCmd, _parser, _data, _functions, _option, true);
 
 	// Evaluate the contents of the parsed interval definitions
 	if (vInterVal.size())
@@ -659,7 +660,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 		}
 
 		if (fitData.sParams.find("{") != string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(fitData.sParams))
-			parser_VectorToExpr(fitData.sParams, _option);
+			convertVectorToExpression(fitData.sParams, _option);
 	}
 
 	StripSpaces(sCmd);
@@ -676,7 +677,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
 	// Expand remaining vectors
 	if (fitData.sFitFunction.find("{") != string::npos)
-		parser_VectorToExpr(fitData.sFitFunction, _option);
+		convertVectorToExpression(fitData.sFitFunction, _option);
 
     size_t nPos = 0;
 
