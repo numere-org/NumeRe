@@ -23,6 +23,9 @@
 #include "wavelet.hpp"
 #include "../../kernel.hpp"
 
+#define TRAPEZOIDAL 1
+#define SIMPSON 2
+
 Integration_Vars parser_iVars;
 static double localizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
@@ -30,6 +33,112 @@ static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZ
 static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
 static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
+
+/////////////////////////////////////////////////
+/// \brief This static function performs an
+/// integration step using a trapezoidal
+/// approximation algorithm.
+///
+/// \param x double&
+/// \param dx double
+/// \param upperBoundary double
+/// \param vResult vector<double>&
+/// \param vFunctionValues vector<double>&
+/// \param bReturnFunctionPoints bool
+/// \return void
+///
+/////////////////////////////////////////////////
+static void integrationstep_trapezoidal(double& x, double dx, double upperBoundary, vector<double>& vResult, vector<double>& vFunctionValues, bool bReturnFunctionPoints)
+{
+    x += dx;
+    int nResults;
+    value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    for (int i = 0; i < nResults; i++)
+    {
+        if (x > upperBoundary && isnan(v[i]))
+            v[i] = 0.0;
+
+        // Now calculate the area below the curve
+        if (!bReturnFunctionPoints)
+        {
+            for (int i = 0; i < nResults; i++)
+                vResult[i] += dx * (vFunctionValues[i] + v[i]) * 0.5;
+        }
+        else
+        {
+            if (vResult.size())
+                vResult.push_back(dx * (vFunctionValues[0] + v[0]) * 0.5 + vResult.back());
+            else
+                vResult.push_back(dx * (vFunctionValues[0] + v[0]) * 0.5);
+
+            break;
+        }
+    }
+
+    // Set the last sample as the first one
+    vFunctionValues.assign(v, v+nResults);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function performs an
+/// integration step using the Simpson
+/// approximation algorithm.
+///
+/// \param x double&
+/// \param dx double
+/// \param upperBoundary double
+/// \param vResult vector<double>&
+/// \param vFunctionValues vector<double>&
+/// \param bReturnFunctionPoints bool
+/// \return void
+///
+/////////////////////////////////////////////////
+static void integrationstep_simpson(double& x, double dx, double upperBoundary, vector<double>& vResult, vector<double>& vFunctionValues, bool bReturnFunctionPoints)
+{
+    // Evaluate the intermediate function value
+    x += dx / 2.0;
+    int nResults;
+    value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    for (int i = 0; i < nResults; i++)
+    {
+        if (x > upperBoundary && isnan(v[i]))
+            v[i] = 0.0;
+    }
+
+    vector<double> vInter(v, v+nResults);
+
+    // Evaluate the end function value
+    x += dx / 2.0;
+    v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+
+    for (int i = 0; i < nResults; i++)
+    {
+        if (x > upperBoundary && isnan(v[i]))
+            v[i] = 0.0;
+
+        // Now calculate the area below the curve
+        if (!bReturnFunctionPoints)
+        {
+            for (int i = 0; i < nResults; i++)
+                vResult[i] += dx / 6.0 * (vFunctionValues[i] + 4.0 * vInter[i] + v[i]); // b-a/6*(f(a)+4f(a+b/2)+f(b))
+        }
+        else
+        {
+            if (vResult.size())
+                vResult.push_back(dx / 6.0 * (vFunctionValues[0] + 4.0 * vInter[0] + v[0]) + vResult.back());
+            else
+                vResult.push_back(dx / 6.0 * (vFunctionValues[0] + 4.0 * vInter[0] + v[0]));
+
+            break;
+        }
+    }
+
+    // Set the last sample as the first one
+    vFunctionValues.assign(v, v+nResults);
+}
 
 
 /////////////////////////////////////////////////
@@ -47,21 +156,27 @@ static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVal
 vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
 {
 	string sParams = "";        // Parameter-string
-	string sInt_Line[4];        // Array, in das alle Eingaben gespeichert werden
-	string sLabel = "";
+	string sIntegrationExpression;
+	string sPrecision;
+	string sLowerBoundary;
+	string sUpperBoundary;
 	value_type* v = 0;
 	int nResults = 0;
 	vector<double> vResult;   // Ausgabe-Wert
-	vector<double> fx_n[3]; // Werte an der Stelle n und n+1
+	vector<double> vFunctionValues; // Werte an der Stelle n und n+1
 	bool bNoIntVar = false;     // Boolean: TRUE, wenn die Funktion eine Konstante der Integration ist
 	bool bLargeInterval = false;    // Boolean: TRUE, wenn ueber ein grosses Intervall integriert werden soll
 	bool bReturnFunctionPoints = false;
 	bool bCalcXvals = false;
 	int nSign = 1;              // Vorzeichen, falls die Integrationsgrenzen getauscht werden muessen
-	unsigned int nMethod = 1;    // 1 = trapezoidal, 2 = simpson
+	unsigned int nMethod = TRAPEZOIDAL;    // 1 = trapezoidal, 2 = simpson
 
-	sInt_Line[2] = "1e-3";
+	sPrecision = "1e-3";
 	parser_iVars.vValue[0][3] = 1e-3;
+	double& x = parser_iVars.vValue[0][0];
+	double& x0 = parser_iVars.vValue[0][1];
+	double& x1 = parser_iVars.vValue[0][2];
+	double& dx = parser_iVars.vValue[0][3];
 
 	// It's not possible to calculate the integral of a string expression
 	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
@@ -71,52 +186,52 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 	if (sCmd.find("-set") != string::npos)
 	{
 		sParams = sCmd.substr(sCmd.find("-set"));
-		sInt_Line[3] = sCmd.substr(9, sCmd.find("-set") - 9);
+		sIntegrationExpression = sCmd.substr(9, sCmd.find("-set") - 9);
 	}
 	else if (sCmd.find("--") != string::npos)
 	{
 		sParams = sCmd.substr(sCmd.find("--"));
-		sInt_Line[3] = sCmd.substr(9, sCmd.find("--") - 9);
+		sIntegrationExpression = sCmd.substr(9, sCmd.find("--") - 9);
 	}
 	else if (sCmd.length() > 9)
-		sInt_Line[3] = sCmd.substr(9);
+		sIntegrationExpression = sCmd.substr(9);
 
-	StripSpaces(sInt_Line[3]);
+	StripSpaces(sIntegrationExpression);
 
 	// Ensure that the function is available
-	if (!sInt_Line[3].length())
+	if (!sIntegrationExpression.length())
 		throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
 
 	// If needed, prompt for the integration function
-	if (sInt_Line[3].length() && sInt_Line[3].find("??") != string::npos)
-		sInt_Line[3] = promptForUserInput(sInt_Line[3]);
+	if (sIntegrationExpression.length() && sIntegrationExpression.find("??") != string::npos)
+		sIntegrationExpression = promptForUserInput(sIntegrationExpression);
 
-	StripSpaces(sInt_Line[3]);
+	StripSpaces(sIntegrationExpression);
 
 	// If the integration function contains a data object,
 	// the calculation is done way different from the usual
 	// integration
-	if ((sInt_Line[3].substr(0, 5) == "data(" || _data.isTable(sInt_Line[3]))
-			&& getMatchingParenthesis(sInt_Line[3]) != string::npos
-			&& sInt_Line[3].find_first_not_of(' ', getMatchingParenthesis(sInt_Line[3]) + 1) == string::npos) // xvals
+	if ((sIntegrationExpression.substr(0, 5) == "data(" || _data.isTable(sIntegrationExpression))
+			&& getMatchingParenthesis(sIntegrationExpression) != string::npos
+			&& sIntegrationExpression.find_first_not_of(' ', getMatchingParenthesis(sIntegrationExpression) + 1) == string::npos) // xvals
 	{
 	    // Extract the integration interval
 		if (sParams.length() && matchParams(sParams, "x", '='))
 		{
-			sInt_Line[0] = getArgAtPos(sParams, matchParams(sParams, "x", '=') + 1);
+			sLowerBoundary = getArgAtPos(sParams, matchParams(sParams, "x", '=') + 1);
 
 			// Replace the colon with a comma
-			if (sInt_Line[0].find(':') != string::npos)
-				sInt_Line[0].replace(sInt_Line[0].find(':'), 1, ",");
+			if (sLowerBoundary.find(':') != string::npos)
+				sLowerBoundary.replace(sLowerBoundary.find(':'), 1, ",");
 
             // Set the interval expression and evaluate it
-			_parser.SetExpr(sInt_Line[0]);
+			_parser.SetExpr(sLowerBoundary);
 			v = _parser.Eval(nResults);
 
 			if (nResults > 1)
-				parser_iVars.vValue[0][2] = v[1];
+				x1 = v[1];
 
-			parser_iVars.vValue[0][1] = v[0];
+			x0 = v[0];
 		}
 
 		// Are the samples of the integral desired?
@@ -128,8 +243,8 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 			bCalcXvals = true;
 
         // Get table name and the corresponding indices
-		string sDatatable = sInt_Line[3].substr(0, sInt_Line[3].find('('));
-		Indices _idx = getIndices(sInt_Line[3], _parser, _data, _option);
+		string sDatatable = sIntegrationExpression.substr(0, sIntegrationExpression.find('('));
+		Indices _idx = getIndices(sIntegrationExpression, _parser, _data, _option);
 
 		// Calculate the integral of the data set
         evaluateIndices(sDatatable, _idx, _data);
@@ -171,10 +286,10 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
                 if (!_cache.isValidEntry(i + j, 0, "cache") || !_cache.isValidEntry(i + j, 1, "cache"))
                     break;
 
-                if (sInt_Line[0].length() && parser_iVars.vValue[0][1] > _cache.getElement(i, 0, "cache"))
+                if (sLowerBoundary.length() && x0 > _cache.getElement(i, 0, "cache"))
                     continue;
 
-                if (sInt_Line[0].length() && parser_iVars.vValue[0][2] < _cache.getElement(i + j, 0, "cache"))
+                if (sLowerBoundary.length() && x1 < _cache.getElement(i + j, 0, "cache"))
                     break;
 
                 // Calculate either the integral, its samples or the corresponding x values
@@ -202,16 +317,13 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 	}
 
 	// No data set for integration
-	if (sInt_Line[3].find("{") != string::npos)
-		convertVectorToExpression(sInt_Line[3], _option);
-
-	sLabel = sInt_Line[3];
+	if (sIntegrationExpression.find("{") != string::npos)
+		convertVectorToExpression(sIntegrationExpression, _option);
 
     // Call custom defined functions
-	if (sInt_Line[3].length() && !_functions.call(sInt_Line[3]))
+	if (sIntegrationExpression.length() && !_functions.call(sIntegrationExpression))
 	{
-		sInt_Line[3] = "";
-		sLabel = "";
+		sIntegrationExpression = "";
 		throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
 	}
 
@@ -220,94 +332,56 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 	{
 		int nPos = 0;
 
-		if (matchParams(sParams, "precision", '='))
+		if (matchParams(sParams, "precision", '=') || matchParams(sParams, "p", '=') || matchParams(sParams, "eps", '='))
 		{
-			nPos = matchParams(sParams, "precision", '=') + 9;
-			sInt_Line[2] = getArgAtPos(sParams, nPos);
-			StripSpaces(sInt_Line[2]);
+		    if (matchParams(sParams, "precision", '='))
+                nPos = matchParams(sParams, "precision", '=') + 9;
+		    else if (matchParams(sParams, "p", '='))
+                nPos = matchParams(sParams, "p", '=') + 1;
+		    else
+                nPos = matchParams(sParams, "eps", '=') + 3;
 
-			if (isNotEmptyExpression(sInt_Line[2]))
+			sPrecision = getArgAtPos(sParams, nPos);
+			StripSpaces(sPrecision);
+
+			if (isNotEmptyExpression(sPrecision))
 			{
-				_parser.SetExpr(sInt_Line[2]);
-				parser_iVars.vValue[0][3] = _parser.Eval();
+				_parser.SetExpr(sPrecision);
+				dx = _parser.Eval();
 
-				if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
+				if (isinf(dx) || isnan(dx))
 				{
 					vResult.push_back(NAN);
 					return vResult;
 				}
 
-				if (!parser_iVars.vValue[0][3])
-					sInt_Line[2] = "";
-			}
-		}
-
-		if (matchParams(sParams, "p", '='))
-		{
-			nPos = matchParams(sParams, "p", '=') + 1;
-			sInt_Line[2] = getArgAtPos(sParams, nPos);
-			StripSpaces(sInt_Line[2]);
-
-			if (isNotEmptyExpression(sInt_Line[2]))
-			{
-				_parser.SetExpr(sInt_Line[2]);
-				parser_iVars.vValue[0][3] = _parser.Eval();
-
-				if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-				{
-					vResult.push_back(NAN);
-					return vResult;
-				}
-
-				if (!parser_iVars.vValue[0][3])
-					sInt_Line[2] = "";
-			}
-		}
-
-		if (matchParams(sParams, "eps", '='))
-		{
-			nPos = matchParams(sParams, "eps", '=') + 3;
-			sInt_Line[2] = getArgAtPos(sParams, nPos);
-			StripSpaces(sInt_Line[2]);
-
-			if (isNotEmptyExpression(sInt_Line[2]))
-			{
-				_parser.SetExpr(sInt_Line[2]);
-				parser_iVars.vValue[0][3] = _parser.Eval();
-
-				if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-				{
-					vResult.push_back(NAN);
-					return vResult;
-				}
-
-				if (!parser_iVars.vValue[0][3])
-					sInt_Line[2] = "";
+				if (!dx)
+					sPrecision = "";
 			}
 		}
 
 		if (matchParams(sParams, "x", '='))
 		{
 			nPos = matchParams(sParams, "x", '=') + 1;
-			sInt_Line[0] = getArgAtPos(sParams, nPos);
-			StripSpaces(sInt_Line[0]);
+			sLowerBoundary = getArgAtPos(sParams, nPos);
+			StripSpaces(sLowerBoundary);
 
-			if (sInt_Line[0].find(':') != string::npos)
+			if (sLowerBoundary.find(':') != string::npos)
 			{
-			    sInt_Line[1] = sInt_Line[0];
-			    sInt_Line[0] = getNextIndex(sInt_Line[1], true);
+			    sUpperBoundary = sLowerBoundary;
+			    sLowerBoundary = getNextIndex(sUpperBoundary, true);
 
-				if (isNotEmptyExpression(sInt_Line[0]))
+				if (isNotEmptyExpression(sLowerBoundary))
 				{
-					_parser.SetExpr(sInt_Line[0]);
+					_parser.SetExpr(sLowerBoundary);
 
 					if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
-						sInt_Line[0] = "";
+						sLowerBoundary = "";
 					else
 					{
-						parser_iVars.vValue[0][1] = _parser.Eval();
+						x0 = _parser.Eval();
 
-						if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
+						if (isinf(x0) || isnan(x0))
 						{
 							vResult.push_back(NAN);
 							return vResult;
@@ -315,17 +389,17 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 					}
 				}
 
-				if (isNotEmptyExpression(sInt_Line[1]))
+				if (isNotEmptyExpression(sUpperBoundary))
 				{
-					_parser.SetExpr(sInt_Line[1]);
+					_parser.SetExpr(sUpperBoundary);
 
 					if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
-						sInt_Line[1] = "";
+						sUpperBoundary = "";
 					else
 					{
-						parser_iVars.vValue[0][2] = _parser.Eval();
+						x1 = _parser.Eval();
 
-						if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
+						if (isinf(x1) || isnan(x1))
 						{
 							vResult.push_back(NAN);
 							return vResult;
@@ -333,10 +407,10 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 					}
 				}
 
-				if (sInt_Line[0].length() && sInt_Line[1].length() && parser_iVars.vValue[0][1] == parser_iVars.vValue[0][2])
+				if (sLowerBoundary.length() && sUpperBoundary.length() && x0 == x1)
 					throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 
-				if (!sInt_Line[0].length() || !sInt_Line[1].length())
+				if (!sLowerBoundary.length() || !sUpperBoundary.length())
 					throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 			}
 			else
@@ -348,10 +422,10 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 			nPos = matchParams(sParams, "method", '=') + 6;
 
 			if (getArgAtPos(sParams, nPos) == "trapezoidal")
-				nMethod = 1;
+				nMethod = TRAPEZOIDAL;
 
 			if (getArgAtPos(sParams, nPos) == "simpson")
-				nMethod = 2;
+				nMethod = SIMPSON;
 		}
 
 		if (matchParams(sParams, "m", '='))
@@ -359,24 +433,24 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 			nPos = matchParams(sParams, "m", '=') + 1;
 
 			if (getArgAtPos(sParams, nPos) == "trapezoidal")
-				nMethod = 1;
+				nMethod = TRAPEZOIDAL;
 
 			if (getArgAtPos(sParams, nPos) == "simpson")
-				nMethod = 2;
+				nMethod = SIMPSON;
 		}
 
 		if (matchParams(sParams, "steps", '='))
 		{
-			sInt_Line[2] = getArgAtPos(sParams, matchParams(sParams, "steps", '=') + 5);
-			_parser.SetExpr(sInt_Line[2]);
-			parser_iVars.vValue[0][3] = (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) / _parser.Eval();
+			sPrecision = getArgAtPos(sParams, matchParams(sParams, "steps", '=') + 5);
+			_parser.SetExpr(sPrecision);
+			dx = (x1 - x0) / _parser.Eval();
 		}
 
 		if (matchParams(sParams, "s", '='))
 		{
-			sInt_Line[2] = getArgAtPos(sParams, matchParams(sParams, "s", '=') + 1);
-			_parser.SetExpr(sInt_Line[2]);
-			parser_iVars.vValue[0][3] = (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) / _parser.Eval();
+			sPrecision = getArgAtPos(sParams, matchParams(sParams, "s", '=') + 1);
+			_parser.SetExpr(sPrecision);
+			dx = (x1 - x0) / _parser.Eval();
 		}
 
 		if (matchParams(sParams, "points"))
@@ -387,42 +461,33 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 	}
 
 	// Ensure that a function is available
-	if (!sInt_Line[3].length())
+	if (!sIntegrationExpression.length())
         throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
 
 	// Check, whether the expression actual depends
 	// upon the integration variable
-	_parser.SetExpr(sInt_Line[3]);
+	_parser.SetExpr(sIntegrationExpression);
 
 	if (!isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
 		bNoIntVar = true;       // Nein? Dann setzen wir den Bool auf TRUE und sparen uns viel Rechnung
 
 	_parser.Eval(nResults);
-	vResult.resize(nResults);
+	vResult.resize(nResults, 0.0);
 
 	// Set the calculation variables to their starting values
-	for (int i = 0; i < 3; i++)
-		fx_n[i].resize(nResults);
-
-	for (int i = 0; i < nResults; i++)
-	{
-		vResult[i] = 0.0;
-
-		for (int j = 0; j < 3; j++)
-			fx_n[j][i] = 0.0;
-	}
+	vFunctionValues.resize(nResults, 0.0);
 
 	// Ensure that interation ranges are available
-	if (!sInt_Line[0].length() || !sInt_Line[1].length())
+	if (!sLowerBoundary.length() || !sUpperBoundary.length())
 	    throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 
 	// Exchange borders, if necessary
-	if (parser_iVars.vValue[0][2] < parser_iVars.vValue[0][1])
+	if (x1 < x0)
 	{
 		// --> Ja? Dann tauschen wir sie fuer die Berechnung einfach aus <--
-		value_type vTemp = parser_iVars.vValue[0][1];
-		parser_iVars.vValue[0][1] = parser_iVars.vValue[0][2];
-		parser_iVars.vValue[0][2] = vTemp;
+		double dTemp = x0;
+		x0 = x1;
+		x1 = dTemp;
 		nSign *= -1; // Beachten wir das Tauschen der Grenzen durch ein zusaetzliches Vorzeichen
 	}
 
@@ -431,155 +496,76 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 	{
 	    // In this case, we have to calculate the integral
 	    // numerically
-		if (sInt_Line[2].length() && parser_iVars.vValue[0][3] > parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1])
-			sInt_Line[2] = "";
+		if (sPrecision.length() && dx > x1 - x0)
+			sPrecision = "";
 
         // If the precision is invalid (e.g. due to a very
         // small interval, simply guess a reasonable interval
         // here
-		if (!sInt_Line[2].length())
-            parser_iVars.vValue[0][3] = (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) / 100;
+		if (!sPrecision.length())
+            dx = (x1 - x0) / 100;
 
 		// Ensure that the precision is not negative
-		if (parser_iVars.vValue[0][3] < 0)
-			parser_iVars.vValue[0][3] *= -1;
+		if (dx < 0)
+			dx *= -1;
 
 		// Calculate the x values, if desired
 		if (bCalcXvals)
 		{
-			parser_iVars.vValue[0][0] = parser_iVars.vValue[0][1];
-			vResult[0] = parser_iVars.vValue[0][0];
+			x = x0;
+			vResult[0] = x;
 
-			while (parser_iVars.vValue[0][0] + parser_iVars.vValue[0][3] < parser_iVars.vValue[0][2])
+			while (x + dx < x1)
 			{
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3];
-				vResult.push_back(parser_iVars.vValue[0][0]);
+				x += dx;
+				vResult.push_back(x);
 			}
 
 			return vResult;
 		}
 
 		// Set the expression in the parser
-		_parser.SetExpr(sInt_Line[3]);
+		_parser.SetExpr(sIntegrationExpression);
 
 		// Is it a large interval (then it will need more time)
-		if ((parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) / parser_iVars.vValue[0][3] >= 9.9e6)
+		if ((x1 - x0) / dx >= 9.9e6)
 			bLargeInterval = true;
 
 		// Do not allow a very high number of integration steps
-		if ((parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) / parser_iVars.vValue[0][3] > 1e10)
+		if ((x1 - x0) / dx > 1e10)
 			throw SyntaxError(SyntaxError::INVALID_INTEGRATION_PRECISION, sCmd, SyntaxError::invalid_position);
 
 		// Set the integration variable to the lower border
-		parser_iVars.vValue[0][0] = parser_iVars.vValue[0][1];
+		x = x0;
 
 		// Calculate the first sample(s)
 		v = _parser.Eval(nResults);
-
-		for (int i = 0; i < nResults; i++)
-			fx_n[0][i] = v[i];
+		vFunctionValues.assign(v, v+nResults);
 
 		// Perform the actual numerical integration
-		while (parser_iVars.vValue[0][0] + parser_iVars.vValue[0][3] < parser_iVars.vValue[0][2] + parser_iVars.vValue[0][3] * 1e-1)
+		while (x + dx < x1 + dx * 1e-1)
 		{
 		    // Calculate the samples first
-			if (nMethod == 1)
-			{
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3]; // x + dx
-				v = _parser.Eval(nResults);    // n+1-te Stuetzstelle auswerten
-
-				for (int i = 0; i < nResults; i++)
-				{
-					fx_n[1][i] = v[i];    // n+1-te Stuetzstelle auswerten
-
-					if (parser_iVars.vValue[0][0] > parser_iVars.vValue[0][2] && isnan(fx_n[1][i]))
-						fx_n[1][i] = 0.0;
-				}
-			}
-			else if (nMethod == 2)
-			{
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3] / 2.0;
-				v = _parser.Eval(nResults);
-
-				for (int i = 0; i < nResults; i++)
-				{
-					fx_n[1][i] = v[i];
-
-					if (parser_iVars.vValue[0][0] > parser_iVars.vValue[0][2] && isnan(fx_n[1][i]))
-						fx_n[1][i] = 0.0;
-				}
-
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3] / 2.0;
-				v = _parser.Eval(nResults);
-
-				for (int i = 0; i < nResults; i++)
-				{
-					fx_n[2][i] = v[i];
-
-					if (parser_iVars.vValue[0][0] > parser_iVars.vValue[0][2] && isnan(fx_n[2][i]))
-						fx_n[2][i] = 0.0;
-				}
-			}
-
-			// Now calculate the area below the curve
-			if (nMethod == 1)
-			{
-				if (!bReturnFunctionPoints)
-				{
-					for (int i = 0; i < nResults; i++)
-						vResult[i] += parser_iVars.vValue[0][3] * (fx_n[0][i] + fx_n[1][i]) * 0.5; // Durch ein Trapez annaehern!
-				}
-				else
-				{
-					if (vResult.size())
-						vResult.push_back(parser_iVars.vValue[0][3] * (fx_n[0][0] + fx_n[1][0]) * 0.5 + vResult.back());
-					else
-						vResult.push_back(parser_iVars.vValue[0][3] * (fx_n[0][0] + fx_n[1][0]) * 0.5);
-				}
-			}
-			else if (nMethod == 2)
-			{
-				if (!bReturnFunctionPoints)
-				{
-					for (int i = 0; i < nResults; i++)
-						vResult[i] += parser_iVars.vValue[0][3] / 6.0 * (fx_n[0][i] + 4.0 * fx_n[1][i] + fx_n[2][i]); // b-a/6*(f(a)+4f(a+b/2)+f(b))
-				}
-				else
-				{
-					if (vResult.size())
-						vResult.push_back(parser_iVars.vValue[0][3] / 6.0 * (fx_n[0][0] + 4.0 * fx_n[1][0] + fx_n[2][0]) + vResult.back());
-					else
-						vResult.push_back(parser_iVars.vValue[0][3] / 6.0 * (fx_n[0][0] + 4.0 * fx_n[1][0] + fx_n[2][0]));
-				}
-			}
-
-			// Set the last sample as the first one
-			if (nMethod == 1)
-			{
-				for (int i = 0; i < nResults; i++)
-					fx_n[0][i] = fx_n[1][i];              // Wert der n+1-ten Stuetzstelle an die n-te Stuetzstelle zuweisen
-			}
-			else if (nMethod == 2)
-			{
-				for (int i = 0; i < nResults; i++)
-					fx_n[0][i] = fx_n[2][i];
-			}
+			if (nMethod == TRAPEZOIDAL)
+                integrationstep_trapezoidal(x, dx, x1, vResult, vFunctionValues, bReturnFunctionPoints);
+			else if (nMethod == SIMPSON)
+                integrationstep_simpson(x, dx, x1, vResult, vFunctionValues, bReturnFunctionPoints);
 
 			// Print a status value, if needed
 			if (_option.getSystemPrintStatus() && bLargeInterval)
 			{
 				if (!bLargeInterval)
 				{
-					if ((int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20) > (int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][3] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20))
+					if ((int)((x - x0) / (x1 - x0) * 20) > (int)((x - dx - x0) / (x1 - x0) * 20))
 					{
-						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20) * 5) + " %");
+						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 20) * 5) + " %");
 					}
 				}
 				else
 				{
-					if ((int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100) > (int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][3] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100))
+					if ((int)((x - x0) / (x1 - x0) * 100) > (int)((x - dx - x0) / (x1 - x0) * 100))
 					{
-						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100)) + " %");
+						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 100)) + " %");
 					}
 				}
 
@@ -596,25 +582,22 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 		// In this case we don't have a dependency
 		// upon the integration variable. The result
 		// is simply constant
-		string sTemp = sInt_Line[3];
-		sInt_Line[3].erase();
+		string sTemp = sIntegrationExpression;
+		sIntegrationExpression.erase();
 
 		// Apply the analytical solution
 		while (sTemp.length())
-			sInt_Line[3] += getNextArgument(sTemp, true) + "*" + parser_iVars.sName[0] + ",";
+			sIntegrationExpression += getNextArgument(sTemp, true) + "*" + parser_iVars.sName[0] + ",";
 
-		sInt_Line[3].erase(sInt_Line[3].length() - 1, 1);
+		sIntegrationExpression.erase(sIntegrationExpression.length() - 1, 1);
 
 		// Calculate the integral analytically
-		_parser.SetExpr(sInt_Line[3]);
-		parser_iVars.vValue[0][0] = parser_iVars.vValue[0][2];
+		_parser.SetExpr(sIntegrationExpression);
+		x = x1;
 		v = _parser.Eval(nResults);
+		vResult.assign(v, v+nResults);
 
-		for (int i = 0; i < nResults; i++)
-			vResult[i] = v[i];
-
-		parser_iVars.vValue[0][0] = parser_iVars.vValue[0][1];
-
+		x = x0;
 		v = _parser.Eval(nResults);
 
 		for (int i = 0; i < nResults; i++)
@@ -626,6 +609,34 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 		NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 100 %: " + _lang.get("COMMON_SUCCESS") + "!\n");
 
 	return vResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function re-evaluates the
+/// boundary expression and updates the internal
+/// variables correspondingly.
+///
+/// \param sRenewBoundariesExpression const string&
+/// \param y0 double&
+/// \param y1 double&
+/// \param sIntegrationExpression const string&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void refreshBoundaries(const string& sRenewBoundariesExpression, double& y0, double& y1, const string& sIntegrationExpression)
+{
+    // Refresh the y boundaries, if necessary
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    double* boundaries;
+    int boundaryCount;
+    _parser.SetExpr(sRenewBoundariesExpression);
+    boundaries = _parser.Eval(boundaryCount);
+
+    y0 = boundaries[0];
+    y1 = boundaries[1];
+
+    _parser.SetExpr(sIntegrationExpression);
 }
 
 
@@ -644,24 +655,35 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
 {
 	string __sCmd = findCommand(sCmd).sString;
-	string sLabel = "";
 	string sParams = "";            // Parameter-string
-	string sInt_Line[2][3];         // string-Array fuer die Integralgrenzen
-	string sInt_Fct;                // string fuer die zu integrierende Funktion
+	string sPrecision;
+	string sBoundariesX[2];
+	string sBoundariesY[2];
+	string sRenewBoundariesExpression;
+	string sIntegrationExpression;                // string fuer die zu integrierende Funktion
 	value_type* v = 0;
 	int nResults = 0;
 	vector<double> vResult[3];      // value_type-Array, wobei vResult[0] das eigentliche Ergebnis speichert
 	// und vResult[1] fuer die Zwischenergebnisse des inneren Integrals ist
 	vector<double> fx_n[2][3];          // value_type-Array fuer die jeweiligen Stuetzstellen im inneren und aeusseren Integral
 	bool bIntVar[2] = {true, true}; // bool-Array, das speichert, ob und welche Integrationsvariablen in sInt_Fct enthalten sind
-	bool bRenewBorder = false;      // bool, der speichert, ob die Integralgrenzen von x oder y abhaengen
+	bool bRenewBoundaries = false;      // bool, der speichert, ob die Integralgrenzen von x oder y abhaengen
 	bool bLargeArray = false;       // bool, der TRUE fuer viele Datenpunkte ist;
 	int nSign = 1;                  // Vorzeichen-Integer
-	unsigned int nMethod = 1;       // trapezoidal = 1, simpson = 2
+	unsigned int nMethod = TRAPEZOIDAL;       // trapezoidal = 1, simpson = 2
 
-	sInt_Line[0][2] = "1e-3";
+	sPrecision = "1e-3";
 	parser_iVars.vValue[0][3] = 1e-3;
 	parser_iVars.vValue[1][3] = 1e-3;
+
+	double& x = parser_iVars.vValue[0][0];
+	double& x0 = parser_iVars.vValue[0][1];
+	double& x1 = parser_iVars.vValue[0][2];
+	double& dx = parser_iVars.vValue[0][3];
+	double& y = parser_iVars.vValue[1][0];
+	double& y0 = parser_iVars.vValue[1][1];
+	double& y1 = parser_iVars.vValue[1][2];
+	double& dy = parser_iVars.vValue[1][3];
 
 	// Strings may not be integrated
 	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
@@ -671,34 +693,32 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 	if (sCmd.find("-set") != string::npos)
 	{
 		sParams = sCmd.substr(sCmd.find("-set"));
-		sInt_Fct = sCmd.substr(__sCmd.length(), sCmd.find("-set") - __sCmd.length());
+		sIntegrationExpression = sCmd.substr(__sCmd.length(), sCmd.find("-set") - __sCmd.length());
 	}
 	else if (sCmd.find("--") != string::npos)
 	{
 		sParams = sCmd.substr(sCmd.find("--"));
-		sInt_Fct = sCmd.substr(__sCmd.length(), sCmd.find("--") - __sCmd.length());
+		sIntegrationExpression = sCmd.substr(__sCmd.length(), sCmd.find("--") - __sCmd.length());
 	}
 	else if (sCmd.length() > __sCmd.length())
-		sInt_Fct = sCmd.substr(__sCmd.length());
+		sIntegrationExpression = sCmd.substr(__sCmd.length());
 
-	StripSpaces(sInt_Fct);
+	StripSpaces(sIntegrationExpression);
 
 	// Ensure that the integration function is available
-	if (!sInt_Fct.length())
+	if (!sIntegrationExpression.length())
 		throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
 
 	// Prompt for an input, if necessary
-	if (sInt_Fct.length() && sInt_Fct.find("??") != string::npos)
-		sInt_Fct = promptForUserInput(sInt_Fct);
+	if (sIntegrationExpression.length() && sIntegrationExpression.find("??") != string::npos)
+		sIntegrationExpression = promptForUserInput(sIntegrationExpression);
 
 	// Expand the integration function, if necessary
-	if (sInt_Fct.find("{") != string::npos)
-		convertVectorToExpression(sInt_Fct, _option);
-
-	sLabel = sInt_Fct;
+	if (sIntegrationExpression.find("{") != string::npos)
+		convertVectorToExpression(sIntegrationExpression, _option);
 
 	// Try to call custom functions
-	if (sInt_Fct.length() && !_functions.call(sInt_Fct))
+	if (sIntegrationExpression.length() && !_functions.call(sIntegrationExpression))
 		throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
 
     // Evaluate the parameters
@@ -706,100 +726,58 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 	{
 		int nPos = 0;
 
-		if (matchParams(sParams, "precision", '='))
+		if (matchParams(sParams, "precision", '=') || matchParams(sParams, "p", '=') || matchParams(sParams, "eps", '='))
 		{
-			nPos = matchParams(sParams, "precision", '=') + 9;
-			sInt_Line[0][2] = getArgAtPos(sParams, nPos);
-			StripSpaces(sInt_Line[0][2]);
+		    if (matchParams(sParams, "precision", '='))
+                nPos = matchParams(sParams, "precision", '=') + 9;
+		    else if (matchParams(sParams, "p", '='))
+                nPos = matchParams(sParams, "p", '=') + 1;
+		    else
+                nPos = matchParams(sParams, "eps", '=') + 3;
 
-			if (isNotEmptyExpression(sInt_Line[0][2]))
+			sPrecision = getArgAtPos(sParams, nPos);
+			StripSpaces(sPrecision);
+
+			if (isNotEmptyExpression(sPrecision))
 			{
-				_parser.SetExpr(sInt_Line[0][2]);
-				parser_iVars.vValue[0][3] = _parser.Eval();
+				_parser.SetExpr(sPrecision);
+				dx = _parser.Eval();
 
-				if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
+				if (isinf(dx) || isnan(dx))
 				{
 					vResult[0].push_back(NAN);
 					return vResult[0];
 				}
 
-				if (!parser_iVars.vValue[0][3])
-					sInt_Line[0][2] = "";
-				else
-					parser_iVars.vValue[1][3] = parser_iVars.vValue[0][3];
-			}
-		}
-
-		if (matchParams(sParams, "p", '='))
-		{
-			nPos = matchParams(sParams, "p", '=') + 1;
-			sInt_Line[0][2] = getArgAtPos(sParams, nPos);
-			StripSpaces(sInt_Line[0][2]);
-
-			if (isNotEmptyExpression(sInt_Line[0][2]))
-			{
-				_parser.SetExpr(sInt_Line[0][2]);
-				parser_iVars.vValue[0][3] = _parser.Eval();
-
-				if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-				{
-					vResult[0].push_back(NAN);
-					return vResult[0];
-				}
-
-				if (!parser_iVars.vValue[0][3])
-					sInt_Line[0][2] = "";
-				else
-					parser_iVars.vValue[1][3] = parser_iVars.vValue[0][3];
-			}
-		}
-
-		if (matchParams(sParams, "eps", '='))
-		{
-			nPos = matchParams(sParams, "eps", '=') + 3;
-			sInt_Line[0][2] = getArgAtPos(sParams, nPos);
-			StripSpaces(sInt_Line[0][2]);
-
-			if (isNotEmptyExpression(sInt_Line[0][2]))
-			{
-				_parser.SetExpr(sInt_Line[0][2]);
-				parser_iVars.vValue[0][3] = _parser.Eval();
-
-				if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-				{
-					vResult[0].push_back(NAN);
-					return vResult[0];
-				}
-
-				if (!parser_iVars.vValue[0][3])
-					sInt_Line[0][2] = "";
-				else
-					parser_iVars.vValue[1][3] = parser_iVars.vValue[0][3];
+				if (!dx)
+					sPrecision = "";
+                else
+                    dy = dx;
 			}
 		}
 
 		if (matchParams(sParams, "x", '='))
 		{
 			nPos = matchParams(sParams, "x", '=') + 1;
-			sInt_Line[0][0] = getArgAtPos(sParams, nPos);
-			StripSpaces(sInt_Line[0][0]);
+			sBoundariesX[0] = getArgAtPos(sParams, nPos);
+			StripSpaces(sBoundariesX[0]);
 
-			if (sInt_Line[0][0].find(':') != string::npos)
+			if (sBoundariesX[0].find(':') != string::npos)
 			{
-			    sInt_Line[0][1] = sInt_Line[0][0];
-			    sInt_Line[0][0] = getNextIndex(sInt_Line[0][1], true);
+			    sBoundariesX[1] = sBoundariesX[0];
+			    sBoundariesX[0] = getNextIndex(sBoundariesX[1], true);
 
-				if (isNotEmptyExpression(sInt_Line[0][0]))
+				if (isNotEmptyExpression(sBoundariesX[0]))
 				{
-					_parser.SetExpr(sInt_Line[0][0]);
+					_parser.SetExpr(sBoundariesX[0]);
 
 					if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]) || isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
-						sInt_Line[0][0] = "";
+						sBoundariesX[0] = "";
 					else
 					{
-						parser_iVars.vValue[0][1] = _parser.Eval();
+						x0 = _parser.Eval();
 
-						if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
+						if (isinf(x0) || isnan(x0))
 						{
 							vResult[0].push_back(NAN);
 							return vResult[0];
@@ -807,17 +785,17 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 					}
 				}
 
-				if (isNotEmptyExpression(sInt_Line[0][1]))
+				if (isNotEmptyExpression(sBoundariesX[1]))
 				{
-					_parser.SetExpr(sInt_Line[0][1]);
+					_parser.SetExpr(sBoundariesX[1]);
 
 					if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]) || isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
-						sInt_Line[0][1] = "";
+						sBoundariesX[1] = "";
 					else
 					{
-						parser_iVars.vValue[0][2] = _parser.Eval();
+						x1 = _parser.Eval();
 
-						if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
+						if (isinf(x1) || isnan(x1))
 						{
 							vResult[0].push_back(NAN);
 							return vResult[0];
@@ -825,10 +803,10 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 					}
 				}
 
-				if (sInt_Line[0][0].length() && sInt_Line[0][1].length() && parser_iVars.vValue[0][1] == parser_iVars.vValue[0][2])
+				if (sBoundariesX[0].length() && sBoundariesX[1].length() && x0 == x1)
 					throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 
-				if (!sInt_Line[0][0].length() || !sInt_Line[0][1].length())
+				if (!sBoundariesX[0].length() || !sBoundariesX[1].length())
 					throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 			}
 			else
@@ -838,27 +816,27 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 		if (matchParams(sParams, "y", '='))
 		{
 			nPos = matchParams(sParams, "y", '=') + 1;
-			sInt_Line[1][0] = getArgAtPos(sParams, nPos);
-			StripSpaces(sInt_Line[1][0]);
+			sBoundariesY[0] = getArgAtPos(sParams, nPos);
+			StripSpaces(sBoundariesY[0]);
 
-			if (sInt_Line[1][0].find(':') != string::npos)
+			if (sBoundariesY[0].find(':') != string::npos)
 			{
-			    sInt_Line[1][1] = sInt_Line[1][0];
-			    sInt_Line[1][0] = getNextIndex(sInt_Line[1][1], true);
+			    sBoundariesY[1] = sBoundariesY[0];
+			    sBoundariesY[0] = getNextIndex(sBoundariesY[1], true);
 
-				if (isNotEmptyExpression(sInt_Line[1][0]))
+				if (isNotEmptyExpression(sBoundariesY[0]))
 				{
-					_parser.SetExpr(sInt_Line[1][0]);
+					_parser.SetExpr(sBoundariesY[0]);
 
 					if (isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
 					{
-						sInt_Line[1][0] = "";
+						sBoundariesY[0] = "";
 					}
 					else
 					{
-						parser_iVars.vValue[1][1] = _parser.Eval();
+						y0 = _parser.Eval();
 
-						if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
+						if (isinf(y0) || isnan(y0))
 						{
 							vResult[0].push_back(NAN);
 							return vResult[0];
@@ -866,17 +844,17 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 					}
 				}
 
-				if (isNotEmptyExpression(sInt_Line[1][1]))
+				if (isNotEmptyExpression(sBoundariesY[1]))
 				{
-					_parser.SetExpr(sInt_Line[1][1]);
+					_parser.SetExpr(sBoundariesY[1]);
 
 					if (isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
-						sInt_Line[1][1] = "";
+						sBoundariesY[1] = "";
 					else
 					{
-						parser_iVars.vValue[1][2] = _parser.Eval();
+						y1 = _parser.Eval();
 
-						if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
+						if (isinf(y1) || isnan(y1))
 						{
 							vResult[0].push_back(NAN);
 							return vResult[0];
@@ -884,10 +862,10 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 					}
 				}
 
-				if (sInt_Line[1][0].length() && sInt_Line[1][1].length() && parser_iVars.vValue[1][1] == parser_iVars.vValue[1][2])
+				if (sBoundariesY[0].length() && sBoundariesY[1].length() && y0 == y1)
 					throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 
-				if (!sInt_Line[1][0].length() || !sInt_Line[1][1].length())
+				if (!sBoundariesY[0].length() || !sBoundariesY[1].length())
 					throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 			}
 			else
@@ -899,10 +877,10 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 			nPos = matchParams(sParams, "method", '=') + 6;
 
 			if (getArgAtPos(sParams, nPos) == "trapezoidal")
-				nMethod = 1;
+				nMethod = TRAPEZOIDAL;
 
 			if (getArgAtPos(sParams, nPos) == "simpson")
-				nMethod = 2;
+				nMethod = SIMPSON;
 		}
 
 		if (matchParams(sParams, "m", '='))
@@ -910,36 +888,36 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 			nPos = matchParams(sParams, "m", '=') + 1;
 
 			if (getArgAtPos(sParams, nPos) == "trapezoidal")
-				nMethod = 1;
+				nMethod = TRAPEZOIDAL;
 
 			if (getArgAtPos(sParams, nPos) == "simpson")
-				nMethod = 2;
+				nMethod = SIMPSON;
 		}
 
 		if (matchParams(sParams, "steps", '='))
 		{
-			sInt_Line[0][2] = getArgAtPos(sParams, matchParams(sParams, "steps", '=') + 5);
-			_parser.SetExpr(sInt_Line[0][2]);
-			parser_iVars.vValue[0][3] = (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) / _parser.Eval();
-			parser_iVars.vValue[1][3] = parser_iVars.vValue[0][3];
+			sPrecision = getArgAtPos(sParams, matchParams(sParams, "steps", '=') + 5);
+			_parser.SetExpr(sPrecision);
+			dx = (x1 - x0) / _parser.Eval();
+			dy = dx;
 		}
 
 		if (matchParams(sParams, "s", '='))
 		{
-			sInt_Line[0][2] = getArgAtPos(sParams, matchParams(sParams, "s", '=') + 1);
-			_parser.SetExpr(sInt_Line[0][2]);
-			parser_iVars.vValue[0][3] = (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) / _parser.Eval();
-			parser_iVars.vValue[1][3] = parser_iVars.vValue[0][3];
+			sPrecision = getArgAtPos(sParams, matchParams(sParams, "s", '=') + 1);
+			_parser.SetExpr(sPrecision);
+			dx = (x1 - x0) / _parser.Eval();
+			dy = dx;
 		}
 	}
 
     // Ensure that the integration function is available
-	if (!sInt_Fct.length())
+	if (!sIntegrationExpression.length())
         throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, sCmd, SyntaxError::invalid_position);
 
 	// Check, whether the expression depends upon one or both
 	// integration variables
-	_parser.SetExpr(sInt_Fct);
+	_parser.SetExpr(sIntegrationExpression);
 
 	if (!isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
 		bIntVar[0] = false;
@@ -952,158 +930,109 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 
 	for (int i = 0; i < 3; i++)
 	{
-		vResult[i].resize(nResults);
-		fx_n[0][i].resize(nResults);
-		fx_n[1][i].resize(nResults);
-	}
-
-	for (int i = 0; i < nResults; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			vResult[j][i] = 0.0;
-			fx_n[0][j][i] = 0.0;
-			fx_n[1][j][i] = 0.0;
-		}
+		vResult[i].resize(nResults, 0.0);
+		fx_n[0][i].resize(nResults, 0.0);
+		fx_n[1][i].resize(nResults, 0.0);
 	}
 
 	// Ensure that the integration ranges are available
-	if (!sInt_Line[0][0].length() || !sInt_Line[0][1].length() || !sInt_Line[1][0].length() || !sInt_Line[1][1].length())
+	if (!sBoundariesX[0].length() || !sBoundariesX[1].length() || !sBoundariesY[0].length() || !sBoundariesY[1].length())
 	    throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 
 	// Sort the intervals and track it with an additional sign
 	//
 	// First: x range
-	if (parser_iVars.vValue[0][1] > parser_iVars.vValue[0][2])
+	if (x0 > x1)
 	{
-		value_type vTemp = parser_iVars.vValue[0][1];
-		parser_iVars.vValue[0][1] = parser_iVars.vValue[0][2];
-		parser_iVars.vValue[0][2] = vTemp;
+		double dTemp = x0;
+		x0 = x1;
+		x1 = dTemp;
 		nSign *= -1;
 	}
 
 	// now y range
-	if (parser_iVars.vValue[1][1] > parser_iVars.vValue[1][2])
+	if (y0 > y1)
 	{
-		value_type vTemp = parser_iVars.vValue[1][1];
-		string_type sTemp = sInt_Line[1][0];
-		parser_iVars.vValue[1][1] = parser_iVars.vValue[1][2];
-		sInt_Line[1][0] = sInt_Line[1][1];
-		parser_iVars.vValue[1][2] = vTemp;
-		sInt_Line[1][1] = sTemp;
+		double dTemp = y0;
+		string sTemp = sBoundariesY[0];
+		y0 = y1;
+		sBoundariesY[0] = sBoundariesY[1];
+		y1 = dTemp;
+		sBoundariesY[1] = sTemp;
 		nSign *= -1;
 	}
 
-	// Do the interval borders depend upon the first interval?
-	_parser.SetExpr(sInt_Line[1][0] + " + " + sInt_Line[1][1]);
-
-	if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
-		bRenewBorder = true;    // Ja? Setzen wir den bool entsprechend
+	if (findVariableInExpression(sBoundariesY[0] + " + " + sBoundariesY[1], parser_iVars.sName[0]) != string::npos)
+    {
+		bRenewBoundaries = true;    // Ja? Setzen wir den bool entsprechend
+        sRenewBoundariesExpression = getNextArgument(sBoundariesY[0], false) + "," + getNextArgument(sBoundariesY[1], false);
+    }
 
 	// Does the expression depend upon at least one integration
 	// variable?
 	if (bIntVar[0] || bIntVar[1])
 	{
 		// Ensure that the precision is reasonble
-		if (sInt_Line[0][2].length() && (parser_iVars.vValue[0][3] > parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]
-										 || parser_iVars.vValue[0][3] > parser_iVars.vValue[1][2] - parser_iVars.vValue[1][1]))
-			sInt_Line[0][2] = "";
+		if (sPrecision.length() && (dx > x1 - x0 || dy > y1 - y0))
+			sPrecision = "";
 
         // If the precision is invalid, we guess a reasonable value here
-		if (!sInt_Line[0][2].length())
+		if (!sPrecision.length())
 		{
 		    // We use the smallest intervall and split it into
 		    // 100 parts
-            parser_iVars.vValue[0][3] = min(parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1], parser_iVars.vValue[1][2] - parser_iVars.vValue[1][1]) / 100;
+            dx = min(x1 - x0, y1 - y0) / 100;
 		}
 
 		// Ensure that the precision is positive
-		if (parser_iVars.vValue[0][3] < 0)
-			parser_iVars.vValue[0][3] *= -1;
+		if (dx < 0)
+			dx *= -1;
 
 		/* --> Legacy: womoeglich sollen einmal unterschiedliche Praezisionen fuer "x" und "y"
 		 *     moeglich sein. Inzwischen weisen wir hier einfach mal die Praezision von "x" an
 		 *     die fuer "y" zu. <--
 		 */
-		parser_iVars.vValue[1][3] = parser_iVars.vValue[0][3];
+		dy = dx;
 
 		// Special case: the expression only depends upon "y" and not upon "x"
 		// In this case, we switch everything, because the integration is much
 		// faster in this case
-		if ((bIntVar[1] && !bIntVar[0]) && !bRenewBorder)
+		if ((bIntVar[1] && !bIntVar[0]) && !bRenewBoundaries)
 		{
-			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE2_SWAPVARS", parser_iVars.sName[0], parser_iVars.sName[1]) + " ...\n");
-			// --> Leerzeichen als "virtuelle Delimiter" hinzufuegen <--
-			string_type sTempFct = " " + sInt_Fct + " ";
-			sInt_Fct = "";
+			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE2_SWAPVARS", parser_iVars.sName[0], parser_iVars.sName[1]) + " ... ");
+			size_t pos;
 
-			do
-			{
-				/* --> Pruefen wir, ob die Umgebung der gefundenen Variable "y" zu den "Delimitern" gehoert. Anderenfalls
-				 *     koennte es sich ja auch um einen Variablennamen handeln. <--
-				 */
-				if (checkDelimiter(sTempFct.substr(sTempFct.find(parser_iVars.sName[1]) - 1, parser_iVars.sName[1].length() + 2)))
-				{
-					int nToReplace = sTempFct.find(parser_iVars.sName[1]);
-					sTempFct.replace(nToReplace, parser_iVars.sName[0].length(), parser_iVars.sName[0]);
-					sInt_Fct += sTempFct.substr(0, nToReplace + 2);
-					sTempFct = sTempFct.substr(nToReplace + 2);
-				}
-				else
-				{
-					/* --> Selbst wenn die gefunde Stelle sich nicht als Variable "y" erwiesen hat, muessen wir den Substring
-					 *     an die Variable sInt_Fct zuweisen, da wir anderenfalls in einen Loop laufen <--
-					 */
-					sInt_Fct += sTempFct.substr(0, sTempFct.find(parser_iVars.sName[1]) + 2);
-					sTempFct = sTempFct.substr(sTempFct.find(parser_iVars.sName[1]) + 2);
-				}
-
-				// --> Weisen wir den restlichen String an den Parser zu <--
-				if (sTempFct.length())
-					_parser.SetExpr(sTempFct);
-				else // Anderenfalls koennen wir auch abbrechen; der gesamte String wurde kontrolliert
-					break;
-			}
-			while (isVariableInAssignedExpression(_parser, parser_iVars.sName[1])); // so lange im restlichen String noch Variablen gefunden werden
-
-			// --> Das Ende des Strings ggf. noch anfuegen <--
-			if (sTempFct.length())
-				sInt_Fct += sTempFct;
-
-			// --> Ueberzaehlige Leerzeichen entfernen <--
-			StripSpaces(sInt_Fct);
+            while ((pos = findVariableInExpression(sIntegrationExpression, parser_iVars.sName[1])) != string::npos)
+                sIntegrationExpression.replace(pos, parser_iVars.sName[1].length(), parser_iVars.sName[0]);
 
 			// --> Strings tauschen <--
-			string_type sTemp = sInt_Line[0][0];
-			sInt_Line[0][0] = sInt_Line[1][0];
-			sInt_Line[1][0] = sTemp;
-			sTemp = sInt_Line[0][1];
-			sInt_Line[0][1] = sInt_Line[1][1];
-			sInt_Line[1][1] = sTemp;
+			string sTemp = sBoundariesX[0];
+			sBoundariesX[0] = sBoundariesY[0];
+			sBoundariesY[0] = sTemp;
+			sTemp = sBoundariesX[1];
+			sBoundariesX[1] = sBoundariesY[1];
+			sBoundariesY[1] = sTemp;
 
 			// --> Werte tauschen <---
-			value_type vTemp = parser_iVars.vValue[0][1];
-			parser_iVars.vValue[0][1] = parser_iVars.vValue[1][1];
-			parser_iVars.vValue[1][1] = vTemp;
-			vTemp = parser_iVars.vValue[0][2];
-			parser_iVars.vValue[0][2] = parser_iVars.vValue[1][2];
-			parser_iVars.vValue[1][2] = vTemp;
+			value_type vTemp = x0;
+			x0 = y0;
+			y0 = vTemp;
+			vTemp = x1;
+			x1 = y1;
+			y1 = vTemp;
 			bIntVar[0] = true;
 			bIntVar[1] = false;
-			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_SUCCESS") + "!\n");
+			NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
 		}
 
-		// Set the expression
-		_parser.SetExpr(sInt_Fct);
-
 		// Is it a very slow integration?
-		if (((parser_iVars.vValue[0][1] - parser_iVars.vValue[0][0]) * (parser_iVars.vValue[1][1] - parser_iVars.vValue[1][0]) / parser_iVars.vValue[0][3] >= 1e3 && bIntVar[0] && bIntVar[1])
-				|| ((parser_iVars.vValue[0][1] - parser_iVars.vValue[0][0]) * (parser_iVars.vValue[1][1] - parser_iVars.vValue[1][0]) / parser_iVars.vValue[0][3] >= 9.9e6 && (bIntVar[0] || bIntVar[1])))
+		if (((x0 - x) * (y0 - y) / dx >= 1e3 && bIntVar[0] && bIntVar[1])
+				|| ((x0 - x) * (y0 - y) / dx >= 9.9e6 && (bIntVar[0] || bIntVar[1])))
 			bLargeArray = true;
 
         // Avoid calculation with too many steps
-		if (((parser_iVars.vValue[0][1] - parser_iVars.vValue[0][0]) * (parser_iVars.vValue[1][1] - parser_iVars.vValue[1][0]) / parser_iVars.vValue[0][3] > 1e10 && bIntVar[0] && bIntVar[1])
-				|| ((parser_iVars.vValue[0][1] - parser_iVars.vValue[0][0]) * (parser_iVars.vValue[1][1] - parser_iVars.vValue[1][0]) / parser_iVars.vValue[0][3] > 1e10 && (bIntVar[0] || bIntVar[1])))
+		if (((x0 - x) * (y0 - y) / dx > 1e10 && bIntVar[0] && bIntVar[1])
+				|| ((x0 - x) * (y0 - y) / dx > 1e10 && (bIntVar[0] || bIntVar[1])))
 			throw SyntaxError(SyntaxError::INVALID_INTEGRATION_PRECISION, sCmd, SyntaxError::invalid_position);
 
 		// --> Kleine Info an den Benutzer, dass der Code arbeitet <--
@@ -1111,133 +1040,63 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 0 %");
 
 		// --> Setzen wir "x" und "y" auf ihre Startwerte <--
-		parser_iVars.vValue[0][0] = parser_iVars.vValue[0][1]; // x = x_0
-		parser_iVars.vValue[1][0] = parser_iVars.vValue[1][1]; // y = y_0
+		x = x0; // x = x_0
+		y = y0; // y = y_0
 
 		// --> Fall: "x" und "y" enthalten. Sehr umstaendlich und aufwaendig zu rechnen <--
 		if (bIntVar[0] && bIntVar[1])
 		{
 			// --> Werte mit den Startwerten die erste Stuetzstelle fuer die y-Integration aus <--
 			v = _parser.Eval(nResults);
-
-			for (int i = 0; i < nResults; i++)
-				fx_n[1][0][i] = v[i];
+			fx_n[1][0].assign(v, v+nResults);
 
 			/* --> Berechne das erste y-Integral fuer die erste Stuetzstelle fuer x
 			 *     Die Schleife laeuft so lange wie y < y_1 <--
 			 */
-			while (parser_iVars.vValue[1][0] + parser_iVars.vValue[1][3] < parser_iVars.vValue[1][2] + parser_iVars.vValue[1][3] * 1e-1)
+			while (y + dy < y1 + dy * 1e-1)
 			{
-				if (nMethod == 1)
-				{
-					parser_iVars.vValue[1][0] += parser_iVars.vValue[1][3]; // y + dy
-					v = _parser.Eval(nResults); // Werte stelle n+1 aus
-
-					for (int i = 0; i < nResults; i++)
-					{
-						fx_n[1][1][i] = v[i]; // Werte stelle n+1 aus
-
-						if (parser_iVars.vValue[1][0] > parser_iVars.vValue[1][2] && isnan(fx_n[1][1][i]))
-							fx_n[1][1][i] = 0.0;
-
-						vResult[1][i] += parser_iVars.vValue[1][3] * (fx_n[1][0][i] + fx_n[1][1][i]) * 0.5; // Berechne das Trapez zu y
-						fx_n[1][0][i] = fx_n[1][1][i];  // Weise Wert an Stelle n+1 an Stelle n zu
-					}
-				}
-				else if (nMethod == 2)
-				{
-					parser_iVars.vValue[1][0] += parser_iVars.vValue[1][3] / 2.0;
-					v = _parser.Eval(nResults);
-
-					for (int i = 0; i < nResults; i++)
-						fx_n[1][1][i] = v[i];
-
-					parser_iVars.vValue[1][0] += parser_iVars.vValue[1][3] / 2.0;
-					v = _parser.Eval(nResults);
-
-					for (int i = 0; i < nResults; i++)
-					{
-						fx_n[1][2][i] = v[i];
-
-						if (parser_iVars.vValue[1][0] > parser_iVars.vValue[1][2] && isnan(fx_n[1][1][i]))
-							fx_n[1][1][i] = 0.0;
-
-						if (parser_iVars.vValue[1][0] > parser_iVars.vValue[1][2] && isnan(fx_n[1][2][i]))
-							fx_n[1][2][i] = 0.0;
-
-						vResult[1][i] = parser_iVars.vValue[1][2] / 6 * (fx_n[1][0][i] + 4.0 * fx_n[1][1][i] + fx_n[1][2][i]);
-						fx_n[1][0][i] = fx_n[1][2][i];
-					}
-				}
+				if (nMethod == TRAPEZOIDAL)
+                    integrationstep_trapezoidal(y, dy, y1, vResult[1], fx_n[1][0], false);
+				else if (nMethod == SIMPSON)
+                    integrationstep_simpson(y, dy, y1, vResult[1], fx_n[1][0], false);
 			}
 
-			for (int i = 0; i < nResults; i++)
-				fx_n[0][0][i] = vResult[1][i]; // Weise ersten Stelle fuer x zu
+			fx_n[0][0] = vResult[1];
 		}
 		else
 		{
 			// --> Hier ist nur "x" oder nur "y" enthalten. Wir koennen uns das erste Integral sparen <--
 			v = _parser.Eval(nResults);
-
-			for (int i = 0; i < nResults; i++)
-				fx_n[0][0][i] = v[i];
+			fx_n[0][0].assign(v, v+nResults);
 		}
 
 		/* --> Das eigentliche, numerische Integral. Es handelt sich um nichts weiter als viele
 		 *     while()-Schleifendurchlaeufe.
 		 *     Die aeussere Schleife laeuft so lange x < x_1 ist. <--
 		 */
-		while (parser_iVars.vValue[0][0] + parser_iVars.vValue[0][3] < parser_iVars.vValue[0][2] + parser_iVars.vValue[0][3] * 1e-1)
+		while (x + dx < x1 + dx * 1e-1)
 		{
-			if (nMethod == 1)
+			if (nMethod == TRAPEZOIDAL)
 			{
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3]; // x + dx
+				x += dx; // x + dx
 
-				// --> Preufen wir, ob die Grenzen ggf. von "x" abhaengen <--
-				if (bRenewBorder)
-				{
-					/* --> Ja? Dann muessen wir jedes Mal diese Grenzen neu auswerten (Sollte man in Zukunft
-					 *     noch intelligenter loesen) <--
-					 */
-					_parser.SetExpr(sInt_Line[1][0]);
-					parser_iVars.vValue[1][1] = _parser.Eval();
-					_parser.SetExpr(sInt_Line[1][1]);
-					parser_iVars.vValue[1][2] = _parser.Eval();
-					_parser.SetExpr(sInt_Fct);
-				}
+				// Refresh the y boundaries, if necessary
+				if (bRenewBoundaries)
+                    refreshBoundaries(sRenewBoundariesExpression, y0, y1, sIntegrationExpression);
 
 				// --> Setzen wir "y" auf den Wert, der von der unteren y-Grenze vorgegeben wird <--
-				parser_iVars.vValue[1][0] = parser_iVars.vValue[1][1];
+				y = y0;
 				// --> Werten wir sofort die erste y-Stuetzstelle aus <--
 				v = _parser.Eval(nResults);
-
-				for (int i = 0; i < nResults; i++)
-					fx_n[1][0][i] = v[i];
-
-				// --> Setzen wir die vResult-Variable fuer die innere Schleife auf 0 <--
-				for (int i = 0; i < nResults; i++)
-					vResult[1][i] = 0.0;
+				fx_n[1][0].assign(v, v+nResults);
+				vResult[1].assign(nResults, 0.0);
 
 				// --> Ist eigentlich sowohl "x" als auch "y" in f(x,y) (oder ggf. nur "y"?) vorhanden? <--
-				if (bIntVar[1] && (!bIntVar[0] || bIntVar[0]))
+				if (bIntVar[1])
 				{
 					// --> Ja? Dann muessen wir wohl diese Integration muehsam ausrechnen <--
-					while (parser_iVars.vValue[1][0] + parser_iVars.vValue[1][3] < parser_iVars.vValue[1][2] + parser_iVars.vValue[1][3] * 1e-1) // so lange y < y_1
-					{
-						parser_iVars.vValue[1][0] += parser_iVars.vValue[1][3]; // y + dy
-						v = _parser.Eval(nResults); // Werte stelle n+1 aus
-
-						for (int i = 0; i < nResults; i++)
-						{
-							fx_n[1][1][i] = v[i]; // Werte stelle n+1 aus
-
-							if (parser_iVars.vValue[1][0] > parser_iVars.vValue[1][2] && isnan(fx_n[1][1][i]))
-								fx_n[1][0][i] = 0.0;
-
-							vResult[1][i] += parser_iVars.vValue[1][3] * (fx_n[1][0][i] + fx_n[1][1][i]) * 0.5; // Berechne das Trapez zu y
-							fx_n[1][0][i] = fx_n[1][1][i];  // Weise Wert an Stelle n+1 an Stelle n zu
-						}
-					}
+					while (y + dy < y1 + dy * 1e-1) // so lange y < y_1
+					    integrationstep_trapezoidal(y, dy, y1, vResult[1], fx_n[1][0], false);
 				}
 				else if (bIntVar[0] && !bIntVar[1])
 				{
@@ -1247,212 +1106,78 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 					 *     stellen und der Breite des (aktuellen) Integrationsintervalls die Flaeche des um-
 					 *     schlossenen Trapezes <--
 					 */
-					parser_iVars.vValue[1][0] = parser_iVars.vValue[1][2];
+					y = y1;
 					v = _parser.Eval(nResults);
 
 					for (int i = 0; i < nResults; i++)
-					{
-						fx_n[1][1][i] = v[i];
-						vResult[1][i] = (parser_iVars.vValue[1][2] - parser_iVars.vValue[1][1]) * (fx_n[1][0][i] + fx_n[1][1][i]) * 0.5;
-						fx_n[1][0][i] = fx_n[1][1][i];
-					}
+						vResult[1][i] = (y1 - y0) * (fx_n[1][0][i] + v[i]) * 0.5;
 				}
 
 				// --> Weise das Ergebnis der y-Integration an die zweite Stuetzstelle der x-Integration zu <--
 				for (int i = 0; i < nResults; i++)
 				{
-					fx_n[0][1][i] = vResult[1][i];
+					if (x > x1 && isnan(vResult[1][i]))
+						vResult[1][i] = 0.0;
 
-					if (parser_iVars.vValue[0][0] > parser_iVars.vValue[0][2] && isnan(fx_n[0][1][i]))
-						fx_n[0][1][i] = 0.0;
-
-					vResult[0][i] += parser_iVars.vValue[0][3] * (fx_n[0][0][i] + fx_n[0][1][i]) * 0.5; // Berechne das Trapez zu x
-					fx_n[0][0][i] = fx_n[0][1][i]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
+					vResult[0][i] += dx * (fx_n[0][0][i] + vResult[1][i]) * 0.5; // Berechne das Trapez zu x
+					fx_n[0][0][i] = vResult[1][i]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
 				}
 			}
-			else if (nMethod == 2)
+			else if (nMethod == SIMPSON)
 			{
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3] / 2.0; // x + dx
+			    for (size_t n = 1; n <= 2; n++)
+                {
+                    x += dx / 2.0; // x + dx
 
-				// --> Preufen wir, ob die Grenzen ggf. von "x" abhaengen <--
-				if (bRenewBorder)
-				{
-					/* --> Ja? Dann muessen wir jedes Mal diese Grenzen neu auswerten (Sollte man in Zukunft
-					 *     noch intelligenter loesen) <--
-					 */
-					_parser.SetExpr(sInt_Line[1][0]);
-					parser_iVars.vValue[1][1] = _parser.Eval();
-					_parser.SetExpr(sInt_Line[1][1]);
-					parser_iVars.vValue[1][2] = _parser.Eval();
-					_parser.SetExpr(sInt_Fct);
-				}
+                    // Refresh the y boundaries, if necessary
+                    if (bRenewBoundaries)
+                        refreshBoundaries(sRenewBoundariesExpression, y0, y1, sIntegrationExpression);
 
-				// --> Setzen wir "y" auf den Wert, der von der unteren y-Grenze vorgegeben wird <--
-				parser_iVars.vValue[1][0] = parser_iVars.vValue[1][1];
-				// --> Werten wir sofort die erste y-Stuetzstelle aus <--
-				v = _parser.Eval(nResults);
+                    // Set y to the first position
+                    y = y0;
+
+                    // Calculate the first position
+                    if (n == 1)
+                    {
+                        v = _parser.Eval(nResults);
+                        fx_n[1][0].assign(v, v+nResults);
+                    }
+
+                    vResult[n].assign(nResults, 0.0);
+
+                    // --> Ist eigentlich sowohl "x" als auch "y" in f(x,y) (oder ggf. nur "y"?) vorhanden? <--
+                    if (bIntVar[1])
+                    {
+                        // --> Ja? Dann muessen wir wohl diese Inegration muehsam ausrechnen <--
+                        while (y + dy < y1 + dy * 1e-1) // so lange y < y_1
+                            integrationstep_simpson(y, dy, y1, vResult[n], fx_n[1][0], false);
+                    }
+                    else if (bIntVar[0] && !bIntVar[1])
+                    {
+                        y = (y0 + y1) / 2.0;
+                        v = _parser.Eval(nResults);
+                        fx_n[1][1].assign(v, v+nResults);
+
+                        y = y1;
+                        v = _parser.Eval(nResults);
+
+                        for (int i = 0; i < nResults; i++)
+                            vResult[n][i] = (y1 - y0) / 6.0 * (fx_n[1][0][i] + 4.0 * fx_n[1][1][i] + v[i]);
+                    }
+
+                    // --> Weise das Ergebnis der y-Integration an die zweite Stuetzstelle der x-Integration zu <--
+                    for (int i = 0; i < nResults; i++)
+                    {
+                        if (x > x1 && isnan(vResult[n][i]))
+                            vResult[n][i] = 0.0;
+                    }
+                }
 
 				for (int i = 0; i < nResults; i++)
-					fx_n[1][0][i] = v[i];
-
-				// --> Setzen wir die vResult-Variable fuer die innere Schleife auf 0 <--
-				for (int i = 0; i < nResults; i++)
-					vResult[1][i] = 0.0;
-
-				// --> Ist eigentlich sowohl "x" als auch "y" in f(x,y) (oder ggf. nur "y"?) vorhanden? <--
-				if (bIntVar[1] && (!bIntVar[0] || bIntVar[0]))
-				{
-					// --> Ja? Dann muessen wir wohl diese Inegration muehsam ausrechnen <--
-					while (parser_iVars.vValue[1][0] + parser_iVars.vValue[1][3] < parser_iVars.vValue[1][2] + parser_iVars.vValue[1][3] * 1e-1) // so lange y < y_1
-					{
-						parser_iVars.vValue[1][0] += parser_iVars.vValue[1][3] / 2.0; // y + dy
-						v = _parser.Eval(nResults); // Werte stelle n+1 aus
-
-						for (int i = 0; i < nResults; i++)
-						{
-							fx_n[1][1][i] = v[i]; // Werte stelle n+1 aus
-
-							if (parser_iVars.vValue[1][0] > parser_iVars.vValue[1][2] && isnan(fx_n[1][1][i]))
-								fx_n[1][1][i] = 0.0;
-						}
-
-						parser_iVars.vValue[1][0] += parser_iVars.vValue[1][3] / 2.0; // y + dy
-						v = _parser.Eval(nResults); // Werte stelle n+1 aus
-
-						for (int i = 0; i < nResults; i++)
-						{
-							fx_n[1][2][i] = v[i]; // Werte stelle n+1 aus
-
-							if (parser_iVars.vValue[1][0] > parser_iVars.vValue[1][2] && isnan(fx_n[1][2][i]))
-								fx_n[1][2][i] = 0.0;
-
-							vResult[1][i] += parser_iVars.vValue[1][3] / 6.0 * (fx_n[1][0][i] + 4.0 * fx_n[1][1][i] + fx_n[1][2][i]); // Berechne das Trapez zu y
-							fx_n[1][0][i] = fx_n[1][2][i];  // Weise Wert an Stelle n+1 an Stelle n zu
-						}
-					}
-				}
-				else if (bIntVar[0] && !bIntVar[1])
-				{
-					/* --> Nein? Dann koennen wir das gesamte y-Integral durch ein Trapez berechnen. Dazu
-					 *     setzen wir die Variable "y" auf den Wert der oberen Grenze und werten das Ergebnis
-					 *     fuer die obere Stuetzstelle aus. Anschliessend berechnen wir mit diesen beiden Stuetz-
-					 *     stellen und der Breite des (aktuellen) Integrationsintervalls die Flaeche des um-
-					 *     schlossenen Trapezes <--
-					 */
-					parser_iVars.vValue[1][0] = (parser_iVars.vValue[1][1] + parser_iVars.vValue[1][2]) / 2.0;
-					v = _parser.Eval(nResults);
-
-					for (int i = 0; i < nResults; i++)
-						fx_n[1][1][i] = v[i];
-
-					parser_iVars.vValue[1][0] = parser_iVars.vValue[1][2];
-					v = _parser.Eval(nResults);
-
-					for (int i = 0; i < nResults; i++)
-					{
-						fx_n[1][2][i] = v[i];
-						vResult[1][i] = (parser_iVars.vValue[1][2] - parser_iVars.vValue[1][1]) / 6.0 * (fx_n[1][0][i] + 4.0 * fx_n[1][1][i] + fx_n[1][2][i]);
-					}
-				}
-
-				// --> Weise das Ergebnis der y-Integration an die zweite Stuetzstelle der x-Integration zu <--
-				for (int i = 0; i < nResults; i++)
-				{
-					fx_n[0][1][i] = vResult[1][i];
-
-					if (parser_iVars.vValue[0][0] > parser_iVars.vValue[0][2] && isnan(fx_n[0][1][i]))
-						fx_n[0][1][i] = 0.0;
-				}
-
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3] / 2.0; // x + dx
-
-				// --> Preufen wir, ob die Grenzen ggf. von "x" abhaengen <--
-				if (bRenewBorder)
-				{
-					/* --> Ja? Dann muessen wir jedes Mal diese Grenzen neu auswerten (Sollte man in Zukunft
-					 *     noch intelligenter loesen) <--
-					 */
-					_parser.SetExpr(sInt_Line[1][0]);
-					parser_iVars.vValue[1][1] = _parser.Eval();
-					_parser.SetExpr(sInt_Line[1][1]);
-					parser_iVars.vValue[1][2] = _parser.Eval();
-					_parser.SetExpr(sInt_Fct);
-				}
-
-				// --> Setzen wir "y" auf den Wert, der von der unteren y-Grenze vorgegeben wird <--
-				parser_iVars.vValue[1][0] = parser_iVars.vValue[1][1];
-
-				// --> Setzen wir die vResult-Variable fuer die innere Schleife auf 0 <--
-				for (int i = 0; i < nResults; i++)
-					vResult[2][i] = 0.0;
-
-				// --> Ist eigentlich sowohl "x" als auch "y" in f(x,y) (oder ggf. nur "y"?) vorhanden? <--
-				if (bIntVar[1] && (!bIntVar[0] || bIntVar[0]))
-				{
-					// --> Ja? Dann muessen wir wohl diese Inegration muehsam ausrechnen <--
-					while (parser_iVars.vValue[1][0] + parser_iVars.vValue[1][3] < parser_iVars.vValue[1][2] + parser_iVars.vValue[1][3] * 1e-1) // so lange y < y_1
-					{
-						parser_iVars.vValue[1][0] += parser_iVars.vValue[1][3] / 2.0; // y + dy
-						v = _parser.Eval(nResults); // Werte stelle n+1 aus
-
-						for (int i = 0; i < nResults; i++)
-						{
-							fx_n[1][1][i] = v[i]; // Werte stelle n+1 aus
-
-							if (parser_iVars.vValue[1][0] > parser_iVars.vValue[1][2] && isnan(fx_n[1][1][i]))
-								fx_n[1][1][i] = 0.0;
-						}
-
-						parser_iVars.vValue[1][0] += parser_iVars.vValue[1][3] / 2.0; // y + dy
-						v = _parser.Eval(nResults); // Werte stelle n+1 aus
-
-						for (int i = 0; i < nResults; i++)
-						{
-							fx_n[1][2][i] = v[i]; // Werte stelle n+1 aus
-
-							if (parser_iVars.vValue[1][0] > parser_iVars.vValue[1][2] && isnan(fx_n[1][2][i]))
-								fx_n[1][2][i] = 0.0;
-
-							vResult[2][i] += parser_iVars.vValue[1][3] / 6.0 * (fx_n[1][0][i] + 4.0 * fx_n[1][1][i] + fx_n[1][2][i]); // Berechne das Trapez zu y
-							fx_n[1][0][i] = fx_n[1][2][i];  // Weise Wert an Stelle n+1 an Stelle n zu
-						}
-					}
-				}
-				else if (bIntVar[0] && !bIntVar[1])
-				{
-					/* --> Nein? Dann koennen wir das gesamte y-Integral durch ein Trapez berechnen. Dazu
-					 *     setzen wir die Variable "y" auf den Wert der oberen Grenze und werten das Ergebnis
-					 *     fuer die obere Stuetzstelle aus. Anschliessend berechnen wir mit diesen beiden Stuetz-
-					 *     stellen und der Breite des (aktuellen) Integrationsintervalls die Flaeche des um-
-					 *     schlossenen Trapezes <--
-					 */
-					parser_iVars.vValue[1][0] = (parser_iVars.vValue[1][1] + parser_iVars.vValue[1][2]) / 2.0;
-					v = _parser.Eval(nResults);
-
-					for (int i = 0; i < nResults; i++)
-						fx_n[1][1][i] = v[i];
-
-					parser_iVars.vValue[1][0] = parser_iVars.vValue[1][2];
-					v = _parser.Eval(nResults);
-
-					for (int i = 0; i < nResults; i++)
-					{
-						fx_n[1][2][i] = v[i];
-						vResult[2][i] = (parser_iVars.vValue[1][2] - parser_iVars.vValue[1][1]) / 6.0 * (fx_n[1][0][i] + 4.0 * fx_n[1][1][i] + fx_n[1][2][i]);
-					}
-				}
-
-				// --> Weise das Ergebnis der y-Integration an die zweite Stuetzstelle der x-Integration zu <--
-				for (int i = 0; i < nResults; i++)
-				{
-					fx_n[0][2][i] = vResult[2][i];
-
-					if (parser_iVars.vValue[0][0] > parser_iVars.vValue[0][2] && isnan(fx_n[0][2][i]))
-						fx_n[0][2][i] = 0.0;
-
-					vResult[0][i] += parser_iVars.vValue[0][3] / 6.0 * (fx_n[0][0][i] + 4.0 * fx_n[0][1][i] + fx_n[0][2][i]); // Berechne das Trapez zu x
-					fx_n[0][0][i] = fx_n[0][2][i]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
-				}
+                {
+					vResult[0][i] += dx / 6.0 * (fx_n[0][0][i] + 4.0 * vResult[1][i] + vResult[2][i]); // Berechne das Trapez zu x
+					fx_n[0][0][i] = vResult[2][i]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
+                }
 			}
 
 			// Show some progress
@@ -1460,16 +1185,16 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 			{
 				if (!bLargeArray)
 				{
-					if ((int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20) > (int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][3] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20))
+					if ((int)((x - x0) / (x1 - x0) * 20) > (int)((x - dx - x0) / (x1 - x0) * 20))
 					{
-						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 20) * 5) + " %");
+						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 20) * 5) + " %");
 					}
 				}
 				else
 				{
-					if ((int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100) > (int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][3] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100))
+					if ((int)((x - x0) / (x1 - x0) * 100) > (int)((x - dx - x0) / (x1 - x0) * 100))
 					{
-						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((parser_iVars.vValue[0][0] - parser_iVars.vValue[0][1]) / (parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1]) * 100)) + " %");
+						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 100)) + " %");
 					}
 				}
 
@@ -1485,12 +1210,11 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 		if (_option.getSystemPrintStatus())
 			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 100 %");
 	}
-	else if (!bRenewBorder)
+	else if (!bRenewBoundaries)
 	{
 		// In this case, the interval borders do not depend upon each other
 		// and the expressin is also independent
-		string sTemp = sInt_Fct;
-
+		string sTemp = sIntegrationExpression;
 		string sInt_Fct_2 = "";
 
 		while (sTemp.length())
@@ -1499,13 +1223,11 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 		sInt_Fct_2.erase(sInt_Fct_2.length() - 1, 1);
 
 		// --> Schnelle Loesung: Konstante x Flaeche, die vom Integral umschlossen wird <--
-		parser_iVars.vValue[0][0] = parser_iVars.vValue[0][2] - parser_iVars.vValue[0][1];
-		parser_iVars.vValue[1][0] = parser_iVars.vValue[1][2] - parser_iVars.vValue[1][1];
+		x = x1 - x0;
+		y = y1 - y0;
 		_parser.SetExpr(sInt_Fct_2);
 		v = _parser.Eval(nResults);
-
-		for (int i = 0; i < nResults; i++)
-			vResult[0][i] = v[i];
+		vResult[0].assign(v, v+nResults);
 	}
 	else
 	{
@@ -1517,157 +1239,84 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 			NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_CONSTANT") + " ... ");
 
 		// --> Waehle willkuerliche Praezision von 1e-4 <--
-		parser_iVars.vValue[0][3] = 1e-4;
-		parser_iVars.vValue[1][3] = 1e-4;
+		dx = 1e-4;
+		dy = 1e-4;
 		// --> Setze "x" und "y" auf ihre unteren Grenzen <--
-		parser_iVars.vValue[0][0] = parser_iVars.vValue[0][1];
-		parser_iVars.vValue[1][0] = parser_iVars.vValue[1][1];
+		x = x0;
+		y = y0;
 		// --> Werte erste x-Stuetzstelle aus <--
 		v = _parser.Eval(nResults);
-
-		for (int i = 0; i < nResults; i++)
-			fx_n[0][0][i] = v[i];
+		fx_n[0][0].assign(v, v+nResults);
 
 		/* --> Berechne das eigentliche Integral. Unterscheidet sich nur begrenzt von dem oberen,
 		 *     ausfuehrlichen Fall, ausser dass die innere Schleife aufgrund des Fehlens der Inte-
 		 *     grationsvariablen "y" vollstaendig wegfaellt <--
 		 */
-		while (parser_iVars.vValue[0][0] + 1e-4 < parser_iVars.vValue[0][2] + 1e-5)
+		while (x + 1e-4 < x1 + 1e-5)
 		{
-			if (nMethod == 1)
+			if (nMethod == TRAPEZOIDAL)
 			{
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3]; // x + dx
+				x += dx; // x + dx
 
 				// --> Erneuere die Werte der x- und y-Grenzen <--
-				_parser.SetExpr(sInt_Line[1][0]);
-				parser_iVars.vValue[1][1] = _parser.Eval();
-				_parser.SetExpr(sInt_Line[1][1]);
-				parser_iVars.vValue[1][2] = _parser.Eval();
-				// --> Weise dem Parser wieder die Funktion f(x,y) zu <--
-				_parser.SetExpr(sInt_Fct);
+				refreshBoundaries(sRenewBoundariesExpression, y0, y1, sIntegrationExpression);
 				// --> Setze "y" wieder auf die untere Grenze <--
-				parser_iVars.vValue[1][0] = parser_iVars.vValue[1][1];
+				y = y0;
 
 				// --> Setze den Speicher fuer die "innere" Integration auf 0 <--
-				for (int i = 0; i < nResults; i++)
-					vResult[1][i] = 0.0;
+				vResult[1].assign(nResults, 0.0);
 
 				// --> Werte erste y-Stuetzstelle aus <--
 				v = _parser.Eval(nResults);
-
-				for (int i = 0; i < nResults; i++)
-					fx_n[1][0][i] = v[i];
+				fx_n[1][0].assign(v, v+nResults);
 
 				// --> Setze "y" auf die obere Grenze <--
-				parser_iVars.vValue[1][0] = parser_iVars.vValue[1][2];
+				y = y1;
 				// --> Werte die zweite Stuetzstelle aus <--
 				v = _parser.Eval(nResults);
 
 				for (int i = 0; i < nResults; i++)
-				{
-					fx_n[1][1][i] = v[i];
-					// --> Berechne das y-Trapez <--
-					vResult[1][i] = (parser_iVars.vValue[1][2] - parser_iVars.vValue[1][1]) * (fx_n[1][0][i] + fx_n[1][1][i]) * 0.5;
+					vResult[0][i] += dx * (fx_n[0][0][i] + (y1 - y0) * (fx_n[1][0][i] + v[i]) * 0.5) * 0.5; // Berechne das Trapez zu x
 
-					// --> Weise das y-Ergebnis der zweiten x-Stuetzstelle zu <--
-					fx_n[0][1][i] = vResult[1][i];
-					vResult[0][i] += parser_iVars.vValue[0][3] * (fx_n[0][0][i] + fx_n[0][1][i]) * 0.5; // Berechne das Trapez zu x
-					fx_n[0][0][i] = fx_n[0][1][i]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
-				}
+                fx_n[0][0] = vResult[1]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
 			}
-			else if (nMethod == 2)
+			else if (nMethod == SIMPSON)
 			{
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3] / 2.0; // x + dx
+			    for (size_t n = 1; n <= 2; n++)
+                {
+                    x += dx / 2.0; // x + dx
 
-				// --> Erneuere die Werte der x- und y-Grenzen <--
-				_parser.SetExpr(sInt_Line[1][0]);
-				parser_iVars.vValue[1][1] = _parser.Eval();
-				_parser.SetExpr(sInt_Line[1][1]);
-				parser_iVars.vValue[1][2] = _parser.Eval();
-				// --> Weise dem Parser wieder die Funktion f(x,y) zu <--
-				_parser.SetExpr(sInt_Fct);
-				// --> Setze "y" wieder auf die untere Grenze <--
-				parser_iVars.vValue[1][0] = parser_iVars.vValue[1][1];
+                    // --> Erneuere die Werte der x- und y-Grenzen <--
+                    refreshBoundaries(sRenewBoundariesExpression, y0, y1, sIntegrationExpression);
+                    // --> Setze "y" wieder auf die untere Grenze <--
+                    y = y0;
 
-				// --> Setze den Speicher fuer die "innere" Integration auf 0 <--
-				for (int i = 0; i < nResults; i++)
-					vResult[1][i] = 0.0;
+                    // --> Setze den Speicher fuer die "innere" Integration auf 0 <--
+                    vResult[n].assign(nResults, 0.0);
 
-				// --> Werte erste y-Stuetzstelle aus <--
-				v = _parser.Eval(nResults);
+                    // --> Werte erste y-Stuetzstelle aus <--
+                    v = _parser.Eval(nResults);
+                    fx_n[1][0].assign(v, v+nResults);
 
-				for (int i = 0; i < nResults; i++)
-					fx_n[1][0][i] = v[i];
+                    // --> Setze "y" auf die obere Grenze <--
+                    y = (y0 + y1) / 2.0;
+                    // --> Werte die zweite Stuetzstelle aus <--
+                    v = _parser.Eval(nResults);
+                    fx_n[1][1].assign(v, v+nResults);
 
-				// --> Setze "y" auf die obere Grenze <--
-				parser_iVars.vValue[1][0] = (parser_iVars.vValue[1][1] + parser_iVars.vValue[1][2]) / 2.0;
-				// --> Werte die zweite Stuetzstelle aus <--
-				v = _parser.Eval(nResults);
+                    // --> Setze "y" auf die obere Grenze <--
+                    y = y1;
+                    // --> Werte die zweite Stuetzstelle aus <--
+                    v = _parser.Eval(nResults);
 
-				for (int i = 0; i < nResults; i++)
-					fx_n[1][1][i] = v[i];
-
-				// --> Setze "y" auf die obere Grenze <--
-				parser_iVars.vValue[1][0] = parser_iVars.vValue[1][2];
-				// --> Werte die zweite Stuetzstelle aus <--
-				v = _parser.Eval(nResults);
+                    for (int i = 0; i < nResults; i++)
+                        vResult[n][i] = (y1 - y0) / 6.0 * (fx_n[1][0][i] + 4.0 * fx_n[1][1][i] + v[i]);
+                }
 
 				for (int i = 0; i < nResults; i++)
-				{
-					fx_n[1][2][i] = v[i];
-					// --> Berechne das y-Trapez <--
-					vResult[1][i] = (parser_iVars.vValue[1][2] - parser_iVars.vValue[1][1]) / 6.0 * (fx_n[1][0][i] + 4.0 * fx_n[1][1][i] + fx_n[1][2][i]);
+					vResult[0][i] += dx / 6.0 * (fx_n[0][0][i] + 4.0 * vResult[1][i] + vResult[2][i]); // Berechne das Trapez zu x
 
-					// --> Weise das y-Ergebnis der zweiten x-Stuetzstelle zu <--
-					fx_n[0][1][i] = vResult[1][i];
-				}
-
-				parser_iVars.vValue[0][0] += parser_iVars.vValue[0][3] / 2.0; // x + dx
-
-				// --> Erneuere die Werte der x- und y-Grenzen <--
-				_parser.SetExpr(sInt_Line[1][0]);
-				parser_iVars.vValue[1][1] = _parser.Eval();
-				_parser.SetExpr(sInt_Line[1][1]);
-				parser_iVars.vValue[1][2] = _parser.Eval();
-				// --> Weise dem Parser wieder die Funktion f(x,y) zu <--
-				_parser.SetExpr(sInt_Fct);
-				// --> Setze "y" wieder auf die untere Grenze <--
-				parser_iVars.vValue[1][0] = parser_iVars.vValue[1][1];
-
-				// --> Setze den Speicher fuer die "innere" Integration auf 0 <--
-				for (int i = 0; i < nResults; i++)
-					vResult[2][i] = 0.0;
-
-				// --> Werte erste y-Stuetzstelle aus <--
-				v = _parser.Eval(nResults);
-
-				for (int i = 0; i < nResults; i++)
-					fx_n[1][0][i] = v[i];
-
-				// --> Setze "y" auf die obere Grenze <--
-				parser_iVars.vValue[1][0] = (parser_iVars.vValue[1][1] + parser_iVars.vValue[1][2]) / 2.0;
-				// --> Werte die zweite Stuetzstelle aus <--
-				v = _parser.Eval(nResults);
-
-				for (int i = 0; i < nResults; i++)
-					fx_n[1][1][i] = v[i];
-
-				// --> Setze "y" auf die obere Grenze <--
-				parser_iVars.vValue[1][0] = parser_iVars.vValue[1][2];
-				// --> Werte die zweite Stuetzstelle aus <--
-				v = _parser.Eval(nResults);
-
-				for (int i = 0; i < nResults; i++)
-				{
-					fx_n[1][2][i] = v[i];
-					// --> Berechne das y-Trapez <--
-					vResult[2][i] = (parser_iVars.vValue[1][2] - parser_iVars.vValue[1][1]) / 6.0 * (fx_n[1][0][i] + 4.0 * fx_n[1][1][i] + fx_n[1][2][i]);
-
-					// --> Weise das y-Ergebnis der zweiten x-Stuetzstelle zu <--
-					fx_n[0][2][i] = vResult[2][i];
-					vResult[0][i] += parser_iVars.vValue[0][3] / 6.0 * (fx_n[0][0][i] + 4.0 * fx_n[0][1][i] + fx_n[0][2][i]); // Berechne das Trapez zu x
-					fx_n[0][0][i] = fx_n[0][2][i]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
-				}
+                fx_n[0][0] = vResult[2]; // Weise den Wert der zweiten Stuetzstelle an die erste Stuetzstelle zu
 			}
 		}
 
