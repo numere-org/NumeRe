@@ -142,6 +142,132 @@ static void integrationstep_simpson(double& x, double dx, double upperBoundary, 
 
 
 /////////////////////////////////////////////////
+/// \brief This static function integrates single
+/// dimension data.
+///
+/// \param sIntegrationExpression string&
+/// \param sParams string&
+/// \return vector<double>
+///
+/////////////////////////////////////////////////
+static vector<double> integrateSingleDimensionData(string& sIntegrationExpression, string& sParams)
+{
+    value_type* v = nullptr;
+    int nResults = 0;
+    string sLowerBoundary;
+    double x0 = 0.0;
+    double x1 = 0.0;
+    bool bReturnFunctionPoints = false;
+    bool bCalcXvals = false;
+
+    vector<double> vResult;
+
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    Datafile& _data = NumeReKernel::getInstance()->getData();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    // Extract the integration interval
+    if (sParams.length() && matchParams(sParams, "x", '='))
+    {
+        sLowerBoundary = getArgAtPos(sParams, matchParams(sParams, "x", '=') + 1);
+
+        // Replace the colon with a comma
+        if (sLowerBoundary.find(':') != string::npos)
+            sLowerBoundary.replace(sLowerBoundary.find(':'), 1, ",");
+
+        // Set the interval expression and evaluate it
+        _parser.SetExpr(sLowerBoundary);
+        v = _parser.Eval(nResults);
+
+        if (nResults > 1)
+            x1 = v[1];
+
+        x0 = v[0];
+    }
+
+    // Are the samples of the integral desired?
+    if (sParams.length() && matchParams(sParams, "points"))
+        bReturnFunctionPoints = true;
+
+    // Are the corresponding x values desired?
+    if (sParams.length() && matchParams(sParams, "xvals"))
+        bCalcXvals = true;
+
+    // Get table name and the corresponding indices
+    string sDatatable = sIntegrationExpression.substr(0, sIntegrationExpression.find('('));
+    Indices _idx = getIndices(sIntegrationExpression, _parser, _data, _option);
+
+    // Calculate the integral of the data set
+    evaluateIndices(sDatatable, _idx, _data);
+
+    // The indices are vectors
+    //
+    // If it is a single column or row, then we simply
+    // summarize its contents, otherwise we calculate the
+    // integral with the trapezoidal method
+    if (_idx.row.size() == 1 || _idx.col.size() == 1)
+        vResult.push_back(_data.sum(sDatatable, _idx.row, _idx.col));
+    else
+    {
+        Datafile _cache;
+
+        // Copy the data
+        for (size_t i = 0; i < _idx.row.size(); i++)
+        {
+            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+        }
+
+        // Sort the data
+        _cache.sortElements("cache -sort c=1[2]");
+        double dResult = 0.0;
+        long long int j = 1;
+
+        // Calculate the integral by jumping over NaNs
+        for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++) //nan-suche
+        {
+            j = 1;
+
+            if (!_cache.isValidEntry(i, 1, "cache"))
+                continue;
+
+            while (!_cache.isValidEntry(i + j, 1, "cache") && i + j < _cache.getLines("cache", false) - 1)
+                j++;
+
+            if (!_cache.isValidEntry(i + j, 0, "cache") || !_cache.isValidEntry(i + j, 1, "cache"))
+                break;
+
+            if (sLowerBoundary.length() && x0 > _cache.getElement(i, 0, "cache"))
+                continue;
+
+            if (sLowerBoundary.length() && x1 < _cache.getElement(i + j, 0, "cache"))
+                break;
+
+            // Calculate either the integral, its samples or the corresponding x values
+            if (!bReturnFunctionPoints && !bCalcXvals)
+                dResult += (_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache"));
+            else if (bReturnFunctionPoints && !bCalcXvals)
+            {
+                if (vResult.size())
+                    vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")) + vResult.back());
+                else
+                    vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")));
+            }
+            else
+                vResult.push_back(_cache.getElement(i + j, 0, "cache"));
+        }
+
+        // If the integral was calculated, then there is a
+        // single result, which hasn't been stored yet
+        if (!bReturnFunctionPoints && !bCalcXvals)
+            vResult.push_back(dResult);
+    }
+
+    // Return the result of the integral
+    return vResult;
+}
+
+/////////////////////////////////////////////////
 /// \brief Calculate the integral of a function
 /// or a data set in a single dimension.
 ///
@@ -214,107 +340,7 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 	if ((sIntegrationExpression.substr(0, 5) == "data(" || _data.isTable(sIntegrationExpression))
 			&& getMatchingParenthesis(sIntegrationExpression) != string::npos
 			&& sIntegrationExpression.find_first_not_of(' ', getMatchingParenthesis(sIntegrationExpression) + 1) == string::npos) // xvals
-	{
-	    // Extract the integration interval
-		if (sParams.length() && matchParams(sParams, "x", '='))
-		{
-			sLowerBoundary = getArgAtPos(sParams, matchParams(sParams, "x", '=') + 1);
-
-			// Replace the colon with a comma
-			if (sLowerBoundary.find(':') != string::npos)
-				sLowerBoundary.replace(sLowerBoundary.find(':'), 1, ",");
-
-            // Set the interval expression and evaluate it
-			_parser.SetExpr(sLowerBoundary);
-			v = _parser.Eval(nResults);
-
-			if (nResults > 1)
-				x1 = v[1];
-
-			x0 = v[0];
-		}
-
-		// Are the samples of the integral desired?
-		if (sParams.length() && matchParams(sParams, "points"))
-			bReturnFunctionPoints = true;
-
-		// Are the corresponding x values desired?
-		if (sParams.length() && matchParams(sParams, "xvals"))
-			bCalcXvals = true;
-
-        // Get table name and the corresponding indices
-		string sDatatable = sIntegrationExpression.substr(0, sIntegrationExpression.find('('));
-		Indices _idx = getIndices(sIntegrationExpression, _parser, _data, _option);
-
-		// Calculate the integral of the data set
-        evaluateIndices(sDatatable, _idx, _data);
-
-        // The indices are vectors
-        //
-        // If it is a single column or row, then we simply
-        // summarize its contents, otherwise we calculate the
-        // integral with the trapezoidal method
-        if (_idx.row.size() == 1 || _idx.col.size() == 1)
-            vResult.push_back(_data.sum(sDatatable, _idx.row, _idx.col));
-        else
-        {
-            Datafile _cache;
-
-            // Copy the data
-            for (size_t i = 0; i < _idx.row.size(); i++)
-            {
-                _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-                _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
-            }
-
-            // Sort the data
-            _cache.sortElements("cache -sort c=1[2]");
-            double dResult = 0.0;
-            long long int j = 1;
-
-            // Calculate the integral by jumping over NaNs
-            for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++) //nan-suche
-            {
-                j = 1;
-
-                if (!_cache.isValidEntry(i, 1, "cache"))
-                    continue;
-
-                while (!_cache.isValidEntry(i + j, 1, "cache") && i + j < _cache.getLines("cache", false) - 1)
-                    j++;
-
-                if (!_cache.isValidEntry(i + j, 0, "cache") || !_cache.isValidEntry(i + j, 1, "cache"))
-                    break;
-
-                if (sLowerBoundary.length() && x0 > _cache.getElement(i, 0, "cache"))
-                    continue;
-
-                if (sLowerBoundary.length() && x1 < _cache.getElement(i + j, 0, "cache"))
-                    break;
-
-                // Calculate either the integral, its samples or the corresponding x values
-                if (!bReturnFunctionPoints && !bCalcXvals)
-                    dResult += (_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache"));
-                else if (bReturnFunctionPoints && !bCalcXvals)
-                {
-                    if (vResult.size())
-                        vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")) + vResult.back());
-                    else
-                        vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")));
-                }
-                else
-                    vResult.push_back(_cache.getElement(i + j, 0, "cache"));
-            }
-
-            // If the integral was calculated, then there is a
-            // single result, which hasn't been stored yet
-            if (!bReturnFunctionPoints && !bCalcXvals)
-                vResult.push_back(dResult);
-        }
-
-		// Return the result of the integral
-		return vResult;
-	}
+        return integrateSingleDimensionData(sIntegrationExpression, sParams);
 
 	// No data set for integration
 	if (sIntegrationExpression.find("{") != string::npos)
@@ -557,16 +583,12 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 				if (!bLargeInterval)
 				{
 					if ((int)((x - x0) / (x1 - x0) * 20) > (int)((x - dx - x0) / (x1 - x0) * 20))
-					{
 						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 20) * 5) + " %");
-					}
 				}
 				else
 				{
 					if ((int)((x - x0) / (x1 - x0) * 100) > (int)((x - dx - x0) / (x1 - x0) * 100))
-					{
 						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 100)) + " %");
-					}
 				}
 
 				if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
@@ -1100,12 +1122,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 				}
 				else if (bIntVar[0] && !bIntVar[1])
 				{
-					/* --> Nein? Dann koennen wir das gesamte y-Integral durch ein Trapez berechnen. Dazu
-					 *     setzen wir die Variable "y" auf den Wert der oberen Grenze und werten das Ergebnis
-					 *     fuer die obere Stuetzstelle aus. Anschliessend berechnen wir mit diesen beiden Stuetz-
-					 *     stellen und der Breite des (aktuellen) Integrationsintervalls die Flaeche des um-
-					 *     schlossenen Trapezes <--
-					 */
+					// We may calculate the whole integral using a single trapez
 					y = y1;
 					v = _parser.Eval(nResults);
 
@@ -1186,16 +1203,12 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 				if (!bLargeArray)
 				{
 					if ((int)((x - x0) / (x1 - x0) * 20) > (int)((x - dx - x0) / (x1 - x0) * 20))
-					{
 						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 20) * 5) + " %");
-					}
 				}
 				else
 				{
 					if ((int)((x - x0) / (x1 - x0) * 100) > (int)((x - dx - x0) / (x1 - x0) * 100))
-					{
 						NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 100)) + " %");
-					}
 				}
 
 				if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
@@ -1640,6 +1653,339 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
 
 
 /////////////////////////////////////////////////
+/// \brief This static function finds extrema in
+/// a multi-result expression, i.e. an expression
+/// containing a table or similar.
+///
+/// \param sCmd string&
+/// \param sExpr string&
+/// \param sInterval string&
+/// \param nOrder int
+/// \param nMode int
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInterval, int nOrder, int nMode)
+{
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    _parser.SetExpr(sExpr);
+    int nResults;
+    value_type* v = _parser.Eval(nResults);
+    vector<double> vResults;
+    int nResults_x = 0;
+    Datafile _cache;
+
+    for (int i = 0; i < nResults; i++)
+        _cache.writeToTable(i, 1, "cache", v[i]);
+
+    _parser.SetExpr(sInterval);
+    v = _parser.Eval(nResults_x);
+
+    if (nResults_x > 1)
+    {
+        for (int i = 0; i < nResults; i++)
+        {
+            if (i >= nResults_x)
+                _cache.writeToTable(i, 0, "cache", 0.0);
+            else
+                _cache.writeToTable(i, 0, "cache", v[i]);
+        }
+    }
+    else
+        return false;
+
+    sCmd = "cache -sort cols=1[2]";
+    _cache.sortElements(sCmd);
+
+    double dMedian = 0.0, dExtremum = 0.0;
+    double* data = new double[nOrder];
+    int nDir = 0;
+    int nanShift = 0;
+
+    if (nOrder >= nResults / 3)
+        nOrder = nResults / 3;
+
+    if (nOrder < 3)
+    {
+        vResults.push_back(NAN);
+        return false;
+    }
+
+    for (int i = 0; i + nanShift < _cache.getLines("cache", true); i++)
+    {
+        if (i == nOrder)
+            break;
+
+        while (isnan(_cache.getElement(i + nanShift, 1, "cache")) && i + nanShift < _cache.getLines("cache", true) - 1)
+            nanShift++;
+
+        data[i] = _cache.getElement(i + nanShift, 1, "cache");
+    }
+
+    gsl_sort(data, 1, nOrder);
+    dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
+
+    for (int i = nOrder; i + nanShift < _cache.getLines("cache", false) - nOrder; i++)
+    {
+        int currNanShift = 0;
+        dMedian = 0.0;
+
+        for (int j = i; j < i + nOrder; j++)
+        {
+            while (isnan(_cache.getElement(j + nanShift + currNanShift, 1, "cache")) && j + nanShift + currNanShift < _cache.getLines("cache", true) - 1)
+                currNanShift++;
+
+            data[j - i] = _cache.getElement(j + nanShift + currNanShift, 1, "cache");
+        }
+
+        gsl_sort(data, 1, nOrder);
+        dMedian = gsl_stats_median_from_sorted_data(data, 1, nOrder);
+
+        if (!nDir)
+        {
+            if (dMedian > dExtremum)
+                nDir = 1;
+            else if (dMedian < dExtremum)
+                nDir = -1;
+
+            dExtremum = dMedian;
+        }
+        else
+        {
+            if (nDir == 1)
+            {
+                if (dMedian < dExtremum)
+                {
+                    if (!nMode || nMode == 1)
+                    {
+                        int nExtremum = i;
+                        double dExtremum = _cache.getElement(i + nanShift, 1, "cache");
+
+                        for (long long int k = i + nanShift; k >= 0; k--)
+                        {
+                            if (k == i - nOrder)
+                                break;
+
+                            if (_cache.getElement(k, 1, "cache") > dExtremum)
+                            {
+                                nExtremum = k;
+                                dExtremum = _cache.getElement(k, 1, "cache");
+                            }
+                        }
+
+                        vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
+                        i = nExtremum + nOrder;
+                    }
+
+                    nDir = 0;
+                }
+
+                dExtremum = dMedian;
+            }
+            else
+            {
+                if (dMedian > dExtremum)
+                {
+                    if (!nMode || nMode == -1)
+                    {
+                        int nExtremum = i + nanShift;
+                        double dExtremum = _cache.getElement(i, 1, "cache");
+
+                        for (long long int k = i + nanShift; k >= 0; k--)
+                        {
+                            if (k == i - nOrder)
+                                break;
+
+                            if (_cache.getElement(k, 1, "cache") < dExtremum)
+                            {
+                                nExtremum = k;
+                                dExtremum = _cache.getElement(k, 1, "cache");
+                            }
+                        }
+
+                        vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
+                        i = nExtremum + nOrder;
+                    }
+
+                    nDir = 0;
+                }
+
+                dExtremum = dMedian;
+            }
+        }
+
+        nanShift += currNanShift;
+    }
+
+    if (!vResults.size())
+        vResults.push_back(NAN);
+
+    delete[] data;
+    sCmd = "_~extrema[~_~]";
+    _parser.SetVectorVar("_~extrema[~_~]", vResults);
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function finds extrema in
+/// the selected data sets.
+///
+/// \param sCmd string&
+/// \param sExpr string&
+/// \param nOrder int
+/// \param nMode int
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode)
+{
+    value_type* v;
+    int nResults = 0;
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    _parser.SetExpr(sExpr);
+    v = _parser.Eval(nResults);
+
+    if (nResults > 1)
+    {
+        if (nOrder >= nResults / 3)
+            nOrder = nResults / 3;
+
+        double dMedian = 0.0, dExtremum = 0.0;
+        double* data = 0;
+        data = new double[nOrder];
+        int nDir = 0;
+        int nanShift = 0;
+        vector<double> vResults;
+
+        if (nOrder < 3)
+        {
+            vResults.push_back(NAN);
+            return false;
+        }
+
+        for (int i = 0; i + nanShift < nResults; i++)
+        {
+            if (i == nOrder)
+                break;
+
+            while (isnan(v[i + nanShift]) && i + nanShift < nResults - 1)
+                nanShift++;
+
+            data[i] = v[i + nanShift];
+        }
+
+        gsl_sort(data, 1, nOrder);
+        dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
+
+        for (int i = nOrder; i + nanShift < nResults - nOrder; i++)
+        {
+            int currNanShift = 0;
+            dMedian = 0.0;
+
+            for (int j = i; j < i + nOrder; j++)
+            {
+                while (isnan(v[j + nanShift + currNanShift]) && j + nanShift + currNanShift < nResults - 1)
+                    currNanShift++;
+
+                data[j - i] = v[j + nanShift + currNanShift];
+            }
+
+            gsl_sort(data, 1, nOrder);
+            dMedian = gsl_stats_median_from_sorted_data(data, 1, nOrder);
+
+            if (!nDir)
+            {
+                if (dMedian > dExtremum)
+                    nDir = 1;
+                else if (dMedian < dExtremum)
+                    nDir = -1;
+
+                dExtremum = dMedian;
+            }
+            else
+            {
+                if (nDir == 1)
+                {
+                    if (dMedian < dExtremum)
+                    {
+                        if (!nMode || nMode == 1)
+                        {
+                            int nExtremum = i + nanShift;
+                            double dExtremum = v[i + nanShift];
+
+                            for (long long int k = i + nanShift; k >= 0; k--)
+                            {
+                                if (k == i - nOrder)
+                                    break;
+
+                                if (v[k] > dExtremum)
+                                {
+                                    nExtremum = k;
+                                    dExtremum = v[k];
+                                }
+                            }
+
+                            vResults.push_back(nExtremum + 1);
+                            i = nExtremum + nOrder;
+                        }
+
+                        nDir = 0;
+                    }
+
+                    dExtremum = dMedian;
+                }
+                else
+                {
+                    if (dMedian > dExtremum)
+                    {
+                        if (!nMode || nMode == -1)
+                        {
+                            int nExtremum = i + nanShift;
+                            double dExtremum = v[i + nanShift];
+
+                            for (long long int k = i + nanShift; k >= 0; k--)
+                            {
+                                if (k == i - nOrder)
+                                    break;
+
+                                if (v[k] < dExtremum)
+                                {
+                                    nExtremum = k;
+                                    dExtremum = v[k];
+                                }
+                            }
+
+                            vResults.push_back(nExtremum + 1);
+                            i = nExtremum + nOrder;
+                        }
+
+                        nDir = 0;
+                    }
+
+                    dExtremum = dMedian;
+                }
+            }
+
+            nanShift += currNanShift;
+        }
+
+        if (data)
+            delete[] data;
+
+        if (!vResults.size())
+            vResults.push_back(NAN);
+
+        sCmd = "_~extrema[~_~]";
+        _parser.SetVectorVar("_~extrema[~_~]", vResults);
+        return true;
+    }
+    else
+        throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, sCmd, SyntaxError::invalid_position);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function is a wrapper to the
 /// actual extrema localisation function
 /// localizeExtremum() further below.
@@ -1749,9 +2095,6 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 		else if (sParams.substr(0, 4) == "-set")
 			sParams = sParams.substr(4);
 
-		value_type* v = 0;
-		Datafile _cache;
-		_cache.setCacheStatus(true);
 		int nResults = 0;
 
 		if (sParams.find('=') != string::npos)
@@ -1780,163 +2123,10 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 		}
 
 		_parser.SetExpr(sExpr);
-		v = _parser.Eval(nResults);
+		_parser.Eval(nResults);
 
 		if (nResults > 1)
-		{
-			vector<double> vResults;
-			int nResults_x = 0;
-
-			for (int i = 0; i < nResults; i++)
-				_cache.writeToTable(i, 1, "cache", v[i]);
-
-			_parser.SetExpr(sInterval);
-			v = _parser.Eval(nResults_x);
-
-			if (nResults_x > 1)
-			{
-				for (int i = 0; i < nResults; i++)
-				{
-					if (i >= nResults_x)
-						_cache.writeToTable(i, 0, "cache", 0.0);
-					else
-						_cache.writeToTable(i, 0, "cache", v[i]);
-				}
-			}
-			else
-				return false;
-
-			sCmd = "cache -sort cols=1[2]";
-			_cache.sortElements(sCmd);
-
-			double dMedian = 0.0, dExtremum = 0.0;
-			double* data = new double[nOrder];
-			int nDir = 0;
-			int nanShift = 0;
-
-			if (nOrder >= nResults / 3)
-				nOrder = nResults / 3;
-
-			if (nOrder < 3)
-			{
-				vResults.push_back(NAN);
-				return false;
-			}
-
-			for (int i = 0; i + nanShift < _cache.getLines("cache", true); i++)
-			{
-				if (i == nOrder)
-					break;
-
-				while (isnan(_cache.getElement(i + nanShift, 1, "cache")) && i + nanShift < _cache.getLines("cache", true) - 1)
-					nanShift++;
-
-				data[i] = _cache.getElement(i + nanShift, 1, "cache");
-			}
-
-			gsl_sort(data, 1, nOrder);
-			dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
-
-			for (int i = nOrder; i + nanShift < _cache.getLines("cache", false) - nOrder; i++)
-			{
-				int currNanShift = 0;
-				dMedian = 0.0;
-
-				for (int j = i; j < i + nOrder; j++)
-				{
-					while (isnan(_cache.getElement(j + nanShift + currNanShift, 1, "cache")) && j + nanShift + currNanShift < _cache.getLines("cache", true) - 1)
-						currNanShift++;
-
-					data[j - i] = _cache.getElement(j + nanShift + currNanShift, 1, "cache");
-				}
-
-				gsl_sort(data, 1, nOrder);
-				dMedian = gsl_stats_median_from_sorted_data(data, 1, nOrder);
-
-				if (!nDir)
-				{
-					if (dMedian > dExtremum)
-						nDir = 1;
-					else if (dMedian < dExtremum)
-						nDir = -1;
-
-					dExtremum = dMedian;
-				}
-				else
-				{
-					if (nDir == 1)
-					{
-						if (dMedian < dExtremum)
-						{
-							if (!nMode || nMode == 1)
-							{
-								int nExtremum = i;
-								double dExtremum = _cache.getElement(i + nanShift, 1, "cache");
-
-								for (long long int k = i + nanShift; k >= 0; k--)
-								{
-									if (k == i - nOrder)
-										break;
-
-									if (_cache.getElement(k, 1, "cache") > dExtremum)
-									{
-										nExtremum = k;
-										dExtremum = _cache.getElement(k, 1, "cache");
-									}
-								}
-
-								vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
-								i = nExtremum + nOrder;
-							}
-
-							nDir = 0;
-						}
-
-						dExtremum = dMedian;
-					}
-					else
-					{
-						if (dMedian > dExtremum)
-						{
-							if (!nMode || nMode == -1)
-							{
-								int nExtremum = i + nanShift;
-								double dExtremum = _cache.getElement(i, 1, "cache");
-
-								for (long long int k = i + nanShift; k >= 0; k--)
-								{
-									if (k == i - nOrder)
-										break;
-
-									if (_cache.getElement(k, 1, "cache") < dExtremum)
-									{
-										nExtremum = k;
-										dExtremum = _cache.getElement(k, 1, "cache");
-									}
-								}
-
-								vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
-								i = nExtremum + nOrder;
-							}
-
-							nDir = 0;
-						}
-
-						dExtremum = dMedian;
-					}
-				}
-
-				nanShift += currNanShift;
-			}
-
-			if (!vResults.size())
-				vResults.push_back(NAN);
-
-			delete[] data;
-			sCmd = "_~extrema[~_~]";
-			_parser.SetVectorVar("_~extrema[~_~]", vResults);
-			return true;
-		}
+            return findExtremaInMultiResult(sCmd, sExpr, sInterval, nOrder, nMode);
 		else
 		{
 			if (!isVariableInAssignedExpression(_parser, sVar))
@@ -1990,149 +2180,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 		}
 	}
 	else if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
-	{
-		value_type* v;
-		int nResults = 0;
-		_parser.SetExpr(sExpr);
-		v = _parser.Eval(nResults);
-
-		if (nResults > 1)
-		{
-			if (nOrder >= nResults / 3)
-				nOrder = nResults / 3;
-
-			double dMedian = 0.0, dExtremum = 0.0;
-			double* data = 0;
-			data = new double[nOrder];
-			int nDir = 0;
-			int nanShift = 0;
-			vector<double> vResults;
-
-			if (nOrder < 3)
-			{
-				vResults.push_back(NAN);
-				return false;
-			}
-
-			for (int i = 0; i + nanShift < nResults; i++)
-			{
-				if (i == nOrder)
-					break;
-
-				while (isnan(v[i + nanShift]) && i + nanShift < nResults - 1)
-					nanShift++;
-
-				data[i] = v[i + nanShift];
-			}
-
-			gsl_sort(data, 1, nOrder);
-			dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
-
-			for (int i = nOrder; i + nanShift < nResults - nOrder; i++)
-			{
-				int currNanShift = 0;
-				dMedian = 0.0;
-
-				for (int j = i; j < i + nOrder; j++)
-				{
-					while (isnan(v[j + nanShift + currNanShift]) && j + nanShift + currNanShift < nResults - 1)
-						currNanShift++;
-
-					data[j - i] = v[j + nanShift + currNanShift];
-				}
-
-				gsl_sort(data, 1, nOrder);
-				dMedian = gsl_stats_median_from_sorted_data(data, 1, nOrder);
-
-				if (!nDir)
-				{
-					if (dMedian > dExtremum)
-						nDir = 1;
-					else if (dMedian < dExtremum)
-						nDir = -1;
-
-					dExtremum = dMedian;
-				}
-				else
-				{
-					if (nDir == 1)
-					{
-						if (dMedian < dExtremum)
-						{
-							if (!nMode || nMode == 1)
-							{
-								int nExtremum = i + nanShift;
-								double dExtremum = v[i + nanShift];
-
-								for (long long int k = i + nanShift; k >= 0; k--)
-								{
-									if (k == i - nOrder)
-										break;
-
-									if (v[k] > dExtremum)
-									{
-										nExtremum = k;
-										dExtremum = v[k];
-									}
-								}
-
-								vResults.push_back(nExtremum + 1);
-								i = nExtremum + nOrder;
-							}
-
-							nDir = 0;
-						}
-
-						dExtremum = dMedian;
-					}
-					else
-					{
-						if (dMedian > dExtremum)
-						{
-							if (!nMode || nMode == -1)
-							{
-								int nExtremum = i + nanShift;
-								double dExtremum = v[i + nanShift];
-
-								for (long long int k = i + nanShift; k >= 0; k--)
-								{
-									if (k == i - nOrder)
-										break;
-
-									if (v[k] < dExtremum)
-									{
-										nExtremum = k;
-										dExtremum = v[k];
-									}
-								}
-
-								vResults.push_back(nExtremum + 1);
-								i = nExtremum + nOrder;
-							}
-
-							nDir = 0;
-						}
-
-						dExtremum = dMedian;
-					}
-				}
-
-				nanShift += currNanShift;
-			}
-
-			if (data)
-				delete[] data;
-
-			if (!vResults.size())
-				vResults.push_back(NAN);
-
-			sCmd = "_~extrema[~_~]";
-			_parser.SetVectorVar("_~extrema[~_~]", vResults);
-			return true;
-		}
-		else
-			throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, sCmd, SyntaxError::invalid_position);
-	}
+		return findExtremaInData(sCmd, sExpr, nOrder, nMode);
 	else
 		throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, sCmd, SyntaxError::invalid_position);
 
@@ -2245,6 +2293,204 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 
 
 /////////////////////////////////////////////////
+/// \brief This static function finds zeroes in
+/// a multi-result expression, i.e. an expression
+/// containing a table or similar.
+///
+/// \param sCmd string&
+/// \param sExpr string&
+/// \param sInterval string&
+/// \param nMode int
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterval, int nMode)
+{
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    _parser.SetExpr(sExpr);
+    int nResults;
+    value_type* v = _parser.Eval(nResults);
+    Datafile _cache;
+
+    vector<double> vResults;
+    int nResults_x = 0;
+
+    for (int i = 0; i < nResults; i++)
+        _cache.writeToTable(i, 1, "cache", v[i]);
+
+    _parser.SetExpr(sInterval);
+    v = _parser.Eval(nResults_x);
+
+    if (nResults_x > 1)
+    {
+        for (int i = 0; i < nResults; i++)
+        {
+            if (i >= nResults_x)
+                _cache.writeToTable(i, 0, "cache", 0.0);
+            else
+                _cache.writeToTable(i, 0, "cache", v[i]);
+        }
+    }
+    else
+        return false;
+
+    sCmd = "cache -sort cols=1[2]";
+    _cache.sortElements(sCmd);
+
+    for (long long int i = 1; i < _cache.getLines("cache", false); i++)
+    {
+        if (isnan(_cache.getElement(i - 1, 1, "cache")))
+            continue;
+
+        if (!nMode && _cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") <= 0.0)
+        {
+            if (_cache.getElement(i, 1, "cache") == 0.0)
+            {
+                vResults.push_back(_cache.getElement(i, 0, "cache"));
+                i++;
+            }
+            else if (_cache.getElement(i - 1, 1, "cache") == 0.0)
+                vResults.push_back(_cache.getElement(i - 1, 0, "cache"));
+            else if (_cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") < 0.0)
+                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "cache"), _cache.getElement(i - 1, 1, "cache"), _cache.getElement(i, 0, "cache"), _cache.getElement(i, 1, "cache")));
+        }
+        else if (nMode && _cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") <= 0.0)
+        {
+            if (_cache.getElement(i, 1, "cache") == 0.0 && _cache.getElement(i - 1, 1, "cache") == 0.0)
+            {
+                for (long long int j = i + 1; j < _cache.getLines("cache", false); j++)
+                {
+                    if (nMode * _cache.getElement(j, 1, "cache") > 0.0)
+                    {
+                        for (long long int k = i - 1; k <= j; k++)
+                            vResults.push_back(_cache.getElement(k, 0, "cache"));
+
+                        break;
+                    }
+                    else if (nMode * _cache.getElement(j, 1, "cache") < 0.0)
+                        break;
+
+                    if (j + 1 == _cache.getLines("cache", false) && i > 1 && nMode * _cache.getElement(i - 2, 1, "cache") < 0.0)
+                    {
+                        for (long long int k = i - 1; k <= j; k++)
+                            vResults.push_back(_cache.getElement(k, 0, "cache"));
+
+                        break;
+                    }
+                }
+
+                continue;
+            }
+            else if (_cache.getElement(i, 1, "cache") == 0.0 && nMode * _cache.getElement(i - 1, 1, "cache") < 0.0)
+                vResults.push_back(_cache.getElement(i, 0, "cache"));
+            else if (_cache.getElement(i - 1, 1, "cache") == 0.0 && nMode * _cache.getElement(i, 1, "cache") > 0.0)
+                vResults.push_back(_cache.getElement(i - 1, 0, "cache"));
+            else if (_cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") < 0.0 && nMode * _cache.getElement(i - 1, 1, "cache") < 0.0)
+                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "cache"), _cache.getElement(i - 1, 1, "cache"), _cache.getElement(i, 0, "cache"), _cache.getElement(i, 1, "cache")));
+        }
+    }
+
+    if (!vResults.size())
+        vResults.push_back(NAN);
+
+    sCmd = "_~zeroes[~_~]";
+    _parser.SetVectorVar("_~zeroes[~_~]", vResults);
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function finds zeroes in
+/// the selected data set.
+///
+/// \param sCmd string&
+/// \param sExpr string&
+/// \param nMode int
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool findZeroesInData(string& sCmd, string& sExpr, int nMode)
+{
+    value_type* v;
+    int nResults = 0;
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    _parser.SetExpr(sExpr);
+    v = _parser.Eval(nResults);
+
+    if (nResults > 1)
+    {
+        vector<double> vResults;
+
+        for (int i = 1; i < nResults; i++)
+        {
+            if (isnan(v[i - 1]))
+                continue;
+
+            if (!nMode && v[i]*v[i - 1] <= 0.0)
+            {
+                if (v[i] == 0.0)
+                {
+                    vResults.push_back((double)i + 1);
+                    i++;
+                }
+                else if (v[i - 1] == 0.0)
+                    vResults.push_back((double)i);
+                else if (fabs(v[i]) <= fabs(v[i - 1]))
+                    vResults.push_back((double)i + 1);
+                else
+                    vResults.push_back((double)i);
+            }
+            else if (nMode && v[i]*v[i - 1] <= 0.0)
+            {
+                if (v[i] == 0.0 && v[i - 1] == 0.0)
+                {
+                    for (int j = i + 1; j < nResults; j++)
+                    {
+                        if (nMode * v[j] > 0.0)
+                        {
+                            for (int k = i - 1; k <= j; k++)
+                                vResults.push_back(k);
+
+                            break;
+                        }
+                        else if (nMode * v[j] < 0.0)
+                            break;
+
+                        if (j + 1 == nResults && i > 2 && nMode * v[i - 2] < 0.0)
+                        {
+                            for (int k = i - 1; k <= j; k++)
+                                vResults.push_back(k);
+
+                            break;
+                        }
+                    }
+
+                    continue;
+                }
+                else if (v[i] == 0.0 && nMode * v[i - 1] < 0.0)
+                    vResults.push_back((double)i + 1);
+                else if (v[i - 1] == 0.0 && nMode * v[i] > 0.0)
+                    vResults.push_back((double)i);
+                else if (fabs(v[i]) <= fabs(v[i - 1]) && nMode * v[i - 1] < 0.0)
+                    vResults.push_back((double)i + 1);
+                else if (nMode * v[i - 1] < 0.0)
+                    vResults.push_back((double)i);
+            }
+        }
+
+        if (!vResults.size())
+            vResults.push_back(NAN);
+
+        sCmd = "_~zeroes[~_~]";
+        _parser.SetVectorVar("_~zeroes[~_~]", vResults);
+        return true;
+    }
+    else
+        throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function is a wrapper to the
 /// actual zeros localisation function
 /// localizeZero() further below.
@@ -2341,9 +2587,6 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 		else if (sParams.substr(0, 4) == "-set")
 			sParams = sParams.substr(4);
 
-		value_type* v = 0;
-		Datafile _cache;
-		_cache.setCacheStatus(true);
 		int nResults = 0;
 
 		if (sParams.find('=') != string::npos)
@@ -2372,95 +2615,10 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 		}
 
 		_parser.SetExpr(sExpr);
-		v = _parser.Eval(nResults);
+		_parser.Eval(nResults);
 
 		if (nResults > 1)
-		{
-			vector<double> vResults;
-			int nResults_x = 0;
-
-			for (int i = 0; i < nResults; i++)
-				_cache.writeToTable(i, 1, "cache", v[i]);
-
-			_parser.SetExpr(sInterval);
-			v = _parser.Eval(nResults_x);
-
-			if (nResults_x > 1)
-			{
-				for (int i = 0; i < nResults; i++)
-				{
-					if (i >= nResults_x)
-						_cache.writeToTable(i, 0, "cache", 0.0);
-					else
-						_cache.writeToTable(i, 0, "cache", v[i]);
-				}
-			}
-			else
-				return false;
-
-			sCmd = "cache -sort cols=1[2]";
-			_cache.sortElements(sCmd);
-
-			for (long long int i = 1; i < _cache.getLines("cache", false); i++)
-			{
-				if (isnan(_cache.getElement(i - 1, 1, "cache")))
-					continue;
-
-				if (!nMode && _cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") <= 0.0)
-				{
-					if (_cache.getElement(i, 1, "cache") == 0.0)
-					{
-						vResults.push_back(_cache.getElement(i, 0, "cache"));
-						i++;
-					}
-					else if (_cache.getElement(i - 1, 1, "cache") == 0.0)
-						vResults.push_back(_cache.getElement(i - 1, 0, "cache"));
-					else if (_cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") < 0.0)
-						vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "cache"), _cache.getElement(i - 1, 1, "cache"), _cache.getElement(i, 0, "cache"), _cache.getElement(i, 1, "cache")));
-				}
-				else if (nMode && _cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") <= 0.0)
-				{
-					if (_cache.getElement(i, 1, "cache") == 0.0 && _cache.getElement(i - 1, 1, "cache") == 0.0)
-					{
-						for (long long int j = i + 1; j < _cache.getLines("cache", false); j++)
-						{
-							if (nMode * _cache.getElement(j, 1, "cache") > 0.0)
-							{
-								for (long long int k = i - 1; k <= j; k++)
-									vResults.push_back(_cache.getElement(k, 0, "cache"));
-
-								break;
-							}
-							else if (nMode * _cache.getElement(j, 1, "cache") < 0.0)
-								break;
-
-							if (j + 1 == _cache.getLines("cache", false) && i > 1 && nMode * _data.getElement(i - 2, 1, "cache") < 0.0)
-							{
-								for (long long int k = i - 1; k <= j; k++)
-									vResults.push_back(_cache.getElement(k, 0, "cache"));
-
-								break;
-							}
-						}
-
-						continue;
-					}
-					else if (_cache.getElement(i, 1, "cache") == 0.0 && nMode * _cache.getElement(i - 1, 1, "cache") < 0.0)
-						vResults.push_back(_cache.getElement(i, 0, "cache"));
-					else if (_cache.getElement(i - 1, 1, "cache") == 0.0 && nMode * _cache.getElement(i, 1, "cache") > 0.0)
-						vResults.push_back(_cache.getElement(i - 1, 0, "cache"));
-					else if (_cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") < 0.0 && nMode * _cache.getElement(i - 1, 1, "cache") < 0.0)
-						vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "cache"), _cache.getElement(i - 1, 1, "cache"), _cache.getElement(i, 0, "cache"), _cache.getElement(i, 1, "cache")));
-				}
-			}
-
-			if (!vResults.size())
-				vResults.push_back(NAN);
-
-			sCmd = "_~zeroes[~_~]";
-			_parser.SetVectorVar("_~zeroes[~_~]", vResults);
-			return true;
-		}
+            return findZeroesInMultiResult(sCmd, sExpr, sInterval, nMode);
 		else
 		{
 			if (!isVariableInAssignedExpression(_parser, sVar))
@@ -2518,83 +2676,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 		}
 	}
 	else if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
-	{
-		value_type* v;
-		int nResults = 0;
-		_parser.SetExpr(sExpr);
-		v = _parser.Eval(nResults);
-
-		if (nResults > 1)
-		{
-			vector<double> vResults;
-
-			for (int i = 1; i < nResults; i++)
-			{
-				if (isnan(v[i - 1]))
-					continue;
-
-				if (!nMode && v[i]*v[i - 1] <= 0.0)
-				{
-					if (v[i] == 0.0)
-					{
-						vResults.push_back((double)i + 1);
-						i++;
-					}
-					else if (v[i - 1] == 0.0)
-						vResults.push_back((double)i);
-					else if (fabs(v[i]) <= fabs(v[i - 1]))
-						vResults.push_back((double)i + 1);
-					else
-						vResults.push_back((double)i);
-				}
-				else if (nMode && v[i]*v[i - 1] <= 0.0)
-				{
-					if (v[i] == 0.0 && v[i - 1] == 0.0)
-					{
-						for (int j = i + 1; j < nResults; j++)
-						{
-							if (nMode * v[j] > 0.0)
-							{
-								for (int k = i - 1; k <= j; k++)
-									vResults.push_back(k);
-
-								break;
-							}
-							else if (nMode * v[j] < 0.0)
-								break;
-
-							if (j + 1 == nResults && i > 2 && nMode * v[i - 2] < 0.0)
-							{
-								for (int k = i - 1; k <= j; k++)
-									vResults.push_back(k);
-
-								break;
-							}
-						}
-
-						continue;
-					}
-					else if (v[i] == 0.0 && nMode * v[i - 1] < 0.0)
-						vResults.push_back((double)i + 1);
-					else if (v[i - 1] == 0.0 && nMode * v[i] > 0.0)
-						vResults.push_back((double)i);
-					else if (fabs(v[i]) <= fabs(v[i - 1]) && nMode * v[i - 1] < 0.0)
-						vResults.push_back((double)i + 1);
-					else if (nMode * v[i - 1] < 0.0)
-						vResults.push_back((double)i);
-				}
-			}
-
-			if (!vResults.size())
-				vResults.push_back(NAN);
-
-			sCmd = "_~zeroes[~_~]";
-			_parser.SetVectorVar("_~zeroes[~_~]", vResults);
-			return true;
-		}
-		else
-			throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
-	}
+        return findZeroesInData(sCmd, sExpr, nMode);
 	else
 		throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
 
