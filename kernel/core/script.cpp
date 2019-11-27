@@ -637,9 +637,9 @@ void Script::evaluateInstallInformation(bool& bFirstPassedInstallCommand)
         }
 
         // Evaluate the flag list
-        if (matchParams(sInstallInfoString, "flags", '='))
+        if (findParameter(sInstallInfoString, "flags", '='))
         {
-            string sParam = getArgAtPos(sInstallInfoString, matchParams(sInstallInfoString, "flags", '=')+5);
+            string sParam = getArgAtPos(sInstallInfoString, findParameter(sInstallInfoString, "flags", '=')+5);
 
             if (sParam.find("ENABLE_FULL_LOGGING") != string::npos)
             {

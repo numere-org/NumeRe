@@ -175,11 +175,11 @@ bool Odesolver::solve(const string& sCmd)
     if (sFunc.find("data(") != string::npos || _odeData->containsTablesOrClusters(sFunc))
         getDataElements(sFunc, *_odeParser, *_odeData, *_odeSettings);
 
-    if (matchParams(sParams, "target", '='))
+    if (findParameter(sParams, "target", '='))
     {
-        sTarget = getArgAtPos(sParams, matchParams(sParams, "target", '=')+6);
-        sParams.erase(sParams.find(sTarget, matchParams(sParams, "target", '=')+6), sTarget.length());
-        sParams.erase(matchParams(sParams, "target", '=')-1, 7);
+        sTarget = getArgAtPos(sParams, findParameter(sParams, "target", '=')+6);
+        sParams.erase(sParams.find(sTarget, findParameter(sParams, "target", '=')+6), sTarget.length());
+        sParams.erase(findParameter(sParams, "target", '=')-1, 7);
         if (sTarget.find('(') != string::npos)
         {
             sTarget += "()";
@@ -206,21 +206,21 @@ bool Odesolver::solve(const string& sCmd)
         getDataElements(sParams, *_odeParser, *_odeData, *_odeSettings);
 
     //cerr << 4 << endl;
-    if (matchParams(sParams, "method", '='))
+    if (findParameter(sParams, "method", '='))
     {
-        if (getArgAtPos(sParams, matchParams(sParams, "method", '=')) == "rkf45")
+        if (getArgAtPos(sParams, findParameter(sParams, "method", '=')) == "rkf45")
         {
             odeStepType = gsl_odeiv_step_rkf45;
         }
-        else if (getArgAtPos(sParams, matchParams(sParams, "method", '=')) == "rk2")
+        else if (getArgAtPos(sParams, findParameter(sParams, "method", '=')) == "rk2")
         {
             odeStepType = gsl_odeiv_step_rk2;
         }
-        else if (getArgAtPos(sParams, matchParams(sParams, "method", '=')) == "rkck")
+        else if (getArgAtPos(sParams, findParameter(sParams, "method", '=')) == "rkck")
         {
             odeStepType = gsl_odeiv_step_rkck;
         }
-        else if (getArgAtPos(sParams, matchParams(sParams, "method", '=')) == "rk8pd")
+        else if (getArgAtPos(sParams, findParameter(sParams, "method", '=')) == "rk8pd")
         {
             odeStepType = gsl_odeiv_step_rk8pd;
         }
@@ -233,12 +233,12 @@ bool Odesolver::solve(const string& sCmd)
     {
         odeStepType = gsl_odeiv_step_rk4;
     }
-    if (matchParams(sParams, "lyapunov"))
+    if (findParameter(sParams, "lyapunov"))
         bCalcLyapunov = true;
-    if (matchParams(sParams, "tol", '='))
+    if (findParameter(sParams, "tol", '='))
     {
         int nRes = 0;
-        string sToleranceParams = getArgAtPos(sParams, matchParams(sParams, "tol", '=')+3);
+        string sToleranceParams = getArgAtPos(sParams, findParameter(sParams, "tol", '=')+3);
         if (sToleranceParams.front() == '[' && sToleranceParams.back() == ']')
         {
             sToleranceParams.pop_back();
@@ -262,10 +262,10 @@ bool Odesolver::solve(const string& sCmd)
         dRelTolerance = 1e-6;
         dAbsTolerance = 1e-6;
     }
-    if (matchParams(sParams, "fx0", '='))
+    if (findParameter(sParams, "fx0", '='))
     {
         int nRes = 0;
-        string sStartValues = getArgAtPos(sParams, matchParams(sParams, "fx0", '=')+3);
+        string sStartValues = getArgAtPos(sParams, findParameter(sParams, "fx0", '=')+3);
         if (sStartValues.front() == '[' && sStartValues.back() == ']')
         {
             sStartValues.pop_back();
@@ -278,9 +278,9 @@ bool Odesolver::solve(const string& sCmd)
             vStartValues.push_back(v[i]);
         }
     }
-    if (matchParams(sParams, "samples", '='))
+    if (findParameter(sParams, "samples", '='))
     {
-        _odeParser->SetExpr(getArgAtPos(sParams, matchParams(sParams, "samples", '=')+7));
+        _odeParser->SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=')+7));
         nSamples = (int)_odeParser->Eval();
         if (nSamples <= 0)
             nSamples = 100;

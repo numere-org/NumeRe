@@ -1285,22 +1285,22 @@ vector<int> Datafile::sortElements(const string& sLine) // data -sort[[=desc]] c
     {
         sCache = findCommand(sLine).sString;
     }
-    if (matchParams(sLine, "sort", '='))
+    if (findParameter(sLine, "sort", '='))
     {
-        if (getArgAtPos(sLine, matchParams(sLine, "sort", '=')+4) == "desc")
+        if (getArgAtPos(sLine, findParameter(sLine, "sort", '=')+4) == "desc")
             sSortingExpression += " desc";
     }
-    else if (matchParams(sLine, "data", '='))
+    else if (findParameter(sLine, "data", '='))
     {
-        if (getArgAtPos(sLine, matchParams(sLine, "data", '=')+4) == "desc")
+        if (getArgAtPos(sLine, findParameter(sLine, "data", '=')+4) == "desc")
             sSortingExpression += " desc";
     }
 
-    if (matchParams(sLine, "cols", '='))
-        sSortingExpression += " cols=" + getArgAtPos(sLine, matchParams(sLine, "cols", '=')+4);
-    else if (matchParams(sLine, "c", '='))
-        sSortingExpression += " cols=" + getArgAtPos(sLine, matchParams(sLine, "c", '=')+1);
-    if (matchParams(sLine, "index"))
+    if (findParameter(sLine, "cols", '='))
+        sSortingExpression += " cols=" + getArgAtPos(sLine, findParameter(sLine, "cols", '=')+4);
+    else if (findParameter(sLine, "c", '='))
+        sSortingExpression += " cols=" + getArgAtPos(sLine, findParameter(sLine, "c", '=')+1);
+    if (findParameter(sLine, "index"))
         sSortingExpression += " index";
 
     return sortElements(sCache, 0, nLines - 1, 0, nCols - 1, sSortingExpression);
@@ -1318,7 +1318,7 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
     int nSign = 1;
     vector<int> vIndex;
 
-    if (matchParams(sSortingExpression, "desc"))
+    if (findParameter(sSortingExpression, "desc"))
         nSign = -1;
 
     if (!getCols("data", false))
@@ -1334,10 +1334,10 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
     for (int i = i1; i <= i2; i++)
         vIndex.push_back(i);
 
-    if (matchParams(sSortingExpression, "index"))
+    if (findParameter(sSortingExpression, "index"))
         bReturnIndex = true;
 
-    if (!matchParams(sSortingExpression, "cols", '=') && !matchParams(sSortingExpression, "c", '='))
+    if (!findParameter(sSortingExpression, "cols", '=') && !findParameter(sSortingExpression, "c", '='))
     {
         for (int i = j1; i <= j2; i++)
         {
@@ -1357,13 +1357,13 @@ vector<int> Datafile::sortElements(const string& sCache, long long int i1, long 
     else
     {
         string sCols = "";
-        if (matchParams(sSortingExpression, "cols", '='))
+        if (findParameter(sSortingExpression, "cols", '='))
         {
-            sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "cols", '=')+4);
+            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "cols", '=')+4);
         }
         else
         {
-            sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "c", '=')+1);
+            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "c", '=')+1);
         }
 
         while (sCols.length())

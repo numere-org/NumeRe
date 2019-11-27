@@ -141,7 +141,7 @@ string truncString(const string& sText, size_t nMaxChars);
 long long int intCast(double number);
 string wcstombs(const wstring& wStr);
 void StripSpaces(string&);
-int matchParams(const string& sCmd, const string& sParam, const char cFollowing = ' ');
+int findParameter(const string& sCmd, const string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const string& sCmd, string& sArgument);
 int StrToInt(const string&);
 double StrToDb(const string&);

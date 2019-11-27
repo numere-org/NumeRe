@@ -461,7 +461,7 @@ void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
 	{
 	    // If the command expression contains the parameter "all" and the
 	    // argument (i.e. the filename) contains wildcards
-		if (matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+		if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
 		{
 		    // Insert the default loadpath, if no path is passed
 			if (sArgument.find('/') == string::npos)
@@ -506,12 +506,12 @@ void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
 		if (_data.isValid())	// Sind ueberhaupt Daten in _data?
 		{
 		    // Load the data to cache
-			if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
+			if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
 			{
-				if (matchParams(sCmd, "head", '='))
-					nArgument = matchParams(sCmd, "head", '=') + 4;
+				if (findParameter(sCmd, "head", '='))
+					nArgument = findParameter(sCmd, "head", '=') + 4;
 				else
-					nArgument = matchParams(sCmd, "h", '=') + 1;
+					nArgument = findParameter(sCmd, "h", '=') + 1;
 				nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
 				_cache.openFile(sArgument, _option, false, true, nArgument);
 			}
@@ -528,12 +528,12 @@ void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
 		else
 		{
 		    // Simply load the data directly -> Melting not needed
-			if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
+			if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
 			{
-				if (matchParams(sCmd, "head", '='))
-					nArgument = matchParams(sCmd, "head", '=') + 4;
+				if (findParameter(sCmd, "head", '='))
+					nArgument = findParameter(sCmd, "head", '=') + 4;
 				else
-					nArgument = matchParams(sCmd, "h", '=') + 1;
+					nArgument = findParameter(sCmd, "h", '=') + 1;
 				nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
 				_data.openFile(sArgument, _option, false, true, nArgument);
 			}
@@ -755,7 +755,7 @@ bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 	Indices _iTargetIndex;
 
 	// Find the transpose flag
-	if (matchParams(sCmd, "transpose"))
+	if (findParameter(sCmd, "transpose"))
 		bTranspose = true;
 
     // Get the target from the option or use the default one
@@ -794,7 +794,7 @@ bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 	Indices _iTargetIndex;
 
 	// Find the transpose flag
-	if (matchParams(sCmd, "transpose"))
+	if (findParameter(sCmd, "transpose"))
 		bTranspose = true;
 
     // Get the target expression from the option. The default one is empty and will raise an error
@@ -1144,7 +1144,7 @@ bool writeToFile(string& sCmd, Datafile& _data, Settings& _option)
 		}
 
 		// Get the file name
-		if (matchParams(sParams, "file", '='))
+		if (findParameter(sParams, "file", '='))
 		{
 			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))
 				NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
@@ -1186,19 +1186,19 @@ bool writeToFile(string& sCmd, Datafile& _data, Settings& _option)
 		}
 
 		// Avoid quotation marks
-		if (matchParams(sParams, "noquotes") || matchParams(sParams, "nq"))
+		if (findParameter(sParams, "noquotes") || findParameter(sParams, "nq"))
 			bNoQuotes = true;
 
         // Get the file open mode
-		if (matchParams(sParams, "mode", '='))
+		if (findParameter(sParams, "mode", '='))
 		{
-			if (getArgAtPos(sParams, matchParams(sParams, "mode", '=') + 4) == "append"
-					|| getArgAtPos(sParams, matchParams(sParams, "mode", '=') + 4) == "app")
+			if (getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "append"
+					|| getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "app")
 				bAppend = true;
-			else if (getArgAtPos(sParams, matchParams(sParams, "mode", '=') + 4) == "trunc")
+			else if (getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "trunc")
 				bTrunc = true;
-			else if (getArgAtPos(sParams, matchParams(sParams, "mode", '=') + 4) == "override"
-					 || getArgAtPos(sParams, matchParams(sParams, "mode", '=') + 4) == "overwrite")
+			else if (getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "override"
+					 || getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "overwrite")
 			{
 				bAppend = false;
 				bTrunc = false;
@@ -1302,9 +1302,9 @@ bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 	}
 
 	// Find the comment escape sequence in the parameter list if available
-	if (matchParams(sParams, "comments", '='))
+	if (findParameter(sParams, "comments", '='))
 	{
-		sCommentEscapeSequence = getArgAtPos(sParams, matchParams(sParams, "comments", '=') + 8);
+		sCommentEscapeSequence = getArgAtPos(sParams, findParameter(sParams, "comments", '=') + 8);
 		if (sCommentEscapeSequence != " ")
 			StripSpaces(sCommentEscapeSequence);
 		while (sCommentEscapeSequence.find("\\t") != string::npos)
@@ -1491,7 +1491,7 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 
     // If the parameter list contains "file", use its value
     // Otherwise use the expression from the command line
-	if (matchParams(sParams, "file", '='))
+	if (findParameter(sParams, "file", '='))
 	{
 	    // Parameter available
 		if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))

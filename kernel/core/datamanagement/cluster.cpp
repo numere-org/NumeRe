@@ -600,13 +600,13 @@ namespace NumeRe
         vector<int> vIndex;
 
         // Look for command line parameters
-        if (matchParams(sSortingExpression, "desc"))
+        if (findParameter(sSortingExpression, "desc"))
             nSign = -1;
 
-        if (matchParams(sSortingExpression, "ignorecase"))
+        if (findParameter(sSortingExpression, "ignorecase"))
             bSortCaseInsensitive = true;
 
-        if (matchParams(sSortingExpression, "index"))
+        if (findParameter(sSortingExpression, "index"))
             bReturnIndex = true;
 
         // Prepare the indices

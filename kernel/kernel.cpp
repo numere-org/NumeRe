@@ -731,9 +731,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // Evaluate the install info string
 			if (_script.isValid() && _script.isOpen() && _script.installProcedures() && _script.getInstallInfoString().length())
 			{
-				if (matchParams(_script.getInstallInfoString(), "type", '='))
+				if (findParameter(_script.getInstallInfoString(), "type", '='))
 				{
-					if (getArgAtPos(_script.getInstallInfoString(), matchParams(_script.getInstallInfoString(), "type", '=')).find("TYPE_PLUGIN") != string::npos)
+					if (getArgAtPos(_script.getInstallInfoString(), findParameter(_script.getInstallInfoString(), "type", '=')).find("TYPE_PLUGIN") != string::npos)
 					{
 						_procedure.declareNewPlugin(_script.getInstallInfoString());
 						_plugin = _procedure;
@@ -1430,9 +1430,9 @@ bool NumeReKernel::handleComposeBlock(string& sLine, const string& sCmdCache, co
             sPlotCompose = "plotcompose ";
 
             // Add the multiplot layout, if needed
-            if (matchParams(sLine, "multiplot", '='))
+            if (findParameter(sLine, "multiplot", '='))
             {
-                sPlotCompose += "-multiplot=" + getArgAtPos(sLine, matchParams(sLine, "multiplot", '=') + 9) + " <<COMPOSE>> ";
+                sPlotCompose += "-multiplot=" + getArgAtPos(sLine, findParameter(sLine, "multiplot", '=') + 9) + " <<COMPOSE>> ";
             }
 
             // If the block wasn't started from a script, then ask the user

@@ -104,10 +104,10 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 		sCmd.erase(findCommand(sCmd).nPos, 11);
 
 		// Search for the multiplot parameter
-		if (matchParams(sCmd, "multiplot", '='))
+		if (findParameter(sCmd, "multiplot", '='))
 		{
 		    // Decode the lines and columns of the parameter
-			_parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "multiplot", '=') + 9));
+			_parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "multiplot", '=') + 9));
 			int nRes = 0;
 			value_type* v = _parser.Eval(nRes);
 
@@ -3314,18 +3314,18 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
 			sSubPlotIDX.erase(sSubPlotIDX.find("--"));
 	}
 	StripSpaces(sSubPlotIDX);
-	if (matchParams(sCmd, "cols", '=') || matchParams(sCmd, "lines", '='))
+	if (findParameter(sCmd, "cols", '=') || findParameter(sCmd, "lines", '='))
 	{
 		unsigned int nMultiLines = 1, nMultiCols = 1;
 
-		if (matchParams(sCmd, "cols", '='))
+		if (findParameter(sCmd, "cols", '='))
 		{
-			_parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "cols", '=') + 4));
+			_parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "cols", '=') + 4));
 			nMultiCols = (unsigned int)_parser.Eval();
 		}
-		if (matchParams(sCmd, "lines", '='))
+		if (findParameter(sCmd, "lines", '='))
 		{
-			_parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "lines", '=') + 5));
+			_parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lines", '=') + 5));
 			nMultiLines = (unsigned int)_parser.Eval();
 		}
 		if (sSubPlotIDX.length())
@@ -6327,9 +6327,9 @@ void Plot::CoordSettings(const PlotData& _pData)
 					}
 
 					if (!_pData.getSchematic()
-							|| matchParams(_pInfo.sPlotParams, "xlabel", '=')
-							|| matchParams(_pInfo.sPlotParams, "ylabel", '=')
-							|| matchParams(_pInfo.sPlotParams, "zlabel", '='))
+							|| findParameter(_pInfo.sPlotParams, "xlabel", '=')
+							|| findParameter(_pInfo.sPlotParams, "ylabel", '=')
+							|| findParameter(_pInfo.sPlotParams, "zlabel", '='))
 					{
 						_graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
 						if (_pData.getCoords() == PlotData::POLAR_RP || _pData.getCoords() == PlotData::SPHERICAL_RP)
@@ -6383,9 +6383,9 @@ void Plot::CoordSettings(const PlotData& _pData)
 					_graph->SetRange('y', 0.0, 2.0 * M_PI);
 					_graph->SetRange('z', _pInfo.dRanges[ZCOORD][0], _pInfo.dRanges[ZCOORD][1]);
 					if (!_pData.getSchematic()
-							|| matchParams(_pInfo.sPlotParams, "xlabel", '=')
-							|| matchParams(_pInfo.sPlotParams, "ylabel", '=')
-							|| matchParams(_pInfo.sPlotParams, "zlabel", '='))
+							|| findParameter(_pInfo.sPlotParams, "xlabel", '=')
+							|| findParameter(_pInfo.sPlotParams, "ylabel", '=')
+							|| findParameter(_pInfo.sPlotParams, "zlabel", '='))
 					{
 						_graph->Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.5);
 						_graph->Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0); //-0.65
@@ -6433,9 +6433,9 @@ void Plot::CoordSettings(const PlotData& _pData)
 					_graph->SetRange('y', 0.0, 2.0 * M_PI);
 					_graph->SetRange('z', 0.0, 1.0 * M_PI);
 					if (!_pData.getSchematic()
-							|| matchParams(_pInfo.sPlotParams, "xlabel", '=')
-							|| matchParams(_pInfo.sPlotParams, "ylabel", '=')
-							|| matchParams(_pInfo.sPlotParams, "zlabel", '='))
+							|| findParameter(_pInfo.sPlotParams, "xlabel", '=')
+							|| findParameter(_pInfo.sPlotParams, "ylabel", '=')
+							|| findParameter(_pInfo.sPlotParams, "zlabel", '='))
 					{
 						_graph->Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), -0.4);
 						_graph->Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), (_pData.getRotateAngle(1) - 225.0) / 180.0); //-0.7
@@ -6481,9 +6481,9 @@ void Plot::CoordSettings(const PlotData& _pData)
 					_graph->SetRange('x', 0.0, _pInfo.dRanges[XCOORD][1]);
 					_graph->SetRange('y', 0.0, 2.0 * M_PI);
 					if (!_pData.getSchematic()
-							|| matchParams(_pInfo.sPlotParams, "xlabel", '=')
-							|| matchParams(_pInfo.sPlotParams, "ylabel", '=')
-							|| matchParams(_pInfo.sPlotParams, "zlabel", '='))
+							|| findParameter(_pInfo.sPlotParams, "xlabel", '=')
+							|| findParameter(_pInfo.sPlotParams, "ylabel", '=')
+							|| findParameter(_pInfo.sPlotParams, "zlabel", '='))
 					{
 						_graph->Label('x', fromSystemCodePage(_pData.getzLabel()).c_str(), 0.0);
 						_graph->Label('y', fromSystemCodePage(_pData.getxLabel()).c_str(), 0.25);
@@ -6663,9 +6663,9 @@ void Plot::CoordSettings(const PlotData& _pData)
 				}
 
 				if (!_pData.getSchematic()
-						|| matchParams(_pInfo.sPlotParams, "xlabel", '=')
-						|| matchParams(_pInfo.sPlotParams, "ylabel", '=')
-						|| matchParams(_pInfo.sPlotParams, "zlabel", '='))
+						|| findParameter(_pInfo.sPlotParams, "xlabel", '=')
+						|| findParameter(_pInfo.sPlotParams, "ylabel", '=')
+						|| findParameter(_pInfo.sPlotParams, "zlabel", '='))
 				{
 					_graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), getLabelPosition(_pData, XCOORD));
 					_graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), getLabelPosition(_pData, YCOORD));
@@ -6965,9 +6965,9 @@ void Plot::CoordSettings(const PlotData& _pData)
 		if (_pData.getAxis()
 				&& _pData.getBox()
 				&& (!_pData.getSchematic()
-					|| matchParams(_pInfo.sPlotParams, "xlabel", '=')
-					|| matchParams(_pInfo.sPlotParams, "ylabel", '=')
-					|| matchParams(_pInfo.sPlotParams, "zlabel", '=')))
+					|| findParameter(_pInfo.sPlotParams, "xlabel", '=')
+					|| findParameter(_pInfo.sPlotParams, "ylabel", '=')
+					|| findParameter(_pInfo.sPlotParams, "zlabel", '=')))
 		{
 			_graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), getLabelPosition(_pData, XCOORD));
 			_graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), getLabelPosition(_pData, YCOORD));
@@ -6977,9 +6977,9 @@ void Plot::CoordSettings(const PlotData& _pData)
 		else if (_pData.getAxis()
 				 && !_pData.getBox()
 				 && (!_pData.getSchematic()
-					 || matchParams(_pInfo.sPlotParams, "xlabel", '=')
-					 || matchParams(_pInfo.sPlotParams, "ylabel", '=')
-					 || matchParams(_pInfo.sPlotParams, "zlabel", '=')))
+					 || findParameter(_pInfo.sPlotParams, "xlabel", '=')
+					 || findParameter(_pInfo.sPlotParams, "ylabel", '=')
+					 || findParameter(_pInfo.sPlotParams, "zlabel", '=')))
 		{
 			_graph->Label('x', fromSystemCodePage(_pData.getxLabel()).c_str(), getLabelPosition(_pData, XCOORD));
 			_graph->Label('y', fromSystemCodePage(_pData.getyLabel()).c_str(), getLabelPosition(_pData, YCOORD));

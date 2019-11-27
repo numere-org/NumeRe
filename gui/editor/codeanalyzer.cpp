@@ -393,8 +393,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             sArgs.pop_back();
 
         // Inform the user that he should append "ignore" as parameter
-        if (!matchParams(sArgs, "ignore")
-                && !matchParams(sArgs, "i")
+        if (!findParameter(sArgs, "ignore")
+                && !findParameter(sArgs, "i")
                 && (sSyntaxElement != "remove" || m_editor->GetStyleAt(m_editor->WordStartPosition(wordend + 1, true)) != wxSTC_NSCR_CUSTOM_FUNCTION))
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_APPENDIGNORE")), ANNOTATION_NOTE);
     }

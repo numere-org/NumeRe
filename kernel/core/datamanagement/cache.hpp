@@ -171,7 +171,7 @@ class MemoryManager : public FileSystem, public StringMemory, public NumeRe::Clu
 		{
 			for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
 			{
-				if (matchParams(sExpression, iter->first, cFollowing))
+				if (findParameter(sExpression, iter->first, cFollowing))
 					return iter->first;
 			}
 			return "";

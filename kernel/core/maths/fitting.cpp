@@ -417,9 +417,9 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
     static const string sBADFUNCTIONS = "ascii(),char(),findfile(),findparam(),gauss(),getopt(),is_string(),rand(),replace(),replaceall(),split(),strfnd(),string_cast(),strrfnd(),strlen(),time(),to_char(),to_cmd(),to_string(),to_value()";
 
     // Evaluate the chi^2 map option
-    if (matchParams(sCmd, "chimap", '='))
+    if (findParameter(sCmd, "chimap", '='))
 	{
-		fitData.sChiMap = getArgAtPos(sCmd, matchParams(sCmd, "chimap", '=') + 6);
+		fitData.sChiMap = getArgAtPos(sCmd, findParameter(sCmd, "chimap", '=') + 6);
 		eraseToken(sCmd, "chimap", true);
 
 		if (fitData.sChiMap.length())
@@ -443,13 +443,13 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 	}
 
 	// Does the user want to export the results into a TeX file?
-	if (matchParams(sCmd, "export", '='))
+	if (findParameter(sCmd, "export", '='))
 	{
 		bTeXExport = true;
-		sTeXExportFile = getArgAtPos(sCmd, matchParams(sCmd, "export", '=') + 6);
+		sTeXExportFile = getArgAtPos(sCmd, findParameter(sCmd, "export", '=') + 6);
 		eraseToken(sCmd, "export", true);
 	}
-	else if (matchParams(sCmd, "export"))
+	else if (findParameter(sCmd, "export"))
 	{
 		bTeXExport = true;
 		eraseToken(sCmd, "export", false);
@@ -525,36 +525,36 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
 	// Because it's quite likely that one misspells the option value
 	// "saverr", whe accept also the spelling "saveer" as an alternative
-	if (matchParams(fitData.sFitFunction, "saverr"))
+	if (findParameter(fitData.sFitFunction, "saverr"))
 	{
 		fitData.bSaveErrors = true;
-		fitData.sFitFunction.erase(matchParams(fitData.sFitFunction, "saverr") - 1, 6);
-		sCmd.erase(matchParams(sCmd, "saverr") - 1, 6);
+		fitData.sFitFunction.erase(findParameter(fitData.sFitFunction, "saverr") - 1, 6);
+		sCmd.erase(findParameter(sCmd, "saverr") - 1, 6);
 	}
 
-	if (matchParams(fitData.sFitFunction, "saveer"))
+	if (findParameter(fitData.sFitFunction, "saveer"))
 	{
 		fitData.bSaveErrors = true;
-		fitData.sFitFunction.erase(matchParams(fitData.sFitFunction, "saveer") - 1, 6);
-		sCmd.erase(matchParams(sCmd, "saveer") - 1, 6);
+		fitData.sFitFunction.erase(findParameter(fitData.sFitFunction, "saveer") - 1, 6);
+		sCmd.erase(findParameter(sCmd, "saveer") - 1, 6);
 	}
 
 	// The masking paramter
-	if (matchParams(fitData.sFitFunction, "mask"))
+	if (findParameter(fitData.sFitFunction, "mask"))
 	{
 		bMaskDialog = true;
-		fitData.sFitFunction.erase(matchParams(fitData.sFitFunction, "mask") - 1, 6);
-		sCmd.erase(matchParams(sCmd, "mask") - 1, 6);
+		fitData.sFitFunction.erase(findParameter(fitData.sFitFunction, "mask") - 1, 6);
+		sCmd.erase(findParameter(sCmd, "mask") - 1, 6);
 	}
 
 	// Ensure that a fitting function was defined
-	if (!matchParams(fitData.sFitFunction, "with", '='))
+	if (!findParameter(fitData.sFitFunction, "with", '='))
 		throw SyntaxError(SyntaxError::NO_FUNCTION_FOR_FIT, sCmd, SyntaxError::invalid_position);
 
     // Changes to the tolerance
-	if (matchParams(fitData.sFitFunction, "tol", '='))
+	if (findParameter(fitData.sFitFunction, "tol", '='))
 	{
-		_parser.SetExpr(getArgAtPos(fitData.sFitFunction, matchParams(fitData.sFitFunction, "tol", '=') + 3));
+		_parser.SetExpr(getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "tol", '=') + 3));
 		eraseToken(sCmd, "tol", true);
 		eraseToken(fitData.sFitFunction, "tol", true);
 		fitData.dPrecision = fabs(_parser.Eval());
@@ -564,9 +564,9 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 	}
 
 	// Changes to the maximal number of iterations
-	if (matchParams(fitData.sFitFunction, "iter", '='))
+	if (findParameter(fitData.sFitFunction, "iter", '='))
 	{
-		_parser.SetExpr(getArgAtPos(fitData.sFitFunction, matchParams(fitData.sFitFunction, "iter", '=') + 4));
+		_parser.SetExpr(getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "iter", '=') + 4));
 		eraseToken(sCmd, "iter", true);
 		eraseToken(fitData.sFitFunction, "iter", true);
 		fitData.nMaxIterations = abs(rint(_parser.Eval()));
@@ -576,9 +576,9 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 	}
 
 	// Fitting parameter restrictions
-	if (matchParams(fitData.sFitFunction, "restrict", '='))
+	if (findParameter(fitData.sFitFunction, "restrict", '='))
 	{
-		fitData.sRestrictions = getArgAtPos(fitData.sFitFunction, matchParams(fitData.sFitFunction, "restrict", '=') + 8);
+		fitData.sRestrictions = getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "restrict", '=') + 8);
 		eraseToken(sCmd, "restrict", true);
 		eraseToken(fitData.sFitFunction, "restrict", true);
 
@@ -605,23 +605,23 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
 	// The fitting parameter list including their possible
 	// starting values
-	if (!matchParams(fitData.sFitFunction, "params", '='))
+	if (!findParameter(fitData.sFitFunction, "params", '='))
 	{
 		fitData.bNoParams = true;
-		fitData.sFitFunction = fitData.sFitFunction.substr(matchParams(fitData.sFitFunction, "with", '=') + 4);
-		sCmd.erase(matchParams(sCmd, "with", '=') - 1);
+		fitData.sFitFunction = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "with", '=') + 4);
+		sCmd.erase(findParameter(sCmd, "with", '=') - 1);
 	}
-	else if (matchParams(fitData.sFitFunction, "with", '=') < matchParams(fitData.sFitFunction, "params", '='))
+	else if (findParameter(fitData.sFitFunction, "with", '=') < findParameter(fitData.sFitFunction, "params", '='))
 	{
-		fitData.sParams = fitData.sFitFunction.substr(matchParams(fitData.sFitFunction, "params", '=') + 6);
-		fitData.sFitFunction = fitData.sFitFunction.substr(matchParams(fitData.sFitFunction, "with", '=') + 4, matchParams(fitData.sFitFunction, "params", '=') - 1 - matchParams(fitData.sFitFunction, "with", '=') - 4);
-		sCmd = sCmd.substr(0, matchParams(sCmd, "with", '=') - 1);
+		fitData.sParams = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "params", '=') + 6);
+		fitData.sFitFunction = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "with", '=') + 4, findParameter(fitData.sFitFunction, "params", '=') - 1 - findParameter(fitData.sFitFunction, "with", '=') - 4);
+		sCmd = sCmd.substr(0, findParameter(sCmd, "with", '=') - 1);
 	}
 	else
 	{
-		fitData.sParams = fitData.sFitFunction.substr(matchParams(fitData.sFitFunction, "params", '=') + 6, matchParams(fitData.sFitFunction, "with", '=') - 1 - matchParams(fitData.sFitFunction, "params", '=') - 6);
-		fitData.sFitFunction = fitData.sFitFunction.substr(matchParams(fitData.sFitFunction, "with", '=') + 4);
-		sCmd = sCmd.substr(0, matchParams(sCmd, "params", '=') - 1);
+		fitData.sParams = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "params", '=') + 6, findParameter(fitData.sFitFunction, "with", '=') - 1 - findParameter(fitData.sFitFunction, "params", '=') - 6);
+		fitData.sFitFunction = fitData.sFitFunction.substr(findParameter(fitData.sFitFunction, "with", '=') + 4);
+		sCmd = sCmd.substr(0, findParameter(sCmd, "params", '=') - 1);
 	}
 
 	// Remove surrounding brackets from the parameter list

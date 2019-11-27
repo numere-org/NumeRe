@@ -211,11 +211,23 @@ string truncString(const string& sText, size_t nMaxChars)
     return sText.substr(0, nMaxChars-3) + "...";
 }
 
-// Diese Funktion vergleicht ganz einfach einen gegebenen Parameter mit der Eingabe. Wird der Parameter gefunden, gibt diese
-// Funktion die Position des ersten char des Parameters +1 zurueck!
-//
-// This function is one of the most important functions
-int matchParams(const string& sCmd, const string& sParam, const char cFollowing)
+
+/////////////////////////////////////////////////
+/// \brief This function searches the passed
+/// parameter in the passed command string. If
+/// something is found, the position of the
+/// parameter+1 is returned.
+///
+/// \param sCmd const string&
+/// \param sParam const string&
+/// \param cFollowing const char
+/// \return int
+///
+/// This function is one of the most important
+/// ones in the whole application as it provides
+/// the support for the defined command syntax.
+/////////////////////////////////////////////////
+int findParameter(const string& sCmd, const string& sParam, const char cFollowing)
 {
 	// --> Wenn kein '-' im string zu finden ist, ist da auch kein Parameter: FALSE zurueckgeben <--
 	if (sCmd.find('-') == string::npos)
@@ -2434,11 +2446,11 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
 	if (bTokenHasValue)
 	{
 	    // Is the token actually available?
-		if (!matchParams(sExpr, sToken, '='))
+		if (!findParameter(sExpr, sToken, '='))
 			return;
 
         // Search for the option value
-		for (unsigned int i = matchParams(sExpr, sToken, '=') + nLength - 1; i < sExpr.length(); i++)
+		for (unsigned int i = findParameter(sExpr, sToken, '=') + nLength - 1; i < sExpr.length(); i++)
 		{
 		    // Assignment operator found
 			if (sExpr[i] == '=')
@@ -2454,7 +2466,7 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
 					// erase token and its value together
 					if (sExpr[j] == ' ')
 					{
-						sExpr.erase(matchParams(sExpr, sToken, '=') - 1, j - matchParams(sExpr, sToken, '=') + 1);
+						sExpr.erase(findParameter(sExpr, sToken, '=') - 1, j - findParameter(sExpr, sToken, '=') + 1);
 						return;
 					}
 				}
@@ -2464,11 +2476,11 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
 	else
 	{
 	    // Is the token actually available?
-		if (!matchParams(sExpr, sToken))
+		if (!findParameter(sExpr, sToken))
 			return;
 
         // Simply erase the token
-		sExpr.erase(matchParams(sExpr, sToken) - 1, nLength);
+		sExpr.erase(findParameter(sExpr, sToken) - 1, nLength);
 	}
 	return;
 }
@@ -3581,10 +3593,10 @@ bool validateParenthesisNumber(const string& sCmd)
 void addArgumentQuotes(string& sToAdd, const string& sParam)
 {
     // Check, whether the parameter exists
-	if (matchParams(sToAdd, sParam, '='))
+	if (findParameter(sToAdd, sParam, '='))
 	{
 	    // Store the position of the equal sign of the parameter token
-		int nPos = matchParams(sToAdd, sParam, '=') + sParam.length();
+		int nPos = findParameter(sToAdd, sParam, '=') + sParam.length();
 
 		// Jump over following whitespaces
 		while (sToAdd[nPos] == ' ')

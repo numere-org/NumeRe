@@ -79,17 +79,17 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
             _data.setCacheStatus(true);
 
 
-        if (matchParams(sCmd, "save", '=') || matchParams(sCmd, "export", '='))
+        if (findParameter(sCmd, "save", '=') || findParameter(sCmd, "export", '='))
         {
             int nPos = 0;
-            if (matchParams(sCmd, "save", '='))
-                nPos = matchParams(sCmd, "save", '=')+4;
+            if (findParameter(sCmd, "save", '='))
+                nPos = findParameter(sCmd, "save", '=')+4;
             else
-                nPos = matchParams(sCmd, "export", '=')+6;
+                nPos = findParameter(sCmd, "export", '=')+6;
             _out.setStatus(true);
             sSavePath = getArgAtPos(sCmd, nPos);
         }
-        if (matchParams(sCmd, "save") || matchParams(sCmd, "export"))
+        if (findParameter(sCmd, "save") || findParameter(sCmd, "export"))
             _out.setStatus(true);
         string sDatatable = "data";
         if (_data.matchTableAsParameter(sCmd).length())

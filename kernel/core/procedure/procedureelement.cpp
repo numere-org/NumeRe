@@ -106,9 +106,9 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
                 // Start of the plot composition block
                 sProcPlotCompose = "plotcompose ";
 
-                if (matchParams(sProcCommandLine, "multiplot", '='))
+                if (findParameter(sProcCommandLine, "multiplot", '='))
                 {
-                    sProcPlotCompose += "-multiplot=" + getArgAtPos(sProcCommandLine, matchParams(sProcCommandLine, "multiplot", '=') + 9) + " <<COMPOSE>> ";
+                    sProcPlotCompose += "-multiplot=" + getArgAtPos(sProcCommandLine, findParameter(sProcCommandLine, "multiplot", '=') + 9) + " <<COMPOSE>> ";
                 }
 
                 continue;

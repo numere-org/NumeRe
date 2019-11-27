@@ -38,7 +38,7 @@ static bool isFunction(const string& sExpr, size_t nPos, size_t nLength)
 void doc_Help(const string& __sTopic, Settings& _option)
 {
     string sTopic = toLowerCase(__sTopic);
-    if (matchParams(sTopic, "html"))
+    if (findParameter(sTopic, "html"))
         eraseToken(sTopic, "html", false);
     vector<string> vDocArticle;
     // --> Zunaechst einmal muessen wir anfuehrende oder abschliessende Leerzeichen entfernen <--
@@ -60,11 +60,11 @@ void doc_Help(const string& __sTopic, Settings& _option)
         make_hline();
         return;
     }
-    else if (matchParams(__sTopic, "html") || _option.getUseExternalViewer()) // HTML-Export generieren
+    else if (findParameter(__sTopic, "html") || _option.getUseExternalViewer()) // HTML-Export generieren
     {
         ofstream fHTML;
         string sHTML;
-        bool generateFile = (bool)matchParams(__sTopic, "html");
+        bool generateFile = (bool)findParameter(__sTopic, "html");
         FileSystem _fSys;
         _fSys.setTokens(_option.getTokenPaths());
         _fSys.setPath("docs/htmlexport", true, _option.getExePath());

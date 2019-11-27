@@ -51,95 +51,95 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
 	default_random_engine randomGenerator (now); // Zufallszahlengenerator initialisieren
 
     // --> Zunaechst extrahieren wir die ggf. uebergebenen Parameter <--
-    if (matchParams(sCmd, "lines", '=') || matchParams(sCmd, "l", '='))
+    if (findParameter(sCmd, "lines", '=') || findParameter(sCmd, "l", '='))
     {
-        if (matchParams(sCmd, "lines", '='))
-            nDataPoints = matchParams(sCmd, "lines", '=')+5;
+        if (findParameter(sCmd, "lines", '='))
+            nDataPoints = findParameter(sCmd, "lines", '=')+5;
         else
-            nDataPoints = matchParams(sCmd, "l", '=')+1;
+            nDataPoints = findParameter(sCmd, "l", '=')+1;
         nDataPoints = (int)StrToDb(getArgAtPos(sCmd, nDataPoints));
     }
-    if (matchParams(sCmd, "cols", '=') || matchParams(sCmd, "c", '='))
+    if (findParameter(sCmd, "cols", '=') || findParameter(sCmd, "c", '='))
     {
-        if (matchParams(sCmd, "cols", '='))
-            nDataRows = matchParams(sCmd, "cols", '=')+4;
+        if (findParameter(sCmd, "cols", '='))
+            nDataRows = findParameter(sCmd, "cols", '=')+4;
         else
-            nDataRows = matchParams(sCmd, "c", '=')+1;
+            nDataRows = findParameter(sCmd, "c", '=')+1;
         nDataRows = (int)StrToDb(getArgAtPos(sCmd, nDataRows));
     }
-    if (matchParams(sCmd, "mean", '=') || matchParams(sCmd, "m", '='))
+    if (findParameter(sCmd, "mean", '=') || findParameter(sCmd, "m", '='))
     {
         int nPos = 0;
-        if (matchParams(sCmd, "mean", '='))
-            nPos = matchParams(sCmd, "mean", '=')+4;
+        if (findParameter(sCmd, "mean", '='))
+            nPos = findParameter(sCmd, "mean", '=')+4;
         else
-            nPos = matchParams(sCmd, "m", '=')+1;
+            nPos = findParameter(sCmd, "m", '=')+1;
         dDistributionMean = StrToDb(getArgAtPos(sCmd, nPos));
     }
-    if (matchParams(sCmd, "width", '=') || matchParams(sCmd, "w", '='))
+    if (findParameter(sCmd, "width", '=') || findParameter(sCmd, "w", '='))
     {
         int nPos = 0;
-        if (matchParams(sCmd, "width", '='))
-            nPos = matchParams(sCmd, "width", '=')+5;
+        if (findParameter(sCmd, "width", '='))
+            nPos = findParameter(sCmd, "width", '=')+5;
         else
-            nPos = matchParams(sCmd, "w", '=')+1;
+            nPos = findParameter(sCmd, "w", '=')+1;
         dDistributionWidth = StrToDb(getArgAtPos(sCmd, nPos));
     }
-    if (matchParams(sCmd, "shape", '=') || matchParams(sCmd, "sh", '='))
+    if (findParameter(sCmd, "shape", '=') || findParameter(sCmd, "sh", '='))
     {
         int nPos = 0;
-        if (matchParams(sCmd, "shape", '='))
-            nPos = matchParams(sCmd, "shape", '=')+5;
+        if (findParameter(sCmd, "shape", '='))
+            nPos = findParameter(sCmd, "shape", '=')+5;
         else
-            nPos = matchParams(sCmd, "sh", '=')+2;
+            nPos = findParameter(sCmd, "sh", '=')+2;
         dShape = fabs(StrToDb(getArgAtPos(sCmd, nPos)));
     }
-    if (matchParams(sCmd, "scale", '=') || matchParams(sCmd, "sc", '='))
+    if (findParameter(sCmd, "scale", '=') || findParameter(sCmd, "sc", '='))
     {
         int nPos = 0;
-        if (matchParams(sCmd, "scale", '='))
-            nPos = matchParams(sCmd, "scale", '=')+5;
+        if (findParameter(sCmd, "scale", '='))
+            nPos = findParameter(sCmd, "scale", '=')+5;
         else
-            nPos = matchParams(sCmd, "sc", '=')+2;
+            nPos = findParameter(sCmd, "sc", '=')+2;
         dScale = fabs(StrToDb(getArgAtPos(sCmd, nPos)));
     }
-    if (matchParams(sCmd, "ubound", '=') || matchParams(sCmd, "ub", '='))
+    if (findParameter(sCmd, "ubound", '=') || findParameter(sCmd, "ub", '='))
     {
         int nPos = 0;
-        if (matchParams(sCmd, "ubound", '='))
-            nPos = matchParams(sCmd, "ubound", '=')+6;
+        if (findParameter(sCmd, "ubound", '='))
+            nPos = findParameter(sCmd, "ubound", '=')+6;
         else
-            nPos = matchParams(sCmd, "ub", '=')+2;
+            nPos = findParameter(sCmd, "ub", '=')+2;
         nUpperBound = abs(StrToInt(getArgAtPos(sCmd, nPos)));
     }
-    if (matchParams(sCmd, "prob", '=') || matchParams(sCmd, "p", '='))
+    if (findParameter(sCmd, "prob", '=') || findParameter(sCmd, "p", '='))
     {
         int nPos = 0;
-        if (matchParams(sCmd, "prob", '='))
-            nPos = matchParams(sCmd, "prob", '=')+4;
+        if (findParameter(sCmd, "prob", '='))
+            nPos = findParameter(sCmd, "prob", '=')+4;
         else
-            nPos = matchParams(sCmd, "p", '=')+1;
+            nPos = findParameter(sCmd, "p", '=')+1;
         dProbability = fabs(StrToDb(getArgAtPos(sCmd, nPos)));
         if (dProbability > 1.0)
             dProbability = 0.5;
     }
-    if (matchParams(sCmd, "freedoms", '=') || matchParams(sCmd, "f", '='))
+    if (findParameter(sCmd, "freedoms", '=') || findParameter(sCmd, "f", '='))
     {
         int nPos = 0;
-        if (matchParams(sCmd, "freedoms", '='))
-            nPos = matchParams(sCmd, "freedoms", '=')+8;
+        if (findParameter(sCmd, "freedoms", '='))
+            nPos = findParameter(sCmd, "freedoms", '=')+8;
         else
-            nPos = matchParams(sCmd, "f", '=')+1;
+            nPos = findParameter(sCmd, "f", '=')+1;
         nFreedoms = abs(StrToInt(getArgAtPos(sCmd, nPos)));
     }
-    if (matchParams(sCmd, "distrib", '=') || matchParams(sCmd, "d", '='))
+    if (findParameter(sCmd, "distrib", '=') || findParameter(sCmd, "d", '='))
     {
         int nPos = 0;
 
-        if (matchParams(sCmd, "distrib", '='))
-            nPos = matchParams(sCmd, "distrib", '=')+7;
+        if (findParameter(sCmd, "distrib", '='))
+            nPos = findParameter(sCmd, "distrib", '=')+7;
         else
-            nPos = matchParams(sCmd, "d", '=')+1;
+            nPos = findParameter(sCmd, "d", '=')+1;
         sDistrib = getArgAtPos(sCmd, nPos);
         if (sDistrib == "gauss" || sDistrib == "normal")
         {

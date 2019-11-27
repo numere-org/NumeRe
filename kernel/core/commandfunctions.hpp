@@ -73,7 +73,7 @@ static string getVarList(const string& sCmd, Parser& _parser, Datafile& _data, S
 
     // Change the separation characters, if the user
     // wants the return value to be a string
-	if (matchParams(sCmd, "asstr"))
+	if (findParameter(sCmd, "asstr"))
 	{
 		sSep = "\", \"";
 		sReturn = "\"";
@@ -88,7 +88,7 @@ static string getVarList(const string& sCmd, Parser& _parser, Datafile& _data, S
 
 			if (iter->second)
 			{
-				if (matchParams(sCmd, "asstr"))
+				if (findParameter(sCmd, "asstr"))
 					sReturn += "\\\"" + mStringVars[iter->first] + "\\\"";
 				else
 					sReturn += "\"" + mStringVars[iter->first] + "\"";
@@ -108,7 +108,7 @@ static string getVarList(const string& sCmd, Parser& _parser, Datafile& _data, S
 		{
 			sReturn += iter->first + " = ";
 
-			if (matchParams(sCmd, "asstr"))
+			if (findParameter(sCmd, "asstr"))
 				sReturn += "\\\"" + iter->second + "\\\"";
 			else
 				sReturn += "\"" + iter->second + "\"";
@@ -133,9 +133,9 @@ static string getVarList(const string& sCmd, Parser& _parser, Datafile& _data, S
 	}
 
 	// Remove the trailing separation character
-	if (matchParams(sCmd, "asstr") && sReturn.length() > 2)
+	if (findParameter(sCmd, "asstr") && sReturn.length() > 2)
 		sReturn.erase(sReturn.length() - 3);
-	else if (!matchParams(sCmd, "asstr") && sReturn.length() > 1)
+	else if (!findParameter(sCmd, "asstr") && sReturn.length() > 1)
 		sReturn.erase(sReturn.length() - 2);
 
 	return sReturn;
@@ -201,32 +201,32 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 		NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
     // Evaluate and prepare the passed parameters
-	if (matchParams(sCmd, "dir", '='))
+	if (findParameter(sCmd, "dir", '='))
 	{
 		nType = 1;
 		addArgumentQuotes(sCmd, "dir");
 	}
-	else if (matchParams(sCmd, "script", '='))
+	else if (findParameter(sCmd, "script", '='))
 	{
 		nType = 2;
 		addArgumentQuotes(sCmd, "script");
 	}
-	else if (matchParams(sCmd, "proc", '='))
+	else if (findParameter(sCmd, "proc", '='))
 	{
 		nType = 3;
 		addArgumentQuotes(sCmd, "proc");
 	}
-	else if (matchParams(sCmd, "file", '='))
+	else if (findParameter(sCmd, "file", '='))
 	{
 		nType = 4;
 		addArgumentQuotes(sCmd, "file");
 	}
-	else if (matchParams(sCmd, "plugin", '='))
+	else if (findParameter(sCmd, "plugin", '='))
 	{
 		nType = 5;
 		addArgumentQuotes(sCmd, "plugin");
 	}
-	else if (matchParams(sCmd, "cache", '='))
+	else if (findParameter(sCmd, "cache", '='))
 	{
 	    // DEPRECATED: Declared at v1.1.2rc2
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
@@ -239,11 +239,11 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 				return false;
 		}
 		else
-			sObject = sCmd.substr(matchParams(sCmd, "cache", '=') + 5);
+			sObject = sCmd.substr(findParameter(sCmd, "cache", '=') + 5);
 
 		StripSpaces(sObject);
 
-		if (matchParams(sObject, "free"))
+		if (findParameter(sObject, "free"))
 			eraseToken(sObject, "free", false);
 
 		if (sObject.rfind('-') != string::npos)
@@ -256,7 +256,7 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 		{
 			if (_data.isTable(getNextArgument(sObject, false)))
 			{
-				if (matchParams(sCmd, "free"))
+				if (findParameter(sCmd, "free"))
 				{
 					string sTemp = getNextArgument(sObject, false);
 					sTemp.erase(sTemp.find('('));
@@ -286,7 +286,7 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 
 		if (sReturnVal.length() && _option.getSystemPrintStatus())
 		{
-			if (matchParams(sCmd, "free"))
+			if (findParameter(sCmd, "free"))
 				NumeReKernel::print(_lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal));
 			else
 				NumeReKernel::print(_lang.get("BUILTIN_NEW_CACHES", sReturnVal));
@@ -318,7 +318,7 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 
 			StripSpaces(sObject);
 
-			if (matchParams(sObject, "free"))
+			if (findParameter(sObject, "free"))
 				eraseToken(sObject, "free", false);
 
 			if (sObject.rfind('-') != string::npos)
@@ -335,7 +335,7 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 			    // Does the table already exist?
 				if (_data.isTable(sTableName))
 				{
-					if (matchParams(sCmd, "free"))
+					if (findParameter(sCmd, "free"))
 					{
 						_data.deleteBulk(sTableName.substr(0, sTableName.find('(')), 0, _data.getLines(sTableName.substr(0, sTableName.find('('))) - 1, 0, _data.getCols(sTableName.substr(0, sTableName.find('('))) - 1);
 
@@ -363,7 +363,7 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 
 			if (sReturnVal.length() && _option.getSystemPrintStatus())
 			{
-				if (matchParams(sCmd, "free"))
+				if (findParameter(sCmd, "free"))
 					NumeReKernel::print(LineBreak(  _lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal), _option) );
 				else
 					NumeReKernel::print(LineBreak(  _lang.get("BUILTIN_NEW_CACHES", sReturnVal), _option) );
@@ -632,10 +632,10 @@ static bool editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings&
 	int nType = 0;
 	int nFileOpenFlag = 0;
 
-	if (matchParams(sCmd, "norefresh"))
+	if (findParameter(sCmd, "norefresh"))
 		nFileOpenFlag = 1;
 
-	if (matchParams(sCmd, "refresh"))
+	if (findParameter(sCmd, "refresh"))
 		nFileOpenFlag = 2 | 4;
 
 	string sObject;
@@ -991,17 +991,17 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 	unsigned int nFirstColLength = _option.getWindow() / 2 - 6;
 	bool bOnlyDir = false;
 
-	if (matchParams(sParams, "dir"))
+	if (findParameter(sParams, "dir"))
 		bOnlyDir = true;
 
-	if (matchParams(sParams, "pattern", '=') || matchParams(sParams, "p", '='))
+	if (findParameter(sParams, "pattern", '=') || findParameter(sParams, "p", '='))
 	{
 		int nPos = 0;
 
-		if (matchParams(sParams, "pattern", '='))
-			nPos = matchParams(sParams, "pattern", '=') + 7;
+		if (findParameter(sParams, "pattern", '='))
+			nPos = findParameter(sParams, "pattern", '=') + 7;
 		else
-			nPos = matchParams(sParams, "p", '=') + 1;
+			nPos = findParameter(sParams, "p", '=') + 1;
 
 		sPattern = getArgAtPos(sParams, nPos);
 		StripSpaces(sPattern);
@@ -1297,14 +1297,14 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 	bool bFreePath = false;
 
 	// Extract a search pattern
-	if (matchParams(__sCmd, "pattern", '=') || matchParams(__sCmd, "p", '='))
+	if (findParameter(__sCmd, "pattern", '=') || findParameter(__sCmd, "p", '='))
 	{
 		int nPos = 0;
 
-		if (matchParams(__sCmd, "pattern", '='))
-			nPos = matchParams(__sCmd, "pattern", '=') + 7;
+		if (findParameter(__sCmd, "pattern", '='))
+			nPos = findParameter(__sCmd, "pattern", '=') + 7;
 		else
-			nPos = matchParams(__sCmd, "p", '=') + 1;
+			nPos = findParameter(__sCmd, "p", '=') + 1;
 
 		sPattern = getArgAtPos(__sCmd, nPos);
 		StripSpaces(sPattern);
@@ -1326,9 +1326,9 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 	make_hline();
 
 	// Find the specified folder
-	if (matchParams(__sCmd, "files", '='))
+	if (findParameter(__sCmd, "files", '='))
 	{
-		int nPos = matchParams(__sCmd, "files", '=') + 5;
+		int nPos = findParameter(__sCmd, "files", '=') + 5;
 		sSpecified = getArgAtPos(__sCmd, nPos);
 		StripSpaces(sSpecified);
 
@@ -2035,15 +2035,15 @@ static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Defin
 	bool bWaitForTermination = false;
 
 	// Extract command line parameters
-	if (matchParams(sCmd, "params", '='))
-		sParams = "\"" + getArgAtPos(sCmd, matchParams(sCmd, "params", '=') + 6) + "\"";
+	if (findParameter(sCmd, "params", '='))
+		sParams = "\"" + getArgAtPos(sCmd, findParameter(sCmd, "params", '=') + 6) + "\"";
 
     // Extract target working path
-	if (matchParams(sCmd, "wp", '='))
-		sWorkpath = "\"" + getArgAtPos(sCmd, matchParams(sCmd, "wp", '=') + 2) + "\"";
+	if (findParameter(sCmd, "wp", '='))
+		sWorkpath = "\"" + getArgAtPos(sCmd, findParameter(sCmd, "wp", '=') + 2) + "\"";
 
     // Extract, whether we shall wait for the process to terminate
-	if (matchParams(sCmd, "wait"))
+	if (findParameter(sCmd, "wait"))
 		bWaitForTermination = true;
 
     // Extract the actual command line command
@@ -2249,7 +2249,7 @@ static string getPathForSetting(string& sCmd, const string& sPathParameter)
 {
     string sPath;
 
-    if (matchParams(sCmd, sPathParameter, '='))
+    if (findParameter(sCmd, sPathParameter, '='))
         addArgumentQuotes(sCmd, sPathParameter);
 
     while (sCmd.find('\\') != string::npos)
@@ -2339,7 +2339,7 @@ static CommandReturnValues swapTables(string& sCmd, Datafile& _data, Settings& _
         // Legacy syntax: swap -cache1=cache2
         //
         // Get the option value of the parameter "cache1"
-        sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchTableAsParameter(sCmd, '='), '=') + _data.matchTableAsParameter(sCmd, '=').length());
+        sArgument = getArgAtPos(sCmd, findParameter(sCmd, _data.matchTableAsParameter(sCmd, '='), '=') + _data.matchTableAsParameter(sCmd, '=').length());
 
         // Swap the caches
         _data.swapTables(_data.matchTableAsParameter(sCmd, '='), sArgument);
@@ -2404,9 +2404,9 @@ static CommandReturnValues saveDataObject(string& sCmd)
     size_t nPrecision = _option.getPrecision();
 
     // Update the precision, if the user selected any
-    if (matchParams(sCmd, "precision", '='))
+    if (findParameter(sCmd, "precision", '='))
     {
-        _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "precision", '=')));
+        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "precision", '=')));
         nPrecision = _parser.Eval();
 
         if (nPrecision < 0 || nPrecision > 14)
@@ -2438,11 +2438,11 @@ static CommandReturnValues saveDataObject(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-        if (matchParams(sCmd, "file", '='))
+        if (findParameter(sCmd, "file", '='))
             addArgumentQuotes(sCmd, "file");
 
         // Try to extract the file name, if it was passed
-        if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(matchParams(sCmd, "file", '=')), sArgument))
+        if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(findParameter(sCmd, "file", '=')), sArgument))
         {
             if (_cache.saveFile(_access.getDataObject() == "data" ? "copy_of_data" : _access.getDataObject(), sArgument, nPrecision))
             {
@@ -2534,7 +2534,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
     StripSpaces(sCmd);
 
     if ((findCommand(sCmd, "integrate").sString.length() >= 10 && findCommand(sCmd, "integrate").sString.substr(0, 10) == "integrate2")
-        || (matchParams(sCmd, "x", '=') && matchParams(sCmd, "y", '=')))
+        || (findParameter(sCmd, "x", '=') && findParameter(sCmd, "y", '=')))
     {
         vIntegrate = integrate2d(sCmd, _data, _parser, _option, _functions);
         sCmd = sArgument;
@@ -2837,18 +2837,18 @@ static CommandReturnValues cmd_dialog(string& sCmd)
         sDialogSettings = evaluateParameterValues(sDialogSettings);
 
     // Extract the message for the user
-    if (matchParams(sDialogSettings, "msg", '='))
-        sMessage = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "msg", '=')+3);
+    if (findParameter(sDialogSettings, "msg", '='))
+        sMessage = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "msg", '=')+3);
 
     // Extract the window title
-    if (matchParams(sDialogSettings, "title", '='))
-        sTitle = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "title", '=')+5);
+    if (findParameter(sDialogSettings, "title", '='))
+        sTitle = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "title", '=')+5);
 
     // Extract the selected dialog type if available, otherwise
     // use the message box as default value
-    if (matchParams(sDialogSettings, "type", '='))
+    if (findParameter(sDialogSettings, "type", '='))
     {
-        string sType = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "type", '=')+4);
+        string sType = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "type", '=')+4);
 
         if (sType == "filedialog")
             nControls = NumeRe::CTRL_FILEDIALOG;
@@ -2868,9 +2868,9 @@ static CommandReturnValues cmd_dialog(string& sCmd)
 
     // Extract the button information. The default values are
     // created by wxWidgets. We don't have to do that here
-    if (matchParams(sDialogSettings, "buttons", '='))
+    if (findParameter(sDialogSettings, "buttons", '='))
     {
-        string sButtons = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "buttons", '=')+7);
+        string sButtons = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "buttons", '=')+7);
 
         if (sButtons == "ok")
             nControls |= NumeRe::CTRL_OKBUTTON;
@@ -2882,9 +2882,9 @@ static CommandReturnValues cmd_dialog(string& sCmd)
 
     // Extract the icon information. The default values are
     // created by wxWidgets. We don't have to do that here
-    if (matchParams(sDialogSettings, "icon", '='))
+    if (findParameter(sDialogSettings, "icon", '='))
     {
-        string sIcon = getArgAtPos(sDialogSettings, matchParams(sDialogSettings, "icon", '=')+4);
+        string sIcon = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "icon", '=')+4);
 
         if (sIcon == "erroricon")
             nControls |= NumeRe::CTRL_ICONERROR;
@@ -3097,9 +3097,9 @@ static CommandReturnValues cmd_get(string& sCmd)
     size_t nPos = findCommand(sCmd, "get").nPos;
     string sCommand = extractCommandString(sCmd, findCommand(sCmd, "get"));
 
-    if (matchParams(sCmd, "savepath"))
+    if (findParameter(sCmd, "savepath"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + _option.getSavePath() + "\"";
@@ -3112,9 +3112,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("SAVEPATH: \"" + _option.getSavePath() + "\"");
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "loadpath"))
+    else if (findParameter(sCmd, "loadpath"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + _option.getLoadPath() + "\"";
@@ -3127,9 +3127,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("LOADPATH: \"" + _option.getLoadPath() + "\"");
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "workpath"))
+    else if (findParameter(sCmd, "workpath"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + _option.getWorkPath() + "\"";
@@ -3142,11 +3142,11 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("WORKPATH: \"" + _option.getWorkPath() + "\"");
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "viewer"))
+    else if (findParameter(sCmd, "viewer"))
     {
         if (_option.getViewerPath().length())
         {
-            if (matchParams(sCmd, "asstr"))
+            if (findParameter(sCmd, "asstr"))
             {
                 if (_option.getViewerPath()[0] == '"' && _option.getViewerPath()[_option.getViewerPath().length() - 1] == '"')
                 {
@@ -3172,7 +3172,7 @@ static CommandReturnValues cmd_get(string& sCmd)
         }
         else
         {
-            if (matchParams(sCmd, "asstr"))
+            if (findParameter(sCmd, "asstr"))
             {
                 if (!nPos)
                     sCmd = "\"\"";
@@ -3187,9 +3187,9 @@ static CommandReturnValues cmd_get(string& sCmd)
 
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "editor"))
+    else if (findParameter(sCmd, "editor"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (_option.getEditorPath()[0] == '"' && _option.getEditorPath()[_option.getEditorPath().length() - 1] == '"')
             {
@@ -3216,9 +3216,9 @@ static CommandReturnValues cmd_get(string& sCmd)
 
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "scriptpath"))
+    else if (findParameter(sCmd, "scriptpath"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + _option.getScriptPath() + "\"";
@@ -3231,9 +3231,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("SCRIPTPATH: \"" + _option.getScriptPath() + "\"");
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "procpath"))
+    else if (findParameter(sCmd, "procpath"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + _option.getProcsPath() + "\"";
@@ -3246,9 +3246,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("PROCPATH: \"" + _option.getProcsPath() + "\"");
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "plotfont"))
+    else if (findParameter(sCmd, "plotfont"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + _option.getDefaultPlotFont() + "\"";
@@ -3261,9 +3261,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("PLOTFONT: \"" + _option.getDefaultPlotFont() + "\"");
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "precision"))
+    else if (findParameter(sCmd, "precision"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getPrecision());
@@ -3273,7 +3273,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getPrecision()) + "\"";
@@ -3285,9 +3285,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("PRECISION = " + toString(_option.getPrecision()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "faststart"))
+    else if (findParameter(sCmd, "faststart"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbFastStart());
@@ -3297,7 +3297,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbFastStart()) + "\"";
@@ -3310,9 +3310,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("FASTSTART: " + toString(_option.getbFastStart()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "compact"))
+    else if (findParameter(sCmd, "compact"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbCompact());
@@ -3321,7 +3321,7 @@ static CommandReturnValues cmd_get(string& sCmd)
 
             return COMMAND_HAS_RETURNVALUE;
         }
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbCompact()) + "\"";
@@ -3334,9 +3334,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("COMPACT-MODE: " + toString(_option.getbCompact()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "autosave"))
+    else if (findParameter(sCmd, "autosave"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getAutoSaveInterval());
@@ -3346,7 +3346,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getAutoSaveInterval()) + "\"";
@@ -3359,9 +3359,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("AUTOSAVE-INTERVAL: " + toString(_option.getAutoSaveInterval()) + " [sec]");
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "plotparams"))
+    else if (findParameter(sCmd, "plotparams"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = _pData.getParams(_option, true);
@@ -3374,9 +3374,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print(LineBreak("PLOTPARAMS: " + _pData.getParams(_option), _option, false));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "varlist"))
+    else if (findParameter(sCmd, "varlist"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = getVarList("vars -asstr", _parser, _data, _option);
@@ -3389,9 +3389,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print(LineBreak("VARS: " + getVarList("vars", _parser, _data, _option), _option, false));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "stringlist"))
+    else if (findParameter(sCmd, "stringlist"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = getVarList("strings -asstr", _parser, _data, _option);
@@ -3404,9 +3404,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print(LineBreak("STRINGS: " + getVarList("strings", _parser, _data, _option), _option, false));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "numlist"))
+    else if (findParameter(sCmd, "numlist"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = getVarList("nums -asstr", _parser, _data, _option);
@@ -3419,9 +3419,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print(LineBreak("NUMS: " + getVarList("nums", _parser, _data, _option), _option, false));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "plotpath"))
+    else if (findParameter(sCmd, "plotpath"))
     {
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + _option.getPlotOutputPath() + "\"";
@@ -3434,9 +3434,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("PLOTPATH: \"" + _option.getPlotOutputPath() + "\"");
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "greeting"))
+    else if (findParameter(sCmd, "greeting"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbGreeting());
@@ -3446,7 +3446,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbGreeting()) + "\"";
@@ -3459,9 +3459,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("GREETING: " + toString(_option.getbGreeting()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "hints"))
+    else if (findParameter(sCmd, "hints"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbShowHints());
@@ -3471,7 +3471,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbShowHints()) + "\"";
@@ -3484,9 +3484,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("HINTS: " + toString(_option.getbGreeting()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "useescinscripts"))
+    else if (findParameter(sCmd, "useescinscripts"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbUseESCinScripts());
@@ -3496,7 +3496,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbUseESCinScripts()) + "\"";
@@ -3509,9 +3509,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("USEESCINSCRIPTS: " + toString(_option.getbUseESCinScripts()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "usecustomlang"))
+    else if (findParameter(sCmd, "usecustomlang"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getUseCustomLanguageFiles());
@@ -3521,7 +3521,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getUseCustomLanguageFiles()) + "\"";
@@ -3533,9 +3533,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("USECUSTOMLANG: " + toString(_option.getUseCustomLanguageFiles()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "externaldocwindow"))
+    else if (findParameter(sCmd, "externaldocwindow"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getUseExternalViewer());
@@ -3545,7 +3545,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getUseExternalViewer()) + "\"";
@@ -3558,9 +3558,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("EXTERNALDOCWINDOW: " + toString(_option.getUseExternalViewer()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "draftmode"))
+    else if (findParameter(sCmd, "draftmode"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbUseDraftMode());
@@ -3570,7 +3570,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbUseDraftMode()) + "\"";
@@ -3583,9 +3583,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("DRAFTMODE: " + toString(_option.getbUseDraftMode()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "extendedfileinfo"))
+    else if (findParameter(sCmd, "extendedfileinfo"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbShowExtendedFileInfo());
@@ -3595,7 +3595,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbShowExtendedFileInfo()) + "\"";
@@ -3608,9 +3608,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("EXTENDED FILEINFO: " + toString(_option.getbShowExtendedFileInfo()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "loademptycols"))
+    else if (findParameter(sCmd, "loademptycols"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbLoadEmptyCols());
@@ -3620,7 +3620,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbLoadEmptyCols()) + "\"";
@@ -3633,9 +3633,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("LOAD EMPTY COLS: " + toString(_option.getbLoadEmptyCols()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "logfile"))
+    else if (findParameter(sCmd, "logfile"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbUseLogFile());
@@ -3645,7 +3645,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbUseLogFile()) + "\"";
@@ -3658,9 +3658,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("EXTENDED FILEINFO: " + toString(_option.getbUseLogFile()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "defcontrol"))
+    else if (findParameter(sCmd, "defcontrol"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString(_option.getbDefineAutoLoad());
@@ -3670,7 +3670,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString(_option.getbDefineAutoLoad()) + "\"";
@@ -3683,9 +3683,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("DEFCONTROL: " + toString(_option.getbDefineAutoLoad()));
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "buffersize"))
+    else if (findParameter(sCmd, "buffersize"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString((int)_option.getBuffer(1));
@@ -3695,7 +3695,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString((int)_option.getBuffer(1)) + "\"";
@@ -3707,9 +3707,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("BUFFERSIZE: " + _option.getBuffer(1) );
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "windowsize"))
+    else if (findParameter(sCmd, "windowsize"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = "x = " + toString((int)_option.getWindow() + 1) + ", y = " + toString((int)_option.getWindow(1) + 1);
@@ -3719,7 +3719,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"x = " + toString((int)_option.getWindow() + 1) + ", y = " + toString((int)_option.getWindow(1) + 1) + "\"";
@@ -3732,9 +3732,9 @@ static CommandReturnValues cmd_get(string& sCmd)
         NumeReKernel::print("WINDOWSIZE: x = " + toString((int)_option.getWindow() + 1) + ", y = " + toString((int)_option.getWindow(1) + 1) );
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "colortheme"))
+    else if (findParameter(sCmd, "colortheme"))
     {
-        if (matchParams(sCmd, "asval"))
+        if (findParameter(sCmd, "asval"))
         {
             if (!nPos)
                 sCmd = toString((int)_option.getColorTheme());
@@ -3744,7 +3744,7 @@ static CommandReturnValues cmd_get(string& sCmd)
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (matchParams(sCmd, "asstr"))
+        if (findParameter(sCmd, "asstr"))
         {
             if (!nPos)
                 sCmd = "\"" + toString((int)_option.getColorTheme()) + "\"";
@@ -3805,7 +3805,7 @@ static CommandReturnValues cmd_readline(string& sCmd)
     string sDefault = "";
     string sArgument;
 
-    if (matchParams(sCmd, "msg", '='))
+    if (findParameter(sCmd, "msg", '='))
     {
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd, nPos);
@@ -3814,14 +3814,14 @@ static CommandReturnValues cmd_readline(string& sCmd)
         sCommand = evaluateParameterValues(sCommand);
     }
 
-    if (matchParams(sCmd, "dflt", '='))
+    if (findParameter(sCmd, "dflt", '='))
     {
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd, nPos);
 
         sCmd = sCmd.replace(nPos, sCommand.length(), evaluateParameterValues(sCommand));
         sCommand = evaluateParameterValues(sCommand);
-        sDefault = getArgAtPos(sCmd, matchParams(sCmd, "dflt", '=') + 4);
+        sDefault = getArgAtPos(sCmd, findParameter(sCmd, "dflt", '=') + 4);
     }
 
     while (!sArgument.length())
@@ -3829,9 +3829,9 @@ static CommandReturnValues cmd_readline(string& sCmd)
         string sLastLine = "";
         NumeReKernel::printPreFmt("|-> ");
 
-        if (matchParams(sCmd, "msg", '='))
+        if (findParameter(sCmd, "msg", '='))
         {
-            sLastLine = LineBreak(getArgAtPos(sCmd, matchParams(sCmd, "msg", '=') + 3), _option, false, 4);
+            sLastLine = LineBreak(getArgAtPos(sCmd, findParameter(sCmd, "msg", '=') + 3), _option, false, 4);
             NumeReKernel::printPreFmt(sLastLine);
 
             if (sLastLine.find('\n') != string::npos)
@@ -3854,7 +3854,7 @@ static CommandReturnValues cmd_readline(string& sCmd)
             sArgument = sDefault;
     }
 
-    if (matchParams(sCmd, "asstr") && sArgument[0] != '"' && sArgument[sArgument.length() - 1] != '"')
+    if (findParameter(sCmd, "asstr") && sArgument[0] != '"' && sArgument[sArgument.length() - 1] != '"')
         sCmd = sCmd.replace(nPos, sCommand.length(), "\"" + sArgument + "\"");
     else
         sCmd = sCmd.replace(nPos, sCommand.length(), sArgument);
@@ -3921,32 +3921,32 @@ static CommandReturnValues cmd_data(string& sCmd)
     size_t nPos;
     string sCommand = findCommand(sCmd).sString;
 
-    if (matchParams(sCmd, "clear"))
+    if (findParameter(sCmd, "clear"))
     {
-        if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
+        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
             remove_data(_data, _option, true);
         else
             remove_data(_data, _option);
 
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "load") || matchParams(sCmd, "load", '='))
+    else if (findParameter(sCmd, "load") || findParameter(sCmd, "load", '='))
     {
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (matchParams(sCmd, "load", '='))
+        if (findParameter(sCmd, "load", '='))
             addArgumentQuotes(sCmd, "load");
         if (extractFirstParameterStringValue(sCmd, sArgument))
         {
-            if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
+            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
-            if (matchParams(sCmd, "slices", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slices", '=') + 6) == "xz")
+            if (findParameter(sCmd, "slices", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slices", '=') + 6) == "xz")
                 nArgument = -1;
-            else if (matchParams(sCmd, "slices", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slices", '=') + 6) == "yz")
+            else if (findParameter(sCmd, "slices", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slices", '=') + 6) == "yz")
                 nArgument = -2;
             else
                 nArgument = 0;
-            if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
+            if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
             {
                 if (_data.isValid())
                 {
@@ -3955,7 +3955,7 @@ static CommandReturnValues cmd_data(string& sCmd)
                     else
                         _data.removeData(true);
                 }
-                if (matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
                 {
                     if (sArgument.find('/') == string::npos)
                         sArgument = "<loadpath>/" + sArgument;
@@ -3982,12 +3982,12 @@ static CommandReturnValues cmd_data(string& sCmd)
                     //NumeReKernel::print(LineBreak("|-> Alle Daten der " + toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
                     return COMMAND_PROCESSED;
                 }
-                if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
+                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
                 {
-                    if (matchParams(sCmd, "head", '='))
-                        nArgument = matchParams(sCmd, "head", '=') + 4;
+                    if (findParameter(sCmd, "head", '='))
+                        nArgument = findParameter(sCmd, "head", '=') + 4;
                     else
-                        nArgument = matchParams(sCmd, "h", '=') + 1;
+                        nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
                     _data.openFile(sArgument, _option, false, true, nArgument);
                 }
@@ -4001,7 +4001,7 @@ static CommandReturnValues cmd_data(string& sCmd)
             }
             else if (!_data.isValid())
             {
-                if (matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
                 {
                     if (sArgument.find('/') == string::npos)
                         sArgument = "<loadpath>/" + sArgument;
@@ -4029,12 +4029,12 @@ static CommandReturnValues cmd_data(string& sCmd)
                     //NumeReKernel::print(LineBreak("|-> Alle Daten der " +toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
                     return COMMAND_PROCESSED;
                 }
-                if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
+                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
                 {
-                    if (matchParams(sCmd, "head", '='))
-                        nArgument = matchParams(sCmd, "head", '=') + 4;
+                    if (findParameter(sCmd, "head", '='))
+                        nArgument = findParameter(sCmd, "head", '=') + 4;
                     else
-                        nArgument = matchParams(sCmd, "h", '=') + 1;
+                        nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
                     _data.openFile(sArgument, _option, false, true, nArgument);
                 }
@@ -4051,7 +4051,7 @@ static CommandReturnValues cmd_data(string& sCmd)
             load_data(_data, _option, _parser);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "paste") || matchParams(sCmd, "pasteload"))
+    else if (findParameter(sCmd, "paste") || findParameter(sCmd, "pasteload"))
     {
         _data.pasteLoad(_option);
         if (_data.isValid())
@@ -4059,28 +4059,28 @@ static CommandReturnValues cmd_data(string& sCmd)
         //NumeReKernel::print(LineBreak("|-> Die Daten wurden erfolgreich eingefügt: Der Datensatz besteht nun aus "+toString(_data.getLines("data"))+" Zeile(n) und "+toString(_data.getCols("data"))+" Spalte(n).", _option) );
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "reload") || matchParams(sCmd, "reload", '='))
+    else if (findParameter(sCmd, "reload") || findParameter(sCmd, "reload", '='))
     {
-        if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !matchParams(sCmd, "reload", '='))
+        if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !findParameter(sCmd, "reload", '='))
             //throw CANNOT_RELOAD_DATA;
             throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, "", SyntaxError::invalid_position);
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (matchParams(sCmd, "reload", '='))
+        if (findParameter(sCmd, "reload", '='))
             addArgumentQuotes(sCmd, "reload");
         if (extractFirstParameterStringValue(sCmd, sArgument))
         {
-            if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
+            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
             if (_data.isValid())
             {
                 _data.removeData(false);
-                if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
+                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
                 {
-                    if (matchParams(sCmd, "head", '='))
-                        nArgument = matchParams(sCmd, "head", '=') + 4;
+                    if (findParameter(sCmd, "head", '='))
+                        nArgument = findParameter(sCmd, "head", '=') + 4;
                     else
-                        nArgument = matchParams(sCmd, "h", '=') + 1;
+                        nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
                     _data.openFile(sArgument, _option, false, true, nArgument);
                 }
@@ -4095,7 +4095,7 @@ static CommandReturnValues cmd_data(string& sCmd)
         }
         else if (_data.isValid())
         {
-            if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
+            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
             sArgument = _data.getDataFileName("data");
             _data.removeData(false);
@@ -4108,17 +4108,17 @@ static CommandReturnValues cmd_data(string& sCmd)
             load_data(_data, _option, _parser);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "app") || matchParams(sCmd, "app", '='))
+    else if (findParameter(sCmd, "app") || findParameter(sCmd, "app", '='))
     {
         append_data(sCmd, _data, _option);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "showf"))
+    else if (findParameter(sCmd, "showf"))
     {
         show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "show"))
+    else if (findParameter(sCmd, "show"))
     {
         _out.setCompact(_option.getbCompact());
         show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
@@ -4128,7 +4128,7 @@ static CommandReturnValues cmd_data(string& sCmd)
     {
         return NO_COMMAND;
     }
-    else if (matchParams(sCmd, "stats"))
+    else if (findParameter(sCmd, "stats"))
     {
         sArgument = evaluateParameterValues(sCmd);
         if (_data.isValid())
@@ -4138,7 +4138,7 @@ static CommandReturnValues cmd_data(string& sCmd)
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, sArgument, sArgument);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "hist"))
+    else if (findParameter(sCmd, "hist"))
     {
         sArgument = evaluateParameterValues(sCmd);
         if (_data.isValid())
@@ -4148,11 +4148,11 @@ static CommandReturnValues cmd_data(string& sCmd)
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, sArgument, sArgument);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "save") || matchParams(sCmd, "save", '='))
+    else if (findParameter(sCmd, "save") || findParameter(sCmd, "save", '='))
     {
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (matchParams(sCmd, "save", '='))
+        if (findParameter(sCmd, "save", '='))
             addArgumentQuotes(sCmd, "save");
         _data.setPrefix("data");
         if (extractFirstParameterStringValue(sCmd, sArgument))
@@ -4190,17 +4190,17 @@ static CommandReturnValues cmd_data(string& sCmd)
         }
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "sort", '=') || matchParams(sCmd, "sort"))
+    else if (findParameter(sCmd, "sort", '=') || findParameter(sCmd, "sort"))
     {
         _data.sortElements(sCmd);
         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "export") || matchParams(sCmd, "export", '='))
+    else if (findParameter(sCmd, "export") || findParameter(sCmd, "export", '='))
     {
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (matchParams(sCmd, "export", '='))
+        if (findParameter(sCmd, "export", '='))
             addArgumentQuotes(sCmd, "export");
         if (extractFirstParameterStringValue(sCmd, sArgument))
         {
@@ -4211,29 +4211,29 @@ static CommandReturnValues cmd_data(string& sCmd)
             show_data(_data, _out, _option, "data", _option.getPrecision(), true, false, true);
         return COMMAND_PROCESSED;
     }
-    else if ((matchParams(sCmd, "avg")
-              || matchParams(sCmd, "sum")
-              || matchParams(sCmd, "min")
-              || matchParams(sCmd, "max")
-              || matchParams(sCmd, "norm")
-              || matchParams(sCmd, "std")
-              || matchParams(sCmd, "prd")
-              || matchParams(sCmd, "num")
-              || matchParams(sCmd, "cnt")
-              || matchParams(sCmd, "and")
-              || matchParams(sCmd, "or")
-              || matchParams(sCmd, "xor")
-              || matchParams(sCmd, "med"))
-             && (matchParams(sCmd, "lines") || matchParams(sCmd, "cols")))
+    else if ((findParameter(sCmd, "avg")
+              || findParameter(sCmd, "sum")
+              || findParameter(sCmd, "min")
+              || findParameter(sCmd, "max")
+              || findParameter(sCmd, "norm")
+              || findParameter(sCmd, "std")
+              || findParameter(sCmd, "prd")
+              || findParameter(sCmd, "num")
+              || findParameter(sCmd, "cnt")
+              || findParameter(sCmd, "and")
+              || findParameter(sCmd, "or")
+              || findParameter(sCmd, "xor")
+              || findParameter(sCmd, "med"))
+             && (findParameter(sCmd, "lines") || findParameter(sCmd, "cols")))
     {
         if (!_data.isValid())
             //throw NO_DATA_AVAILABLE;
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
         string sEvery = "";
-        if (matchParams(sCmd, "every", '='))
+        if (findParameter(sCmd, "every", '='))
         {
             value_type* v = 0;
-            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "every", '=') + 5));
+            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "every", '=') + 5));
             v = _parser.Eval(nArgument);
             if (nArgument > 1)
             {
@@ -4245,13 +4245,13 @@ static CommandReturnValues cmd_data(string& sCmd)
         nPos = findCommand(sCmd, "data").nPos;
         sArgument = extractCommandString(sCmd, findCommand(sCmd, "data"));
         sCommand = sArgument;
-        if (matchParams(sCmd, "grid"))
+        if (findParameter(sCmd, "grid"))
             sArgument = "grid";
         else
             sArgument.clear();
-        if (matchParams(sCmd, "avg"))
+        if (findParameter(sCmd, "avg"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[avg_lines]");
                 _parser.SetVectorVar("_~data[avg_lines]", _data.avg("data", sArgument + "lines" + sEvery));
@@ -4262,9 +4262,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[avg_cols]", _data.avg("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "sum"))
+        else if (findParameter(sCmd, "sum"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[sum_lines]");
                 _parser.SetVectorVar("_~data[sum_lines]", _data.sum("data", sArgument + "lines" + sEvery));
@@ -4275,9 +4275,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[sum_cols]", _data.sum("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "min"))
+        else if (findParameter(sCmd, "min"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[min_lines]");
                 _parser.SetVectorVar("_~data[min_lines]", _data.min("data", sArgument + "lines" + sEvery));
@@ -4288,9 +4288,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[min_cols]", _data.min("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "max"))
+        else if (findParameter(sCmd, "max"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[max_lines]");
                 _parser.SetVectorVar("_~data[max_lines]", _data.max("data", sArgument + "lines" + sEvery));
@@ -4301,9 +4301,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[max_cols]", _data.max("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "norm"))
+        else if (findParameter(sCmd, "norm"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[norm_lines]");
                 _parser.SetVectorVar("_~data[norm_lines]", _data.norm("data", sArgument + "lines" + sEvery));
@@ -4314,9 +4314,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[norm_cols]", _data.norm("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "std"))
+        else if (findParameter(sCmd, "std"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[std_lines]");
                 _parser.SetVectorVar("_~data[std_lines]", _data.std("data", sArgument + "lines" + sEvery));
@@ -4327,9 +4327,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[std_cols]", _data.std("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "prd"))
+        else if (findParameter(sCmd, "prd"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[prd_lines]");
                 _parser.SetVectorVar("_~data[prd_lines]", _data.prd("data", sArgument + "lines" + sEvery));
@@ -4340,9 +4340,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[prd_cols]", _data.prd("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "num"))
+        else if (findParameter(sCmd, "num"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[num_lines]");
                 _parser.SetVectorVar("_~data[num_lines]", _data.num("data", sArgument + "lines" + sEvery));
@@ -4353,9 +4353,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[num_cols]", _data.num("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "cnt"))
+        else if (findParameter(sCmd, "cnt"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[cnt_lines]");
                 _parser.SetVectorVar("_~data[cnt_lines]", _data.cnt("data", sArgument + "lines" + sEvery));
@@ -4366,9 +4366,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[cnt_cols]", _data.cnt("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "med"))
+        else if (findParameter(sCmd, "med"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[med_lines]");
                 _parser.SetVectorVar("_~data[med_lines]", _data.med("data", sArgument + "lines" + sEvery));
@@ -4379,9 +4379,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[med_cols]", _data.med("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "and"))
+        else if (findParameter(sCmd, "and"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[and_lines]");
                 _parser.SetVectorVar("_~data[and_lines]", _data.and_func("data", sArgument + "lines" + sEvery));
@@ -4392,9 +4392,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[and_cols]", _data.and_func("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "or"))
+        else if (findParameter(sCmd, "or"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[or_lines]");
                 _parser.SetVectorVar("_~data[or_lines]", _data.or_func("data", sArgument + "lines" + sEvery));
@@ -4405,9 +4405,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _parser.SetVectorVar("_~data[or_cols]", _data.or_func("data", sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "xor"))
+        else if (findParameter(sCmd, "xor"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~data[xor_lines]");
                 _parser.SetVectorVar("_~data[xor_lines]", _data.xor_func("data", sArgument + "lines" + sEvery));
@@ -4421,19 +4421,19 @@ static CommandReturnValues cmd_data(string& sCmd)
 
         return COMMAND_HAS_RETURNVALUE;
     }
-    else if ((matchParams(sCmd, "avg")
-              || matchParams(sCmd, "sum")
-              || matchParams(sCmd, "min")
-              || matchParams(sCmd, "max")
-              || matchParams(sCmd, "norm")
-              || matchParams(sCmd, "std")
-              || matchParams(sCmd, "prd")
-              || matchParams(sCmd, "num")
-              || matchParams(sCmd, "cnt")
-              || matchParams(sCmd, "and")
-              || matchParams(sCmd, "or")
-              || matchParams(sCmd, "xor")
-              || matchParams(sCmd, "med"))
+    else if ((findParameter(sCmd, "avg")
+              || findParameter(sCmd, "sum")
+              || findParameter(sCmd, "min")
+              || findParameter(sCmd, "max")
+              || findParameter(sCmd, "norm")
+              || findParameter(sCmd, "std")
+              || findParameter(sCmd, "prd")
+              || findParameter(sCmd, "num")
+              || findParameter(sCmd, "cnt")
+              || findParameter(sCmd, "and")
+              || findParameter(sCmd, "or")
+              || findParameter(sCmd, "xor")
+              || findParameter(sCmd, "med"))
             )
     {
         if (!_data.isValid())
@@ -4442,38 +4442,38 @@ static CommandReturnValues cmd_data(string& sCmd)
         nPos = findCommand(sCmd, "data").nPos;
         sArgument = extractCommandString(sCmd, findCommand(sCmd, "data"));
         sCommand = sArgument;
-        if (matchParams(sCmd, "grid") && _data.getCols("data") < 3)
+        if (findParameter(sCmd, "grid") && _data.getCols("data") < 3)
             //throw TOO_FEW_COLS;
             throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, "data", "data");
-        else if (matchParams(sCmd, "grid"))
+        else if (findParameter(sCmd, "grid"))
             nArgument = 2;
         else
             nArgument = 0;
-        if (matchParams(sCmd, "avg"))
+        if (findParameter(sCmd, "avg"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.avg("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "sum"))
+        else if (findParameter(sCmd, "sum"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.sum("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "min"))
+        else if (findParameter(sCmd, "min"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.min("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "max"))
+        else if (findParameter(sCmd, "max"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.max("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "norm"))
+        else if (findParameter(sCmd, "norm"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.norm("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "std"))
+        else if (findParameter(sCmd, "std"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.std("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "prd"))
+        else if (findParameter(sCmd, "prd"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.prd("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "num"))
+        else if (findParameter(sCmd, "num"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.num("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "cnt"))
+        else if (findParameter(sCmd, "cnt"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "med"))
+        else if (findParameter(sCmd, "med"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "and"))
+        else if (findParameter(sCmd, "and"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "or"))
+        else if (findParameter(sCmd, "or"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (matchParams(sCmd, "xor"))
+        else if (findParameter(sCmd, "xor"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
 
         return COMMAND_HAS_RETURNVALUE;
@@ -4504,12 +4504,12 @@ static CommandReturnValues cmd_new(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    if (matchParams(sCmd, "dir", '=')
-            || matchParams(sCmd, "script", '=')
-            || matchParams(sCmd, "proc", '=')
-            || matchParams(sCmd, "file", '=')
-            || matchParams(sCmd, "plugin", '=')
-            || matchParams(sCmd, "cache", '=')
+    if (findParameter(sCmd, "dir", '=')
+            || findParameter(sCmd, "script", '=')
+            || findParameter(sCmd, "proc", '=')
+            || findParameter(sCmd, "file", '=')
+            || findParameter(sCmd, "plugin", '=')
+            || findParameter(sCmd, "cache", '=')
             || sCmd.find("()", findCommand(sCmd).nPos + 3) != string::npos
             || sCmd.find('$', findCommand(sCmd).nPos + 3) != string::npos)
     {
@@ -4599,10 +4599,10 @@ static CommandReturnValues cmd_quit(string& sCmd)
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (matchParams(sCmd, "as"))
+    if (findParameter(sCmd, "as"))
         autoSave(_data, _out, _option);
 
-    if (matchParams(sCmd, "i"))
+    if (findParameter(sCmd, "i"))
         _data.setSaveStatus(true);
 
     return NUMERE_QUIT;
@@ -4680,26 +4680,26 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     size_t nPos;
     string sCommand = findCommand(sCmd).sString;
 
-    if (matchParams(sCmd, "showf"))
+    if (findParameter(sCmd, "showf"))
     {
         show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "show"))
+    else if (findParameter(sCmd, "show"))
     {
         _out.setCompact(_option.getbCompact());
         show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "clear"))
+    else if (findParameter(sCmd, "clear"))
     {
-        if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
+        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
             clear_cache(_data, _option, true);
         else
             clear_cache(_data, _option);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "hist"))
+    else if (findParameter(sCmd, "hist"))
     {
         sArgument = evaluateParameterValues(sCmd);
         if (_data.isValidCache())
@@ -4709,10 +4709,10 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "stats"))
+    else if (findParameter(sCmd, "stats"))
     {
         sArgument = evaluateParameterValues(sCmd);
-        if (matchParams(sCmd, "save", '='))
+        if (findParameter(sCmd, "save", '='))
         {
             if (sCmd[sCmd.find("save=") + 5] == '"' || sCmd[sCmd.find("save=") + 5] == '#')
             {
@@ -4730,11 +4730,11 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "save") || matchParams(sCmd, "save", '='))
+    else if (findParameter(sCmd, "save") || findParameter(sCmd, "save", '='))
     {
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (matchParams(sCmd, "save", '='))
+        if (findParameter(sCmd, "save", '='))
             addArgumentQuotes(sCmd, "save");
         _data.setPrefix(sCommand);
         if (extractFirstParameterStringValue(sCmd, sArgument))
@@ -4775,17 +4775,17 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
         }
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "sort") || matchParams(sCmd, "sort", '='))
+    else if (findParameter(sCmd, "sort") || findParameter(sCmd, "sort", '='))
     {
         _data.sortElements(sCmd);
         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "export") || matchParams(sCmd, "export", '='))
+    else if (findParameter(sCmd, "export") || findParameter(sCmd, "export", '='))
     {
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (matchParams(sCmd, "export", '='))
+        if (findParameter(sCmd, "export", '='))
             addArgumentQuotes(sCmd, "export");
         if (extractFirstParameterStringValue(sCmd, sArgument))
         {
@@ -4796,52 +4796,52 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
             show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true, true);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "rename", '=')) //CACHE -rename=NEWNAME
+    else if (findParameter(sCmd, "rename", '=')) //CACHE -rename=NEWNAME
     {
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
             sCmd = evaluateParameterValues(sCmd);
 
-        sArgument = getArgAtPos(sCmd, matchParams(sCmd, "rename", '=') + 6);
+        sArgument = getArgAtPos(sCmd, findParameter(sCmd, "rename", '=') + 6);
         _data.renameTable(sCommand, sArgument);
         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) );
         //NumeReKernel::print(LineBreak("|-> Der Cache wurde erfolgreich zu \""+sArgument+"\" umbenannt.", _option) );
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "swap", '=')) //CACHE -swap=NEWCACHE
+    else if (findParameter(sCmd, "swap", '=')) //CACHE -swap=NEWCACHE
     {
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
             sCmd = evaluateParameterValues(sCmd);
 
-        sArgument = getArgAtPos(sCmd, matchParams(sCmd, "swap", '=') + 4);
+        sArgument = getArgAtPos(sCmd, findParameter(sCmd, "swap", '=') + 4);
         _data.swapTables(sCommand, sArgument);
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCommand, sArgument), _option) );
         //NumeReKernel::print(LineBreak("|-> Der Inhalt von \""+sCommand+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) );
         return COMMAND_PROCESSED;
     }
-    else if ((matchParams(sCmd, "avg")
-              || matchParams(sCmd, "sum")
-              || matchParams(sCmd, "min")
-              || matchParams(sCmd, "max")
-              || matchParams(sCmd, "norm")
-              || matchParams(sCmd, "std")
-              || matchParams(sCmd, "prd")
-              || matchParams(sCmd, "num")
-              || matchParams(sCmd, "cnt")
-              || matchParams(sCmd, "and")
-              || matchParams(sCmd, "or")
-              || matchParams(sCmd, "xor")
-              || matchParams(sCmd, "med"))
-             && (matchParams(sCmd, "lines") || matchParams(sCmd, "cols")))
+    else if ((findParameter(sCmd, "avg")
+              || findParameter(sCmd, "sum")
+              || findParameter(sCmd, "min")
+              || findParameter(sCmd, "max")
+              || findParameter(sCmd, "norm")
+              || findParameter(sCmd, "std")
+              || findParameter(sCmd, "prd")
+              || findParameter(sCmd, "num")
+              || findParameter(sCmd, "cnt")
+              || findParameter(sCmd, "and")
+              || findParameter(sCmd, "or")
+              || findParameter(sCmd, "xor")
+              || findParameter(sCmd, "med"))
+             && (findParameter(sCmd, "lines") || findParameter(sCmd, "cols")))
     {
         if (!_data.isValidCache() || !_data.getTableCols(sCacheCmd, false))
             //throw NO_CACHED_DATA;
             throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sCacheCmd, sCacheCmd);
         string sEvery = "";
-        if (matchParams(sCmd, "every", '='))
+        if (findParameter(sCmd, "every", '='))
         {
             value_type* v = 0;
-            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "every", '=') + 5));
+            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "every", '=') + 5));
             v = _parser.Eval(nArgument);
             if (nArgument > 1)
             {
@@ -4853,14 +4853,14 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
         nPos = findCommand(sCmd, sCacheCmd).nPos;
         sArgument = extractCommandString(sCmd, findCommand(sCmd, sCacheCmd));
         sCommand = sArgument;
-        if (matchParams(sCmd, "grid"))
+        if (findParameter(sCmd, "grid"))
             sArgument = "grid";
         else
             sArgument.clear();
 
-        if (matchParams(sCmd, "avg"))
+        if (findParameter(sCmd, "avg"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[avg_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[avg_lines]", _data.avg(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4871,9 +4871,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[avg_cols]", _data.avg(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "sum"))
+        else if (findParameter(sCmd, "sum"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[sum_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[sum_lines]", _data.sum(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4884,9 +4884,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[sum_cols]", _data.sum(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "min"))
+        else if (findParameter(sCmd, "min"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[min_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[min_lines]", _data.min(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4897,9 +4897,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[min_cols]", _data.min(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "max"))
+        else if (findParameter(sCmd, "max"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[max_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[max_lines]", _data.max(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4910,9 +4910,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[max_cols]", _data.max(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "norm"))
+        else if (findParameter(sCmd, "norm"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[norm_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[norm_lines]", _data.norm(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4923,9 +4923,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[norm_cols]", _data.norm(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "std"))
+        else if (findParameter(sCmd, "std"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[std_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[std_lines]", _data.std(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4936,9 +4936,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[std_cols]", _data.std(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "prd"))
+        else if (findParameter(sCmd, "prd"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[prd_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[prd_lines]", _data.prd(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4949,9 +4949,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[prd_cols]", _data.prd(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "num"))
+        else if (findParameter(sCmd, "num"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[num_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[num_lines]", _data.num(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4962,9 +4962,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[num_cols]", _data.num(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "cnt"))
+        else if (findParameter(sCmd, "cnt"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[cnt_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[cnt_lines]", _data.cnt(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4975,9 +4975,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[cnt_cols]", _data.cnt(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "med"))
+        else if (findParameter(sCmd, "med"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[med_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[med_lines]", _data.med(sCacheCmd, sArgument + "lines" + sEvery));
@@ -4988,9 +4988,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[med_cols]", _data.med(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "and"))
+        else if (findParameter(sCmd, "and"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[and_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[and_lines]", _data.and_func(sCacheCmd, sArgument + "lines" + sEvery));
@@ -5001,9 +5001,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[and_cols]", _data.and_func(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "or"))
+        else if (findParameter(sCmd, "or"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[or_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[or_lines]", _data.or_func(sCacheCmd, sArgument + "lines" + sEvery));
@@ -5014,9 +5014,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 _parser.SetVectorVar("_~" + sCacheCmd + "[or_cols]", _data.or_func(sCacheCmd, sArgument + "cols" + sEvery));
             }
         }
-        else if (matchParams(sCmd, "xor"))
+        else if (findParameter(sCmd, "xor"))
         {
-            if (matchParams(sCmd, "lines"))
+            if (findParameter(sCmd, "lines"))
             {
                 sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[xor_lines]");
                 _parser.SetVectorVar("_~" + sCacheCmd + "[xor_lines]", _data.med(sCacheCmd, sArgument + "lines" + sEvery));
@@ -5030,19 +5030,19 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
 
         return COMMAND_HAS_RETURNVALUE;
     }
-    else if ((matchParams(sCmd, "avg")
-              || matchParams(sCmd, "sum")
-              || matchParams(sCmd, "min")
-              || matchParams(sCmd, "max")
-              || matchParams(sCmd, "norm")
-              || matchParams(sCmd, "std")
-              || matchParams(sCmd, "prd")
-              || matchParams(sCmd, "num")
-              || matchParams(sCmd, "cnt")
-              || matchParams(sCmd, "and")
-              || matchParams(sCmd, "or")
-              || matchParams(sCmd, "xor")
-              || matchParams(sCmd, "med"))
+    else if ((findParameter(sCmd, "avg")
+              || findParameter(sCmd, "sum")
+              || findParameter(sCmd, "min")
+              || findParameter(sCmd, "max")
+              || findParameter(sCmd, "norm")
+              || findParameter(sCmd, "std")
+              || findParameter(sCmd, "prd")
+              || findParameter(sCmd, "num")
+              || findParameter(sCmd, "cnt")
+              || findParameter(sCmd, "and")
+              || findParameter(sCmd, "or")
+              || findParameter(sCmd, "xor")
+              || findParameter(sCmd, "med"))
             )
     {
         if (!_data.isValidCache() || !_data.getTableCols(sCacheCmd, false))
@@ -5051,38 +5051,38 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
         nPos = findCommand(sCmd, sCacheCmd).nPos;
         sArgument = extractCommandString(sCmd, findCommand(sCmd, sCacheCmd));
         sCommand = sArgument;
-        if (matchParams(sCmd, "grid") && _data.getTableCols(sCacheCmd, false) < 3)
+        if (findParameter(sCmd, "grid") && _data.getTableCols(sCacheCmd, false) < 3)
             //throw TOO_FEW_COLS;
             throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, sCacheCmd, sCacheCmd);
-        else if (matchParams(sCmd, "grid"))
+        else if (findParameter(sCmd, "grid"))
             nArgument = 2;
         else
             nArgument = 0;
-        if (matchParams(sCmd, "avg"))
+        if (findParameter(sCmd, "avg"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.avg(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "sum"))
+        else if (findParameter(sCmd, "sum"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.sum(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "min"))
+        else if (findParameter(sCmd, "min"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.min(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "max"))
+        else if (findParameter(sCmd, "max"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.max(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "norm"))
+        else if (findParameter(sCmd, "norm"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.norm(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "std"))
+        else if (findParameter(sCmd, "std"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.std(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "prd"))
+        else if (findParameter(sCmd, "prd"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.prd(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "num"))
+        else if (findParameter(sCmd, "num"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.num(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "cnt"))
+        else if (findParameter(sCmd, "cnt"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "med"))
+        else if (findParameter(sCmd, "med"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "and"))
+        else if (findParameter(sCmd, "and"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "or"))
+        else if (findParameter(sCmd, "or"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (matchParams(sCmd, "xor"))
+        else if (findParameter(sCmd, "xor"))
             sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
 
         return COMMAND_HAS_RETURNVALUE;
@@ -5110,21 +5110,21 @@ static CommandReturnValues cmd_clear(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (matchParams(sCmd, "data") || sCmd.find(" data()", findCommand(sCmd).nPos) != string::npos)
+    if (findParameter(sCmd, "data") || sCmd.find(" data()", findCommand(sCmd).nPos) != string::npos)
     {
-        if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
+        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
             remove_data(_data, _option, true);
         else
             remove_data(_data, _option);
     }
     else if (_data.matchTableAsParameter(sCmd).length() || _data.containsTablesOrClusters(sCmd.substr(findCommand(sCmd).nPos)))
     {
-        if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
+        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
             clear_cache(_data, _option, true);
         else
             clear_cache(_data, _option);
     }
-    else if (matchParams(sCmd, "string") || sCmd.find(" string()", findCommand(sCmd).nPos) != string::npos)
+    else if (findParameter(sCmd, "string") || sCmd.find(" string()", findCommand(sCmd).nPos) != string::npos)
     {
         if (_data.clearStringElements())
         {
@@ -5164,7 +5164,7 @@ static CommandReturnValues cmd_ifndefined(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-        if (matchParams(sCmd, "comment", '='))
+        if (findParameter(sCmd, "comment", '='))
             addArgumentQuotes(sCmd, "comment");
 
         string sArgument = sCmd.substr(sCmd.find(' '));
@@ -5243,11 +5243,11 @@ static CommandReturnValues cmd_copy(string& sCmd)
         else
             throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, sCmd, SyntaxError::invalid_position);
     }
-    else if ((matchParams(sCmd, "target", '=') || matchParams(sCmd, "t", '=')) && sCmd.length() > 5)
+    else if ((findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '=')) && sCmd.length() > 5)
     {
         int nArgument;
 
-        if (matchParams(sCmd, "all") || matchParams(sCmd, "a"))
+        if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
             nArgument = 1;
         else
             nArgument = 0;
@@ -5318,7 +5318,7 @@ static CommandReturnValues cmd_append(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
+    if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '='))
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
@@ -5336,14 +5336,14 @@ static CommandReturnValues cmd_append(string& sCmd)
         {
             sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7), 1, '"');
 
-            if (matchParams(sCmd, "slice")
-                    || matchParams(sCmd, "keepdim")
-                    || matchParams(sCmd, "complete")
-                    || matchParams(sCmd, "ignore")
-                    || matchParams(sCmd, "i")
-                    || matchParams(sCmd, "head")
-                    || matchParams(sCmd, "h")
-                    || matchParams(sCmd, "all"))
+            if (findParameter(sCmd, "slice")
+                    || findParameter(sCmd, "keepdim")
+                    || findParameter(sCmd, "complete")
+                    || findParameter(sCmd, "ignore")
+                    || findParameter(sCmd, "i")
+                    || findParameter(sCmd, "head")
+                    || findParameter(sCmd, "h")
+                    || findParameter(sCmd, "all"))
             {
                 size_t nPos = string::npos;
 
@@ -5423,7 +5423,7 @@ static CommandReturnValues cmd_write(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (sCmd.length() > 6 && matchParams(sCmd, "file", '='))
+    if (sCmd.length() > 6 && findParameter(sCmd, "file", '='))
         writeToFile(sCmd, _data, _option);
     else
         doc_Help("write", _option);
@@ -5540,7 +5540,7 @@ static CommandReturnValues cmd_stats(string& sCmd)
 
     string sArgument = evaluateParameterValues(sCmd);
 
-    if (matchParams(sCmd, "data") && _data.isValid())
+    if (findParameter(sCmd, "data") && _data.isValid())
     {
         // DEPRECATED: Declared at v1.1.2rc2
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
@@ -5565,7 +5565,7 @@ static CommandReturnValues cmd_stats(string& sCmd)
             if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
                 NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-            if (matchParams(sCmd, "export", '='))
+            if (findParameter(sCmd, "export", '='))
                 addArgumentQuotes(sCmd, "export");
 
             sArgument = "stats -cache " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
@@ -5643,12 +5643,12 @@ static CommandReturnValues cmd_save(string& sCmd)
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (matchParams(sCmd, "define"))
+    if (findParameter(sCmd, "define"))
     {
         _functions.save(_option);
         return COMMAND_PROCESSED;
     }
-    else if (matchParams(sCmd, "set") || matchParams(sCmd, "settings"))
+    else if (findParameter(sCmd, "set") || findParameter(sCmd, "settings"))
     {
         _option.save(_option.getExePath());
         return COMMAND_PROCESSED;
@@ -5682,7 +5682,7 @@ static CommandReturnValues cmd_set(string& sCmd)
     if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
         NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-    if (matchParams(sCmd, "savepath") || matchParams(sCmd, "savepath", '='))
+    if (findParameter(sCmd, "savepath") || findParameter(sCmd, "savepath", '='))
     {
         sArgument = getPathForSetting(sCmd, "savepath");
         _out.setPath(sArgument, true, _out.getProgramPath());
@@ -5694,7 +5694,7 @@ static CommandReturnValues cmd_set(string& sCmd)
 
         NumeReKernel::modifiedSettings = true;
     }
-    else if (matchParams(sCmd, "loadpath") || matchParams(sCmd, "loadpath", '='))
+    else if (findParameter(sCmd, "loadpath") || findParameter(sCmd, "loadpath", '='))
     {
         sArgument = getPathForSetting(sCmd, "loadpath");
         _data.setPath(sArgument, true, _data.getProgramPath());
@@ -5705,7 +5705,7 @@ static CommandReturnValues cmd_set(string& sCmd)
 
         NumeReKernel::modifiedSettings = true;
     }
-    else if (matchParams(sCmd, "workpath") || matchParams(sCmd, "workpath", '='))
+    else if (findParameter(sCmd, "workpath") || findParameter(sCmd, "workpath", '='))
     {
         sArgument = getPathForSetting(sCmd, "workpath");
         FileSystem _fSys;
@@ -5718,7 +5718,7 @@ static CommandReturnValues cmd_set(string& sCmd)
 
         NumeReKernel::modifiedSettings = true;
     }
-    else if (matchParams(sCmd, "viewer") || matchParams(sCmd, "viewer", '='))
+    else if (findParameter(sCmd, "viewer") || findParameter(sCmd, "viewer", '='))
     {
         sArgument = getPathForSetting(sCmd, "viewer");
         _option.setViewerPath(sArgument);
@@ -5726,7 +5726,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage(  _lang.get("BUILTIN_CHECKKEYWORD_SET_PROGRAM", "Imageviewer")) );
     }
-    else if (matchParams(sCmd, "editor") || matchParams(sCmd, "editor", '='))
+    else if (findParameter(sCmd, "editor") || findParameter(sCmd, "editor", '='))
     {
         sArgument = getPathForSetting(sCmd, "editor");
         _option.setEditorPath(sArgument);
@@ -5734,7 +5734,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage(  _lang.get("BUILTIN_CHECKKEYWORD_SET_PROGRAM", "Texteditor")) );
     }
-    else if (matchParams(sCmd, "scriptpath") || matchParams(sCmd, "scriptpath", '='))
+    else if (findParameter(sCmd, "scriptpath") || findParameter(sCmd, "scriptpath", '='))
     {
         sArgument = getPathForSetting(sCmd, "scriptpath");
         _script.setPath(sArgument, true, _script.getProgramPath());
@@ -5745,7 +5745,7 @@ static CommandReturnValues cmd_set(string& sCmd)
 
         NumeReKernel::modifiedSettings = true;
     }
-    else if (matchParams(sCmd, "plotpath") || matchParams(sCmd, "plotpath", '='))
+    else if (findParameter(sCmd, "plotpath") || findParameter(sCmd, "plotpath", '='))
     {
         sArgument = getPathForSetting(sCmd, "plotpath");
         _pData.setPath(sArgument, true, _pData.getProgramPath());
@@ -5756,7 +5756,7 @@ static CommandReturnValues cmd_set(string& sCmd)
 
         NumeReKernel::modifiedSettings = true;
     }
-    else if (matchParams(sCmd, "procpath") || matchParams(sCmd, "procpath", '='))
+    else if (findParameter(sCmd, "procpath") || findParameter(sCmd, "procpath", '='))
     {
         sArgument = getPathForSetting(sCmd, "procpath");
         _option.setProcPath(sArgument);
@@ -5766,9 +5766,9 @@ static CommandReturnValues cmd_set(string& sCmd)
 
         NumeReKernel::modifiedSettings = true;
     }
-    else if (matchParams(sCmd, "plotfont") || matchParams(sCmd, "plotfont", '='))
+    else if (findParameter(sCmd, "plotfont") || findParameter(sCmd, "plotfont", '='))
     {
-        if (matchParams(sCmd, "plotfont", '='))
+        if (findParameter(sCmd, "plotfont", '='))
             addArgumentQuotes(sCmd, "plotfont");
 
         if (!extractFirstParameterStringValue(sCmd, sArgument))
@@ -5796,7 +5796,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_DEFAULTFONT"))) );
     }
-    else if (matchParams(sCmd, "precision") || matchParams(sCmd, "precision", '='))
+    else if (findParameter(sCmd, "precision") || findParameter(sCmd, "precision", '='))
     {
         if (!parseCmdArg(sCmd, "precision", _parser, nArgument) || (!nArgument || nArgument > 14))
         {
@@ -5816,7 +5816,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_PRECISION"))) );
     }
-    else if (matchParams(sCmd, "draftmode") || matchParams(sCmd, "draftmode", '='))
+    else if (findParameter(sCmd, "draftmode") || findParameter(sCmd, "draftmode", '='))
     {
         if (!parseCmdArg(sCmd, "draftmode", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbUseDraftMode();
@@ -5831,7 +5831,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DRAFTMODE"), _lang.get("COMMON_INACTIVE")), _option) );
         }
     }
-    else if (matchParams(sCmd, "extendedfileinfo") || matchParams(sCmd, "extendedfileinfo", '='))
+    else if (findParameter(sCmd, "extendedfileinfo") || findParameter(sCmd, "extendedfileinfo", '='))
     {
         if (!parseCmdArg(sCmd, "extendedfileinfo", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbShowExtendedFileInfo();
@@ -5846,7 +5846,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_EXTENDEDINFO"), _lang.get("COMMON_INACTIVE")), _option) );
         }
     }
-    else if (matchParams(sCmd, "loademptycols") || matchParams(sCmd, "loademptycols", '='))
+    else if (findParameter(sCmd, "loademptycols") || findParameter(sCmd, "loademptycols", '='))
     {
         if (!parseCmdArg(sCmd, "loademptycols", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbLoadEmptyCols();
@@ -5862,7 +5862,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOADEMPTYCOLS"), _lang.get("COMMON_INACTIVE")), _option) );
         }
     }
-    else if (matchParams(sCmd, "logfile") || matchParams(sCmd, "logfile", '='))
+    else if (findParameter(sCmd, "logfile") || findParameter(sCmd, "logfile", '='))
     {
         if (!parseCmdArg(sCmd, "logfile", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbUseLogFile();
@@ -5879,9 +5879,9 @@ static CommandReturnValues cmd_set(string& sCmd)
             NumeReKernel::print(LineBreak("|   (" + _lang.get("BUILTIN_CHECKKEYWORD_SET_RESTART_REQUIRED") + ")", _option) );
         }
     }
-    else if (matchParams(sCmd, "mode") || matchParams(sCmd, "mode", '='))
+    else if (findParameter(sCmd, "mode") || findParameter(sCmd, "mode", '='))
     {
-        if (matchParams(sCmd, "mode", '='))
+        if (findParameter(sCmd, "mode", '='))
             addArgumentQuotes(sCmd, "mode");
 
         extractFirstParameterStringValue(sCmd, sArgument);
@@ -5932,7 +5932,7 @@ static CommandReturnValues cmd_set(string& sCmd)
             }
         }
     }
-    else if (matchParams(sCmd, "compact") || matchParams(sCmd, "compact", '='))
+    else if (findParameter(sCmd, "compact") || findParameter(sCmd, "compact", '='))
     {
         if (!parseCmdArg(sCmd, "compact", _parser, nArgument) || !(nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbCompact();
@@ -5947,7 +5947,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_COMPACT"), _lang.get("COMMON_INACTIVE")), _option) );
         }
     }
-    else if (matchParams(sCmd, "greeting") || matchParams(sCmd, "greeting", '='))
+    else if (findParameter(sCmd, "greeting") || findParameter(sCmd, "greeting", '='))
     {
         if (!parseCmdArg(sCmd, "greeting", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbGreeting();
@@ -5962,7 +5962,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_GREETING"), _lang.get("COMMON_INACTIVE")), _option) );
         }
     }
-    else if (matchParams(sCmd, "hints") || matchParams(sCmd, "hints", '='))
+    else if (findParameter(sCmd, "hints") || findParameter(sCmd, "hints", '='))
     {
         if (!parseCmdArg(sCmd, "hints", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbShowHints();
@@ -5977,7 +5977,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_HINTS"), _lang.get("COMMON_INACTIVE")), _option) );
         }
     }
-    else if (matchParams(sCmd, "useescinscripts") || matchParams(sCmd, "useescinscripts", '='))
+    else if (findParameter(sCmd, "useescinscripts") || findParameter(sCmd, "useescinscripts", '='))
     {
         if (!parseCmdArg(sCmd, "useescinscripts", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbUseESCinScripts();
@@ -5992,7 +5992,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_INACTIVE")), _option) );
         }
     }
-    else if (matchParams(sCmd, "usecustomlang") || matchParams(sCmd, "usecustomlang", '='))
+    else if (findParameter(sCmd, "usecustomlang") || findParameter(sCmd, "usecustomlang", '='))
     {
         if (!parseCmdArg(sCmd, "usecustomlang", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getUseCustomLanguageFiles();
@@ -6007,7 +6007,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_CUSTOM_LANG"), _lang.get("COMMON_INACTIVE")), _option) );
         }
     }
-    else if (matchParams(sCmd, "externaldocwindow") || matchParams(sCmd, "externaldocwindow", '='))
+    else if (findParameter(sCmd, "externaldocwindow") || findParameter(sCmd, "externaldocwindow", '='))
     {
         if (!parseCmdArg(sCmd, "externaldocwindow", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getUseExternalViewer();
@@ -6022,7 +6022,7 @@ static CommandReturnValues cmd_set(string& sCmd)
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DOC_VIEWER"), _lang.get("COMMON_INACTIVE")), _option) );
         }
     }
-    else if (matchParams(sCmd, "defcontrol") || matchParams(sCmd, "defcontrol", '='))
+    else if (findParameter(sCmd, "defcontrol") || findParameter(sCmd, "defcontrol", '='))
     {
         if (!parseCmdArg(sCmd, "defcontrol", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
             nArgument = !_option.getbDefineAutoLoad();
@@ -6040,7 +6040,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         if (_option.getbDefineAutoLoad() && !_functions.getDefinedFunctions() && fileExists(_option.getExePath() + "\\functions.def"))
             _functions.load(_option);
     }
-    else if (matchParams(sCmd, "autosave") || matchParams(sCmd, "autosave", '='))
+    else if (findParameter(sCmd, "autosave") || findParameter(sCmd, "autosave", '='))
     {
         if (!parseCmdArg(sCmd, "autosave", _parser, nArgument) && !nArgument)
         {
@@ -6060,7 +6060,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_AUTOSAVE"))) );
     }
-    else if (matchParams(sCmd, "buffersize") || matchParams(sCmd, "buffersize", '='))
+    else if (findParameter(sCmd, "buffersize") || findParameter(sCmd, "buffersize", '='))
     {
         if (!parseCmdArg(sCmd, "buffersize", _parser, nArgument) || nArgument < 300)
         {
@@ -6082,9 +6082,9 @@ static CommandReturnValues cmd_set(string& sCmd)
 
         NumeReKernel::modifiedSettings = true;
     }
-    else if (matchParams(sCmd, "windowsize"))
+    else if (findParameter(sCmd, "windowsize"))
     {
-        if (matchParams(sCmd, "x", '='))
+        if (findParameter(sCmd, "x", '='))
         {
             parseCmdArg(sCmd, "x", _parser, nArgument);
             _option.setWindowSize((unsigned)nArgument, 0);
@@ -6092,7 +6092,7 @@ static CommandReturnValues cmd_set(string& sCmd)
             NumeReKernel::nLINE_LENGTH = _option.getWindow();
         }
 
-        if (matchParams(sCmd, "y", '='))
+        if (findParameter(sCmd, "y", '='))
         {
             parseCmdArg(sCmd, "y", _parser, nArgument);
             _option.setWindowSize(0, (unsigned)nArgument);
@@ -6104,7 +6104,7 @@ static CommandReturnValues cmd_set(string& sCmd)
         if (_option.getSystemPrintStatus())
             NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_WINDOWSIZE"))) );
     }
-    else if (matchParams(sCmd, "save"))
+    else if (findParameter(sCmd, "save"))
         _option.save(_option.getExePath());
     else
         doc_Help("set", _option);
@@ -6130,7 +6130,7 @@ static CommandReturnValues cmd_start(string& sCmd)
     if (_script.isOpen())
         throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, "start");
 
-    if (matchParams(sCmd, "script") || matchParams(sCmd, "script", '='))
+    if (findParameter(sCmd, "script") || findParameter(sCmd, "script", '='))
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
@@ -6138,10 +6138,10 @@ static CommandReturnValues cmd_start(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-        if (matchParams(sCmd, "install"))
+        if (findParameter(sCmd, "install"))
             _script.setInstallProcedures();
 
-        if (matchParams(sCmd, "script", '='))
+        if (findParameter(sCmd, "script", '='))
             addArgumentQuotes(sCmd, "script");
 
         if (extractFirstParameterStringValue(sCmd, sArgument))
@@ -6197,7 +6197,7 @@ static CommandReturnValues cmd_script(string& sCmd)
 
     string sArgument;
 
-    if (matchParams(sCmd, "load") || matchParams(sCmd, "load", '='))
+    if (findParameter(sCmd, "load") || findParameter(sCmd, "load", '='))
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
@@ -6207,7 +6207,7 @@ static CommandReturnValues cmd_script(string& sCmd)
             if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
                 NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-            if (matchParams(sCmd, "load", '='))
+            if (findParameter(sCmd, "load", '='))
                 addArgumentQuotes(sCmd, "load");
 
             if (!extractFirstParameterStringValue(sCmd, sArgument))
@@ -6239,7 +6239,7 @@ static CommandReturnValues cmd_script(string& sCmd)
         else
             throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, "script");
     }
-    else if (matchParams(sCmd, "start") || matchParams(sCmd, "start", '='))
+    else if (findParameter(sCmd, "start") || findParameter(sCmd, "start", '='))
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
@@ -6250,10 +6250,10 @@ static CommandReturnValues cmd_script(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-        if (matchParams(sCmd, "install"))
+        if (findParameter(sCmd, "install"))
             _script.setInstallProcedures();
 
-        if (matchParams(sCmd, "start", '='))
+        if (findParameter(sCmd, "start", '='))
             addArgumentQuotes(sCmd, "start");
 
         if (extractFirstParameterStringValue(sCmd, sArgument))
@@ -6291,7 +6291,7 @@ static CommandReturnValues cmd_show(string& sCmd)
         _out.setCompact(_option.getbCompact());
 
     // Determine the correct data object
-    if (matchParams(sCmd, "data") || sCmd.find(" data()") != string::npos)
+    if (findParameter(sCmd, "data") || sCmd.find(" data()") != string::npos)
     {
         // data as object, passed as parameter
         show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
@@ -6427,9 +6427,9 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     int nArgument;
 
     // smooth cache(i1:i2,j1:j2) -order=1
-    if (matchParams(sCmd, "order", '='))
+    if (findParameter(sCmd, "order", '='))
     {
-        nArgument = matchParams(sCmd, "order", '=') + 5;
+        nArgument = findParameter(sCmd, "order", '=') + 5;
         if (_data.containsTablesOrClusters(sCmd.substr(nArgument)) || sCmd.substr(nArgument).find("data(") != string::npos)
         {
             sArgument = sCmd.substr(nArgument);
@@ -6460,7 +6460,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
         if (_access.getIndices().col.isOpenEnd())
             _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
 
-        if (matchParams(sCmd, "grid"))
+        if (findParameter(sCmd, "grid"))
         {
             if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::GRID))
             {
@@ -6470,7 +6470,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
             else
                 throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
+        else if (!findParameter(sCmd, "lines") && !findParameter(sCmd, "cols"))
         {
             if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::ALL))
             {
@@ -6480,7 +6480,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
             else
                 throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else if (matchParams(sCmd, "lines"))
+        else if (findParameter(sCmd, "lines"))
         {
             if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::LINES))
             {
@@ -6490,7 +6490,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
             else
                 throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else if (matchParams(sCmd, "cols"))
+        else if (findParameter(sCmd, "cols"))
         {
             if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::COLS))
             {
@@ -6522,7 +6522,7 @@ static CommandReturnValues cmd_string(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (matchParams(sCmd, "clear"))
+    if (findParameter(sCmd, "clear"))
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
@@ -6577,7 +6577,7 @@ static CommandReturnValues cmd_hist(string& sCmd)
     string sArgument = evaluateParameterValues(sCmd);
     string sCommand = findCommand(sCmd).sString;
 
-    if (matchParams(sCmd, "data") && _data.isValid())
+    if (findParameter(sCmd, "data") && _data.isValid())
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRACATED"));
@@ -6603,7 +6603,7 @@ static CommandReturnValues cmd_hist(string& sCmd)
             if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
                 NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-            if (matchParams(sCmd, "export", '='))
+            if (findParameter(sCmd, "export", '='))
                 addArgumentQuotes(sCmd, "export");
 
             if (sCommand == "hist2d")
@@ -6662,7 +6662,7 @@ static CommandReturnValues cmd_move(string& sCmd)
 
     if (sCmd.length() > 5)
     {
-        if (_data.containsTablesOrClusters(sCmd) && (matchParams(sCmd, "target", '=') || matchParams(sCmd, "t", '=')))
+        if (_data.containsTablesOrClusters(sCmd) && (findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '=')))
         {
             if (moveData(sCmd, _parser, _data, _option))
             {
@@ -6674,7 +6674,7 @@ static CommandReturnValues cmd_move(string& sCmd)
         }
         else
         {
-            if (matchParams(sCmd, "all") || matchParams(sCmd, "a"))
+            if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
                 nArgument = 1;
             else
                 nArgument = 0;
@@ -6708,7 +6708,7 @@ static CommandReturnValues cmd_move(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_hline(string& sCmd)
 {
-    if (matchParams(sCmd, "single"))
+    if (findParameter(sCmd, "single"))
         make_hline(-2);
     else
         make_hline();
@@ -6751,7 +6751,7 @@ static CommandReturnValues cmd_random(string& sCmd)
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (matchParams(sCmd, "o"))
+    if (findParameter(sCmd, "o"))
         plugin_random(sCmd, _data, _out, _option, true);
     else
         plugin_random(sCmd, _data, _out, _option);
@@ -6778,7 +6778,7 @@ static CommandReturnValues cmd_redefine(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-        if (matchParams(sCmd, "comment", '='))
+        if (findParameter(sCmd, "comment", '='))
             addArgumentQuotes(sCmd, "comment");
 
         if (_functions.defineFunc(sCmd.substr(sCmd.find(' ') + 1), true))
@@ -6817,9 +6817,9 @@ static CommandReturnValues cmd_resample(string& sCmd)
 
     if (_access.getDataObject().length())
     {
-        if (matchParams(sCmd, "samples", '='))
+        if (findParameter(sCmd, "samples", '='))
         {
-            nArgument = matchParams(sCmd, "samples", '=') + 7;
+            nArgument = findParameter(sCmd, "samples", '=') + 7;
 
             if (_data.containsTablesOrClusters(getArgAtPos(sCmd, nArgument)) || getArgAtPos(sCmd, nArgument).find("data(") != string::npos)
             {
@@ -6847,7 +6847,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
         if (_access.getIndices().col.isOpenEnd())
             _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
 
-        if (matchParams(sCmd, "grid"))
+        if (findParameter(sCmd, "grid"))
         {
             if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::GRID))
             {
@@ -6857,7 +6857,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
             else
                 throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
+        else if (!findParameter(sCmd, "lines") && !findParameter(sCmd, "cols"))
         {
             if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::ALL))
             {
@@ -6867,7 +6867,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
             else
                 throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else if (matchParams(sCmd, "cols"))
+        else if (findParameter(sCmd, "cols"))
         {
             if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::COLS))
             {
@@ -6877,7 +6877,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
             else
                 throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else if (matchParams(sCmd, "lines"))
+        else if (findParameter(sCmd, "lines"))
         {
             if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::LINES))
             {
@@ -6938,7 +6938,7 @@ static CommandReturnValues cmd_remove(string& sCmd)
     }
     else if (sCmd.length() > 7)
     {
-        if (matchParams(sCmd, "all") || matchParams(sCmd, "a"))
+        if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
             nArgument = 1;
         else
             nArgument = 0;
@@ -6986,7 +6986,7 @@ static CommandReturnValues cmd_rename(string& sCmd)
         // Legacy syntax: rename -cache1=cache2
         //
         // Get the option value of the parameter "cache1"
-        sArgument = getArgAtPos(sCmd, matchParams(sCmd, _data.matchTableAsParameter(sCmd, '='), '=') + _data.matchTableAsParameter(sCmd, '=').length());
+        sArgument = getArgAtPos(sCmd, findParameter(sCmd, _data.matchTableAsParameter(sCmd, '='), '=') + _data.matchTableAsParameter(sCmd, '=').length());
 
         // Rename the cache
         _data.renameTable(_data.matchTableAsParameter(sCmd, '='), sArgument);
@@ -7045,29 +7045,29 @@ static CommandReturnValues cmd_reload(string& sCmd)
     string sArgument;
     int nArgument;
 
-    if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '='))
+    if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '='))
     {
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-        if (matchParams(sCmd, "data", '='))
+        if (findParameter(sCmd, "data", '='))
             addArgumentQuotes(sCmd, "data");
 
         if (extractFirstParameterStringValue(sCmd, sArgument))
         {
-            if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
+            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
 
             if (_data.isValid())
             {
                 _data.removeData(false);
 
-                if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
+                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
                 {
-                    if (matchParams(sCmd, "head", '='))
-                        nArgument = matchParams(sCmd, "head", '=') + 4;
+                    if (findParameter(sCmd, "head", '='))
+                        nArgument = findParameter(sCmd, "head", '=') + 4;
                     else
-                        nArgument = matchParams(sCmd, "h", '=') + 1;
+                        nArgument = findParameter(sCmd, "h", '=') + 1;
 
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
                     _data.openFile(sArgument, _option, false, true, nArgument);
@@ -7083,10 +7083,10 @@ static CommandReturnValues cmd_reload(string& sCmd)
         }
         else if (_data.isValid())
         {
-            if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !matchParams(sCmd, "data", '='))
+            if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !findParameter(sCmd, "data", '='))
                 throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, sCmd, SyntaxError::invalid_position);
 
-            if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
+            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
 
             sArgument = _data.getDataFileName("data");
@@ -7137,7 +7137,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         if (_access.getIndices().col.isOpenEnd())
             _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
 
-        if (matchParams(sCmd, "grid"))
+        if (findParameter(sCmd, "grid"))
         {
             if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::GRID))
             {
@@ -7147,7 +7147,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
             else
                 throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else if (!matchParams(sCmd, "lines") && !matchParams(sCmd, "cols"))
+        else if (!findParameter(sCmd, "lines") && !findParameter(sCmd, "cols"))
         {
             if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::ALL))
             {
@@ -7157,7 +7157,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
             else
                 throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else if (matchParams(sCmd, "lines"))
+        else if (findParameter(sCmd, "lines"))
         {
             if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::LINES))
             {
@@ -7167,7 +7167,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
             else
                 throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
         }
-        else if (matchParams(sCmd, "cols"))
+        else if (findParameter(sCmd, "cols"))
         {
             if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::COLS))
             {
@@ -7230,15 +7230,15 @@ static CommandReturnValues cmd_define(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-        if (matchParams(sCmd, "comment", '='))
+        if (findParameter(sCmd, "comment", '='))
             addArgumentQuotes(sCmd, "comment");
 
-        if (matchParams(sCmd, "save"))
+        if (findParameter(sCmd, "save"))
         {
             _functions.save(_option);
             return COMMAND_PROCESSED;
         }
-        else if (matchParams(sCmd, "load"))
+        else if (findParameter(sCmd, "load"))
         {
             if (fileExists(_option.getExePath() + "\\functions.def"))
                 _functions.load(_option);
@@ -7281,7 +7281,7 @@ static CommandReturnValues cmd_delete(string& sCmd)
 
     if (_data.containsTablesOrClusters(sCmd))
     {
-        if (matchParams(sCmd, "ignore") || matchParams(sCmd, "i"))
+        if (findParameter(sCmd, "ignore") || findParameter(sCmd, "i"))
         {
             if (deleteCacheEntry(sCmd, _parser, _data, _option))
             {
@@ -7404,16 +7404,16 @@ static CommandReturnValues cmd_list(string& sCmd)
 
     string sArgument;
 
-    if (matchParams(sCmd, "files") || (matchParams(sCmd, "files", '=')))
+    if (findParameter(sCmd, "files") || (findParameter(sCmd, "files", '=')))
         listFiles(sCmd, _option);
-    else if (matchParams(sCmd, "var"))
+    else if (findParameter(sCmd, "var"))
         listDeclaredVariables(_parser, _option, _data);
-    else if (matchParams(sCmd, "const"))
+    else if (findParameter(sCmd, "const"))
         listConstants(_parser, _option);
-    else if ((matchParams(sCmd, "func") || matchParams(sCmd, "func", '=')))
+    else if ((findParameter(sCmd, "func") || findParameter(sCmd, "func", '=')))
     {
-        if (matchParams(sCmd, "func", '='))
-            sArgument = getArgAtPos(sCmd, matchParams(sCmd, "func", '=') + 4);
+        if (findParameter(sCmd, "func", '='))
+            sArgument = getArgAtPos(sCmd, findParameter(sCmd, "func", '=') + 4);
         else
             listFunctions(_option, "all");
 
@@ -7453,21 +7453,21 @@ static CommandReturnValues cmd_list(string& sCmd)
             listFunctions(_option, "all");
 
     }
-    else if (matchParams(sCmd, "logic"))
+    else if (findParameter(sCmd, "logic"))
         listLogicalOperators(_option);
-    else if (matchParams(sCmd, "cmd"))
+    else if (findParameter(sCmd, "cmd"))
         listCommands(_option);
-    else if (matchParams(sCmd, "define"))
+    else if (findParameter(sCmd, "define"))
         listDefinitions(_functions, _option);
-    else if (matchParams(sCmd, "settings"))
+    else if (findParameter(sCmd, "settings"))
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
         listOptions(_option);
     }
-    else if (matchParams(sCmd, "units"))
+    else if (findParameter(sCmd, "units"))
         listUnitConversions(_option);
-    else if (matchParams(sCmd, "plugins"))
+    else if (findParameter(sCmd, "plugins"))
         listInstalledPlugins(_parser, _data, _option);
     else
         doc_Help("list", _option);
@@ -7495,32 +7495,32 @@ static CommandReturnValues cmd_load(string& sCmd)
     string sArgument;
     int nArgument;
 
-    if (matchParams(sCmd, "define"))
+    if (findParameter(sCmd, "define"))
     {
         if (fileExists("functions.def"))
             _functions.load(_option);
         else
             NumeReKernel::print( _lang.get("BUILTIN_CHECKKEYWORD_DEF_EMPTY") );
     }
-    else if (matchParams(sCmd, "data") || matchParams(sCmd, "data", '=')) // deprecated
+    else if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '=')) // deprecated
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (matchParams(sCmd, "data", '='))
+        if (findParameter(sCmd, "data", '='))
             addArgumentQuotes(sCmd, "data");
         if (extractFirstParameterStringValue(sCmd, sArgument))
         {
-            if (matchParams(sCmd, "slice", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slice", '=') + 5) == "xz")
+            if (findParameter(sCmd, "slice", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slice", '=') + 5) == "xz")
                 nArgument = -1;
-            else if (matchParams(sCmd, "slice", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slice", '=') + 5) == "yz")
+            else if (findParameter(sCmd, "slice", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slice", '=') + 5) == "yz")
                 nArgument = -2;
             else
                 nArgument = 0;
-            if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
+            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
-            if (matchParams(sCmd, "tocache") && !matchParams(sCmd, "all"))
+            if (findParameter(sCmd, "tocache") && !findParameter(sCmd, "all"))
             {
                 Datafile _cache;
                 _cache.setTokens(_option.getTokenPaths());
@@ -7546,7 +7546,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))), _option) );
                 return COMMAND_PROCESSED;
             }
-            else if (matchParams(sCmd, "tocache") && matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+            else if (findParameter(sCmd, "tocache") && findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
             {
                 if (sArgument.find('/') == string::npos)
                     sArgument = "<loadpath>/" + sArgument;
@@ -7587,7 +7587,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 //NumeReKernel::print(LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
                 return COMMAND_PROCESSED;
             }
-            if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore"))
+            if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
             {
                 if (_data.isValid())
                 {
@@ -7596,7 +7596,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     else
                         _data.removeData(true);
                 }
-                if (matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
                 {
                     if (sArgument.find('/') == string::npos)
                         sArgument = "<loadpath>/" + sArgument;
@@ -7622,12 +7622,12 @@ static CommandReturnValues cmd_load(string& sCmd)
                     return COMMAND_PROCESSED;
                 }
 
-                if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
+                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
                 {
-                    if (matchParams(sCmd, "head", '='))
-                        nArgument = matchParams(sCmd, "head", '=') + 4;
+                    if (findParameter(sCmd, "head", '='))
+                        nArgument = findParameter(sCmd, "head", '=') + 4;
                     else
-                        nArgument = matchParams(sCmd, "h", '=') + 1;
+                        nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
                     _data.openFile(sArgument, _option, false, true, nArgument);
                 }
@@ -7640,7 +7640,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             }
             else if (!_data.isValid())
             {
-                if (matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
                 {
                     if (sArgument.find('/') == string::npos)
                         sArgument = "<loadpath>/" + sArgument;
@@ -7665,12 +7665,12 @@ static CommandReturnValues cmd_load(string& sCmd)
                     //NumeReKernel::print(LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
                     return COMMAND_PROCESSED;
                 }
-                if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
+                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
                 {
-                    if (matchParams(sCmd, "head", '='))
-                        nArgument = matchParams(sCmd, "head", '=') + 4;
+                    if (findParameter(sCmd, "head", '='))
+                        nArgument = findParameter(sCmd, "head", '=') + 4;
                     else
-                        nArgument = matchParams(sCmd, "h", '=') + 1;
+                        nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
                     _data.openFile(sArgument, _option, false, true, nArgument);
                 }
@@ -7687,7 +7687,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         else
             load_data(_data, _option, _parser);
     }
-    else if (matchParams(sCmd, "script") || matchParams(sCmd, "script", '=')) // deprecated
+    else if (findParameter(sCmd, "script") || findParameter(sCmd, "script", '=')) // deprecated
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
@@ -7695,7 +7695,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         {
             if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
                 NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-            if (matchParams(sCmd, "script", '='))
+            if (findParameter(sCmd, "script", '='))
                 addArgumentQuotes(sCmd, "script");
             if (!extractFirstParameterStringValue(sCmd, sArgument))
             {
@@ -7733,16 +7733,16 @@ static CommandReturnValues cmd_load(string& sCmd)
         // Add quotation marks around the object, if there aren't any
         if (sCmd[sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5)] != '"' && sCmd.find("string(") == string::npos)
         {
-            if (matchParams(sCmd, "slice")
-                    || matchParams(sCmd, "keepdim")
-                    || matchParams(sCmd, "complete")
-                    || matchParams(sCmd, "ignore")
-                    || matchParams(sCmd, "tocache")
-                    || matchParams(sCmd, "i")
-                    || matchParams(sCmd, "head")
-                    || matchParams(sCmd, "h")
-                    || matchParams(sCmd, "app")
-                    || matchParams(sCmd, "all"))
+            if (findParameter(sCmd, "slice")
+                    || findParameter(sCmd, "keepdim")
+                    || findParameter(sCmd, "complete")
+                    || findParameter(sCmd, "ignore")
+                    || findParameter(sCmd, "tocache")
+                    || findParameter(sCmd, "i")
+                    || findParameter(sCmd, "head")
+                    || findParameter(sCmd, "h")
+                    || findParameter(sCmd, "app")
+                    || findParameter(sCmd, "all"))
             {
                 sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5), 1, '"');
                 nArgument = string::npos;
@@ -7761,7 +7761,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             }
         }
 
-        if (matchParams(sCmd, "app"))
+        if (findParameter(sCmd, "app"))
         {
             sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5), "-app=");
             append_data(sCmd, _data, _option);
@@ -7770,17 +7770,17 @@ static CommandReturnValues cmd_load(string& sCmd)
 
         if (extractFirstParameterStringValue(sCmd, sArgument))
         {
-            if (matchParams(sCmd, "slice", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slice", '=') + 5) == "xz")
+            if (findParameter(sCmd, "slice", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slice", '=') + 5) == "xz")
                 nArgument = -1;
-            else if (matchParams(sCmd, "slice", '=') && getArgAtPos(sCmd, matchParams(sCmd, "slice", '=') + 5) == "yz")
+            else if (findParameter(sCmd, "slice", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slice", '=') + 5) == "yz")
                 nArgument = -2;
             else
                 nArgument = 0;
 
-            if (matchParams(sCmd, "keepdim") || matchParams(sCmd, "complete"))
+            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
 
-            if (matchParams(sCmd, "tocache") && !matchParams(sCmd, "all"))
+            if (findParameter(sCmd, "tocache") && !findParameter(sCmd, "all"))
             {
                 // Single file directly to cache
                 sArgument = loadToCache(sArgument, _data, _option);
@@ -7790,7 +7790,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 return COMMAND_PROCESSED;
             }
-            else if (matchParams(sCmd, "tocache") && matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+            else if (findParameter(sCmd, "tocache") && findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
             {
                 // multiple files directly to cache
                 if (sArgument.find('/') == string::npos)
@@ -7810,13 +7810,13 @@ static CommandReturnValues cmd_load(string& sCmd)
                 return COMMAND_PROCESSED;
             }
 
-            if (matchParams(sCmd, "i") || matchParams(sCmd, "ignore") || !_data.isValid())
+            if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore") || !_data.isValid())
             {
                 if (_data.isValid())
                     _data.removeData();
 
                 // multiple files
-                if (matchParams(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
                 {
                     if (sArgument.find('/') == string::npos)
                         sArgument = "<loadpath>/" + sArgument;
@@ -7845,12 +7845,12 @@ static CommandReturnValues cmd_load(string& sCmd)
                 }
 
                 // Provide headline
-                if (matchParams(sCmd, "head", '=') || matchParams(sCmd, "h", '='))
+                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
                 {
-                    if (matchParams(sCmd, "head", '='))
-                        nArgument = matchParams(sCmd, "head", '=') + 4;
+                    if (findParameter(sCmd, "head", '='))
+                        nArgument = findParameter(sCmd, "head", '=') + 4;
                     else
-                        nArgument = matchParams(sCmd, "h", '=') + 1;
+                        nArgument = findParameter(sCmd, "h", '=') + 1;
 
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
                     _data.openFile(sArgument, _option, false, true, nArgument);
@@ -7908,7 +7908,7 @@ static CommandReturnValues cmd_paste(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (matchParams(sCmd, "data"))
+    if (findParameter(sCmd, "data"))
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
@@ -7953,19 +7953,19 @@ static CommandReturnValues cmd_progress(string& sCmd)
 
         sCmd.erase(sCmd.find(sArgument));
 
-        if (matchParams(sArgument, "first", '='))
-            sExpr = getArgAtPos(sArgument, matchParams(sArgument, "first", '=') + 5) + ",";
+        if (findParameter(sArgument, "first", '='))
+            sExpr = getArgAtPos(sArgument, findParameter(sArgument, "first", '=') + 5) + ",";
         else
             sExpr = "1,";
 
-        if (matchParams(sArgument, "last", '='))
-            sExpr += getArgAtPos(sArgument, matchParams(sArgument, "last", '=') + 4);
+        if (findParameter(sArgument, "last", '='))
+            sExpr += getArgAtPos(sArgument, findParameter(sArgument, "last", '=') + 4);
         else
             sExpr += "100";
 
-        if (matchParams(sArgument, "type", '='))
+        if (findParameter(sArgument, "type", '='))
         {
-            sArgument = getArgAtPos(sArgument, matchParams(sArgument, "type", '=') + 4);
+            sArgument = getArgAtPos(sArgument, findParameter(sArgument, "type", '=') + 4);
 
             if (containsStrings(sArgument))
             {

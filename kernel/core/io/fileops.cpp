@@ -37,20 +37,20 @@ bool removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
 
     sCmd = fromSystemCodePage(sCmd);
 
-    if (matchParams(sCmd, "ignore") || matchParams(sCmd, "i"))
+    if (findParameter(sCmd, "ignore") || findParameter(sCmd, "i"))
     {
-        if (matchParams(sCmd, "ignore"))
-            sCmd.erase(matchParams(sCmd, "ignore")-1,6);
+        if (findParameter(sCmd, "ignore"))
+            sCmd.erase(findParameter(sCmd, "ignore")-1,6);
         else
-            sCmd.erase(matchParams(sCmd, "i")-1,1);
+            sCmd.erase(findParameter(sCmd, "i")-1,1);
         bIgnore = true;
     }
-    if (matchParams(sCmd, "all") || matchParams(sCmd, "a"))
+    if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
     {
-        if (matchParams(sCmd, "all"))
-            sCmd.erase(matchParams(sCmd, "all")-1,3);
+        if (findParameter(sCmd, "all"))
+            sCmd.erase(findParameter(sCmd, "all")-1,3);
         else
-            sCmd.erase(matchParams(sCmd, "a")-1,1);
+            sCmd.erase(findParameter(sCmd, "a")-1,1);
         bAll = true;
     }
     sCmd = sCmd.substr(sCmd.find("remove")+6);
@@ -131,21 +131,21 @@ bool moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 
     sCmd = fromSystemCodePage(sCmd);
 
-    if (matchParams(sCmd, "all") || matchParams(sCmd, "a"))
+    if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
     {
         bAll = true;
-        if (matchParams(sCmd, "all"))
-            sCmd.erase(matchParams(sCmd, "all")-1,3);
+        if (findParameter(sCmd, "all"))
+            sCmd.erase(findParameter(sCmd, "all")-1,3);
         else
-            sCmd.erase(matchParams(sCmd, "a")-1,1);
+            sCmd.erase(findParameter(sCmd, "a")-1,1);
     }
-    if (matchParams(sCmd, "target", '=') || matchParams(sCmd, "t", '='))
+    if (findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '='))
     {
         unsigned int nPos = 0;
-        if (matchParams(sCmd, "target", '='))
-            nPos = matchParams(sCmd, "target", '=')+6;
+        if (findParameter(sCmd, "target", '='))
+            nPos = findParameter(sCmd, "target", '=')+6;
         else
-            nPos = matchParams(sCmd, "t", '=')+1;
+            nPos = findParameter(sCmd, "t", '=')+1;
         sTarget = getArgAtPos(sCmd, nPos);
         StripSpaces(sTarget);
         sCmd = sCmd.substr(0, sCmd.rfind('-', nPos));
@@ -307,13 +307,13 @@ bool copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 
     sCmd = fromSystemCodePage(sCmd);
 
-    if (matchParams(sCmd, "all") || matchParams(sCmd, "a"))
+    if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
     {
         bAll = true;
-        if (matchParams(sCmd, "all"))
-            sCmd.erase(matchParams(sCmd, "all")-1,3);
+        if (findParameter(sCmd, "all"))
+            sCmd.erase(findParameter(sCmd, "all")-1,3);
         else
-            sCmd.erase(matchParams(sCmd, "a")-1,3);
+            sCmd.erase(findParameter(sCmd, "a")-1,3);
         StripSpaces(sCmd);
         while (sCmd[sCmd.length()-1] == '-' && sCmd[sCmd.length()-2] == ' ')
         {
@@ -321,13 +321,13 @@ bool copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
             StripSpaces(sCmd);
         }
     }
-    if (matchParams(sCmd, "target", '=') || matchParams(sCmd, "t", '='))
+    if (findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '='))
     {
         unsigned int nPos = 0;
-        if (matchParams(sCmd, "target", '='))
-            nPos = matchParams(sCmd, "target", '=')+6;
+        if (findParameter(sCmd, "target", '='))
+            nPos = findParameter(sCmd, "target", '=')+6;
         else
-            nPos = matchParams(sCmd, "t", '=')+1;
+            nPos = findParameter(sCmd, "t", '=')+1;
         sTarget = sCmd.substr(nPos);
         StripSpaces(sTarget);
         sCmd = sCmd.substr(0, sCmd.rfind('-', nPos));

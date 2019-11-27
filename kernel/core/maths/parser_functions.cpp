@@ -581,10 +581,10 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 	string sTargetTable;
 
 	// search for the target option in the command string
-	if (matchParams(sCmd, "target", '='))
+	if (findParameter(sCmd, "target", '='))
 	{
 		// Extract the table name
-		sTargetTable = getArgAtPos(sCmd, matchParams(sCmd, "target", '=') + 6);
+		sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "target", '=') + 6);
 
 		// data is read-only. Therefore it cannot be used as target
 		if (sTargetTable.substr(0, sTargetTable.find('(')) == "data")
@@ -603,8 +603,8 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
 		// remove the target option and its value from the command line
-		sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "target", '=') + 6), matchParams(sCmd, "target", '=') - 1), getArgAtPos(sCmd, matchParams(sCmd, "target", '=') + 6).length());
-		sCmd.erase(matchParams(sCmd, "target", '=') - 1, 7);
+		sCmd.erase(sCmd.find(getArgAtPos(sCmd, findParameter(sCmd, "target", '=') + 6), findParameter(sCmd, "target", '=') - 1), getArgAtPos(sCmd, findParameter(sCmd, "target", '=') + 6).length());
+		sCmd.erase(findParameter(sCmd, "target", '=') - 1, 7);
 	}
 	else if (sDefaultTarget.length())
 	{
@@ -673,15 +673,15 @@ bool evaluateIndices(const string& sCache, Indices& _idx, Datafile& _data)
 /////////////////////////////////////////////////
 static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyIntervalIdentifier, Parser& _parser, vector<double>& vInterval, size_t nMinSize, bool bEraseInterval)
 {
-    string sInterval = getArgAtPos(sExpr, matchParams(sExpr, sLegacyIntervalIdentifier, '=') + 1);
+    string sInterval = getArgAtPos(sExpr, findParameter(sExpr, sLegacyIntervalIdentifier, '=') + 1);
     EndlessVector<string> indices;
 
     // Erase the interval definition, if needed
     if (bEraseInterval)
     {
         sExpr.erase(sExpr.find(sInterval), sInterval.length());
-        size_t pos = sExpr.rfind(sLegacyIntervalIdentifier, matchParams(sExpr, sLegacyIntervalIdentifier, '='));
-        sExpr.erase(pos, matchParams(sExpr, sLegacyIntervalIdentifier, '=') + 1 - pos);
+        size_t pos = sExpr.rfind(sLegacyIntervalIdentifier, findParameter(sExpr, sLegacyIntervalIdentifier, '='));
+        sExpr.erase(pos, findParameter(sExpr, sLegacyIntervalIdentifier, '=') + 1 - pos);
     }
 
     // If the intervall contains a colon, split it there
@@ -734,15 +734,15 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, Datafile& _
 		getDataElements(sExpr, _parser, _data, _option);
 
 	// Get the interval for x
-	if (matchParams(sExpr, "x", '='))
+	if (findParameter(sExpr, "x", '='))
         readAndParseLegacyIntervals(sExpr, "x", _parser, vInterval, 0, bEraseInterval);
 
 	// Get the interval for y
-	if (matchParams(sExpr, "y", '='))
+	if (findParameter(sExpr, "y", '='))
         readAndParseLegacyIntervals(sExpr, "y", _parser, vInterval, 2, bEraseInterval);
 
 	// Get the interval for z
-	if (matchParams(sExpr, "z", '='))
+	if (findParameter(sExpr, "z", '='))
         readAndParseLegacyIntervals(sExpr, "z", _parser, vInterval, 4, bEraseInterval);
 
 	// Read the interval syntax

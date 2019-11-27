@@ -167,9 +167,9 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     // Extract the integration interval
-    if (sParams.length() && matchParams(sParams, "x", '='))
+    if (sParams.length() && findParameter(sParams, "x", '='))
     {
-        sLowerBoundary = getArgAtPos(sParams, matchParams(sParams, "x", '=') + 1);
+        sLowerBoundary = getArgAtPos(sParams, findParameter(sParams, "x", '=') + 1);
 
         // Replace the colon with a comma
         if (sLowerBoundary.find(':') != string::npos)
@@ -186,11 +186,11 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
     }
 
     // Are the samples of the integral desired?
-    if (sParams.length() && matchParams(sParams, "points"))
+    if (sParams.length() && findParameter(sParams, "points"))
         bReturnFunctionPoints = true;
 
     // Are the corresponding x values desired?
-    if (sParams.length() && matchParams(sParams, "xvals"))
+    if (sParams.length() && findParameter(sParams, "xvals"))
         bCalcXvals = true;
 
     // Get table name and the corresponding indices
@@ -358,14 +358,14 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 	{
 		int nPos = 0;
 
-		if (matchParams(sParams, "precision", '=') || matchParams(sParams, "p", '=') || matchParams(sParams, "eps", '='))
+		if (findParameter(sParams, "precision", '=') || findParameter(sParams, "p", '=') || findParameter(sParams, "eps", '='))
 		{
-		    if (matchParams(sParams, "precision", '='))
-                nPos = matchParams(sParams, "precision", '=') + 9;
-		    else if (matchParams(sParams, "p", '='))
-                nPos = matchParams(sParams, "p", '=') + 1;
+		    if (findParameter(sParams, "precision", '='))
+                nPos = findParameter(sParams, "precision", '=') + 9;
+		    else if (findParameter(sParams, "p", '='))
+                nPos = findParameter(sParams, "p", '=') + 1;
 		    else
-                nPos = matchParams(sParams, "eps", '=') + 3;
+                nPos = findParameter(sParams, "eps", '=') + 3;
 
 			sPrecision = getArgAtPos(sParams, nPos);
 			StripSpaces(sPrecision);
@@ -386,9 +386,9 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 			}
 		}
 
-		if (matchParams(sParams, "x", '='))
+		if (findParameter(sParams, "x", '='))
 		{
-			nPos = matchParams(sParams, "x", '=') + 1;
+			nPos = findParameter(sParams, "x", '=') + 1;
 			sLowerBoundary = getArgAtPos(sParams, nPos);
 			StripSpaces(sLowerBoundary);
 
@@ -443,9 +443,9 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 				throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 		}
 
-		if (matchParams(sParams, "method", '='))
+		if (findParameter(sParams, "method", '='))
 		{
-			nPos = matchParams(sParams, "method", '=') + 6;
+			nPos = findParameter(sParams, "method", '=') + 6;
 
 			if (getArgAtPos(sParams, nPos) == "trapezoidal")
 				nMethod = TRAPEZOIDAL;
@@ -454,9 +454,9 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 				nMethod = SIMPSON;
 		}
 
-		if (matchParams(sParams, "m", '='))
+		if (findParameter(sParams, "m", '='))
 		{
-			nPos = matchParams(sParams, "m", '=') + 1;
+			nPos = findParameter(sParams, "m", '=') + 1;
 
 			if (getArgAtPos(sParams, nPos) == "trapezoidal")
 				nMethod = TRAPEZOIDAL;
@@ -465,24 +465,24 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 				nMethod = SIMPSON;
 		}
 
-		if (matchParams(sParams, "steps", '='))
+		if (findParameter(sParams, "steps", '='))
 		{
-			sPrecision = getArgAtPos(sParams, matchParams(sParams, "steps", '=') + 5);
+			sPrecision = getArgAtPos(sParams, findParameter(sParams, "steps", '=') + 5);
 			_parser.SetExpr(sPrecision);
 			dx = (x1 - x0) / _parser.Eval();
 		}
 
-		if (matchParams(sParams, "s", '='))
+		if (findParameter(sParams, "s", '='))
 		{
-			sPrecision = getArgAtPos(sParams, matchParams(sParams, "s", '=') + 1);
+			sPrecision = getArgAtPos(sParams, findParameter(sParams, "s", '=') + 1);
 			_parser.SetExpr(sPrecision);
 			dx = (x1 - x0) / _parser.Eval();
 		}
 
-		if (matchParams(sParams, "points"))
+		if (findParameter(sParams, "points"))
 			bReturnFunctionPoints = true;
 
-		if (matchParams(sParams, "xvals"))
+		if (findParameter(sParams, "xvals"))
 			bCalcXvals = true;
 	}
 
@@ -748,14 +748,14 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 	{
 		int nPos = 0;
 
-		if (matchParams(sParams, "precision", '=') || matchParams(sParams, "p", '=') || matchParams(sParams, "eps", '='))
+		if (findParameter(sParams, "precision", '=') || findParameter(sParams, "p", '=') || findParameter(sParams, "eps", '='))
 		{
-		    if (matchParams(sParams, "precision", '='))
-                nPos = matchParams(sParams, "precision", '=') + 9;
-		    else if (matchParams(sParams, "p", '='))
-                nPos = matchParams(sParams, "p", '=') + 1;
+		    if (findParameter(sParams, "precision", '='))
+                nPos = findParameter(sParams, "precision", '=') + 9;
+		    else if (findParameter(sParams, "p", '='))
+                nPos = findParameter(sParams, "p", '=') + 1;
 		    else
-                nPos = matchParams(sParams, "eps", '=') + 3;
+                nPos = findParameter(sParams, "eps", '=') + 3;
 
 			sPrecision = getArgAtPos(sParams, nPos);
 			StripSpaces(sPrecision);
@@ -778,9 +778,9 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 			}
 		}
 
-		if (matchParams(sParams, "x", '='))
+		if (findParameter(sParams, "x", '='))
 		{
-			nPos = matchParams(sParams, "x", '=') + 1;
+			nPos = findParameter(sParams, "x", '=') + 1;
 			sBoundariesX[0] = getArgAtPos(sParams, nPos);
 			StripSpaces(sBoundariesX[0]);
 
@@ -835,9 +835,9 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 				throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 		}
 
-		if (matchParams(sParams, "y", '='))
+		if (findParameter(sParams, "y", '='))
 		{
-			nPos = matchParams(sParams, "y", '=') + 1;
+			nPos = findParameter(sParams, "y", '=') + 1;
 			sBoundariesY[0] = getArgAtPos(sParams, nPos);
 			StripSpaces(sBoundariesY[0]);
 
@@ -894,9 +894,9 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 				throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, sCmd, SyntaxError::invalid_position);
 		}
 
-		if (matchParams(sParams, "method", '='))
+		if (findParameter(sParams, "method", '='))
 		{
-			nPos = matchParams(sParams, "method", '=') + 6;
+			nPos = findParameter(sParams, "method", '=') + 6;
 
 			if (getArgAtPos(sParams, nPos) == "trapezoidal")
 				nMethod = TRAPEZOIDAL;
@@ -905,9 +905,9 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 				nMethod = SIMPSON;
 		}
 
-		if (matchParams(sParams, "m", '='))
+		if (findParameter(sParams, "m", '='))
 		{
-			nPos = matchParams(sParams, "m", '=') + 1;
+			nPos = findParameter(sParams, "m", '=') + 1;
 
 			if (getArgAtPos(sParams, nPos) == "trapezoidal")
 				nMethod = TRAPEZOIDAL;
@@ -916,17 +916,17 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 				nMethod = SIMPSON;
 		}
 
-		if (matchParams(sParams, "steps", '='))
+		if (findParameter(sParams, "steps", '='))
 		{
-			sPrecision = getArgAtPos(sParams, matchParams(sParams, "steps", '=') + 5);
+			sPrecision = getArgAtPos(sParams, findParameter(sParams, "steps", '=') + 5);
 			_parser.SetExpr(sPrecision);
 			dx = (x1 - x0) / _parser.Eval();
 			dy = dx;
 		}
 
-		if (matchParams(sParams, "s", '='))
+		if (findParameter(sParams, "s", '='))
 		{
-			sPrecision = getArgAtPos(sParams, matchParams(sParams, "s", '=') + 1);
+			sPrecision = getArgAtPos(sParams, findParameter(sParams, "s", '=') + 1);
 			_parser.SetExpr(sPrecision);
 			dx = (x1 - x0) / _parser.Eval();
 			dy = dx;
@@ -1408,12 +1408,12 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
 		StripSpaces(sVar);
 
 		// Is the "eps" parameter available?
-		if (matchParams(sVar, "eps", '='))
+		if (findParameter(sVar, "eps", '='))
 		{
 
-			sEps = getArgAtPos(sVar, matchParams(sVar, "eps", '=') + 3);
+			sEps = getArgAtPos(sVar, findParameter(sVar, "eps", '=') + 3);
 			sVar += " ";
-			sVar = sVar.substr(0, matchParams(sVar, "eps", '=')) + sVar.substr(sVar.find(' ', matchParams(sVar, "eps", '=') + 3));
+			sVar = sVar.substr(0, findParameter(sVar, "eps", '=')) + sVar.substr(sVar.find(' ', findParameter(sVar, "eps", '=') + 3));
 
 			if (isNotEmptyExpression(sEps))
 			{
@@ -1429,13 +1429,13 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
 		}
 
 		// Is the "samples" parameter available?
-		if (matchParams(sVar, "samples", '='))
+		if (findParameter(sVar, "samples", '='))
 		{
 
-			_parser.SetExpr(getArgAtPos(sVar, matchParams(sVar, "samples", '=') + 7));
+			_parser.SetExpr(getArgAtPos(sVar, findParameter(sVar, "samples", '=') + 7));
 			nSamples = (int)_parser.Eval();
 			sVar += " ";
-			sVar = sVar.substr(0, matchParams(sVar, "samples", '=')) + sVar.substr(sVar.find(' ', matchParams(sVar, "samples", '=') + 7));
+			sVar = sVar.substr(0, findParameter(sVar, "samples", '=')) + sVar.substr(sVar.find(' ', findParameter(sVar, "samples", '=') + 7));
 
 			if (nSamples <= 0)
 				nSamples = 100;
@@ -1609,7 +1609,7 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             _cache.sortElements("cache -sort c=1[2]");
 
             // Shall the x values be calculated?
-            if (matchParams(sCmd, "xvals"))
+            if (findParameter(sCmd, "xvals"))
             {
                 // The x values are approximated to be in the
                 // middle of the two samplex
@@ -1649,6 +1649,49 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
 	}
 
 	return vResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function extracts the
+/// interval definition for the extrema and root
+/// search functions.
+///
+/// \param sParams const string&
+/// \param sVar string&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string getIntervalForSearchFunctions(const string& sParams, string& sVar)
+{
+    string sInterval = "";
+
+    if (sParams.find('=') != string::npos)
+    {
+        int nPos = sParams.find('=');
+        sInterval = getArgAtPos(sParams, nPos + 1);
+
+        if (sInterval.front() == '[' && sInterval.back() == ']')
+        {
+            sInterval.pop_back();
+            sInterval.erase(0, 1);
+        }
+
+        sVar = " " + sParams.substr(0, nPos);
+        sVar = sVar.substr(sVar.rfind(' '));
+        StripSpaces(sVar);
+    }
+    else
+    {
+        sVar = "x";
+        sInterval = sParams.substr(sParams.find('[') + 1, getMatchingParenthesis(sParams.substr(sParams.find('['))) - 1);
+        StripSpaces(sInterval);
+
+        if (sInterval == ":")
+            sInterval = "-10:10";
+    }
+
+    return sInterval;
 }
 
 
@@ -2003,8 +2046,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 	unsigned int nSamples = 21;
 	int nOrder = 5;
 	double dVal[2];
-	double dLeft = 0.0;
-	double dRight = 0.0;
+	double dBoundaries[2] = {0.0, 0.0};
 	int nMode = 0;
 	double* dVar = 0;
 	string sExpr = "";
@@ -2056,32 +2098,32 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 		getDataElements(sParams, _parser, _data, _option, false);
 
 	// Evaluate the parameters
-	if (matchParams(sParams, "min"))
+	if (findParameter(sParams, "min"))
 		nMode = -1;
 
-	if (matchParams(sParams, "max"))
+	if (findParameter(sParams, "max"))
 		nMode = 1;
 
-	if (matchParams(sParams, "samples", '='))
+	if (findParameter(sParams, "samples", '='))
 	{
-		_parser.SetExpr(getArgAtPos(sParams, matchParams(sParams, "samples", '=') + 7));
+		_parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
 		nSamples = (unsigned int)_parser.Eval();
 
 		if (nSamples < 21)
 			nSamples = 21;
 
-		sParams.erase(matchParams(sParams, "samples", '=') - 1, 8);
+		sParams.erase(findParameter(sParams, "samples", '=') - 1, 8);
 	}
 
-	if (matchParams(sParams, "points", '='))
+	if (findParameter(sParams, "points", '='))
 	{
-		_parser.SetExpr(getArgAtPos(sParams, matchParams(sParams, "points", '=') + 6));
+		_parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "points", '=') + 6));
 		nOrder = (int)_parser.Eval();
 
 		if (nOrder <= 3)
 			nOrder = 3;
 
-		sParams.erase(matchParams(sParams, "points", '=') - 1, 7);
+		sParams.erase(findParameter(sParams, "points", '=') - 1, 7);
 	}
 
 	// Extract the interval
@@ -2097,30 +2139,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 
 		int nResults = 0;
 
-		if (sParams.find('=') != string::npos)
-		{
-			int nPos = sParams.find('=');
-			sInterval = getArgAtPos(sParams, nPos + 1);
-
-			if (sInterval.front() == '[' && sInterval.back() == ']')
-			{
-				sInterval.pop_back();
-				sInterval.erase(0, 1);
-			}
-
-			sVar = " " + sParams.substr(0, nPos);
-			sVar = sVar.substr(sVar.rfind(' '));
-			StripSpaces(sVar);
-		}
-		else
-		{
-			sVar = "x";
-			sInterval = sParams.substr(sParams.find('[') + 1, getMatchingParenthesis(sParams.substr(sParams.find('['))) - 1);
-			StripSpaces(sInterval);
-
-			if (sInterval == ":")
-				sInterval = "-10:10";
-		}
+		sInterval = getIntervalForSearchFunctions(sParams, sVar);
 
 		_parser.SetExpr(sExpr);
 		_parser.Eval(nResults);
@@ -2131,7 +2150,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 		{
 			if (!isVariableInAssignedExpression(_parser, sVar))
 			{
-				sCmd = toSystemCodePage("\"Bezüglich der Variablen " + sVar + " ist der Ausdruck konstant und besitzt keine Extrema!\"");
+				sCmd = "nan";
 				return true;
 			}
 
@@ -2143,39 +2162,30 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 			if (sInterval.find(':') == string::npos || sInterval.length() < 3)
 				return false;
 
-			if (isNotEmptyExpression(sInterval.substr(0, sInterval.find(':'))))
+            auto indices = getAllIndices(sInterval);
+
+            for (size_t i = 0; i < 2; i++)
+            {
+                if (isNotEmptyExpression(indices[i]))
+                {
+                    _parser.SetExpr(indices[i]);
+                    dBoundaries[i] = _parser.Eval();
+
+                    if (isinf(dBoundaries[i]) || isnan(dBoundaries[i]))
+                    {
+                        sCmd = "nan";
+                        return false;
+                    }
+                }
+                else
+                    return false;
+            }
+
+			if (dBoundaries[1] < dBoundaries[0])
 			{
-				_parser.SetExpr(sInterval.substr(0, sInterval.find(':')));
-				dLeft = _parser.Eval();
-
-				if (isinf(dLeft) || isnan(dLeft))
-				{
-					sCmd = "nan";
-					return false;
-				}
-			}
-			else
-				return false;
-
-			if (isNotEmptyExpression(sInterval.substr(sInterval.find(':') + 1)))
-			{
-				_parser.SetExpr(sInterval.substr(sInterval.find(':') + 1));
-				dRight = _parser.Eval();
-
-				if (isinf(dRight) || isnan(dRight))
-				{
-					sCmd = "nan";
-					return false;
-				}
-			}
-			else
-				return false;
-
-			if (dRight < dLeft)
-			{
-				double Temp = dRight;
-				dRight = dLeft;
-				dLeft = Temp;
+				double Temp = dBoundaries[1];
+				dBoundaries[1] = dBoundaries[0];
+				dBoundaries[0] = Temp;
 			}
 		}
 	}
@@ -2186,8 +2196,8 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 
     // Calculate the number of samples depending on
     // the interval width
-	if ((int)(dRight - dLeft))
-		nSamples = (nSamples - 1) * (int)(dRight - dLeft) + 1;
+	if ((int)(dBoundaries[1] - dBoundaries[0]))
+		nSamples = (nSamples - 1) * (int)(dBoundaries[1] - dBoundaries[0]) + 1;
 
 	// Ensure that we calculate a reasonable number of samples
 	if (nSamples > 10001)
@@ -2198,7 +2208,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 	_parser.Eval();
 	sCmd = "";
 	vector<double> vResults;
-	dVal[0] = _parser.Diff(dVar, dLeft, 1e-7);
+	dVal[0] = _parser.Diff(dVar, dBoundaries[0], 1e-7);
 
 	// Evaluate the extrema for all samples. We search for
 	// a sign change in the derivative and examine these intervals
@@ -2206,7 +2216,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 	for (unsigned int i = 1; i < nSamples; i++)
 	{
 	    // Evaluate the derivative at the current sample position
-		dVal[1] = _parser.Diff(dVar, dLeft + i * (dRight - dLeft) / (double)(nSamples - 1), 1e-7);
+		dVal[1] = _parser.Diff(dVar, dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), 1e-7);
 
 		// Is it a sign change or a actual zero?
 		if (dVal[0]*dVal[1] < 0)
@@ -2216,7 +2226,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 					|| (nMode == -1 && (dVal[0] < 0 && dVal[1] > 0)))
 			{
 			    // Examine the current interval in more detail
-				vResults.push_back(localizeExtremum(sExpr, dVar, _parser, _option, dLeft + (i - 1) * (dRight - dLeft) / (double)(nSamples - 1), dLeft + i * (dRight - dLeft) / (double)(nSamples - 1)));
+				vResults.push_back(localizeExtremum(sExpr, dVar, _parser, _option, dBoundaries[0] + (i - 1) * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
 			}
 		}
 		else if (dVal[0]*dVal[1] == 0.0)
@@ -2233,7 +2243,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 					while (dVal[0]*dVal[1] == 0.0 && i + 1 < nSamples)
 					{
 						i++;
-						dVal[1] = _parser.Diff(dVar, dLeft + i * (dRight - dLeft) / (double)(nSamples - 1), 1e-7);
+						dVal[1] = _parser.Diff(dVar, dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), 1e-7);
 					}
 				}
 				else
@@ -2241,12 +2251,12 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 					while (dVal[1] == 0.0 && i + 1 < nSamples)
 					{
 						i++;
-						dVal[1] = _parser.Diff(dVar, dLeft + i * (dRight - dLeft) / (double)(nSamples - 1), 1e-7);
+						dVal[1] = _parser.Diff(dVar, dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), 1e-7);
 					}
 				}
 
 				// Store the current location
-				vResults.push_back(localizeExtremum(sExpr, dVar, _parser, _option, dLeft + nTemp * (dRight - dLeft) / (double)(nSamples - 1), dLeft + i * (dRight - dLeft) / (double)(nSamples - 1)));
+				vResults.push_back(localizeExtremum(sExpr, dVar, _parser, _option, dBoundaries[0] + nTemp * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
 			}
 		}
 		dVal[0] = dVal[1];
@@ -2256,15 +2266,15 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 	// examine the boundaries for possible extremas
 	if (!sCmd.length() && !vResults.size())
 	{
-		dVal[0] = _parser.Diff(dVar, dLeft);
-		dVal[1] = _parser.Diff(dVar, dRight);
+		dVal[0] = _parser.Diff(dVar, dBoundaries[0]);
+		dVal[1] = _parser.Diff(dVar, dBoundaries[1]);
 
         // Examine the left boundary
 		if (dVal[0]
 				&& (!nMode
 					|| (dVal[0] < 0 && nMode == 1)
 					|| (dVal[0] > 0 && nMode == -1)))
-			sCmd = toString(dLeft, _option);
+			sCmd = toString(dBoundaries[0], _option);
 
 		// Examine the right boundary
 		if (dVal[1]
@@ -2275,7 +2285,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 			if (sCmd.length())
 				sCmd += ", ";
 
-			sCmd += toString(dRight, _option);
+			sCmd += toString(dBoundaries[1], _option);
 		}
 
 		// Still nothing found?
@@ -2507,8 +2517,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 {
 	unsigned int nSamples = 21;
 	double dVal[2];
-	double dLeft = 0.0;
-	double dRight = 0.0;
+	double dBoundaries[2] = {0.0, 0.0};
 	int nMode = 0;
 	double* dVar = 0;
 	double dTemp = 0.0;
@@ -2560,20 +2569,20 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 		getDataElements(sParams, _parser, _data, _option, false);
 
 	// Evaluate the parameter list
-	if (matchParams(sParams, "min") || matchParams(sParams, "down"))
+	if (findParameter(sParams, "min") || findParameter(sParams, "down"))
 		nMode = -1;
-	if (matchParams(sParams, "max") || matchParams(sParams, "up"))
+	if (findParameter(sParams, "max") || findParameter(sParams, "up"))
 		nMode = 1;
 
-	if (matchParams(sParams, "samples", '='))
+	if (findParameter(sParams, "samples", '='))
 	{
-		_parser.SetExpr(getArgAtPos(sParams, matchParams(sParams, "samples", '=') + 7));
+		_parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
 		nSamples = (int)_parser.Eval();
 
 		if (nSamples < 21)
 			nSamples = 21;
 
-		sParams.erase(matchParams(sParams, "samples", '=') - 1, 8);
+		sParams.erase(findParameter(sParams, "samples", '=') - 1, 8);
 	}
 
 	// Evaluate the interval
@@ -2589,30 +2598,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 
 		int nResults = 0;
 
-		if (sParams.find('=') != string::npos)
-		{
-			int nPos = sParams.find('=');
-			sInterval = getArgAtPos(sParams, nPos + 1);
-
-			if (sInterval.front() == '[' && sInterval.back() == ']')
-			{
-				sInterval.pop_back();
-				sInterval.erase(0, 1);
-			}
-
-			sVar = " " + sParams.substr(0, nPos);
-			sVar = sVar.substr(sVar.rfind(' '));
-			StripSpaces(sVar);
-		}
-		else
-		{
-			sVar = "x";
-			sInterval = sParams.substr(sParams.find('[') + 1, getMatchingParenthesis(sParams.substr(sParams.find('['))) - 1);
-			StripSpaces(sInterval);
-
-			if (sInterval == ":")
-				sInterval = "-10:10";
-		}
+		sInterval = getIntervalForSearchFunctions(sParams, sVar);
 
 		_parser.SetExpr(sExpr);
 		_parser.Eval(nResults);
@@ -2623,11 +2609,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 		{
 			if (!isVariableInAssignedExpression(_parser, sVar))
 			{
-				if (!_parser.Eval())
-					sCmd = "\"Der Ausdruck ist auf dem gesamten Intervall identisch Null!\"";
-				else
-					sCmd = toSystemCodePage("\"Bezüglich der Variablen " + sVar + " ist der Ausdruck konstant und besitzt keine Nullstellen!\"");
-
+				sCmd = "nan";
 				return true;
 			}
 
@@ -2639,39 +2621,30 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 			if (sInterval.find(':') == string::npos || sInterval.length() < 3)
 				return false;
 
-			if (isNotEmptyExpression(sInterval.substr(0, sInterval.find(':'))))
+            auto indices = getAllIndices(sInterval);
+
+            for (size_t i = 0; i < 2; i++)
+            {
+                if (isNotEmptyExpression(indices[i]))
+                {
+                    _parser.SetExpr(indices[i]);
+                    dBoundaries[i] = _parser.Eval();
+
+                    if (isinf(dBoundaries[i]) || isnan(dBoundaries[i]))
+                    {
+                        sCmd = "nan";
+                        return false;
+                    }
+                }
+                else
+                    return false;
+            }
+
+			if (dBoundaries[1] < dBoundaries[0])
 			{
-				_parser.SetExpr(sInterval.substr(0, sInterval.find(':')));
-				dLeft = _parser.Eval();
-
-				if (isinf(dLeft) || isnan(dLeft))
-				{
-					sCmd = "nan";
-					return false;
-				}
-			}
-			else
-				return false;
-
-			if (isNotEmptyExpression(sInterval.substr(sInterval.find(':') + 1)))
-			{
-				_parser.SetExpr(sInterval.substr(sInterval.find(':') + 1));
-				dRight = _parser.Eval();
-
-				if (isinf(dRight) || isnan(dRight))
-				{
-					sCmd = "nan";
-					return false;
-				}
-			}
-			else
-				return false;
-
-			if (dRight < dLeft)
-			{
-				double Temp = dRight;
-				dRight = dLeft;
-				dLeft = Temp;
+				double Temp = dBoundaries[1];
+				dBoundaries[1] = dBoundaries[0];
+				dBoundaries[0] = Temp;
 			}
 		}
 	}
@@ -2681,8 +2654,8 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 		throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
 
     // Calculate the interval
-	if ((int)(dRight - dLeft))
-		nSamples = (nSamples - 1) * (int)(dRight - dLeft) + 1;
+	if ((int)(dBoundaries[1] - dBoundaries[0]))
+		nSamples = (nSamples - 1) * (int)(dBoundaries[1] - dBoundaries[0]) + 1;
 
 	// Ensure that we calculate a reasonable
 	// amount of samples
@@ -2695,7 +2668,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 	sCmd = "";
 	dTemp = *dVar;
 
-	*dVar = dLeft;
+	*dVar = dBoundaries[0];
 	vector<double> vResults;
 	dVal[0] = _parser.Eval();
 
@@ -2704,11 +2677,11 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 	// errors
 	if (dVal[0] != 0.0 && fabs(dVal[0]) < 1e-10)
 	{
-		*dVar = dLeft - 1e-10;
+		*dVar = dBoundaries[0] - 1e-10;
 		dVal[1] = _parser.Eval();
 
 		if (dVal[0]*dVal[1] < 0 && (nMode * dVal[0] <= 0.0))
-			vResults.push_back(localizeExtremum(sExpr, dVar, _parser, _option, dLeft - 1e-10, dLeft));
+			vResults.push_back(localizeExtremum(sExpr, dVar, _parser, _option, dBoundaries[0] - 1e-10, dBoundaries[0]));
 	}
 
 	// Evaluate all samples. We try to find
@@ -2717,7 +2690,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 	for (unsigned int i = 1; i < nSamples; i++)
 	{
 	    // Evalute the current sample
-		*dVar = dLeft + i * (dRight - dLeft) / (double)(nSamples - 1);
+		*dVar = dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1);
 		dVal[1] = _parser.Eval();
 
 		if (dVal[0]*dVal[1] < 0)
@@ -2727,7 +2700,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 					|| (nMode == 1 && (dVal[0] < 0 && dVal[1] > 0)))
 			{
 			    // Examine the current interval
-				vResults.push_back((localizeZero(sExpr, dVar, _parser, _option, dLeft + (i - 1) * (dRight - dLeft) / (double)(nSamples - 1), dLeft + i * (dRight - dLeft) / (double)(nSamples - 1))));
+				vResults.push_back((localizeZero(sExpr, dVar, _parser, _option, dBoundaries[0] + (i - 1) * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1))));
 			}
 		}
 		else if (dVal[0]*dVal[1] == 0.0)
@@ -2745,7 +2718,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 					while (dVal[0]*dVal[1] == 0.0 && i + 1 < nSamples)
 					{
 						i++;
-						*dVar = dLeft + i * (dRight - dLeft) / (double)(nSamples - 1);
+						*dVar = dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1);
 						dVal[1] = _parser.Eval();
 					}
 				}
@@ -2754,13 +2727,13 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 					while (dVal[1] == 0.0 && i + 1 < nSamples)
 					{
 						i++;
-						*dVar = dLeft + i * (dRight - dLeft) / (double)(nSamples - 1);
+						*dVar = dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1);
 						dVal[1] = _parser.Eval();
 					}
 				}
 
 				// Store the result
-				vResults.push_back(localizeZero(sExpr, dVar, _parser, _option, dLeft + nTemp * (dRight - dLeft) / (double)(nSamples - 1), dLeft + i * (dRight - dLeft) / (double)(nSamples - 1)));
+				vResults.push_back(localizeZero(sExpr, dVar, _parser, _option, dBoundaries[0] + nTemp * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
 			}
 		}
 
@@ -2771,11 +2744,11 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 	// a zero slightly right from the interval
 	if (dVal[0] != 0.0 && fabs(dVal[0]) < 1e-10)
 	{
-		*dVar = dRight + 1e-10;
+		*dVar = dBoundaries[1] + 1e-10;
 		dVal[1] = _parser.Eval();
 
 		if (dVal[0]*dVal[1] < 0 && nMode * dVal[0] <= 0.0)
-			vResults.push_back(localizeZero(sExpr, dVar, _parser, _option, dRight, dRight + 1e-10));
+			vResults.push_back(localizeZero(sExpr, dVar, _parser, _option, dBoundaries[1], dBoundaries[1] + 1e-10));
 	}
 
 	*dVar = dTemp;
@@ -3037,18 +3010,18 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, Define& _fun
 	}
 
 	// Evaluate the parameters
-	if (matchParams(sParams, "n", '='))
+	if (findParameter(sParams, "n", '='))
 	{
-		_parser.SetExpr(sParams.substr(matchParams(sParams, "n", '=') + 1, sParams.find(' ', matchParams(sParams, "n", '=') + 1) - matchParams(sParams, "n", '=') - 1));
+		_parser.SetExpr(sParams.substr(findParameter(sParams, "n", '=') + 1, sParams.find(' ', findParameter(sParams, "n", '=') + 1) - findParameter(sParams, "n", '=') - 1));
 		nth_taylor = (unsigned int)_parser.Eval();
 
 		if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
 			nth_taylor = 6;
 
-		sParams = sParams.substr(0, matchParams(sParams, "n", '=') - 1) + sParams.substr(matchParams(sParams, "n", '=') - 1 + _parser.GetExpr().length());
+		sParams = sParams.substr(0, findParameter(sParams, "n", '=') - 1) + sParams.substr(findParameter(sParams, "n", '=') - 1 + _parser.GetExpr().length());
 	}
 
-	if (matchParams(sParams, "unique") || matchParams(sParams, "u"))
+	if (findParameter(sParams, "unique") || findParameter(sParams, "u"))
 		bUseUniqueName = true;
 
 	// Extract the variable and the approximation location
@@ -3129,31 +3102,11 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, Define& _fun
     // from the string
 	if (bUseUniqueName)
 	{
+	    string sOperators = " ,;-*/%^!<>&|?:=+[]{}()";
+
 		for (unsigned int i = 0; i < sTaylor.length(); i++)
 		{
-			if (sTaylor[i] == ' '
-                || sTaylor[i] == ','
-                || sTaylor[i] == ';'
-                || sTaylor[i] == '-'
-                || sTaylor[i] == '*'
-                || sTaylor[i] == '/'
-                || sTaylor[i] == '%'
-                || sTaylor[i] == '^'
-                || sTaylor[i] == '!'
-                || sTaylor[i] == '<'
-                || sTaylor[i] == '>'
-                || sTaylor[i] == '&'
-                || sTaylor[i] == '|'
-                || sTaylor[i] == '?'
-                || sTaylor[i] == ':'
-                || sTaylor[i] == '='
-                || sTaylor[i] == '+'
-                || sTaylor[i] == '['
-                || sTaylor[i] == ']'
-                || sTaylor[i] == '{'
-                || sTaylor[i] == '}'
-                || sTaylor[i] == '('
-                || sTaylor[i] == ')')
+		    if (sOperators.find(sTaylor[i]) != string::npos)
 			{
 				sTaylor.erase(i, 1);
 				i--;
@@ -3305,16 +3258,16 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
 	bool bComplex = false;
 	string sTargetTable = "fftdata";
 
-	if (matchParams(sCmd, "inverse"))
+	if (findParameter(sCmd, "inverse"))
 		bInverseTrafo = true;
 
-	if (matchParams(sCmd, "complex"))
+	if (findParameter(sCmd, "complex"))
 		bComplex = true;
 
 	// search for explicit "target" options and select the target cache
 	sTargetTable = evaluateTargetOptionInCommand(sCmd, sTargetTable, _idx, _parser, _data, _option);
 
-	if (matchParams(sCmd, "inverse") || matchParams(sCmd, "complex"))
+	if (findParameter(sCmd, "inverse") || findParameter(sCmd, "complex"))
 	{
 		for (unsigned int i = 0; i < sCmd.length(); i++)
 		{
@@ -3489,18 +3442,18 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
 	string sType = "d"; // d = daubechies, cd = centered daubechies, h = haar, ch = centered haar, b = bspline, cb = centered bspline
 	int k = 4;
 
-	if (matchParams(sCmd, "inverse"))
+	if (findParameter(sCmd, "inverse"))
 		bInverseTrafo = true;
 
-	if (matchParams(sCmd, "grid"))
+	if (findParameter(sCmd, "grid"))
 		bTargetGrid = true;
 
-	if (matchParams(sCmd, "type", '='))
-		sType = getArgAtPos(sCmd, matchParams(sCmd, "type", '=') + 4);
+	if (findParameter(sCmd, "type", '='))
+		sType = getArgAtPos(sCmd, findParameter(sCmd, "type", '=') + 4);
 
-	if (matchParams(sCmd, "k", '='))
+	if (findParameter(sCmd, "k", '='))
 	{
-		_parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "k", '=') + 1));
+		_parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "k", '=') + 1));
 		k = (int)_parser.Eval();
 	}
 
@@ -3508,7 +3461,7 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
 	// search for explicit "target" options and select the target cache
 	sTargetTable = evaluateTargetOptionInCommand(sCmd, sTargetTable, _idx, _parser, _data, _option);
 
-	if (matchParams(sCmd, "inverse") || matchParams(sCmd, "type", '=') || matchParams(sCmd, "k", '='))
+	if (findParameter(sCmd, "inverse") || findParameter(sCmd, "type", '=') || findParameter(sCmd, "k", '='))
 	{
 		for (unsigned int i = 0; i < sCmd.length(); i++)
 		{
@@ -3676,7 +3629,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 	string sExpr = "";
 	string sParams = "";
 	string sInterval = "";
-	string sVar = "";
+	string sVar = "x";
 	bool bLogarithmic = false;
 
 	if (sCmd.find("-set") != string::npos)
@@ -3695,17 +3648,8 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 	StripSpaces(sExpr);
 	sExpr = sExpr.substr(findCommand(sExpr).sString.length());
 
-	if (isNotEmptyExpression(sExpr))
-	{
-		if (!_functions.call(sExpr))
-			return false;
-	}
-
-	if (isNotEmptyExpression(sParams))
-	{
-		if (!_functions.call(sParams))
-			return false;
-	}
+    if (!_functions.call(sExpr) || !_functions.call(sParams))
+        return false;
 
 	StripSpaces(sParams);
 
@@ -3725,23 +3669,23 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 			convertVectorToExpression(sParams, _option);
 	}
 
-	if (matchParams(sParams, "samples", '='))
+	if (findParameter(sParams, "samples", '='))
 	{
 		sParams += " ";
 
-		if (isNotEmptyExpression(getArgAtPos(sParams, matchParams(sParams, "samples", '=') + 7)))
+		if (isNotEmptyExpression(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7)))
 		{
-			_parser.SetExpr(getArgAtPos(sParams, matchParams(sParams, "samples", '=') + 7));
+			_parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
 			nSamples = (unsigned int)_parser.Eval();
 		}
 
-		sParams.erase(matchParams(sParams, "samples", '=') - 1, 8);
+		sParams.erase(findParameter(sParams, "samples", '=') - 1, 8);
 	}
 
-	if (matchParams(sParams, "logscale"))
+	if (findParameter(sParams, "logscale"))
 	{
 		bLogarithmic = true;
-		sParams.erase(matchParams(sParams, "logscale") - 1, 8);
+		sParams.erase(findParameter(sParams, "logscale") - 1, 8);
 	}
 
 	if (sParams.find('=') != string::npos
@@ -3754,7 +3698,9 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 		else if (sParams.substr(0, 4) == "-set")
 			sParams = sParams.substr(4);
 
-		if (sParams.find('=') != string::npos)
+        vector<double> vInterval = readAndParseIntervals(sParams, _parser, _data, _functions, _option, false);
+
+        if (!vInterval.size() && sParams.find('=') != string::npos)
 		{
 			int nPos = sParams.find('=');
 			sInterval = getArgAtPos(sParams, nPos + 1);
@@ -3768,16 +3714,19 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 			sVar = " " + sParams.substr(0, nPos);
 			sVar = sVar.substr(sVar.rfind(' '));
 			StripSpaces(sVar);
-		}
-		else
-		{
-			sVar = "x";
-			sInterval = sParams.substr(sParams.find('[') + 1, getMatchingParenthesis(sParams.substr(sParams.find('['))) - 1);
-			StripSpaces(sInterval);
 
-			if (sInterval == ":")
-				sInterval = "-10:10";
+			auto indices = getAllIndices(sInterval);
+
+			_parser.SetExpr(indices[0] + "," + indices[1]);
+			int nIndices;
+			double* res = _parser.Eval(nIndices);
+			vInterval.assign(res, res+2);
 		}
+
+		if (vInterval.size() > 4)
+            sVar = "z";
+        else if (vInterval.size() > 2)
+            sVar = "y";
 
 		if (isNotEmptyExpression(sExpr))
 			_parser.SetExpr(sExpr);
@@ -3790,36 +3739,19 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 		if (!dVar)
 			throw SyntaxError(SyntaxError::EVAL_VAR_NOT_FOUND, sCmd, sVar, sVar);
 
-		if (sInterval.find(':') == string::npos || sInterval.length() < 3)
-			return false;
+        dLeft = vInterval[0];
+        dRight = vInterval[1];
 
-		if (isNotEmptyExpression(sInterval.substr(0, sInterval.find(':'))))
-		{
-			_parser.SetExpr(sInterval.substr(0, sInterval.find(':')));
-			dLeft = _parser.Eval();
-
-			if (isinf(dLeft) || isnan(dLeft))
-			{
-				sCmd = "nan";
-				return false;
-			}
-		}
-		else
-			return false;
-
-		if (isNotEmptyExpression(sInterval.substr(sInterval.find(':') + 1)))
-		{
-			_parser.SetExpr(sInterval.substr(sInterval.find(':') + 1));
-			dRight = _parser.Eval();
-
-			if (isinf(dRight) || isnan(dRight))
-			{
-				sCmd = "nan";
-				return false;
-			}
-		}
-		else
-			return false;
+        if (isnan(dLeft) && isnan(dRight))
+        {
+            dLeft = -10.0;
+            dRight = 10.0;
+        }
+        else if (isnan(dLeft) || isnan(dRight) || isinf(dLeft) || isinf(dRight))
+        {
+            sCmd = "nan";
+            return false;
+        }
 
 		if (bLogarithmic && (dLeft <= 0.0 || dRight <= 0.0))
 			throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
@@ -3941,53 +3873,53 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
 	}
 
 	// Validate the intervals
-	if ((!matchParams(sCmd, "x", '=') && !sXVals.length()) || (!matchParams(sCmd, "y", '=') && !sYVals.length()) || (!matchParams(sCmd, "z", '=') && !sZVals.length()))
+	if ((!findParameter(sCmd, "x", '=') && !sXVals.length()) || (!findParameter(sCmd, "y", '=') && !sYVals.length()) || (!findParameter(sCmd, "z", '=') && !sZVals.length()))
 		throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, SyntaxError::invalid_position, "datagrid");
 
 	// Get the number of samples from the option list
-	if (matchParams(sCmd, "samples", '='))
+	if (findParameter(sCmd, "samples", '='))
 	{
-		_parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "samples", '=') + 7));
+		_parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7));
 		nSamples = (unsigned int)_parser.Eval();
 
 		if (nSamples < 2)
 			throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
 
-		sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "samples", '=') + 7), matchParams(sCmd, "samples", '=') - 1), getArgAtPos(sCmd, matchParams(sCmd, "samples", '=') + 7).length());
-		sCmd.erase(matchParams(sCmd, "samples", '=') - 1, 8);
+		sCmd.erase(sCmd.find(getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7), findParameter(sCmd, "samples", '=') - 1), getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7).length());
+		sCmd.erase(findParameter(sCmd, "samples", '=') - 1, 8);
 	}
 
 	// search for explicit "target" options and select the target cache
 	sTargetCache = evaluateTargetOptionInCommand(sCmd, sTargetCache, _iTargetIndex, _parser, _data, _option);
 
 	// read the transpose option
-	if (matchParams(sCmd, "transpose"))
+	if (findParameter(sCmd, "transpose"))
 	{
 		bTranspose = true;
-		sCmd.erase(matchParams(sCmd, "transpose") - 1, 9);
+		sCmd.erase(findParameter(sCmd, "transpose") - 1, 9);
 	}
 
 	// Read the interval definitions from the option list, if they are included
 	// Remove them from the command expression
 	if (!sXVals.length())
 	{
-		sXVals = getArgAtPos(sCmd, matchParams(sCmd, "x", '=') + 1);
-		sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "x", '=') + 1), matchParams(sCmd, "x", '=') - 1), getArgAtPos(sCmd, matchParams(sCmd, "x", '=') + 1).length());
-		sCmd.erase(matchParams(sCmd, "x", '=') - 1, 2);
+		sXVals = getArgAtPos(sCmd, findParameter(sCmd, "x", '=') + 1);
+		sCmd.erase(sCmd.find(getArgAtPos(sCmd, findParameter(sCmd, "x", '=') + 1), findParameter(sCmd, "x", '=') - 1), getArgAtPos(sCmd, findParameter(sCmd, "x", '=') + 1).length());
+		sCmd.erase(findParameter(sCmd, "x", '=') - 1, 2);
 	}
 
 	if (!sYVals.length())
 	{
-		sYVals = getArgAtPos(sCmd, matchParams(sCmd, "y", '=') + 1);
-		sCmd.erase(sCmd.find(getArgAtPos(sCmd, matchParams(sCmd, "y", '=') + 1), matchParams(sCmd, "y", '=') - 1), getArgAtPos(sCmd, matchParams(sCmd, "y", '=') + 1).length());
-		sCmd.erase(matchParams(sCmd, "y", '=') - 1, 2);
+		sYVals = getArgAtPos(sCmd, findParameter(sCmd, "y", '=') + 1);
+		sCmd.erase(sCmd.find(getArgAtPos(sCmd, findParameter(sCmd, "y", '=') + 1), findParameter(sCmd, "y", '=') - 1), getArgAtPos(sCmd, findParameter(sCmd, "y", '=') + 1).length());
+		sCmd.erase(findParameter(sCmd, "y", '=') - 1, 2);
 	}
 
 	if (!sZVals.length())
 	{
 		while (sCmd[sCmd.length() - 1] == ' ' || sCmd[sCmd.length() - 1] == '=' || sCmd[sCmd.length() - 1] == '-')
 			sCmd.erase(sCmd.length() - 1);
-		sZVals = getArgAtPos(sCmd, matchParams(sCmd, "z", '=') + 1);
+		sZVals = getArgAtPos(sCmd, findParameter(sCmd, "z", '=') + 1);
 	}
 
 	// Try to call the functions
@@ -4427,9 +4359,9 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _fun
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
 	// Samples lesen
-	if (matchParams(sCmd, "samples", '='))
+	if (findParameter(sCmd, "samples", '='))
 	{
-		string sSamples = getArgAtPos(sCmd, matchParams(sCmd, "samples", '=') + 7);
+		string sSamples = getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7);
 
 		if (sSamples.find("data(") != string::npos || _data.containsTablesOrClusters(sSamples))
 			getDataElements(sSamples, _parser, _data, _option);
@@ -4441,8 +4373,8 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _fun
 	}
 
 	// Dateiname lesen
-	if (matchParams(sCmd, "file", '='))
-		sAudioFileName = getArgAtPos(sCmd, matchParams(sCmd, "file", '=') + 4);
+	if (findParameter(sCmd, "file", '='))
+		sAudioFileName = getArgAtPos(sCmd, findParameter(sCmd, "file", '=') + 4);
 
 	if (sAudioFileName.find('/') == string::npos && sAudioFileName.find('\\') == string::npos)
 		sAudioFileName.insert(0, "<savepath>/");
@@ -4507,7 +4439,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _fun
 	for (unsigned int i = 0; i < _mDataSet.size(); i++)
 	{
 		for (unsigned int j = 0; j < _mDataSet[0].size(); j++)
-			write_word(fAudio, (int)_mDataSet[i][j], 2);
+			write_word(fAudio, intCast(_mDataSet[i][j]), 2);
 	}
 
 	// Chunk sizes nachtraeglich einfuegen
@@ -4559,9 +4491,9 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
 	// Samples lesen
-	if (matchParams(sCmd, "samples", '='))
+	if (findParameter(sCmd, "samples", '='))
 	{
-		string sSamples = getArgAtPos(sCmd, matchParams(sCmd, "samples", '=') + 7);
+		string sSamples = getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7);
 
 		if (sSamples.find("data(") != string::npos || _data.containsTablesOrClusters(sSamples))
 			getDataElements(sSamples, _parser, _data, _option);
@@ -4599,7 +4531,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	if (_x.nx != _v.GetNx())
 		return false;
 
-	if (!matchParams(sCmd, "samples", '='))
+	if (!findParameter(sCmd, "samples", '='))
 		nSamples = _x.GetNx();
 
 	mglData _regularized(nSamples);
@@ -4751,18 +4683,18 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 	if (!_functions.call(sCmd))
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
-	if (matchParams(sCmd, "samples", '='))
+	if (findParameter(sCmd, "samples", '='))
 	{
-		_parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "samples", '=') + 7));
+		_parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7));
 		nSamples = _parser.Eval();
 
 		if (nSamples < 0)
 			nSamples = 0;
 	}
 
-	if (matchParams(sCmd, "target", '='))
+	if (findParameter(sCmd, "target", '='))
 	{
-		sTargetCache = getArgAtPos(sCmd, matchParams(sCmd, "target", '=') + 6);
+		sTargetCache = getArgAtPos(sCmd, findParameter(sCmd, "target", '=') + 6);
 
         if (!_data.isTable(sTargetCache))
             _data.addTable(sTargetCache, _option);

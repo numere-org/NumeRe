@@ -130,23 +130,23 @@ vector<int> MemoryManager::sortElements(const string& sLine) // cache -sort[[=de
     {
         sCache = findCommand(sLine).sString;
     }
-    if (matchParams(sLine, "sort", '='))
+    if (findParameter(sLine, "sort", '='))
     {
-        if (getArgAtPos(sLine, matchParams(sLine, "sort", '=')+4) == "desc")
+        if (getArgAtPos(sLine, findParameter(sLine, "sort", '=')+4) == "desc")
             sSortingExpression += " desc";
     }
     else
     {
         for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
         {
-            if (matchParams(sLine, iter->first, '='))
+            if (findParameter(sLine, iter->first, '='))
             {
-                if (getArgAtPos(sLine, matchParams(sLine, iter->first, '=')+5) == "desc")
+                if (getArgAtPos(sLine, findParameter(sLine, iter->first, '=')+5) == "desc")
                     sSortingExpression += " desc";
                 sCache = iter->first;
                 break;
             }
-            else if (matchParams(sLine, iter->first))
+            else if (findParameter(sLine, iter->first))
             {
                 sCache = iter->first;
                 break;
@@ -154,11 +154,11 @@ vector<int> MemoryManager::sortElements(const string& sLine) // cache -sort[[=de
         }
     }
 
-    if (matchParams(sLine, "cols", '='))
-        sSortingExpression += " cols=" + getArgAtPos(sLine, matchParams(sLine, "cols", '=')+4);
-    else if (matchParams(sLine, "c", '='))
-        sSortingExpression += " cols=" + getArgAtPos(sLine, matchParams(sLine, "c", '=')+1);
-    if (matchParams(sLine, "index"))
+    if (findParameter(sLine, "cols", '='))
+        sSortingExpression += " cols=" + getArgAtPos(sLine, findParameter(sLine, "cols", '=')+4);
+    else if (findParameter(sLine, "c", '='))
+        sSortingExpression += " cols=" + getArgAtPos(sLine, findParameter(sLine, "c", '=')+1);
+    if (findParameter(sLine, "index"))
         sSortingExpression += " index";
 
     return vMemory[mCachesMap.at(sCache)]->sortElements(0, getTableLines(sCache, false)-1, 0, getTableCols(sCache, false)-1, sSortingExpression);

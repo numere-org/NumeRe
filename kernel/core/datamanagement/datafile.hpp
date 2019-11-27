@@ -44,7 +44,7 @@ string toLowerCase(const string&);
 using namespace std;
 using namespace boost;
 
-int matchParams(const string& sCmd, const string& sParam, const char cFollowing);
+int findParameter(const string& sCmd, const string& sParam, const char cFollowing);
 string getArgAtPos(const string& sCmd, unsigned int nPos);
 void StripSpaces(string& sToStrip);
 string getClipboardText();

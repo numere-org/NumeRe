@@ -1016,11 +1016,11 @@ static string strfnc_findparam(StringFuncArgs& funcArgs)
 
 	if (funcArgs.sArg3.length())
 	{
-		nMatch = matchParams(funcArgs.sArg2, funcArgs.sArg1, funcArgs.sArg3[0]);
+		nMatch = findParameter(funcArgs.sArg2, funcArgs.sArg1, funcArgs.sArg3[0]);
 	}
 	else
 	{
-		nMatch = matchParams(funcArgs.sArg2, funcArgs.sArg1);
+		nMatch = findParameter(funcArgs.sArg2, funcArgs.sArg1);
 	}
 	if (nMatch != string::npos)
 		return toString((int)(nMatch + 1));

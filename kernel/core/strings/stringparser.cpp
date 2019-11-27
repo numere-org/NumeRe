@@ -1218,7 +1218,7 @@ namespace NumeRe
         // detected
         for (auto iter = m_mStringParams.begin(); iter != m_mStringParams.end(); ++iter)
         {
-            vPositions.push_back(matchParams(sLine, iter->first));
+            vPositions.push_back(findParameter(sLine, iter->first));
 
             if (vPositions.back())
                 parserFlags |= iter->second;

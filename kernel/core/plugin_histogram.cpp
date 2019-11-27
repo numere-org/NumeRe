@@ -115,13 +115,13 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 		if (findCommand(sCmd).sString == "hist2d")
 			bMake2DHist = true;
 
-		if (matchParams(sCmd, "cols", '=') || matchParams(sCmd, "c", '='))
+		if (findParameter(sCmd, "cols", '=') || findParameter(sCmd, "c", '='))
 		{
 			int nPos = 0;
-			if (matchParams(sCmd, "cols", '='))
-				nPos = matchParams(sCmd, "cols", '=') + 4;
+			if (findParameter(sCmd, "cols", '='))
+				nPos = findParameter(sCmd, "cols", '=') + 4;
 			else
-				nPos = matchParams(sCmd, "c", '=') + 1;
+				nPos = findParameter(sCmd, "c", '=') + 1;
 			string sTemp = getArgAtPos(sCmd, nPos);
 			string sTemp_2 = "";
 			StripSpaces(sTemp);
@@ -161,83 +161,83 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			/*nDataRow = (int)StrToDb(sCmd.substr(sCmd.find("cols=")+5, sCmd.find(':', sCmd.find("cols=")+5)-sCmd.find("cols=")-5));
 			nDataRowFinal = (int)StrToDb(sCmd.substr(sCmd.find(':', sCmd.find("cols="))+1, sCmd.find(' ', sCmd.find("cols=")+5)-sCmd.find(':', sCmd.find("cols="))-1));*/
 		}
-		if (matchParams(sCmd, "bins", '=') || matchParams(sCmd, "b", '='))
+		if (findParameter(sCmd, "bins", '=') || findParameter(sCmd, "b", '='))
 		{
-			if (matchParams(sCmd, "bins", '='))
-				nBin = matchParams(sCmd, "bins", '=') + 4;
+			if (findParameter(sCmd, "bins", '='))
+				nBin = findParameter(sCmd, "bins", '=') + 4;
 			else
-				nBin = matchParams(sCmd, "b", '=') + 1;
+				nBin = findParameter(sCmd, "b", '=') + 1;
 			nBin = (int)StrToDb(getArgAtPos(sCmd, nBin));
 		}
-		if (matchParams(sCmd, "width", '=') || matchParams(sCmd, "w", '='))
+		if (findParameter(sCmd, "width", '=') || findParameter(sCmd, "w", '='))
 		{
 			int nPos = 0;
-			if (matchParams(sCmd, "width", '='))
-				nPos = matchParams(sCmd, "width", '=') + 5;
+			if (findParameter(sCmd, "width", '='))
+				nPos = findParameter(sCmd, "width", '=') + 5;
 			else
-				nPos = matchParams(sCmd, "w", '=') + 1;
+				nPos = findParameter(sCmd, "w", '=') + 1;
 			dIntervallLength = StrToDb(getArgAtPos(sCmd, nPos));
 		}
-		if (matchParams(sCmd, "save", '=') || matchParams(sCmd, "export", '='))
+		if (findParameter(sCmd, "save", '=') || findParameter(sCmd, "export", '='))
 		{
 			int nPos = 0;
-			if (matchParams(sCmd, "save", '='))
-				nPos = matchParams(sCmd, "save", '=') + 4;
+			if (findParameter(sCmd, "save", '='))
+				nPos = findParameter(sCmd, "save", '=') + 4;
 			else
-				nPos = matchParams(sCmd, "export", '=') + 6;
+				nPos = findParameter(sCmd, "export", '=') + 6;
 			sHistSavePath = getArgAtPos(sCmd, nPos);
 			_out.setStatus(true);
 		}
-		if ((!bMake2DHist && matchParams(sCmd, "xlabel", '=')) || matchParams(sCmd, "binlabel", '='))
+		if ((!bMake2DHist && findParameter(sCmd, "xlabel", '=')) || findParameter(sCmd, "binlabel", '='))
 		{
-			if (matchParams(sCmd, "xlabel", '='))
+			if (findParameter(sCmd, "xlabel", '='))
 			{
-				sBinLabel = fromSystemCodePage(getArgAtPos(sCmd, matchParams(sCmd, "xlabel", '=') + 6));
+				sBinLabel = fromSystemCodePage(getArgAtPos(sCmd, findParameter(sCmd, "xlabel", '=') + 6));
 			}
 			else
-				sBinLabel = fromSystemCodePage(getArgAtPos(sCmd, matchParams(sCmd, "binlabel", '=') + 8));
+				sBinLabel = fromSystemCodePage(getArgAtPos(sCmd, findParameter(sCmd, "binlabel", '=') + 8));
 			StripSpaces(sBinLabel);
 			if (!sBinLabel.length())
 				sBinLabel = "Bins";
 		}
-		if ((!bMake2DHist && matchParams(sCmd, "ylabel", '=')) || matchParams(sCmd, "countlabel", '='))
+		if ((!bMake2DHist && findParameter(sCmd, "ylabel", '=')) || findParameter(sCmd, "countlabel", '='))
 		{
-			if (matchParams(sCmd, "ylabel", '='))
-				sCountLabel = fromSystemCodePage(getArgAtPos(sCmd, matchParams(sCmd, "ylabel", '=') + 6));
+			if (findParameter(sCmd, "ylabel", '='))
+				sCountLabel = fromSystemCodePage(getArgAtPos(sCmd, findParameter(sCmd, "ylabel", '=') + 6));
 			else
-				sCountLabel = fromSystemCodePage(getArgAtPos(sCmd, matchParams(sCmd, "countlabel", '=') + 10));
+				sCountLabel = fromSystemCodePage(getArgAtPos(sCmd, findParameter(sCmd, "countlabel", '=') + 10));
 			StripSpaces(sCountLabel);
 			if (!sCountLabel.length())
 				sCountLabel = "Counts";
 		}
-		if (matchParams(sCmd, "xlabel", '=') && bMake2DHist)
+		if (findParameter(sCmd, "xlabel", '=') && bMake2DHist)
 		{
-			sAxisLabels[0] = fromSystemCodePage(getArgAtPos(sCmd, matchParams(sCmd, "xlabel", '=') + 6));
+			sAxisLabels[0] = fromSystemCodePage(getArgAtPos(sCmd, findParameter(sCmd, "xlabel", '=') + 6));
 			StripSpaces(sAxisLabels[0]);
 			if (!sAxisLabels[0].length())
 				sAxisLabels[0] = "x";
 		}
-		if (matchParams(sCmd, "ylabel", '=') && bMake2DHist)
+		if (findParameter(sCmd, "ylabel", '=') && bMake2DHist)
 		{
-			sAxisLabels[1] = fromSystemCodePage(getArgAtPos(sCmd, matchParams(sCmd, "ylabel", '=') + 6));
+			sAxisLabels[1] = fromSystemCodePage(getArgAtPos(sCmd, findParameter(sCmd, "ylabel", '=') + 6));
 			StripSpaces(sAxisLabels[1]);
 			if (!sAxisLabels[1].length())
 				sAxisLabels[1] = "y";
 		}
-		if (matchParams(sCmd, "zlabel", '=') && bMake2DHist)
+		if (findParameter(sCmd, "zlabel", '=') && bMake2DHist)
 		{
-			sAxisLabels[2] = fromSystemCodePage(getArgAtPos(sCmd, matchParams(sCmd, "zlabel", '=') + 6));
+			sAxisLabels[2] = fromSystemCodePage(getArgAtPos(sCmd, findParameter(sCmd, "zlabel", '=') + 6));
 			StripSpaces(sAxisLabels[2]);
 			if (!sAxisLabels[2].length())
 				sAxisLabels[2] = "z";
 		}
-		if (matchParams(sCmd, "sum"))
+		if (findParameter(sCmd, "sum"))
 			bSum = true;
-		if (matchParams(sCmd, "save") || matchParams(sCmd, "export"))
+		if (findParameter(sCmd, "save") || findParameter(sCmd, "export"))
 			_out.setStatus(true);
-		if (matchParams(sCmd, "x", '='))
+		if (findParameter(sCmd, "x", '='))
 		{
-			string sTemp =  getArgAtPos(sCmd, matchParams(sCmd, "x", '=') + 1);
+			string sTemp =  getArgAtPos(sCmd, findParameter(sCmd, "x", '=') + 1);
 			//cerr << sTemp << endl;
 			if (sTemp.find(':') != string::npos)
 			{
@@ -247,9 +247,9 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 					dMax = StrToDb(sTemp.substr(sTemp.find(':') + 1));
 			}
 		}
-		if (matchParams(sCmd, "y", '='))
+		if (findParameter(sCmd, "y", '='))
 		{
-			string sTemp =  getArgAtPos(sCmd, matchParams(sCmd, "y", '=') + 1);
+			string sTemp =  getArgAtPos(sCmd, findParameter(sCmd, "y", '=') + 1);
 			//cerr << sTemp << endl;
 			if (sTemp.find(':') != string::npos)
 			{
@@ -259,9 +259,9 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 					dMaxY = StrToDb(sTemp.substr(sTemp.find(':') + 1));
 			}
 		}
-		if (matchParams(sCmd, "z", '='))
+		if (findParameter(sCmd, "z", '='))
 		{
-			string sTemp =  getArgAtPos(sCmd, matchParams(sCmd, "z", '=') + 1);
+			string sTemp =  getArgAtPos(sCmd, findParameter(sCmd, "z", '=') + 1);
 			//cerr << sTemp << endl;
 			if (sTemp.find(':') != string::npos)
 			{
@@ -271,12 +271,12 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 					dMaxZ = StrToDb(sTemp.substr(sTemp.find(':') + 1));
 			}
 		}
-		if (matchParams(sCmd, "tocache"))
+		if (findParameter(sCmd, "tocache"))
 			bWriteToCache = true;
-		if (matchParams(sCmd, "tocache", '='))
+		if (findParameter(sCmd, "tocache", '='))
 		{
 			bWriteToCache = true;
-			sTargettable = getArgAtPos(sCmd, matchParams(sCmd, "tocache", '=') + 7);
+			sTargettable = getArgAtPos(sCmd, findParameter(sCmd, "tocache", '=') + 7);
 			if (sTargettable.find('(') == string::npos)
 				sTargettable += "()";
 			if (!_target.isTable(sTargettable))
@@ -285,26 +285,26 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			}
 			sTargettable.erase(sTargettable.find('('));
 		}
-		if (matchParams(sCmd, "silent"))
+		if (findParameter(sCmd, "silent"))
 			bSilent = true;
-		if (matchParams(sCmd, "grid") && nDataRowFinal - nDataRow > 3)
+		if (findParameter(sCmd, "grid") && nDataRowFinal - nDataRow > 3)
 		{
 			bGrid = true;
 		}
-		if (matchParams(sCmd, "method", '='))
+		if (findParameter(sCmd, "method", '='))
 		{
-			if (getArgAtPos(sCmd, matchParams(sCmd, "method", '=') + 6) == "scott")
+			if (getArgAtPos(sCmd, findParameter(sCmd, "method", '=') + 6) == "scott")
 				nMethod = 1;
-			else if (getArgAtPos(sCmd, matchParams(sCmd, "method", '=') + 6) == "freedman")
+			else if (getArgAtPos(sCmd, findParameter(sCmd, "method", '=') + 6) == "freedman")
 				nMethod = 2;
 			else
 				nMethod = 0;
 		}
-		if (matchParams(sCmd, "m", '='))
+		if (findParameter(sCmd, "m", '='))
 		{
-			if (getArgAtPos(sCmd, matchParams(sCmd, "m", '=') + 1) == "scott")
+			if (getArgAtPos(sCmd, findParameter(sCmd, "m", '=') + 1) == "scott")
 				nMethod = 1;
-			else if (getArgAtPos(sCmd, matchParams(sCmd, "m", '=') + 1) == "freedman")
+			else if (getArgAtPos(sCmd, findParameter(sCmd, "m", '=') + 1) == "freedman")
 				nMethod = 2;
 			else
 				nMethod = 0;
@@ -918,7 +918,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 				}
 			}
 			// --> Setze die ueblichen Ausgabe-Info-Parameter <--
-			if (!bWriteToCache || matchParams(sCmd, "export", '=') || matchParams(sCmd, "save", '='))
+			if (!bWriteToCache || findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '='))
 			{
 				_out.setPluginName(_lang.get("HIS_OUT_PLGNINFO", PI_HIST, toString(nDataRow + 1), toString(nDataRowFinal), _data.getDataFileName(sDatatable)));
 				//_out.setPluginName("Histogramm (v " + PI_HIST + ") unter Verwendung der Datenreihe(n) " + toString(nDataRow+1) + "-" + toString(nDataRowFinal) + " aus " + _data.getDataFileName(sDatatable));
@@ -980,7 +980,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 
 
 			// --> Uebergabe an Output::format(string**,int,int,Settings&), das den Rest erledigt
-			if (!bWriteToCache || matchParams(sCmd, "save", '=') || matchParams(sCmd, "export", '='))
+			if (!bWriteToCache || findParameter(sCmd, "save", '=') || findParameter(sCmd, "export", '='))
 			{
 				/*if (!_out.isFile() && !bSilent && _option.getSystemPrintStatus())
 				    cerr << "|" << endl;*/
@@ -1361,7 +1361,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			}
 			//cerr << -2 << endl;
 
-			if (!bWriteToCache || matchParams(sCmd, "export", '=') || matchParams(sCmd, "save", '='))
+			if (!bWriteToCache || findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '='))
 			{
 				_out.setPluginName("2D-" + _lang.get("HIS_OUT_PLGNINFO", PI_HIST, toString(nDataRow + 1), toString(nDataRowFinal), _data.getDataFileName(sDatatable)));
 				_out.setCommentLine(_lang.get("HIST_OUT_COMMENTLINE2D", toString(dMin, 5), toString(dMax, 5), toString(dIntervallLength, 5), toString(dMinY, 5), toString(dMaxY, 5), toString(dIntervallLengthY, 5)));
@@ -1862,7 +1862,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			    _histGraph->Legend();*/
 
 
-			if (!bWriteToCache || matchParams(sCmd, "save", '=') || matchParams(sCmd, "export", '='))
+			if (!bWriteToCache || findParameter(sCmd, "save", '=') || findParameter(sCmd, "export", '='))
 			{
 				/*if (!_out.isFile() && _option.getSystemPrintStatus() && !bSilent)
 				    cerr << "|" << endl;*/

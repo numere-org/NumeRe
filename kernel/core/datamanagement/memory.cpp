@@ -632,7 +632,7 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
 
 	vector<int> vIndex;
 
-	if (matchParams(sSortingExpression, "desc"))
+	if (findParameter(sSortingExpression, "desc"))
 		nSign = -1;
 
 	if (!Memory::getCols(false))
@@ -646,10 +646,10 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
 	for (int i = i1; i <= i2; i++)
 		vIndex.push_back(i);
 
-	if (matchParams(sSortingExpression, "index"))
+	if (findParameter(sSortingExpression, "index"))
 		bReturnIndex = true;
 
-	if (!matchParams(sSortingExpression, "cols", '=') && !matchParams(sSortingExpression, "c", '='))
+	if (!findParameter(sSortingExpression, "cols", '=') && !findParameter(sSortingExpression, "c", '='))
 	{
 		for (int i = j1; i <= j2; i++)
 		{
@@ -668,13 +668,13 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
 	else
 	{
 		string sCols = "";
-		if (matchParams(sSortingExpression, "cols", '='))
+		if (findParameter(sSortingExpression, "cols", '='))
 		{
-			sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "cols", '=') + 4);
+			sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "cols", '=') + 4);
 		}
 		else
 		{
-			sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "c", '=') + 1);
+			sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "c", '=') + 1);
 		}
 
 		while (sCols.length())

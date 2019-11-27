@@ -217,17 +217,17 @@ bool Plugin::declareNewPlugin(const string& sInstallInfoString)
     bool bAllowOverride = false;
     vPlugin.resize(8,"");
 
-    if (matchParams(sInstallInfoString, "flags", '='))
+    if (findParameter(sInstallInfoString, "flags", '='))
     {
-        if (getArgAtPos(sInstallInfoString, matchParams(sInstallInfoString, "flags", '=')+5).find("ENABLE_FORCE_OVERRIDE") != string::npos)
+        if (getArgAtPos(sInstallInfoString, findParameter(sInstallInfoString, "flags", '=')+5).find("ENABLE_FORCE_OVERRIDE") != string::npos)
             bAllowOverride = true;
     }
 
     for (unsigned int i = 0; i < 8; i++)
     {
-        if (matchParams(sInstallInfoString, vParams[i], '='))
+        if (findParameter(sInstallInfoString, vParams[i], '='))
         {
-            vPlugin[i] = getArgAtPos(sInstallInfoString, matchParams(sInstallInfoString, vParams[i], '=')+vParams[i].length());
+            vPlugin[i] = getArgAtPos(sInstallInfoString, findParameter(sInstallInfoString, vParams[i], '=')+vParams[i].length());
             StripSpaces(vPlugin[i]);
             if (i > 3 && (vPlugin[i].find(' ') != string::npos || vPlugin[i].find(',') != string::npos))
             {

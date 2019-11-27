@@ -34,7 +34,7 @@ using namespace std;
  */
 
 int StrToInt(const string&);
-int matchParams(const string& sCmd, const string& sParam, const char cFollowing);
+int findParameter(const string& sCmd, const string& sParam, const char cFollowing);
 void StripSpaces(string&);
 
 class Settings : public Documentation

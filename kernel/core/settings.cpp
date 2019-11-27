@@ -242,7 +242,7 @@ bool Settings::set(const string& _sOption)
     /* --> Im Wesentlichen immer dasselbe: wenn der Parameter "-PARAM=" in der Zeile auftaucht,
      *     verwende alles danach (bis zum Ende der Zeile) als Wert der entsprechenden Einstellung <--
      */
-    if (matchParams(_sOption, "savepath", '='))
+    if (findParameter(_sOption, "savepath", '='))
     {
         sSavePath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sSavePath);
@@ -255,7 +255,7 @@ bool Settings::set(const string& _sOption)
         else
             sSavePath = "<>/save";
     }
-    else if (matchParams(_sOption, "loadpath", '='))
+    else if (findParameter(_sOption, "loadpath", '='))
     {
         sLoadPath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sLoadPath);
@@ -268,7 +268,7 @@ bool Settings::set(const string& _sOption)
         else
             sLoadPath = "<>/data";
     }
-    else if (matchParams(_sOption, "plotpath", '='))
+    else if (findParameter(_sOption, "plotpath", '='))
     {
         sPlotOutputPath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sPlotOutputPath);
@@ -281,7 +281,7 @@ bool Settings::set(const string& _sOption)
         else
             sPlotOutputPath = "<>/plots";
     }
-    else if (matchParams(_sOption, "scriptpath", '='))
+    else if (findParameter(_sOption, "scriptpath", '='))
     {
         sScriptpath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sScriptpath);
@@ -294,7 +294,7 @@ bool Settings::set(const string& _sOption)
         else
             sScriptpath = "<>/scripts";
     }
-    else if (matchParams(_sOption, "procpath", '='))
+    else if (findParameter(_sOption, "procpath", '='))
     {
         sProcsPath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sProcsPath);
@@ -307,7 +307,7 @@ bool Settings::set(const string& _sOption)
         else
             sProcsPath = "<>/procedures";
     }
-    else if (matchParams(_sOption, "plotviewerpath", '='))
+    else if (findParameter(_sOption, "plotviewerpath", '='))
     {
         sViewer = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sViewer);
@@ -318,7 +318,7 @@ bool Settings::set(const string& _sOption)
             return true;
         }
     }
-    else if (matchParams(_sOption, "editorpath", '='))
+    else if (findParameter(_sOption, "editorpath", '='))
     {
         sEditor = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sEditor);
@@ -333,7 +333,7 @@ bool Settings::set(const string& _sOption)
             sEditor = "notepad.exe";
         }
     }
-    else if (matchParams(_sOption, "precision", '='))
+    else if (findParameter(_sOption, "precision", '='))
     {
         nPrecision = StrToInt(_sOption.substr(_sOption.find('=')+1));
         if (nPrecision > 0 && nPrecision < 15)
@@ -341,32 +341,32 @@ bool Settings::set(const string& _sOption)
         else
             nPrecision = 7;
     }
-    else if (matchParams(_sOption, "faststart", '='))
+    else if (findParameter(_sOption, "faststart", '='))
     {
         bFastStart = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "greeting", '='))
+    else if (findParameter(_sOption, "greeting", '='))
     {
         bGreeting = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "hints", '='))
+    else if (findParameter(_sOption, "hints", '='))
     {
         bShowHints = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "escinscripts", '='))
+    else if (findParameter(_sOption, "escinscripts", '='))
     {
         bUseESCinScripts = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "usedraftmode", '='))
+    else if (findParameter(_sOption, "usedraftmode", '='))
     {
         bUseDraftMode = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "defaultframework", '='))
+    else if (findParameter(_sOption, "defaultframework", '='))
     {
         sFramework = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sFramework);
@@ -375,7 +375,7 @@ bool Settings::set(const string& _sOption)
         else
             sFramework = "calc";
     }
-    else if (matchParams(_sOption, "plotfont", '='))
+    else if (findParameter(_sOption, "plotfont", '='))
     {
         sDefaultfont = _sOption.substr(_sOption.find('=')+1);
         if (sDefaultfont == "palatino")
@@ -408,52 +408,52 @@ bool Settings::set(const string& _sOption)
         else
             sDefaultfont = "pagella";
     }
-    else if (matchParams(_sOption, "usecompacttables", '='))
+    else if (findParameter(_sOption, "usecompacttables", '='))
     {
         bCompact = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "usecustomlangfile", '='))
+    else if (findParameter(_sOption, "usecustomlangfile", '='))
     {
         bUseCustomLanguageFile = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "useexternaldocviewer", '=') || matchParams(_sOption, "useexternalviewer", '='))
+    else if (findParameter(_sOption, "useexternaldocviewer", '=') || findParameter(_sOption, "useexternalviewer", '='))
     {
         bUseExternalDocViewer = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "useexecutecommand", '='))
+    else if (findParameter(_sOption, "useexecutecommand", '='))
     {
         bUseExecuteCommand = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "usemaskasdefault", '='))
+    else if (findParameter(_sOption, "usemaskasdefault", '='))
     {
         bUseMaskAsDefault = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "trytodecodeprocedurearguments", '='))
+    else if (findParameter(_sOption, "trytodecodeprocedurearguments", '='))
     {
         bTryToDecodeProcedureArguments = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "extendedfileinfo", '='))
+    else if (findParameter(_sOption, "extendedfileinfo", '='))
     {
         bShowExtendedFileInfo = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "uselogfile", '='))
+    else if (findParameter(_sOption, "uselogfile", '='))
     {
         bUseLogfile = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "loademptycols", '='))
+    else if (findParameter(_sOption, "loademptycols", '='))
     {
         bLoadEmptyCols = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "autosaveinterval", '='))
+    else if (findParameter(_sOption, "autosaveinterval", '='))
     {
         nAutoSaveInterval = StrToInt(_sOption.substr(_sOption.find('=')+1));
         if (nAutoSaveInterval)
@@ -461,7 +461,7 @@ bool Settings::set(const string& _sOption)
         else
             nAutoSaveInterval = 30;
     }
-    else if (matchParams(_sOption, "buffersize", '='))
+    else if (findParameter(_sOption, "buffersize", '='))
     {
         nBuffer_x = (unsigned)StrToInt(_sOption.substr(_sOption.find('=')+1,_sOption.find(',')));
         nBuffer_y = (unsigned)StrToInt(_sOption.substr(_sOption.find(',')+1));
@@ -473,7 +473,7 @@ bool Settings::set(const string& _sOption)
             nBuffer_y = 300;
         }
     }
-    else if (matchParams(_sOption, "windowsize", '='))
+    else if (findParameter(_sOption, "windowsize", '='))
     {
         nWindow_x = (unsigned)StrToInt(_sOption.substr(_sOption.find('=')+1,_sOption.find(',')));
         nWindow_y = (unsigned)StrToInt(_sOption.substr(_sOption.find(',')+1));
@@ -485,12 +485,12 @@ bool Settings::set(const string& _sOption)
             nWindow_y = 34;
         }
     }
-    else if (matchParams(_sOption, "defcontrol", '='))
+    else if (findParameter(_sOption, "defcontrol", '='))
     {
         bDefineAutoLoad = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
-    else if (matchParams(_sOption, "colortheme", '='))
+    else if (findParameter(_sOption, "colortheme", '='))
     {
         nColorTheme = (unsigned)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;

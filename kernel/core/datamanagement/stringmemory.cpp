@@ -83,13 +83,13 @@ vector<int> StringInternalMemory::sortElements(long long int i1, long long int i
     vector<int> vIndex;
 
     // Look for command line parameters
-    if (matchParams(sSortingExpression, "desc"))
+    if (findParameter(sSortingExpression, "desc"))
         nSign = -1;
 
-    if (matchParams(sSortingExpression, "ignorecase"))
+    if (findParameter(sSortingExpression, "ignorecase"))
         bSortCaseInsensitive = true;
 
-    if (matchParams(sSortingExpression, "index"))
+    if (findParameter(sSortingExpression, "index"))
         bReturnIndex = true;
 
     // Prepare the indices
@@ -107,7 +107,7 @@ vector<int> StringInternalMemory::sortElements(long long int i1, long long int i
         vIndex.push_back(i);
 
     // Enter the quicksort algorithm
-    if (!matchParams(sSortingExpression, "cols", '=') && !matchParams(sSortingExpression, "c", '='))
+    if (!findParameter(sSortingExpression, "cols", '=') && !findParameter(sSortingExpression, "c", '='))
     {
         // Sort everything
         for (int i = j1; i <= j2; i++)
@@ -137,13 +137,13 @@ vector<int> StringInternalMemory::sortElements(long long int i1, long long int i
         string sCols = "";
 
         // Extract the column definitions
-        if (matchParams(sSortingExpression, "cols", '='))
+        if (findParameter(sSortingExpression, "cols", '='))
         {
-            sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "cols", '=')+4);
+            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "cols", '=')+4);
         }
         else
         {
-            sCols = getArgAtPos(sSortingExpression, matchParams(sSortingExpression, "c", '=')+1);
+            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "c", '=')+1);
         }
 
         // Decode the column definitions and apply the

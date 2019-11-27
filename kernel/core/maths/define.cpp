@@ -174,9 +174,9 @@ bool FunctionDefinition::importFunction(const string& _sExportedString)
 
 
     // Separate the comment
-    if (matchParams(sDefinitionString, "comment", '='))
+    if (findParameter(sDefinitionString, "comment", '='))
     {
-        sComment = getArgAtPos(sDefinitionString, matchParams(sDefinitionString, "comment", '=')+7);
+        sComment = getArgAtPos(sDefinitionString, findParameter(sDefinitionString, "comment", '=')+7);
     }
 
     StripSpaces(sImport);
@@ -200,9 +200,9 @@ bool FunctionDefinition::appendComment(const string& _sComment)
     sComment += _sComment;
 
     // Replace a previous comment, if there's one available
-    if (matchParams(sDefinitionString, "comment", '='))
+    if (findParameter(sDefinitionString, "comment", '='))
     {
-        size_t pos = matchParams(sDefinitionString, "comment", '=')+7;
+        size_t pos = findParameter(sDefinitionString, "comment", '=')+7;
         string sTemp = getArgAtPos(sDefinitionString, pos);
         pos = sDefinitionString.find(sTemp, pos);
 
@@ -258,9 +258,9 @@ bool FunctionDefinition::decodeDefinition()
     }
 
     // Separate the comment
-    if (matchParams(sDefinitionString, "comment", '='))
+    if (findParameter(sDefinitionString, "comment", '='))
     {
-        sComment = getArgAtPos(sDefinitionString, matchParams(sDefinitionString, "comment", '=')+7);
+        sComment = getArgAtPos(sDefinitionString, findParameter(sDefinitionString, "comment", '=')+7);
     }
 
     // Create the initial version of the parsed definition
@@ -342,9 +342,9 @@ bool FunctionDefinition::splitAndValidateArguments()
 // the passed variables into their values
 bool FunctionDefinition::convertToValues()
 {
-    if (matchParams(sDefinitionString, "asval", '='))
+    if (findParameter(sDefinitionString, "asval", '='))
     {
-        string sAsVal = getArgAtPos(sDefinitionString, matchParams(sDefinitionString, "asval", '=')+5);
+        string sAsVal = getArgAtPos(sDefinitionString, findParameter(sDefinitionString, "asval", '=')+5);
 
         if (sAsVal.front() == '{')
             sAsVal.erase(0,1);
@@ -528,9 +528,9 @@ bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
 
     // Handle the case that the user simply wanted to append
     // a comment to the existing definition
-    if (bRedefine && sExpr.find("()") != string::npos && matchParams(sExpr, "comment", '=') && mFunctionsMap.size())
+    if (bRedefine && sExpr.find("()") != string::npos && findParameter(sExpr, "comment", '=') && mFunctionsMap.size())
     {
-        string sComment = getArgAtPos(sExpr, matchParams(sExpr, "comment", '=')+7);
+        string sComment = getArgAtPos(sExpr, findParameter(sExpr, "comment", '=')+7);
 
         if (mFunctionsMap.find(sExpr.substr(0, sExpr.find("()"))) != mFunctionsMap.end())
         {
@@ -584,7 +584,7 @@ bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
     string sDefinition = sExpr;
 
     // Handle recursive redefinitions
-    if (bRedefine && matchParams(sExpr, "recursive"))
+    if (bRedefine && findParameter(sExpr, "recursive"))
         sDefinition = resolveRecursiveDefinitions(sDefinition);
 
     // Prepare the function definition and the possible

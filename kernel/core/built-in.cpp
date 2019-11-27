@@ -252,9 +252,9 @@ string evaluateParameterValues(const string& sCmd)
     // Try to detect the interval syntax
 	if (sReturn.find('-') != string::npos
         && (sReturn.find('[') != string::npos
-            || matchParams(sReturn, "x", '=')
-            || matchParams(sReturn, "y", '=')
-            || matchParams(sReturn, "z", '=')))
+            || findParameter(sReturn, "x", '=')
+            || findParameter(sReturn, "y", '=')
+            || findParameter(sReturn, "z", '=')))
 	{
 	    // Get the parameter part of the string and remove
 	    // the parameter string part from the original expression
@@ -436,12 +436,12 @@ bool parseCmdArg(const string& sCmd, const string& sParam, Parser& _parser, int&
 
 	unsigned int nPos = 0;
 
-	if (matchParams(sCmd, sParam) || matchParams(sCmd, sParam, '='))
+	if (findParameter(sCmd, sParam) || findParameter(sCmd, sParam, '='))
 	{
-		if (matchParams(sCmd, sParam))
-			nPos = matchParams(sCmd, sParam) + sParam.length();
+		if (findParameter(sCmd, sParam))
+			nPos = findParameter(sCmd, sParam) + sParam.length();
 		else
-			nPos = matchParams(sCmd, sParam, '=') + sParam.length();
+			nPos = findParameter(sCmd, sParam, '=') + sParam.length();
 
 		while (sCmd[nPos] == ' ' && nPos < sCmd.length() - 1)
 			nPos++;

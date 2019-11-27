@@ -237,13 +237,13 @@ string PlotData::getFileName() const
 void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& _option, int nType)
 {
     string sCmd = toLowerCase(__sCmd);
-    if (matchParams(sCmd, "reset") && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "reset") && (nType == ALL || nType & SUPERGLOBAL))
         reset();
-    if (matchParams(sCmd, "grid") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "grid") && (nType == ALL || nType & GLOBAL))
         nGrid = 1;
-    if (matchParams(sCmd, "grid", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "grid", '=') && (nType == ALL || nType & GLOBAL))
     {
-        unsigned int nPos = matchParams(sCmd, "grid", '=')+4;
+        unsigned int nPos = findParameter(sCmd, "grid", '=')+4;
         if (getArgAtPos(sCmd, nPos) == "fine")
             nGrid = 2;
         else if (getArgAtPos(sCmd, nPos) == "coarse")
@@ -251,140 +251,140 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         else
             nGrid = 1;
     }
-    if (matchParams(sCmd, "nogrid") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "nogrid") && (nType == ALL || nType & GLOBAL))
         nGrid = 0;
-    if ((matchParams(sCmd, "alpha") || matchParams(sCmd, "transparency")) && (nType == ALL || nType & LOCAL))
+    if ((findParameter(sCmd, "alpha") || findParameter(sCmd, "transparency")) && (nType == ALL || nType & LOCAL))
     {
         bAlpha = true;
 
-        if (matchParams(sCmd, "alpha", '='))
+        if (findParameter(sCmd, "alpha", '='))
         {
-            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "alpha", '=')+5));
+            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "alpha", '=')+5));
             dAlphaVal = 1 - _parser.Eval();
 
             if (dAlphaVal < 0 || dAlphaVal > 1)
                 dAlphaVal = 0.5;
         }
 
-        if (matchParams(sCmd, "transparency", '='))
+        if (findParameter(sCmd, "transparency", '='))
         {
-            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "transparency", '=')+12));
+            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "transparency", '=')+12));
             dAlphaVal = 1 - _parser.Eval();
 
             if (dAlphaVal < 0 || dAlphaVal > 1)
                 dAlphaVal = 0.5;
         }
     }
-    if ((matchParams(sCmd, "noalpha") || matchParams(sCmd, "notransparency")) && (nType == ALL || nType & LOCAL))
+    if ((findParameter(sCmd, "noalpha") || findParameter(sCmd, "notransparency")) && (nType == ALL || nType & LOCAL))
         bAlpha = false;
-    if (matchParams(sCmd, "light") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "light") && (nType == ALL || nType & LOCAL))
         nLighting = 1;
-    if (matchParams(sCmd, "light", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "light", '=') && (nType == ALL || nType & LOCAL))
     {
-        if (getArgAtPos(sCmd, matchParams(sCmd, "light", '=')+5) == "smooth")
+        if (getArgAtPos(sCmd, findParameter(sCmd, "light", '=')+5) == "smooth")
             nLighting = 2;
-        else if (getArgAtPos(sCmd, matchParams(sCmd, "light", '=')+5) == "soft")
+        else if (getArgAtPos(sCmd, findParameter(sCmd, "light", '=')+5) == "soft")
             nLighting = 2;
         else
             nLighting = 0;
     }
-    if (matchParams(sCmd, "nolight") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nolight") && (nType == ALL || nType & LOCAL))
         nLighting = 0;
-    if (matchParams(sCmd, "axis") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "axis") && (nType == ALL || nType & GLOBAL))
         bAxis = true;
-    if (matchParams(sCmd, "noaxis") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "noaxis") && (nType == ALL || nType & GLOBAL))
         bAxis = false;
-    if (matchParams(sCmd, "box") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "box") && (nType == ALL || nType & GLOBAL))
         bBox = true;
-    if (matchParams(sCmd, "nobox") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "nobox") && (nType == ALL || nType & GLOBAL))
         bBox = false;
-    if (matchParams(sCmd, "lcont") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "lcont") && (nType == ALL || nType & LOCAL))
     {
         bContLabels = true;
 
-        if (matchParams(sCmd, "lcont", '='))
+        if (findParameter(sCmd, "lcont", '='))
         {
-            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "lcont", '=')));
+            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lcont", '=')));
             nContLines = (size_t)_parser.Eval();
         }
     }
-    if (matchParams(sCmd, "nolcont") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nolcont") && (nType == ALL || nType & LOCAL))
         bContLabels = false;
-    if (matchParams(sCmd, "pcont") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "pcont") && (nType == ALL || nType & LOCAL))
     {
         bContProj = true;
 
-        if (matchParams(sCmd, "pcont", '='))
+        if (findParameter(sCmd, "pcont", '='))
         {
-            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "pcont", '=')));
+            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "pcont", '=')));
             nContLines = (size_t)_parser.Eval();
         }
     }
-    if (matchParams(sCmd, "nopcont") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nopcont") && (nType == ALL || nType & LOCAL))
         bContProj = false;
-    if (matchParams(sCmd, "fcont") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "fcont") && (nType == ALL || nType & LOCAL))
     {
         bContFilled = true;
 
-        if (matchParams(sCmd, "fcont", '='))
+        if (findParameter(sCmd, "fcont", '='))
         {
-            _parser.SetExpr(getArgAtPos(sCmd, matchParams(sCmd, "fcont", '=')));
+            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "fcont", '=')));
             nContLines = (size_t)_parser.Eval();
         }
     }
-    if (matchParams(sCmd, "nofcont") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nofcont") && (nType == ALL || nType & LOCAL))
         bContFilled = false;
-    if (matchParams(sCmd, "xerrorbars") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "xerrorbars") && (nType == ALL || nType & LOCAL))
         bxError = true;
-    if (matchParams(sCmd, "noxerrorbars") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noxerrorbars") && (nType == ALL || nType & LOCAL))
         bxError = false;
-    if (matchParams(sCmd, "yerrorbars") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "yerrorbars") && (nType == ALL || nType & LOCAL))
         byError = true;
-    if (matchParams(sCmd, "noyerrorbars") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noyerrorbars") && (nType == ALL || nType & LOCAL))
         byError = false;
-    if (matchParams(sCmd, "errorbars") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "errorbars") && (nType == ALL || nType & LOCAL))
     {
         bxError = true;
         byError = true;
     }
-    if (matchParams(sCmd, "noerrorbars") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noerrorbars") && (nType == ALL || nType & LOCAL))
     {
         bxError = false;
         byError = false;
     }
-    if (matchParams(sCmd, "logscale") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "logscale") && (nType == ALL || nType & GLOBAL))
     {
         for (int i = 0; i < 4; i++)
         {
             bLogscale[i] = true;
         }
     }
-    if (matchParams(sCmd, "nologscale") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "nologscale") && (nType == ALL || nType & GLOBAL))
     {
         for (int i = 0; i < 4; i++)
         {
             bLogscale[i] = false;
         }
     }
-    if (matchParams(sCmd, "xlog") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "xlog") && (nType == ALL || nType & GLOBAL))
         bLogscale[0] = true;
-    if (matchParams(sCmd, "ylog") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "ylog") && (nType == ALL || nType & GLOBAL))
         bLogscale[1] = true;
-    if (matchParams(sCmd, "zlog") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "zlog") && (nType == ALL || nType & GLOBAL))
         bLogscale[2] = true;
-    if (matchParams(sCmd, "clog") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "clog") && (nType == ALL || nType & GLOBAL))
         bLogscale[3] = true;
-    if (matchParams(sCmd, "noxlog") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "noxlog") && (nType == ALL || nType & GLOBAL))
         bLogscale[0] = false;
-    if (matchParams(sCmd, "noylog") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "noylog") && (nType == ALL || nType & GLOBAL))
         bLogscale[1] = false;
-    if (matchParams(sCmd, "nozlog") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "nozlog") && (nType == ALL || nType & GLOBAL))
         bLogscale[2] = false;
-    if (matchParams(sCmd, "noclog") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "noclog") && (nType == ALL || nType & GLOBAL))
         bLogscale[3] = false;
-    if (matchParams(sCmd, "samples", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "samples", '=') && (nType == ALL || nType & LOCAL))
     {
-        int nPos = matchParams(sCmd, "samples", '=') + 7;
+        int nPos = findParameter(sCmd, "samples", '=') + 7;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
         nSamples = (int)_parser.Eval();
         if (isnan(_parser.Eval()) || isinf(_parser.Eval()))
@@ -392,9 +392,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (_option.getbDebug())
             cerr << "|-> DEBUG: nSamples = " << nSamples << endl;
     }
-    if (matchParams(sCmd, "t", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "t", '=') && (nType == ALL || nType & LOCAL))
     {
-        int nPos = matchParams(sCmd, "t", '=')+1;
+        int nPos = findParameter(sCmd, "t", '=')+1;
         string sTemp_1 = getArgAtPos(__sCmd, nPos);
 
         if (sTemp_1.find(':') != string::npos)
@@ -410,9 +410,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 dtParam[1] = 1;
         }
     }
-    if (matchParams(sCmd, "colorrange", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "colorrange", '=') && (nType == ALL || nType & GLOBAL))
     {
-        unsigned int nPos = matchParams(sCmd, "colorrange", '=') + 10;
+        unsigned int nPos = findParameter(sCmd, "colorrange", '=') + 10;
         string sTemp_1 = getArgAtPos(__sCmd, nPos);
 
         if (sTemp_1.find(':') != string::npos)
@@ -429,9 +429,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if (matchParams(sCmd, "rotate", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "rotate", '=') && (nType == ALL || nType & GLOBAL))
     {
-        int nPos = matchParams(sCmd, "rotate", '=')+6;
+        int nPos = findParameter(sCmd, "rotate", '=')+6;
         string sTemp = getArgAtPos(__sCmd, nPos);
         if (sTemp.find(",") != string::npos && sTemp.length() > 1)
         {
@@ -482,9 +482,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if (matchParams(sCmd, "origin", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "origin", '=') && (nType == ALL || nType & GLOBAL))
     {
-        int nPos = matchParams(sCmd, "origin", '=')+6;
+        int nPos = findParameter(sCmd, "origin", '=')+6;
         string sTemp = getArgAtPos(__sCmd, nPos);
         if (sTemp.find(',') != string::npos && sTemp.length() > 1)
         {
@@ -513,9 +513,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 dOrigin[i] = 0.0;
         }
     }
-    if (matchParams(sCmd, "slices", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "slices", '=') && (nType == ALL || nType & LOCAL))
     {
-        int nPos = matchParams(sCmd, "slices", '=')+6;
+        int nPos = findParameter(sCmd, "slices", '=')+6;
         string sTemp = getArgAtPos(__sCmd, nPos);
         if (sTemp.find(',') != string::npos && sTemp.length() > 1)
         {
@@ -539,27 +539,27 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 nSlices[i] = 1;
         }
     }
-    if (matchParams(sCmd, "connect") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "connect") && (nType == ALL || nType & LOCAL))
         bConnectPoints = true;
-    if (matchParams(sCmd, "noconnect") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noconnect") && (nType == ALL || nType & LOCAL))
         bConnectPoints = false;
-    if (matchParams(sCmd, "points") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "points") && (nType == ALL || nType & LOCAL))
         bDrawPoints = true;
-    if (matchParams(sCmd, "nopoints") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nopoints") && (nType == ALL || nType & LOCAL))
         bDrawPoints = false;
-    if (matchParams(sCmd, "open") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "open") && (nType == ALL || nType & GLOBAL))
         bOpenImage = true;
-    if (matchParams(sCmd, "noopen") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "noopen") && (nType == ALL || nType & GLOBAL))
         bOpenImage = false;
-    if (matchParams(sCmd, "interpolate") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "interpolate") && (nType == ALL || nType & LOCAL))
         bInterpolate = true;
-    if (matchParams(sCmd, "nointerpolate") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nointerpolate") && (nType == ALL || nType & LOCAL))
         bInterpolate = false;
-    if (matchParams(sCmd, "hires") && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "hires") && (nType == ALL || nType & SUPERGLOBAL))
         nHighResLevel = 2;
-    if (matchParams(sCmd, "hires", '=') && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "hires", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
-        int nPos = matchParams(sCmd, "hires", '=')+5;
+        int nPos = findParameter(sCmd, "hires", '=')+5;
         if (getArgAtPos(sCmd, nPos) == "all")
         {
             bAllHighRes = true;
@@ -575,9 +575,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             nHighResLevel = 1;
         }
     }
-    if (matchParams(sCmd, "legend", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "legend", '=') && (nType == ALL || nType & GLOBAL))
     {
-        int nPos = matchParams(sCmd, "legend", '=')+6;
+        int nPos = findParameter(sCmd, "legend", '=')+6;
         if (getArgAtPos(sCmd, nPos) == "topleft" || getArgAtPos(sCmd, nPos) == "left")
             nLegendPosition = 2;
         else if (getArgAtPos(sCmd, nPos) == "bottomleft")
@@ -587,16 +587,16 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         else
             nLegendPosition = 3;
     }
-    if (matchParams(sCmd, "nohires") && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "nohires") && (nType == ALL || nType & SUPERGLOBAL))
     {
         nHighResLevel = 0;
         bAllHighRes = false;
     }
-    if (matchParams(sCmd, "animate") && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "animate") && (nType == ALL || nType & SUPERGLOBAL))
         bAnimate = true;
-    if (matchParams(sCmd, "animate", '=') && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "animate", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
-        unsigned int nPos = matchParams(sCmd, "animate", '=')+7;
+        unsigned int nPos = findParameter(sCmd, "animate", '=')+7;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
         nAnimateSamples = (int)_parser.Eval();
         if (nAnimateSamples && !isinf(_parser.Eval()) && !isnan(_parser.Eval()))
@@ -611,9 +611,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (nAnimateSamples < 1)
             nAnimateSamples = 50;
     }
-    if (matchParams(sCmd, "marks", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "marks", '=') && (nType == ALL || nType & LOCAL))
     {
-        unsigned int nPos = matchParams(sCmd, "marks", '=')+5;
+        unsigned int nPos = findParameter(sCmd, "marks", '=')+5;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
         nMarks = (int)_parser.Eval();
         if (!nMarks || isinf(_parser.Eval()) || isnan(_parser.Eval()))
@@ -623,11 +623,11 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (nMarks < 0)
             nMarks = 0;
     }
-    if (matchParams(sCmd, "nomarks") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nomarks") && (nType == ALL || nType & LOCAL))
         nMarks = 0;
-    if (matchParams(sCmd, "textsize", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "textsize", '=') && (nType == ALL || nType & GLOBAL))
     {
-        unsigned int nPos = matchParams(sCmd, "textsize", '=')+8;
+        unsigned int nPos = findParameter(sCmd, "textsize", '=')+8;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
         nTextsize = (int)_parser.Eval();
         if (!nTextsize || isinf(_parser.Eval()) || isnan(_parser.Eval()))
@@ -637,131 +637,131 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (nTextsize < 1)
             nTextsize = 1;
     }
-    if (matchParams(sCmd, "aspect", '=') && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "aspect", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
-        unsigned int nPos = matchParams(sCmd, "aspect", '=') + 6;
+        unsigned int nPos = findParameter(sCmd, "aspect", '=') + 6;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
         dAspect = _parser.Eval();
         if (dAspect <= 0 || isnan(dAspect) || isinf(dAspect))
             dAspect = 4/3;
     }
-    if (matchParams(sCmd, "noanimate") && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "noanimate") && (nType == ALL || nType & SUPERGLOBAL))
         bAnimate = false;
-    if (matchParams(sCmd, "silent") && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "silent") && (nType == ALL || nType & SUPERGLOBAL))
         bSilentMode = true;
-    if (matchParams(sCmd, "nosilent") && (nType == ALL || nType & SUPERGLOBAL))
+    if (findParameter(sCmd, "nosilent") && (nType == ALL || nType & SUPERGLOBAL))
         bSilentMode = false;
-    if (matchParams(sCmd, "cut") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "cut") && (nType == ALL || nType & LOCAL))
         bCutBox = true;
-    if (matchParams(sCmd, "nocut") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nocut") && (nType == ALL || nType & LOCAL))
         bCutBox = false;
-    if (matchParams(sCmd, "flow") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "flow") && (nType == ALL || nType & LOCAL))
     {
         bFlow = true;
         if (bPipe)
             bPipe = false;
     }
-    if (matchParams(sCmd, "noflow") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noflow") && (nType == ALL || nType & LOCAL))
         bFlow = false;
-    if (matchParams(sCmd, "pipe") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "pipe") && (nType == ALL || nType & LOCAL))
     {
         bPipe = true;
         if (bFlow)
             bFlow = false;
     }
-    if (matchParams(sCmd, "nopipe") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nopipe") && (nType == ALL || nType & LOCAL))
         bPipe = false;
-    if (matchParams(sCmd, "flength") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "flength") && (nType == ALL || nType & LOCAL))
         bFixedLength = true;
-    if (matchParams(sCmd, "noflength") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noflength") && (nType == ALL || nType & LOCAL))
         bFixedLength = false;
-    if (matchParams(sCmd, "colorbar") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "colorbar") && (nType == ALL || nType & LOCAL))
         bColorbar = true;
-    if (matchParams(sCmd, "nocolorbar") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nocolorbar") && (nType == ALL || nType & LOCAL))
         bColorbar = false;
-    if (matchParams(sCmd, "orthoproject") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "orthoproject") && (nType == ALL || nType & GLOBAL))
         bOrthoProject = true;
-    if (matchParams(sCmd, "noorthoproject") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "noorthoproject") && (nType == ALL || nType & GLOBAL))
         bOrthoProject = false;
-    if (matchParams(sCmd, "area") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "area") && (nType == ALL || nType & LOCAL))
         bArea = true;
-    if (matchParams(sCmd, "noarea") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noarea") && (nType == ALL || nType & LOCAL))
         bArea = false;
-    if (matchParams(sCmd, "bars") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "bars") && (nType == ALL || nType & LOCAL))
     {
         dBars = 0.9;
         dHBars = 0.0;
     }
-    if (matchParams(sCmd, "bars", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "bars", '=') && (nType == ALL || nType & LOCAL))
     {
-        _parser.SetExpr(getArgAtPos(__sCmd, matchParams(sCmd, "bars", '=')+4));
+        _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "bars", '=')+4));
         dBars = _parser.Eval();
         if (dBars && !isinf(_parser.Eval()) && !isnan(_parser.Eval()) && (dBars < 0.0 || dBars > 1.0))
             dBars = 0.9;
         dHBars = 0.0;
     }
-    if (matchParams(sCmd, "hbars") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "hbars") && (nType == ALL || nType & LOCAL))
     {
         dBars = 0.0;
         dHBars = 0.9;
     }
-    if (matchParams(sCmd, "hbars", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "hbars", '=') && (nType == ALL || nType & LOCAL))
     {
-        _parser.SetExpr(getArgAtPos(__sCmd, matchParams(sCmd, "hbars", '=')+5));
+        _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "hbars", '=')+5));
         dHBars = _parser.Eval();
         if (dHBars && !isinf(_parser.Eval()) && !isnan(_parser.Eval()) && (dHBars < 0.0 || dHBars > 1.0))
             dHBars = 0.9;
         dBars = 0.0;
     }
-    if ((matchParams(sCmd, "nobars") || matchParams(sCmd, "nohbars")) && (nType == ALL || nType & LOCAL))
+    if ((findParameter(sCmd, "nobars") || findParameter(sCmd, "nohbars")) && (nType == ALL || nType & LOCAL))
     {
         dBars = 0.0;
         dHBars = 0.0;
     }
-    if (matchParams(sCmd, "steps") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "steps") && (nType == ALL || nType & LOCAL))
         bStepPlot = true;
-    if (matchParams(sCmd, "nosteps") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nosteps") && (nType == ALL || nType & LOCAL))
         bStepPlot = false;
-    if (matchParams(sCmd, "boxplot") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "boxplot") && (nType == ALL || nType & LOCAL))
         bBoxPlot = true;
-    if (matchParams(sCmd, "noboxplot") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noboxplot") && (nType == ALL || nType & LOCAL))
         bBoxPlot = false;
-    if (matchParams(sCmd, "colormask") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "colormask") && (nType == ALL || nType & LOCAL))
         bColorMask = true;
-    if (matchParams(sCmd, "nocolormask") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nocolormask") && (nType == ALL || nType & LOCAL))
         bColorMask = false;
-    if (matchParams(sCmd, "alphamask") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "alphamask") && (nType == ALL || nType & LOCAL))
         bAlphaMask = true;
-    if (matchParams(sCmd, "noalphamask") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noalphamask") && (nType == ALL || nType & LOCAL))
         bAlphaMask = false;
-    if (matchParams(sCmd, "schematic") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "schematic") && (nType == ALL || nType & GLOBAL))
         bSchematic = true;
-    if (matchParams(sCmd, "noschematic") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "noschematic") && (nType == ALL || nType & GLOBAL))
         bSchematic = false;
-    if (matchParams(sCmd, "perspective", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "perspective", '=') && (nType == ALL || nType & GLOBAL))
     {
-        _parser.SetExpr(getArgAtPos(__sCmd, matchParams(sCmd, "perspective", '=')+11));
+        _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "perspective", '=')+11));
         dPerspective = fabs(_parser.Eval());
         if (dPerspective >= 1.0)
             dPerspective = 0.0;
     }
-    if (matchParams(sCmd, "noperspective") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "noperspective") && (nType == ALL || nType & GLOBAL))
         dPerspective = 0.0;
-    if (matchParams(sCmd, "cloudplot") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "cloudplot") && (nType == ALL || nType & LOCAL))
         bCloudPlot = true;
-    if (matchParams(sCmd, "nocloudplot") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "nocloudplot") && (nType == ALL || nType & LOCAL))
         bCloudPlot = false;
-    if (matchParams(sCmd, "region") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "region") && (nType == ALL || nType & LOCAL))
         bRegion = true;
-    if (matchParams(sCmd, "noregion") && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "noregion") && (nType == ALL || nType & LOCAL))
         bRegion = false;
-    if ((matchParams(sCmd, "crust") || matchParams(sCmd, "reconstruct")) && (nType == ALL || nType & LOCAL))
+    if ((findParameter(sCmd, "crust") || findParameter(sCmd, "reconstruct")) && (nType == ALL || nType & LOCAL))
         bCrust = true;
-    if ((matchParams(sCmd, "nocrust") || matchParams(sCmd, "noreconstruct")) && (nType == ALL || nType & LOCAL))
+    if ((findParameter(sCmd, "nocrust") || findParameter(sCmd, "noreconstruct")) && (nType == ALL || nType & LOCAL))
         bCrust = false;
-    if (matchParams(sCmd, "maxline", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "maxline", '=') && (nType == ALL || nType & LOCAL))
     {
-        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "maxline", '=')+7);
+        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "maxline", '=')+7);
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
         _lHlines[0].sDesc = getArgAtPos(getNextArgument(sTemp, true),0);
@@ -769,9 +769,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             _lHlines[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
         replaceControlChars(_lHlines[0].sDesc);
     }
-    if (matchParams(sCmd, "minline", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "minline", '=') && (nType == ALL || nType & LOCAL))
     {
-        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "minline", '=')+7);
+        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "minline", '=')+7);
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
         _lHlines[1].sDesc = getArgAtPos(getNextArgument(sTemp, true),0);
@@ -779,13 +779,13 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             _lHlines[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
         replaceControlChars(_lHlines[1].sDesc);
     }
-    if ((matchParams(sCmd, "hline", '=') || matchParams(sCmd, "hlines", '=')) && (nType == ALL || nType & LOCAL))
+    if ((findParameter(sCmd, "hline", '=') || findParameter(sCmd, "hlines", '=')) && (nType == ALL || nType & LOCAL))
     {
         string sTemp;
-        if (matchParams(sCmd, "hline", '='))
-            sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "hline", '=')+5);
+        if (findParameter(sCmd, "hline", '='))
+            sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "hline", '=')+5);
         else
-            sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "hlines", '=')+6);
+            sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "hlines", '=')+6);
         if (sTemp.find(',') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
@@ -832,13 +832,13 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if ((matchParams(sCmd, "vline", '=') || matchParams(sCmd, "vlines", '=')) && (nType == ALL || nType & LOCAL))
+    if ((findParameter(sCmd, "vline", '=') || findParameter(sCmd, "vlines", '=')) && (nType == ALL || nType & LOCAL))
     {
         string sTemp;
-        if (matchParams(sCmd, "vline", '='))
-            sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "vline", '=')+5);
+        if (findParameter(sCmd, "vline", '='))
+            sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "vline", '=')+5);
         else
-            sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "vlines", '=')+6);
+            sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "vlines", '=')+6);
         if (sTemp.find(',') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
@@ -885,9 +885,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if (matchParams(sCmd, "lborder", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "lborder", '=') && (nType == ALL || nType & LOCAL))
     {
-        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "lborder", '=')+7);
+        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "lborder", '=')+7);
         if (sTemp.find(',') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
@@ -900,9 +900,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         }
         replaceControlChars(_lVLines[0].sDesc);
     }
-    if (matchParams(sCmd, "rborder", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "rborder", '=') && (nType == ALL || nType & LOCAL))
     {
-        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "rborder", '=')+7);
+        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "rborder", '=')+7);
         if (sTemp.find(',') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
@@ -915,9 +915,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         }
         replaceControlChars(_lVLines[1].sDesc);
     }
-    if (matchParams(sCmd, "addxaxis", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "addxaxis", '=') && (nType == ALL || nType & GLOBAL))
     {
-        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "addxaxis", '=')+8);
+        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addxaxis", '=')+8);
         if (sTemp.find(',') != string::npos || sTemp.find('"') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
@@ -956,9 +956,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         }
         //replaceControlChars(_[1].sDesc);
     }
-    if (matchParams(sCmd, "addyaxis", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "addyaxis", '=') && (nType == ALL || nType & GLOBAL))
     {
-        string sTemp = getArgAtPos(__sCmd, matchParams(sCmd, "addyaxis", '=')+8);
+        string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "addyaxis", '=')+8);
         if (sTemp.find(',') != string::npos || sTemp.find('"') != string::npos)
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
@@ -997,9 +997,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         }
         //replaceControlChars(_[1].sDesc);
     }
-    if (matchParams(sCmd, "colorscheme", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "colorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
-        unsigned int nPos = matchParams(sCmd, "colorscheme", '=') + 11;
+        unsigned int nPos = findParameter(sCmd, "colorscheme", '=') + 11;
         while (sCmd[nPos] == ' ')
             nPos++;
         if (sCmd[nPos] == '"')
@@ -1113,9 +1113,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if (matchParams(sCmd, "bgcolorscheme", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "bgcolorscheme", '=') && (nType == ALL || nType & LOCAL))
     {
-        unsigned int nPos = matchParams(sCmd, "bgcolorscheme", '=') + 13;
+        unsigned int nPos = findParameter(sCmd, "bgcolorscheme", '=') + 13;
         while (sCmd[nPos] == ' ')
             nPos++;
         if (sCmd[nPos] == '"')
@@ -1185,9 +1185,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             sBackgroundColorScheme = sBackgroundColorScheme.substr(0, sBackgroundColorScheme.find(' ')) + sBackgroundColorScheme.substr(sBackgroundColorScheme.find(' ')+1);
         }
     }
-    if (matchParams(sCmd, "plotcolors", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "plotcolors", '=') && (nType == ALL || nType & LOCAL))
     {
-        unsigned int nPos = matchParams(sCmd, "plotcolors", '=')+10;
+        unsigned int nPos = findParameter(sCmd, "plotcolors", '=')+10;
         string sTemp = getArgAtPos(__sCmd, nPos);
         if (checkColorChars(sTemp))
         {
@@ -1201,9 +1201,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if (matchParams(sCmd, "axisbind", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "axisbind", '=') && (nType == ALL || nType & LOCAL))
     {
-        unsigned int nPos = matchParams(sCmd, "axisbind", '=')+8;
+        unsigned int nPos = findParameter(sCmd, "axisbind", '=')+8;
         string sTemp = getArgAtPos(__sCmd, nPos);
         for (unsigned int i = 0; i < sTemp.length(); i++)
         {
@@ -1266,9 +1266,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if (matchParams(sCmd, "linestyles", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "linestyles", '=') && (nType == ALL || nType & LOCAL))
     {
-        unsigned int nPos = matchParams(sCmd, "linestyles", '=')+10;
+        unsigned int nPos = findParameter(sCmd, "linestyles", '=')+10;
         string sTemp = getArgAtPos(__sCmd, nPos);
         if (checkLineChars(sTemp))
         {
@@ -1283,9 +1283,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if (matchParams(sCmd, "linesizes", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "linesizes", '=') && (nType == ALL || nType & LOCAL))
     {
-        unsigned int nPos = matchParams(sCmd, "linesizes", '=')+9;
+        unsigned int nPos = findParameter(sCmd, "linesizes", '=')+9;
         string sTemp = getArgAtPos(__sCmd, nPos);
 
         for (unsigned int i = 0; i < sTemp.length(); i++)
@@ -1300,9 +1300,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         }
 
     }
-    if (matchParams(sCmd, "pointstyles", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "pointstyles", '=') && (nType == ALL || nType & LOCAL))
     {
-        unsigned int nPos = matchParams(sCmd, "pointstyles", '=')+11;
+        unsigned int nPos = findParameter(sCmd, "pointstyles", '=')+11;
         string sTemp = getArgAtPos(__sCmd, nPos);
         if (checkPointChars(sTemp))
         {
@@ -1337,9 +1337,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if (matchParams(sCmd, "styles", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "styles", '=') && (nType == ALL || nType & LOCAL))
     {
-        unsigned int nPos = matchParams(sCmd, "styles", '=')+6;
+        unsigned int nPos = findParameter(sCmd, "styles", '=')+6;
         string sTemp = getArgAtPos(__sCmd, nPos);
         unsigned int nJump = 0;
         unsigned int nStyle = 0;
@@ -1393,9 +1393,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             i += nJump;
         }
     }
-    if (matchParams(sCmd, "gridstyle", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "gridstyle", '=') && (nType == ALL || nType & GLOBAL))
     {
-        unsigned int nPos = matchParams(sCmd, "gridstyle", '=')+9;
+        unsigned int nPos = findParameter(sCmd, "gridstyle", '=')+9;
         string sTemp = getArgAtPos(__sCmd, nPos);
         for (unsigned int i = 0; i < sTemp.length(); i += 3)
         {
@@ -1429,18 +1429,18 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
-    if (matchParams(sCmd, "legendstyle", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "legendstyle", '=') && (nType == ALL || nType & LOCAL))
     {
-        if (getArgAtPos(sCmd, matchParams(sCmd, "legendstyle", '=')+11) == "onlycolors")
+        if (getArgAtPos(sCmd, findParameter(sCmd, "legendstyle", '=')+11) == "onlycolors")
             nLegendstyle = 1;
-        else if (getArgAtPos(sCmd, matchParams(sCmd, "legendstyle", '=')+11) == "onlystyles")
+        else if (getArgAtPos(sCmd, findParameter(sCmd, "legendstyle", '=')+11) == "onlystyles")
             nLegendstyle = 2;
         else
             nLegendstyle = 0;
     }
-    if (matchParams(sCmd, "coords", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "coords", '=') && (nType == ALL || nType & GLOBAL))
     {
-        int nPos = matchParams(sCmd, "coords", '=')+6;
+        int nPos = findParameter(sCmd, "coords", '=')+6;
         if (getArgAtPos(sCmd, nPos) == "cartesian" || getArgAtPos(sCmd, nPos) == "std")
         {
             nCoords = CARTESIAN;
@@ -1470,9 +1470,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             nCoords = SPHERICAL_RT;
         }
     }
-    if (matchParams(sCmd, "font", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "font", '=') && (nType == ALL || nType & GLOBAL))
     {
-        string sTemp = getArgAtPos(sCmd, matchParams(sCmd, "font", '=')+4);
+        string sTemp = getArgAtPos(sCmd, findParameter(sCmd, "font", '=')+4);
         StripSpaces(sTemp);
         if (sTemp == "palatino")
             sTemp = "pagella";
@@ -1504,32 +1504,32 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             _fontData.LoadFont(sFontStyle.c_str(), (sTokens[0][1]+ "\\fonts").c_str());
         }
     }
-    if ((matchParams(sCmd, "opng", '=')
-        || matchParams(sCmd, "save", '=')
-        || matchParams(sCmd, "export", '=')
-        || matchParams(sCmd, "opnga", '=')
-        || matchParams(sCmd, "oeps", '=')
-        || matchParams(sCmd, "osvg", '=')
-        || matchParams(sCmd, "otex", '=')
-        || matchParams(sCmd, "ogif", '=')) && (nType == ALL || nType & SUPERGLOBAL))
+    if ((findParameter(sCmd, "opng", '=')
+        || findParameter(sCmd, "save", '=')
+        || findParameter(sCmd, "export", '=')
+        || findParameter(sCmd, "opnga", '=')
+        || findParameter(sCmd, "oeps", '=')
+        || findParameter(sCmd, "osvg", '=')
+        || findParameter(sCmd, "otex", '=')
+        || findParameter(sCmd, "ogif", '=')) && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = 0;
-        if (matchParams(sCmd, "opng", '='))
-            nPos = matchParams(sCmd, "opng", '=') + 4;
-        else if (matchParams(sCmd, "opnga", '='))
-            nPos = matchParams(sCmd, "opnga", '=') + 5;
-        else if (matchParams(sCmd, "save", '='))
-            nPos = matchParams(sCmd, "save", '=') + 4;
-        else if (matchParams(sCmd, "export", '='))
-            nPos = matchParams(sCmd, "export", '=') + 6;
-        else if (matchParams(sCmd, "oeps", '='))
-            nPos = matchParams(sCmd, "oeps", '=') + 4;
-        else if (matchParams(sCmd, "osvg", '='))
-            nPos = matchParams(sCmd, "osvg", '=') + 4;
-        else if (matchParams(sCmd, "otex", '='))
-            nPos = matchParams(sCmd, "otex", '=') + 4;
-        else if (matchParams(sCmd, "ogif", '='))
-            nPos = matchParams(sCmd, "ogif", '=') + 4;
+        if (findParameter(sCmd, "opng", '='))
+            nPos = findParameter(sCmd, "opng", '=') + 4;
+        else if (findParameter(sCmd, "opnga", '='))
+            nPos = findParameter(sCmd, "opnga", '=') + 5;
+        else if (findParameter(sCmd, "save", '='))
+            nPos = findParameter(sCmd, "save", '=') + 4;
+        else if (findParameter(sCmd, "export", '='))
+            nPos = findParameter(sCmd, "export", '=') + 6;
+        else if (findParameter(sCmd, "oeps", '='))
+            nPos = findParameter(sCmd, "oeps", '=') + 4;
+        else if (findParameter(sCmd, "osvg", '='))
+            nPos = findParameter(sCmd, "osvg", '=') + 4;
+        else if (findParameter(sCmd, "otex", '='))
+            nPos = findParameter(sCmd, "otex", '=') + 4;
+        else if (findParameter(sCmd, "ogif", '='))
+            nPos = findParameter(sCmd, "ogif", '=') + 4;
 
         sFileName = getArgAtPos(__sCmd, nPos);
         StripSpaces(sFileName);
@@ -1539,51 +1539,51 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             if (sFileName.length() > 4)
                 sExtension = sFileName.substr(sFileName.length()-4,4);
             if (sExtension != ".png"
-                && (matchParams(sCmd, "opng", '=')
-                    || matchParams(sCmd, "opnga", '=')))
+                && (findParameter(sCmd, "opng", '=')
+                    || findParameter(sCmd, "opnga", '=')))
                 sFileName += ".png";
-            else if (sExtension != ".eps" && matchParams(sCmd, "oeps", '='))
+            else if (sExtension != ".eps" && findParameter(sCmd, "oeps", '='))
                 sFileName += ".eps";
-            else if (sExtension != ".svg" && matchParams(sCmd, "osvg", '='))
+            else if (sExtension != ".svg" && findParameter(sCmd, "osvg", '='))
                 sFileName += ".svg";
-            else if (sExtension != ".tex" && matchParams(sCmd, "otex", '='))
+            else if (sExtension != ".tex" && findParameter(sCmd, "otex", '='))
                 sFileName += ".tex";
-            else if (sExtension != ".gif" && matchParams(sCmd, "ogif", '='))
+            else if (sExtension != ".gif" && findParameter(sCmd, "ogif", '='))
                 sFileName += ".gif";
-            else if ((matchParams(sCmd, "export", '=') || matchParams(sCmd, "save", '=')) && sFileName.rfind('.') == string::npos)
+            else if ((findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '=')) && sFileName.rfind('.') == string::npos)
                 sFileName += ".png";
 
             sFileName = FileSystem::ValidizeAndPrepareName(sFileName, sFileName.substr(sFileName.rfind('.')));
         }
     }
-    if ((matchParams(sCmd, "xlabel", '=')
-        || matchParams(sCmd, "ylabel", '=')
-        || matchParams(sCmd, "zlabel", '=')
-        || matchParams(sCmd, "title", '=')
-        || matchParams(sCmd, "background", '=')) && (nType == ALL || nType & GLOBAL))
+    if ((findParameter(sCmd, "xlabel", '=')
+        || findParameter(sCmd, "ylabel", '=')
+        || findParameter(sCmd, "zlabel", '=')
+        || findParameter(sCmd, "title", '=')
+        || findParameter(sCmd, "background", '=')) && (nType == ALL || nType & GLOBAL))
     {
         int nPos = 0;
-        if (matchParams(sCmd, "xlabel", '='))
+        if (findParameter(sCmd, "xlabel", '='))
         {
-            nPos = matchParams(sCmd, "xlabel", '=') + 6;
+            nPos = findParameter(sCmd, "xlabel", '=') + 6;
             sAxisLabels[0] = getArgAtPos(__sCmd, nPos);
             bDefaultAxisLabels[0] = false;
         }
-        if (matchParams(sCmd, "ylabel", '='))
+        if (findParameter(sCmd, "ylabel", '='))
         {
-            nPos = matchParams(sCmd, "ylabel", '=') + 6;
+            nPos = findParameter(sCmd, "ylabel", '=') + 6;
             sAxisLabels[1] = getArgAtPos(__sCmd, nPos);
             bDefaultAxisLabels[1] = false;
         }
-        if (matchParams(sCmd, "zlabel", '='))
+        if (findParameter(sCmd, "zlabel", '='))
         {
-            nPos = matchParams(sCmd, "zlabel", '=') + 6;
+            nPos = findParameter(sCmd, "zlabel", '=') + 6;
             sAxisLabels[2] = getArgAtPos(__sCmd, nPos);
             bDefaultAxisLabels[2] = false;
         }
-        if (matchParams(sCmd, "title", '='))
+        if (findParameter(sCmd, "title", '='))
         {
-            nPos = matchParams(sCmd, "title", '=') + 5;
+            nPos = findParameter(sCmd, "title", '=') + 5;
             sPlotTitle = getArgAtPos(__sCmd, nPos);
             StripSpaces(sPlotTitle);
             if (sComposedTitle.length())
@@ -1591,9 +1591,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             else
                 sComposedTitle = sPlotTitle;
         }
-        if (matchParams(sCmd, "background", '='))
+        if (findParameter(sCmd, "background", '='))
         {
-            nPos = matchParams(sCmd, "background", '=')+10;
+            nPos = findParameter(sCmd, "background", '=')+10;
             sBackground = getArgAtPos(__sCmd, nPos);
             StripSpaces(sBackground);
             if (sBackground.length())
@@ -1615,59 +1615,59 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 sAxisLabels[i] = "@{" + sAxisLabels[i] + "}";
         }
     }
-    if ((matchParams(sCmd, "xticks", '=')
-        || matchParams(sCmd, "yticks", '=')
-        || matchParams(sCmd, "zticks", '=')
-        || matchParams(sCmd, "cticks", '=')) && (nType == ALL || nType & GLOBAL))
+    if ((findParameter(sCmd, "xticks", '=')
+        || findParameter(sCmd, "yticks", '=')
+        || findParameter(sCmd, "zticks", '=')
+        || findParameter(sCmd, "cticks", '=')) && (nType == ALL || nType & GLOBAL))
     {
-        if (matchParams(sCmd, "xticks", '='))
+        if (findParameter(sCmd, "xticks", '='))
         {
-            sTickTemplate[0] = getArgAtPos(__sCmd, matchParams(sCmd, "xticks", '=')+6);
+            sTickTemplate[0] = getArgAtPos(__sCmd, findParameter(sCmd, "xticks", '=')+6);
             if (sTickTemplate[0].find('%') == string::npos && sTickTemplate[0].length())
                 sTickTemplate[0] += "%g";
         }
-        if (matchParams(sCmd, "yticks", '='))
+        if (findParameter(sCmd, "yticks", '='))
         {
-            sTickTemplate[1] = getArgAtPos(__sCmd, matchParams(sCmd, "yticks", '=')+6);
+            sTickTemplate[1] = getArgAtPos(__sCmd, findParameter(sCmd, "yticks", '=')+6);
             if (sTickTemplate[1].find('%') == string::npos && sTickTemplate[1].length())
                 sTickTemplate[1] += "%g";
         }
-        if (matchParams(sCmd, "zticks", '='))
+        if (findParameter(sCmd, "zticks", '='))
         {
-            sTickTemplate[2] = getArgAtPos(__sCmd, matchParams(sCmd, "zticks", '=')+6);
+            sTickTemplate[2] = getArgAtPos(__sCmd, findParameter(sCmd, "zticks", '=')+6);
             if (sTickTemplate[2].find('%') == string::npos && sTickTemplate[2].length())
                 sTickTemplate[2] += "%g";
         }
-        if (matchParams(sCmd, "cticks", '='))
+        if (findParameter(sCmd, "cticks", '='))
         {
-            sTickTemplate[3] = getArgAtPos(__sCmd, matchParams(sCmd, "cticks", '=')+6);
+            sTickTemplate[3] = getArgAtPos(__sCmd, findParameter(sCmd, "cticks", '=')+6);
             if (sTickTemplate[3].find('%') == string::npos && sTickTemplate[3].length())
                 sTickTemplate[3] += "%g";
         }
     }
-    if ((matchParams(sCmd, "xscale", '=')
-        || matchParams(sCmd, "yscale", '=')
-        || matchParams(sCmd, "zscale", '=')
-        || matchParams(sCmd, "cscale", '=')) && (nType == ALL || nType & GLOBAL))
+    if ((findParameter(sCmd, "xscale", '=')
+        || findParameter(sCmd, "yscale", '=')
+        || findParameter(sCmd, "zscale", '=')
+        || findParameter(sCmd, "cscale", '=')) && (nType == ALL || nType & GLOBAL))
     {
-        if (matchParams(sCmd, "xscale", '='))
+        if (findParameter(sCmd, "xscale", '='))
         {
-            _parser.SetExpr(getArgAtPos(__sCmd, matchParams(sCmd, "xscale", '=')+6));
+            _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "xscale", '=')+6));
             dAxisScale[0] = _parser.Eval();
         }
-        if (matchParams(sCmd, "yscale", '='))
+        if (findParameter(sCmd, "yscale", '='))
         {
-            _parser.SetExpr(getArgAtPos(__sCmd, matchParams(sCmd, "yscale", '=')+6));
+            _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "yscale", '=')+6));
             dAxisScale[1] = _parser.Eval();
         }
-        if (matchParams(sCmd, "zscale", '='))
+        if (findParameter(sCmd, "zscale", '='))
         {
-            _parser.SetExpr(getArgAtPos(__sCmd, matchParams(sCmd, "zscale", '=')+6));
+            _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "zscale", '=')+6));
             dAxisScale[2] = _parser.Eval();
         }
-        if (matchParams(sCmd, "cscale", '='))
+        if (findParameter(sCmd, "cscale", '='))
         {
-            _parser.SetExpr(getArgAtPos(__sCmd, matchParams(sCmd, "cscale", '=')+6));
+            _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "cscale", '=')+6));
             dAxisScale[3] = _parser.Eval();
         }
 
@@ -1677,26 +1677,26 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 dAxisScale[i] = 1.0;
         }
     }
-    if ((matchParams(sCmd, "xticklabels", '=')
-        || matchParams(sCmd, "yticklabels", '=')
-        || matchParams(sCmd, "zticklabels", '=')
-        || matchParams(sCmd, "cticklabels", '=')) && (nType == ALL || nType & GLOBAL))
+    if ((findParameter(sCmd, "xticklabels", '=')
+        || findParameter(sCmd, "yticklabels", '=')
+        || findParameter(sCmd, "zticklabels", '=')
+        || findParameter(sCmd, "cticklabels", '=')) && (nType == ALL || nType & GLOBAL))
     {
-        if (matchParams(sCmd, "xticklabels", '='))
+        if (findParameter(sCmd, "xticklabels", '='))
         {
-            sCustomTicks[0] = getArgAtPos(__sCmd, matchParams(sCmd, "xticklabels", '=')+11);
+            sCustomTicks[0] = getArgAtPos(__sCmd, findParameter(sCmd, "xticklabels", '=')+11);
         }
-        if (matchParams(sCmd, "yticklabels", '='))
+        if (findParameter(sCmd, "yticklabels", '='))
         {
-            sCustomTicks[1] = getArgAtPos(__sCmd, matchParams(sCmd, "yticklabels", '=')+11);
+            sCustomTicks[1] = getArgAtPos(__sCmd, findParameter(sCmd, "yticklabels", '=')+11);
         }
-        if (matchParams(sCmd, "zticklabels", '='))
+        if (findParameter(sCmd, "zticklabels", '='))
         {
-            sCustomTicks[2] = getArgAtPos(__sCmd, matchParams(sCmd, "zticklabels", '=')+11);
+            sCustomTicks[2] = getArgAtPos(__sCmd, findParameter(sCmd, "zticklabels", '=')+11);
         }
-        if (matchParams(sCmd, "cticklabels", '='))
+        if (findParameter(sCmd, "cticklabels", '='))
         {
-            sCustomTicks[3] = getArgAtPos(__sCmd, matchParams(sCmd, "cticklabels", '=')+11);
+            sCustomTicks[3] = getArgAtPos(__sCmd, findParameter(sCmd, "cticklabels", '=')+11);
         }
     }
     if (sCmd.find('[') != string::npos && (nType == ALL || nType & GLOBAL))

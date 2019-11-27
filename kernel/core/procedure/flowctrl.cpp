@@ -2115,23 +2115,23 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
 				sLine.erase(sLine.find(sArgument));
 
-				if (matchParams(sArgument, "first", '='))
+				if (findParameter(sArgument, "first", '='))
 				{
-					sExpr = getArgAtPos(sArgument, matchParams(sArgument, "first", '=') + 5) + ",";
+					sExpr = getArgAtPos(sArgument, findParameter(sArgument, "first", '=') + 5) + ",";
 				}
 				else
 					sExpr = "1,";
 
-				if (matchParams(sArgument, "last", '='))
+				if (findParameter(sArgument, "last", '='))
 				{
-					sExpr += getArgAtPos(sArgument, matchParams(sArgument, "last", '=') + 4);
+					sExpr += getArgAtPos(sArgument, findParameter(sArgument, "last", '=') + 4);
 				}
 				else
 					sExpr += "100";
 
-				if (matchParams(sArgument, "type", '='))
+				if (findParameter(sArgument, "type", '='))
 				{
-					sArgument = getArgAtPos(sArgument, matchParams(sArgument, "type", '=') + 4);
+					sArgument = getArgAtPos(sArgument, findParameter(sArgument, "type", '=') + 4);
 
 					if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sArgument))
 					{
@@ -2611,21 +2611,21 @@ string FlowCtrl::extractFlagsAndIndexVariables()
 		}
 
 		// Extract the flow control flags
-		if (vCmdArray[i].sCommand.find("end") != string::npos && matchParams(vCmdArray[i].sCommand, "sv"))
+		if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "sv"))
 			bSilent = false;
 
-		if (vCmdArray[i].sCommand.find("end") != string::npos && matchParams(vCmdArray[i].sCommand, "mask"))
+		if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "mask"))
 			bMask = true;
 
-		if (vCmdArray[i].sCommand.find("end") != string::npos && matchParams(vCmdArray[i].sCommand, "sp"))
+		if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "sp"))
 			bMask = false;
 
-		if (vCmdArray[i].sCommand.find("end") != string::npos && matchParams(vCmdArray[i].sCommand, "lnumctrl"))
+		if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl"))
 			nLoopSavety = 1000;
 
-		if (vCmdArray[i].sCommand.find("end") != string::npos && matchParams(vCmdArray[i].sCommand, "lnumctrl", '='))
+		if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl", '='))
 		{
-			_parserRef->SetExpr(getArgAtPos(vCmdArray[i].sCommand, matchParams(vCmdArray[i].sCommand, "lnumctrl", '=') + 8));
+			_parserRef->SetExpr(getArgAtPos(vCmdArray[i].sCommand, findParameter(vCmdArray[i].sCommand, "lnumctrl", '=') + 8));
 			nLoopSavety = (int)_parserRef->Eval();
 
 			if (nLoopSavety <= 0)
