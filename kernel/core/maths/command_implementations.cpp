@@ -54,6 +54,8 @@ static void integrationstep_trapezoidal(double& x, double dx, double upperBounda
     int nResults;
     value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
 
+    // Evaluate the current integration step for each of the
+    // defined functions
     for (int i = 0; i < nResults; i++)
     {
         if (x > upperBoundary && isnan(v[i]))
@@ -67,6 +69,7 @@ static void integrationstep_trapezoidal(double& x, double dx, double upperBounda
         }
         else
         {
+            // Calculate the integral
             if (vResult.size())
                 vResult.push_back(dx * (vFunctionValues[0] + v[0]) * 0.5 + vResult.back());
             else
@@ -127,6 +130,7 @@ static void integrationstep_simpson(double& x, double dx, double upperBoundary, 
         }
         else
         {
+            // Calculate the integral at the current x position
             if (vResult.size())
                 vResult.push_back(dx / 6.0 * (vFunctionValues[0] + 4.0 * vInter[0] + v[0]) + vResult.back());
             else
@@ -266,6 +270,7 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
     // Return the result of the integral
     return vResult;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Calculate the integral of a function
@@ -1666,6 +1671,8 @@ static string getIntervalForSearchFunctions(const string& sParams, string& sVar)
 {
     string sInterval = "";
 
+    // Extract the interval definition from the
+    // parameter string
     if (sParams.find('=') != string::npos)
     {
         int nPos = sParams.find('=');
@@ -1718,12 +1725,14 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
     int nResults_x = 0;
     Datafile _cache;
 
+    // Store the results in the second column of a table
     for (int i = 0; i < nResults; i++)
         _cache.writeToTable(i, 1, "cache", v[i]);
 
     _parser.SetExpr(sInterval);
     v = _parser.Eval(nResults_x);
 
+    // Write the results for the x interval in the first column
     if (nResults_x > 1)
     {
         for (int i = 0; i < nResults; i++)
@@ -1748,12 +1757,15 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
     if (nOrder >= nResults / 3)
         nOrder = nResults / 3;
 
+    // Ensure that the number of used points is reasonable
     if (nOrder < 3)
     {
         vResults.push_back(NAN);
         return false;
     }
 
+    // Find the first median and use it as starting point
+    // for identifying the next extremum
     for (int i = 0; i + nanShift < _cache.getLines("cache", true); i++)
     {
         if (i == nOrder)
@@ -1765,9 +1777,12 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
         data[i] = _cache.getElement(i + nanShift, 1, "cache");
     }
 
+    // Sort the data and find the median
     gsl_sort(data, 1, nOrder);
     dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
 
+    // Go through the data points using sliding median to find the local
+    // extrema in the data set
     for (int i = nOrder; i + nanShift < _cache.getLines("cache", false) - nOrder; i++)
     {
         int currNanShift = 0;
@@ -1795,66 +1810,33 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
         }
         else
         {
-            if (nDir == 1)
+            if (nDir*dMedian < nDir*dExtremum)
             {
-                if (dMedian < dExtremum)
+                if (!nMode || nMode == nDir)
                 {
-                    if (!nMode || nMode == 1)
+                    int nExtremum = i + nanShift;
+                    double dExtremum = _cache.getElement(i + nanShift, 1, "cache");
+
+                    for (long long int k = i + nanShift; k >= 0; k--)
                     {
-                        int nExtremum = i;
-                        double dExtremum = _cache.getElement(i + nanShift, 1, "cache");
+                        if (k == i - nOrder)
+                            break;
 
-                        for (long long int k = i + nanShift; k >= 0; k--)
+                        if (nDir*_cache.getElement(k, 1, "cache") > nDir*dExtremum)
                         {
-                            if (k == i - nOrder)
-                                break;
-
-                            if (_cache.getElement(k, 1, "cache") > dExtremum)
-                            {
-                                nExtremum = k;
-                                dExtremum = _cache.getElement(k, 1, "cache");
-                            }
+                            nExtremum = k;
+                            dExtremum = _cache.getElement(k, 1, "cache");
                         }
-
-                        vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
-                        i = nExtremum + nOrder;
                     }
 
-                    nDir = 0;
+                    vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
+                    i = nExtremum + nOrder;
                 }
 
-                dExtremum = dMedian;
+                nDir = 0;
             }
-            else
-            {
-                if (dMedian > dExtremum)
-                {
-                    if (!nMode || nMode == -1)
-                    {
-                        int nExtremum = i + nanShift;
-                        double dExtremum = _cache.getElement(i, 1, "cache");
 
-                        for (long long int k = i + nanShift; k >= 0; k--)
-                        {
-                            if (k == i - nOrder)
-                                break;
-
-                            if (_cache.getElement(k, 1, "cache") < dExtremum)
-                            {
-                                nExtremum = k;
-                                dExtremum = _cache.getElement(k, 1, "cache");
-                            }
-                        }
-
-                        vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
-                        i = nExtremum + nOrder;
-                    }
-
-                    nDir = 0;
-                }
-
-                dExtremum = dMedian;
-            }
+            dExtremum = dMedian;
         }
 
         nanShift += currNanShift;
@@ -1948,66 +1930,33 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
             }
             else
             {
-                if (nDir == 1)
+                if (nDir*dMedian < nDir*dExtremum)
                 {
-                    if (dMedian < dExtremum)
+                    if (!nMode || nMode == nDir)
                     {
-                        if (!nMode || nMode == 1)
+                        int nExtremum = i + nanShift;
+                        double dExtremum = v[i + nanShift];
+
+                        for (long long int k = i + nanShift; k >= 0; k--)
                         {
-                            int nExtremum = i + nanShift;
-                            double dExtremum = v[i + nanShift];
+                            if (k == i - nOrder)
+                                break;
 
-                            for (long long int k = i + nanShift; k >= 0; k--)
+                            if (nDir*v[k] > nDir*dExtremum)
                             {
-                                if (k == i - nOrder)
-                                    break;
-
-                                if (v[k] > dExtremum)
-                                {
-                                    nExtremum = k;
-                                    dExtremum = v[k];
-                                }
+                                nExtremum = k;
+                                dExtremum = v[k];
                             }
-
-                            vResults.push_back(nExtremum + 1);
-                            i = nExtremum + nOrder;
                         }
 
-                        nDir = 0;
+                        vResults.push_back(nExtremum + 1);
+                        i = nExtremum + nOrder;
                     }
 
-                    dExtremum = dMedian;
+                    nDir = 0;
                 }
-                else
-                {
-                    if (dMedian > dExtremum)
-                    {
-                        if (!nMode || nMode == -1)
-                        {
-                            int nExtremum = i + nanShift;
-                            double dExtremum = v[i + nanShift];
 
-                            for (long long int k = i + nanShift; k >= 0; k--)
-                            {
-                                if (k == i - nOrder)
-                                    break;
-
-                                if (v[k] < dExtremum)
-                                {
-                                    nExtremum = k;
-                                    dExtremum = v[k];
-                                }
-                            }
-
-                            vResults.push_back(nExtremum + 1);
-                            i = nExtremum + nOrder;
-                        }
-
-                        nDir = 0;
-                    }
-
-                    dExtremum = dMedian;
-                }
+                dExtremum = dMedian;
             }
 
             nanShift += currNanShift;
