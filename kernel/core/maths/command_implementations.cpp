@@ -3581,6 +3581,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 	string sVar = "x";
 	bool bLogarithmic = false;
 
+	// Separate expression and parameters
 	if (sCmd.find("-set") != string::npos)
 	{
 		sExpr = sCmd.substr(0, sCmd.find("-set"));
@@ -3602,6 +3603,8 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 
 	StripSpaces(sParams);
 
+	// Evaluate calls in the expression
+	// to any table or cluster
 	if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
 	{
 		getDataElements(sExpr, _parser, _data, _option);
@@ -3610,6 +3613,8 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 			convertVectorToExpression(sExpr, _option);
 	}
 
+    // Evaluate calls in the parameters
+	// to any table or cluster
 	if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
 	{
 		getDataElements(sParams, _parser, _data, _option);
@@ -3618,6 +3623,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 			convertVectorToExpression(sParams, _option);
 	}
 
+	// Evaluate samples
 	if (findParameter(sParams, "samples", '='))
 	{
 		sParams += " ";
@@ -3631,12 +3637,14 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 		sParams.erase(findParameter(sParams, "samples", '=') - 1, 8);
 	}
 
+	// Evaluate logscale parameter
 	if (findParameter(sParams, "logscale"))
 	{
 		bLogarithmic = true;
 		sParams.erase(findParameter(sParams, "logscale") - 1, 8);
 	}
 
+    // Extract the interval definition
 	if (sParams.find('=') != string::npos
 			|| (sParams.find('[') != string::npos
 				&& sParams.find(']', sParams.find('['))
@@ -3706,6 +3714,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 			throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
 	}
 
+	// Set the corresponding expression
 	if (isNotEmptyExpression(sExpr))
 		_parser.SetExpr(sExpr);
 	else if (dVar)
@@ -3717,6 +3726,8 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 	sCmd = "";
 	vector<double> vResults;
 
+	// Evaluate the selected expression at
+	// the selected samples
 	if (dVar)
 	{
 		dTemp = *dVar;
@@ -4290,7 +4301,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _fun
 	int nBPS = 16;
 	unsigned int nDataChunkPos = 0;
 	unsigned int nFileSize = 0;
-	const double dValMax = 32760.0;
+	const double MAXVAL16BIT = 32760.0;
 	double dMax = 0.0;
 	Indices _idx;
 	Matrix _mDataSet;
@@ -4345,22 +4356,26 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _fun
     if (_idx.col.size() > 2)
         return false;
 
+    // Find the absolute maximal value
     if (fabs(_data.max(sDataset, _idx.row, _idx.col)) > fabs(_data.min(sDataset, _idx.row, _idx.col)))
         dMax = fabs(_data.max(sDataset, _idx.row, _idx.col));
     else
         dMax = fabs(_data.min(sDataset, _idx.row, _idx.col));
 
+    // Store the data in a matrix
     _mDataSet.push_back(_data.getElement(_idx.row, VectorIndex(_idx.col[0]), sDataset));
 
     if (_idx.col.size() == 2)
         _mDataSet.push_back(_data.getElement(_idx.row, VectorIndex(_idx.col[1]), sDataset));
 
+    // Transpose the numbers for simplicity
     _mDataSet = transposeMatrix(_mDataSet);
 
+    // Re-normalize the numbers to fit in 16 bits
 	for (unsigned int i = 0; i < _mDataSet.size(); i++)
 	{
 		for (unsigned int j = 0; j < _mDataSet[0].size(); j++)
-			_mDataSet[i][j] = _mDataSet[i][j] / dMax * dValMax;
+			_mDataSet[i][j] = _mDataSet[i][j] / dMax * MAXVAL16BIT;
 	}
 
 	nChannels = _mDataSet[0].size();
@@ -4414,9 +4429,6 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _fun
 /// \param _option const Settings&
 /// \return bool
 ///
-/// \todo Examine the mglRefill algorithm, as it
-/// most probably does something else than
-/// expected.
 /////////////////////////////////////////////////
 bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
@@ -4424,7 +4436,6 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	string sDataset = "";
 	string sColHeaders[2] = {"", ""};
 	Indices _idx;
-	mglData _x, _v;
 	double dXmin, dXmax;
 	sCmd.erase(0, findCommand(sCmd).nPos + findCommand(sCmd).sString.length()); // Kommando entfernen
 
@@ -4460,6 +4471,8 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	Datafile _cache;
 	getData(sDataset, _idx, _data, _cache);
 
+	_cache.sortElements("cache -sort cols=1[2]");
+
 	sColHeaders[0] = _cache.getHeadLineElement(0, "cache") + "\\n(regularized)";
 	sColHeaders[1] = _cache.getHeadLineElement(1, "cache") + "\\n(regularized)";
 
@@ -4468,30 +4481,20 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 	dXmin = _cache.min("cache", 0, nLines - 1, 0);
 	dXmax = _cache.max("cache", 0, nLines - 1, 0);
 
-	_x.Create(nLines);
-	_v.Create(nLines);
-
-	for (long long int i = 0; i < nLines; i++)
-	{
-		_x.a[i] = _cache.getElement(i, 0, "cache");
-		_v.a[i] = _cache.getElement(i, 1, "cache");
-	}
-
-	if (_x.nx != _v.GetNx())
-		return false;
+	// Create splines
+	tk::spline _spline;
+	_spline.set_points(_cache.getElement(VectorIndex(0, nLines-1), VectorIndex(0), "cache"), _cache.getElement(VectorIndex(0, nLines-1), VectorIndex(1), "cache"), false);
 
 	if (!findParameter(sCmd, "samples", '='))
-		nSamples = _x.GetNx();
-
-	mglData _regularized(nSamples);
-	_regularized.Refill(_x, _v, dXmin, dXmax); //wohin damit?
+		nSamples = nLines;
 
 	long long int nLastCol = _data.getCols(sDataset, false);
 
+	// Interpolate the data points
 	for (long long int i = 0; i < nSamples; i++)
 	{
-		_data.writeToTable(i, nLastCol, sDataset, dXmin + i * (dXmax - dXmin) / (nSamples - 1));
-		_data.writeToTable(i, nLastCol + 1, sDataset, _regularized.a[i]);
+		_data.writeToTable(i, nLastCol, sDataset, dXmin + i * (dXmax-dXmin) / (nSamples-1));
+		_data.writeToTable(i, nLastCol + 1, sDataset, _spline(dXmin + i*(dXmax-dXmin) / (nSamples-1)));
 	}
 
 	_data.setHeadLineElement(nLastCol, sDataset, sColHeaders[0]);
@@ -4706,23 +4709,27 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 	// Zielcache befuellen entsprechend der Fourier-Algorithmik
 
 	if (_target.row.isOpenEnd())
-		_target.row.setRange(0, _target.row.front() + _result.GetNx() - 1);//?
+		_target.row.setRange(0, _target.row.front() + _result.GetNx() - 1);
 
 	if (_target.col.isOpenEnd())
-		_target.col.setRange(0, _target.col.front() + _result.GetNy() + 1); //?
+		_target.col.setRange(0, _target.col.front() + _result.GetNy() + 1);
 
-	// UPDATE DATA ELEMENTS
+	// Write the time axis
 	for (int i = 0; i < _result.GetNx(); i++)
 		_data.writeToTable(i, _target.col.front(), sTargetCache, dXmin + i * dSampleSize);
 
+    // Define headline
 	_data.setHeadLineElement(_target.col.front(), sTargetCache, sDataset);
 	dSampleSize = 2 * (dFmax - dFmin) / ((double)_result.GetNy() - 1.0);
 
+	// Write the frequency axis
 	for (int i = 0; i < _result.GetNy() / 2; i++)
-		_data.writeToTable(i, _target.col[1], sTargetCache, dFmin + i * dSampleSize); // Fourier f Hier ist was falsch
+		_data.writeToTable(i, _target.col[1], sTargetCache, dFmin + i * dSampleSize); // Fourier f
 
+    // Define headline
 	_data.setHeadLineElement(_target.col[1], sTargetCache, "f [Hz]");
 
+	// Write the STFA map
 	for (int i = 0; i < _result.GetNx(); i++)
 	{
 		if (_target.row[i] == VectorIndex::INVALID)
@@ -4735,6 +4742,7 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 
 			_data.writeToTable(_target.row[i], _target.col[j+2], sTargetCache, _result[i + (j + _result.GetNy() / 2)*_result.GetNx()]);
 
+			// Update the headline
 			if (!i)
 				_data.setHeadLineElement(_target.col[j+2], sTargetCache, "A[" + toString((int)j + 1) + "]");
 		}
@@ -4782,9 +4790,12 @@ bool calculateSplines(string& sCmd, Parser& _parser, Datafile& _data, Define& _f
 		yVect.push_back(_cache.getElement(i, 1, "cache"));
 	}
 
+	// Set the points for the spline to calculate
 	_spline.set_points(xVect, yVect);
 
 	string sDefinition = "Spline(x) := ";
+
+	// Create the polynomial, which will be defined for future use
 	for (size_t i = 0; i < xVect.size() - 1; i++)
 	{
 		string sRange = "polynomial(";

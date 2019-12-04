@@ -308,8 +308,34 @@ namespace
 			// TODO: maybe sort x and y, rather than returning an error
 			for (int i = 0; i < n - 1; i++)
 			{
-				assert(m_x[i] < m_x[i + 1]);
+				assert(m_x[i] <= m_x[i + 1]);
 			}
+
+			double dAvg = 0.0;
+			size_t nPos = (size_t)-1;
+
+			// Remove duplicates by averaging
+			for (size_t i = 0; i < m_x.size()-1; i++)
+            {
+                if (m_x[i] == m_x[i+1])
+                {
+                    if (nPos == (size_t)-1)
+                        nPos = i;
+
+                    dAvg += m_y[i];
+                }
+                else if (nPos != (size_t)-1)
+                {
+                    dAvg += m_y[i];
+                    dAvg /= i - nPos + 1;
+                    m_y[i] = dAvg;
+                    m_x.erase(m_x.begin()+nPos, m_x.begin()+i);
+                    m_y.erase(m_y.begin()+nPos, m_y.begin()+i);
+                    i = nPos;
+                    nPos = (size_t)-1;
+                    dAvg = 0.0;
+                }
+            }
 
 			if (cubic_spline == true) // cubic spline interpolation
 			{
