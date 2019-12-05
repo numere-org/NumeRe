@@ -3736,6 +3736,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 
 		for (unsigned int i = 1; i < nSamples; i++)
 		{
+		    // Is a logarithmic distribution needed?
 			if (bLogarithmic)
 				*dVar = pow(10.0, log10(dLeft) + i * (log10(dRight) - log10(dLeft)) / (double)(nSamples - 1));
 			else
