@@ -42,7 +42,6 @@ class Script : public FileSystem
         string sIncludeFileName;
         bool bScriptOpen;
         bool bReadFromInclude;
-        bool bAppendNextLine;
         bool bValidScript;
         bool bAutoStart;
         bool bLastScriptCommand;

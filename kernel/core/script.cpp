@@ -33,7 +33,6 @@ Script::Script() : FileSystem()
     bValidScript = false;
     bScriptOpen = false;
     bReadFromInclude = false;
-    bAppendNextLine = false;
     bAutoStart = false;
     bLastScriptCommand = false;
     bBlockComment = false;
@@ -168,7 +167,6 @@ void Script::openScript()
 
         // Set the defaults
         bReadFromInclude = false;
-        bAppendNextLine = false;
         bValidScript = true;
         bAutoStart = false;
         bENABLE_FULL_LOGGING = false;
@@ -232,7 +230,6 @@ void Script::close()
 
         // Reset the flags
         bBlockComment = false;
-        bAppendNextLine = false;
         bReadFromInclude = false;
         bAutoStart = false;
         bScriptOpen = false;
@@ -676,13 +673,25 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
     // in the current script
     while (!fScript.eof() && !sScriptCommand.length())
     {
-        getline(fScript, sScriptCommand);
-        nLine++;
-        StripSpaces(sScriptCommand);
+        string sCurrentLine;
 
-        // Add a breakpoint, if the user has set it in the editor
-        if (NumeReKernel::getInstance()->getDebugger().getBreakpointManager().isBreakpoint(sScriptFileName, nLine-1) && sScriptCommand.substr(0,2) != "|>")
-            sScriptCommand.insert(0, "|> ");
+        // Compose lines, which were broken using the "\\" operator
+        do
+        {
+            getline(fScript, sCurrentLine);
+            nLine++;
+            StripSpaces(sCurrentLine);
+
+            if (sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\")
+                sScriptCommand.erase(sScriptCommand.length()-2);
+
+            sScriptCommand += sCurrentLine;
+
+            // Add a breakpoint, if the user has set it in the editor
+            if (NumeReKernel::getInstance()->getDebugger().getBreakpointManager().isBreakpoint(sScriptFileName, nLine-1) && sScriptCommand.substr(0,2) != "|>")
+                sScriptCommand.insert(0, "|> ");
+        }
+        while (!fScript.eof() && sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\");
 
         // Ignore empty lines
         if (!sScriptCommand.length())
@@ -821,16 +830,27 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
 // from the included script
 string Script::getNextScriptCommandFromInclude()
 {
-    bool bSkipNextLine = false;
     string sScriptCommand;
 
     // Search for the next valid and non-empty line
     // in the included script
     while (!fInclude.eof() && !sScriptCommand.length())
     {
-        getline(fInclude, sScriptCommand);
-        nIncludeLine++;
-        StripSpaces(sScriptCommand);
+        string sCurrentLine;
+
+        // Compose lines, which were broken using the "\\" operator
+        do
+        {
+            getline(fInclude, sCurrentLine);
+            nIncludeLine++;
+            StripSpaces(sCurrentLine);
+
+            if (sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\")
+                sScriptCommand.erase(sScriptCommand.length()-2);
+
+            sScriptCommand += sCurrentLine;
+        }
+        while (!fInclude.eof() && sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\");
 
         // Ignore empty lines
         if (!sScriptCommand.length())
@@ -845,10 +865,12 @@ string Script::getNextScriptCommandFromInclude()
                 getline(fInclude, sScriptCommand);
                 nIncludeLine++;
                 StripSpaces(sScriptCommand);
+
                 if (sScriptCommand.substr(0,12) == "<endinstall>"
                     || (findCommand(sScriptCommand).sString == "global" && sScriptCommand.find("<endinstall>") != string::npos))
                     break;
             }
+
             sScriptCommand.clear();
             continue;
         }
@@ -881,19 +903,6 @@ string Script::getNextScriptCommandFromInclude()
             continue;
         }
 
-        // Append the next line if needed
-        if (bSkipNextLine && sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\")
-        {
-            sScriptCommand.clear();
-            continue;
-        }
-        else if (bSkipNextLine)
-        {
-            bSkipNextLine = false;
-            sScriptCommand.clear();
-            continue;
-        }
-
         // Ensure that the relevant commands are available
         if (findCommand(sScriptCommand).sString != "define"
             && findCommand(sScriptCommand).sString != "ifndef"
@@ -901,12 +910,8 @@ string Script::getNextScriptCommandFromInclude()
             && findCommand(sScriptCommand).sString != "redefine"
             && findCommand(sScriptCommand).sString != "redef"
             && findCommand(sScriptCommand).sString != "lclfunc"
-            && findCommand(sScriptCommand).sString != "global"
-            && !bAppendNextLine)
+            && findCommand(sScriptCommand).sString != "global")
         {
-            if (sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\")
-                bSkipNextLine = true;
-
             sScriptCommand.clear();
             continue;
         }
@@ -919,33 +924,17 @@ string Script::getNextScriptCommandFromInclude()
             && findCommand(sScriptCommand).sString != "ifndefined"
             && findCommand(sScriptCommand).sString != "redefine"
             && findCommand(sScriptCommand).sString != "redef"
-            && findCommand(sScriptCommand).sString != "lclfunc"
-            && !bAppendNextLine)
+            && findCommand(sScriptCommand).sString != "lclfunc")
         {
-            // Definition commands required, but none found
-            if (sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\")
-                bSkipNextLine = true;
-
             sScriptCommand.clear();
             continue;
         }
         else if (nIncludeType == 2
-            && findCommand(sScriptCommand).sString != "global"
-            && !bAppendNextLine)
+            && findCommand(sScriptCommand).sString != "global")
         {
-            // "global" command required, but not found
-            if (sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\")
-                bSkipNextLine = true;
-
             sScriptCommand.clear();
             continue;
         }
-
-        // Append the next line, if needed
-        if (sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\")
-            bAppendNextLine = true;
-        else
-            bAppendNextLine = false;
     }
 
     // If this is the last line, close the included file
