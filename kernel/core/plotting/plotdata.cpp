@@ -626,7 +626,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     }
     if (findParameter(sCmd, "nomarks") && (nType == ALL || nType & LOCAL))
         nMarks = 0;
-    if (findParameter(sCmd, "textsize", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "textsize", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = findParameter(sCmd, "textsize", '=')+8;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
