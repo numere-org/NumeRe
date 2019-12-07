@@ -18,6 +18,7 @@
 
 #include <mgl2/mgl.h>
 #include "plotdata.hpp"
+#include "../../kernel.hpp"
 
 extern mglGraph _fontData;
 
@@ -1470,7 +1471,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             nCoords = SPHERICAL_RT;
         }
     }
-    if (findParameter(sCmd, "font", '=') && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "font", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         string sTemp = getArgAtPos(sCmd, findParameter(sCmd, "font", '=')+4);
         StripSpaces(sTemp);
@@ -1926,11 +1927,18 @@ void PlotData::reset()
     nCoords = CARTESIAN;
     nLegendPosition = 3;
     nLegendstyle = 0;
-    if (sFontStyle != "pagella")
+
+    if (NumeReKernel::getInstance())
     {
-        sFontStyle = "pagella";
-        _fontData.LoadFont(sFontStyle.c_str(), (sTokens[0][1]+ "\\fonts").c_str());
+        if (sFontStyle != NumeReKernel::getInstance()->getSettings().getDefaultPlotFont())
+        {
+            sFontStyle = NumeReKernel::getInstance()->getSettings().getDefaultPlotFont();
+            _fontData.LoadFont(sFontStyle.c_str(), (sTokens[0][1]+ "\\fonts").c_str());
+        }
     }
+    else
+        _fontData.LoadFont("pagella", (sTokens[0][1] + "\\fonts").c_str());
+
     return;
 }
 

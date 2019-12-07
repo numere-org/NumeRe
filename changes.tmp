@@ -19,3 +19,4 @@ Fixed	The endless loop occuring, if one has a language-like feature like "%%1%%"
 New	Added the function "polynomial(x,a0,a1,a2,...)"
 Cleaned	The code of the mathematical commands has been re-organized.
 Fixed	The command lclfunc may now be used together with the linebreak operator "\\".
+Fixed	Font selection now also works in multiplot layouts.
