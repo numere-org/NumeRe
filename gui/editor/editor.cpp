@@ -6083,6 +6083,8 @@ void NumeReEditor::AbstrahizeSection()
             // Ignore MATLAB structure fields
             if (GetCharAt(WordStartPosition(i, true)-1) == '.')
                 continue;
+            else if (GetCharAt(WordStartPosition(i, true)-1) == '_')
+                sCurrentToken.insert(0, "_");
 
             // Find all occurences
             vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
@@ -6137,12 +6139,15 @@ void NumeReEditor::AbstrahizeSection()
 
             i += sCurrentToken.length();
         }
-        else if (isStyleType(STYLE_CUSTOMFUNCTION, i))
+        else if (isStyleType(STYLE_DATAOBJECT, i))
         {
             // Tables
             //
             // Get the token name
             wxString sCurrentToken = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
+
+            if (GetCharAt(WordStartPosition(i, true)-1) == '_')
+                sCurrentToken.insert(0, "_");
 
             // Find all occurences
             vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
@@ -6152,7 +6157,12 @@ void NumeReEditor::AbstrahizeSection()
                 // Determine, whether the token is used before
                 // or afer the current section
                 if (vMatch.front() < nStartPos || vMatch.back() > nEndPos)
-                    lInputTokens.push_back(sCurrentToken + "()");
+                {
+                    if (GetStyleAt(i) == wxSTC_NSCR_CLUSTER)
+                        lInputTokens.push_back(sCurrentToken + "{}");
+                    else
+                        lInputTokens.push_back(sCurrentToken + "()");
+                }
             }
 
             i += sCurrentToken.length();
