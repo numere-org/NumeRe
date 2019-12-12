@@ -6032,7 +6032,13 @@ void NumeReEditor::AbstrahizeSection()
         // Split the argument list into single tokens
         while (sArgumentList.length())
         {
-            sArgumentListSet.insert(getNextArgument(sArgumentList, true));
+            string sCurrentArg = getNextArgument(sArgumentList, true);
+
+            // Remove possible default values
+            if (sCurrentArg.find_first_of(" =") != string::npos)
+                sCurrentArg.erase(sCurrentArg.find_first_of(" ="));
+
+            sArgumentListSet.insert(sCurrentArg);
         }
 
         // In the MATLAB case, get the return list of
@@ -6083,8 +6089,6 @@ void NumeReEditor::AbstrahizeSection()
             // Ignore MATLAB structure fields
             if (GetCharAt(WordStartPosition(i, true)-1) == '.')
                 continue;
-            else if (GetCharAt(WordStartPosition(i, true)-1) == '_')
-                sCurrentToken.insert(0, "_");
 
             // Find all occurences
             vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
@@ -6146,9 +6150,6 @@ void NumeReEditor::AbstrahizeSection()
             // Get the token name
             wxString sCurrentToken = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
-            if (GetCharAt(WordStartPosition(i, true)-1) == '_')
-                sCurrentToken.insert(0, "_");
-
             // Find all occurences
             vector<int> vMatch = m_search->FindAll(sCurrentToken, this->GetStyleAt(i), nCurrentBlockStart, nCurrentBlockEnd);
 
@@ -6156,7 +6157,10 @@ void NumeReEditor::AbstrahizeSection()
             {
                 // Determine, whether the token is used before
                 // or afer the current section
-                if (vMatch.front() < nStartPos || vMatch.back() > nEndPos)
+                if (vMatch.front() < nStartPos
+                    || vMatch.back() > nEndPos
+                    || (sArgumentListSet.find(sCurrentToken.ToStdString() + "()") != sArgumentListSet.end() && GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
+                    || (sArgumentListSet.find(sCurrentToken.ToStdString() + "{}") != sArgumentListSet.end() && GetStyleAt(i) == wxSTC_NSCR_CLUSTER))
                 {
                     if (GetStyleAt(i) == wxSTC_NSCR_CLUSTER)
                         lInputTokens.push_back(sCurrentToken + "{}");
