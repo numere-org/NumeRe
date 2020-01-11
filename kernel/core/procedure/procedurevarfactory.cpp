@@ -24,13 +24,26 @@
 #define FLAG_EXPLICIT 1
 #define FLAG_INLINE 2
 
-// Constructor
+
+/////////////////////////////////////////////////
+/// \brief Constructor
+/////////////////////////////////////////////////
 ProcedureVarFactory::ProcedureVarFactory()
 {
     init();
 }
 
-// General constructor from a procedure instance
+
+/////////////////////////////////////////////////
+/// \brief General constructor from an already
+/// available procedure instance.
+///
+/// \param _procedure Procedure*
+/// \param sProc const string&
+/// \param currentProc unsigned int
+/// \param _inliningMode bool
+///
+/////////////////////////////////////////////////
 ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc, bool _inliningMode)
 {
     init();
@@ -41,13 +54,23 @@ ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const string& sP
     inliningMode = _inliningMode;
 }
 
-// Destructor. Will free up all memory
+
+/////////////////////////////////////////////////
+/// \brief Destructor.
+/////////////////////////////////////////////////
 ProcedureVarFactory::~ProcedureVarFactory()
 {
     reset();
 }
 
-// This member function is the initializer function.
+
+/////////////////////////////////////////////////
+/// \brief This member function is the
+/// initializer function.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void ProcedureVarFactory::init()
 {
     _currentProcedure = nullptr;
@@ -83,10 +106,18 @@ void ProcedureVarFactory::init()
     sInlineStringDef.clear();
 }
 
-// This member function will reset the object, i.e. free
-// up the allocated memory. Can be used instead of deleting
-// the object, however due to design decisions, this object
-// is heap-allocated and recreated for each procedure
+
+/////////////////////////////////////////////////
+/// \brief Resets the object.
+///
+/// \return void
+///
+/// This member function will reset the object,
+/// i.e. free up the allocated memory. Can be
+/// used instead of deleting the object, however
+/// due to design decisions, this object is heap-
+/// allocated and recreated for each procedure.
+/////////////////////////////////////////////////
 void ProcedureVarFactory::reset()
 {
     if (nArgumentMapSize)
@@ -166,7 +197,16 @@ void ProcedureVarFactory::reset()
     sInlineStringDef.clear();
 }
 
-// replaces path characters etc.
+
+/////////////////////////////////////////////////
+/// \brief Replaces path characters and whitespaces
+/// to create variable names fitting for an non-
+/// relative procedure.
+///
+/// \param sProcedureName string
+/// \return string
+///
+/////////////////////////////////////////////////
 string ProcedureVarFactory::replaceProcedureName(string sProcedureName)
 {
     for (size_t i = 0; i < sProcedureName.length(); i++)
@@ -178,9 +218,18 @@ string ProcedureVarFactory::replaceProcedureName(string sProcedureName)
     return sProcedureName;
 }
 
-// This private member function counts the number of elements
-// in the passed string list. This is used to determine the
-// size of the to be allocated data object
+
+/////////////////////////////////////////////////
+/// \brief This private memebr function counts
+/// the number of elements in the passed string
+/// list.
+///
+/// \param sVarList const string&
+/// \return unsigned int
+///
+/// This can be used to determine the size of the
+/// to be allocated data object.
+/////////////////////////////////////////////////
 unsigned int ProcedureVarFactory::countVarListElements(const string& sVarList)
 {
     int nParenthesis = 0;
@@ -203,9 +252,19 @@ unsigned int ProcedureVarFactory::countVarListElements(const string& sVarList)
     return nElements;
 }
 
-// This private member function checks, whether the keywords "var",
-// "str" or "tab" are used in the current argument and throws and
-// exception, if this is the case.
+
+/////////////////////////////////////////////////
+/// \brief This private member function checks,
+/// whether the keywords "var", "str" or "tab"
+/// are used in the current argument and throws
+/// an exception, if this is the case.
+///
+/// \param sArgument const string&
+/// \param sArgumentList const string&
+/// \param nCurrentIndex unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
 void ProcedureVarFactory::checkKeywordsInArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex)
 {
     string sCommand = findCommand(sArgument).sString;
@@ -228,8 +287,17 @@ void ProcedureVarFactory::checkKeywordsInArgument(const string& sArgument, const
     }
 }
 
-// This private member function creates the local variables for
-// inlined procedures. The variables are redirected to cluster items.
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the local variables for inlined procedures.
+///
+/// \param sVarList string
+/// \return void
+///
+/// The created variables are redirected to
+/// cluster items.
+/////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalInlineVars(string sVarList)
 {
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
@@ -324,8 +392,18 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
     sInlineVarDef.back() = '}';
 }
 
-// This private member function creates the local string variables for
-// inlined procedures. The variables are redirected to cluster items.
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the local string variables for inlined
+/// procedures.
+///
+/// \param sStringList string
+/// \return void
+///
+/// the created variables are redirected to
+/// cluster items.
+/////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
 {
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
@@ -414,8 +492,16 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
     sInlineStringDef.back() = '}';
 }
 
-// This member function will create the procedure arguments for the
-// current procedure.
+
+/////////////////////////////////////////////////
+/// \brief This member function will create the
+/// procedure arguments for the current procedure.
+///
+/// \param sArgumentList string
+/// \param sArgumentValues string
+/// \return map<string,string>
+///
+/////////////////////////////////////////////////
 map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumentList, string sArgumentValues)
 {
     map<string,string> mVarMap;
@@ -576,8 +662,16 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
     return mVarMap;
 }
 
-// This member function will create the local numerical variables
-// for the current procedure.
+
+/////////////////////////////////////////////////
+/// \brief This member function will create the
+/// local numerical variables for the current
+/// procedure.
+///
+/// \param sVarList string
+/// \return void
+///
+/////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalVars(string sVarList)
 {
     // already declared the local vars?
@@ -675,7 +769,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                 if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
                 {
                     string sTemp;
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarList, sTemp, true);
+                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarValue, sTemp, true);
                 }
 
                 _parserRef->SetExpr(sVarValue);
@@ -711,8 +805,16 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
     }
 }
 
-// This member function will create the local string variables
-// for the current procedure.
+
+/////////////////////////////////////////////////
+/// \brief This member function will create the
+/// local string variables for the current
+/// procedure.
+///
+/// \param sStringList string
+/// \return void
+///
+/////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalStrings(string sStringList)
 {
     // already declared the local vars?
@@ -861,8 +963,15 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
     }
 }
 
-// This member function will create the local tables
-// for the current procedure.
+
+/////////////////////////////////////////////////
+/// \brief This member function will create the
+/// local tables for the current procedure.
+///
+/// \param sTableList string
+/// \return void
+///
+/////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalTables(string sTableList)
 {
     // already declared the local vars?
@@ -916,8 +1025,15 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
     }
 }
 
-// This member function will create the local clusters
-// for the current procedure.
+
+/////////////////////////////////////////////////
+/// \brief This member function will create the
+/// local clusters for the current procedure.
+///
+/// \param sClusterList string
+/// \return void
+///
+/////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalClusters(string sClusterList)
 {
     // already declared the local vars?
@@ -1018,8 +1134,17 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
     }
 }
 
-// This private member function will resolve the argument
-// calls in the passed procedure command line
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// resolve the calls to arguments in the passed
+/// procedure command line.
+///
+/// \param sProcedureCommandLine string
+/// \param nMapSize size_t
+/// \return string
+///
+/////////////////////////////////////////////////
 string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_t nMapSize)
 {
     if (!nMapSize)
@@ -1065,8 +1190,17 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
     return sProcedureCommandLine;
 }
 
-// This private member function will resolve the numerical variable
-// calls in the passed procedure command line
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// resolve the calls to numerical variables in
+/// the passed procedure command line.
+///
+/// \param sProcedureCommandLine string
+/// \param nMapSize size_t
+/// \return string
+///
+/////////////////////////////////////////////////
 string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine, size_t nMapSize)
 {
     if (!nMapSize)
@@ -1111,8 +1245,17 @@ string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine, size_
     return sProcedureCommandLine;
 }
 
-// This private member function will resolve the string variable
-// calls in the passed procedure command line
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// resolve the calls to string variables in the
+/// passed procedure command line.
+///
+/// \param sProcedureCommandLine string
+/// \param nMapSize size_t
+/// \return string
+///
+/////////////////////////////////////////////////
 string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, size_t nMapSize)
 {
     if (!nMapSize)
@@ -1160,8 +1303,17 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, si
     return sProcedureCommandLine;
 }
 
-// This private member function will resolve the table
-// calls in the passed procedure command line
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// resolve the calls to local tables in the
+/// passed procedure command line.
+///
+/// \param sProcedureCommandLine string
+/// \param nMapSize size_t
+/// \return string
+///
+/////////////////////////////////////////////////
 string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, size_t nMapSize)
 {
     if (!nMapSize)
@@ -1205,8 +1357,17 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, siz
     return sProcedureCommandLine;
 }
 
-// This private member function will resolve the cluster
-// calls in the passed procedure command line
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// resolve the calls to local clusters in the
+/// passed procedure command line.
+///
+/// \param sProcedureCommandLine string
+/// \param nMapSize size_t
+/// \return string
+///
+/////////////////////////////////////////////////
 string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, size_t nMapSize)
 {
     if (!nMapSize)

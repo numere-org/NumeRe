@@ -38,6 +38,11 @@ using namespace mu;
 // forward declaration of the procedure class
 class Procedure;
 
+/////////////////////////////////////////////////
+/// \brief This class is the variable factory
+/// used by procedure instances to create their
+/// local variables and resolve calls to them.
+/////////////////////////////////////////////////
 class ProcedureVarFactory
 {
     private:
