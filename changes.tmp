@@ -1,1 +1,2 @@
 Fixed	Resolved the "Cannot use string expressions in declaration of local variables" issue.
+Added	A context menu was added to the dependency viewer, which provides the possibility to export the tree into a Graphviz DOT file.

@@ -27,6 +27,12 @@ using namespace std;
 
 BEGIN_EVENT_TABLE(DependencyDialog, wxDialog)
     EVT_TREE_ITEM_ACTIVATED(-1, DependencyDialog::OnItemActivate)
+    EVT_TREE_ITEM_RIGHT_CLICK(-1, DependencyDialog::OnItemRightClick)
+    EVT_MENU(ID_DEPENDENCYDIALOG_EXPORTDOT, DependencyDialog::OnMenuEvent)
+    EVT_MENU(ID_DEPENDENCYDIALOG_FOLDALL, DependencyDialog::OnMenuEvent)
+    EVT_MENU(ID_DEPENDENCYDIALOG_FOLDITEM, DependencyDialog::OnMenuEvent)
+    EVT_MENU(ID_DEPENDENCYDIALOG_UNFOLDALL, DependencyDialog::OnMenuEvent)
+    EVT_MENU(ID_DEPENDENCYDIALOG_UNFOLDITEM, DependencyDialog::OnMenuEvent)
 END_EVENT_TABLE()
 
 
@@ -55,12 +61,11 @@ DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxStri
     SetSizer(vsizer);
 
     // Calculate the dependencies
-    map<string, DependencyList> mDeps;
-    string sMainProc = calculateDependencies(lib, mainfile, mDeps);
+    calculateDependencies(lib, mainfile);
 
     // Fill the dependency tree with the calculated
     // dependencies
-    fillDependencyTree(sMainProc, mDeps);
+    fillDependencyTree();
 }
 
 
@@ -72,39 +77,38 @@ DependencyDialog::DependencyDialog(wxWindow* parent, wxWindowID id, const wxStri
 ///
 /// \param lib ProcedureLibrary&
 /// \param mainfile const string&
-/// \param mDeps map<string, DependencyList>&
-/// \return string
+/// \return void
 ///
 /////////////////////////////////////////////////
-string DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const string& mainfile, map<string, DependencyList>& mDeps)
+void DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const string& mainfile)
 {
     // Get the dependencies
     Dependencies* dep = lib.getProcedureContents(replacePathSeparator(mainfile))->getDependencies();
-    string sMainProc = dep->getMainProcedure();
+    m_mainProcedure = dep->getMainProcedure();
     bool restart = false;
 
     // Insert the dependencies into the main map
-    mDeps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
+    m_deps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
 
     // Get the iterator to the begin of the map
-    auto iter = mDeps.begin();
+    auto iter = m_deps.begin();
 
     // Go through the map
-    while (iter != mDeps.end())
+    while (iter != m_deps.end())
     {
         restart = false;
 
         // Go through all dependencies
         for (auto listiter = iter->second.begin(); listiter != iter->second.end(); ++listiter)
         {
-            if (mDeps.find(listiter->getProcedureName()) == mDeps.end() && listiter->getProcedureName().find("thisfile~") == string::npos)
+            if (m_deps.find(listiter->getProcedureName()) == m_deps.end() && listiter->getProcedureName().find("thisfile~") == string::npos)
             {
                 dep = lib.getProcedureContents(listiter->getFileName())->getDependencies();
 
                 if (dep->getDependencyMap().size())
                 {
-                    mDeps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
-                    iter = mDeps.begin();
+                    m_deps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
+                    iter = m_deps.begin();
                     restart = true;
                     break;
                 }
@@ -116,8 +120,6 @@ string DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const stri
         if (!restart)
             ++iter;
     }
-
-    return sMainProc;
 }
 
 
@@ -128,25 +130,23 @@ string DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const stri
 /// DependencyDialog::insertChilds() recursively
 /// to fill the childs of a procedure call.
 ///
-/// \param sMainProcedure const string&
-/// \param mDeps map<string,DependencyList>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DependencyDialog::fillDependencyTree(const string& sMainProcedure, map<string, DependencyList>& mDeps)
+void DependencyDialog::fillDependencyTree()
 {
     // Find the current main procedure
-    auto iter = mDeps.find(sMainProcedure);
+    auto iter = m_deps.find(m_mainProcedure);
 
     // Ensure that the main procedure exists and that it is found
     // in the dependency maps
-    if (iter == mDeps.end())
+    if (iter == m_deps.end())
     {
         m_dependencyTree->AddRoot("ERROR: No main procedure found.");
         return;
     }
 
-    wxTreeItemId root = m_dependencyTree->AddRoot(sMainProcedure + "()");
+    wxTreeItemId root = m_dependencyTree->AddRoot(m_mainProcedure + "()");
 
     // Go through the list of calls
     for (auto listiter = iter->second.begin(); listiter != iter->second.end(); ++listiter)
@@ -161,7 +161,7 @@ void DependencyDialog::fillDependencyTree(const string& sMainProcedure, map<stri
         }
 
         // Insert the child calls to the current procedure call
-        insertChilds(item, listiter->getProcedureName(), mDeps);
+        insertChilds(item, listiter->getProcedureName());
     }
 
     // Expand the root node
@@ -178,17 +178,16 @@ void DependencyDialog::fillDependencyTree(const string& sMainProcedure, map<stri
 ///
 /// \param item wxTreeItemId
 /// \param sParentProcedure const string&
-/// \param mDeps map<string, DependencyList>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DependencyDialog::insertChilds(wxTreeItemId item, const string& sParentProcedure, map<string, DependencyList>& mDeps)
+void DependencyDialog::insertChilds(wxTreeItemId item, const string& sParentProcedure)
 {
     // Find the current main procedure
-    auto iter = mDeps.find(sParentProcedure);
+    auto iter = m_deps.find(sParentProcedure);
 
     // Return, if the current procedure is not found
-    if (iter == mDeps.end())
+    if (iter == m_deps.end())
         return;
 
     for (auto listiter = iter->second.begin(); listiter != iter->second.end(); ++listiter)
@@ -202,7 +201,7 @@ void DependencyDialog::insertChilds(wxTreeItemId item, const string& sParentProc
         else
         {
             currItem = m_dependencyTree->AppendItem(item, listiter->getProcedureName() + "()");
-            insertChilds(currItem, listiter->getProcedureName(), mDeps);
+            insertChilds(currItem, listiter->getProcedureName());
         }
 
         // Colour thisfile namespace calls in grey
@@ -247,6 +246,169 @@ bool DependencyDialog::findInParents(wxTreeItemId item, const string& sCurrProc)
 
 
 /////////////////////////////////////////////////
+/// \brief This private member function will
+/// collapse the current item and all corresponding
+/// subitems.
+///
+/// \param item wxTreeItemId
+/// \return void
+///
+/////////////////////////////////////////////////
+void DependencyDialog::CollapseAll(wxTreeItemId item)
+{
+    wxTreeItemIdValue cookie;
+    wxTreeItemId child = m_dependencyTree->GetFirstChild(item, cookie);
+
+    while (child.IsOk())
+    {
+        CollapseAll(child);
+        child = m_dependencyTree->GetNextSibling(child);
+    }
+
+    m_dependencyTree->Collapse(item);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function calculates
+/// the level of nested clusters needed to
+/// correctly visualize the nested namespaces.
+///
+/// \param sCurrentNameSpace const std::string&
+/// \param sNewNameSpace const std::string&
+/// \return int
+///
+/////////////////////////////////////////////////
+int DependencyDialog::calculateClusterLevel(const std::string& sCurrentNameSpace, const std::string& sNewNameSpace)
+{
+    int nNameSpaces = 0;
+
+    // Go through the namespaces and compare them
+    // character-wise
+    for (size_t i = 0; i < sCurrentNameSpace.size(); i++)
+    {
+        // New one is shorter? Return
+        if (sNewNameSpace.size() <= i)
+            return nNameSpaces;
+
+        // Characters differ? Return
+        if (sCurrentNameSpace[i] != sNewNameSpace[i])
+            return nNameSpaces;
+
+        // Found a namespace separator? Increment
+        // namespace counter
+        if (sCurrentNameSpace[i] == '~')
+            nNameSpaces++;
+    }
+
+    // New one is longer? Return the namespace counter + 1
+    if (sNewNameSpace.size() > sCurrentNameSpace.size())
+        return nNameSpaces+1;
+
+    return nNameSpaces;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of GraphViz DOT files.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void DependencyDialog::CreateDotFile()
+{
+    std::string sClusterDefinition;
+    std::string sDotFileContent;
+    std::map<std::string, std::list<std::string> > mProcedures;
+
+    // Fill the cluster map with the procedures and prepare the graph
+    // list for DOT
+    for (auto caller = m_deps.begin(); caller != m_deps.end(); ++caller)
+    {
+        for (auto called = caller->second.begin(); called != caller->second.end(); ++called)
+        {
+            mProcedures[caller->first.substr(0, caller->first.rfind('~')+1)].push_back(caller->first);
+            mProcedures[called->getProcedureName().substr(0, called->getProcedureName().rfind('~')+1)].push_back(called->getProcedureName());
+
+            sDotFileContent += "\t\"" + caller->first + "()\" -> \"" + called->getProcedureName() + "()\"\n";
+        }
+    }
+
+    std::string sCurrentNameSpace;
+    std::string sNameSpace;
+    char cClusterIndex = 'A';
+    int nCurrentClusterLevel = 0;
+
+    // Prepare the cluster list by calculating the cluster level of
+    // the current namespace and nest it in a previous cluster
+    for (auto iter = mProcedures.begin(); iter != mProcedures.end(); ++iter)
+    {
+        sNameSpace = iter->first;
+        sNameSpace.erase(sNameSpace.rfind('~')+1);
+
+        int nNewClusterLevel = calculateClusterLevel(sCurrentNameSpace, sNameSpace);
+
+        // Deduce, whether the new cluster is nested or
+        // an independent one
+        if (nNewClusterLevel+1 == nCurrentClusterLevel)
+            sClusterDefinition += "\n" + std::string(nCurrentClusterLevel, '\t') + "}\n";
+        else if (nNewClusterLevel < nCurrentClusterLevel)
+        {
+            for (int i = nCurrentClusterLevel-nNewClusterLevel; i >= 0; i--)
+                sClusterDefinition += "\n" + std::string(i, '\t') + "}\n";
+
+            nCurrentClusterLevel = nNewClusterLevel;
+        }
+        else
+        {
+            sClusterDefinition += "\n";
+            nCurrentClusterLevel++;
+        }
+
+        sCurrentNameSpace = sNameSpace;
+
+        // Write the cluster header
+        sClusterDefinition += std::string(nCurrentClusterLevel, '\t') + "subgraph cluster_" + cClusterIndex + "\n" + std::string(nCurrentClusterLevel, '\t') + "{\n" + std::string(nCurrentClusterLevel+1, '\t') + "style=rounded\n" + std::string(nCurrentClusterLevel+1, '\t') + "label=\"" + sCurrentNameSpace.substr(1) + "\"\n" + std::string(nCurrentClusterLevel+1, '\t');
+        cClusterIndex++;
+
+        // Ensure that the procedure list is unique
+        iter->second.sort();
+        iter->second.unique();
+
+        // Add the procedures to the current namespace
+        for (auto procedure = iter->second.begin(); procedure != iter->second.end(); ++procedure)
+            sClusterDefinition += "\"" + *procedure + "()\" ";
+
+    }
+
+    // Close all opened clusters
+    for (int i = nCurrentClusterLevel; i > 0; i--)
+        sClusterDefinition += "\n" + std::string(i, '\t') + "}";
+
+    // Present a file save dialog to the user
+    wxFileDialog saveDialog(this, _guilang.get("GUI_DLG_SAVE"), "", "dependency.dot", _guilang.get("COMMON_FILETYPE_DOT") + " (*.dot)|*.dot", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+    if (saveDialog.ShowModal() == wxID_CANCEL)
+        return;
+
+    // Open the file stream
+    ofstream file(saveDialog.GetPath().ToStdString().c_str());
+
+    // If the stream could be opened, stream the prepared contents
+    // of the DOT file to the opened file
+    if (file.good())
+    {
+        file << "digraph ProcedureDependency\n{\n\tratio=0.4\n\n";
+        file << sClusterDefinition << "\n\n";
+        file << sDotFileContent << "}\n";
+    }
+
+    file.close();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This private member function is the
 /// event handler for double clicking on an item
 /// in the dependency tree.
@@ -272,4 +434,63 @@ void DependencyDialog::OnItemActivate(wxTreeEvent& event)
     else
         main->FindAndOpenProcedure(procedureName);
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function shows the
+/// popup menu on a right click on any tree item.
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DependencyDialog::OnItemRightClick(wxTreeEvent& event)
+{
+    m_selectedItem = event.GetItem();
+
+    wxMenu popupMenu;
+
+    popupMenu.Append(ID_DEPENDENCYDIALOG_FOLDALL, _guilang.get("GUI_DEPDLG_FOLDALL"));
+    popupMenu.Append(ID_DEPENDENCYDIALOG_UNFOLDALL, _guilang.get("GUI_DEPDLG_UNFOLDALL"));
+    popupMenu.Append(ID_DEPENDENCYDIALOG_FOLDITEM, _guilang.get("GUI_DEPDLG_FOLDITEM"));
+    popupMenu.Append(ID_DEPENDENCYDIALOG_UNFOLDITEM, _guilang.get("GUI_DEPDLG_UNFOLDITEM"));
+    popupMenu.AppendSeparator();
+    popupMenu.Append(ID_DEPENDENCYDIALOG_EXPORTDOT, _guilang.get("GUI_DEPDLG_EXPORTDOT"));
+
+    m_dependencyTree->PopupMenu(&popupMenu, event.GetPoint());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function handles
+/// all menu events yielded by clicking on an
+/// item of the popup menu.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DependencyDialog::OnMenuEvent(wxCommandEvent& event)
+{
+    switch (event.GetId())
+    {
+        case ID_DEPENDENCYDIALOG_FOLDALL:
+            CollapseAll(m_dependencyTree->GetRootItem());
+            m_dependencyTree->Expand(m_dependencyTree->GetRootItem());
+            break;
+        case ID_DEPENDENCYDIALOG_UNFOLDALL:
+            m_dependencyTree->ExpandAll(m_dependencyTree->GetRootItem());
+            break;
+        case ID_DEPENDENCYDIALOG_FOLDITEM:
+            CollapseAll(m_selectedItem);
+            break;
+        case ID_DEPENDENCYDIALOG_UNFOLDITEM:
+            m_dependencyTree->ExpandAll(m_selectedItem);
+            break;
+        case ID_DEPENDENCYDIALOG_EXPORTDOT:
+            CreateDotFile();
+            break;
+    }
+}
+
 

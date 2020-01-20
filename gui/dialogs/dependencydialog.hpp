@@ -25,6 +25,7 @@
 #include "../controls/treelistctrl.h"
 #include "../../kernel/core/procedure/procedurelibrary.hpp"
 #include "../../kernel/core/procedure/dependency.hpp"
+#include "../../common/datastructures.h"
 
 /////////////////////////////////////////////////
 /// \brief This class represents a dialog showing
@@ -34,13 +35,22 @@ class DependencyDialog : public wxDialog
 {
     private:
         wxcode::wxTreeListCtrl* m_dependencyTree;
+        wxTreeItemId m_selectedItem;
+        std::string m_mainProcedure;
+        std::map<std::string, DependencyList> m_deps;
 
-        std::string calculateDependencies(ProcedureLibrary& lib, const std::string& mainfile, std::map<std::string, DependencyList>& mDeps);
-        void fillDependencyTree(const std::string& sMainProcedure, std::map<std::string, DependencyList>& mDeps);
-        void insertChilds(wxTreeItemId item, const std::string& sParentProcedure, std::map<std::string, DependencyList>& mDeps);
+        void calculateDependencies(ProcedureLibrary& lib, const std::string& mainfile);
+        void fillDependencyTree();
+        void insertChilds(wxTreeItemId item, const std::string& sParentProcedure);
         bool findInParents(wxTreeItemId item, const std::string& sCurrProc);
 
+        void CollapseAll(wxTreeItemId item);
+        int calculateClusterLevel(const std::string& sCurrentNameSpace, const std::string& sNewNameSpace);
+        void CreateDotFile();
+
         void OnItemActivate(wxTreeEvent& event);
+        void OnItemRightClick(wxTreeEvent& event);
+        void OnMenuEvent(wxCommandEvent& event);
 
     public:
         DependencyDialog(wxWindow* parent, wxWindowID id, const wxString& title, const std::string& mainfile, ProcedureLibrary& lib, long style = wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
