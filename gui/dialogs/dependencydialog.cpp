@@ -355,10 +355,16 @@ void DependencyDialog::CreateDotFile()
             sClusterDefinition += "\n" + std::string(nCurrentClusterLevel, '\t') + "}\n";
         else if (nNewClusterLevel < nCurrentClusterLevel)
         {
-            for (int i = nCurrentClusterLevel-nNewClusterLevel; i >= 0; i--)
-                sClusterDefinition += "\n" + std::string(i, '\t') + "}\n";
+            sClusterDefinition += "\n";
+
+            for (int i = nCurrentClusterLevel-nNewClusterLevel; i > 0; i--)
+                sClusterDefinition += std::string(i, '\t') + "}\n";
 
             nCurrentClusterLevel = nNewClusterLevel;
+
+            // Minimal level is 1 in this case
+            if (!nCurrentClusterLevel)
+                nCurrentClusterLevel = 1;
         }
         else
         {
@@ -399,7 +405,7 @@ void DependencyDialog::CreateDotFile()
     // of the DOT file to the opened file
     if (file.good())
     {
-        file << "digraph ProcedureDependency\n{\n\tratio=0.4\n\n";
+        file << "digraph ProcedureDependency\n{\n\tratio=0.4\n";
         file << sClusterDefinition << "\n\n";
         file << sDotFileContent << "}\n";
     }
