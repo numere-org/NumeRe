@@ -30,7 +30,7 @@ Integration_Vars parser_iVars;
 static double localizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
-static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
+static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
 static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
 
@@ -4103,14 +4103,14 @@ static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZ
 /// \param sCmd const string&
 /// \param sVectorVals string&
 /// \param sZVals const string&
-/// \param nSamples size_t
+/// \param nSamples size_t&
 /// \param _parser Parser&
 /// \param _data Datafile&
 /// \param _option const Settings&
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
+static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	vector<double> vVectorVals;
 
@@ -4151,20 +4151,10 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sDatatable)-1);
 
-        if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
-        {
-            // Only if the z values are also a table read the vector from the table
-            vVectorVals = _data.getElement(_idx.row, _idx.col, sDatatable);
-        }
-        else
-        {
-            // Otherwise use minimal and maximal values
-            double dMin = _data.min(sDatatable, _idx.row, _idx.col);
-            double dMax = _data.max(sDatatable, _idx.row, _idx.col);
-
-            for (unsigned int i = 0; i < nSamples; i++)
-                vVectorVals.push_back((dMax - dMin) / double(nSamples - 1)*i + dMin);
-        }
+        // Copy the values from the table and update the
+        // corresponding samples setting
+        vVectorVals = _data.getElement(_idx.row, _idx.col, sDatatable);
+        nSamples = vVectorVals.size();
 	}
 	else if (sVectorVals.find(':') != string::npos)
 	{
