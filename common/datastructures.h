@@ -379,7 +379,7 @@ enum PathID {
     SCRIPTPATH,
     PROCPATH,
     PLOTPATH,
-    PATH_LAST = PLOTPATH
+    PATH_LAST
 };
 
 

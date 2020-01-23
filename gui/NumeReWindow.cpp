@@ -4445,7 +4445,10 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             // more than two seconds from te current time. Older
             // modifications are likely to be metadata updates
             // done by the OS and do not require any refresh
-            if ((wxDateTime::Now() - filename.GetModificationTime()).GetSeconds() > 2)
+            //
+            // GetModificationTime() fails if the file is not readable
+            // therefore we check this first
+            if (!filename.IsFileReadable() || (wxDateTime::Now() - filename.GetModificationTime()).GetSeconds() > 2)
                 continue;
 
             // Add a new revision in the list of revisions that
