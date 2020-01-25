@@ -2,3 +2,4 @@ Fixed	Resolved the "Cannot use string expressions in declaration of local variab
 Added	A context menu was added to the dependency viewer, which provides the possibility to export the tree into a Graphviz DOT file.
 Fixed	"datagrid" will now use the size of passed data sets to determine its sample size.
 Fixed	The file tree will now get refreshed as expected.
+Fixed	Documentation comments just before procedures are now copied during installation. The messed up comments in the created procedure file were removed as well.

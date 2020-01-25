@@ -25,15 +25,25 @@
 
 extern value_type vAns;
 
-// Default constructor
+
+/////////////////////////////////////////////////
+/// \brief Default constructor
+/////////////////////////////////////////////////
 Procedure::Procedure() : FlowCtrl(), Plugin()
 {
     // init the object
 	init();
 }
 
-// Custom constructor using the presets from the passed
-// procedure. Used as a recursion functionality
+
+/////////////////////////////////////////////////
+/// \brief Custom constructor using the presets
+/// from the passed procedure instance. Used as a
+/// recursion functionality.
+///
+/// \param _procedure const Procedure&
+///
+/////////////////////////////////////////////////
 Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), Plugin(_procedure)
 {
     // Init the object
@@ -57,9 +67,12 @@ Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), Plugin(_procedur
 	}
 }
 
-// Destructor ensuring that the procedure
-// output file stream will be closed, if it is
-// still open
+
+/////////////////////////////////////////////////
+/// \brief Destructor ensuring that the procedure
+/// output file stream will be closed, if it is
+/// still open.
+/////////////////////////////////////////////////
 Procedure::~Procedure()
 {
 	if (fProcedure.is_open())
@@ -71,8 +84,15 @@ Procedure::~Procedure()
     }
 }
 
-// Private initializing member function. Sets all
-// variables to a reasonable default value
+
+/////////////////////////////////////////////////
+/// \brief Private initializing member function.
+/// Sets all variables to a reasonable default
+/// value.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void Procedure::init()
 {
 	sCallingNameSpace = "main";
@@ -85,7 +105,26 @@ void Procedure::init()
 	_varFactory = nullptr;
 }
 
-// This member function does the calculation stuff for the current procedure
+
+/////////////////////////////////////////////////
+/// \brief This member function does the
+/// evaluation stuff regarding strings and
+/// numerical expressions for the current
+/// procedure.
+///
+/// \param sLine string
+/// \param sCurrentCommand string
+/// \param nByteCode int&
+/// \param _parser Parser&
+/// \param _functions Define&
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \param _out Output&
+/// \param _pData PlotData&
+/// \param _script Script&
+/// \return Returnvalue
+///
+/////////////////////////////////////////////////
 Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
 {
 	string sCache = "";
@@ -450,9 +489,18 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 	return thisReturnVal;
 }
 
-// This member function is used to obtain the procedure file name
-// from the selected procedure. It handles the "thisfile" namespace
-// directly
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to obtain
+/// the procedure file name from the selected
+/// procedure. It handles the "thisfile"
+/// namespace directly.
+///
+/// \param sProc const string&
+/// \param bInstallFileName bool
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 {
 	if (sProc.length())
@@ -511,8 +559,25 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 		return false;
 }
 
-// This member function handles the most part of the execution
-// of the currently selected procedure.
+
+/////////////////////////////////////////////////
+/// \brief This member function is central in the
+/// execution of the currently selected procedure
+/// as it handles all the logic.
+///
+/// \param sProc string
+/// \param sVarList string
+/// \param _parser Parser&
+/// \param _functions Define&
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \param _out Output&
+/// \param _pData PlotData&
+/// \param _script Script&
+/// \param nth_procedure unsigned int
+/// \return Returnvalue
+///
+/////////////////////////////////////////////////
 Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure)
 {
     // Measure the current stack size and ensure
@@ -1162,7 +1227,26 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, D
 	return _ReturnVal;
 }
 
-// This member function handles the calls for procedures and plugins
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the calls
+/// for procedures and plugins, resolves them and
+/// executes the called procedures by constructing
+/// a new instance of this class on the heap.
+///
+/// \param sLine string&
+/// \param _parser Parser&
+/// \param _functions Define&
+/// \param _data Datafile&
+/// \param _out Output&
+/// \param _pData PlotData&
+/// \param _script Script&
+/// \param _option Settings&
+/// \param nth_procedure unsigned int
+/// \param nth_command int
+/// \return int
+///
+/////////////////////////////////////////////////
 int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure, int nth_command)
 {
     // Create a new procedure object on the heap
@@ -1344,18 +1428,26 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, Define& _funct
 	return nReturn;
 }
 
-// Virtual member function allowing to identify and evaluate
-// some special procedure commands. Currently it is only used
-// for the namespace command.
-// The commands "var", "str" and "tab" are recognized but
-// not evaluated.
+
+/////////////////////////////////////////////////
+/// \brief Virtual member function allowing to
+/// identify and evaluate some special procedure
+/// commands. Currently it is only used for the
+/// namespace command.
+///
+/// \param sLine string&
+/// \return int
+///
+/// The commands "var", "str", "tab" and "cst"
+/// are recognized but not evaluated.
+/////////////////////////////////////////////////
 int Procedure::procedureCmdInterface(string& sLine)
 {
     // Find the current command
 	string sCommand = findCommand(sLine).sString;
 
 	// Try to identify the command
-	if (sCommand == "var" || sCommand == "str" || sCommand == "tab")
+	if (sCommand == "var" || sCommand == "str" || sCommand == "tab" || sCommand == "cst")
 	{
 	    // Only recognized
 		return 1;
@@ -1391,9 +1483,17 @@ int Procedure::procedureCmdInterface(string& sLine)
 	return -1;
 }
 
-// This member function handles the procedure installation
-// process by governing the file stream and passing the
-// passed procedure line onwards to the stream.
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// procedure installation process by governing
+/// the file stream and passing the corresponding
+/// procedure linewards to the stream.
+///
+/// \param sProcedureLine string
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Procedure::writeProcedure(string sProcedureLine)
 {
 	string sAppendedLine = "";
@@ -1408,7 +1508,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
 	    // It will determine the correct file path from the
 	    // procedure name and its namespace
 		bool bAppend = false;
-		bool bNamespaceline = false;
+
 		nthBlock = 0;
 
 		// Get the procedure name and its namespace
@@ -1426,83 +1526,119 @@ bool Procedure::writeProcedure(string sProcedureLine)
 		if (sFileName.substr(0, 9) == "thisfile~")
 			bAppend = true;
 
-		if (sLastWrittenProcedureFile.find("|namespace") != string::npos)
-			bNamespaceline = true;
-
 		// Create a corresponding folder from the
 		// namespace
-		if (sCurrentProcedureName.find('~') != string::npos)
+		if (sCurrentProcedureName.find_last_of("~/") != string::npos)
 		{
 			FileSystem _fSys;
-			_fSys.setPath(sCurrentProcedureName.substr(0, sCurrentProcedureName.rfind('~')), true, sTokens[5][1]);
-		}
-
-		if (sCurrentProcedureName.find('/') != string::npos)
-		{
-			FileSystem _fSys;
-			_fSys.setPath(sCurrentProcedureName.substr(0, sCurrentProcedureName.rfind('/')), true, sTokens[5][1]);
+			_fSys.setPath(sCurrentProcedureName.substr(0, sCurrentProcedureName.find_last_of("~/")), true, sTokens[5][1]);
 		}
 
 		// If the procedure shall be appended, open the
-		// filestream in append mode, otherwise truncate
+		// filestream in read mode, read everything and
+		// truncate the file afterwards, otherwise truncate
 		// the whole file in advance
 		if (bAppend)
-			fProcedure.open(sCurrentProcedureName.c_str(), ios_base::out | ios_base::app);
+        {
+			fProcedure.open(sCurrentProcedureName.c_str(), ios_base::in);
+
+			if (!fProcedure.good())
+			{
+			    fProcedure.close();
+                return false;
+			}
+
+            string sLineTemp;
+            vector<string> vProcedureFile;
+
+            // Read the whole file
+            while (!fProcedure.eof())
+            {
+                getline(fProcedure, sLineTemp);
+                vProcedureFile.push_back(sLineTemp);
+            }
+
+            fProcedure.close();
+
+            // find the last "endprocedure" command and
+            // erase everything after it
+            for (int i = vProcedureFile.size()-1; i >= 0; i--)
+            {
+                if (vProcedureFile[i] == "endprocedure")
+                {
+                    vProcedureFile.erase(vProcedureFile.begin()+i+1, vProcedureFile.end());
+                    break;
+                }
+            }
+
+            // Open the file in out mode and truncate it
+            fProcedure.open(sCurrentProcedureName.c_str(), ios_base::out | ios_base::trunc);
+
+            // Write the stored contents to the file
+            for (size_t i = 0; i < vProcedureFile.size(); i++)
+            {
+                fProcedure << vProcedureFile[i] << endl;
+            }
+
+            // Append two line breaks to separate the procedures
+            fProcedure << endl << endl;
+        }
 		else
+        {
 			fProcedure.open(sCurrentProcedureName.c_str(), ios_base::out | ios_base::trunc);
 
-		// Ensure that the file stream could be opened
-		if (fProcedure.fail())
-		{
-			fProcedure.close();
-			return false;
-		}
-		else
-		{
-			string sProcName = "";
+            // Ensure that the file stream could be opened
+            if (fProcedure.fail())
+            {
+                fProcedure.close();
+                return false;
+            }
+
+            string sProcName = "";
 
 			if (sFileName.find('~') != string::npos)
 				sProcName = sFileName.substr(sFileName.rfind('~') + 1);
 			else
 				sProcName = sFileName;
 
-			sLastWrittenProcedureFile = sCurrentProcedureName;
-			bWritingTofile = true;
-
-            // Add a warning that the procedures after the
-            // first procedure are file static
-			if (bAppend && !bNamespaceline)
-			{
-				unsigned int nLength = _lang.get("PROC_NAMESPACE_THISFILE_MESSAGE").length();
-				fProcedure << endl << endl
-						   << "#**" << std::setfill('*') << std::setw(nLength + 2) << "**" << endl
-						   << " * NAMESPACE: THISFILE" << std::setfill(' ') << std::setw(nLength - 17) << " *" << endl
-						   << " * " << _lang.get("PROC_NAMESPACE_THISFILE_MESSAGE") << " *" << endl
-						   << " **" << std::setfill('*') << std::setw(nLength + 3) << "**#" << endl << endl << endl;
-				sLastWrittenProcedureFile += "|namespace";
-			}
-			else if (bAppend)
-				fProcedure << endl << endl;
-
-			// Write the procedure head comment
-			unsigned int nLength = _lang.get("COMMON_PROCEDURE").length();
-            fProcedure << "#*********" << std::setfill('*') << std::setw(nLength + 2) << "***" << std::setfill('*') << std::setw(max(21u, sProcName.length() + 2)) << "*" << endl;
+            // Write the procedure head comment
+			unsigned int nLength = _lang.get("PROC_FOOTER").length();
+            fProcedure << "#**" << std::setfill('*') << std::setw(nLength) << '*' << endl;
 			fProcedure << " * NUMERE-" << toUpperCase(_lang.get("COMMON_PROCEDURE")) << ": $" << sProcName << "()" << endl;
-			fProcedure << " * =======" << std::setfill('=') << std::setw(nLength + 2) << "===" << std::setfill('=') << std::setw(max(21u, sProcName.length() + 2)) << "=" << endl;
+			fProcedure << " * " << std::setfill('=') << std::setw(nLength) << '=' << endl;
 			fProcedure << " * " << _lang.get("PROC_ADDED_DATE") << ": " << getTimeStamp(false) << " *#" << endl;
 			fProcedure << endl;
-			fProcedure << "procedure $";
+        }
 
-			// Write the procedure name (without the namespace)
-			if (sFileName.find('~') != string::npos)
-				fProcedure << sFileName.substr(sFileName.rfind('~') + 1);
-			else
-				fProcedure << sFileName;
+        sLastWrittenProcedureFile = sCurrentProcedureName;
+        bWritingTofile = true;
 
-			// Write the argument list
-			fProcedure << sProcedureLine.substr(sProcedureLine.find('(')) << endl;
-			return true;
-		}
+        // Print prefixed documentation strings, which were
+        // appended, first
+        if (sProcedureLine.find("##!") != string::npos)
+        {
+            // Line comments
+            fProcedure << sProcedureLine.substr(sProcedureLine.find("##!"));
+            sProcedureLine.erase(sProcedureLine.find("##!"));
+        }
+        else if (sProcedureLine.find("#*!") != string::npos)
+        {
+            // block comments
+            fProcedure << sProcedureLine.substr(sProcedureLine.find("#*!"));
+            sProcedureLine.erase(sProcedureLine.find("#*!"));
+        }
+
+        fProcedure << "procedure $";
+
+        // Write the procedure name (without the namespace)
+        if (sFileName.find('~') != string::npos)
+            fProcedure << sFileName.substr(sFileName.rfind('~') + 1);
+        else
+            fProcedure << sFileName;
+
+        // Write the argument list
+        fProcedure << sProcedureLine.substr(sProcedureLine.find('(')) << endl;
+        return true;
 	}
 	else if (sProcedureLine.substr(0, 12) == "endprocedure")
 		bWritingTofile = false;
@@ -1640,7 +1776,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
 	if (!bWritingTofile && fProcedure.is_open())
 	{
 		fProcedure << endl;
-		fProcedure << "#* " << _lang.get("PROC_END_OF_PROCEDURE") << endl;
+		fProcedure << "#**" << _lang.get("PROC_END_OF_PROCEDURE") << endl;
 		fProcedure << " * " << _lang.get("PROC_FOOTER") << endl;
 		fProcedure << " * https://sites.google.com/site/numereframework/" << endl;
 		fProcedure << " **" << std::setfill('*') << std::setw(_lang.get("PROC_FOOTER").length() + 1) << "#" << endl;
@@ -1649,10 +1785,9 @@ bool Procedure::writeProcedure(string sProcedureLine)
 
 		// This ensures that all blocks were closed
 		if (nthBlock)
-		{
 			throw SyntaxError(SyntaxError::IF_OR_LOOP_SEEMS_NOT_TO_BE_CLOSED, sProcedureLine, SyntaxError::invalid_position, sCurrentProcedureName);
-		}
-		sCurrentProcedureName = "";
+
+ 		sCurrentProcedureName = "";
 	}
 
 	StripSpaces(sAppendedLine);
@@ -1665,9 +1800,21 @@ bool Procedure::writeProcedure(string sProcedureLine)
 	return true;
 }
 
-// This private member function extracts procedure name, argument
-// list and the corresponding file name from the passed position
-// in the command line
+
+/////////////////////////////////////////////////
+/// \brief This private member function extracts
+/// procedure name, argument list and the
+/// corresponding file name from the passed
+/// position in the command line.
+///
+/// \param sCmdLine const string&
+/// \param nPos size_t
+/// \param sProcName string&
+/// \param sArgList string&
+/// \param sFileName string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos, string& sProcName, string& sArgList, string& sFileName)
 {
     string __sName = sCmdLine.substr(nPos, sCmdLine.find('(', nPos) - nPos);
@@ -1735,8 +1882,17 @@ void Procedure::extractProcedureInformation(const string& sCmdLine, size_t nPos,
     }
 }
 
-// This virtual member function checks, whether the procedures in the
-// current line are declared as inline and whether they are inlinable
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function checks,
+/// whether the procedures in the current line
+/// are declared as inline and whether they are
+/// inlinable.
+///
+/// \param sProc const string&
+/// \return int one of ProcedureCommendLine::Inlineable values
+///
+/////////////////////////////////////////////////
 int Procedure::isInline(const string& sProc)
 {
     // No procedures?
@@ -1791,11 +1947,20 @@ int Procedure::isInline(const string& sProc)
 	return nInlineable;
 }
 
-// This virtual private member function expands all procedures in
-// single command line, which were declared as "inline" and which
-// are inlinable, into a vector of command lines, which will be
-// inserted in the flow control command array before the current
-// command line
+
+/////////////////////////////////////////////////
+/// \brief This virtual private member function
+/// expands all procedures in the current command
+/// line, which were declared as "inline" and
+/// which are inlinable, into a vector of
+/// command lines, which will be inserted in the
+/// flow control command array before the current
+/// command line.
+///
+/// \param sProc string&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> Procedure::expandInlineProcedures(string& sProc)
 {
     vector<string> vExpandedProcedures;
@@ -1866,8 +2031,19 @@ vector<string> Procedure::expandInlineProcedures(string& sProc)
 	return vExpandedProcedures;
 }
 
-// This private member function evaluates, whether the current procedure
-// is inlineable, i.e. whether it fulfills the internal inlining rules.
+
+/////////////////////////////////////////////////
+/// \brief This private member function evaluates,
+/// whether the current procedure is inlineable,
+/// i.e. whether it fulfills the internal inlining
+/// rules.
+///
+/// \param sProc const string&
+/// \param sFileName const string&
+/// \param nInlineFlag int*
+/// \return int one of ProcedureCommendLine::Inlineable values
+///
+/////////////////////////////////////////////////
 int Procedure::isInlineable(const string& sProc, const string& sFileName, int* nInlineFlag)
 {
     // Get procedure element and goto to the corresponding line
@@ -1932,9 +2108,18 @@ int Procedure::isInlineable(const string& sProc, const string& sFileName, int* n
     return nInlineable;
 }
 
-// This private member function applies the internal inlining rule
-// set for a single procedure command line and returns the
-// corresponding enumeration flags
+
+/////////////////////////////////////////////////
+/// \brief This private member function applies
+/// the internal inlining rule set for a single
+/// procedure command line and returns the
+/// corresponding enumeration flags.
+///
+/// \param sCommandLine const string&
+/// \param sArgumentList const string&
+/// \return int one of ProcedureCommendLine::Inlineable values
+///
+/////////////////////////////////////////////////
 int Procedure::applyInliningRuleset(const string& sCommandLine, const string& sArgumentList)
 {
     static const string sINVALID_INLINING_COMMANDS = " cst tab namespace for if while switch ifndef ifndefined def define lclfunc redef redefine undef undefine ";
@@ -1964,8 +2149,16 @@ int Procedure::applyInliningRuleset(const string& sCommandLine, const string& sA
     return ProcedureCommandLine::INLINING_POSSIBLE;
 }
 
-// This private member function simply counts the number of procedures,
-// which may be found in the current command line
+
+/////////////////////////////////////////////////
+/// \brief This private member function simply
+/// counts the number of procedures,  which may
+/// be found in the current command line.
+///
+/// \param sCommandLine const string&
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t Procedure::countProceduresInLine(const string& sCommandLine)
 {
     size_t nProcedures = 0;
@@ -1993,9 +2186,20 @@ size_t Procedure::countProceduresInLine(const string& sCommandLine)
 	return nProcedures;
 }
 
-// This virutal private member function returns the inlined
-// representation of the selected procedure as a vector containing
-// the single commands
+
+/////////////////////////////////////////////////
+/// \brief This virtual private member function
+/// returns the inlined representation of the
+/// selected procedure as a vector containing the
+/// single commands.
+///
+/// \param sProc const string&
+/// \param sArgumentList const string&
+/// \param sFileName const string&
+/// \param nProcedures size_t
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> Procedure::getInlined(const string& sProc, const string& sArgumentList, const string& sFileName, size_t nProcedures)
 {
     // Prepare a variable factory and get the procedure
@@ -2119,17 +2323,24 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
     return vProcCommandLines;
 }
 
-// This virtual member function handles the gathering of all
-// relevant information for the debugger for the currently
-// found break point
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function handles
+/// the gathering of all relevant information for
+/// the debugger for the currently found
+/// breakpoint.
+///
+/// \param _parser Parser&
+/// \param _option Settings&
+/// \return int
+///
+/////////////////////////////////////////////////
 int Procedure::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
 {
 	// if the stack is empty, it has to be a breakpoint from a script
 	// This is only valid, if the script contained flow control statements
 	if (!NumeReKernel::getInstance()->getDebugger().getStackSize())
-	{
 		return NumeReKernel::evalDebuggerBreakPoint("");
-	}
 
 	// Get a reference to the debugger object
 	NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
@@ -2143,14 +2354,20 @@ int Procedure::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This virtual member function handles
+/// the gathering of all relevant information for
+/// the debugger for the currently found error.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int Procedure::getErrorInformationForDebugger()
 {
     // if the stack is empty, it has to be a breakpoint from a script
 	// This is only valid, if the script contained flow control statements
 	if (!NumeReKernel::getInstance()->getDebugger().getStackSize())
-	{
 		return 0;
-	}
 
 	// Get a reference to the debugger object
 	NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
@@ -2161,9 +2378,15 @@ int Procedure::getErrorInformationForDebugger()
 	return 1;
 }
 
-// This member function will return the current line number
-// depending on whether a flow control statement is evaluated
-// or not
+
+/////////////////////////////////////////////////
+/// \brief This member function will return the
+/// current line number depending on whether a
+/// flow control statement is evaluated or not.
+///
+/// \return unsigned int
+///
+/////////////////////////////////////////////////
 unsigned int Procedure::GetCurrentLine() const
 {
     // Get the line number from FlowCtrl
@@ -2174,10 +2397,24 @@ unsigned int Procedure::GetCurrentLine() const
     return nCurrentLine;
 }
 
-// This member function replaces the procedure occurence
-// between the both passed positions using akronymed version
-// of the called procedure. It also declares the numerical
-// return value as a vector to the parser.
+
+/////////////////////////////////////////////////
+/// \brief This member function replaces the
+/// procedure occurence between the both passed
+/// positions using akronymed version of the
+/// called procedure. It also declares the
+/// numerical return value as a vector to the
+/// parser.
+///
+/// \param sLine string&
+/// \param _parser Parser&
+/// \param _return const Returnvalue&
+/// \param nPos unsigned int
+/// \param nPos2 unsigned int
+/// \param sReplaceName const string&
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnvalue& _return, unsigned int nPos, unsigned int nPos2, const string& sReplaceName)
 {
     // Replace depending on the type
@@ -2221,9 +2458,18 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
 	return 3;
 }
 
-// This member function sets the current procedure object
-// to its original state. It will be called at the end of
-// the executed procedure
+
+/////////////////////////////////////////////////
+/// \brief This member function sets the current
+/// procedure object to its original state. It
+/// will be called at the end of the executed
+/// procedure.
+///
+/// \param _parser Parser&
+/// \param bSupressAnswer bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 {
 	sCallingNameSpace = "main";
@@ -2252,8 +2498,15 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 	return;
 }
 
-// This member function extracts the namespace of the currently
-// executed procedure
+
+/////////////////////////////////////////////////
+/// \brief This member function extracts the
+/// namespace of the currently executed procedure.
+///
+/// \param sProc const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Procedure::extractCurrentNamespace(const string& sProc)
 {
     for (unsigned int i = sProc.length() - 1; i >= 0; i--)
@@ -2289,9 +2542,19 @@ void Procedure::extractCurrentNamespace(const string& sProc)
 		sThisNameSpace = sCallingNameSpace;
 }
 
-// This method handles the definitions of local variables. It will
-// return true, if a definition occured, otherwise false. The return
-// value will be used to create a corresponding byte code
+
+/////////////////////////////////////////////////
+/// \brief This method handles the definitions of
+/// local variables.
+///
+/// \param sProcCommandLine string&
+/// \param sCommand const string&
+/// \return bool
+///
+/// It will return true, if a definition occured,
+/// otherwise false. The return value will be
+/// used to create a corresponding byte code.
+/////////////////////////////////////////////////
 bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string& sCommand)
 {
     // Is it a variable declaration?
@@ -2334,8 +2597,25 @@ bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string
     return false;
 }
 
-// This member function reads the lines from the included file. It
-// acts quite independent from the rest of the procedure
+
+/////////////////////////////////////////////////
+/// \brief This member function reads the lines
+/// from the included file. It acts quite
+/// independent from the rest of the procedure.
+///
+/// \param fInclude ifstream&
+/// \param nIncludeType int
+/// \param _parser Parser&
+/// \param _functions Define&
+/// \param _data Datafile&
+/// \param _out Output&
+/// \param _pData PlotData&
+/// \param _script Script&
+/// \param _option Settings&
+/// \param nth_procedure unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
 void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure)
 {
     string sProcCommandLine;
@@ -2531,10 +2811,22 @@ void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _p
     }
 }
 
-// This member function handles the script include syntax, which
-// one may use in other procedures. The included file is indicated
-// with an "@" and its file name afterwards. This function will
-// decode this syntax and open the corresponding file stream.
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// script include syntax, which one may use in
+/// other procedures.
+///
+/// \param sProcCommandLine string&
+/// \param fInclude ifstream&
+/// \param bReadingFromInclude bool
+/// \return int
+///
+/// The included file is indicated with an "@"
+/// and its file name afterwards. This function
+/// will decode this syntax and open the
+/// corresponding file stream.
+/////////////////////////////////////////////////
 int Procedure::handleIncludeSyntax(string& sProcCommandLine, ifstream& fInclude, bool bReadingFromInclude)
 {
     int nIncludeType = 0;

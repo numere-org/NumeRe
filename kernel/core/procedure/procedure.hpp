@@ -50,6 +50,11 @@ using namespace mu;
 class ProcedureVarFactory;
 
 
+/////////////////////////////////////////////////
+/// \brief This class implements the logic to
+/// evaluate complex procedures, which may be
+/// called recursively.
+/////////////////////////////////////////////////
 class Procedure : public FlowCtrl, public Plugin
 {
     private:
@@ -123,3 +128,5 @@ class Procedure : public FlowCtrl, public Plugin
 };
 
 #endif // PROCEDURE_HPP
+
+

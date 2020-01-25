@@ -22,7 +22,10 @@
 #include "script.hpp"
 #include "../kernel.hpp"
 
-// Default constructor
+
+/////////////////////////////////////////////////
+/// \brief Default constructor
+/////////////////////////////////////////////////
 Script::Script() : FileSystem()
 {
     sScriptFileName = "";
@@ -46,13 +49,23 @@ Script::Script() : FileSystem()
     nIncludeType = 0;
 }
 
-// Specialized constructor taking a script file name as argument
+
+/////////////////////////////////////////////////
+/// \brief Specialized constructor taking a
+/// script file name as argument.
+///
+/// \param _sScriptFileName const string&
+///
+/////////////////////////////////////////////////
 Script::Script(const string& _sScriptFileName) : Script()
 {
     sScriptFileName = _sScriptFileName;
 }
 
-// Destructor
+
+/////////////////////////////////////////////////
+/// \brief Destructor
+/////////////////////////////////////////////////
 Script::~Script()
 {
     if (bScriptOpen)
@@ -61,9 +74,18 @@ Script::~Script()
     }
 }
 
-// This member function removes line comments from a script line.
-// It does not remove documentation lines, if a install section is
-// currently executed and we're inside of a procedure.
+
+/////////////////////////////////////////////////
+/// \brief This member function removes line
+/// comments from a script line.
+///
+/// \param sLine const string&
+/// \return string
+///
+/// It does not remove documentation lines, if an
+/// install section is currently executed and
+/// we're inside of a procedure.
+/////////////////////////////////////////////////
 string Script::stripLineComments(const string& sLine)
 {
     // Comment signs are the only chars? -> return an empty string
@@ -91,9 +113,18 @@ string Script::stripLineComments(const string& sLine)
     return sLine;
 }
 
-// This member function removes block comments from a script line.
-// It does not remove documentation lines, if a install section is
-// currently executed and we're inside of a procedure.
+
+/////////////////////////////////////////////////
+/// \brief This member function removes block
+/// comments from a script line.
+///
+/// \param sLine const string&
+/// \return string
+///
+/// It does not remove documentation lines, if an
+/// install section is currently executed and
+/// we're inside of a procedure.
+/////////////////////////////////////////////////
 string Script::stripBlockComments(const string& sLine)
 {
     // Comment signs are the only chars? -> return an empty string
@@ -142,8 +173,14 @@ string Script::stripBlockComments(const string& sLine)
     return sReturn;
 }
 
-// This member function opens a script with an already defined
-// script file name
+
+/////////////////////////////////////////////////
+/// \brief This member function opens a script
+/// with an already defined script file name.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void Script::openScript()
 {
     // Close an already opened script
@@ -182,8 +219,15 @@ void Script::openScript()
     return;
 }
 
-// This member function opens the script with the passed
-// file name
+
+/////////////////////////////////////////////////
+/// \brief This member function opens the script
+/// with the passed file name.
+///
+/// \param _sScriptFileName string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Script::openScript(string& _sScriptFileName)
 {
     setScriptFileName(_sScriptFileName);
@@ -191,7 +235,14 @@ void Script::openScript(string& _sScriptFileName)
     return;
 }
 
-// This member function closes an opened script
+
+/////////////////////////////////////////////////
+/// \brief This member function closes an opened
+/// script.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void Script::close()
 {
     // If a script is open
@@ -248,8 +299,14 @@ void Script::close()
     return;
 }
 
-// This member function restarts the currently opened
-// script
+
+/////////////////////////////////////////////////
+/// \brief This member function restarts the
+/// currently opened script.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void Script::restart()
 {
     _localDef.reset();
@@ -278,10 +335,17 @@ void Script::restart()
     return;
 }
 
-// This member function closes the script, if the code
-// reached a "return" statement. This function has to be
-// called from the outside, because this class won't
-// track this command
+
+/////////////////////////////////////////////////
+/// \brief This member function closes the script,
+///  if the code reached a "return" statement.
+///
+/// \return void
+///
+/// This function has to be called from the
+/// outside, because this class won't track this
+/// command internally.
+/////////////////////////////////////////////////
 void Script::returnCommand()
 {
     if (bScriptOpen)
@@ -300,8 +364,16 @@ void Script::returnCommand()
     }
 }
 
-// This member function starts the current installation
-// section
+
+/////////////////////////////////////////////////
+/// \brief This member function starts the
+/// current installation section.
+///
+/// \param sScriptCommand string&
+/// \param bFirstPassedInstallCommand bool&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Script::startInstallation(string& sScriptCommand, bool& bFirstPassedInstallCommand)
 {
     // Open the installation logfile
@@ -340,8 +412,17 @@ bool Script::startInstallation(string& sScriptCommand, bool& bFirstPassedInstall
     return true;
 }
 
-// This member function handles the install information
-// tags of the current installation section
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// install information tags of the current
+/// installation section.
+///
+/// \param sScriptCommand string&
+/// \param bFirstPassedInstallCommand bool&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassedInstallCommand)
 {
     unsigned int nNumereVersion = AutoVersion::MAJOR*100+AutoVersion::MINOR*10+AutoVersion::BUILD;
@@ -451,8 +532,16 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
     return true;
 }
 
-// This member function extracts the documentation index entry
-// from the installation section
+
+/////////////////////////////////////////////////
+/// \brief This member function extracts the
+/// documentation index entry from the
+/// installation section.
+///
+/// \param sScriptCommand string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string Script::extractDocumentationIndex(string& sScriptCommand)
 {
     // Extract or search for the documentation index entry
@@ -500,8 +589,16 @@ string Script::extractDocumentationIndex(string& sScriptCommand)
     return sInstallID + " <<>>" + sScriptCommand;
 }
 
-// This member function writes the appended documentation article
-// to the target file
+
+/////////////////////////////////////////////////
+/// \brief This member function writes the
+/// appended documentation article to the target
+/// file.
+///
+/// \param sScriptCommand string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Script::writeDocumentationArticle(string& sScriptCommand)
 {
     // Ensure that the article ID is already present
@@ -599,8 +696,16 @@ void Script::writeDocumentationArticle(string& sScriptCommand)
     sScriptCommand.clear();
 }
 
-// This member function evaluates the flags from the installation
-// information string and also removes unnecessary comments
+
+/////////////////////////////////////////////////
+/// \brief This member function evaluates the
+/// flags from the installation information
+/// string and also removes unnecessary comments.
+///
+/// \param bFirstPassedInstallCommand bool&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Script::evaluateInstallInformation(bool& bFirstPassedInstallCommand)
 {
     if (sInstallInfoString.length() && !bFirstPassedInstallCommand)
@@ -663,11 +768,19 @@ void Script::evaluateInstallInformation(bool& bFirstPassedInstallCommand)
     }
 }
 
-// This member function returns the next valid line from the currently
-// opened script
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the next
+/// valid line from the currently opened script.
+///
+/// \param bFirstPassedInstallCommand bool&
+/// \return string
+///
+/////////////////////////////////////////////////
 string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
 {
     string sScriptCommand;
+    string sDocumentationBuffer;
 
     // Search for the next valid and non-empty line
     // in the current script
@@ -700,7 +813,12 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         // Try to find the end of the current block comment
         if (bBlockComment && sScriptCommand.find("*#") != string::npos)
         {
+            // Append the block comment to the buffered documentation
+            if (sDocumentationBuffer.length())
+                sDocumentationBuffer += sScriptCommand.substr(0, sScriptCommand.find("*#")+2) + "\n";
+
             bBlockComment = false;
+
             if (sScriptCommand.find("*#") == sScriptCommand.length()-2)
             {
                 sScriptCommand.clear();
@@ -711,6 +829,10 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         }
         else if (bBlockComment && sScriptCommand.find("*#") == string::npos)
         {
+            // Append the block comment to the buffered documentation
+            if (sDocumentationBuffer.length())
+                sDocumentationBuffer += sScriptCommand + "\n";
+
             sScriptCommand.clear();
             continue;
         }
@@ -718,7 +840,15 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         // Remove line comments
         if (sScriptCommand.find("##") != string::npos)
         {
+            // Buffer documentation comments, which might probably
+            // be prefixed
+            if (bInstallProcedures && sScriptCommand.substr(0, 3) == "##!")
+                sDocumentationBuffer += sScriptCommand + "\n";
+            else
+                sDocumentationBuffer.clear();
+
             sScriptCommand = stripLineComments(sScriptCommand);
+
             if (!sScriptCommand.length())
                 continue;
         }
@@ -790,6 +920,13 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         // Remove possible block comments
         if (sScriptCommand.find("#*") != string::npos)
         {
+            // Buffer documentation comments, which might probably
+            // be prefixed
+            if (bInstallProcedures && sScriptCommand.substr(0, 3) == "#*!")
+                sDocumentationBuffer += sScriptCommand + "\n";
+            else
+                sDocumentationBuffer.clear();
+
             sScriptCommand = stripBlockComments(sScriptCommand);
 
             if (!sScriptCommand.length())
@@ -799,6 +936,10 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         // Try to find the end of the current block comment
         if (bBlockComment && sScriptCommand.find("*#") != string::npos)
         {
+            // Append the block comment to the buffered documentation
+            if (sDocumentationBuffer.length())
+                sDocumentationBuffer += sScriptCommand.substr(0, sScriptCommand.find("*#")+2) + "\n";
+
             bBlockComment = false;
 
             if (sScriptCommand.find("*#") == sScriptCommand.length()-2)
@@ -811,6 +952,10 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         }
         else if (bBlockComment && sScriptCommand.find("*#") == string::npos)
         {
+            // Append the block comment to the buffered documentation
+            if (sDocumentationBuffer.length())
+                sDocumentationBuffer += sScriptCommand + "\n";
+
             sScriptCommand.clear();
             continue;
         }
@@ -823,11 +968,22 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         Script::close();
     }
 
+    // If the current command is the start of a procedure definition,
+    // append the buffered documentation strings
+    if (sScriptCommand.substr(0, 10) == "procedure ")
+        return sScriptCommand + sDocumentationBuffer;
+
     return sScriptCommand;
 }
 
-// This member function returns the next valid line
-// from the included script
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the next
+/// valid line from the included script.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string Script::getNextScriptCommandFromInclude()
 {
     string sScriptCommand;
@@ -949,8 +1105,16 @@ string Script::getNextScriptCommandFromInclude()
     return sScriptCommand;
 }
 
-// This member function handles the script include
-// syntax ("@SCRIPT") and prepares the included file stream
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// script include syntax ("@SCRIPT") and
+/// prepares the included file stream.
+///
+/// \param sScriptCommand string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string Script::handleIncludeSyntax(string& sScriptCommand)
 {
     // Only accept the including syntax, if we're currently
@@ -1017,8 +1181,16 @@ string Script::handleIncludeSyntax(string& sScriptCommand)
     return sScriptCommand;
 }
 
-// This private member function handles the definition and
-// replacement of local functions
+
+/////////////////////////////////////////////////
+/// \brief This private member function handles
+/// the definition and replacement of local
+/// functions.
+///
+/// \param sScriptCommand string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Script::handleLocalDefinitions(string& sScriptCommand)
 {
     // If the current command contains the command "lclfunc",
@@ -1038,9 +1210,15 @@ bool Script::handleLocalDefinitions(string& sScriptCommand)
     return true;
 }
 
-// This member function is the main interface to the
-// internal managed script. It will always return the
-// next valid script line
+
+/////////////////////////////////////////////////
+/// \brief This member function is the main
+/// interface to the internal managed script. It
+/// will always return the next valid script line.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string Script::getNextScriptCommand()
 {
     string sScriptCommand = "";
@@ -1064,13 +1242,13 @@ string Script::getNextScriptCommand()
         return "";
 
     // Remove line comments from the script command
-    if (sScriptCommand.find("##") != string::npos)
+    if (sScriptCommand.find("##") != string::npos && !bInstallProcedures)
     {
         sScriptCommand = stripLineComments(sScriptCommand);
     }
 
     // Remove block comments from the script command
-    if (sScriptCommand.find("#*") != string::npos)
+    if (sScriptCommand.find("#*") != string::npos && !bInstallProcedures)
         sScriptCommand = stripBlockComments(sScriptCommand);
 
     // Replace "<this>" path tokens with the current script file path
@@ -1126,8 +1304,15 @@ string Script::getNextScriptCommand()
     return sScriptCommand;
 }
 
-// This member function sets the script file name in the
-// internal buffer
+
+/////////////////////////////////////////////////
+/// \brief This member function sets the script
+/// file name in the internal buffer.
+///
+/// \param _sScriptFileName string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Script::setScriptFileName(string& _sScriptFileName)
 {
     if (_sScriptFileName.length())
@@ -1136,7 +1321,14 @@ void Script::setScriptFileName(string& _sScriptFileName)
     return;
 }
 
-// --> gibt den Wert von sScriptFileName (ggf. gekuerzt) zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief Returns a shortened version of the
+/// current script file name.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string Script::getScriptFileNameShort() const
 {
     string sFileName = sScriptFileName;
