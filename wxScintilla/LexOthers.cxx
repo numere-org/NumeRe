@@ -1800,6 +1800,27 @@ int SCI_METHOD LexerNSCR::WordListSet(int n, const char *wl) {
 void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle, IDocument *pAccess)
 {
 	LexAccessor styler(pAccess);
+	int nInstallStart = -1;
+	
+	if (startPos > 0 && (styler.StyleAt(startPos) == SCE_NSCR_INSTALL || styler.StyleAt(startPos-1) == SCE_NSCR_INSTALL || styler.StyleAt(startPos) == SCE_NSCR_PROCEDURE_COMMANDS || styler.StyleAt(startPos-1) == SCE_NSCR_PROCEDURE_COMMANDS))
+	{
+		startPos--;
+		length++;
+		
+		while (startPos > 0 && (styler.StyleAt(startPos) == SCE_NSCR_INSTALL || styler.StyleAt(startPos) == SCE_NSCR_PROCEDURE_COMMANDS))
+		{
+			startPos--;
+			length++;
+		}
+		
+		while (startPos+length < styler.Length() && (styler.StyleAt(startPos+length) == SCE_NSCR_INSTALL || styler.StyleAt(startPos+length) == SCE_NSCR_PROCEDURE_COMMANDS))
+			length++;
+		
+		initStyle = styler.StyleAt(startPos);
+		
+		//if (initStyle == SCE_NSCR_INSTALL)
+		//	initStyle = SCE_NSCR_DEFAULT;
+	}
 
 	int styleBeforeDCKeyword = SCE_NSCR_DEFAULT;
 
@@ -1888,7 +1909,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					"Operator keywords",
 					0,
 					*/
-					if (keywords.InList(s))
+					if (keywords.InList(s) && nInstallStart == -1)
 					{
 						sc.ChangeState(SCE_NSCR_COMMAND);
 					}
@@ -1961,13 +1982,13 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					sc.ForwardSetState(SCE_NSCR_DEFAULT);
 				}
 				break;
-			case SCE_NSCR_INSTALL:
+			/*case SCE_NSCR_INSTALL:
 				if (sc.Match("<endinstall>"))
 				{
 					sc.Forward(12);
 					sc.SetState(SCE_NSCR_DEFAULT);
 				}
-				break;
+				break;*/
 			case SCE_NSCR_FUNCTION:
 			case SCE_NSCR_PROCEDURES:
 				if (sc.ch == ' ' || sc.ch == '(' || sc.atLineStart)
@@ -2026,7 +2047,31 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 				}
 				else if ((sc.ch == '<') && sc.Match("<install>"))
 				{
-					sc.SetState(SCE_NSCR_INSTALL);
+					nInstallStart = sc.currentPos;
+				}
+				else if ((sc.ch == '<') && sc.Match("<endinstall>") && nInstallStart != -1)
+				{
+					styler.Flush();
+					styler.StartAt(nInstallStart);
+					styler.StartSegment(nInstallStart);
+					
+					for (int i = nInstallStart; i <= sc.currentPos; i++)
+					{
+						if (styler.StyleAt(i) == SCE_NSCR_PROCEDURE_COMMANDS)
+						{
+							styler.ColourTo(i-1, SCE_NSCR_INSTALL);
+							
+							while (styler.StyleAt(i+1) == SCE_NSCR_PROCEDURE_COMMANDS)
+								i++;
+							
+							styler.ColourTo(i, SCE_NSCR_PROCEDURE_COMMANDS);
+						}
+					}
+					
+					styler.ColourTo(sc.currentPos+11, SCE_NSCR_INSTALL);
+					sc.Forward(11);
+					//sc.SetState(SCE_NSCR_DEFAULT);
+					nInstallStart = -1;
 				}
 				else
 				{
@@ -2115,12 +2160,14 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
  		}
 		if (options.foldSyntaxBased && (style == SCE_NSCR_IDENTIFIER || style == SCE_NSCR_COMMAND || style == SCE_NSCR_INSTALL || style == SCE_NSCR_PROCEDURE_COMMANDS))
 		{
-			if (styler.Match(i, "endif")
+			bool isCommand = style == SCE_NSCR_COMMAND || style == SCE_NSCR_PROCEDURE_COMMANDS;
+			
+			if (isCommand && (styler.Match(i, "endif")
 				|| styler.Match(i, "endfor")
 				|| styler.Match(i, "endwhile")
 				|| styler.Match(i, "endprocedure")
 				|| styler.Match(i, "endcompose")
-				|| styler.Match(i, "endswitch")
+				|| styler.Match(i, "endswitch"))
 				|| styler.Match(i, "<endinstall>")
 				|| styler.Match(i, "<endinfo>")
 				|| styler.Match(i, "</helpindex>")
@@ -2139,11 +2186,11 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 			}
 			else if (styler.SafeGetCharAt(i-1) != 'd'
 				&& styler.SafeGetCharAt(i-1) != 'e'
-				&& (styler.Match(i, "if ") || styler.Match(i, "if(")
+				&& (isCommand && (styler.Match(i, "if ") || styler.Match(i, "if(")
 					|| styler.Match(i, "for ") || styler.Match(i, "for(")
 					|| styler.Match(i, "while ") || styler.Match(i, "while(")
 					|| styler.Match(i, "switch ") || styler.Match(i, "switch(")
-					|| styler.Match(i, "procedure ") || styler.Match(i, "compose")
+					|| styler.Match(i, "procedure ") || styler.Match(i, "compose"))
 					|| styler.Match(i, "<install>")
 					|| styler.Match(i, "<info>")
 					|| styler.Match(i, "<helpindex>")

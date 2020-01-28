@@ -164,7 +164,7 @@ int CodeFormatter::determineIndentationLevelNSCR(int nLine, int& singleLineInden
 	for (int i = nLineStart; i < nLineEnd; i++)
 	{
 	    // Examine flow control statements
-		if (m_editor->GetStyleAt(i) == wxSTC_NSCR_COMMAND)
+		if (m_editor->GetStyleAt(i) == wxSTC_NSCR_COMMAND || m_editor->GetStyleAt(i) == wxSTC_NSCR_PROCEDURE_COMMANDS)
 		{
 			wxString word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 1, true));
 
@@ -214,25 +214,6 @@ int CodeFormatter::determineIndentationLevelNSCR(int nLine, int& singleLineInden
 						 || word == "</item>"
 						 || word == "</list>")
 					nIndentCount--;
-			}
-			else
-			{
-				word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i, true));
-
-				if (word == "procedure"
-						|| word == "if"
-						|| word == "for"
-						|| word == "while"
-						|| word == "compose")
-					nIndentCount++;
-				else if (word == "endprocedure"
-						 || word == "endif"
-						 || word == "endfor"
-						 || word == "endwhile"
-						 || word == "endcompose")
-					nIndentCount--;
-				else if (word == "else" || word == "elseif")
-					singleLineIndent = -1;
 			}
 
 			if (word.length())

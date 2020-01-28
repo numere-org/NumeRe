@@ -3,3 +3,4 @@ Added	A context menu was added to the dependency viewer, which provides the poss
 Fixed	"datagrid" will now use the size of passed data sets to determine its sample size.
 Fixed	The file tree will now get refreshed as expected.
 Fixed	Documentation comments just before procedures are now copied during installation. The messed up comments in the created procedure file were removed as well.
+Fixed	Flow control statements in install sections should now not be folded erroneously any more.
