@@ -602,7 +602,7 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
 
 
 /////////////////////////////////////////////////
-/// \brief Search the procedure definition in a global file
+/// \brief Search the procedure definition in a global file.
 ///
 /// \param pathname const wxString&
 /// \param procedurename const wxString&
@@ -611,7 +611,7 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
 /// This private member function searches for the procedure
 /// definition in a selected global procedure file. It also
 /// appends the documentation to the definition, so that
-/// it might be shown in the tooltip
+/// it might be shown in the tooltip.
 /////////////////////////////////////////////////
 wxString SearchController::FindProcedureDefinitionInOtherFile(const wxString& pathname, const wxString& procedurename)
 {
@@ -800,7 +800,7 @@ wxString SearchController::FindProcedureDefinitionInOtherFile(const wxString& pa
 
 
 /////////////////////////////////////////////////
-/// \brief Returns the required procedure name for the current file
+/// \brief Returns the required procedure name for the current file.
 ///
 /// \return wxString
 ///
@@ -811,7 +811,7 @@ wxString SearchController::GetNameOfNamingProcedure()
 }
 
 /////////////////////////////////////////////////
-/// \brief Appends the text to the current documentation
+/// \brief Appends the text to the current documentation.
 ///
 /// \param sDocumentation wxString&
 /// \param sNewDocLine const wxString&
@@ -819,11 +819,14 @@ wxString SearchController::GetNameOfNamingProcedure()
 ///
 /// This member function appends a found documentation line to the overall
 /// documentation and converts some TeX-commands into plain
-/// text and rudimentary styling
+/// text and rudimentary styling.
 /////////////////////////////////////////////////
 void SearchController::AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine)
 {
     static bool bBeginEnd = false;
+
+    if (sNewDocLine.find_first_not_of(" \t") == string::npos)
+        return;
 
     // Handle some special TeX commands and rudimentary lists
     if (sNewDocLine.find("\\begin{") != string::npos && sNewDocLine.find("\\end{") == string::npos)
@@ -840,7 +843,7 @@ void SearchController::AppendToDocumentation(wxString& sDocumentation, const wxS
 
         bBeginEnd = false;
     }
-    else if ((sNewDocLine.length() && sNewDocLine.substr(0, 2) == "- ") || bBeginEnd)
+    else if ((sNewDocLine.length() && (sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 2) == "- " || sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 7) == "\\param ")) || bBeginEnd)
     {
         if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != '\n')
             sDocumentation += "\n    ";
@@ -851,18 +854,22 @@ void SearchController::AppendToDocumentation(wxString& sDocumentation, const wxS
             sDocumentation += " ";
     }
 
-    sDocumentation += sNewDocLine;
+    sDocumentation += sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"));
+    size_t nPos = sDocumentation.find("\\procedure{");
+
+    if (nPos != string::npos)
+        sDocumentation.erase(nPos, sDocumentation.find('}', nPos)+1 - nPos);
 }
 
 
 /////////////////////////////////////////////////
-/// \brief Checks layout and finishes styling of the documentation string
+/// \brief Checks layout and finishes styling of the documentation string.
 ///
 /// \param __sDoc const wxString&
 /// \return string
 ///
 /// This member function checks the layout of the found documentations
-/// and applies some special modifications
+/// and applies some special modifications.
 /////////////////////////////////////////////////
 string SearchController::CleanDocumentation(const wxString& __sDoc)
 {
@@ -876,6 +883,24 @@ string SearchController::CleanDocumentation(const wxString& __sDoc)
         if (sDocumentation.back() == ' ' || sDocumentation.back() == '\n')
         {
             sDocumentation.erase(sDocumentation.find_last_not_of(" \n")+1);
+        }
+
+        size_t nPos = sDocumentation.find("\\param ");
+
+        // Resolve "\param" keywords
+        if (nPos != string::npos)
+        {
+            // Insert a headline above the first parameter
+            sDocumentation.insert(nPos, "\n    " + toUpperCase(_guilang.get("GUI_EDITOR_CALLTIP_PROC_PARAMS")) + "\n    ");
+
+            while ((nPos = sDocumentation.find("\\param ")) != string::npos)
+            {
+                sDocumentation.replace(nPos, 6, "-");
+                sDocumentation.insert(sDocumentation.find(' ', sDocumentation.find_first_not_of(' ', nPos+1)), ":");
+
+                if (sDocumentation[sDocumentation.find_first_not_of(' ', nPos+1)] == '_')
+                    sDocumentation.erase(sDocumentation.find_first_not_of(' ', nPos+1), 1);
+            }
         }
 
         // Remove doubled exclamation marks

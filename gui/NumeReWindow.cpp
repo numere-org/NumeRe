@@ -1575,6 +1575,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             OnCreatePackage();
             break;
         }
+        case ID_MENU_CREATE_DOCUMENTATION:
+        {
+            m_currentEd->AddProcedureDocumentation();
+            break;
+        }
 
 		case ID_PROJECT_ADDFILE:
 		{
@@ -2395,7 +2400,9 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
     fHeader << "    string=[b]\"" << endl;
     fHeader << "}" << endl << endl;
     fHeader << "\\newcommand\\realnumberstyle[1]{\\tiny}" << endl;
-    fHeader << "\\newcommand\\oprts[1]{\\textcolor{red}{\\upshape{#1}}}" << endl << endl;
+    fHeader << "\\newcommand\\oprts[1]{\\textcolor{red}{\\upshape{#1}}}" << endl;
+    fHeader << "\\newcommand\\procedure[1]{\\section{Procedure \\$#1()}}" << endl << endl;
+    fHeader << "\\newcommand\\parameters{\\subsection*{Parameters for this procedure}}" << endl << endl;
 
     fHeader << "% Apply a patch for the closing parenthesis" <<  endl;
     fHeader << "\\makeatletter" << endl;
@@ -5083,6 +5090,7 @@ void NumeReWindow::UpdateMenuBar()
 	menuTools->Append(ID_MENU_SORT_SELECTION_ASC, _guilang.get("GUI_MENU_SORT_ASC"), _guilang.get("GUI_MENU_SORT_ASC_TTP"));
 	menuTools->Append(ID_MENU_SORT_SELECTION_DESC, _guilang.get("GUI_MENU_SORT_DESC"), _guilang.get("GUI_MENU_SORT_DESC_TTP"));
 	menuTools->AppendSeparator();
+	menuTools->Append(ID_MENU_CREATE_DOCUMENTATION, _guilang.get("GUI_MENU_CREATE_DOCUMENTATION"), _guilang.get("GUI_MENU_CREATE_DOCUMENTATION_TTP"));
 	menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
     menuTools->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
     menuTools->AppendSeparator();

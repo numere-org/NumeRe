@@ -2742,6 +2742,12 @@ string NumeReEditor::GetStrippedRange(int nPos1, int nPos2, bool encode)
 	while (sTextRange.find("\r\n") != string::npos)
 		sTextRange.replace(sTextRange.find("\r\n"), 2, "\n");
 
+    // Remove documentation comment sequences
+    size_t nCommentSeq;
+
+    while ((nCommentSeq = sTextRange.find("\n##!")) != string::npos)
+        sTextRange.erase(nCommentSeq+1, sTextRange.find_first_not_of(" \t", nCommentSeq+4) - nCommentSeq-1);
+
     // Convert umlauts, if the encode flag
     // has been set
 	if (encode)
@@ -2825,9 +2831,15 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
 				sFileContents += "\\end{lstlisting}\n";
 			}
 
-			sFileContents += parseDocumentation(i + 3, GetLineEndPosition(LineFromPosition(i))) + "\n";
-			i = GetLineEndPosition(LineFromPosition(i)) + 1;
-			startpos = i;
+			int j = i;
+
+			// Find all combined documentation comment lines
+			while (GetStyleAt(j) == wxSTC_NSCR_COMMENT_LINE && GetTextRange(j, j + 3) == "##!")
+                j = PositionFromLine(LineFromPosition(j) + 1);
+
+			sFileContents += parseDocumentation(i + 3, GetLineEndPosition(LineFromPosition(j) - 1)) + "\n";
+			i = j-1;
+			startpos = j-1;
 		}
 		else if (GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE && GetTextRange(i, i + 3) == "##~") // ignore that (escaped comment)
 		{
@@ -2945,7 +2957,7 @@ string NumeReEditor::parseDocumentation(int nPos1, int nPos2)
 			{
 				if (sTextRange.substr(i, 3) == "\n- ")
 				{
-					sTextRange.replace(i + 1, 1, "\\item");
+					sTextRange.replace(i + 1, 1, "\t\\item");
 					continue;
 				}
 
@@ -2954,9 +2966,39 @@ string NumeReEditor::parseDocumentation(int nPos1, int nPos2)
 					if (sTextRange[i] == '\n')
 						sTextRange.insert(i, "\\end{itemize}");
 					else
-						sTextRange += "\\end{itemize}";
+						sTextRange += "\n\\end{itemize}";
 
-					sTextRange.insert(nItemizeStart + 1, "\\begin{itemize}");
+					sTextRange.insert(nItemizeStart + 1, "\\begin{itemize}\n");
+					break;
+				}
+			}
+		}
+	}
+
+	// Handle parameter lists
+	if (sTextRange.find("\n\\param ") != string::npos)
+	{
+		while (sTextRange.find("\n\\param ") != string::npos)
+		{
+			size_t nItemizeStart = sTextRange.find("\n\\param ");
+
+			for (size_t i = nItemizeStart; i < sTextRange.length(); i++)
+			{
+				if (sTextRange.substr(i, 8) == "\n\\param ")
+				{
+					sTextRange.replace(i + 1, 7, "\t\\item !!");
+					sTextRange.insert(sTextRange.find(' ', i+9), "!!:");
+					continue;
+				}
+
+				if ((sTextRange[i] == '\n' && sTextRange.substr(i, 3) != "\n  ") || i + 1 == sTextRange.length())
+				{
+					if (sTextRange[i] == '\n')
+						sTextRange.insert(i, "\\end{itemize}");
+					else
+						sTextRange += "\n\\end{itemize}";
+
+					sTextRange.insert(nItemizeStart + 1, "\\parameters\n\\begin{itemize}\n");
 					break;
 				}
 			}
@@ -7186,6 +7228,66 @@ void NumeReEditor::SynchronizeBreakpoints()
         m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), line);
         line++;
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of documentation blocks in front of
+/// procedure heads.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::AddProcedureDocumentation()
+{
+    if (getFileType() != FILE_NPRC)
+        return;
+
+    // Find the possible start position of the current procedure
+    int nProcedureHeadPosition = m_search->FindCurrentProcedureHead(GetLineEndPosition(GetCurrentLine()));
+
+    // Ensure that the cursor is in the line of the procedure's
+    // head
+    if (LineFromPosition(nProcedureHeadPosition) != GetCurrentLine())
+        return;
+
+    string sProcedureName = m_search->FindMarkedProcedure(nProcedureHeadPosition + 11, false).ToStdString();
+    sProcedureName.erase(sProcedureName.find('('));
+    replaceAll(sProcedureName, "_", "\\_");
+
+    string sDocumentation = "##! \\procedure{" + sProcedureName.substr(1) + "}\r\n##! [Procedure description]";
+
+    // Get the argument list
+    string sFunctionArgumentList = getFunctionArgumentList(LineFromPosition(nProcedureHeadPosition)).ToStdString();
+
+    if (sFunctionArgumentList.length())
+        sDocumentation += "\r\n##!";
+
+    // Separate the argument list and prepare the template
+    while (sFunctionArgumentList.length())
+    {
+        string sCurArg = getNextArgument(sFunctionArgumentList, true);
+        string sDefault;
+
+        // Remove default arguments from the list and store them separately
+        if (sCurArg.find('=') != string::npos)
+        {
+            sDefault = sCurArg.substr(sCurArg.find_first_not_of(" =\t", sCurArg.find('=')));
+            sCurArg.erase(sCurArg.find_last_not_of(" =", sCurArg.find('='))+1);
+        }
+
+        sDocumentation += "\r\n##! \\param " + sCurArg + "  ";
+
+        // Append default parameters, if they are available
+        if (sDefault.length())
+            sDocumentation += "(!!=" + sDefault + "!!) ";
+
+        sDocumentation += "[Parameter description]";
+    }
+
+    // Insert the text before the procedure head
+    InsertText(nProcedureHeadPosition, sDocumentation + "\r\n");
 }
 
 

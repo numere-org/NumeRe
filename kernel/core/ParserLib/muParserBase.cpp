@@ -485,6 +485,7 @@ namespace mu
 		// (tellg returns -1 otherwise causing the parser to ignore the value)
 		string_type sBuf(a_sExpr + _nrT(" ") );
 
+		// TODO: Handle Operations like and(data() == data()) correctly
 		// Perform the pre-evaluation of the vectors first
 		if (sBuf.find('{') != string::npos && sBuf.find('}', sBuf.find('{')) != string::npos)
 		{

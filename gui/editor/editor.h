@@ -230,6 +230,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void RemoveBreakpoint( int linenum );
 		void SynchronizeBreakpoints();
 
+		void AddProcedureDocumentation();
+
 		void SetSyntax(NumeReSyntax* __syntax)
 		{
 			if (!_syntax)
