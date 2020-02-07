@@ -36,6 +36,11 @@ string getArgAtPos(const string&, unsigned int);
 string toUpperCase(const string&);
 string toString(int);
 
+/////////////////////////////////////////////////
+/// \brief This class handles the documentation
+/// index and provides lookup functionalities to
+/// obtain the corresponding article.
+/////////////////////////////////////////////////
 class Documentation : public FileSystem
 {
     private:
@@ -46,6 +51,8 @@ class Documentation : public FileSystem
 
         void updateIndexFile();
         bool loadIndexFile(const string& sIndexFile);
+        int findPositionInDocumentationIndex(const string& sTopic);
+        vector<string> loadDocumentationArticle(const string& sFileName);
 
     public:
         Documentation();
@@ -55,10 +62,10 @@ class Documentation : public FileSystem
         void updateDocIndex(string _sFilename = "<>/update.hlpidx");
         void addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles);
         void removeFromDocIndex(const string& _sID, bool bUseUserLangFiles);
-        vector<string> getHelpArticle(const string& _sTheme);
+        vector<string> getHelpArticle(const string& sTopic);
         vector<string> getDocIndex();
-        string getHelpIdxKey(const string& _sTheme);
-        string getHelpArtclID(const string& _sTheme);
+        string getHelpIdxKey(const string& sTopic);
+        string getHelpArtclID(const string& sTopic);
         string getHelpArticleTitle(const string& _sIdxKey);
 };
 

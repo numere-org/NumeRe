@@ -22,73 +22,117 @@
 
 bool fileExists(const string&);
 
+/////////////////////////////////////////////////
+/// \brief The default constructor
+/////////////////////////////////////////////////
 Documentation::Documentation() : FileSystem()
 {
     vDocIndexTable.reserve(128);
     sDocIndexFile = "<>/numere.hlpidx";
 }
 
+
+/////////////////////////////////////////////////
+/// \brief The destructor closes the internal
+/// file stream, if it is still open.
+/////////////////////////////////////////////////
 Documentation::~Documentation()
 {
     if (fDocument.is_open())
         fDocument.close();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This private member function updates
+/// the documentation index file after an update
+/// or an installation of a plugin.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void Documentation::updateIndexFile()
 {
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
+
+    // Create a valid file name if it still contains
+    // a path placeholder
     if (sDocIndexFile.find("<>") != string::npos)
         sDocIndexFile = FileSystem::ValidFileName(sDocIndexFile, ".hlpidx");
+
     if (fDocument.is_open())
         fDocument.close();
+
+    // Open the documentation index file and truncate its
+    // contents
     fDocument.open(sDocIndexFile.c_str(), ios_base::out | ios_base::trunc);
+
     if (fDocument.fail())
     {
         fDocument.close();
-        //sErrorToken = sDocIndexFile;
         throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDocIndexFile);
     }
-    fDocument << "<!--" << endl;
-    fDocument << "  NumeRe: Framework fuer Numerische Rechnungen" << endl
-              << "  Copyright (C) " << AutoVersion::YEAR << "  Erik Haenel et al." << endl << endl
-              << "  This program is free software: you can redistribute it and/or modify" << endl
-              << "  it under the terms of the GNU General Public License as published by" << endl
-              << "  the Free Software Foundation, either version 3 of the License, or" << endl
-              << "  (at your option) any later version." << endl << endl
-              << "  This program is distributed in the hope that it will be useful," << endl
-              << "  but WITHOUT ANY WARRANTY; without even the implied warranty of" << endl
-              << "  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the" << endl
-              << "  GNU General Public License for more details." << endl << endl
-              << "  You should have received a copy of the GNU General Public License" << endl
-              << "  along with this program.  If not, see <http://www.gnu.org/licenses/>." << endl;
+
+    // Write the copyright comment
+    fDocument << "<!--\n";
+    fDocument << "  NumeRe: Framework fuer Numerische Rechnungen\n"
+              << "  Copyright (C) " << AutoVersion::YEAR << "  Erik Haenel et al.\n\n"
+              << "  This program is free software: you can redistribute it and/or modify\n"
+              << "  it under the terms of the GNU General Public License as published by\n"
+              << "  the Free Software Foundation, either version 3 of the License, or\n"
+              << "  (at your option) any later version.\n\n"
+              << "  This program is distributed in the hope that it will be useful,\n"
+              << "  but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+              << "  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+              << "  GNU General Public License for more details.\n\n"
+              << "  You should have received a copy of the GNU General Public License\n"
+              << "  along with this program.  If not, see <http://www.gnu.org/licenses/>.\n";
     fDocument << "-->" << endl << endl;
 
     fDocument << "<helpindex>" << endl;
-    map<string,int>::iterator mDocIndexIterator;
-    for (int i = 0; i < (int)vDocIndexTable.size(); i++)
+
+    // Write the single documentation index entries
+    for (size_t i = 0; i < vDocIndexTable.size(); i++)
     {
-        fDocument << "\t<article id=\"" << vDocIndexTable[i][0] << "\">" << endl;
-        fDocument << "\t\t<file path=\"" << vDocIndexTable[i][1] << "\" />" << endl;
-        fDocument << "\t\t<title string=\"" << vDocIndexTable[i][2] << "\" idxkey=\"" << vDocIndexTable[i][3] << "\" />" << endl;
-        fDocument << "\t\t<keywords>" << endl;
-        mDocIndexIterator = mDocumentationIndex.begin();
-        for (;mDocIndexIterator != mDocumentationIndex.end(); ++mDocIndexIterator)
+        fDocument << "\t<article id=\"" << vDocIndexTable[i][0] << "\">\n";
+        fDocument << "\t\t<file path=\"" << vDocIndexTable[i][1] << "\" />\n";
+        fDocument << "\t\t<title string=\"" << vDocIndexTable[i][2] << "\" idxkey=\"" << vDocIndexTable[i][3] << "\" />\n";
+        fDocument << "\t\t<keywords>\n";
+
+        // Write the keywords, which correspond to the
+        // current article
+        for (auto mDocIndexIterator = mDocumentationIndex.begin(); mDocIndexIterator != mDocumentationIndex.end(); ++mDocIndexIterator)
         {
             if (mDocIndexIterator->second == i)
-                fDocument << "\t\t\t<keyword>" << mDocIndexIterator->first << "</keyword>" << endl;
+                fDocument << "\t\t\t<keyword>" << mDocIndexIterator->first << "</keyword>\n";
         }
-        fDocument << "\t\t</keywords>" << endl;
-        fDocument << "\t</article>" << endl;
+
+        fDocument << "\t\t</keywords>\n";
+        fDocument << "\t</article>\n";
     }
+
     fDocument << "</helpindex>" << endl;
     fDocument.close();
-    return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function opens the passed
+/// index file and reads its contents to memory.
+///
+/// \param sIndexFile const string&
+/// \return bool
+///
+/// If any of the read article IDs is already in
+/// internal storage, it's links and keywords are
+/// update.
+/////////////////////////////////////////////////
 bool Documentation::loadIndexFile(const string& sIndexFile)
 {
+    // Open the documentation index file for reading
     fDocument.open(FileSystem::ValidFileName(sIndexFile, ".hlpidx").c_str(), ios_base::in);
+
     if (fDocument.fail())
     {
         fDocument.close();
@@ -101,18 +145,23 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
     int nIndex = 0;
     vector<string> vEntry;
 
+    // Read the index file's contents completely to memory
     while (!fDocument.eof())
     {
         getline(fDocument, sLine);
         StripSpaces(sLine);
+
         if (sLine.length())
             sDocIndex += sLine;
     }
+
     fDocument.close();
 
+    // Ignore comment blocks
     while (sDocIndex.length() && sDocIndex.find("<!--") != string::npos)
     {
         unsigned int nEndPos = sDocIndex.find("-->", sDocIndex.find("<!--")+4);
+
         if (nEndPos == string::npos)
             sDocIndex.erase(sDocIndex.find("<!--"));
         else
@@ -120,17 +169,19 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
     }
 
     if (!sDocIndex.length())
-    {
         return false;
-    }
+
     while (sDocIndex.length() > 26)
     {
         if (sDocIndex.find("<article ") == string::npos || sDocIndex.find("</article>") == string::npos)
             break;
+
         sLine = sDocIndex.substr(sDocIndex.find("<article "), sDocIndex.find("</article>")-sDocIndex.find("<article "));
-        sDocIndex.erase(0,sDocIndex.find("</article>")+10);
+        sDocIndex.erase(0, sDocIndex.find("</article>")+10);
+
         if (sLine.find("<file ") == string::npos || sLine.find("<keywords>") == string::npos)
             continue;
+
         vEntry.push_back(getArgAtPos(sLine, sLine.find("id=")+3));
         vEntry.push_back(getArgAtPos(sLine, sLine.find("path=")+5));
         vEntry.push_back(getArgAtPos(sLine, sLine.find("string=")+7));
@@ -140,43 +191,215 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
         if (mDocumentationIndex.find(vEntry.back()) == mDocumentationIndex.end())
         {
             mDocumentationIndex[vEntry.back()] = nIndex;
+
             while (sLine.find("<keyword>") != string::npos)
             {
                 sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
-                sLine.erase(0,sLine.find("</keyword>")+10);
+                sLine.erase(0, sLine.find("</keyword>")+10);
 
                 mDocumentationIndex[sKeyWord] = nIndex;
             }
 
             nIndex++;
-
             vDocIndexTable.push_back(vEntry);
         }
         else
         {
             // overwrite nIndex in this scope
             int nIndex = mDocumentationIndex[vEntry.back()];
-            for (unsigned int i = 0; i < vEntry.size(); i++)
-            {
+
+            for (size_t i = 0; i < vEntry.size(); i++)
                 vDocIndexTable[nIndex][i] = vEntry[i];
-            }
+
             while (sLine.find("<keyword>") != string::npos)
             {
                 sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
-                sLine.erase(0,sLine.find("</keyword>")+10);
+                sLine.erase(0, sLine.find("</keyword>")+10);
 
                 mDocumentationIndex[sKeyWord] = nIndex;
             }
         }
+
         vEntry.clear();
 
         if (sDocIndex == "</helpindex>")
             break;
     }
-    return true;
 
+    return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This private member function returns
+/// the position of the queried topic in the
+/// documentation index table.
+///
+/// \param sTopic const string&
+/// \return int
+///
+/////////////////////////////////////////////////
+int Documentation::findPositionInDocumentationIndex(const string& sTopic)
+{
+    int nIndex = -1;
+    auto iter = mDocumentationIndex.begin();
+    auto firstIndex = mDocumentationIndex.end();
+    auto secondIndex = mDocumentationIndex.end();
+
+    for (int i = sTopic.length(); i > 0; i--)
+    {
+        if (firstIndex != mDocumentationIndex.end())
+            iter = firstIndex;
+        else
+            iter = mDocumentationIndex.begin();
+
+        for (; iter != secondIndex; ++iter)
+        {
+            if (iter->first[0] < sTopic[0])
+                continue;
+
+            if (iter->first[0] == sTopic[0] && firstIndex == mDocumentationIndex.end())
+                firstIndex = iter;
+
+            if (iter->first[0] > sTopic[0])
+            {
+                secondIndex = iter;
+                break;
+            }
+
+            if (iter->first == sTopic.substr(0,i))
+            {
+                nIndex = iter->second;
+                break;
+            }
+        }
+
+        if (nIndex != -1)
+            break;
+    }
+
+    return nIndex;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function loads and
+/// prepares the selected documentation article.
+///
+/// \param sFileName const string&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
+vector<string> Documentation::loadDocumentationArticle(const string& sFileName)
+{
+    fDocument.open(sFileName.c_str(), ios_base::in);
+
+    if (fDocument.fail())
+    {
+        fDocument.close();
+        throw SyntaxError(SyntaxError::HLP_FILE_MISSING, "", SyntaxError::invalid_position, vDocIndexTable[nIndex][1]);
+    }
+
+    while (!fDocument.eof())
+    {
+        getline(fDocument, sLine);
+        StripSpaces(sLine);
+
+        if (!sLine.length())
+            continue;
+
+        while (sLine.find("<!--") != string::npos)
+        {
+            if (sLine.find("-->", sLine.find("<!--")+4) != string::npos)
+                sLine.erase(sLine.find("<!--"), sLine.find("-->", sLine.find("<!--")+4)+3 - sLine.find("<!--"));
+            else
+            {
+                sLine.erase(sLine.find("<!--"));
+                string sLineTemp = "";
+
+                while (!fDocument.eof())
+                {
+                    getline(fDocument, sLineTemp);
+                    StripSpaces(sLineTemp);
+
+                    if (!sLineTemp.length())
+                        continue;
+
+                    if (sLineTemp.find("-->") != string::npos)
+                    {
+                        sLine += sLineTemp.substr(sLineTemp.find("-->")+3);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!sLine.length())
+            continue;
+
+        if (sLine.find("<article ") != string::npos)
+        {
+            if (getArgAtPos(sLine, sLine.find("id=")+3) != vDocIndexTable[nIndex][0])
+            {
+                while (!fDocument.eof())
+                {
+                    getline(fDocument, sLine);
+                    StripSpaces(sLine);
+
+                    if (!sLine.length())
+                        continue;
+
+                    if (sLine.find("</article>") != string::npos)
+                        break;
+                }
+
+                continue;
+            }
+
+            sLine.erase(0, sLine.find('>', sLine.find("<article "))+1);
+            StripSpaces(sLine);
+
+            if (!sLine.length())
+                continue;
+        }
+
+        if (sLine.find("<title ") != string::npos)
+        {
+            vReturn.push_back(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7));
+            sLine.erase(0, sLine.find("/>", sLine.find("<title "))+2);
+            StripSpaces(sLine);
+
+            if (!sLine.length())
+                continue;
+        }
+
+        if (sLine.find("</article>") != string::npos)
+        {
+            sLine.erase(sLine.find("</article>"));
+            StripSpaces(sLine);
+
+            if (!sLine.length());
+                break;
+        }
+
+        vReturn.push_back(sLine);
+    }
+
+    fDocument.close();
+
+    if (!vReturn.size())
+        vReturn.push_back("NO_ENTRY_FOUND");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function loads the index
+/// files to memory.
+///
+/// \param bLoadUserLangFiles bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void Documentation::loadDocIndex(bool bLoadUserLangFiles)
 {
     if (sDocIndexFile.find("<>") != string::npos)
@@ -184,47 +407,32 @@ void Documentation::loadDocIndex(bool bLoadUserLangFiles)
 
     if (!bLoadUserLangFiles)
     {
-        /*if (!fileExists(sDocIndexFile))
-        {
-            cerr << endl << " ERROR: Documentation index was not found." << endl;
-            return;
-        }*/
         if (!loadIndexFile(sDocIndexFile))
         {
             if (fileExists(FileSystem::ValidFileName("<>/update.hlpidx", ".hlpidx")))
-            {
-                if (!loadIndexFile("<>/update.hlpidx"))
-                {
-                    cerr << endl << " ERROR: Documentation index could not be read." << endl;
-                    return;
-                }
-            }
-            else
-            {
-                cerr << endl << " ERROR: Documentation index could not be read." << endl;
-                return;
-            }
-        }
+                loadIndexFile("<>/update.hlpidx");        }
     }
     else if (bLoadUserLangFiles && fileExists(FileSystem::ValidFileName("<>/user/numere.hlpidx", ".hlpidx")))
-    {
-        if (!loadIndexFile("<>/user/numere.hlpidx"))
-        {
-            cerr << endl << " ERROR: User documentation index could not be read." << endl;
-        }
-    }
-
-    return;
+        loadIndexFile("<>/user/numere.hlpidx");
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function updates the
+/// documentation index file based upon the
+/// passed update file.
+///
+/// \param _sFilename string
+/// \return void
+///
+/////////////////////////////////////////////////
 void Documentation::updateDocIndex(string _sFilename)
 {
-    _sFilename = FileSystem::ValidFileName(_sFilename, ".hlpidx");
+    /*_sFilename = FileSystem::ValidFileName(_sFilename, ".hlpidx");
+
     if (!vDocIndexTable.size())
-    {
-        cerr << endl << " ERROR: A documentation index was not loaded." << endl;
         return;
-    }
+
     string sLine = "";
     string sDocIndex = "";
     string sKeyWord = "";
@@ -233,11 +441,12 @@ void Documentation::updateDocIndex(string _sFilename)
 
     if (fDocument.is_open())
         fDocument.close();
+
     fDocument.open(_sFilename.c_str(), ios_base::in);
+
     if (fDocument.fail())
     {
         fDocument.close();
-        cerr << endl << " ERROR: Could not update documentation index." << endl;
         return;
     }
 
@@ -245,14 +454,17 @@ void Documentation::updateDocIndex(string _sFilename)
     {
         getline(fDocument, sLine);
         StripSpaces(sLine);
+
         if (sLine.length())
             sDocIndex += sLine;
     }
+
     fDocument.close();
 
     while (sDocIndex.length() && sDocIndex.find("<!--") != string::npos)
     {
         unsigned int nEndPos = sDocIndex.find("-->", sDocIndex.find("<!--")+4);
+
         if (nEndPos == string::npos)
             sDocIndex.erase(sDocIndex.find("<!--"));
         else
@@ -260,22 +472,24 @@ void Documentation::updateDocIndex(string _sFilename)
     }
 
     if (!sDocIndex.length())
-    {
-        cerr << endl << " ERROR: Documentation index update file could not be read." << endl;
         return;
-    }
+
     while (sDocIndex.length() > 26)
     {
         if (sDocIndex.find("<article ") == string::npos || sDocIndex.find("</article>") == string::npos)
             break;
+
         sLine = sDocIndex.substr(sDocIndex.find("<article "), sDocIndex.find("</article>")-sDocIndex.find("<article "));
         sDocIndex.erase(0,sDocIndex.find("</article>")+10);
+
         if (sLine.find("<file ") == string::npos || sLine.find("<keywords>") == string::npos)
             continue;
+
         vEntry.push_back(getArgAtPos(sLine, sLine.find("id=")+3));
         vEntry.push_back(getArgAtPos(sLine, sLine.find("path=")+5));
         vEntry.push_back(getArgAtPos(sLine, sLine.find("string=")+7));
         vEntry.push_back(getArgAtPos(sLine, sLine.find("idxkey=")+7));
+
         for (unsigned int i = 0; i < vDocIndexTable.size(); i++)
         {
             if (vEntry[0] == vDocIndexTable[i][0])
@@ -294,6 +508,7 @@ void Documentation::updateDocIndex(string _sFilename)
                 break;
             }
         }
+
         if (vEntry.size())
         {
             vDocIndexTable.push_back(vEntry);
@@ -301,6 +516,7 @@ void Documentation::updateDocIndex(string _sFilename)
         }
         else
             continue;
+
         while (sLine.find("<keyword>") != string::npos)
         {
             sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
@@ -310,9 +526,12 @@ void Documentation::updateDocIndex(string _sFilename)
         }
 
         nIndex++;
+
         if (sDocIndex == "</helpindex>")
             break;
-    }
+    }*/
+
+    loadIndexFile(_sFilename);
 
     try
     {
@@ -327,17 +546,31 @@ void Documentation::updateDocIndex(string _sFilename)
     return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to add
+/// documentation index entries to the index
+/// during a plugin or package installation.
+///
+/// \param _sIndexToAdd string&
+/// \param bUseUserLangFiles bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
 {
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
+    // Load default documentation index, if the user uses
+    // custom language files
     if (bUseUserLangFiles)
     {
         vDocIndexTable.clear();
         mDocumentationIndex.clear();
         loadDocIndex(false);
     }
+
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
@@ -346,18 +579,25 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
     vector<string> vEntry;
     int nIndex = vDocIndexTable.size();
 
+    // Parse the added documentation index entry and
+    // insert it in the index
     while (_sIndexToAdd.length() > 26)
     {
         if (_sIndexToAdd.find("<article ") == string::npos || _sIndexToAdd.find("</article>") == string::npos)
             break;
+
         sLine = _sIndexToAdd.substr(_sIndexToAdd.find("<article "), _sIndexToAdd.find("</article>")-_sIndexToAdd.find("<article "));
         _sIndexToAdd.erase(0,_sIndexToAdd.find("</article>")+10);
+
         if (sLine.find("<keywords>") == string::npos)
             continue;
+
         vEntry.push_back(getArgAtPos(sLine, sLine.find("id=")+3));
         vEntry.push_back("<>/docs/plugins/" + vEntry[0]);
         vEntry.push_back(getArgAtPos(sLine, sLine.find("string=")+7));
         vEntry.push_back(getArgAtPos(sLine, sLine.find("idxkey=")+7));
+
+        // Separate the keywords
         for (unsigned int i = 0; i < vDocIndexTable.size(); i++)
         {
             if (vEntry[0] == vDocIndexTable[i][0])
@@ -376,6 +616,7 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
                 break;
             }
         }
+
         if (vEntry.size())
         {
             vDocIndexTable.push_back(vEntry);
@@ -383,6 +624,7 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
         }
         else
             continue;
+
         while (sLine.find("<keyword>") != string::npos)
         {
             sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
@@ -392,38 +634,56 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
         }
 
         nIndex++;
+
         if (_sIndexToAdd == "</helpindex>")
             break;
     }
 
+    // Update the index file with the new content
     updateIndexFile();
 
+    // Load custom language files, if necessary
     if (bUseUserLangFiles)
         loadDocIndex(true);
-
-    return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function removes the index
+/// entry passed to the function from the
+/// documentation index.
+///
+/// \param _sID const string&
+/// \param bUseUserLangFiles bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFiles)
 {
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
+
     if (_sID == "<<NO_HLP_ENTRY>>")
         return;
+
+    // Load default index file, if the user
+    // uses custom language files
     if (bUseUserLangFiles)
     {
         vDocIndexTable.clear();
         mDocumentationIndex.clear();
         loadDocIndex(false);
     }
-    map<string,int>::iterator iter = mDocumentationIndex.begin();
-    vector<vector<string> >::iterator vIter = vDocIndexTable.begin();
 
-    for (unsigned int i = 0; i < vDocIndexTable.size(); i++)
+    // Search the documentation ID in the documentation
+    // index table
+    for (size_t i = 0; i < vDocIndexTable.size(); i++)
     {
         if (vDocIndexTable[i][0] == _sID)
         {
-            for (; iter != mDocumentationIndex.end(); ++iter)
+            // Search the keywords corresponding to the
+            // position in the documentation index table
+            for (auto iter = mDocumentationIndex.begin(); iter != mDocumentationIndex.end(); ++iter)
             {
                 if (iter->second == (int)i)
                 {
@@ -433,23 +693,36 @@ void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFile
                 }
                 else if (iter->second > (int)i)
                 {
+                    // Reassign the correct postion in the
+                    // table to the following entries
                     (iter->second)--;
                 }
             }
-            vDocIndexTable.erase(vIter+i);
+
+            vDocIndexTable.erase(vDocIndexTable.begin()+i);
             break;
         }
     }
 
+    // Update the file after the removal
     updateIndexFile();
 
+    // Load custom languge files, if necessary
     if (bUseUserLangFiles)
         loadDocIndex(true);
-
-    return;
 }
 
-vector<string> Documentation::getHelpArticle(const string& _sTheme)
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// documentation article, which corresponds to
+/// the passed documentation topic.
+///
+/// \param sTopic const string&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
+vector<string> Documentation::getHelpArticle(const string& sTopic)
 {
     vector<string> vReturn;
     int nIndex = -1;
@@ -458,156 +731,51 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
-    if (_sTheme != "idx" && _sTheme != "index")
+    if (sTopic != "idx" && sTopic != "index")
     {
-        map<string,int>::iterator iter = mDocumentationIndex.begin();
-        map<string,int>::iterator firstIndex = mDocumentationIndex.end();
-        map<string,int>::iterator secondIndex = mDocumentationIndex.end();
-        for (unsigned int i = _sTheme.length(); i > 0; i--)
-        {
-            if (firstIndex != mDocumentationIndex.end())
-                iter = firstIndex;
-            else
-                iter = mDocumentationIndex.begin();
-            //int n = 0;
-            for (; iter != secondIndex; ++iter)
-            {
-                if (iter->first[0] < _sTheme[0])
-                    continue;
-                if (iter->first[0] == _sTheme[0] && firstIndex == mDocumentationIndex.end())
-                    firstIndex = iter;
-                if (iter->first[0] > _sTheme[0])
-                {
-                    secondIndex = iter;
-                    break;
-                }
-                //cerr << iter->first << endl;
-                if (iter->first == _sTheme.substr(0,i))
-                {
-                    nIndex = iter->second;
-                    break;
-                }
-                //n++;
-            }
-            if (nIndex != -1)
-                break;
-        }
+        nIndex = findPositionInDocumentationIndex(sTopic);
 
         if (nIndex != -1)
         {
             if (fDocument.is_open())
                 fDocument.close();
+
             if (vDocIndexTable[nIndex][1].find("<>") != string::npos)
                 vDocIndexTable[nIndex][1] = FileSystem::ValidFileName(vDocIndexTable[nIndex][1], ".nhlp");
-            fDocument.open(vDocIndexTable[nIndex][1].c_str(), ios_base::in);
-            if (fDocument.fail())
-            {
-                fDocument.close();
-                //sErrorToken = vDocIndexTable[nIndex][1];
-                throw SyntaxError(SyntaxError::HLP_FILE_MISSING, "", SyntaxError::invalid_position, vDocIndexTable[nIndex][1]);
-            }
 
-            while (!fDocument.eof())
-            {
-                getline(fDocument, sLine);
-                StripSpaces(sLine);
-                if (!sLine.length())
-                    continue;
-                while (sLine.find("<!--") != string::npos)
-                {
-                    if (sLine.find("-->", sLine.find("<!--")+4) != string::npos)
-                    {
-                        sLine.erase(sLine.find("<!--"), sLine.find("-->", sLine.find("<!--")+4)+3 - sLine.find("<!--"));
-                    }
-                    else
-                    {
-                        sLine.erase(sLine.find("<!--"));
-                        string sLineTemp = "";
-                        while (!fDocument.eof())
-                        {
-                            getline(fDocument, sLineTemp);
-                            StripSpaces(sLineTemp);
-                            if (!sLineTemp.length())
-                                continue;
-                            if (sLineTemp.find("-->") != string::npos)
-                            {
-                                sLine += sLineTemp.substr(sLineTemp.find("-->")+3);
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (!sLine.length())
-                    continue;
-                if (sLine.find("<article ") != string::npos)
-                {
-                    if (getArgAtPos(sLine, sLine.find("id=")+3) != vDocIndexTable[nIndex][0])
-                    {
-                        while (!fDocument.eof())
-                        {
-                            getline(fDocument, sLine);
-                            StripSpaces(sLine);
-                            if (!sLine.length())
-                                continue;
-                            if (sLine.find("</article>") != string::npos)
-                                break;
-                        }
-                        continue;
-                    }
-                    sLine.erase(0, sLine.find('>', sLine.find("<article "))+1);
-                    StripSpaces(sLine);
-                    if (!sLine.length())
-                        continue;
-                }
-                if (sLine.find("<title ") != string::npos)
-                {
-                    vReturn.push_back(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7));
-                    sLine.erase(0, sLine.find("/>", sLine.find("<title "))+2);
-                    StripSpaces(sLine);
-                    if (!sLine.length())
-                        continue;
-                }
-                if (sLine.find("</article>") != string::npos)
-                {
-                    sLine.erase(sLine.find("</article>"));
-                    StripSpaces(sLine);
-                    if (!sLine.length());
-                        break;
-                }
-                vReturn.push_back(sLine);
-            }
-            fDocument.close();
-            if (!vReturn.size())
-                vReturn.push_back("NO_ENTRY_FOUND");
+            return loadDocumentationArticle(vDocIndexTable[nIndex][1]);
         }
         else
-        {
             vReturn.push_back("NO_ENTRY_FOUND");
-        }
     }
     else
     {
         string sKeyList = "";
         vReturn.push_back("Index");
         map<string,string> mIdx;
-        for (unsigned int i = 0; i < vDocIndexTable.size(); i++)
+
+        for (size_t i = 0; i < vDocIndexTable.size(); i++)
         {
             sKeyList = vDocIndexTable[i][3];
+
             while (sKeyList.find(',') != string::npos)
             {
                 mIdx[sKeyList.substr(0,sKeyList.find(','))] = vDocIndexTable[i][2];
                 sKeyList.erase(0,sKeyList.find(',')+1);
                 StripSpaces(sKeyList);
             }
+
             mIdx[sKeyList] = vDocIndexTable[i][2];
         }
-        map<string,string>::iterator iter = mIdx.begin();
+
         vReturn.push_back(_lang.get("DOCHELPER_KEYWORDS_AND_ARTICLES")+ ":");
         vReturn.push_back("<list>");
-        for (; iter != mIdx.end(); ++iter)
+
+        for (auto iter = mIdx.begin(); iter != mIdx.end(); ++iter)
         {
             vReturn.push_back("<item node=\"" + iter->first + "\">" + iter->second + "</item>");
         }
+
         vReturn.push_back("</list>");
         vReturn.push_back(_lang.get("DOCHELPER_KEYWORDS_AND_ARTICLES_NUMBERS", toString((int)vReturn.size()-4), toString((int)vDocIndexTable.size())));
     }
@@ -615,13 +783,25 @@ vector<string> Documentation::getHelpArticle(const string& _sTheme)
     return vReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// key list for the documentation index prepared
+/// for the corresponding tree in the
+/// documentation browser.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> Documentation::getDocIndex()
 {
     vector<string> vReturn;
     list<string> lIndex;
     string sKeyList;
 
-    for (unsigned int i = 0; i < vDocIndexTable.size(); i++)
+    // Go through the index table and extract the
+    // key list
+    for (size_t i = 0; i < vDocIndexTable.size(); i++)
     {
         sKeyList = vDocIndexTable[i][3];
 
@@ -631,6 +811,7 @@ vector<string> Documentation::getDocIndex()
             sKeyList.erase(0,sKeyList.find(',')+1);
             StripSpaces(sKeyList);
         }
+
         lIndex.push_back(sKeyList);
     }
 
@@ -641,124 +822,67 @@ vector<string> Documentation::getDocIndex()
     return vReturn;
 }
 
-string Documentation::getHelpIdxKey(const string& _sTheme)
-{
-    int nIndex = -1;
-    string sReturn = "";
-    map<string,int>::iterator iter = mDocumentationIndex.begin();
-    map<string,int>::iterator firstIndex = mDocumentationIndex.end();
-    map<string,int>::iterator secondIndex = mDocumentationIndex.end();
 
-    for (unsigned int i = _sTheme.length(); i > 0; i--)
-    {
-        if (firstIndex != mDocumentationIndex.end())
-            iter = firstIndex;
-        else
-            iter = mDocumentationIndex.begin();
-        //int n = 0;
-        for (; iter != secondIndex; ++iter)
-        {
-            if (iter->first[0] < _sTheme[0])
-                continue;
-            if (iter->first[0] == _sTheme[0] && firstIndex == mDocumentationIndex.end())
-                firstIndex = iter;
-            if (iter->first[0] > _sTheme[0])
-            {
-                secondIndex = iter;
-                break;
-            }
-            //cerr << iter->first << endl;
-            if (iter->first == _sTheme.substr(0,i))
-            {
-                nIndex = iter->second;
-                break;
-            }
-            //n++;
-        }
-        if (nIndex != -1)
-            break;
-    }
+/////////////////////////////////////////////////
+/// \brief This member function returns an index
+/// key, which corresponds to the queried topic.
+///
+/// \param sTopic const string&
+/// \return string
+///
+/////////////////////////////////////////////////
+string Documentation::getHelpIdxKey(const string& sTopic)
+{
+    int nIndex = findPositionInDocumentationIndex(sTopic);
+    string sReturn = "";
+
     if (nIndex == -1)
         return "<<NONE>>";
+
     sReturn = vDocIndexTable[nIndex][3];
+
     if (sReturn.find(',') != string::npos)
         sReturn.erase(sReturn.find(','));
+
     return sReturn;
 }
 
-string Documentation::getHelpArtclID(const string& _sTheme)
-{
-    map<string,int>::iterator iter = mDocumentationIndex.begin();
-    map<string,int>::iterator firstIndex = mDocumentationIndex.end();
-    map<string,int>::iterator secondIndex = mDocumentationIndex.end();
 
-    for (unsigned int i = _sTheme.length(); i > 0; i--)
-    {
-        if (firstIndex != mDocumentationIndex.end())
-            iter = firstIndex;
-        else
-            iter = mDocumentationIndex.begin();
-        //int n = 0;
-        for (; iter != secondIndex; ++iter)
-        {
-            if (iter->first[0] < _sTheme[0])
-                continue;
-            if (iter->first[0] == _sTheme[0] && firstIndex == mDocumentationIndex.end())
-                firstIndex = iter;
-            if (iter->first[0] > _sTheme[0])
-            {
-                secondIndex = iter;
-                break;
-            }
-            //cerr << iter->first << endl;
-            if (iter->first == _sTheme.substr(0,i))
-            {
-                return vDocIndexTable[iter->second][0];
-            }
-            //n++;
-        }
-    }
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// article ID corresponding to the queried topic.
+///
+/// \param sTopic const string&
+/// \return string
+///
+/////////////////////////////////////////////////
+string Documentation::getHelpArtclID(const string& sTopic)
+{
+    int nIndex = findPositionInDocumentationIndex(sTopic);
+
+    if (nIndex != -1)
+        return vDocIndexTable[nIndex][0];
+
     return "NO_ENTRY_FOUND";
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// documentation article title corresponding to
+/// the queried index key.
+///
+/// \param _sIdxKey const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string Documentation::getHelpArticleTitle(const string& _sIdxKey)
 {
-    int nIndex = -1;
-    map<string,int>::iterator iter = mDocumentationIndex.begin();
-    map<string,int>::iterator firstIndex = mDocumentationIndex.end();
-    map<string,int>::iterator secondIndex = mDocumentationIndex.end();
+    int nIndex = findPositionInDocumentationIndex(sTopic);
 
-    for (unsigned int i = _sIdxKey.length(); i > 0; i--)
-    {
-        if (firstIndex != mDocumentationIndex.end())
-            iter = firstIndex;
-        else
-            iter = mDocumentationIndex.begin();
-        //int n = 0;
-        for (; iter != secondIndex; ++iter)
-        {
-            if (iter->first[0] < _sIdxKey[0])
-                continue;
-            if (iter->first[0] == _sIdxKey[0] && firstIndex == mDocumentationIndex.end())
-                firstIndex = iter;
-            if (iter->first[0] > _sIdxKey[0])
-            {
-                secondIndex = iter;
-                break;
-            }
-            //cerr << iter->first << endl;
-            if (iter->first == _sIdxKey.substr(0,i))
-            {
-                nIndex = iter->second;
-                break;
-            }
-            //n++;
-        }
-        if (nIndex != -1)
-            break;
-    }
     if (nIndex == -1)
         return "<<NONE>>";
+
     return vDocIndexTable[nIndex][2];
 }
 
