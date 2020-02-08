@@ -38,6 +38,8 @@ static double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemove
 static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option);
 static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
 static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option);
+static map<string,string> createMatrixFunctionsMap();
+static bool containsMatrices(const string& sExpr, Datafile& _data);
 
 
 
@@ -83,7 +85,19 @@ static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const str
 static std::vector<double> parser_getUniqueList(std::list<double>& _list);
 static void parser_fillMissingMatrixElements(Matrix& _mMatrix);
 
-// This is the main interface to the matrix operations
+
+/////////////////////////////////////////////////
+/// \brief This function is the main interface to
+/// the matrix operations.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     vector<Indices> vIndices;
@@ -97,10 +111,6 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, Defi
     bool bAllowMatrixClearing = false;
     bool isCluster = false;
 
-    // 1. Objekte ersetzen cmd
-    // 2. Vektoren deklarieren
-    // 3. Evalschleife durchführen
-
     // Kommando entfernen
     if (findCommand(sCmd).sString == "matop")
         sCmd.erase(0, findCommand(sCmd).nPos+5);
@@ -111,35 +121,9 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, Defi
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
-    if (sCmd.find("data(") == string::npos
-        && !_data.containsTablesOrClusters(sCmd)
-        && sCmd.find("{") == string::npos
-        && sCmd.find("det(") == string::npos
-        && sCmd.find("invert(") == string::npos
-        && sCmd.find("transpose(") == string::npos
-        && sCmd.find("zero(") == string::npos
-        && sCmd.find("one(") == string::npos
-        && sCmd.find("matfl(") == string::npos
-        && sCmd.find("matflf(") == string::npos
-        && sCmd.find("matfc(") == string::npos
-        && sCmd.find("matfcf(") == string::npos
-        && sCmd.find("diag(") == string::npos
-        && sCmd.find("solve(") == string::npos
-        && sCmd.find("cross(") == string::npos
-        && sCmd.find("eigenvals(") == string::npos
-        && sCmd.find("eigenvects(") == string::npos
-        && sCmd.find("diagonalize(") == string::npos
-        && sCmd.find("trace(") == string::npos
-        && sCmd.find("size(") == string::npos
-        && sCmd.find("and(") == string::npos
-        && sCmd.find("or(") == string::npos
-        && sCmd.find("xor(") == string::npos
-        && sCmd.find("reshape(") == string::npos
-        && sCmd.find("resize(") == string::npos
-        && sCmd.find("logtoidx(") == string::npos
-        && sCmd.find("idxtolog(") == string::npos
-        && sCmd.find("unique(") == string::npos
-        && sCmd.find("identity(") == string::npos)
+    // Ensure that there's at least a single
+    // matrix operation available
+    if (!containsMatrices(sCmd, _data))
         throw SyntaxError(SyntaxError::NO_MATRIX_FOR_MATOP, sCmd, SyntaxError::invalid_position);
 
     // Rekursive Ausdruecke ersetzen
@@ -274,13 +258,26 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, Defi
         }
     }
 
+    // Display the result in the terminal
     parser_ShowMatrixResult(_mResult, _option);
 
     return true;
 }
 
-// This is the actual worker function for matrix operations.
-// It will be called recursively.
+
+/////////////////////////////////////////////////
+/// \brief This is the actual worker function
+/// for matrix operations. It will be called
+/// recursively for functions and parentheses.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     string __sCmd;
@@ -979,14 +976,34 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
                     {
                         __sCmd += sCmd.substr(pos_back, i-pos_back);
                     }
+
                     vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
                     __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
                 }
                 else
                 {
-                    __sCmd += sCmd.substr(pos_back, i-pos_back);
-                    vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
-                    __sCmd += "(_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"])";
+                    __sCmd += sCmd.substr(pos_back, i-pos_back) + "(";
+
+                    // As this might be a usual function, evaluate each argument
+                    // separately (if it is matrix expression) and combine them
+                    // afterwards
+                    while (sSubExpr.length())
+                    {
+                        string sExpr = getNextArgument(sSubExpr, true);
+
+                        if (containsMatrices(sExpr, _data))
+                        {
+                            vReturnedMatrices.push_back(parser_subMatrixOperations(sExpr, _parser, _data, _functions, _option));
+                            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+                        }
+                        else
+                            __sCmd += sExpr;
+
+                        if (sSubExpr.length())
+                            __sCmd += ",";
+                    }
+
+                    __sCmd += ")";
                 }
                 pos_back = closing_par_pos+1;
                 i = pos_back-1;
@@ -1379,25 +1396,51 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
     return _mResult;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function will search for
+/// the position of the next (left-hand) matrix
+/// multiplication operator.
+///
+/// \param sCmd const string&
+/// \param nLastPos size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
 static size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos)
 {
     int nQuotes = 0;
+
     for (int i = nLastPos; i >= 0; i--)
     {
         if (sCmd[i] == '(' || sCmd[i] == '{')
             nQuotes++;
+
         if (sCmd[i] == ')' || sCmd[i] == '}')
             nQuotes--;
+
         if (!(nQuotes%2) && sCmd.substr(i,2) == "**")
             return i;
     }
+
     return 0;
 }
 
 
 
 
-
+/////////////////////////////////////////////////
+/// \brief This static function performs the
+/// multiplication of two matrices.
+///
+/// \param _mLeft const Matrix&
+/// \param _mRight const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mResult;
@@ -1454,6 +1497,16 @@ static Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _m
     return _mResult;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function will transpose
+/// the passed matrix (exchange rows with
+/// columns).
+///
+/// \param _mMatrix const Matrix&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 Matrix transposeMatrix(const Matrix& _mMatrix)
 {
     Matrix _mTransposed;
@@ -1468,6 +1521,15 @@ Matrix transposeMatrix(const Matrix& _mMatrix)
     return _mTransposed;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function returns an
+/// identity matrix of the defined size.
+///
+/// \param nSize unsigned int
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_IdentityMatrix(unsigned int nSize)
 {
     Matrix _mIdentity;
@@ -1487,6 +1549,17 @@ static Matrix parser_IdentityMatrix(unsigned int nSize)
     return _mIdentity;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function returns a matrix
+/// filled with ones with the defined lines and
+/// columns.
+///
+/// \param nLines unsigned int
+/// \param nCols unsigned int
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols)
 {
     Matrix _mOnes;
@@ -1498,6 +1571,18 @@ static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols)
     return _mOnes;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function returns a matrix filled
+/// with zeros with the defined lines and columns.
+///
+/// \param nLines unsigned int
+/// \param nCols unsigned int
+/// \return Matrix
+///
+/// This function is not static, because it is
+/// used from somewhere else.
+/////////////////////////////////////////////////
 Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols)
 {
     Matrix _mZeroes;
@@ -1507,6 +1592,18 @@ Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols)
     return _mZeroes;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function calculates the
+/// inverse of the passed matrix, if it exists.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     //cerr << _mMatrix.size() << "  " << _mMatrix[0].size() << endl;
@@ -1631,16 +1728,58 @@ static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, co
     return _mInverse;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function creates a matrix
+/// from the passed columns.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return Matrix
+///
+/// Missing elements are filled up with zeros.
+/////////////////////////////////////////////////
 static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     return transposeMatrix(parser_matFromLines(sCmd, _parser, _data, _functions, _option));
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function creates a matrix
+/// from the passed columns.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return Matrix
+///
+/// Missing elements are filled up logically.
+/////////////////////////////////////////////////
 static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     return transposeMatrix(parser_matFromLinesFilled(sCmd, _parser, _data, _functions, _option));
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function creates a matrix
+/// from the passed lines.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return Matrix
+///
+/// Missing elements are filled up with zeros.
+/////////////////////////////////////////////////
 static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     Matrix _matfl;
@@ -1686,6 +1825,20 @@ static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data
     return _matfl;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function creates a matrix
+/// from the passed lines.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return Matrix
+///
+/// Missing elements are filled up logically.
+/////////////////////////////////////////////////
 static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     Matrix _matfl;
@@ -1743,6 +1896,19 @@ static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile&
     return _matfl;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function is used to
+/// calculate the differences between consecutive
+/// matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param nLine unsigned int
+/// \return vector<double>
+///
+/// This function is used by the \c matf*f()
+/// functions to derive the filling logic.
+/////////////////////////////////////////////////
 static vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLine)
 {
     vector<double> vDeltas;
@@ -1753,6 +1919,20 @@ static vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLi
     return vDeltas;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function creates a
+/// diagonal matrix with the passed elements in
+/// its main diagonal.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     Matrix _diag;
@@ -1793,6 +1973,18 @@ static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _da
     return _diag;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function returns the
+/// determinant of the passed matrix.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = parser_IdentityMatrix(1);
@@ -1805,6 +1997,17 @@ static Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, 
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function calculates the
+/// determinant of the passed matrix using the
+/// LaPlace algorithm.
+///
+/// \param _mMatrix const Matrix&
+/// \param vRemovedLines vector<int>
+/// \return double
+///
+/////////////////////////////////////////////////
 static double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines)
 {
     // simple Sonderfaelle
@@ -1860,6 +2063,18 @@ static double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemove
     return 1.0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function converts logical
+/// vectors into matrix indices.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixLogToIndex(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     vector<int> vLines;
@@ -1909,6 +2124,18 @@ static Matrix parser_MatrixLogToIndex(const Matrix& _mMatrix, const string& sCmd
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function converts matrix
+/// indices into logical vectors.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixIndexToLog(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     if (_mMatrix.size() == 1 || _mMatrix[0].size() == 1)
@@ -1979,6 +2206,18 @@ static Matrix parser_MatrixIndexToLog(const Matrix& _mMatrix, const string& sCmd
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function returns the size
+/// of the passed matrix.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(2,1);
@@ -1989,6 +2228,18 @@ static Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, cons
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c and() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = parser_IdentityMatrix(1);
@@ -2006,6 +2257,18 @@ static Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c or() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2023,6 +2286,18 @@ static Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const 
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c xor() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixXor(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2045,6 +2320,18 @@ static Matrix parser_MatrixXor(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c sum() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixSum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2059,6 +2346,18 @@ static Matrix parser_MatrixSum(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c std() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixStd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2076,6 +2375,18 @@ static Matrix parser_MatrixStd(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c avg() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixAvg(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2085,6 +2396,18 @@ static Matrix parser_MatrixAvg(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c prd() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixPrd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = parser_IdentityMatrix(1);
@@ -2099,6 +2422,18 @@ static Matrix parser_MatrixPrd(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c cnt() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixCnt(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2106,6 +2441,18 @@ static Matrix parser_MatrixCnt(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c num() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixNum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2120,6 +2467,18 @@ static Matrix parser_MatrixNum(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c norm() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixNorm(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2135,6 +2494,18 @@ static Matrix parser_MatrixNorm(const Matrix& _mMatrix, const string& sCmd, cons
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c min() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixMin(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2151,6 +2522,18 @@ static Matrix parser_MatrixMin(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c max() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2167,6 +2550,18 @@ static Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c med() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2184,6 +2579,19 @@ static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c pct() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param dPercentage double
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2201,6 +2609,20 @@ static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c cmp() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param dValue double
+/// \param nType int
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -2263,10 +2685,22 @@ static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType,
     return _mReturn;
 }
 
-// This static function implements the cross- and
-// auto-correlation matrix calculation from the
-// passed two matrices. If their sizes are not
-// fitting, they are resized to fit
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// cross- and auto-correlation matrix
+/// calculation from the passed two matrices.
+///
+/// \param _mMatrix1 const Matrix&
+/// \param _mMatrix2 const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/// If their sizes are not fitting, they are
+/// resized to fit.
+/////////////////////////////////////////////////
 static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position)
 {
     // Ensure that the size is non-zero
@@ -2305,8 +2739,20 @@ static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix
     return mCorrelation;
 }
 
-// This static function implements the covariance
-// calculation of the passed two matrices
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// covariance calculation of the passed two
+/// matrices.
+///
+/// \param _mMatrix1 const Matrix&
+/// \param _mMatrix2 const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position)
 {
     // Ensure that their size is equal
@@ -2338,9 +2784,20 @@ static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2
     return mCovariance;
 }
 
-// This static function implements the normalize
-// function, which will normalize the (absolute) data range of
-// the passed matrix into the range [0,1]
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// normalize function, which will normalize the
+/// (absolute) data range of the passed matrix
+/// into the range [0,1].
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_Normalize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mReturn = _mMatrix;
@@ -2360,6 +2817,23 @@ static Matrix parser_Normalize(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function changes the
+/// number of rows and columns to fit the new
+/// shape.
+///
+/// \param _mMatrix const Matrix&
+/// \param nLines size_t
+/// \param nCols size_t
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/// The total number of elements before and
+/// afterwards must be identical.
+/////////////////////////////////////////////////
 static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)
 {
     if (nLines * nCols != _mMatrix.size() * _mMatrix[0].size())
@@ -2372,6 +2846,21 @@ static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function changes the size
+/// of the passed matrix to fit the new size.
+///
+/// \param _mMatrix const Matrix&
+/// \param nLines size_t
+/// \param nCols size_t
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/// Missing elements are filled up with zeros.
+/////////////////////////////////////////////////
 static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)
 {
     if (!nLines || !nCols)
@@ -2389,7 +2878,19 @@ static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t 
     return _mReturn;
 }
 
-// This static function implements the "unique(MAT,nDim)" function
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// \c unique(MAT,nDim) function.
+///
+/// \param _mMatrix const Matrix&
+/// \param nDim size_t
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const string& sCmd, const string& sExpr, size_t position)
 {
     // Create a std::list and the return value
@@ -2452,8 +2953,16 @@ static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const str
     return _mReturn;
 }
 
-// This is a static helper function for the implementation
-// of the "unique()" function
+
+/////////////////////////////////////////////////
+/// \brief This is a static helper function for
+/// the implementation of the \c unique()
+/// function.
+///
+/// \param _list std::list<double>&
+/// \return std::vector<double>
+///
+/////////////////////////////////////////////////
 static std::vector<double> parser_getUniqueList(std::list<double>& _list)
 {
     _list.sort();
@@ -2462,8 +2971,16 @@ static std::vector<double> parser_getUniqueList(std::list<double>& _list)
     return vReturn;
 }
 
-// This is a static helper function, which will add the
-// elements in the rows of the passed matrix
+
+/////////////////////////////////////////////////
+/// \brief This is a static helper function,
+/// which will add the elements in the rows of
+/// the passed matrix.
+///
+/// \param _mMatrix Matrix&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void parser_fillMissingMatrixElements(Matrix& _mMatrix)
 {
     size_t lines = _mMatrix.size();
@@ -2486,6 +3003,21 @@ static void parser_fillMissingMatrixElements(Matrix& _mMatrix)
 }
 
 // LGS-Loesung auf Basis des Invert-Algorthmuses
+/////////////////////////////////////////////////
+/// \brief This static function will solve the
+/// system of linear equations passed as matrix
+/// using the Gauss elimination algorithm.
+///
+/// \param _mMatrix const Matrix&
+/// \param _parser Parser&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mResult = createZeroesMatrix(_mMatrix[0].size()-1,1);
@@ -2619,7 +3151,18 @@ static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _
     return _mResult;
 }
 
-// n-dimensionales Kreuzprodukt
+
+/////////////////////////////////////////////////
+/// \brief This static function calulates the
+/// n-dimensional cross product ("curl").
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     Matrix _mResult = createZeroesMatrix(_mMatrix.size(),1);
@@ -2666,13 +3209,32 @@ static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd
     return _mResult;
 }
 
-// This static function does the whole eigenvalues, eigenvectors and diagonalizing
-// stuff. If the results are complex then the real and imaginary parts of the result
-// are returned as separate results:
-// for eigenvalues it's two columns of the returned matrix
-// for eigenvectors or the diagonal matrix it's a matrix with 2N columns, where the
-// imaginary part may be found in the columns N+1 - 2N
-// __attribute__((force_align_arg_pointer)) fixes TDM-GCC Bug for wrong stack alignment
+
+/////////////////////////////////////////////////
+/// \brief This static function does the whole
+/// eigenvalues, eigenvectors and diagonalizing
+/// stuff.
+///
+/// \param _mMatrix const Matrix&
+/// \param nReturnType int
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/// If the results are complex then the real and
+/// imaginary parts of the result are returned as
+/// separate results:
+/// \li for eigenvalues it's two columns of the
+/// returned matrix
+/// \li for eigenvectors or the diagonal matrix
+/// it's a matrix with 2N columns, where the
+/// imaginary part may be found in the columns
+/// N+1 - 2N
+///
+/// \c __attribute__((force_align_arg_pointer))
+/// fixes TDM-GCC Bug for wrong stack alignment.
+/////////////////////////////////////////////////
 __attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position)
 {
     if (_mMatrix.size() != _mMatrix[0].size())
@@ -2786,8 +3348,16 @@ __attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(con
         return _mEigenVects;
 }
 
-// This static function tries to remove the imaginary part of
-// the eigen return values
+
+/////////////////////////////////////////////////
+/// \brief This static function tries to remove
+/// the imaginary part of the returned
+/// eigenvalues.
+///
+/// \param _mMatrix Matrix&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void parser_makeReal(Matrix& _mMatrix)
 {
     if (_mMatrix[0].size() < 2 || (_mMatrix[0].size() % 2))
@@ -2820,7 +3390,18 @@ static void parser_makeReal(Matrix& _mMatrix)
     return;
 }
 
-// This static function determines, whether the passed matrix is symmetric or not
+
+/////////////////////////////////////////////////
+/// \brief This static function determines,
+/// whether the passed matrix is symmetric or not.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     if (_mMatrix.size() != _mMatrix[0].size())
@@ -2841,6 +3422,18 @@ static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, cons
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function calculates the
+/// trace of the passed matrix.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
     if (_mMatrix.size() != _mMatrix[0].size())
@@ -2853,6 +3446,21 @@ static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function extracts parts of
+/// the passed matrix based upon the passed index
+/// equations.
+///
+/// \param sExpr string&
+/// \param _mMatrix const Matrix&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
 static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
     Matrix _mReturn;
@@ -2880,6 +3488,16 @@ static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Pa
     return _mReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function formats and
+/// prints the calculated matrix to the terminal.
+///
+/// \param _mResult const Matrix&
+/// \param _option const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
 {
     if (!_option.getSystemPrintStatus() || NumeReKernel::bSupressAnswer)
@@ -3022,6 +3640,21 @@ static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _opt
     return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function solves the system
+/// of linear equations symbolically.
+///
+/// \param _mMatrix const Matrix&
+/// \param _parser Parser&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
 {
     string sSolution = "sle(";
@@ -3130,6 +3763,20 @@ static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Def
     return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function creates an Indices
+/// object, which is filled with the indices
+/// specified by the index equation.
+///
+/// \param sCmd const string&
+/// \param _mMatrix const Matrix&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return Indices
+///
+/////////////////////////////////////////////////
 Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, const Settings& _option)
 {
     Indices _idx;
@@ -3273,7 +3920,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
             if (sI[n] == "<<EMPTY>>")
             {
                 if (n)
-                    _idx.row.setRange(0, _mMatrix.size()-1);
+                    _idx.row.back() = _mMatrix.size()-1;
                 else
                     _idx.row.front() = 0;
             }
@@ -3289,7 +3936,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
             if (sJ[n] == "<<EMPTY>>")
             {
                 if (n)
-                    _idx.col.setRange(0, _mMatrix[0].size()-1);
+                    _idx.col.back() = _mMatrix[0].size()-1;
                 else
                     _idx.col.front() = 0;
             }
@@ -3307,8 +3954,18 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
     return _idx;
 }
 
-// Static helper function for parser_getIndicesForMatrix(), which will
-// handle the return values of matrix evaluations
+
+/////////////////////////////////////////////////
+/// \brief Static helper function for
+/// parser_getIndicesForMatrix(), which will
+/// handle the return values of matrix evaluations.
+///
+/// \param _sCmd const string&
+/// \param vReturnedMatrices const vector<Matrix>&
+/// \param _parser Parser&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void parser_declareMatrixReturnValuesForIndices(const string& _sCmd, const vector<Matrix>& vReturnedMatrices, Parser& _parser)
 {
     for (unsigned int j = 0; j < vReturnedMatrices.size(); j++)
@@ -3334,8 +3991,21 @@ static void parser_declareMatrixReturnValuesForIndices(const string& _sCmd, cons
     }
 }
 
-// Static helper function for parser_getIndicesForMatrix(), which will
-// handle the indices of already parsed datafile matrices
+
+/////////////////////////////////////////////////
+/// \brief Static helper function for
+/// parser_getIndicesForMatrix(), which will
+/// handle the indices of already parsed datafile
+/// matrices.
+///
+/// \param _sCmd string&
+/// \param vMatrixNames const vector<string>&
+/// \param vIndices const vector<Indices>&
+/// \param Parser&_parser
+/// \param _data Datafile&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, Parser&_parser, Datafile& _data)
 {
     for (unsigned int j = 0; j < vIndices.size(); j++)
@@ -3354,9 +4024,23 @@ static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector
     }
 }
 
-// Static wrapper function for resolving already parsed datafile
-// matrix elements and evaluated matrix expressions, which are used
-// as indices for datafile matrices
+
+/////////////////////////////////////////////////
+/// \brief Static wrapper function for resolving
+/// already parsed datafile matrix elements and
+/// evaluated matrix expressions, which are used
+/// as indices for datafile matrices.
+///
+/// \param sCmd const string&
+/// \param vMatrixNames const vector<string>&
+/// \param vIndices const vector<Indices>&
+/// \param vReturnedMatrices const vector<Matrix>&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return Indices
+///
+/////////////////////////////////////////////////
 static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option)
 {
     string _sCmd = sCmd;
@@ -3373,5 +4057,77 @@ static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<strin
 
     // Return the calculated indices
     return getIndices(_sCmd, _parser, _data, _option);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function creates the
+/// matrix function map.
+///
+/// \return map<string,string>
+///
+/////////////////////////////////////////////////
+static map<string,string> createMatrixFunctionsMap()
+{
+    map<string,string> mFunctionMap;
+
+    mFunctionMap["det"] = "det(";
+    mFunctionMap["invert"] = "invert(";
+    mFunctionMap["transpose"] = "transpose(";
+    mFunctionMap["zero"] = "zero(";
+    mFunctionMap["one"] = "one(";
+    mFunctionMap["matfl"] = "matfl(";
+    mFunctionMap["matflf"] = "matflf(";
+    mFunctionMap["matfc"] = "matfc(";
+    mFunctionMap["matfcf"] = "matfcf(";
+    mFunctionMap["diag"] = "diag(";
+    mFunctionMap["solve"] = "solve(";
+    mFunctionMap["cross"] = "cross(";
+    mFunctionMap["diagonalize"] = "diagonalize(";
+    mFunctionMap["eigenvals"] = "eigenvals(";
+    mFunctionMap["eigenvects"] = "eigenvects(";
+    mFunctionMap["trace"] = "trace(";
+    mFunctionMap["size"] = "size(";
+    mFunctionMap["reshape"] = "reshape(";
+    mFunctionMap["resize"] = "resize(";
+    mFunctionMap["logtoidx"] = "logtoidx(";
+    mFunctionMap["idxtolog"] = "idxtolog(";
+    mFunctionMap["unique"] = "unique(";
+    mFunctionMap["identity"] = "identity(";
+    mFunctionMap["covar"] = "covar(";
+    mFunctionMap["correl"] = "correl(";
+    mFunctionMap["normalize"] = "normalize(";
+
+    return mFunctionMap;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function evaluates,
+/// whether there are matrix expressions in the
+/// passed expression.
+///
+/// \param sExpr const string&
+/// \param _data Datafile&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool containsMatrices(const string& sExpr, Datafile& _data)
+{
+    if (_data.containsTablesOrClusters(sExpr) || sExpr.find("data(") != string::npos || sExpr.find('{') != string::npos)
+        return true;
+
+    static map<string, string> mMatrixFunctionsMap = createMatrixFunctionsMap();
+
+    // search for any matrix function
+    for (auto iter = mMatrixFunctionsMap.begin(); iter != mMatrixFunctionsMap.end(); ++iter)
+    {
+        size_t match = sExpr.find(iter->first+"(");
+
+        if (match != string::npos && (!match || (!isalpha(sExpr[match-1]) && sExpr[match-1] != '_')))
+            return true;
+    }
+
+    return false;
 }
 

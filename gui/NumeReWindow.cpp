@@ -2401,7 +2401,7 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
     fHeader << "}" << endl << endl;
     fHeader << "\\newcommand\\realnumberstyle[1]{\\tiny}" << endl;
     fHeader << "\\newcommand\\oprts[1]{\\textcolor{red}{\\upshape{#1}}}" << endl;
-    fHeader << "\\newcommand\\procedure[1]{\\section{Procedure \\$#1()}}" << endl << endl;
+    fHeader << "\\newcommand\\procedure[1]{\\section{Procedure \\$#1()}}" << endl;
     fHeader << "\\newcommand\\parameters{\\subsection*{Parameters for this procedure}}" << endl << endl;
 
     fHeader << "% Apply a patch for the closing parenthesis" <<  endl;
