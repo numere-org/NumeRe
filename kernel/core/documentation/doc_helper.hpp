@@ -52,7 +52,7 @@ class Documentation : public FileSystem
         void updateIndexFile();
         bool loadIndexFile(const string& sIndexFile);
         int findPositionInDocumentationIndex(const string& sTopic);
-        vector<string> loadDocumentationArticle(const string& sFileName);
+        vector<string> loadDocumentationArticle(const string& sFileName, const string& sArticleID);
 
     public:
         Documentation();

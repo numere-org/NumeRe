@@ -7,3 +7,4 @@ Fixed	Flow control statements in install sections should now not be folded erron
 Added	NumeRe may now create a DoxyGen-like documentation block in front of the current procedure.
 Fixed	Functions with more than one argument may now be called correctly in "matop" mode.
 Fixed	Matrix extractions using indices in "matop" mode work now correclty again.
+Added	It's now possible to remove entries from the documentation index using the "delete" attribute.

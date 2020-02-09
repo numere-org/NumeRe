@@ -104,7 +104,7 @@ void Documentation::updateIndexFile()
         // current article
         for (auto mDocIndexIterator = mDocumentationIndex.begin(); mDocIndexIterator != mDocumentationIndex.end(); ++mDocIndexIterator)
         {
-            if (mDocIndexIterator->second == i)
+            if (mDocIndexIterator->second == (int)i)
                 fDocument << "\t\t\t<keyword>" << mDocIndexIterator->first << "</keyword>\n";
         }
 
@@ -179,6 +179,13 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
         sLine = sDocIndex.substr(sDocIndex.find("<article "), sDocIndex.find("</article>")-sDocIndex.find("<article "));
         sDocIndex.erase(0, sDocIndex.find("</article>")+10);
 
+        // Shall this entry be deleted?
+        if (sLine.substr(0, sLine.find('>')).find("delete=\"true\"") != string::npos)
+        {
+            removeFromDocIndex(getArgAtPos(sLine, sLine.find("id=")+3), false);
+            continue;
+        }
+
         if (sLine.find("<file ") == string::npos || sLine.find("<keywords>") == string::npos)
             continue;
 
@@ -187,20 +194,26 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
         vEntry.push_back(getArgAtPos(sLine, sLine.find("string=")+7));
         vEntry.push_back(getArgAtPos(sLine, sLine.find("idxkey=")+7));
 
+        sLine.erase(0, sLine.find("<keywords>")+10);
+
         // is this item already known? (user lang file)
         if (mDocumentationIndex.find(vEntry.back()) == mDocumentationIndex.end())
         {
+            nIndex = vDocIndexTable.size();
             mDocumentationIndex[vEntry.back()] = nIndex;
 
-            while (sLine.find("<keyword>") != string::npos)
+            while (sLine.find("<keyword") != string::npos)
             {
-                sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
+                sKeyWord = sLine.substr(sLine.find('>')+1, sLine.find("</keyword>")-1-sLine.find('>'));
+                bool bDelete = sLine.substr(0, sLine.find('>')).find("delete=\"true\"") != string::npos;
                 sLine.erase(0, sLine.find("</keyword>")+10);
 
-                mDocumentationIndex[sKeyWord] = nIndex;
+                if (bDelete && mDocumentationIndex.find(sKeyWord) != mDocumentationIndex.end())
+                    mDocumentationIndex.erase(mDocumentationIndex.find(sKeyWord));
+                else
+                    mDocumentationIndex[sKeyWord] = nIndex;
             }
 
-            nIndex++;
             vDocIndexTable.push_back(vEntry);
         }
         else
@@ -213,10 +226,14 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
 
             while (sLine.find("<keyword>") != string::npos)
             {
-                sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
+                sKeyWord = sLine.substr(sLine.find('>')+1, sLine.find("</keyword>")-1-sLine.find('>'));
+                bool bDelete = sLine.substr(0, sLine.find('>')).find("delete=\"true\"") != string::npos;
                 sLine.erase(0, sLine.find("</keyword>")+10);
 
-                mDocumentationIndex[sKeyWord] = nIndex;
+                if (bDelete && mDocumentationIndex.find(sKeyWord) != mDocumentationIndex.end())
+                    mDocumentationIndex.erase(mDocumentationIndex.find(sKeyWord));
+                else
+                    mDocumentationIndex[sKeyWord] = nIndex;
             }
         }
 
@@ -287,18 +304,22 @@ int Documentation::findPositionInDocumentationIndex(const string& sTopic)
 /// prepares the selected documentation article.
 ///
 /// \param sFileName const string&
+/// \param sArticleID const string&
 /// \return vector<string>
 ///
 /////////////////////////////////////////////////
-vector<string> Documentation::loadDocumentationArticle(const string& sFileName)
+vector<string> Documentation::loadDocumentationArticle(const string& sFileName, const string& sArticleID)
 {
     fDocument.open(sFileName.c_str(), ios_base::in);
 
     if (fDocument.fail())
     {
         fDocument.close();
-        throw SyntaxError(SyntaxError::HLP_FILE_MISSING, "", SyntaxError::invalid_position, vDocIndexTable[nIndex][1]);
+        throw SyntaxError(SyntaxError::HLP_FILE_MISSING, "", SyntaxError::invalid_position, sFileName);
     }
+
+    string sLine;
+    vector<string> vReturn;
 
     while (!fDocument.eof())
     {
@@ -339,7 +360,7 @@ vector<string> Documentation::loadDocumentationArticle(const string& sFileName)
 
         if (sLine.find("<article ") != string::npos)
         {
-            if (getArgAtPos(sLine, sLine.find("id=")+3) != vDocIndexTable[nIndex][0])
+            if (getArgAtPos(sLine, sLine.find("id=")+3) != sArticleID)
             {
                 while (!fDocument.eof())
                 {
@@ -389,6 +410,8 @@ vector<string> Documentation::loadDocumentationArticle(const string& sFileName)
 
     if (!vReturn.size())
         vReturn.push_back("NO_ENTRY_FOUND");
+
+    return vReturn;
 }
 
 
@@ -410,7 +433,8 @@ void Documentation::loadDocIndex(bool bLoadUserLangFiles)
         if (!loadIndexFile(sDocIndexFile))
         {
             if (fileExists(FileSystem::ValidFileName("<>/update.hlpidx", ".hlpidx")))
-                loadIndexFile("<>/update.hlpidx");        }
+                loadIndexFile("<>/update.hlpidx");
+        }
     }
     else if (bLoadUserLangFiles && fileExists(FileSystem::ValidFileName("<>/user/numere.hlpidx", ".hlpidx")))
         loadIndexFile("<>/user/numere.hlpidx");
@@ -428,113 +452,15 @@ void Documentation::loadDocIndex(bool bLoadUserLangFiles)
 /////////////////////////////////////////////////
 void Documentation::updateDocIndex(string _sFilename)
 {
-    /*_sFilename = FileSystem::ValidFileName(_sFilename, ".hlpidx");
+    _sFilename = FileSystem::ValidFileName(_sFilename, ".hlpidx");
 
-    if (!vDocIndexTable.size())
-        return;
-
-    string sLine = "";
-    string sDocIndex = "";
-    string sKeyWord = "";
-    int nIndex = vDocIndexTable.size();
-    vector<string> vEntry;
-
-    if (fDocument.is_open())
-        fDocument.close();
-
-    fDocument.open(_sFilename.c_str(), ios_base::in);
-
-    if (fDocument.fail())
-    {
-        fDocument.close();
-        return;
-    }
-
-    while (!fDocument.eof())
-    {
-        getline(fDocument, sLine);
-        StripSpaces(sLine);
-
-        if (sLine.length())
-            sDocIndex += sLine;
-    }
-
-    fDocument.close();
-
-    while (sDocIndex.length() && sDocIndex.find("<!--") != string::npos)
-    {
-        unsigned int nEndPos = sDocIndex.find("-->", sDocIndex.find("<!--")+4);
-
-        if (nEndPos == string::npos)
-            sDocIndex.erase(sDocIndex.find("<!--"));
-        else
-            sDocIndex.erase(sDocIndex.find("<!--"), nEndPos - sDocIndex.find("<!--")+3);
-    }
-
-    if (!sDocIndex.length())
-        return;
-
-    while (sDocIndex.length() > 26)
-    {
-        if (sDocIndex.find("<article ") == string::npos || sDocIndex.find("</article>") == string::npos)
-            break;
-
-        sLine = sDocIndex.substr(sDocIndex.find("<article "), sDocIndex.find("</article>")-sDocIndex.find("<article "));
-        sDocIndex.erase(0,sDocIndex.find("</article>")+10);
-
-        if (sLine.find("<file ") == string::npos || sLine.find("<keywords>") == string::npos)
-            continue;
-
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("id=")+3));
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("path=")+5));
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("string=")+7));
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("idxkey=")+7));
-
-        for (unsigned int i = 0; i < vDocIndexTable.size(); i++)
-        {
-            if (vEntry[0] == vDocIndexTable[i][0])
-            {
-                vDocIndexTable[i] = vEntry;
-                vEntry.clear();
-
-                while (sLine.find("<keyword>") != string::npos)
-                {
-                    sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
-                    sLine.erase(0,sLine.find("</keyword>")+10);
-
-                    mDocumentationIndex[sKeyWord] = i;
-                }
-
-                break;
-            }
-        }
-
-        if (vEntry.size())
-        {
-            vDocIndexTable.push_back(vEntry);
-            vEntry.clear();
-        }
-        else
-            continue;
-
-        while (sLine.find("<keyword>") != string::npos)
-        {
-            sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
-            sLine.erase(0,sLine.find("</keyword>")+10);
-
-            mDocumentationIndex[sKeyWord] = nIndex;
-        }
-
-        nIndex++;
-
-        if (sDocIndex == "</helpindex>")
-            break;
-    }*/
-
+    // Load the updated help index file
     loadIndexFile(_sFilename);
 
     try
     {
+        // update the own index file and remove the
+        // update file
         updateIndexFile();
         remove(_sFilename.c_str());
     }
@@ -743,7 +669,7 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
             if (vDocIndexTable[nIndex][1].find("<>") != string::npos)
                 vDocIndexTable[nIndex][1] = FileSystem::ValidFileName(vDocIndexTable[nIndex][1], ".nhlp");
 
-            return loadDocumentationArticle(vDocIndexTable[nIndex][1]);
+            return loadDocumentationArticle(vDocIndexTable[nIndex][1], vDocIndexTable[nIndex][0]);
         }
         else
             vReturn.push_back("NO_ENTRY_FOUND");
@@ -878,7 +804,7 @@ string Documentation::getHelpArtclID(const string& sTopic)
 /////////////////////////////////////////////////
 string Documentation::getHelpArticleTitle(const string& _sIdxKey)
 {
-    int nIndex = findPositionInDocumentationIndex(sTopic);
+    int nIndex = findPositionInDocumentationIndex(_sIdxKey);
 
     if (nIndex == -1)
         return "<<NONE>>";
