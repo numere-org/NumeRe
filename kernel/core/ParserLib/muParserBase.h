@@ -121,8 +121,6 @@ namespace mu
 			mutable std::map<std::string, std::string>* mVarMapPntr;
 
 			// Bytecode caching and loop caching interface section
-			ParserByteCode GetByteCode() const;
-			void SetByteCode(const ParserByteCode& _bytecode);
 			void ActivateLoopMode(unsigned int _nLoopLength);
 			void DeactivateLoopMode();
 			void SetIndex(unsigned int _nLoopElement);
@@ -162,6 +160,7 @@ namespace mu
 
 			void SetExpr(const string_type& a_sExpr);
 			void PreEvaluateVectors(std::string& sExpr);
+			bool ResolveVectorsInMultiArgFunc(std::string& sExpr, size_t& nPos);
 			size_t FindMultiArgFunc(const std::string& sExpr, size_t nPos, std::string& sMultArgFunc);
 			void SetVarFactory(facfun_type a_pFactory, void* pUserData = NULL);
 
@@ -240,6 +239,7 @@ namespace mu
 			std::vector<double>* GetVectorVar(const std::string& sVarName);
 			void UpdateVectorVar(const std::string& sVarName);
 			void ClearVectorVars(bool bIgnoreProcedureVects = false);
+			bool ContainsVectorVars(const std::string& sExpr);
 
 		protected:
 
@@ -366,7 +366,7 @@ namespace mu
 			mutable stringbuf_type  m_vStringBuf; ///< String buffer, used for storing string function arguments
 			stringbuf_type  m_vStringVarBuf;
 
-			std::auto_ptr<token_reader_type> m_pTokenReader; ///< Managed pointer to the token reader object.
+			std::unique_ptr<token_reader_type> m_pTokenReader; ///< Managed pointer to the token reader object.
 
 			funmap_type  m_FunDef;         ///< Map of function names and pointers.
 			funmap_type  m_PostOprtDef;    ///< Postfix operator callbacks
