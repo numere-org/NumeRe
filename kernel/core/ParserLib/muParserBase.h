@@ -239,7 +239,7 @@ namespace mu
 			std::vector<double>* GetVectorVar(const std::string& sVarName);
 			void UpdateVectorVar(const std::string& sVarName);
 			void ClearVectorVars(bool bIgnoreProcedureVects = false);
-			bool ContainsVectorVars(const std::string& sExpr);
+			bool ContainsVectorVars(const std::string& sExpr, bool ignoreSingletons);
 
 		protected:
 

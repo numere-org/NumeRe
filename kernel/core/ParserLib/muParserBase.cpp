@@ -487,7 +487,7 @@ namespace mu
 		string_type sBuf(a_sExpr + " ");
 
 		// Perform the pre-evaluation of the vectors first
-		if ((sBuf.find('{') != string::npos && sBuf.find('}', sBuf.find('{')) != string::npos) || ContainsVectorVars(sBuf))
+		if ((sBuf.find('{') != string::npos && sBuf.find('}', sBuf.find('{')) != string::npos) || ContainsVectorVars(sBuf, true))
 			PreEvaluateVectors(sBuf);
 
 		if (sBuf.find('{') != string::npos || sBuf.find('}') != string::npos)
@@ -534,6 +534,9 @@ namespace mu
 		for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
         {
             size_t match = 0;
+
+            if (iter->second.size() == 1)
+                continue;
 
             while ((match = sExpr.find(iter->first, match)) != string::npos)
             {
@@ -749,7 +752,7 @@ namespace mu
     /////////////////////////////////////////////////
 	bool ParserBase::ResolveVectorsInMultiArgFunc(std::string& sExpr, size_t& nPos)
 	{
-	    string sMultiArgFunc;
+        string sMultiArgFunc;
 	    // Try to find a multi-argument function. The size_t will store the start position of the function name
         size_t nMultiArgParens = FindMultiArgFunc(sExpr, nPos, sMultiArgFunc);
 
@@ -815,6 +818,11 @@ namespace mu
 				size_t nSep = sExpr.find_last_of(" +-*/(=:?&|<>!%{^", i - 1) + 1;
 				// Extract the function
 				std::string sFunc = sExpr.substr(nSep, i - nSep);
+
+				// Exclude the following functions
+				if (sFunc == "polynomial")
+                    continue;
+
 				// Compare the function with the set of known multi-argument functions
 				auto iter = m_FunDef.find(sFunc);
 
@@ -3645,16 +3653,20 @@ namespace mu
     /// the passed expression contains a vector.
     ///
     /// \param sExpr const std::string&
+    /// \param ignoreSingletons bool
     /// \return bool
     ///
     /////////////////////////////////////////////////
-	bool ParserBase::ContainsVectorVars(const std::string& sExpr)
+	bool ParserBase::ContainsVectorVars(const std::string& sExpr, bool ignoreSingletons)
 	{
 	    if (!dVectorVars)
             return false;
 
         for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
         {
+            if (ignoreSingletons && iter->second.size() == 1)
+                continue;
+
             size_t nPos = sExpr.find(iter->first);
 
             if (nPos != string::npos && (!nPos || checkDelimiter(sExpr.substr(nPos-1, iter->first.length()+2))))

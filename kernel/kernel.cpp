@@ -472,7 +472,15 @@ void NumeReKernel::defineConst()
 /////////////////////////////////////////////////
 void NumeReKernel::defineFunctions()
 {
-	// --> mathemat. Funktion deklarieren <--
+
+	/////////////////////////////////////////////////////////////////////
+	// NOTE:
+	// If multi-argument functions are declared, think of whether
+	// they can be use a column of data sets as their argument list.
+	// If not, then they have to be excluded in the multi-argument
+	// function search in the parser.
+	/////////////////////////////////////////////////////////////////////
+
 	_parser.DefineFun("faculty", parser_Faculty, false);                        // faculty(n)
 	_parser.DefineFun("factorial", parser_Faculty, false);                      // factorial(n)
 	_parser.DefineFun("dblfacul", parser_doubleFaculty, false);                 // dblfacul(n)
@@ -508,7 +516,7 @@ void NumeReKernel::defineFunctions()
 	_parser.DefineFun("and", parser_and, true);                                 // and(x,y,z,...)
 	_parser.DefineFun("or", parser_or, true);                                   // or(x,y,z,...)
 	_parser.DefineFun("xor", parser_xor, true);                                 // xor(x,y,z,...)
-	_parser.DefineFun("polynomial", parser_polynomial, true);                    // polynomial(x,a0,a1,a2,a3,...)
+	_parser.DefineFun("polynomial", parser_polynomial, true);                   // polynomial(x,a0,a1,a2,a3,...)
 	_parser.DefineFun("rand", parser_Random, false);                            // rand(left,right)
 	_parser.DefineFun("gauss", parser_gRandom, false);                          // gauss(mean,std)
 	_parser.DefineFun("erf", parser_erf, false);                                // erf(x)
@@ -544,6 +552,14 @@ void NumeReKernel::defineFunctions()
 	_parser.DefineFun("psi", parser_digamma, true);                             // psi(x)
 	_parser.DefineFun("psi_n", parser_polygamma, true);                         // psi_n(n,x)
 	_parser.DefineFun("Li2", parser_dilogarithm, true);                         // Li2(x)
+
+	/////////////////////////////////////////////////////////////////////
+	// NOTE:
+	// If multi-argument functions are declared, think of whether
+	// they can be use a column of data sets as their argument list.
+	// If not, then they have to be excluded in the multi-argument
+	// function search in the parser.
+	/////////////////////////////////////////////////////////////////////
 }
 
 
