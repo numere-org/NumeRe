@@ -2720,7 +2720,7 @@ void NumeReKernel::issueWarning(string sWarningMessage)
     }
 
     wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
-    Sleep(KERNEL_PRINT_SLEEP);
+    Sleep(10*KERNEL_PRINT_SLEEP);
 }
 
 

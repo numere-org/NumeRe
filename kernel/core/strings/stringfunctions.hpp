@@ -1408,6 +1408,64 @@ static string strfnc_locate(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the getkeyval()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_getkeyval(StringFuncArgs& funcArgs)
+{
+    string sValues;
+
+    // Remove the masked strings
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
+
+    // Set the default tolerance mode, if necessary
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = 0;
+
+    // Ensure that the length of the array is
+    // even
+    if (funcArgs.sMultiArg.size() % 2)
+        funcArgs.sMultiArg.pop_back();
+
+    // Examine the whole string array
+    for (size_t i = 0; i < funcArgs.sMultiArg.size(); i+=2)
+    {
+        // Remove the masked strings
+        funcArgs.sMultiArg[i] = removeMaskedStrings(funcArgs.sMultiArg[i]);
+
+        // Remove surrounding whitespaces and compare
+        StripSpaces(funcArgs.sMultiArg[i]);
+
+        if (funcArgs.sMultiArg[i] == funcArgs.sArg2)
+            sValues += funcArgs.sMultiArg[i+1] + ",";
+    }
+
+    // Pop the trailing comma, if the string has a length.
+    // Otherwise set values to the default values and probably
+    // issue a warning
+    if (sValues.length())
+        sValues.pop_back();
+    else
+    {
+        if (funcArgs.nArg1)
+            NumeReKernel::issueWarning(_lang.get("PARSERFUNCS_LISTFUNC_GETKEYVAL_WARNING", "\"" + funcArgs.sArg2 + "\""));
+
+        if (funcArgs.sArg3.find_first_not_of("0123456789.eE+-") != string::npos && funcArgs.sArg3.front() != '"')
+            sValues = "\"" + funcArgs.sArg3 + "\"";
+        else
+            sValues = funcArgs.sArg3;
+    }
+
+    return sValues;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the findtoken()
 /// function.
 ///
@@ -1636,6 +1694,7 @@ static map<string, StringFuncHandle> getStringFuncHandles()
 	mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
 	mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);
 	mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
+	mHandleTable["getkeyval"]           = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_getkeyval, true);
 	mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
 	mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
 	mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
