@@ -122,9 +122,7 @@ namespace mu
 		bMakeLoopByteCode = false;
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
-		nVectorIndex = 0;
-		nVectorVarsSize = 200;
-		dVectorVars = 0;
+
 		mVarMapPntr = 0;
 	}
 
@@ -158,9 +156,7 @@ namespace mu
 		bMakeLoopByteCode = false;
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
-		nVectorIndex = 0;
-		nVectorVarsSize = 200;
-		dVectorVars = 0;
+
 		mVarMapPntr = 0;
 
 		Assign(a_Parser);
@@ -169,8 +165,8 @@ namespace mu
 	//---------------------------------------------------------------------------
 	ParserBase::~ParserBase()
 	{
-		if (dVectorVars)
-			delete[] dVectorVars;
+        for (auto iter = m_lDataStorage.begin(); iter != m_lDataStorage.end(); ++iter)
+            delete *iter;
 	}
 
 	//---------------------------------------------------------------------------
@@ -1016,6 +1012,9 @@ namespace mu
 			Error(ecNAME_CONFLICT);
 
 		CheckName(a_sName, ValidNameChars());
+
+		//if (m_VarDef.find(a_sName) != m_VarDef.end())
+		//	Error(ecNAME_CONFLICT);
 		m_VarDef[a_sName] = a_pVar;
 		ReInit();
 	}
@@ -2373,8 +2372,21 @@ namespace mu
 	void ParserBase::RemoveVar(const string_type& a_strVarName)
 	{
 		varmap_type::iterator item = m_VarDef.find(a_strVarName);
+
 		if (item != m_VarDef.end())
 		{
+		    // Search for the variable in the internal storage and
+		    // remove it
+		    for (auto iter = m_lDataStorage.begin(); iter != m_lDataStorage.end(); ++iter)
+            {
+                if (item->second == *iter)
+                {
+                    delete *iter;
+                    m_lDataStorage.erase(iter);
+                    break;
+                }
+            }
+
 			m_VarDef.erase(item);
 			ReInit();
 		}
@@ -2696,7 +2708,7 @@ namespace mu
             return sIndex;
         }
         else
-            return toString(nVectorIndex);
+            return toString(m_lDataStorage.size()); //nVectorIndex);
 	}
 
 
@@ -3496,45 +3508,20 @@ namespace mu
 		if (!vVar.size())
 			return;
 
-		if (!dVectorVars)
-			dVectorVars = new double[nVectorVarsSize];
-
-		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end())
+		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end() && m_VarDef.find(sVarName) == m_VarDef.end())
 		{
-		    // Variable does not exist and has to be
-		    // created
-			if (nVectorIndex < nVectorVarsSize)
-			{
-				DefineVar(sVarName, &dVectorVars[nVectorIndex]);
-				dVectorVars[nVectorIndex] = vVar[0];
-				nVectorIndex++;
-			}
-			else
-			{
-			    // Re-allocate the whole vector storage,
-			    // because it is too small
-				delete[] dVectorVars;
-				dVectorVars = 0;
-				nVectorIndex = 0;
-				nVectorVarsSize *= 2;
-				dVectorVars = new double[nVectorVarsSize];
+		    // Create the storage for a new variable
+		    m_lDataStorage.push_back(new double);
 
-				if (bMakeLoopByteCode)
-					vLoopString.assign(nLoopLength, std::vector<std::string>(1, ""));
+		    // Assign the first element of the vector
+		    // to this storage
+		    *m_lDataStorage.back() = vVar[0];
 
-				for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
-				{
-					DefineVar(iter->first, &dVectorVars[nVectorIndex]);
-					nVectorIndex++;
-				}
-
-				DefineVar(sVarName, &dVectorVars[nVectorIndex]);
-				dVectorVars[nVectorIndex] = vVar[0];
-				nVectorIndex++;
-			}
+		    // Define a new variable
+		    DefineVar(sVarName, m_lDataStorage.back());
 		}
-		else if (!bAddVectorType && GetVar().find(sVarName) != GetVar().end())
-			*(GetVar().find(sVarName)->second) = vVar[0];
+		else if (!bAddVectorType && m_VarDef.find(sVarName) != m_VarDef.end())
+			*(m_VarDef.find(sVarName)->second) = vVar[0];
 
 		mVectorVars[sVarName] = vVar;
 
@@ -3557,9 +3544,6 @@ namespace mu
     /////////////////////////////////////////////////
 	std::vector<double>* ParserBase::GetVectorVar(const std::string& sVarName)
 	{
-		if (!dVectorVars)
-			return nullptr;
-
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return nullptr;
 
@@ -3578,9 +3562,6 @@ namespace mu
     /////////////////////////////////////////////////
 	void ParserBase::UpdateVectorVar(const std::string& sVarName)
 	{
-		if (!dVectorVars)
-			return;
-
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return;
 
@@ -3633,15 +3614,6 @@ namespace mu
 			mVectorVars.clear();
 			mTargets.clear();
 			sTargets.clear();
-			nVectorIndex = 0;
-
-			if (dVectorVars && nVectorVarsSize > 200)
-			{
-				delete[] dVectorVars;
-				dVectorVars = 0;
-			}
-
-			nVectorVarsSize = 200;
 		}
 
 		return;
@@ -3659,10 +3631,7 @@ namespace mu
     /////////////////////////////////////////////////
 	bool ParserBase::ContainsVectorVars(const std::string& sExpr, bool ignoreSingletons)
 	{
-	    if (!dVectorVars)
-            return false;
-
-        for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
         {
             if (ignoreSingletons && iter->second.size() == 1)
                 continue;

@@ -270,7 +270,9 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
     {
         // Replace the value with its actual value and mark the
         // argument type as reference
-        sArgumentValue = toString(*(_parser.GetVar().find(sArgumentValue)->second), 5);
+        double* address = _parser.GetVar().find(sArgumentValue)->second;
+        sArgumentValue = toString(*address, 5);
+        //return "\t1 x 1\t(&) double @" + toHexString((int)address) + "\t";
         return "\t1 x 1\t(&) double\t";
     }
 
@@ -557,6 +559,7 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
             if (iter->second == sVarArray[i])
             {
                 // Store the variables
+                //mLocalVars[iter->first + " @" + toHexString((int)&vVarArray[i][0]) + "\t" + iter->second] = vVarArray[i][0];
                 mLocalVars[iter->first + "\t" + iter->second] = vVarArray[i][0];
 
                 // Replace the variables

@@ -32,6 +32,7 @@
 #include <map>
 #include <memory>
 #include <locale>
+#include <list>
 
 //--- Parser includes --------------------------------------------------------------------------
 #include "muParserDef.h"
@@ -96,9 +97,7 @@ namespace mu
 
 			mutable std::map<std::string, std::vector<double> > mVectorVars;
 			mutable std::map<std::string, std::vector<double>* > mNonSingletonVectorVars;
-			mutable double* dVectorVars;
-			mutable int nVectorIndex;
-			mutable int nVectorVarsSize;
+
 			mutable varmap_type mTargets;
 			mutable string_type sTargets;
 			mutable int nVectorDimension;
@@ -119,6 +118,7 @@ namespace mu
 			typedef ParserError exception_type;
 
 			mutable std::map<std::string, std::string>* mVarMapPntr;
+			mutable std::list<double*> m_lDataStorage;
 
 			// Bytecode caching and loop caching interface section
 			void ActivateLoopMode(unsigned int _nLoopLength);

@@ -333,7 +333,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 	_parser.DefineVar("nlen", &_data.dClusterElementsCount);
 
 	// --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
-	_parser.SetVarFactory(parser_AddVariable, &_parser);
+	_parser.SetVarFactory(parser_AddVariable, &(_parser.m_lDataStorage));
 
 	// Define the operators
 	defineOperators();

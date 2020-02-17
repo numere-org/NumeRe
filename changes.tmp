@@ -11,3 +11,5 @@ Added	It's now possible to remove entries from the documentation index using the
 Fixed	Expressions like "and(data(:, 1) == data(:, 2))" will now return a single, correct result.
 Fixed	Resolved a crash during saving, which occured in combination with many non-ASCII characters in a line.
 New	Added the function "getkeyval()", which can be used to return the value from a key-value based list.
+Fixed	Resolved a strange bug occuring only late in any calculation and only in some occurences, where values seem to be overwritten by strange values.
+Fixed	The "Busy" indicator is now also pulsing, if one double-clicks the history.

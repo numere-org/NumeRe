@@ -6874,7 +6874,6 @@ void NumeReWindow::OnExecuteFile(const string& sFileName)
             command = "'" + command + "'";
 
         command = "$" + command + "()";
-        Busy();
     }
     else if (command.rfind(".nscr") != string::npos)
     {
@@ -6890,7 +6889,6 @@ void NumeReWindow::OnExecuteFile(const string& sFileName)
             command = "\"" + command + "\"";
 
         command = "start " + command;
-        Busy();
     }
     else
         command = "load \"" + command + "\" -app -ignore";

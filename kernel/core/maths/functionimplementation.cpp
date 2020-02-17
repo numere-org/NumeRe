@@ -1398,16 +1398,14 @@ value_type parser_cot(value_type x)
 // --> Var-Factory: Hier werden die physikalischen Adressen der Variablen generiert <--
 value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
 {
-    // --> Wir verwenden ein static-Array (~ globales Array), dessen Adressen fuer die Variablen verwendet werden <--
-    static value_type afValBuf[200];
-    static int iVal = 0;
+    // Cast the passed void pointer to a the data storage list
+    std::list<double*>* m_lDataStorage = static_cast<std::list<double*>* >(a_pUserData);
 
-    if (iVal >= 199)
-        throw mu::ParserError( _nrT(toSystemCodePage(_lang.get("PARSER_ADD_VAR_ERROR"))) );
+    // Create the storage for a new variable
+    m_lDataStorage->push_back(new double);
 
-    afValBuf[iVal] = 0;
-
-    return &afValBuf[iVal++];
+    // Return the address of the newly created storage
+    return m_lDataStorage->back();
 }
 
 
