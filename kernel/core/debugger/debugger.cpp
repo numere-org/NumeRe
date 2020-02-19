@@ -472,8 +472,8 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         // Replace the occurences
         if (sLocalTables[i][0] != sLocalTables[i][1])
         {
-            while (sErraticCommand.find(sLocalTables[i][1]) != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalTables[i][1]), sLocalTables[i][1].length(), sLocalTables[i][0]);
+            while (sErraticCommand.find(sLocalTables[i][1] + "(") != string::npos)
+                sErraticCommand.replace(sErraticCommand.find(sLocalTables[i][1] + "("), sLocalTables[i][1].length(), sLocalTables[i][0]);
         }
 
         string sTableData;
@@ -501,8 +501,8 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         // Replace the occurences
         if (sLocalClusters[i][0] != sLocalClusters[i][1])
         {
-            while (sErraticCommand.find(sLocalClusters[i][1]) != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalClusters[i][1]), sLocalClusters[i][1].length(), sLocalClusters[i][0].substr(0, sLocalClusters[i][0].length()-1));
+            while (sErraticCommand.find(sLocalClusters[i][1] + "{") != string::npos)
+                sErraticCommand.replace(sErraticCommand.find(sLocalClusters[i][1] + "{"), sLocalClusters[i][1].length(), sLocalClusters[i][0]);
         }
 
         string sTableData;
@@ -510,9 +510,9 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         // Extract the minimal and maximal values of the tables
         // to display them in the variable viewer panel
         sTableData = toString(instance->getData().getCluster(sLocalClusters[i][1]).size()) + " x 1";
-        sTableData += "\tcluster\t" + instance->getData().getCluster(sLocalClusters[i][1]).getShortVectorRepresentation() + "\t" + sLocalClusters[i][1] + (sLocalClusters[i][1].back() == '{' ? "}" : "{}");
+        sTableData += "\tcluster\t" + instance->getData().getCluster(sLocalClusters[i][1]).getShortVectorRepresentation() + "\t" + sLocalClusters[i][1] + "{}";
 
-        mLocalClusters[sLocalClusters[i][0] + "}"] = sTableData;
+        mLocalClusters[sLocalClusters[i][0] + "{}"] = sTableData;
     }
 
     // Store the arguments

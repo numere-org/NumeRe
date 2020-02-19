@@ -612,6 +612,9 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                     throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgumentList, sErrorToken, sErrorToken);
                 }
             }
+
+            if (sArgumentMap[i][1].find_first_of("+-*/&|?!^<>=") != string::npos && (sArgumentMap[i][1].front() != '{' || getMatchingParenthesis(sArgumentMap[i][1]) != sArgumentMap[i][1].length()-1))
+                sArgumentMap[i][1] = "(" + sArgumentMap[i][1] + ")";
         }
 
         // Evaluate procedure calls and the parentheses of the
@@ -1068,7 +1071,7 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
         StripSpaces(sLocalClusters[i][0]);
         sLocalClusters[i][1] = "_~"+sProcName+"_"+toString((int)nth_procedure)+"_"+sLocalClusters[i][0];
 
-        sLocalClusters[i][0] += "{";
+        //sLocalClusters[i][0] += "{";
 
         try
         {
@@ -1214,10 +1217,8 @@ string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine, size_
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while (sProcedureCommandLine.find(sLocalVars[i][0], nPos) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(sLocalVars[i][0], nPos)) != string::npos)
         {
-            nPos = sProcedureCommandLine.find(sLocalVars[i][0], nPos);
-
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
                 || sProcedureCommandLine[nPos+sLocalVars[i][0].length()] == '(')
             {
@@ -1269,10 +1270,8 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, si
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while (sProcedureCommandLine.find(sLocalStrings[i][0], nPos) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(sLocalStrings[i][0], nPos)) != string::npos)
         {
-            nPos = sProcedureCommandLine.find(sLocalStrings[i][0], nPos);
-
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
                 || sProcedureCommandLine[nPos+sLocalStrings[i][0].length()] == '(')
             {
@@ -1327,10 +1326,8 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, siz
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while (sProcedureCommandLine.find(sLocalTables[i][0], nPos) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(sLocalTables[i][0] + "(", nPos)) != string::npos)
         {
-            nPos = sProcedureCommandLine.find(sLocalTables[i][0], nPos);
-
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
                 || sProcedureCommandLine[nPos-1] == '$')
             {
@@ -1381,10 +1378,8 @@ string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, s
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while (sProcedureCommandLine.find(sLocalClusters[i][0], nPos) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(sLocalClusters[i][0] + "{", nPos)) != string::npos)
         {
-            nPos = sProcedureCommandLine.find(sLocalClusters[i][0], nPos);
-
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#'))
             {
                 nPos += sLocalClusters[i][0].length();
@@ -1396,10 +1391,10 @@ string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, s
             if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
                 nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalClusters[i][0].length() + nPos - nDelimCheck), true)
+            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalClusters[i][0].length() + 1 + nPos - nDelimCheck), true)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
-                sProcedureCommandLine.replace(nPos, sLocalClusters[i][0].length()-1, sLocalClusters[i][1]);
+                sProcedureCommandLine.replace(nPos, sLocalClusters[i][0].length(), sLocalClusters[i][1]);
                 nPos += sLocalClusters[i][1].length();
             }
             else
