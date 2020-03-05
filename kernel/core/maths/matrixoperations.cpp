@@ -51,6 +51,7 @@ static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const
 static Matrix parser_IdentityMatrix(unsigned int nSize);
 static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols);
 Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols);
+static Matrix parser_shuffleMatrix(unsigned int nShuffle, unsigned int nBase);
 static Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
 static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
@@ -453,6 +454,24 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             else
                 vReturnedMatrices.push_back(createZeroesMatrix((unsigned int)v[0], (unsigned int)v[0]));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+
+        // create a shuffled vector
+        if (sCmd.substr(i,8) == "shuffle("
+            && getMatchingParenthesis(sCmd.substr(i+7)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,9))))
+        {
+            string sSubExpr = sCmd.substr(i+8, getMatchingParenthesis(sCmd.substr(i+7))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            _parser.SetExpr(sSubExpr);
+            v = _parser.Eval(nResults);
+            if (nResults > 1)
+                vReturnedMatrices.push_back(parser_shuffleMatrix((unsigned int)v[0], (unsigned int)v[1]));
+            else
+                vReturnedMatrices.push_back(parser_shuffleMatrix((unsigned int)v[0], (unsigned int)v[0]));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+7))+8;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
@@ -1112,7 +1131,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
             }
 
             // Get the indices
-            Indices _idx = getIndices(__sCmd.substr(nPos), _parser, _data, _option);
+            Indices _idx = parser_getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option);
 
             if (_idx.row.isOpenEnd())
                 _idx.row.setRange(0, iter->second.size()-1);
@@ -1590,6 +1609,55 @@ Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols)
     for (unsigned int i = 0; i < nLines; i++)
         _mZeroes.push_back(vLine);
     return _mZeroes;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function creates a
+/// shuffled vector of nShuffle elements created
+/// from a 1:nBase vector.
+///
+/// \param nShuffle unsigned int
+/// \param nBase unsigned int
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix parser_shuffleMatrix(unsigned int nShuffle, unsigned int nBase)
+{
+    Matrix _mBase = createZeroesMatrix(nBase, 1);
+    static double dSeed = 1;
+
+    if (nShuffle > nBase)
+        nShuffle = nBase;
+
+    // Create the base (unshuffled) vector
+    for (size_t i = 0; i < nBase; i++)
+        _mBase[i][0] = i+1;
+
+    // Initialize the random number engine using the
+    // time and the last random number created by the
+    // random engine
+    default_random_engine randGen((double)time(0)*dSeed);
+
+    // Shuffle the vector by swapping the i-th shuffled
+    // element with the i-th element
+    for (size_t i = 0; i < nShuffle; i++)
+    {
+        uniform_real_distribution<double> randDist(i, nBase-1);
+
+        int nIndex = rint(randDist(randGen));
+        double dTemp = _mBase[i][0];
+        _mBase[i][0] = _mBase[nIndex][0];
+        _mBase[nIndex][0] = dTemp;
+    }
+
+    uniform_real_distribution<double> randDist(1, nBase-1);
+
+    // Update the seed
+    dSeed = randDist(randGen);
+
+    // Return only the requested vector length
+    return Matrix(_mBase.begin(), _mBase.begin()+nShuffle);
 }
 
 
@@ -4097,6 +4165,7 @@ static map<string,string> createMatrixFunctionsMap()
     mFunctionMap["covar"] = "covar(";
     mFunctionMap["correl"] = "correl(";
     mFunctionMap["normalize"] = "normalize(";
+    mFunctionMap["shuffle"] = "shuffle(";
 
     return mFunctionMap;
 }

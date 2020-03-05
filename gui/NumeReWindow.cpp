@@ -124,6 +124,12 @@ std::string replacePathSeparator(const std::string&);
 string toString(const vector<int>& vVector);
 vector<int> toVector(string sString);
 string removeQuotationMarks(const string& sString);
+string removeMaskedStrings(const string& sString);
+
+string prepareStringsForDialog(const string& sString)
+{
+    return removeMaskedStrings(removeQuotationMarks(sString));
+}
 // Create the stack trace object here
 Language _guilang;
 FindReplaceDialog* g_findReplace;
@@ -2017,7 +2023,7 @@ void NumeReWindow::showGraph(NumeRe::Window& window)
 void NumeReWindow::showFileDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
-    wxFileDialog dialog(this, window.getWindowSettings().sTitle, removeQuotationMarks(getNextArgument(sExpression, true)));
+    wxFileDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
     dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     int ret = dialog.ShowModal();
 
@@ -2041,7 +2047,7 @@ void NumeReWindow::showFileDialog(NumeRe::Window& window)
 void NumeReWindow::showDirDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
-    wxDirDialog dialog(this, window.getWindowSettings().sTitle, removeQuotationMarks(getNextArgument(sExpression, true)));
+    wxDirDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
     dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     int ret = dialog.ShowModal();
 
@@ -2065,7 +2071,7 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
 void NumeReWindow::showTextEntry(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
-    wxTextEntryDialog dialog(this, window.getWindowSettings().sMessage, window.getWindowSettings().sTitle, removeQuotationMarks(getNextArgument(sExpression, true)));
+    wxTextEntryDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
     dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     int ret = dialog.ShowModal();
 
@@ -2088,7 +2094,6 @@ void NumeReWindow::showTextEntry(NumeRe::Window& window)
 /////////////////////////////////////////////////
 void NumeReWindow::showMessageBox(NumeRe::Window& window)
 {
-    string sExpression = window.getWindowSettings().sExpression;
     long style = wxCENTRE;
     int nControls = window.getWindowSettings().nControls;
 
@@ -2113,7 +2118,7 @@ void NumeReWindow::showMessageBox(NumeRe::Window& window)
     if (nControls & NumeRe::CTRL_ICONERROR)
         style |= wxICON_ERROR;
 
-    int ret = wxMessageBox(removeQuotationMarks(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, style, this);
+    int ret = wxMessageBox(prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, style, this);
 
     if (ret == wxOK)
         window.updateWindowInformation(NumeRe::STATUS_OK, "ok");
@@ -2141,10 +2146,10 @@ void NumeReWindow::showListDialog(NumeRe::Window& window)
 
     while (sExpression.length())
     {
-        choices.Add(removeQuotationMarks(getNextArgument(sExpression, true)));
+        choices.Add(prepareStringsForDialog(getNextArgument(sExpression, true)));
     }
 
-    wxSingleChoiceDialog dialog(this, window.getWindowSettings().sMessage, window.getWindowSettings().sTitle, choices);
+    wxSingleChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, choices);
     dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     int ret = dialog.ShowModal();
 
@@ -2172,10 +2177,10 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
 
     while (sExpression.length())
     {
-        choices.Add(removeQuotationMarks(getNextArgument(sExpression, true)));
+        choices.Add(prepareStringsForDialog(getNextArgument(sExpression, true)));
     }
 
-    wxMultiChoiceDialog dialog(this, window.getWindowSettings().sMessage, window.getWindowSettings().sTitle, choices);
+    wxMultiChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, choices);
     dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     int ret = dialog.ShowModal();
 

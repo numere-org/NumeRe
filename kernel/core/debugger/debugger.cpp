@@ -23,7 +23,10 @@
 #include "../utils/tools.hpp"
 #include "../procedure/procedurevarfactory.hpp"
 
-// constructor
+
+/////////////////////////////////////////////////
+/// \brief Constructor.
+/////////////////////////////////////////////////
 NumeReDebugger::NumeReDebugger()
 {
     nLineNumber = string::npos;
@@ -35,9 +38,16 @@ NumeReDebugger::NumeReDebugger()
     bExceptionHandled = false;
 }
 
-// This member function shows the debugger with the
-// corresponding error message obtained by the passed
-// exception_ptr
+
+/////////////////////////////////////////////////
+/// \brief This member function shows the
+/// debugger with the corresponding error message
+/// obtained by the passed exception_ptr.
+///
+/// \param e exception_ptr
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::showError(exception_ptr e)
 {
     if (!bDebuggerActive)
@@ -97,8 +107,15 @@ void NumeReDebugger::showError(exception_ptr e)
     }
 }
 
-// This member function shows the debugger with the
-// passed error message
+
+/////////////////////////////////////////////////
+/// \brief This member function shows the
+/// debugger with the passed error message.
+///
+/// \param sTitle const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::showError(const string& sTitle)
 {
     if (bExceptionHandled)
@@ -112,10 +129,17 @@ void NumeReDebugger::showError(const string& sTitle)
     reset();
 }
 
-// This member function shows the debugger with the
-// corresponding error message obtained by the passed
-// SyntaxError object and throws the corresponding
-// exception afterwards
+
+/////////////////////////////////////////////////
+/// \brief This member function shows the
+/// debugger with the corresponding error message
+/// obtained by the passed SyntaxError object and
+/// throws the corresponding exception afterwards.
+///
+/// \param error SyntaxError
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::throwException(SyntaxError error)
 {
     // do not show the debugger, if the user simply pressed ESC
@@ -144,9 +168,16 @@ void NumeReDebugger::throwException(SyntaxError error)
     throw error;
 }
 
-// This member function shows the debugger for the
-// current breakpoint and returns the debugger code
-// obtained from the user
+
+/////////////////////////////////////////////////
+/// \brief This member function shows the
+/// debugger for the current breakpoint and
+/// returns the debugger code (i.e. the chosen
+/// command) obtained from the user.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int NumeReDebugger::showBreakPoint()
 {
     int nDebuggerCode = showEvent(_lang.get("DBG_HEADLINE"));
@@ -155,9 +186,17 @@ int NumeReDebugger::showBreakPoint()
     return nDebuggerCode;
 }
 
-// This private member function shows the debugger for
-// the current selected event and returns the debugger
-// code obtained from the user
+
+/////////////////////////////////////////////////
+/// \brief This private member function shows the
+/// debugger for the current selected event and
+/// returns the debugger code (i.e. the chosen
+/// command) obtained from the user.
+///
+/// \param sTitle const string&
+/// \return int
+///
+/////////////////////////////////////////////////
 int NumeReDebugger::showEvent(const string& sTitle)
 {
     if (!bDebuggerActive)
@@ -180,9 +219,16 @@ int NumeReDebugger::showEvent(const string& sTitle)
     return NumeReKernel::DEBUGGER_CONTINUE;
 }
 
-// This function replaces unmasked dollars with regular
-// line break characters and also removes the masking
-// characters in front of masked dollars
+
+/////////////////////////////////////////////////
+/// \brief This function replaces unmasked
+/// dollars with regular line break characters
+/// and also removes the masking characters in
+/// front of masked dollars.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::formatMessage()
 {
     for (size_t i = 1; i < sErrorMessage.length(); i++)
@@ -197,8 +243,16 @@ void NumeReDebugger::formatMessage()
     }
 }
 
-// This private member function decodes the type of the arguments
-// by looking at their values and apply some guesses
+
+/////////////////////////////////////////////////
+/// \brief This private member function decodes
+/// the type of the arguments by looking at their
+/// values and apply some guesses.
+///
+/// \param sArgumentValue string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReDebugger::decodeType(string& sArgumentValue)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
@@ -293,9 +347,17 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
     return "\t1 x 1\t(...)\t";
 }
 
-// This member function can be used to select a
-// specific element in the current stack trace to
-// read the state at this position
+
+/////////////////////////////////////////////////
+/// \brief This member function can be used to
+/// select a specific element in the current
+/// stack trace to read the state at this
+/// position.
+///
+/// \param nStackElement size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReDebugger::select(size_t nStackElement)
 {
     // Ensure that the selected element exists
@@ -329,8 +391,14 @@ bool NumeReDebugger::select(size_t nStackElement)
     return true;
 }
 
-// This member function resets the debugger after a
-// thrown and displayed error
+
+/////////////////////////////////////////////////
+/// \brief This member function resets the
+/// debugger after a thrown and displayed error.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::reset()
 {
     vStackTrace.clear();
@@ -339,9 +407,15 @@ void NumeReDebugger::reset()
     return;
 }
 
-// This member function resets the debugger after
-// an evaluated breakpoint. This excludes resetting
-// the stacktrace
+
+/////////////////////////////////////////////////
+/// \brief This member function resets the
+/// debugger after an evaluated breakpoint. This
+/// excludes resetting the stacktrace.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::resetBP()
 {
     nLineNumber = string::npos;
@@ -356,9 +430,18 @@ void NumeReDebugger::resetBP()
     return;
 }
 
-// This member function adds a new stack item to the
-// monitored stack. Additionally, it cleanes the procedure's
-// names for the stack trace display
+
+/////////////////////////////////////////////////
+/// \brief This member function adds a new stack
+/// item to the monitored stack. Additionally, it
+/// cleanes the procedure's names for the stack
+/// trace display.
+///
+/// \param sStackItem const string&
+/// \param _currentProcedure Procedure*
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::pushStackItem(const string& sStackItem, Procedure* _currentProcedure)
 {
     vStackTrace.push_back(pair<string, Procedure*>(sStackItem, _currentProcedure));
@@ -381,7 +464,14 @@ void NumeReDebugger::pushStackItem(const string& sStackItem, Procedure* _current
     return;
 }
 
-// This member function removes the last item from the stack
+
+/////////////////////////////////////////////////
+/// \brief This member function removes the last
+/// item from the stack.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::popStackItem()
 {
     if (vStackTrace.size())
@@ -390,10 +480,22 @@ void NumeReDebugger::popStackItem()
     return;
 }
 
-// This member function gathers all information from the current
-// workspace and stores them internally to display them to the user.
-// This member function is a wrapper for the more complicated signature
-// further below
+
+/////////////////////////////////////////////////
+/// \brief This member function gathers all
+/// information from the current workspace and
+/// stores them internally to display them to the
+/// user.
+///
+/// \param _varFactory ProcedureVarFactory*
+/// \param _sErraticCommand const string&
+/// \param _sErraticModule const string&
+/// \param _nLineNumber unsigned int
+/// \return void
+///
+/// This member function is a wrapper for the
+/// more complicated signature further below.
+/////////////////////////////////////////////////
 void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
 {
     if (!bDebuggerActive)
@@ -404,11 +506,33 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
                        _nLineNumber);
 }
 
-// This member function gathers all information from the current
-// workspace and stores them internally to display them to the user
+
+/////////////////////////////////////////////////
+/// \brief This member function gathers all
+/// information from the current workspace and
+/// stores them internally to display them to the
+/// user.
+///
+/// \param sLocalVars string**
+/// \param nLocalVarMapSize size_t
+/// \param dLocalVars double*
+/// \param sLocalStrings string**
+/// \param nLocalStrMapSize size_t
+/// \param sLocalTables string**
+/// \param nLocalTableMapSize size_t
+/// \param sLocalClusters string**
+/// \param nLocalClusterMapSize size_t
+/// \param sArgumentMap string**
+/// \param nArgumentMapSize size_t
+/// \param _sErraticCommand const string&
+/// \param _sErraticModule const string&
+/// \param _nLineNumber unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, size_t nLocalStrMapSize, string** sLocalTables,
-                                        size_t nLocalTableMapSize, string** sLocalClusters, size_t nLocalClusterMapSize, string** sArgumentMap, size_t nArgumentMapSize, const string& _sErraticCommand,
-                                        const string& _sErraticModule, unsigned int _nLineNumber)
+                                        size_t nLocalTableMapSize, string** sLocalClusters, size_t nLocalClusterMapSize, string** sArgumentMap, size_t nArgumentMapSize,
+                                        const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
 {
     if (!bDebuggerActive)
         return;
@@ -529,8 +653,22 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     return;
 }
 
-// This member funciton gathers the necessary debugging informations
-// from the current executed control flow block
+
+/////////////////////////////////////////////////
+/// \brief This member funciton gathers the
+/// necessary debugging informations from the
+/// current executed control flow block.
+///
+/// \param _sErraticCommand const string&
+/// \param _nLineNumber unsigned int
+/// \param map<string
+/// \param mVarMap string>&
+/// \param vVarArray double**
+/// \param sVarArray string*
+/// \param nVarArray int
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string, string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray)
 {
     if (!bDebuggerActive)
@@ -572,7 +710,14 @@ void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand,
     return;
 }
 
-// This member function returns the module informations as a vector
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// module informations as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReDebugger::getModuleInformations()
 {
     vector<string> vModule;
@@ -583,7 +728,14 @@ vector<string> NumeReDebugger::getModuleInformations()
     return vModule;
 }
 
-// This member function returns the stack trace as a vector
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the stack
+/// trace as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReDebugger::getStackTrace()
 {
     vector<string> vStack;
@@ -607,7 +759,14 @@ vector<string> NumeReDebugger::getStackTrace()
     return vStack;
 }
 
-// This member function returns the numerical variables as a vector
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// numerical variables as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReDebugger::getNumVars()
 {
     vector<string> vNumVars;
@@ -620,7 +779,14 @@ vector<string> NumeReDebugger::getNumVars()
     return vNumVars;
 }
 
-// This member function returns the string variables as a vector
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// string variables as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReDebugger::getStringVars()
 {
     vector<string> vStringVars;
@@ -633,7 +799,14 @@ vector<string> NumeReDebugger::getStringVars()
     return vStringVars;
 }
 
-// This member function returns the tables as a vector
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// tables as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReDebugger::getTables()
 {
     vector<string> vTables;
@@ -646,7 +819,14 @@ vector<string> NumeReDebugger::getTables()
     return vTables;
 }
 
-// This member function returns the clusters as a vector
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// clusters as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReDebugger::getClusters()
 {
     vector<string> vClusters;
@@ -659,7 +839,14 @@ vector<string> NumeReDebugger::getClusters()
     return vClusters;
 }
 
-// This member function returns the procedure argument as a vector
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// procedure argument as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReDebugger::getArguments()
 {
     vector<string> vArguments;
@@ -673,8 +860,14 @@ vector<string> NumeReDebugger::getArguments()
     return vArguments;
 }
 
-// This member function returns the current global
-// variables as a vector
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// current global variables as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReDebugger::getGlobals()
 {
     vector<string> vGlobals;
