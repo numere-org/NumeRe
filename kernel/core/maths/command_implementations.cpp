@@ -4015,7 +4015,7 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
 			_data.writeToTable(_iTargetIndex.row[i], _iTargetIndex.col[j+2], sTargetCache, vZVals[i][j]);
 
 			if (!i)
-				_data.setHeadLineElement(_iTargetIndex.col[j+2], sTargetCache, "z[" + toString((int)j + 1) + "]");
+				_data.setHeadLineElement(_iTargetIndex.col[j+2], sTargetCache, "z(x(:),y(" + toString((int)j + 1) + "))");
 		}
 	}
 

@@ -1510,6 +1510,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         || findParameter(sCmd, "export", '=')
         || findParameter(sCmd, "opnga", '=')
         || findParameter(sCmd, "oeps", '=')
+        || findParameter(sCmd, "obps", '=')
         || findParameter(sCmd, "osvg", '=')
         || findParameter(sCmd, "otex", '=')
         || findParameter(sCmd, "ogif", '=')) && (nType == ALL || nType & SUPERGLOBAL))
@@ -1525,6 +1526,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             nPos = findParameter(sCmd, "export", '=') + 6;
         else if (findParameter(sCmd, "oeps", '='))
             nPos = findParameter(sCmd, "oeps", '=') + 4;
+        else if (findParameter(sCmd, "obps", '='))
+            nPos = findParameter(sCmd, "obps", '=') + 4;
         else if (findParameter(sCmd, "osvg", '='))
             nPos = findParameter(sCmd, "osvg", '=') + 4;
         else if (findParameter(sCmd, "otex", '='))
@@ -1545,6 +1548,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 sFileName += ".png";
             else if (sExtension != ".eps" && findParameter(sCmd, "oeps", '='))
                 sFileName += ".eps";
+            else if (sExtension != ".bps" && findParameter(sCmd, "obps", '='))
+                sFileName += ".bps";
             else if (sExtension != ".svg" && findParameter(sCmd, "osvg", '='))
                 sFileName += ".svg";
             else if (sExtension != ".tex" && findParameter(sCmd, "otex", '='))

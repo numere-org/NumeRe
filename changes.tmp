@@ -16,3 +16,5 @@ Fixed	The "Busy" indicator is now also pulsing, if one double-clicks the history
 New	Added the "shuffle(sel,val)" matrix function.
 Fixed	Resolved the issue that clusters could not be used correctly in matrix expressions.
 Fixed	Resolved a rare case, where double-clicking on a cluster in the variable viewer didn't show its contents.
+Added	The new command "implot" was created to create an image-specific plot.
+Added	Created the new plot option "obps", which will export the plot as *.eps file using bitmap representation (in contrast to option "oeps").

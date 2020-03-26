@@ -34,7 +34,20 @@ extern Plugin _plugin;
 #define APPR_ONE 0.9999999
 #define APPR_TWO 1.9999999
 
-
+/////////////////////////////////////////////////
+/// \brief Wrapper function for creating plots.
+/// Will create an instance of the Plot class,
+/// which will handle the plotting process.
+///
+/// \param sCmd string&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _option Settings&
+/// \param _functions Define&
+/// \param _pData PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData)
 {
 	Plot graph(sCmd, _data, _parser, _option, _functions, _pData);
@@ -51,9 +64,20 @@ void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _optio
 
 
 
-
-// Plotting object constructor. This function uses "calculate-upon-construction",
-// which means that the constructor has to do all the hard work.
+/////////////////////////////////////////////////
+/// \brief Plotting object constructor. This
+/// class uses "calculate-upon-construction",
+/// which means that the constructor has to do
+/// all the hard work.
+///
+/// \param sCmd string&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _option Settings&
+/// \param _functions Define&
+/// \param _pData PlotData&
+///
+/////////////////////////////////////////////////
 Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData)
 {
 	sFunc = "";                      // string mit allen Funktionen
@@ -268,33 +292,50 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 		{
 			if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
 				NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_SAVING")) + " ... ");
-			_graph->WriteFrame(sOutputName.c_str());
+
+            if (sOutputName.substr(sOutputName.length()-4) == ".bps")
+            {
+                sOutputName[sOutputName.length()-3] = 'e';
+                _graph->WriteBPS(sOutputName.c_str());
+            }
+            else
+                _graph->WriteFrame(sOutputName.c_str());
 
 			// --> TeX-Ausgabe gewaehlt? Dann werden mehrere Dateien erzeugt, die an den Zielort verschoben werden muessen <--
 			if (sOutputName.substr(sOutputName.length() - 4, 4) == ".tex")
-			{
 				writeTeXMain(sOutputName);
-			}
+
 			if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
 				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
 		}
+
 		if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-		{
 			NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PLOT_SAVE_LOCATION", sOutputName), _option, 0) + "\n");
-		}
 	}
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Plot class destructor.
+/////////////////////////////////////////////////
 Plot::~Plot()
 {
 	clearData();
+
 	if (_graph)
 		delete _graph;
 }
 
-// This member function determines the maximal plotting dimension
-// of the passed command
+
+/////////////////////////////////////////////////
+/// \brief This member function determines the
+/// maximal plotting dimension of the passed
+/// command.
+///
+/// \param sPlotCommand const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::determinePlottingDimensions(const string& sPlotCommand)
 {
     if ((sPlotCommand.substr(0, 4) == "mesh"
@@ -313,15 +354,34 @@ void Plot::determinePlottingDimensions(const string& sPlotCommand)
     {
         _pInfo.nMaxPlotDim = 3;
     }
-    else if (sPlotCommand.substr(0, 4) == "vect" || sPlotCommand.substr(0, 4) == "dens" || sPlotCommand.substr(0, 4) == "grad")
+    else if (sPlotCommand.substr(0, 4) == "vect" || sPlotCommand.substr(0, 4) == "dens" || sPlotCommand.substr(0, 4) == "grad" || sPlotCommand == "implot")
     {
         if (_pInfo.nMaxPlotDim < 3)
             _pInfo.nMaxPlotDim = 2;
     }
 }
 
-// This member function handles the creation of a single subplot, which
-// may be part of a plot composition or a single plot
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of a single subplot, which may be a
+/// single plot or part of a plot composition.
+///
+/// \param _pData PlotData&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _functions Define&
+/// \param _option Settings&
+/// \param sOutputName string&
+/// \param bAnimateVar bool&
+/// \param vPlotCompose vector<string>&
+/// \param nSubPlotStart size_t
+/// \param nMultiplots[2] size_t
+/// \param nSubPlots size_t&
+/// \param nSubPlotMap size_t&
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser, Define& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     vector<short> vType;
@@ -431,9 +491,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 			if (vPlotCompose.size() > 1)
 				_pData.setLocalComposeParams(_pInfo.sPlotParams, _parser, _option);
 			else
-			{
 				_pData.setParams(_pInfo.sPlotParams, _parser, _option);
-			}
 		}
 
 		if (!nPlotCompose)
@@ -687,8 +745,16 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
     return vPlotCompose.size();
 }
 
-// This member function determines output size and quality on the
-// plotting target and the plotting parameters
+
+/////////////////////////////////////////////////
+/// \brief This member function determines output
+/// size and quality on the plotting target and
+/// the plotting parameters.
+///
+/// \param _pData PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::applyPlotSizeAndQualitySettings(PlotData& _pData)
 {
     // Apply the quality and image dimension settings to the overall result
@@ -735,15 +801,38 @@ void Plot::applyPlotSizeAndQualitySettings(PlotData& _pData)
     // Copy the font and select the font size
     _graph->CopyFont(&_fontData);
     _graph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
+    //_graph->SubPlot(1,1,0, "");
 
 }
 
 
-// This member function creates the plot or animation selected
-// by the plotting command. It will also create the samples for
-// the animation, which may be target either directly to a file
-// (aka GIF) or to the GraphViewer, which will finalize the
-// Rendering step.
+/////////////////////////////////////////////////
+/// \brief This member function creates the plot
+/// or animation selected by the plotting command.
+///
+/// \param _pData PlotData&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _option const Settings&
+/// \param nStyle int&
+/// \param nPlotCompose size_t
+/// \param nPlotComposeSize size_t
+/// \param nLegends size_t&
+/// \param bNewSubPlot bool
+/// \param bAnimateVar bool
+/// \param vDrawVector vector<string>&
+/// \param vType vector<short>&
+/// \param nFunctions int
+/// \param dDataRanges[3][2] double
+/// \param sOutputName const string&
+/// \return bool
+///
+/// It will also create the samples for the
+/// animation, which may be target either
+/// directly to a file (aka GIF) or to the
+/// GraphViewer, which will finalize the
+/// rendering step.
+/////////////////////////////////////////////////
 bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, vector<short>& vType, int nFunctions, double dDataRanges[3][2], const string& sOutputName)
 {
     mglData _mBackground;
@@ -880,7 +969,7 @@ bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _par
         // This section will transform the calculated data points into the desired
         // plotting style. The most complex plots are the default plot, the "plot3d"
         // and the 2D-Plots (mesh, surf, etc.)
-        if (_pInfo.b2D)        // 2D-Plot
+        if (_pInfo.b2D || _pInfo.sCommand == "implot")        // 2D-Plot
         {
             create2dPlot(_pData, _data, _parser, _option,
                          vType,
@@ -938,9 +1027,25 @@ bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _par
 }
 
 
-void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option,
-						vector<short>& vType,
-						int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+/////////////////////////////////////////////////
+/// \brief This member function wraps the
+/// creation of all all two-dimensional plots
+/// (e.g. surface or density plots).
+///
+/// \param _pData PlotData&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _option const Settings&
+/// \param vType vector<short>&
+/// \param nStyle int&
+/// \param nLegends size_t&
+/// \param nFunctions int
+/// \param nPlotCompose size_t
+/// \param nPlotComposeSize size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
 	string sDummy = "";
 	string sConvLegends = "";
@@ -1107,6 +1212,20 @@ void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, cons
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function creates an actual
+/// single two-dimensional plot based upon the
+/// current plotting command.
+///
+/// \param _pData PlotData&
+/// \param _mData mglData&
+/// \param _mMaskData mglData&
+/// \param _mAxisVals mglData*
+/// \param _mContVec mglData&
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Plot::plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mglData& _mContVec, const Settings& _option)
 {
 	/*if (_option.getbDebug())
@@ -1115,7 +1234,8 @@ bool Plot::plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglDat
 	if (_pData.getCutBox()
 			&& _pInfo.sCommand.substr(0, 4) != "cont"
 			&& _pInfo.sCommand.substr(0, 4) != "grad"
-			&& _pInfo.sCommand.substr(0, 4) != "dens")
+			&& _pInfo.sCommand.substr(0, 4) != "dens"
+			&& _pInfo.sCommand != "implot")
 		_graph->SetCutBox(CalcCutBox(_pData.getRotateAngle(1), 0, _pData.getCoords()), CalcCutBox(_pData.getRotateAngle(1), 1, _pData.getCoords()));
 
 	// --> Entsprechend dem gewuenschten Plotting-Style plotten <--
@@ -1183,7 +1303,7 @@ bool Plot::plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglDat
 		if (!(_pData.getContFilled() && _pData.getContProj()))
 			_graph->Dens(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeLight().c_str());
 	}
-	else if (_pInfo.sCommand.substr(0, 4) == "dens")
+	else if (_pInfo.sCommand.substr(0, 4) == "dens" || _pInfo.sCommand == "implot")
 	{
 		if (_pData.getBars())
 			_graph->Tile(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorScheme().c_str());
@@ -1221,9 +1341,25 @@ bool Plot::plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglDat
 }
 
 
-void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option,
-						 vector<short>& vType,
-						 int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+/////////////////////////////////////////////////
+/// \brief This member function wraps the
+/// creation of all one-dimensional plots
+/// (e.g. line or point plots).
+///
+/// \param _pData PlotData&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _option const Settings&
+/// \param vType vector<short>&
+/// \param nStyle int&
+/// \param nLegends size_t&
+/// \param nFunctions int
+/// \param nPlotCompose size_t
+/// \param nPlotComposeSize size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
 	string sDummy = "";
 	string sConvLegends = "";
@@ -1651,6 +1787,19 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function creates an actual
+/// single one-dimensional plot based upon the
+/// current plotting command.
+///
+/// \param _pData PlotData&
+/// \param _mData mglData&
+/// \param _mAxisVals mglData&
+/// \param _mData2[2] mglData
+/// \param nType const short
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType)
 {
 	if (nType == 1)
@@ -1737,6 +1886,15 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of all three-dimensional plots.
+///
+/// \param _pData PlotData&
+/// \param _option const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::create3dPlot(PlotData& _pData, const Settings& _option)
 {
 	if (sFunc != "<<empty>>")
@@ -1933,6 +2091,15 @@ void Plot::create3dPlot(PlotData& _pData, const Settings& _option)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of all three-dimensional vector
+/// fields.
+///
+/// \param _pData PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::create3dVect(PlotData& _pData)
 {
 	if (sFunc != "<<empty>>")
@@ -1985,6 +2152,14 @@ void Plot::create3dVect(PlotData& _pData)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of all two-dimensional vector fields.
+///
+/// \param _pData PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::create2dVect(PlotData& _pData)
 {
 	if (sFunc != "<<empty>>")
@@ -2023,6 +2198,19 @@ void Plot::create2dVect(PlotData& _pData)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of all two-dimensional drawings.
+///
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \param vDrawVector vector<string>&
+/// \param vResults value_type*
+/// \param nFunctions int&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
 {
 	string sStyle;
@@ -2276,6 +2464,19 @@ void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of all three-dimensional drawings.
+///
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \param vDrawVector vector<string>&
+/// \param vResults value_type*
+/// \param nFunctions int&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
 {
 	string sStyle;
@@ -2631,9 +2832,25 @@ void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 }
 
 
-void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option,
-						   vector<short>& vType,
-						   int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+/////////////////////////////////////////////////
+/// \brief This member function wraps the
+/// creation of all trajectory-like plots (plots
+/// describing a series of points in 3D space).
+///
+/// \param _pData PlotData&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _option const Settings&
+/// \param vType vector<short>&
+/// \param nStyle int&
+/// \param nLegends size_t&
+/// \param nFunctions int
+/// \param nPlotCompose size_t
+/// \param nPlotComposeSize size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
 	string sDummy = "";
 	string sConvLegends = "";
@@ -2946,6 +3163,17 @@ void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, c
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function creates an actual
+/// single three-dimensional trajectory.
+///
+/// \param _pData PlotData&
+/// \param _mData[3] mglData
+/// \param _mData2[3] mglData
+/// \param nType const short
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Plot::plotstd3d(PlotData& _pData, mglData _mData[3], mglData _mData2[3], const short nType)
 {
 	if (nType == 1)
@@ -3031,12 +3259,33 @@ bool Plot::plotstd3d(PlotData& _pData, mglData _mData[3], mglData _mData2[3], co
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function is a helper to
+/// return the number of data points located in
+/// the passed mglData object.
+///
+/// \param _mData const mglData&
+/// \return long
+///
+/////////////////////////////////////////////////
 long Plot::getNN(const mglData& _mData)
 {
 	return _mData.nx * _mData.ny * _mData.nz;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function evaluates the
+/// current plot parameter string if it contains
+/// actual string expressions.
+///
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
 	string sDummy;
@@ -3153,6 +3402,20 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function creates a default
+/// plot file name based upon the currently used
+/// plotting command.
+///
+/// \param _pData PlotData&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _option Settings&
+/// \param nPlotComposeSize size_t
+/// \param nPlotCompose size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose)
 {
 	// --> Ggf. waehlen eines Default-Dateinamens <--
@@ -3197,6 +3460,8 @@ void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings
 			_pData.setFileName("drawing3d" + sExt);
 		else if (_pInfo.sCommand.substr(0, 4) == "draw")
 			_pData.setFileName("drawing" + sExt);
+		else if (_pInfo.sCommand == "implot")
+			_pData.setFileName("image" + sExt);
 		else
 			_pData.setFileName("unknown_style" + sExt);
 	}
@@ -3225,18 +3490,23 @@ void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function prepares the line
+/// and point styles based upon the currently
+/// used parameters.
+///
+/// \param _pData PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::setStyles(PlotData& _pData)
 {
 	for (int i = 0; i < _pInfo.nStyleMax; i++)
 	{
-		_pInfo.sLineStyles[i] = " ";
-		_pInfo.sLineStyles[i][0] = _pData.getColors()[i];
-		_pInfo.sPointStyles[i] = " ";
-		_pInfo.sPointStyles[i][0] = _pData.getColors()[i];
-		_pInfo.sContStyles[i] = " ";
-		_pInfo.sContStyles[i][0] = _pData.getContColors()[i];
-		_pInfo.sConPointStyles[i] = " ";
-		_pInfo.sConPointStyles[i][0] = _pData.getColors()[i];
+		_pInfo.sLineStyles[i] = _pData.getColors().substr(i, 1);
+		_pInfo.sPointStyles[i] = _pData.getColors().substr(i, 1);
+		_pInfo.sContStyles[i] = _pData.getColors().substr(i, 1);
+		_pInfo.sConPointStyles[i] = _pData.getColors().substr(i, 1);
 	}
 
 	for (int i = 0; i < _pInfo.nStyleMax; i++)
@@ -3276,8 +3546,18 @@ void Plot::setStyles(PlotData& _pData)
 	}
 }
 
-// This protected member function expands a style string into 9 style
-// string with different luminosities. This is used by curve arrays
+
+/////////////////////////////////////////////////
+/// \brief This protected member function expands
+/// a style string into 9 style string with
+/// different luminosities. This is used by curve
+/// arrays.
+///
+/// \param sCurrentStyle const string&
+/// \param expand bool
+/// \return string
+///
+/////////////////////////////////////////////////
 string Plot::expandStyleForCurveArray(const string& sCurrentStyle, bool expand)
 {
     // Do nothing, if the string shall not be expanded
@@ -3296,8 +3576,26 @@ string Plot::expandStyleForCurveArray(const string& sCurrentStyle, bool expand)
 }
 
 
-void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option,
-						   size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+/////////////////////////////////////////////////
+/// \brief This member function evaluates the
+/// subplot command in a plot composition and
+/// determines, where to place the next plot and
+/// if that is actually possible.
+///
+/// \param _pData PlotData&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \param nLegends size_t&
+/// \param sCmd string&
+/// \param nMultiplots[2] size_t
+/// \param nSubPlots size_t&
+/// \param nSubPlotMap size_t&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
 	if (nLegends && !_pData.getSchematic())
 	{
@@ -3445,6 +3743,17 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function writes a message
+/// to the terminal indicating that the algorithm
+/// is currently working.
+///
+/// \param _pData PlotData&
+/// \param _option const Settings&
+/// \param bAnimateVar bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnimateVar)
 {
 	if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
@@ -3536,25 +3845,41 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnima
 		if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
 			NumeReKernel::printPreFmt("3D-");
 	}
-	if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !bAnimateVar && !(_pInfo.bDraw3D || _pInfo.bDraw))
-    {
+	else if (_pInfo.sCommand == "implot")
+        _pInfo.b2D = true;
+
+	if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !bAnimateVar && !(_pInfo.bDraw3D || _pInfo.bDraw) && _pInfo.sCommand != "implot")
 		NumeReKernel::printPreFmt("Plot ... ");
-    }
+    else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand == "implot")
+        NumeReKernel::printPreFmt("Image plot ... ");
 	else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !bAnimateVar)
-    {
 		NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_DRAWING")) + " ... ");
-    }
 	else if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
-	{
 		NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_ANIMATION")) + " ... \n");
-	}
 
 }
 
 
-void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option,
-							 vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds,
-							 double dDataRanges[3][2], double dSecDataRanges[2][2])
+/////////////////////////////////////////////////
+/// \brief This member function obtains the data
+/// from the referenced table objects and
+/// determines their actual dimensions.
+///
+/// \param _pData PlotData&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \param vType vector<short>&
+/// \param sDataPlots string&
+/// \param sAxisBinds string&
+/// \param sDataAxisBinds string&
+/// \param dDataRanges[3][2] double
+/// \param dSecDataRanges[2][2] double
+/// \return void
+///
+/////////////////////////////////////////////////
+void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2])
 {
 	const short TYPE_DATA = -1;
 	const short TYPE_FUNC = 1;
@@ -3850,9 +4175,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                 _mDataPlots[i][q].a[n] = validize(getDataFromObject(sDataTable, _idx.row[n], _idx.col[q], isCluster));
 
                                 if (!isCluster && _pInfo.sCommand == "plot3d" && q < 3 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.col[q], sDataTable) - _idx.row[0]))
-                                {
                                     _mDataPlots[i][q].a[n] = 0.0;
-                                }
                             }
                         }
                     }
@@ -3875,12 +4198,17 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 							_mDataPlots[i][q].Create(_idx.row.size());
 					}
 
+					long long int nDataCols = _data.getCols(sDataTable);
+
+					// Needed for data grids
+					size_t nNum = _data.num(sDataTable, _idx.row, VectorIndex(_idx.col.front()+1));
+
 					// Fill the mglData objects using the single indices
 					// and the referenced data object
 					for (size_t l = 0; l < _idx.row.size(); l++)
 					{
 					    // Fill the objects depending on the selected columns
-						if (nColumns == 1 && (isCluster || _data.getCols(sDataTable) >= _idx.col.front()))
+						if (nColumns == 1 && (isCluster || nDataCols >= _idx.col.front()))
 						{
 							// These are only y-values. Add index values
 							// as x column
@@ -3894,7 +4222,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 							else if (_pData.getyError() || _pData.getxError())
 								_mDataPlots[i][2].a[l] = 0.0;
 						}
-						else if (!isCluster && _data.getCols(sDataTable) < _idx.col.front() && _pInfo.sCommand != "plot3d")
+						else if (!isCluster && nDataCols < _idx.col.front() && _pInfo.sCommand != "plot3d")
 						{
 							// Catch column index errors
 							for (int i = 0; i < nDataPlots; i++)
@@ -3910,35 +4238,27 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 						else if (!isCluster && nDataDim[i] == 2 && nColumns == 2)
 						{
 						    // These are xy data values
-							if ((_data.getCols(sDataTable) >= _idx.col.front()+1 && (_idx.col.isOrdered() || openEnd))
-                                || (_data.getCols(sDataTable) >= _idx.col.back()+1 && !_idx.col.isOrdered()))
+							if ((nDataCols >= _idx.col.front()+1 && (_idx.col.isOrdered() || openEnd))
+                                || (nDataCols >= _idx.col.back()+1 && !_idx.col.isOrdered()))
 							{
 								// These data columns are in correct order
                                 _mDataPlots[i][0].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.front(), isCluster));
 
 								if (!openEnd)
-								{
 									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.last(), isCluster));
-								}
 								else
-								{
 									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.front() + 1, isCluster));
-								}
 							}
-							else if ((_data.getCols(sDataTable) >= _idx.col.front() && (_idx.col.isOrdered() || openEnd))
-									 || (_data.getCols(sDataTable) >= _idx.col.back() && !_idx.col.isOrdered()))
+							else if ((nDataCols >= _idx.col.front() && (_idx.col.isOrdered() || openEnd))
+									 || (nDataCols >= _idx.col.back() && !_idx.col.isOrdered()))
 							{
 								// These data columns miss a x-column
 								_mDataPlots[i][0].a[l] = _idx.row[l] + 1;
 
 								if (_idx.col.isOrdered() || openEnd)
-								{
 									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.front(), isCluster));
-								}
 								else if (!_idx.col.isOrdered())
-								{
 									_mDataPlots[i][1].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col.last(), isCluster));
-								}
 								else
 									_mDataPlots[i][1].a[l] = NAN;
 							}
@@ -3968,32 +4288,23 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
                                 {
                                     for (size_t k = 0; k < _idx.row.size(); k++)
                                     {
-                                        if (_data.num(sDataTable, _idx.row, VectorIndex(_idx.col.front()+1)) <= k)
+                                        if (nNum <= k)
                                         {
                                             _mDataPlots[i][q].a[l + (_idx.row.size())*k] = NAN;
                                             continue;
                                         }
 
-                                        if (_data.getCols(sDataTable) > _idx.col[q+k] && _data.isValidEntry(_idx.row[l], _idx.col[q+k], sDataTable))
-                                        {
-                                            _mDataPlots[i][q].a[l + (_idx.row.size())*k] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col[q+k], isCluster));
-                                        }
-                                        else
-                                            _mDataPlots[i][q].a[l + (_idx.row.size())*k] = NAN;
+                                        _mDataPlots[i][q].a[l + (_idx.row.size())*k] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col[q+k], isCluster));
                                     }
                                 }
                                 else
                                 {
                                     // --> Vorwaerts zaehlen <--
                                     if (!q && (_pData.getBoxplot()))
-                                    {
                                         _mDataPlots[i][q] = _idx.row[l]+1;
-                                    }
 
-                                    if (_data.getCols(sDataTable) > _idx.col[q] && _data.isValidEntry(_idx.row[l], _idx.col[q], sDataTable))
-                                    {
+                                    if (nDataCols > _idx.col[q])
                                         _mDataPlots[i][q + (_pData.getBoxplot())].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col[q], isCluster));
-                                    }
                                     else if (q == 2 && _pInfo.sCommand == "plot3d"
                                              && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.col[q], sDataTable) - _idx.row.front()))
                                         _mDataPlots[i][q].a[l] = 0.0;
@@ -4013,19 +4324,13 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 								for (int k = 0; k < min(nDataDim[i], (int)_idx.col.size()); k++)
 								{
 									if (bBoxplot && !k)
-									{
 										_mDataPlots[i][0] = _idx.row[l] + 1;
-									}
 
-									if (_data.getCols(sDataTable) > _idx.col[k])
-									{
+									if (nDataCols > _idx.col[k])
 										_mDataPlots[i][k + bBoxplot].a[l] = validize(getDataFromObject(sDataTable, _idx.row[l], _idx.col[k], isCluster));
-									}
 									else if (_pInfo.sCommand == "plot3d" && k < 3
 											 && !(_data.getLines(sDataTable, true) - _data.getAppendedZeroes(_idx.col[k], sDataTable) - _idx.row.front()))
-									{
 										_mDataPlots[i][k].a[l] = 0.0;
-									}
 									else
 										_mDataPlots[i][k + bBoxplot].a[l] = NAN;
 								}
@@ -4041,7 +4346,18 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 	}
 }
 
-// This member function creates the legends for the data plots
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// legend strings for the data plots.
+///
+/// \param _pData PlotData&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	// --> Ersetzen von "data()" bzw. "cache()" durch die Spaltentitel <--
@@ -4294,7 +4610,19 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
     }
 }
 
-// This member function is used to construct special legend elements
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to
+/// construct special legend elements.
+///
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _pData const PlotData&
+/// \param sColumnIndices const string&
+/// \param sTableName const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName)
 {
 	value_type* v = nullptr;
@@ -4334,8 +4662,23 @@ string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const 
 	return sLegend + sLast;
 }
 
-// This member function is used to calculate the data ranges.
-// It is called during filling the data objects.
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to
+/// calculate the data ranges. It is called
+/// during filling the data objects.
+///
+/// \param _pData PlotData&
+/// \param sDataAxisBinds const string&
+/// \param dDataRanges[3][2] double
+/// \param dSecDataRanges[2][2] double
+/// \param i int
+/// \param l int
+/// \param _vLine const VectorIndex&
+/// \param numberofColNodes size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, const VectorIndex& _vLine, size_t numberofColNodes)
 {
     // Calculate the ranges for all three spatial directions
@@ -4443,7 +4786,7 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 		    // All other rows are used to compare them with the already setted value
 		    //
 		    // Three dimensional plot:
-			if (_pInfo.b2D && q == 2)
+			if (_pInfo.b2D && q == 2 && _pInfo.sCommand != "implot")
 			{
 			    // Ignore data ranges, which are resulting from
                 // values, which are already excluded by the user
@@ -4468,6 +4811,11 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 						dDataRanges[q][1] = _mDataPlots[i][q].a[l + _vLine.size() * k];
 				}
 			}
+			else if (q == 2 && _pInfo.sCommand == "implot")
+            {
+                dDataRanges[q][0] = 0;
+                dDataRanges[q][1] = 255;
+            }
 			else
 			{
                 // Ignore data ranges, which are resulting from
@@ -4551,8 +4899,15 @@ void Plot::calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, d
 	}
 }
 
-// This member function counts the valid data
-// points in the passed mglData object
+
+/////////////////////////////////////////////////
+/// \brief This member function counts the valid
+/// data points in the passed mglData object.
+///
+/// \param _mData const mglData&
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t Plot::countValidElements(const mglData& _mData)
 {
     size_t nElements = 0;
@@ -4569,6 +4924,18 @@ size_t Plot::countValidElements(const mglData& _mData)
     return nElements;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function prepares the
+/// memory array in the PlotData class instance
+/// to fit the desired plotting style.
+///
+/// \param _pData PlotData&
+/// \param sFunc const string&
+/// \param nFunctions int
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::prepareMemory(PlotData& _pData, const string& sFunc, int nFunctions)
 {
 	if (!_pInfo.b2D && sFunc != "<<empty>>" && _pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect)
@@ -4593,8 +4960,14 @@ void Plot::prepareMemory(PlotData& _pData, const string& sFunc, int nFunctions)
 	}
 }
 
-// This member function separates the legend
-// strings from the actual functions
+
+/////////////////////////////////////////////////
+/// \brief This member function separates the
+/// legend strings from the actual functions.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::separateLegends()
 {
     // Do only something, if the function has
@@ -4645,6 +5018,23 @@ void Plot::separateLegends()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function applies the
+/// default ranges to the plotting ranges.
+///
+/// \param _pData PlotData&
+/// \param dDataRanges[3][2] double
+/// \param dSecDataRanges[2][2] double
+/// \param nPlotCompose size_t
+/// \param bNewSubPlot bool
+/// \return void
+///
+/// Default ranges are used, whenever the user
+/// does not supply custom ones. If the current
+/// plot contains data sets, then those ranges
+/// are used as default ranges (if the user did
+/// not supply custom ones).
+/////////////////////////////////////////////////
 void Plot::defaultRanges(PlotData& _pData, double dDataRanges[3][2], double dSecDataRanges[2][2], size_t nPlotCompose, bool bNewSubPlot)
 {
 	if (!nPlotCompose || bNewSubPlot)
@@ -4868,6 +5258,20 @@ void Plot::defaultRanges(PlotData& _pData, double dDataRanges[3][2], double dSec
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// plotting data points from usual expressions.
+///
+/// \param _pData PlotData&
+/// \param _parser Parser&
+/// \param sFunc const string&
+/// \param vResults value_type*
+/// \param dt_max double
+/// \param t_animate int
+/// \param nFunctions int
+/// \return int
+///
+/////////////////////////////////////////////////
 int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value_type* vResults, double dt_max, int t_animate, int nFunctions)
 {
 	// --> Plot-Speicher mit den berechneten Daten fuellen <--
@@ -4887,12 +5291,7 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
 			for (int i = 0; i < nFunctions; i++)
 			{
 				if (isinf(vResults[i]) || isnan(vResults[i]))
-				{
-					if (!x)
-						_pData.setData(x, i, NAN);
-					else
-						_pData.setData(x, i, NAN);
-				}
+					_pData.setData(x, i, NAN);
 				else
 					_pData.setData(x, i, (double)vResults[i]);
 			}
@@ -4938,11 +5337,8 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
 					double dResult = _parser.Eval();
 					//vResults = &_parser.Eval();
 
-					if (isnan(dResult)
-							|| isinf(dResult))
-					{
+					if (isnan(dResult) || isinf(dResult))
 						_pData.setData(x, y, NAN, z);
-					}
 					else
 						_pData.setData(x, y, dResult, z);
 				}
@@ -5148,6 +5544,23 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function fits the
+/// remaining plotting ranges for the calculated
+/// interval of data points.
+///
+/// \param _pData PlotData&
+/// \param sFunc const string&
+/// \param dDataRanges[3][2] double
+/// \param nPlotCompose size_t
+/// \param bNewSubPlot bool
+/// \return void
+///
+/// E.g. if a usual plot is calculated and the
+/// user did only supply the x range, then this
+/// function will calculate the corresponding y
+/// range (and extend it to about 10%).
+/////////////////////////////////////////////////
 void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRanges[3][2], size_t nPlotCompose, bool bNewSubPlot)
 {
 	/* --> Darstellungsintervalle anpassen: Wenn nicht alle vorgegeben sind, sollten die fehlenden
@@ -5163,6 +5576,7 @@ void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRang
 			throw SyntaxError(SyntaxError::PLOTDATA_IS_NAN, "", SyntaxError::invalid_position);
 		}
 	}
+
 	if (!(_pInfo.b3D || _pInfo.b3DVect || _pInfo.b2DVect) && (!nPlotCompose || bNewSubPlot) && !(_pInfo.bDraw3D || _pInfo.bDraw))
 	{
 		if (!_pInfo.b2D && _pData.getGivenRanges() < 2 && _pInfo.sCommand != "plot3d")
@@ -5268,7 +5682,7 @@ void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRang
 					_pInfo.dRanges[ZCOORD][0] = 0.0;
 			}
 		}
-		else if (_pData.getGivenRanges() < 3)
+		else if (_pData.getGivenRanges() < 3 && _pInfo.sCommand != "implot")
 		{
 			if (sFunc != "<<empty>>")
 			{
@@ -5297,6 +5711,7 @@ void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRang
 				_pInfo.dRanges[ZCOORD][0] = 0.0;
 			_pInfo.dRanges[ZCOORD][1] += dInt / 20.0;
 		}
+
 		if (!_pInfo.b2D && _pInfo.sCommand != "plot3d")
 		{
 			double dInt = fabs(_pInfo.dSecAxisRanges[1][1] - _pInfo.dSecAxisRanges[1][0]);
@@ -5336,6 +5751,7 @@ void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRang
 			}
 		}
 	}
+
 	if (_pData.getxLogscale() || _pData.getyLogscale() || _pData.getzLogscale())
 	{
 		if (_pData.getxLogscale())
@@ -5372,6 +5788,13 @@ void Plot::fitPlotRanges(PlotData& _pData, const string& sFunc, double dDataRang
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Clearing member function for
+/// allocated memory on the heap.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::clearData()
 {
 	if (_mDataPlots)
@@ -5386,6 +5809,17 @@ void Plot::clearData()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function informs the
+/// mglGraph object about the new plotting
+/// interval ranges.
+///
+/// \param _pData PlotData&
+/// \param sFunc const string&
+/// \param dDataRanges[3][2] double
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::passRangesToGraph(PlotData& _pData, const string& sFunc, double dDataRanges[3][2])
 {
 	if (_pData.getBoxplot() && !_pData.getRangeSetting() && nDataPlots)
@@ -5462,8 +5896,10 @@ void Plot::passRangesToGraph(PlotData& _pData, const string& sFunc, double dData
 
 		if (dMax > dColorMax && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
 			dColorMax = dMax / _pData.getAxisScale(3);
+
 		if (dMin < dColorMin && sFunc != "<<empty>>" && _pInfo.sCommand == "plot3d")
 			dColorMin = dMin / _pData.getAxisScale(3);
+
 		if (_pData.getcLogscale() && (_pInfo.b2D || _pInfo.sCommand == "plot3d" || _pInfo.b3D || _pInfo.b3DVect) && dColorMin <= 0.0 && dColorMax <= 0.0)
 		{
 			clearData();
@@ -5482,6 +5918,12 @@ void Plot::passRangesToGraph(PlotData& _pData, const string& sFunc, double dData
 			_pInfo.dColorRanges[0] = dColorMin * 0.95;
 			_pInfo.dColorRanges[1] = dColorMax * 1.05;
 		}
+		else if (_pInfo.sCommand == "implot")
+        {
+            _graph->SetRange('c', 0, 255.0);
+            _pInfo.dColorRanges[0] = 0;
+            _pInfo.dColorRanges[1] = 255.0;
+        }
 		else
 		{
 			_graph->SetRange('c', dColorMin - 0.05 * (dColorMax - dColorMin), dColorMax + 0.05 * (dColorMax - dColorMin));
@@ -5684,35 +6126,37 @@ void Plot::passRangesToGraph(PlotData& _pData, const string& sFunc, double dData
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function applies the
+/// colour bar to the plot.
+///
+/// \param _pData PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::applyColorbar(PlotData& _pData)
 {
-	if (_pData.getColorbar() && (_pInfo.sCommand.substr(0, 4) == "grad" || _pInfo.sCommand.substr(0, 4) == "dens") && !_pInfo.b3D && !_pData.getSchematic())
+	if (_pData.getColorbar() && (_pInfo.sCommand.substr(0, 4) == "grad" || _pInfo.sCommand.substr(0, 4) == "dens" || _pInfo.sCommand == "implot") && !_pInfo.b3D && !_pData.getSchematic())
 	{
 		if (_pData.getAxisScale(3) != 1.0)
 			_graph->SetRange('c', _pInfo.dColorRanges[0] / _pData.getAxisScale(3), _pInfo.dColorRanges[1] / _pData.getAxisScale(3));
+
 		// --> In diesem Fall haetten wir gerne eine Colorbar fuer den Farbwert <--
 		if (_pData.getBox())
 		{
-			if (!(_pData.getContProj() && _pData.getContFilled()) && _pInfo.sCommand.substr(0, 4) != "dens")
-			{
+			if (!(_pData.getContProj() && _pData.getContFilled()) && _pInfo.sCommand.substr(0, 4) != "dens" && _pInfo.sCommand != "implot")
 				_graph->Colorbar(_pData.getColorSchemeLight("I>").c_str());
-			}
 			else
-			{
 				_graph->Colorbar(_pData.getColorScheme("I>").c_str());
-			}
 		}
 		else
 		{
-			if (!(_pData.getContProj() && _pData.getContFilled()) && _pInfo.sCommand.substr(0, 4) != "dens")
-			{
+			if (!(_pData.getContProj() && _pData.getContFilled()) && _pInfo.sCommand.substr(0, 4) != "dens" && _pInfo.sCommand != "implot")
 				_graph->Colorbar(_pData.getColorSchemeLight(">").c_str());
-			}
 			else
-			{
 				_graph->Colorbar(_pData.getColorScheme().c_str());
-			}
 		}
+
 		if (_pData.getAxisScale(3) != 1.0)
 			_graph->SetRange('c', _pInfo.dColorRanges[0], _pInfo.dColorRanges[1]);
 	}
@@ -5728,13 +6172,25 @@ void Plot::applyColorbar(PlotData& _pData)
 	{
 		if (_pData.getAxisScale(3) != 1.0)
 			_graph->SetRange('c', _pInfo.dColorRanges[0] / _pData.getAxisScale(3), _pInfo.dColorRanges[1] / _pData.getAxisScale(3));
+
 		_graph->Colorbar(_pData.getColorScheme().c_str());
+
 		if (_pData.getAxisScale(3) != 1.0)
 			_graph->SetRange('c', _pInfo.dColorRanges[0], _pInfo.dColorRanges[1]);
 	}
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function applies the light
+/// effects to two- or three-dimensional plots.
+/// The orientation of the light sources depend
+/// on the dimensionality of the plot.
+///
+/// \param _pData PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::applyLighting(PlotData& _pData)
 {
 	if (_pInfo.sCommand.substr(0, 4) == "mesh"
@@ -5802,16 +6258,24 @@ void Plot::applyLighting(PlotData& _pData)
 }
 
 
-// --> Erledigt die nervenaufreibende Logscale-Logik <--
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// complex logscale logic applied to the
+/// coordinate system of the plot.
+///
+/// \param _pData PlotData&
+/// \param bzLogscale bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::setLogScale(PlotData& _pData, bool bzLogscale)
 {
 	// --> Logarithmische Skalierung; ein bisschen Fummelei <--
 	if (_pData.getCoords() == PlotData::CARTESIAN)
 	{
 		if ((_pData.getxLogscale() || _pData.getyLogscale() || _pData.getzLogscale()) || _pData.getcLogscale())
-		{
 			_graph->SetRanges(0.1, 10.0, 0.1, 10.0, 0.1, 10.0);
-		}
+
 		if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale() && !_pData.getcLogscale())
 			_graph->SetFunc("lg(x)", "");
 		else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale() && !_pData.getcLogscale())
@@ -5855,10 +6319,22 @@ void Plot::setLogScale(PlotData& _pData, bool bzLogscale)
 		else if (!_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale() && _pData.getcLogscale())
 			_graph->SetFunc("", "", "", "lg(c)");
 	}
-	return;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// light source depending on the orientation of
+/// the graph. It is not used.
+///
+/// \param dPhi double
+/// \param dTheta double
+/// \param nId int
+/// \param cColor char
+/// \param dBrightness double
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::directionalLight(double dPhi, double dTheta, int nId, char cColor, double dBrightness)
 {
 	mglPoint _mPoint(0.0, 0.0, 0.0);
@@ -5887,10 +6363,25 @@ void Plot::directionalLight(double dPhi, double dTheta, int nId, char cColor, do
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// two coordinates in space, which describe the
+/// cutting box. The cutting box depends on the
+/// rotation of the graph.
+///
+/// \param dPhi double
+/// \param nEdge int
+/// \param nCoords int
+/// \param b3D bool
+/// \return mglPoint
+///
+/////////////////////////////////////////////////
 mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
 {
 	int z = ZCOORD;
 	int r = XCOORD;
+
+	// Determine the coordinates, which correspond to X and Y
 	if (!b3D)
 	{
 		switch (nCoords)
@@ -5919,6 +6410,9 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
 		}
 	}
 
+	// The cutting box depends on the rotation of the graph
+	// and is oriented in a way that the cutted range is
+	// always presented to the viewer.
 	if (dPhi >= 0.0 && dPhi < 90.0)
 	{
 		if (!nEdge)
@@ -5926,26 +6420,18 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
 			if (nCoords == PlotData::CARTESIAN)
 				return mglPoint(0.5 * (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) + _pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0] - 0.1 * fabs(_pInfo.dRanges[YCOORD][0]), _pInfo.dRanges[ZCOORD][0] - 0.1 * fabs(_pInfo.dRanges[ZCOORD][0]));
 			else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
-			{
 				return createMglPoint(nCoords, 0.0, 1.5 * M_PI, _pInfo.dRanges[z][0] - 0.1 * fabs(_pInfo.dRanges[z][0]));
-			}
 			else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
-			{
 				return createMglPoint(nCoords, 0.0, 1.5 * M_PI, 0.0, b3D);
-			}
 		}
 		else
 		{
 			if (nCoords == PlotData::CARTESIAN)
 				return mglPoint(_pInfo.dRanges[XCOORD][1] + 0.1 * fabs(_pInfo.dRanges[XCOORD][1]), (0.5 * (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) + _pInfo.dRanges[YCOORD][0]), _pInfo.dRanges[ZCOORD][1] + 0.1 * fabs(_pInfo.dRanges[ZCOORD][1]));
 			else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
-			{
 				return createMglPoint(nCoords, 1.1 * _pInfo.dRanges[r][1], 2.0 * M_PI, _pInfo.dRanges[z][1] + 0.1 * fabs(_pInfo.dRanges[z][1]), b3D);
-			}
 			else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
-			{
 				return createMglPoint(nCoords, 1.1 * _pInfo.dRanges[r][1], 2.0 * M_PI, M_PI, b3D);
-			}
 		}
 	}
 	else if (dPhi >= 90.0 && dPhi < 180.0)
@@ -5955,26 +6441,18 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
 			if (nCoords == PlotData::CARTESIAN)
 				return mglPoint(0.5 * (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) + _pInfo.dRanges[XCOORD][0], 0.5 * (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) + _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0] - 0.1 * fabs(_pInfo.dRanges[ZCOORD][0]));
 			else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
-			{
 				return createMglPoint(nCoords, 0.0, 0.0, _pInfo.dRanges[z][0] - 0.1 * fabs(_pInfo.dRanges[z][0]), b3D);
-			}
 			else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
-			{
 				return createMglPoint(nCoords, 0.0, 0.0, 0.0, b3D);
-			}
 		}
 		else
 		{
 			if (nCoords == PlotData::CARTESIAN)
 				return mglPoint(_pInfo.dRanges[XCOORD][1] + 0.1 * fabs(_pInfo.dRanges[XCOORD][1]), _pInfo.dRanges[YCOORD][1] + 0.1 * fabs(_pInfo.dRanges[YCOORD][1]), _pInfo.dRanges[ZCOORD][1] + 0.1 * fabs(_pInfo.dRanges[ZCOORD][1]));
 			else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
-			{
 				return createMglPoint(nCoords, _pInfo.dRanges[r][1] * 1.1, 0.5 * M_PI, _pInfo.dRanges[z][1] + 0.1 * fabs(_pInfo.dRanges[z][1]), b3D);
-			}
 			else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
-			{
 				return createMglPoint(nCoords, 1.1 * _pInfo.dRanges[r][1], 0.5 * M_PI, M_PI, b3D);
-			}
 		}
 	}
 	else if (dPhi >= 180.0 && dPhi < 270.0)
@@ -5984,26 +6462,18 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
 			if (nCoords == PlotData::CARTESIAN)
 				return mglPoint(_pInfo.dRanges[XCOORD][0] - 0.1 * fabs(_pInfo.dRanges[XCOORD][0]), 0.5 * (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) + _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][0] - 0.1 * fabs(_pInfo.dRanges[ZCOORD][0]));
 			else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
-			{
 				return createMglPoint(nCoords, 0.0, 0.5 * M_PI, _pInfo.dRanges[z][0] - 0.1 * fabs(_pInfo.dRanges[z][0]), b3D);
-			}
 			else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
-			{
 				return createMglPoint(nCoords, 0.0, 0.5 * M_PI, 0.0, b3D);
-			}
 		}
 		else
 		{
 			if (nCoords == PlotData::CARTESIAN)
 				return mglPoint((0.5 * (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) + _pInfo.dRanges[XCOORD][0]), _pInfo.dRanges[YCOORD][1] + 0.1 * fabs(_pInfo.dRanges[YCOORD][1]), _pInfo.dRanges[ZCOORD][1] + 0.1 * fabs(_pInfo.dRanges[ZCOORD][1]));
 			else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
-			{
 				return createMglPoint(nCoords, 1.1 * _pInfo.dRanges[r][1], M_PI, _pInfo.dRanges[z][1] + 0.1 * fabs(_pInfo.dRanges[z][1]), b3D);
-			}
 			else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
-			{
 				return createMglPoint(nCoords, 1.1 * _pInfo.dRanges[r][1], M_PI, M_PI, b3D);
-			}
 		}
 	}
 	else
@@ -6013,38 +6483,43 @@ mglPoint Plot::CalcCutBox(double dPhi, int nEdge, int nCoords, bool b3D)
 			if (nCoords == PlotData::CARTESIAN)
 				return mglPoint(_pInfo.dRanges[XCOORD][0] - 0.1 * fabs(_pInfo.dRanges[XCOORD][0]), _pInfo.dRanges[YCOORD][0] - 0.1 * fabs(_pInfo.dRanges[YCOORD][0]), _pInfo.dRanges[ZCOORD][0] - 0.1 * fabs(_pInfo.dRanges[ZCOORD][0]));
 			else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
-			{
 				return createMglPoint(nCoords, 0.0, M_PI, _pInfo.dRanges[z][0] - 0.1 * fabs(_pInfo.dRanges[z][0]), b3D);
-			}
 			else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
-			{
 				return createMglPoint(nCoords, 0.0, M_PI, 0.0, b3D);
-			}
 		}
 		else
 		{
 			if (nCoords == PlotData::CARTESIAN)
 				return mglPoint(0.5 * (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) + _pInfo.dRanges[XCOORD][0], 0.5 * (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) + _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][1] + 0.1 * fabs(_pInfo.dRanges[ZCOORD][1]));
 			else if (nCoords == PlotData::POLAR_PZ || nCoords == PlotData::POLAR_RP || nCoords == PlotData::POLAR_RZ)
-			{
 				return createMglPoint(nCoords, 1.1 * _pInfo.dRanges[r][1], 1.5 * M_PI, _pInfo.dRanges[z][1] + 0.1 * fabs(_pInfo.dRanges[z][1]), b3D);
-			}
 			else if (nCoords == PlotData::SPHERICAL_PT || nCoords == PlotData::SPHERICAL_RP || nCoords == PlotData::SPHERICAL_RT)
-			{
 				return createMglPoint(nCoords, 1.1 * _pInfo.dRanges[r][1], 1.5 * M_PI, M_PI, b3D);
-			}
 		}
 	}
+
 	return mglPoint(0);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function creates a
+/// mglPoint instance depending on the chosen
+/// coordinate system.
+///
+/// \param nCoords int
+/// \param r double
+/// \param phi double
+/// \param theta double
+/// \param b3D bool
+/// \return mglPoint
+///
+/////////////////////////////////////////////////
 mglPoint Plot::createMglPoint(int nCoords, double r, double phi, double theta, bool b3D)
 {
 	if (b3D)
-	{
 		return mglPoint(r, phi, theta);
-	}
+
 	switch (nCoords)
 	{
 		case PlotData::POLAR_PZ:
@@ -6062,72 +6537,76 @@ mglPoint Plot::createMglPoint(int nCoords, double r, double phi, double theta, b
 		default:
 			return mglPoint(r, phi, theta);
 	}
+
 	return mglPoint();
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function determines the
+/// positions for the projected density and
+/// contour maps, which depend on the rotation of
+/// the graph and are chosen in a way that they
+/// are always in the background of the graph.
+///
+/// \param dPhi double
+/// \param nEdge int
+/// \return double
+///
+/////////////////////////////////////////////////
 double Plot::getProjBackground(double dPhi, int nEdge)
 {
 	if (dPhi >= 0.0 && dPhi < 90.0)
 	{
 		if (!nEdge)
-		{
 			return _pInfo.dRanges[XCOORD][0];
-		}
 		else
-		{
 			return _pInfo.dRanges[YCOORD][1];
-		}
 	}
 	else if (dPhi >= 90.0 && dPhi < 180.0)
 	{
 		if (!nEdge)
-		{
 			return _pInfo.dRanges[XCOORD][0];
-		}
 		else
-		{
 			return _pInfo.dRanges[YCOORD][0];
-		}
 	}
 	else if (dPhi >= 180.0 && dPhi < 270.0)
 	{
 		if (!nEdge)
-		{
 			return _pInfo.dRanges[XCOORD][1];
-		}
 		else
-		{
 			return _pInfo.dRanges[YCOORD][0];
-		}
 	}
 	else
 	{
 		if (!nEdge)
-		{
 			return _pInfo.dRanges[XCOORD][1];
-		}
 		else
-		{
 			return _pInfo.dRanges[YCOORD][1];
-		}
 	}
+
 	return 0.0;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function prepares the
+/// legend strings to fit the selected legend
+/// style (only colours or only styles or both).
+///
+/// \param sLegend const string&
+/// \param _pData const PlotData&
+/// \return string
+///
+/////////////////////////////////////////////////
 string Plot::getLegendStyle(const string& sLegend, const PlotData& _pData)
 {
 	if (_pData.getLegendStyle())
 	{
 		if (_pData.getLegendStyle() == 1)
-		{
 			return sLegend.substr(0, 1) + "-";
-		}
 		else if (_pData.getLegendStyle() == 2)
-		{
 			return "k" + sLegend.substr(1);
-		}
 		else
 			return sLegend;
 	}
@@ -6136,10 +6615,21 @@ string Plot::getLegendStyle(const string& sLegend, const PlotData& _pData)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function applies a
+/// floating point modulo operator on the data
+/// set.
+///
+/// \param _mData const mglData&
+/// \param dDenominator double
+/// \return mglData
+///
+/////////////////////////////////////////////////
 mglData Plot::fmod(const mglData& _mData, double dDenominator)
 {
 	if (!getNN(_mData))
 		return _mData;
+
 	mglData _mReturn(_mData.nx, _mData.ny, _mData.nz);
 
 	for (long int i = 0; i < getNN(_mData); i++)
@@ -6149,10 +6639,19 @@ mglData Plot::fmod(const mglData& _mData, double dDenominator)
 		if (_mReturn.a[i] < 0)
 			_mReturn.a[i] += dDenominator;
 	}
+
 	return _mReturn;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function applies axes and
+/// axis labels to the graph.
+///
+/// \param _pData const PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::CoordSettings(const PlotData& _pData)
 {
 	if (_pData.getAxis())
@@ -6174,6 +6673,7 @@ void Plot::CoordSettings(const PlotData& _pData)
 				else
 					_graph->SetTickTempl('c', "%g");
 			}
+
 			if (_pData.getCustomTick(i).length())
 			{
 				int nCount = 1;
@@ -6262,6 +6762,7 @@ void Plot::CoordSettings(const PlotData& _pData)
 				}
 			}
 		}
+
 		if (_pData.getBox() || _pData.getCoords() != PlotData::CARTESIAN)
 		{
 			if (!(_pInfo.b2D || _pInfo.b3D || _pInfo.sCommand == "plot3d" || _pInfo.b3DVect || _pInfo.b2DVect)) // standard plot
@@ -6939,6 +7440,7 @@ void Plot::CoordSettings(const PlotData& _pData)
 			}
 		}
 	}
+
 	if (_pData.getCoords() == PlotData::CARTESIAN)
 	{
 		if (_pData.getGrid() && !_pInfo.b2DVect && !_pInfo.b3DVect) // Standard-Grid
@@ -6953,6 +7455,7 @@ void Plot::CoordSettings(const PlotData& _pData)
 		}
 		else if (_pData.getGrid()) // Vektor-Grid
 			_graph->Grid("xyzt", _pData.getFineGridStyle().c_str());
+
 		if (_pData.getBox())
 		{
 			if (!_pData.getSchematic())
@@ -6986,10 +7489,20 @@ void Plot::CoordSettings(const PlotData& _pData)
 			_graph->Label('z', fromSystemCodePage(_pData.getzLabel()).c_str(), getLabelPosition(_pData, ZCOORD));
 		}
 	}
-	return;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function determines the
+/// position of the axis label, which depends on
+/// whether a box surrounds the plot and the
+/// selected coordinate system.
+///
+/// \param _pData const PlotData&
+/// \param nCoord int
+/// \return double
+///
+/////////////////////////////////////////////////
 double Plot::getLabelPosition(const PlotData& _pData, int nCoord)
 {
 	if (_pData.getCoords() == PlotData::CARTESIAN)
@@ -7007,11 +7520,13 @@ double Plot::getLabelPosition(const PlotData& _pData, int nCoord)
 		int nCoordMap[] = {RCOORD, PHICOORD, ZCOORD};
 
 		double dCoordPos[] = {-0.5, (_pData.getRotateAngle(1) - 225.0) / 180.0, 0.0};
+
 		if (_pData.getCoords() >= PlotData::SPHERICAL_PT)
 		{
 			dCoordPos[RCOORD] = -0.4;
 			dCoordPos[THETACOORD] = -0.9;
 		}
+
 		switch (_pData.getCoords())
 		{
 			case PlotData::POLAR_PZ:
@@ -7047,11 +7562,20 @@ double Plot::getLabelPosition(const PlotData& _pData, int nCoord)
 			default:
 				return 0.0;
 		}
+
 		return dCoordPos[nCoordMap[nCoord]];
 	}
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function applies the grid
+/// with the selected styles to the plot.
+///
+/// \param _pData const PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::applyGrid(const PlotData& _pData)
 {
 	if (!_pData.getSchematic())
@@ -7061,8 +7585,10 @@ void Plot::applyGrid(const PlotData& _pData)
 		_graph->SetTickLen(1e-20);
 		_graph->Axis("_");
 	}
+
 	if (_pData.getBox() || _pData.getCoords() != PlotData::CARTESIAN)
 		_graph->Box();
+
 	if (_pData.getGrid() == 1)
 		_graph->Grid("xyzt", _pData.getGridStyle().c_str());
 	else if (_pData.getGrid() == 2)
@@ -7073,6 +7599,18 @@ void Plot::applyGrid(const PlotData& _pData)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function is used to
+/// create a coordinate function for the
+/// coordinate system, which considers the
+/// desired axis scale.
+///
+/// \param sFunc const string&
+/// \param dPhiScale double
+/// \param dThetaScale double
+/// \return string
+///
+/////////////////////////////////////////////////
 string Plot::CoordFunc(const string& sFunc, double dPhiScale, double dThetaScale)
 {
 	string sParsedFunction = sFunc;
@@ -7087,6 +7625,7 @@ string Plot::CoordFunc(const string& sFunc, double dPhiScale, double dThetaScale
 		while (sParsedFunction.find("$PS$") != string::npos)
 			sParsedFunction.replace(sParsedFunction.find("$PS$"), 4, "(" + toString(dPhiScale, 5) + ")");
 	}
+
 	if (dThetaScale == 1.0)
 	{
 		while (sParsedFunction.find("$TS$") != string::npos)
@@ -7102,46 +7641,71 @@ string Plot::CoordFunc(const string& sFunc, double dPhiScale, double dThetaScale
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function creates a special
+/// colour string, which is used for bar charts,
+/// which might contain more than one data set.
+///
+/// \param nNum long int
+/// \return string
+///
+/////////////////////////////////////////////////
 string Plot::composeColoursForBarChart(long int nNum)
 {
 	string sColours;
+
 	for (int i = 0; i < nNum; i++)
 	{
 		sColours += _pInfo.sLineStyles[*_pInfo.nStyle];
+
 		if (i + 1 < nNum)
 			(*_pInfo.nStyle)++;
+
 		if (*_pInfo.nStyle >= _pInfo.nStyleMax)
 			*_pInfo.nStyle = 0;
 	}
+
 	return sColours;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function checks, whether
+/// the selected subplot position is still empty.
+///
+/// \param nMultiPlot[2] unsigned int
+/// \param nSubPlotMap unsigned int&
+/// \param nPlotPos unsigned int
+/// \param nCols unsigned int
+/// \param nLines unsigned int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Plot::checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines)
 {
 	// cols, lines
 	if (nPlotPos + nCols - 1 >= (nPlotPos / nMultiPlot[0] + 1)*nMultiPlot[0])
 		return false;
+
 	if (nPlotPos / nMultiPlot[0] + nLines - 1 >= nMultiPlot[1])
 		return false;
+
 	unsigned int nCol0, nLine0, pos;
 	nCol0 = nPlotPos % nMultiPlot[0];
 	nLine0 = nPlotPos / nMultiPlot[0];
-
-	//cerr << nCols << " " << nLines << endl;
-	//cerr << nCol0 << " " << nLine0 << endl;
 
 	for (unsigned int i = 0; i < nLines; i++)
 	{
 		for (unsigned int j = 0; j < nCols; j++)
 		{
-			//cerr << ((nCol0+j)+nMultiPlot[0]*(nLine0+i)) << endl;
 			pos = 1;
 			pos <<= ((nCol0 + j) + nMultiPlot[0] * (nLine0 + i));
+
 			if (pos & nSubPlotMap)
 				return false;
 		}
 	}
+
 	for (unsigned int i = 0; i < nLines; i++)
 	{
 		for (unsigned int j = 0; j < nCols; j++)
@@ -7151,10 +7715,24 @@ bool Plot::checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlo
 			nSubPlotMap |= pos;
 		}
 	}
+
 	return true;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function does the
+/// "undefined data point" magic, where the range
+/// of the plot is chosen so that "infinity"
+/// values are ignored.
+///
+/// \param nCol int
+/// \param dMin double&
+/// \param dMax double&
+/// \param _pData PlotData&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Plot::weightedRange(int nCol, double& dMin, double& dMax, PlotData& _pData)
 {
 	if (log(dMax - dMin) > 5)
@@ -7162,10 +7740,12 @@ void Plot::weightedRange(int nCol, double& dMin, double& dMax, PlotData& _pData)
 		const double dPercentage = 0.975;
 		const double dSinglePercentageValue = 0.99;
 		double dSinglePercentageUse;
+
 		if (nCol == PlotData::ALLRANGES)
 			dSinglePercentageUse = dSinglePercentageValue;
 		else
 			dSinglePercentageUse = dPercentage;
+
 		if (log(fabs(dMin)) <= 1)
 		{
 			vector<double> vRanges = _pData.getWeightedRanges(nCol, 1.0, dSinglePercentageUse);
