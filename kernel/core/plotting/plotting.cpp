@@ -33,6 +33,7 @@ extern Plugin _plugin;
 #define TCOORD 3
 #define APPR_ONE 0.9999999
 #define APPR_TWO 1.9999999
+#define STYLES_COUNT 20
 
 /////////////////////////////////////////////////
 /// \brief Wrapper function for creating plots.
@@ -102,7 +103,7 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
 	_pInfo.bDraw = false;
 	_pInfo.bDraw3D = false;
 	_pInfo.nMaxPlotDim = 1;
-	_pInfo.nStyleMax = 14;                  // Gesamtzahl der Styles
+	_pInfo.nStyleMax = STYLES_COUNT;                  // Gesamtzahl der Styles
 
 	bool bAnimateVar = false;
 	string sOutputName = "";
@@ -1764,24 +1765,25 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 		if (_pData.getHLines(i).sDesc.length())
 		{
 			_graph->Line(mglPoint(_pInfo.dRanges[XCOORD][0], _pData.getHLines(i).dPos), mglPoint(_pInfo.dRanges[XCOORD][1], _pData.getHLines(i).dPos), _pData.getHLines(i).sStyle.c_str(), 100);
-			if (!i || i > 1)
-			{
-				_graph->Puts(_pInfo.dRanges[XCOORD][0] + 0.03 * fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1]), _pData.getHLines(i).dPos + 0.01 * fabs(_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]), fromSystemCodePage(_pData.getHLines(i).sDesc).c_str(), ":kL");
-			}
-			else
-			{
-				_graph->Puts(_pInfo.dRanges[XCOORD][0] + 0.03 * fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1]), _pData.getHLines(i).dPos - 0.04 * fabs(_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]), fromSystemCodePage(_pData.getHLines(i).sDesc).c_str(), ":kL");
-			}
+            _graph->Puts(_pData.getxLogscale() ? _pInfo.dRanges[XCOORD][0] + 0.03 * log10(fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1])) : _pInfo.dRanges[XCOORD][0] + 0.03 * fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1]),
+                         _pData.getyLogscale() ? _pData.getHLines(i).dPos + 0.01 * log10(fabs(_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0])) : _pData.getHLines(i).dPos + 0.01 * fabs(_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]),
+                         fromSystemCodePage(_pData.getHLines(i).sDesc).c_str(), ":kL");
 		}
 	}
+
 	for (unsigned int i = 0; i < _pData.getVLinesSize(); i++)
 	{
 		if (_pData.getVLines(i).sDesc.length())
 		{
 			_graph->Line(mglPoint(_pData.getVLines(i).dPos, _pInfo.dRanges[YCOORD][0]), mglPoint(_pData.getVLines(i).dPos, _pInfo.dRanges[YCOORD][1]), _pData.getVLines(i).sStyle.c_str());
-			_graph->Puts(mglPoint(_pData.getVLines(i).dPos - 0.01 * fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1]), _pInfo.dRanges[YCOORD][0] + 0.05 * fabs(_pInfo.dRanges[YCOORD][0] - _pInfo.dRanges[YCOORD][1])), mglPoint(_pData.getVLines(i).dPos - 0.01 * fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1]), _pInfo.dRanges[YCOORD][1]), fromSystemCodePage(_pData.getVLines(i).sDesc).c_str(), ":kL");
+			_graph->Puts(mglPoint(_pData.getxLogscale() ? _pData.getVLines(i).dPos - 0.01 * log10(fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1])) : _pData.getVLines(i).dPos - 0.01 * fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1]),
+                                  _pData.getyLogscale() ? _pInfo.dRanges[YCOORD][0] + 0.05 * log10(fabs(_pInfo.dRanges[YCOORD][0] - _pInfo.dRanges[YCOORD][1])) : _pInfo.dRanges[YCOORD][0] + 0.05 * fabs(_pInfo.dRanges[YCOORD][0] - _pInfo.dRanges[YCOORD][1])),
+                         mglPoint(_pData.getxLogscale() ? _pData.getVLines(i).dPos - 0.01 * log10(fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1])) : _pData.getVLines(i).dPos - 0.01 * fabs(_pInfo.dRanges[XCOORD][0] - _pInfo.dRanges[XCOORD][1]),
+                                  _pInfo.dRanges[YCOORD][1]),
+                         fromSystemCodePage(_pData.getVLines(i).sDesc).c_str(), ":kL");
 		}
 	}
+
 	if (nLegends && !_pData.getSchematic() && nPlotCompose + 1 == nPlotComposeSize)
 		_graph->Legend(_pData.getLegendPosition());
 }
@@ -6761,6 +6763,14 @@ void Plot::CoordSettings(const PlotData& _pData)
 					_graph->SetTicksVal('c', _mAxisRange, fromSystemCodePage(_pData.getCustomTick(i)).c_str());
 				}
 			}
+
+            if (_pData.getTimeAxis(i).use)
+            {
+                if (i < 3)
+                    _graph->SetTicksTime('x' + i, 0, _pData.getTimeAxis(i).sTimeFormat.c_str());
+                else
+                    _graph->SetTicksTime('c', 0, _pData.getTimeAxis(i).sTimeFormat.c_str());
+            }
 		}
 
 		if (_pData.getBox() || _pData.getCoords() != PlotData::CARTESIAN)

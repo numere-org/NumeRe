@@ -18,3 +18,5 @@ Fixed	Resolved the issue that clusters could not be used correctly in matrix exp
 Fixed	Resolved a rare case, where double-clicking on a cluster in the variable viewer didn't show its contents.
 Added	The new command "implot" was created to create an image-specific plot.
 Added	Created the new plot option "obps", which will export the plot as *.eps file using bitmap representation (in contrast to option "oeps").
+Applied	NumeRe features now 20 different plotting styles (instead of 14).
+Applied	NumeRe may now use time values for axis in plots and format them correspondingly using the "timeaxes=(AXES,FORMAT)" option
