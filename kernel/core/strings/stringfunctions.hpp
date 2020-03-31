@@ -1455,7 +1455,7 @@ static string strfnc_getkeyval(StringFuncArgs& funcArgs)
         if (funcArgs.nArg1)
             NumeReKernel::issueWarning(_lang.get("PARSERFUNCS_LISTFUNC_GETKEYVAL_WARNING", "\"" + funcArgs.sArg2 + "\""));
 
-        if (funcArgs.sArg3.find_first_not_of("0123456789.eE+-") != string::npos && funcArgs.sArg3.front() != '"')
+        if (funcArgs.sArg3.find_first_not_of("0123456789.eE+-(){},") != string::npos && funcArgs.sArg3.front() != '"')
             sValues = "\"" + funcArgs.sArg3 + "\"";
         else
             sValues = funcArgs.sArg3;
