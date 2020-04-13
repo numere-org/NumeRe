@@ -180,7 +180,7 @@ bool Odesolver::solve(const string& sCmd)
         sTarget = getArgAtPos(sParams, findParameter(sParams, "target", '=')+6);
         sParams.erase(sParams.find(sTarget, findParameter(sParams, "target", '=')+6), sTarget.length());
         sParams.erase(findParameter(sParams, "target", '=')-1, 7);
-        if (sTarget.find('(') != string::npos)
+        if (sTarget.find('(') == string::npos)
         {
             sTarget += "()";
             bAllowCacheClearance = true;

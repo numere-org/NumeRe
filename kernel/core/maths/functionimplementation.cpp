@@ -1403,6 +1403,7 @@ value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
 
     // Create the storage for a new variable
     m_lDataStorage->push_back(new double);
+    *(m_lDataStorage->back()) = 0.0;
 
     // Return the address of the newly created storage
     return m_lDataStorage->back();

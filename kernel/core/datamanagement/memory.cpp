@@ -916,9 +916,13 @@ void Memory::deleteBulk(long long int i1, long long int i2, long long int j1, lo
 
 	if (i2 == -1)
 		i2 = i1;
+    else if (i2 >= nLines)
+        i2 = nLines-1;
 
 	if (j2 == -1)
         j2 = j1;
+    else if (j2 >= nCols)
+        j2 = nCols-1;
 
 	for (long long int i = i1; i <= i2; i++)
 	{
