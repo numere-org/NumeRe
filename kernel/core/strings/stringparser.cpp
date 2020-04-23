@@ -967,7 +967,7 @@ namespace NumeRe
                             sCurrentComponent += "\n";
                             k++;
                         }
-                        else if (vFinal[j][k + 1] == 't' && !isToken("tau", vFinal[j], k+1) && !isToken("theta", vFinal[j], k+1)) // tabulator
+                        else if (vFinal[j][k + 1] == 't' && !isToken("tau", vFinal[j], k+1) && !isToken("theta", vFinal[j], k+1) && !isToken("times", vFinal[j], k+1)) // tabulator
                         {
                             sCurrentComponent += "\t";
                             k++;
