@@ -1107,13 +1107,41 @@ namespace NumeRe
     // the referenced value and returns indices or values depending
     // on the passed type. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::cmp(const VectorIndex& _vLine, double dRef, int nType)
+    double Cluster::cmp(const VectorIndex& _vLine, double dRef, int _nType)
     {
         if (!vClusterArray.size())
             return NAN;
 
-        double dKeep = 0.0;
+        enum
+        {
+            RETURN_VALUE = 1,
+            RETURN_LE = 2,
+            RETURN_GE = 4,
+            RETURN_FIRST = 8
+        };
+
+        int nType = 0;
+
+        double dKeep = dRef;
         int nKeep = -1;
+
+        if (_nType > 0)
+            nType = RETURN_GE;
+        else if (_nType < 0)
+            nType = RETURN_LE;
+
+        switch (intCast(fabs(_nType)))
+        {
+            case 2:
+                nType |= RETURN_VALUE;
+                break;
+            case 3:
+                nType |= RETURN_FIRST;
+                break;
+            case 4:
+                nType |= RETURN_FIRST | RETURN_VALUE;
+                break;
+        }
 
         // Apply the operation and ignore invalid or non-double items
         for (long long int i = 0; i < _vLine.size(); i++)
@@ -1126,15 +1154,21 @@ namespace NumeRe
 
             if (vClusterArray[_vLine[i]]->getDouble() == dRef)
             {
-                if (abs(nType) <= 1)
-                {
-                    return _vLine[i] + 1;
-                }
-                else
+                if (nType & RETURN_VALUE)
                     return vClusterArray[_vLine[i]]->getDouble();
+
+                return _vLine[i] + 1;
             }
-            else if ((nType == 1 || nType == 2) && vClusterArray[_vLine[i]]->getDouble() > dRef)
+            else if (nType & RETURN_GE && vClusterArray[_vLine[i]]->getDouble() > dRef)
             {
+                if (nType & RETURN_FIRST)
+                {
+                    if (nType & RETURN_VALUE)
+                        return vClusterArray[_vLine[i]]->getDouble();
+
+                    return _vLine[i]+1;
+                }
+
                 if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble() < dKeep)
                 {
                     dKeep = vClusterArray[_vLine[i]]->getDouble();
@@ -1143,8 +1177,16 @@ namespace NumeRe
                 else
                     continue;
             }
-            else if ((nType == -1 || nType == -2) && vClusterArray[_vLine[i]]->getDouble() < dRef)
+            else if (nType & RETURN_LE && vClusterArray[_vLine[i]]->getDouble() < dRef)
             {
+                if (nType & RETURN_FIRST)
+                {
+                    if (nType & RETURN_VALUE)
+                        return vClusterArray[_vLine[i]]->getDouble();
+
+                    return _vLine[i]+1;
+                }
+
                 if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble() > dKeep)
                 {
                     dKeep = vClusterArray[_vLine[i]]->getDouble();
@@ -1157,10 +1199,10 @@ namespace NumeRe
 
         if (nKeep == -1)
             return NAN;
-        else if (abs(nType) == 2)
+        else if (nType & RETURN_VALUE)
             return dKeep;
-        else
-            return nKeep + 1;
+
+        return nKeep+1;
     }
 
     // This member function calculates the median value

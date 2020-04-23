@@ -420,37 +420,63 @@ value_type parser_Pct(const value_type* vElements, int nElements)
 // --> Analogie zur Excel-Funktion VERGLEICH() <--
 value_type parser_compare(const value_type* vElements, int nElements)
 {
+    enum
+    {
+        RETURN_VALUE = 1,
+        RETURN_LE = 2,
+        RETURN_GE = 4,
+        RETURN_FIRST = 8
+    };
+
     int nType = 0;
+
     if (nElements < 3)
         return NAN;
+
     value_type vRef = vElements[nElements-2];
     value_type vKeep = vRef;
     int nKeep = -1;
-    if (vElements[nElements-1] == 0)
-    {
-        nType = 0;
-    }
+
+    if (vElements[nElements-1] > 0)
+        nType = RETURN_GE;
     else if (vElements[nElements-1] < 0)
+        nType = RETURN_LE;
+
+    switch (intCast(fabs(vElements[nElements-1])))
     {
-        nType = -1;
+        case 2:
+            nType |= RETURN_VALUE;
+            break;
+        case 3:
+            nType |= RETURN_FIRST;
+            break;
+        case 4:
+            nType |= RETURN_FIRST | RETURN_VALUE;
+            break;
     }
-    else
-    {
-        nType = 1;
-    }
+
     for (int i = 0; i < nElements-2; i++)
     {
         if (isnan(vElements[i]) || isinf(vElements[i]))
             continue;
+
         if (vElements[i] == vRef)
         {
-            if (!nType || fabs(vElements[nElements-1]) <= 1)
-                return i+1;
-            else
+            if (nType & RETURN_VALUE)
                 return vElements[i];
+
+            return i+1;
         }
-        else if (nType == 1 && vElements[i] > vRef)
+        else if (nType & RETURN_GE && vElements[i] > vRef)
         {
+            if (nType & RETURN_FIRST)
+            {
+                if (nType & RETURN_VALUE)
+                    return vElements[i];
+
+                return i+1;
+            }
+
             if (nKeep == -1 || vElements[i] < vKeep)
             {
                 vKeep = vElements[i];
@@ -459,8 +485,16 @@ value_type parser_compare(const value_type* vElements, int nElements)
             else
                 continue;
         }
-        else if (nType == -1 && vElements[i] < vRef)
+        else if (nType & RETURN_LE && vElements[i] < vRef)
         {
+            if (nType & RETURN_FIRST)
+            {
+                if (nType & RETURN_VALUE)
+                    return vElements[i];
+
+                return i+1;
+            }
+
             if (nKeep == -1 || vElements[i] > vKeep)
             {
                 vKeep = vElements[i];
@@ -470,12 +504,13 @@ value_type parser_compare(const value_type* vElements, int nElements)
                 continue;
         }
     }
+
     if (nKeep == -1)
         return NAN;
-    else if (vElements[nElements-1] <= -2 || vElements[nElements-1] >= 2)
+    else if (nType & RETURN_VALUE)
         return vKeep;
-    else
-        return nKeep+1;
+
+    return nKeep+1;
 }
 
 // --> Ver-undet seine Inputargumente <--
