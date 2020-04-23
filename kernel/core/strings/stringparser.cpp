@@ -1082,7 +1082,7 @@ namespace NumeRe
                                 bLineBreaks = true;
                                 k++;
                             }
-                            else if (strRes.vResult[j][k + 1] == 't' && !isToken("tau", strRes.vResult[j], k+1) && !isToken("theta", strRes.vResult[j], k+1)) // tabulator
+                            else if (strRes.vResult[j][k + 1] == 't' && !isToken("tau", strRes.vResult[j], k+1) && !isToken("theta", strRes.vResult[j], k+1) && !isToken("times", strRes.vResult[j], k+1)) // tabulator
                             {
                                 sConsoleOut += "\t";
                                 k++;
