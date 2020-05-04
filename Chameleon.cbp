@@ -604,6 +604,7 @@
 		<Unit filename="kernel/core/settings.cpp" />
 		<Unit filename="kernel/core/settings.hpp" />
 		<Unit filename="kernel/core/strings/stringdatastructures.hpp" />
+		<Unit filename="kernel/core/strings/stringexpression.hpp" />
 		<Unit filename="kernel/core/strings/stringfunchandler.cpp" />
 		<Unit filename="kernel/core/strings/stringfunchandler.hpp" />
 		<Unit filename="kernel/core/strings/stringfunctions.hpp" />
@@ -620,6 +621,13 @@
 		<Unit filename="kernel/core/ui/language.hpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.cpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.hpp" />
+		<Unit filename="kernel/core/utils/timer.hpp">
+			<Option target="Debug" />
+			<Option target="Release_dynamic" />
+			<Option target="Debug_dynamic" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+		</Unit>
 		<Unit filename="kernel/core/utils/tinyxml2.cpp" />
 		<Unit filename="kernel/core/utils/tinyxml2.h" />
 		<Unit filename="kernel/core/utils/tools.cpp" />

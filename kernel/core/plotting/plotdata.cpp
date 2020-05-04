@@ -19,6 +19,7 @@
 #include <mgl2/mgl.h>
 #include "plotdata.hpp"
 #include "../../kernel.hpp"
+#define STYLES_COUNT 20
 
 extern mglGraph _fontData;
 
@@ -886,6 +887,45 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
         }
     }
+    if (findParameter(sCmd, "timeaxes", '=') && (nType == ALL || nType & GLOBAL))
+    {
+        string sTemp;
+        sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "timeaxes", '=')+8);
+
+        if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
+            sTemp = sTemp.substr(1,sTemp.length()-2);
+
+        string sAxesList = getArgAtPos(getNextArgument(sTemp, true),0);
+
+        if (sAxesList.front() == '{')
+            sAxesList.erase(0,1);
+
+        if (sAxesList.back() == '}')
+            sAxesList.erase(sAxesList.length()-1);
+
+        string sFormat;
+
+        if (sTemp.length())
+        {
+            sFormat = getArgAtPos(getNextArgument(sTemp, true),0);
+
+            if (sFormat.front() == '{')
+                sFormat.erase(0,1);
+
+            if (sFormat.back() == '}')
+                sFormat.erase(sFormat.length()-1);
+        }
+
+        while (sAxesList.length())
+        {
+            string sAxis = removeSurroundingQuotationMarks(getNextArgument(sAxesList, true));
+
+            if (sAxis == "c")
+                _timeAxes[3].activate(removeSurroundingQuotationMarks(getNextArgument(sFormat, true)));
+            else if (sAxis.find_first_of("xyz") != string::npos)
+                _timeAxes[sAxis[0]-'x'].activate(removeSurroundingQuotationMarks(getNextArgument(sFormat, true)));
+        }
+    }
     if (findParameter(sCmd, "lborder", '=') && (nType == ALL || nType & LOCAL))
     {
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "lborder", '=')+7);
@@ -1194,7 +1234,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             for (unsigned int i = 0; i < sTemp.length(); i++)
             {
-                if (i >= 14)
+                if (i >= STYLES_COUNT)
                     break;
                 if (sTemp[i] == ' ')
                     continue;
@@ -1275,7 +1315,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             for (unsigned int i = 0; i < sTemp.length(); i++)
             {
-                if (i >= 14)
+                if (i >= STYLES_COUNT)
                     break;
                 if (sTemp[i] == ' ')
                     continue;
@@ -1291,7 +1331,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
 
         for (unsigned int i = 0; i < sTemp.length(); i++)
         {
-            if (i >= 14)
+            if (i >= STYLES_COUNT)
                 break;
             if (sTemp[i] == ' ')
                 continue;
@@ -1312,7 +1352,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             for (unsigned int i = 0; i < sTemp.length(); i++)
             {
                 sChar = "";
-                if (i >= 28 || nChar >= 14)
+                if (i >= 2*STYLES_COUNT || nChar >= STYLES_COUNT)
                     break;
                 if (sTemp[i] == ' ')
                 {
@@ -1347,7 +1387,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         for (unsigned int i = 0; i < sTemp.length(); i += 4)
         {
             nJump = 0;
-            if (nStyle >= 14)
+            if (nStyle >= STYLES_COUNT)
                 break;
             if (sTemp.substr(i,4).find('#') != string::npos)
                 nJump = 1;
@@ -1510,6 +1550,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         || findParameter(sCmd, "export", '=')
         || findParameter(sCmd, "opnga", '=')
         || findParameter(sCmd, "oeps", '=')
+        || findParameter(sCmd, "obps", '=')
         || findParameter(sCmd, "osvg", '=')
         || findParameter(sCmd, "otex", '=')
         || findParameter(sCmd, "ogif", '=')) && (nType == ALL || nType & SUPERGLOBAL))
@@ -1525,6 +1566,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             nPos = findParameter(sCmd, "export", '=') + 6;
         else if (findParameter(sCmd, "oeps", '='))
             nPos = findParameter(sCmd, "oeps", '=') + 4;
+        else if (findParameter(sCmd, "obps", '='))
+            nPos = findParameter(sCmd, "obps", '=') + 4;
         else if (findParameter(sCmd, "osvg", '='))
             nPos = findParameter(sCmd, "osvg", '=') + 4;
         else if (findParameter(sCmd, "otex", '='))
@@ -1545,6 +1588,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 sFileName += ".png";
             else if (sExtension != ".eps" && findParameter(sCmd, "oeps", '='))
                 sFileName += ".eps";
+            else if (sExtension != ".bps" && findParameter(sCmd, "obps", '='))
+                sFileName += ".bps";
             else if (sExtension != ".svg" && findParameter(sCmd, "osvg", '='))
                 sFileName += ".svg";
             else if (sExtension != ".tex" && findParameter(sCmd, "otex", '='))
@@ -1827,12 +1872,6 @@ void PlotData::reset()
         sAxisBind.clear();
         _lHlines.push_back(Line());
         _lVLines.push_back(Line());
-        /*_lHlines[i].sDesc = "";
-        _lHlines[i].sStyle = "k;2";
-        _lHlines[i].dPos = 0.0;
-        _lVLines[i].sDesc = "";
-        _lVLines[i].sStyle = "k;2";
-        _lVLines[i].dPos = 0.0;*/
         nSlices[i] = 1;
     }
 
@@ -1842,7 +1881,9 @@ void PlotData::reset()
         sTickTemplate[i] = "";
         sCustomTicks[i] = "";
         dAxisScale[i] = 1.0;
+        _timeAxes[i].deactivate();
     }
+
     for (int i = 0; i < 2; i++)
     {
         _AddAxes[i].dMin = NAN;
@@ -1850,6 +1891,7 @@ void PlotData::reset()
         _AddAxes[i].sLabel = "";
         _AddAxes[i].sStyle = "k";
     }
+
     dAspect = 4.0/3.0;
     dtParam[0] = 0.0;
     dtParam[1] = 1.0;
@@ -1908,14 +1950,14 @@ void PlotData::reset()
     sColorSchemeLight = "{U8}{N8}{C8}{e7}{y8}";
     sBackgroundColorScheme = "<<REALISTIC>>";
     sBackground = "";
-    sColors = "rbGqmPuRBgQMpU";
-    sGreys = "kHhWkHhWkHhWkH";
-    sContColors = "kUHYPCQhuWypcq";
-    sContGreys = "kwkwkwkwkwkwkw";
-    sPointStyles = " + x o s d#+#x x o s d#+#x +";
-    sLineStyles = "-------;;;;;;;";
-    sLineSizes = "00000000000000";
-    sLineStylesGrey = "-|=;i:j|=;i:j-";
+    sColors =         "rbGqmPunclRBgQMpUNCL";
+    sContColors =     "kUHYPCQNLMhuWypcqnlm";
+    sContGreys =      "kwkwkwkwkwkwkwkwkwkw";
+    sPointStyles =    " + x o s . d#+#x#.#* x o s . d#+#x#.#* +";
+    sLineStyles =     "----------;;;;;;;;;;";
+    sLineSizes =      "00000000000000000000";
+    sGreys =          "kHhWkHhWkHhWkHhWkHhW";
+    sLineStylesGrey = "-|=;i:j|=;i:j-|=:i;-";
     sGridStyle = "=h0-h0";
     nAnimateSamples = 50;
     nRanges = 0;
@@ -1938,8 +1980,6 @@ void PlotData::reset()
     }
     else
         _fontData.LoadFont("pagella", (sTokens[0][1] + "\\fonts").c_str());
-
-    return;
 }
 
 // --> Daten im Speicher loeschen. Speicher selbst bleibt bestehen <--
@@ -1961,6 +2001,7 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
 
     _lHlines.clear();
     _lVLines.clear();
+
     for (int i = 0; i < 3; i++)
     {
         dRanges[i][0] = -10.0;
@@ -1971,43 +2012,44 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
         bDefaultAxisLabels[i] = true;
         _lHlines.push_back(Line());
         _lVLines.push_back(Line());
-        /*_lHlines[i].sDesc = "";
-        _lHlines[i].sStyle = "k;2";
-        _lVLines[i].sDesc = "";
-        _lVLines[i].sStyle = "k;2";
-        _lHlines[i].dPos = 0.0;
-        _lVLines[i].dPos = 0.0;*/
     }
+
     for (int i = 0; i < 4; i++)
     {
         sCustomTicks[i] = "";
         dAxisScale[i] = 1.0;
+        _timeAxes[i].deactivate();
     }
+
     nRanges = 0;
     sFileName = "";
     sPlotTitle = "";
+
     if (bGraphFinished)
         sComposedTitle = "";
+
     if (!bAllHighRes)
         nHighResLevel = 0;
+
     dMin = NAN;
     dMax = NAN;
     dMaximum = 1.0;
     nRequestedLayers = 1;
-    sColors = "rbGqmPuRBgQMpU";
-    sGreys = "kHhWkHhWkHhWkH";
-    sContColors = "kUHYPCQhuWypcq";
-    sContGreys = "kwkwkwkwkwkwkw";
-    sPointStyles = " + x o s d#+#x x o s d#+#x +";
-    sLineStyles = "-------;;;;;;;";
-    sLineSizes = "00000000000000";
-    sLineStylesGrey = "-|=;i:j|=;i:j-";
+    sColors =         "rbGqmPunclRBgQMpUNCL";
+    sContColors =     "kUHYPCQNLMhuWypcqnlm";
+    sContGreys =      "kwkwkwkwkwkwkwkwkwkw";
+    sPointStyles =    " + x o s . d#+#x#.#* x o s . d#+#x#.#* +";
+    sLineStyles =     "----------;;;;;;;;;;";
+    sLineSizes =      "00000000000000000000";
+    sGreys =          "kHhWkHhWkHhWkHhWkHhW";
+    sLineStylesGrey = "-|=;i:j|=;i:j-|=:i;-";
     nLegendstyle = 0;
     sAxisBind.clear();
     sFunctionAxisBind.clear();
     sBackground = "";
     dColorRange[0] = NAN;
     dColorRange[1] = NAN;
+
     for (int i = 0; i < 2; i++)
     {
         _AddAxes[i].dMin = NAN;
@@ -2015,7 +2057,6 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
         _AddAxes[i].sLabel = "";
         _AddAxes[i].sStyle = "k";
     }
-    return;
 }
 
 /* --> Plotparameter als String lesen: Gibt nur Parameter zurueck, die von Plot zu Plot

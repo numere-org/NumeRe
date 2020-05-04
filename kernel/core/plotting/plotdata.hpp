@@ -29,6 +29,7 @@
 
 #include "../ui/error.hpp"
 #include "../utils/tools.hpp"
+#include "../structures.hpp"
 #include "../ParserLib/muParser.h"
 
 
@@ -135,6 +136,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         vector<Line> _lHlines;
         vector<Line> _lVLines;
         Axis _AddAxes[2];
+        TimeAxis _timeAxes[4];
         int nRequestedLayers;
         int nLegendPosition;
 
@@ -485,6 +487,15 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                         _AddAxes[i].sLabel = "@{\\i y}";
                 }
                 return;
+            }
+        inline TimeAxis getTimeAxis(unsigned int i = 0) const
+            {
+                TimeAxis axis;
+
+                if (i < 4)
+                    return _timeAxes[i];
+
+                return axis;
             }
 
         // --> Lesen der einzelnen Achsenbeschriftungen <--

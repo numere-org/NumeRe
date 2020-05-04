@@ -58,13 +58,12 @@ namespace NumeRe
             string createStringOutput(StringResult& strRes, string& sLine, int parserFlags, bool bSilent);
             string createTerminalOutput(StringResult& strRes, int parserFlags);
             vector<bool> applyElementaryStringOperations(vector<string>& vFinal, bool& bReturningLogicals);
-            string concatenateStrings(const string& sExpr);
+            void concatenateStrings(string& sExpr);
             void storeStringToDataObjects(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings);
             void storeStringToStringObject(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings);
             int decodeStringParams(string& sLine);
-            bool isAssignmentOperator(const string& sLine, size_t eq_pos);
             bool isSimpleString(const string& sLine);
-            bool isToken(const string& sToken, const string& sLine, size_t pos);
+            bool isToken(const char* sToken, const string& sLine, size_t pos);
             string maskControlCharacters(string sString);
             virtual StringResult eval(string& sLine, string sCache, bool bParseNumericals = true) override;
 

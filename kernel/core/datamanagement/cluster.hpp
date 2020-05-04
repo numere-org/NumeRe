@@ -41,7 +41,8 @@ namespace NumeRe
         public:
             enum ClusterItemType
             {
-                ITEMTYPE_INVALID,
+                ITEMTYPE_INVALID = -1,
+                ITEMTYPE_MIXED,
                 ITEMTYPE_DOUBLE,
                 ITEMTYPE_STRING
             };
@@ -146,6 +147,7 @@ namespace NumeRe
         private:
             vector<ClusterItem*> vClusterArray;
             bool bSortCaseInsensitive;
+            mutable int nGlobalType;
 
             void assign(const Cluster& cluster);
             void assign(const vector<double>& vVals);
@@ -156,7 +158,11 @@ namespace NumeRe
             void reorderElements(vector<int> vIndex, int i1, int i2);
 
         public:
-            Cluster() {bSortCaseInsensitive = false;}
+            Cluster()
+            {
+                bSortCaseInsensitive = false;
+                nGlobalType = ClusterItem::ITEMTYPE_INVALID;
+            }
             Cluster(const Cluster& cluster)
             {
                 assign(cluster);

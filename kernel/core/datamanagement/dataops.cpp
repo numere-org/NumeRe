@@ -36,7 +36,18 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 
 extern Language _lang;
 
-// This function exports the passed data into an Excel 97-2003 worksheet
+
+/////////////////////////////////////////////////
+/// \brief This function exports the passed data
+/// into an Excel 97-2003 worksheet.
+///
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \param sCache const string&
+/// \param sFileName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void export_excel(Datafile& _data, Settings& _option, const string& sCache, const string& sFileName)
 {
 	using namespace YExcel;
@@ -94,11 +105,22 @@ void export_excel(Datafile& _data, Settings& _option, const string& sCache, cons
 	// Inform the user
 	if (_option.getSystemPrintStatus())
 		NumeReKernel::print(LineBreak(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString((_data.getLines(sCache) + 1)*_data.getCols(sCache)), sFileName), _option));
-	return;
 }
 
 
-// This function is a wrapper for the Datafile object. It will simply do the whole UI stuff and let the Datafile object do the hard work
+/////////////////////////////////////////////////
+/// \brief This function is a wrapper for the
+/// Datafile object. It will simply do the whole
+/// UI stuff and let the Datafile object do the
+/// hard work.
+///
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \param _parser Parser&
+/// \param sFileName string
+/// \return void
+///
+/////////////////////////////////////////////////
 void load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFileName)
 {
     // check, if the filename is available
@@ -169,10 +191,25 @@ void load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFile
 			}
 		}
 	}
-	return;
 }
 
-// 3. Zur Kontrolle (oder aus anderen Gruenden) moechte man die eingelesenen Daten vielleicht auch betrachten. Wird hier erledigt
+
+/////////////////////////////////////////////////
+/// \brief This function presents the passed data
+/// to the user in a visual way.
+///
+/// \param _data Datafile&
+/// \param _out Output&
+/// \param _option Settings&
+/// \param _sCache const string&
+/// \param nPrecision size_t
+/// \param bData bool
+/// \param bCache bool
+/// \param bSave bool
+/// \param bDefaultName bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void show_data(Datafile& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision, bool bData, bool bCache, bool bSave, bool bDefaultName)
 {
 	string sCache = _sCache;
@@ -309,11 +346,29 @@ void show_data(Datafile& _data, Output& _out, Settings& _option, const string& _
 		else
 			throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, "", SyntaxError::invalid_position);
 	}
-	return;
 }
 
-// This function transforms the data into a string matrix and returns the corresponding pointer
-// The calling function is responsible to clear the created memory
+
+/////////////////////////////////////////////////
+/// \brief This function transforms the data into
+/// a string matrix and returns the corresponding
+/// pointer.
+///
+/// \note The calling function is responsible to
+/// clear the allocated memory.
+///
+/// \param _data Datafile&
+/// \param _out Output&
+/// \param _option Settings&
+/// \param sCache const string&
+/// \param nLines long longint&
+/// \param nCols long longint&
+/// \param nHeadlineCount int&
+/// \param nPrecision size_t
+/// \param bSave bool
+/// \return string**
+///
+/////////////////////////////////////////////////
 string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
 {
 	nHeadlineCount = 1;
@@ -435,7 +490,17 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 	return sOut;
 }
 
-// 4. Sehr spannend: Einzelne Datenreihen zu einer einzelnen Tabelle verknuepfen
+
+/////////////////////////////////////////////////
+/// \brief This function handles appending data
+/// sets to already existing data.
+///
+/// \param __sCmd const string&
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
 {
 	string sCmd = __sCmd;
@@ -548,8 +613,17 @@ void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
 	return;
 }
 
-// 5. Vielleicht hat man sich irgendwie vertan und moechte die Daten wieder entfernen -> Das klappt hiermit
-void remove_data (Datafile& _data, Settings& _option, bool bIgnore)
+
+/////////////////////////////////////////////////
+/// \brief This function frees the passed
+/// Datafile object.
+///
+/// \param
+/// \param
+/// \return
+///
+/////////////////////////////////////////////////
+void remove_data(Datafile& _data, Settings& _option, bool bIgnore)
 {
     // Only if data is available
 	if (_data.isValid())
@@ -587,7 +661,17 @@ void remove_data (Datafile& _data, Settings& _option, bool bIgnore)
 	return;
 }
 
-// 8. Den Cache leeren
+
+/////////////////////////////////////////////////
+/// \brief This function removes all allocated
+/// tables and frees the assigned memory.
+///
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \param bIgnore bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 {
     // Only if there is valid data in the cache
@@ -641,9 +725,20 @@ void clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 	return;
 }
 
-// This static function searches for the named table in the cache
-// map, evaluates the specified indices and deletes the corresponding
-// contents from the table
+
+/////////////////////////////////////////////////
+/// \brief This static function searches for the
+/// named table in the cache map, evaluates the
+/// specified indices and deletes the
+/// corresponding contents from the table.
+///
+/// \param sCache const string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool searchAndDeleteTable(const string& sCache, Parser& _parser, Datafile& _data, const Settings& _option)
 {
     for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
@@ -677,9 +772,20 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, Datafile
     return false;
 }
 
-// This static function searches for the named cluster in the cluster
-// map, evaluates the specified indices and deletes the corresponding
-// contents from the cluster
+
+/////////////////////////////////////////////////
+/// \brief This static function searches for the
+/// named cluster in the cluster map, evaluates
+/// the specified indices and deletes the
+/// corresponding contents from the cluster.
+///
+/// \param sCluster const string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Datafile& _data, const Settings& _option)
 {
     for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
@@ -710,7 +816,18 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Data
     return false;
 }
 
-// 20. Loescht ein der mehrere Eintraege im Cache
+
+/////////////////////////////////////////////////
+/// \brief This function removes one or multiple
+/// entries in the selected table or cluster.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	bool bSuccess = false;
@@ -744,7 +861,18 @@ bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Sett
 	return bSuccess;
 }
 
-// 21. Kopiert ganze Teile eines Datenobjekts in den Cache (oder im Cache umher)
+
+/////////////////////////////////////////////////
+/// \brief This function copies whole chunks of
+/// data between tables.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	string sToCopy = "";
@@ -783,7 +911,18 @@ bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 	return true;
 }
 
-// This function will move the selected part of a data table to a new location
+
+/////////////////////////////////////////////////
+/// \brief This function will move the selected
+/// part of a data table to a new location.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	string sToMove = "";
@@ -829,7 +968,19 @@ bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
     return true;
 }
 
-// This function gets the source for a data operation like copy and move
+
+/////////////////////////////////////////////////
+/// \brief This function gets the source for a
+/// data operation like copy and move.
+///
+/// \param sExpression const string&
+/// \param _idx Indices&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return string
+///
+/////////////////////////////////////////////////
 static string getSourceForDataOperation(const string& sExpression, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option)
 {
     string sSourceForFileOperation = "";
@@ -857,7 +1008,19 @@ static string getSourceForDataOperation(const string& sExpression, Indices& _idx
     return sSourceForFileOperation;
 }
 
-// This function evaluates the transpose flag and switches the indices correspondingly
+
+/////////////////////////////////////////////////
+/// \brief This function evaluates the transpose
+/// flag and switches the indices correspondingly.
+///
+/// \param sTarget const string&
+/// \param _iSourceIndex Indices&
+/// \param _iTargetIndex Indices&
+/// \param _data const Datafile&
+/// \param bTranspose bool
+/// \return void
+///
+/////////////////////////////////////////////////
 static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const Datafile& _data, bool bTranspose)
 {
     if (!isValidIndexSet(_iTargetIndex))
@@ -902,7 +1065,21 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
     }
 }
 
-// This function will perform the actual data operation
+
+/////////////////////////////////////////////////
+/// \brief This function will perform the actual
+/// data operation.
+///
+/// \param sSource const string&
+/// \param sTarget const string&
+/// \param _iSourceIndex const Indices&
+/// \param _iTargetIndex const Indices&
+/// \param _data Datafile&
+/// \param bMove bool
+/// \param bTranspose bool
+/// \return void
+///
+/////////////////////////////////////////////////
 static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, Datafile& _data, bool bMove, bool bTranspose)
 {
     Datafile _cache;
@@ -982,8 +1159,19 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
     _data.setCacheStatus(false);
 }
 
-// This static function sorts strings and is called by sortData, if the selected data object
-// equals "string"
+
+/////////////////////////////////////////////////
+/// \brief This static function sorts strings and
+/// is called by sortData, if the selected data
+/// object equals "string".
+///
+/// \param sCmd string&
+/// \param _idx Indices&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& _data)
 {
     vector<int> vSortIndex;
@@ -1019,8 +1207,20 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& 
 	return true;
 }
 
-// This static function sorst clusters and is called by sortData, if the selected data object
-// equals a cluster identifier
+
+/////////////////////////////////////////////////
+/// \brief This static function sorts clusters
+/// and is called by sortData, if the selected
+/// data object equals a cluster identifier.
+///
+/// \param sCmd string&
+/// \param sCluster const string&
+/// \param _idx Indices&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Parser& _parser, Datafile& _data)
 {
     vector<int> vSortIndex;
@@ -1054,7 +1254,20 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 	return true;
 }
 
-// This function is a wrapper for the corresponding member function of the Datafile object
+
+/////////////////////////////////////////////////
+/// \brief This function is a wrapper for the
+/// corresponding member function of the Datafile
+/// object.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _functions Define&
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
 {
 	vector<int> vSortIndex;
@@ -1111,7 +1324,17 @@ bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions
 	return true;
 }
 
-// This function writes the string contents in the command to a file
+
+/////////////////////////////////////////////////
+/// \brief This function writes the string
+/// contents in the command to a file.
+///
+/// \param sCmd string&
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool writeToFile(string& sCmd, Datafile& _data, Settings& _option)
 {
 	fstream fFile;
@@ -1285,7 +1508,19 @@ bool writeToFile(string& sCmd, Datafile& _data, Settings& _option)
 	return true;
 }
 
-// This function reads the content of a file as strings
+
+/////////////////////////////////////////////////
+/// \brief This function reads the content of a
+/// file as strings and copies them to a
+/// temporary string vector variable.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
 {
 	string sFileName = "";
@@ -1383,7 +1618,18 @@ bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 	return true;
 }
 
-// This function reads image data from an image file and stores it as a cache table
+
+/////////////////////////////////////////////////
+/// \brief This function reads image data from an
+/// image file and stores it as a cache table.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
 {
 	string sFileName = "";
@@ -1448,8 +1694,12 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 		if (_idx.row[i] == VectorIndex::INVALID)
 			break;
 
-		_data.writeToTable(_idx.row[i] + i, _idx.col[1], sTargetCache, i + 1);
+		_data.writeToTable(_idx.row[i], _idx.col[1], sTargetCache, i + 1);
 	}
+
+	// Write headlines
+	_data.setHeadLineElement(_idx.col[0], sTargetCache, "x");
+	_data.setHeadLineElement(_idx.col[1], sTargetCache, "y");
 
 	// iData is a iterator over the image data
 	int iData;
@@ -1462,14 +1712,16 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 		if (_idx.col[j+2] == VectorIndex::INVALID)
 			break;
 
+        _data.setHeadLineElement(_idx.col[2+j], sTargetCache, "z(x(:),y(" + toString(j) + "))");
+
 		for (int i = 0; i < nWidth; i++)
 		{
 			if (_idx.row[i] == VectorIndex::INVALID)
 				break;
 
             // The actual copy process
-            // Calculate the average of the three channels and store it in the target cache
-			_data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache, imageData[j * 3 * nWidth + iData] / 3.0 + imageData[j * 3 * nWidth + iData + 1] / 3.0 + imageData[j * 3 * nWidth + iData + 2] / 3.0);
+            // Calculate the luminosity of the three channels and write it to the table
+			_data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache, imageData[j * 3 * nWidth + iData] * 0.3 + imageData[j * 3 * nWidth + iData + 1] * 0.59 + imageData[j * 3 * nWidth + iData + 2] * 0.11);
 
 			// Advance the iterator three channels
 			iData += 3;
@@ -1480,7 +1732,21 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 	return true;
 }
 
-// This function extracts the filename from a given (and already separated) command string and returns it as a valid file name
+
+/////////////////////////////////////////////////
+/// \brief This function extracts the filename
+/// from a given (and already separated) command
+/// string and returns it as a valid file name.
+///
+/// \param sCmd string&
+/// \param sParams string&
+/// \param sDefExt const string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option Settings&
+/// \return string
+///
+/////////////////////////////////////////////////
 static string getFilenameFromCommandString(string& sCmd, string& sParams, const string& sDefExt, Parser& _parser, Datafile& _data, Settings& _option)
 {
     string sFileName;

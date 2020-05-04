@@ -714,6 +714,8 @@ void wxTerm::pass_command(const string& command)
 	// erase the current line
 	erase_line();
 
+	m_wxParent->Busy();
+
 	// Set the new command to the kernel and log it
 	wxCriticalSectionLocker lock(m_kernelCS);
 	m_wxParent->AddToHistory(command);

@@ -122,9 +122,7 @@ namespace mu
 		bMakeLoopByteCode = false;
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
-		nVectorIndex = 0;
-		nVectorVarsSize = 200;
-		dVectorVars = 0;
+
 		mVarMapPntr = 0;
 	}
 
@@ -158,9 +156,7 @@ namespace mu
 		bMakeLoopByteCode = false;
 		bPauseLoopByteCode = false;
 		bPauseLock = false;
-		nVectorIndex = 0;
-		nVectorVarsSize = 200;
-		dVectorVars = 0;
+
 		mVarMapPntr = 0;
 
 		Assign(a_Parser);
@@ -169,8 +165,8 @@ namespace mu
 	//---------------------------------------------------------------------------
 	ParserBase::~ParserBase()
 	{
-		if (dVectorVars)
-			delete[] dVectorVars;
+        for (auto iter = m_lDataStorage.begin(); iter != m_lDataStorage.end(); ++iter)
+            delete *iter;
 	}
 
 	//---------------------------------------------------------------------------
@@ -475,6 +471,7 @@ namespace mu
 	{
 		// Check locale compatibility
 		std::locale loc;
+
 		if (m_pTokenReader->GetArgSep() == std::use_facet<numpunct<char_type> >(loc).decimal_point())
 			Error(ecLOCALE);
 
@@ -483,16 +480,15 @@ namespace mu
 		// when calling tellg on a stringstream created from the expression after
 		// reading a value at the end of an expression. (mu::Parser::IsVal function)
 		// (tellg returns -1 otherwise causing the parser to ignore the value)
-		string_type sBuf(a_sExpr + _nrT(" ") );
+		string_type sBuf(a_sExpr + " ");
 
-		// TODO: Handle Operations like and(data() == data()) correctly
 		// Perform the pre-evaluation of the vectors first
-		if (sBuf.find('{') != string::npos && sBuf.find('}', sBuf.find('{')) != string::npos)
-		{
+		if ((sBuf.find('{') != string::npos && sBuf.find('}', sBuf.find('{')) != string::npos) || ContainsVectorVars(sBuf, true))
 			PreEvaluateVectors(sBuf);
-		}
+
 		if (sBuf.find('{') != string::npos || sBuf.find('}') != string::npos)
-			Error(ecMISSING_PARENS, sBuf, std::min(sBuf.find('{') != string::npos, sBuf.find('}') != string::npos), "{}");
+			Error(ecMISSING_PARENS, sBuf, std::min(sBuf.find('{'), sBuf.find('}')), "{}");
+
 		// Now check, whether the pre-evaluated formula was already parsed into the bytecode
 		// -> Return, if that is true
 		// -> Invalidate the bytecode for this formula, if necessary
@@ -527,73 +523,44 @@ namespace mu
 	    // Pause the loop mode if it is active
 		PauseLoopMode();
 
-		std::string sMultiArgFunc;
 		vector<double> vResults;
-		value_type* v = nullptr;
-		int nResults;
+
+		// Resolve vectors, which are part of a multi-argument
+		// function's parentheses
+		for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+        {
+            size_t match = 0;
+
+            if (iter->second.size() == 1)
+                continue;
+
+            while ((match = sExpr.find(iter->first, match)) != string::npos)
+            {
+                if (!match || checkDelimiter(sExpr.substr(match-1, iter->first.length()+2)))
+                    ResolveVectorsInMultiArgFunc(sExpr, match);
+
+                match++;
+            }
+        }
 
 		// Walk through the whole expression
-		for (unsigned int i = 0; i < sExpr.length(); i++)
+		for (size_t i = 0; i < sExpr.length(); i++)
 		{
 		    // search for vector parentheses
 			if (sExpr[i] == '{' && sExpr.find('}', i) != string::npos)
 			{
-			    // Try to find a multi-argument function. The size_t will store the start position of the function name
-				size_t nMultiArgParens = FindMultiArgFunc(sExpr, i, sMultiArgFunc);
-				vResults.clear();
+			    if (ResolveVectorsInMultiArgFunc(sExpr, i))
+                    continue;
 
-				// Find the matching brace for the current vector brace
+                vResults.clear();
+
+                // Find the matching brace for the current vector brace
 				size_t j = getMatchingParenthesis(sExpr.substr(i));
+
 				if (j != std::string::npos)
 					j += i; // if one is found, add the current position
 
-				if (nMultiArgParens != std::string::npos)
-				{
-				    // This is part of a multi-argument function
-				    // Find the matching parenthesis for the multi-argument function
-					size_t nClosingParens = getMatchingParenthesis(sExpr.substr(nMultiArgParens)) + nMultiArgParens;
-
-					// Set the argument of the function as expression and evaluate it recursively
-					SetExpr(sExpr.substr(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
-					v = Eval(nResults);
-
-					// Apply the needed multi-argument function
-					if (sMultiArgFunc == "num")
-						vResults.push_back(parser_Num(v, nResults));
-					if (sMultiArgFunc == "cnt")
-						vResults.push_back(parser_Cnt(v, nResults));
-					if (sMultiArgFunc == "and")
-						vResults.push_back(parser_and(v, nResults));
-					if (sMultiArgFunc == "or")
-						vResults.push_back(parser_or(v, nResults));
-					if (sMultiArgFunc == "xor")
-						vResults.push_back(parser_xor(v, nResults));
-					if (sMultiArgFunc == "norm")
-						vResults.push_back(parser_Norm(v, nResults));
-					if (sMultiArgFunc == "prd")
-						vResults.push_back(parser_product(v, nResults));
-					if (sMultiArgFunc == "sum")
-						vResults.push_back(parser_Sum(v, nResults));
-					if (sMultiArgFunc == "avg")
-						vResults.push_back(parser_Avg(v, nResults));
-					if (sMultiArgFunc == "med")
-						vResults.push_back(parser_Med(v, nResults));
-					if (sMultiArgFunc == "pct")
-						vResults.push_back(parser_Pct(v, nResults));
-					if (sMultiArgFunc == "std")
-						vResults.push_back(parser_Std(v, nResults));
-					if (sMultiArgFunc == "cmp")
-						vResults.push_back(parser_compare(v, nResults));
-					if (sMultiArgFunc == "min")
-						vResults.push_back(parser_Min(v, nResults));
-					if (sMultiArgFunc == "max")
-						vResults.push_back(parser_Max(v, nResults));
-
-                    // Store the result in a new temporary vector
-                    string sVectorVarName = CreateTempVectorVar(vResults);
-					sExpr.replace(nMultiArgParens - sMultiArgFunc.length(), nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(), sVectorVarName);
-				}
-				else if (j != std::string::npos && sExpr.substr(i, j - i).find(':') != std::string::npos)
+			    if (j != std::string::npos && sExpr.substr(i, j - i).find(':') != std::string::npos)
 				{
 				    // This is vector expansion: e.g. "{1:10}"
 				    // Get the expression
@@ -613,7 +580,8 @@ namespace mu
 					    // This is a normal vector, e.g. "{1,2,3}"
 					    // Set the sub expression and evaluate it
 						SetExpr(sExpr.substr(i + 1, j - i - 1));
-						v = Eval(nResults);
+						int nResults;
+						value_type* v = Eval(nResults);
 
 						// Store the results in the target vector
 						for (int n = 0; n < nResults; n++)
@@ -650,6 +618,7 @@ namespace mu
 				}
 			}
 		}
+
 		// Re-enable the loop mode if it is used in the moment
 		PauseLoopMode(false);
 	}
@@ -673,20 +642,25 @@ namespace mu
 		{
 			if (sSubExpr[i] == '(' || sSubExpr[i] == '[' || sSubExpr[i] == '{')
 				i += getMatchingParenthesis(sSubExpr.substr(i));
+
 			if (sSubExpr[i] == ':')
 			{
 				if (isExpansion == -1)
 					isExpansion = 1;
+
                 // This is a conditional operator
 				if (isExpansion == 0)
 					continue;
+
 				sSubExpr[i] = ',';
 			}
+
 			// This is a conditional operator
 			if (sSubExpr[i] == '?')
 			{
 				if (isExpansion == -1)
 					isExpansion = 0;
+
 				if (isExpansion == 1)
 					throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sSubExpr, i);
 			}
@@ -700,13 +674,9 @@ namespace mu
 		{
 		    // This is an expansion. There are two possible cases
 			if (nResults == 2)
-			{
 				expandVector(v[0], v[1], (v[0] < v[1] ? 1.0 : -1.0), vResults);
-			}
 			else if (nResults == 3)
-			{
 				expandVector(v[0], v[2], v[1], vResults);
-			}
 		}
 		else
 		{
@@ -765,6 +735,53 @@ namespace mu
 		}
 	}
 
+    /////////////////////////////////////////////////
+    /// \brief This private function will try to find
+    /// a surrounding multi-argument function,
+    /// resolve the arguments, apply the function and
+    /// store the result as a new vector.
+    ///
+    /// \param sExpr std::string&
+    /// \param nPos size_t&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+	bool ParserBase::ResolveVectorsInMultiArgFunc(std::string& sExpr, size_t& nPos)
+	{
+        string sMultiArgFunc;
+	    // Try to find a multi-argument function. The size_t will store the start position of the function name
+        size_t nMultiArgParens = FindMultiArgFunc(sExpr, nPos, sMultiArgFunc);
+
+        if (nMultiArgParens != std::string::npos)
+        {
+            // This is part of a multi-argument function
+            // Find the matching parenthesis for the multi-argument function
+            size_t nClosingParens = getMatchingParenthesis(sExpr.substr(nMultiArgParens)) + nMultiArgParens;
+
+            // Set the argument of the function as expression and evaluate it recursively
+            vector<double> vResults;
+            int nResults;
+            SetExpr(sExpr.substr(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
+            value_type* v = Eval(nResults);
+
+            // Apply the needed multi-argument function
+            ParserCallback pCallback = m_FunDef[sMultiArgFunc];
+            vResults.push_back(multfun_type(pCallback.GetAddr())(v, nResults));
+
+            // Store the result in a new temporary vector
+            string sVectorVarName = CreateTempVectorVar(vResults);
+            sExpr.replace(nMultiArgParens - sMultiArgFunc.length(), nClosingParens - nMultiArgParens + 1 + sMultiArgFunc.length(), sVectorVarName);
+
+            // Set the position to the start of the multi-argument
+            // function to avoid jumping over consecutive vectors
+            nPos = nMultiArgParens-sMultiArgFunc.length();
+
+            return true;
+        }
+
+        return false;
+	}
+
     /** \brief This function searches for the first multi-argument function
      *
      * \param sExpr const std::string&
@@ -783,33 +800,29 @@ namespace mu
 			{
 			    // Get the matching parenthesis
 				size_t nParPos = getMatchingParenthesis(sExpr.substr(i));
+
 				if (nParPos == string::npos)
 					return std::string::npos;
 				else
 					nParPos += i;
+
                 // Ignore all results before nPos
 				if (nParPos < nPos)
 					continue;
+
                 // Find the last character before the alphabetic part
 				size_t nSep = sExpr.find_last_of(" +-*/(=:?&|<>!%{^", i - 1) + 1;
 				// Extract the function
 				std::string sFunc = sExpr.substr(nSep, i - nSep);
+
+				// Exclude the following functions
+				if (sFunc == "polynomial")
+                    continue;
+
 				// Compare the function with the set of known multi-argument functions
-				if (sFunc == "num"
-						|| sFunc == "cnt"
-						|| sFunc == "prd"
-						|| sFunc == "sum"
-						|| sFunc == "and"
-						|| sFunc == "or"
-						|| sFunc == "xor"
-						|| sFunc == "avg"
-						|| sFunc == "med"
-						|| sFunc == "pct"
-						|| sFunc == "std"
-						|| sFunc == "norm"
-						|| sFunc == "cmp"
-						|| sFunc == "min"
-						|| sFunc == "max")
+				auto iter = m_FunDef.find(sFunc);
+
+				if (iter != m_FunDef.end() && iter->second.GetArgc() == -1)
 				{
 				    // If the function is a multi-argument function, store it and return the position
 					sMultArgFunc = sFunc;
@@ -817,6 +830,7 @@ namespace mu
 				}
 			}
 		}
+
 		// Return string::npos if nothing was found
 		return std::string::npos;
 	}
@@ -998,6 +1012,9 @@ namespace mu
 			Error(ecNAME_CONFLICT);
 
 		CheckName(a_sName, ValidNameChars());
+
+		//if (m_VarDef.find(a_sName) != m_VarDef.end())
+		//	Error(ecNAME_CONFLICT);
 		m_VarDef[a_sName] = a_pVar;
 		ReInit();
 	}
@@ -2355,8 +2372,21 @@ namespace mu
 	void ParserBase::RemoveVar(const string_type& a_strVarName)
 	{
 		varmap_type::iterator item = m_VarDef.find(a_strVarName);
+
 		if (item != m_VarDef.end())
 		{
+		    // Search for the variable in the internal storage and
+		    // remove it
+		    for (auto iter = m_lDataStorage.begin(); iter != m_lDataStorage.end(); ++iter)
+            {
+                if (item->second == *iter)
+                {
+                    delete *iter;
+                    m_lDataStorage.erase(iter);
+                    break;
+                }
+            }
+
 			m_VarDef.erase(item);
 			ReInit();
 		}
@@ -2500,14 +2530,17 @@ namespace mu
 
         NumeReKernel::print("Value stack:");
         NumeReKernel::printPreFmt("|-> ");
+
 		while ( !stVal.empty() )
 		{
 			token_type val = stVal.pop();
-			if (val.GetType() == tpSTR)
+
+            if (val.GetType() == tpSTR)
                 NumeReKernel::printPreFmt(" \"" + val.GetAsString() + "\" ");
 			else
                 NumeReKernel::printPreFmt(" " + toString(val.GetVal(), 7) + " ");
 		}
+
 		NumeReKernel::printPreFmt("  \n");
 		NumeReKernel::printPreFmt("|-> Operator stack:\n");
 
@@ -2568,59 +2601,104 @@ namespace mu
 						break;
 				}
 			}
+
 			stOprt.pop();
 		}
 
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the next
+    /// comma-separated expression object from the
+    /// passed argument list.
+    ///
+    /// \param sArgList std::string&
+    /// \param bCut bool
+    /// \return string_type
+    ///
+    /////////////////////////////////////////////////
 	string_type ParserBase::getNextVarObject(std::string& sArgList, bool bCut)
 	{
 		int nParenthesis = 0;
 		int nVektorbrace = 0;
 		unsigned int nPos = 0;
+
+		// Find the next "top-level" expression object, which
+		// is separated by a comma
 		for (unsigned int i = 0; i < sArgList.length(); i++)
 		{
-			//cerr << nParenthesis << " ";
 			if (sArgList[i] == '(')
 				nParenthesis++;
-			if (sArgList[i] == ')')
+
+            if (sArgList[i] == ')')
 				nParenthesis--;
+
 			if (sArgList[i] == '{')
 			{
 				nVektorbrace++;
 				i++;
 			}
+
 			if (sArgList[i] == '}')
 			{
 				nVektorbrace--;
 				i++;
 			}
+
 			if (sArgList[i] == ',' && !nParenthesis && !nVektorbrace)
 			{
 				nPos = i;
 				break;
 			}
 		}
+
+		// Nothing found: use everything
 		if (!nPos && sArgList[0] != ',')
 			nPos = sArgList.length();
+
+        // First position: remove the comma
+        // and return an empty string
 		if (!nPos)
 		{
 			if (bCut && sArgList[0] == ',')
 				sArgList.erase(0, 1);
+
 			return "";
 		}
+
+		// Extract the argument
 		std::string sArg = sArgList.substr(0, nPos);
-		while (sArg[0] == ' ' || sArg[0] == '\t')
+
+		// Strip whitespaces from front and back
+		while (sArg.front() == ' ' || sArg.front() == '\t')
 			sArg.erase(0, 1);
-		while (sArg[sArg.length() - 1] == ' ' || sArg[sArg.length() - 1] == '\t')
+
+		while (sArg.back() == ' ' || sArg.back() == '\t')
 			sArg.erase(sArg.length() - 1);
+
+        // Remove the argument and the trailing comma
+        // from the argument list
 		if (bCut && sArgList.length() > nPos + 1)
 			sArgList = sArgList.substr(nPos + 1);
 		else if (bCut)
 			sArgList = "";
+
 		return sArg;
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns the next
+    /// free vector index, which can be used to
+    /// create a new temporary vector.
+    ///
+    /// \return string_type
+    ///
+    /// This function is called by
+    /// ParserBase::CreateTempVectorVar(), which
+    /// creates the actual vector.
+    /////////////////////////////////////////////////
 	string_type ParserBase::getNextVectorVarIndex()
 	{
 	    if (bMakeLoopByteCode)
@@ -2630,11 +2708,20 @@ namespace mu
             return sIndex;
         }
         else
-            return toString(nVectorIndex);
+            return toString(m_lDataStorage.size()); //nVectorIndex);
 	}
 
-	// This member function assigns the results of the calculation to
-	// the temporary vector
+
+    /////////////////////////////////////////////////
+    /// \brief This member function assigns the
+    /// results of the calculation to the temporary
+    /// vector.
+    ///
+    /// \param varmap const varmap_type&
+    /// \param nFinalResults int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::assignResultsToTarget(const varmap_type& varmap, int nFinalResults)
 	{
 	    if (!mTargets.size() || varmap.find("_~TRGTVCT[~]") == varmap.end())
@@ -2905,19 +2992,16 @@ namespace mu
 	    return v[0];
 	}
 
-	ParserByteCode ParserBase::GetByteCode() const
-	{
-		return m_vRPN;
-	}
 
-	void ParserBase::SetByteCode(const ParserByteCode& _bytecode)
-	{
-		m_vRPN.Assign(_bytecode);
-		m_pParseFormula = &ParserBase::ParseCmdCode;
-		return;
-	}
-
-	//---------------------------------------------------------------------------
+    /////////////////////////////////////////////////
+    /// \brief Activates the loop mode and prepares
+    /// the internal arrays for storing the necessary
+    /// data.
+    ///
+    /// \param _nLoopLength unsigned int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::ActivateLoopMode(unsigned int _nLoopLength)
     {
         if (!bMakeLoopByteCode)
@@ -2947,6 +3031,14 @@ namespace mu
         return;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Deactivates the loop mode and resets
+    /// the internal arrays.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::DeactivateLoopMode()
     {
         if (bMakeLoopByteCode)
@@ -2973,37 +3065,88 @@ namespace mu
         return;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Activates the selected position in the
+    /// internally stored bytecode.
+    ///
+    /// \param _nLoopElement unsigned int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::SetIndex(unsigned int _nLoopElement)
     {
         nthLoopElement = _nLoopElement;
         nCurrVectorIndex = 0;
         nthLoopPartEquation = 0;
-        return;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Activate the compiling step for the
+    /// parser.
+    ///
+    /// \param _bCompiling bool
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::SetCompiling(bool _bCompiling)
     {
         bCompiling = _bCompiling;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Returns true, if the parser is
+    /// currently in compiling step.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool ParserBase::IsCompiling()
     {
         return bCompiling;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Store the passed data access for this
+    /// position internally.
+    ///
+    /// \param _access const CachedDataAccess&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::CacheCurrentAccess(const CachedDataAccess& _access)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
             vDataAccessCache[nthLoopElement].push_back(_access);
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Evaluate, whether there are any cached
+    /// data accesses for this position.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t ParserBase::HasCachedAccess()
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode && vCanCacheAccess[nthLoopElement])
             return vDataAccessCache[nthLoopElement].size();
+
         return 0;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Disable the data access caching for
+    /// this position.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::DisableAccessCaching()
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
@@ -3013,70 +3156,157 @@ namespace mu
         }
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Check, whether the current position
+    /// can cache any data accesses.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool ParserBase::CanCacheAccess()
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
             return vCanCacheAccess[nthLoopElement];
+
         return false;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the cached data access for the
+    /// passed position.
+    ///
+    /// \param nthAccess size_t
+    /// \return CachedDataAccess
+    ///
+    /////////////////////////////////////////////////
     CachedDataAccess ParserBase::GetCachedAccess(size_t nthAccess)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode && vDataAccessCache[nthLoopElement].size() > nthAccess)
             return vDataAccessCache[nthLoopElement][nthAccess];
+
         return CachedDataAccess();
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Caches the passed equation for this
+    /// position.
+    ///
+    /// \param sEquation const string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::CacheCurrentEquation(const string& sEquation)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
             vCachedEquation[nthLoopElement] = sEquation;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the stored equation for this
+    /// position.
+    ///
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string ParserBase::GetCachedEquation()
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
             return vCachedEquation[nthLoopElement];
+
         return "";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Caches the passed target equation for
+    /// this position.
+    ///
+    /// \param sEquation const string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::CacheCurrentTarget(const string& sEquation)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
             vCachedTarget[nthLoopElement] = sEquation;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the stored target equation for
+    /// this position.
+    ///
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string ParserBase::GetCachedTarget()
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
             return vCachedTarget[nthLoopElement];
+
         return "";
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns, whether
+    /// the current equation is already parsed and
+    /// there's a valid bytecode for it.
+    ///
+    /// \param _nthLoopElement unsigned int
+    /// \param _nthPartEquation unsigned int
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
     int ParserBase::IsValidByteCode(unsigned int _nthLoopElement, unsigned int _nthPartEquation)
     {
         if (!bMakeLoopByteCode)
             return 0;
+
         if (_nthLoopElement >= 0 && _nthLoopElement < nLoopLength)
             return vValidByteCode[_nthLoopElement][_nthPartEquation];
         else
             return vValidByteCode[nthLoopElement][_nthPartEquation];
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Probably unused.
+    ///
+    /// \param _nthLoopElement unsigned int
+    /// \param _nthPartEquation unsigned int
+    /// \return void
+    /// \todo Evaluate, whether this is used.
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::DeclareAsInvalid(unsigned int _nthLoopElement, unsigned int _nthPartEquation)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
         {
             if (g_DbgDumpStack)
                 NumeReKernel::print("DEBUG: Declared as invalid: (" + toString(_nthLoopElement) + "," + toString(_nthPartEquation) + ")");
+
             if (_nthLoopElement >= 0 && _nthLoopElement < nLoopLength)
                 vValidByteCode[_nthLoopElement][_nthPartEquation] = 0;
             else
                 vValidByteCode[nthLoopElement][_nthPartEquation] = 0;
         }
-        return;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Probably unused.
+    ///
+    /// \param _nthLoopElement unsigned int
+    /// \param _nthPartEquation unsigned int
+    /// \return void
+    /// \todo Evaluate, whether this is used.
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::DeclareAsDelayed(unsigned int _nthLoopElement, unsigned int _nthPartEquation)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
@@ -3086,49 +3316,107 @@ namespace mu
             else
                 vValidByteCode[nthLoopElement][_nthPartEquation] = -1;
         }
-        return;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Check, whether the loop mode is
+    /// active. This function returns true even if
+    /// the loop mode is paused.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool ParserBase::ActiveLoopMode() const
     {
         return bMakeLoopByteCode;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief Check, whether the pause mode is
+    /// locked.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool ParserBase::IsLockedPause() const
     {
         return bPauseLock;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function locks the pause
+    /// mode so that it cannot be accidentally
+    /// activated.
+    ///
+    /// \param _bLock bool
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::LockPause(bool _bLock)
     {
         bPauseLock = _bLock;
-        return;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function pauses the loop
+    /// mode, so that the new assigned equation does
+    /// not invalidate already parsed equations.
+    ///
+    /// \param _bPause bool
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void ParserBase::PauseLoopMode(bool _bPause)
     {
         if (bMakeLoopByteCode)
         {
             if (g_DbgDumpStack)
                 NumeReKernel::print("DEBUG: Set loop pause mode to: " + toString(_bPause));
+
             bPauseLoopByteCode = _bPause;
+
             if (!_bPause)
                 m_pParseFormula = &ParserBase::ParseCmdCode;
         }
-        return;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function checks, whether
+    /// the passed expression is already parsed, so
+    /// that the parsing step may be omitted.
+    ///
+    /// \param sNewEquation string
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool ParserBase::IsAlreadyParsed(string sNewEquation)
     {
         string sCurrentEquation = GetExpr();
         StripSpaces(sCurrentEquation);
         StripSpaces(sNewEquation);
+
         if (sCurrentEquation == sNewEquation)
             return true;
+
         return false;
     }
 
-	//---------------------------------------------------------------------------
+
+    /////////////////////////////////////////////////
+    /// \brief This member function evaluates the
+    /// expression in parallel. Is not used at the
+    /// moment.
+    ///
+    /// \param results value_type*
+    /// \param nBulkSize int
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserBase::Eval(value_type* results, int nBulkSize)
 	{
 		CreateRPN();
@@ -3184,6 +3472,16 @@ namespace mu
 
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function copies the passed
+    /// vector into the internal storage referencing
+    /// it with a auto-generated variable name.
+    ///
+    /// \param vVar const std::vector<double>&
+    /// \return string_type
+    ///
+    /////////////////////////////////////////////////
 	string_type ParserBase::CreateTempVectorVar(const std::vector<double>& vVar)
 	{
 	    string_type sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
@@ -3193,73 +3491,77 @@ namespace mu
 	    return sTempVarName;
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function copies the passed
+    /// vector into the internal storage referencing
+    /// it with the passed name.
+    ///
+    /// \param sVarName const std::string&
+    /// \param vVar const std::vector<double>&
+    /// \param bAddVectorType bool
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserBase::SetVectorVar(const std::string& sVarName, const std::vector<double>& vVar, bool bAddVectorType)
 	{
 		if (!vVar.size())
 			return;
-		if (!dVectorVars)
-			dVectorVars = new double[nVectorVarsSize];
-		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end())
-		{
-			//cerr << "mVectorVars.find() == mVectorVars.end() [" << vVar[0] << "/" << nVectorIndex << "]" << endl;
-			if (nVectorIndex < nVectorVarsSize)
-			{
-				DefineVar(sVarName, &dVectorVars[nVectorIndex]);
-				dVectorVars[nVectorIndex] = vVar[0];
-				nVectorIndex++;
-			}
-			else
-			{
-				delete[] dVectorVars;
-				dVectorVars = 0;
-				nVectorIndex = 0;
-				nVectorVarsSize *= 2;
-				dVectorVars = new double[nVectorVarsSize];
-				if (bMakeLoopByteCode)
-				{
-					vLoopString.assign(nLoopLength, std::vector<std::string>(1, ""));
-				}
 
-				for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
-				{
-					DefineVar(iter->first, &dVectorVars[nVectorIndex]);
-					nVectorIndex++;
-				}
-				DefineVar(sVarName, &dVectorVars[nVectorIndex]);
-				dVectorVars[nVectorIndex] = vVar[0];
-				nVectorIndex++;
-			}
-		}
-		else if (!bAddVectorType && GetVar().find(sVarName) != GetVar().end())
+		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end() && m_VarDef.find(sVarName) == m_VarDef.end())
 		{
-			*(GetVar().find(sVarName)->second) = vVar[0];
-			//std::cerr << "Defining " << sVarName << " with " << vVar[0] << endl;
+		    // Create the storage for a new variable
+		    m_lDataStorage.push_back(new double);
+
+		    // Assign the first element of the vector
+		    // to this storage
+		    *m_lDataStorage.back() = vVar[0];
+
+		    // Define a new variable
+		    DefineVar(sVarName, m_lDataStorage.back());
 		}
+		else if (!bAddVectorType && m_VarDef.find(sVarName) != m_VarDef.end())
+			*(m_VarDef.find(sVarName)->second) = vVar[0];
+
 		mVectorVars[sVarName] = vVar;
+
 		if (vVar.size() > 1)
 			mNonSingletonVectorVars[sVarName] = &mVectorVars[sVarName];
 		else if (mNonSingletonVectorVars.find(sVarName) != mNonSingletonVectorVars.end())
-		{
 			mNonSingletonVectorVars.erase(mNonSingletonVectorVars.find(sVarName));
-		}
-		//std::cerr << mVectorVars[sVarName].size() << endl;
+
 		return;
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function returns a pointer
+    /// to the vector stored internally.
+    ///
+    /// \param sVarName const std::string&
+    /// \return std::vector<double>*
+    ///
+    /////////////////////////////////////////////////
 	std::vector<double>* ParserBase::GetVectorVar(const std::string& sVarName)
 	{
-		if (!dVectorVars)
-			return nullptr;
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return nullptr;
+
 		return &mVectorVars[sVarName];
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function updates the
+    /// corresponding variable of a vector with the
+    /// previously newly assigned value.
+    ///
+    /// \param sVarName const std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserBase::UpdateVectorVar(const std::string& sVarName)
 	{
-		if (!dVectorVars)
-			return;
-
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return;
 
@@ -3267,16 +3569,26 @@ namespace mu
 		return;
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function cleares the
+    /// internal vector storage.
+    ///
+    /// \param bIgnoreProcedureVects bool
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserBase::ClearVectorVars(bool bIgnoreProcedureVects)
 	{
 		if (!mVectorVars.size())
 			return;
-		//cerr << "clearing vect vars; size = " << mVectorVars.size() << endl;
+
 		auto iter = mVectorVars.begin();
+
 		while (iter != mVectorVars.end())
 		{
-			//cerr << iter->first << endl;
 			string siter = iter->first;
+
 			if ((iter->first).find('[') != string::npos && (iter->first).find(']') != string::npos)
 			{
 				if (bIgnoreProcedureVects && (iter->first).substr(0, 8) == "_~PROC~[")
@@ -3284,32 +3596,64 @@ namespace mu
 					iter++;
 					continue;
 				}
+
 				RemoveVar(iter->first);
 				iter = mVectorVars.erase(iter);
 			}
 			else
 				iter = mVectorVars.erase(iter); //iter++;
+
 			auto ns_iter = mNonSingletonVectorVars.find(siter);
+
 			if (ns_iter != mNonSingletonVectorVars.end())
 				mNonSingletonVectorVars.erase(ns_iter);
 		}
+
 		if (!bIgnoreProcedureVects || !mVectorVars.size())
 		{
 			mVectorVars.clear();
 			mTargets.clear();
 			sTargets.clear();
-			nVectorIndex = 0;
-			if (dVectorVars && nVectorVarsSize > 200)
-			{
-				delete[] dVectorVars;
-				dVectorVars = 0;
-			}
-			nVectorVarsSize = 200;
 		}
-		//cerr << "finished" << endl;
+
 		return;
 	}
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function checks, whether
+    /// the passed expression contains a vector.
+    ///
+    /// \param sExpr const std::string&
+    /// \param ignoreSingletons bool
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+	bool ParserBase::ContainsVectorVars(const std::string& sExpr, bool ignoreSingletons)
+	{
+	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+        {
+            if (ignoreSingletons && iter->second.size() == 1)
+                continue;
+
+            size_t nPos = sExpr.find(iter->first);
+
+            if (nPos != string::npos && (!nPos || checkDelimiter(sExpr.substr(nPos-1, iter->first.length()+2))))
+                return true;
+        }
+
+        return false;
+	}
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function checks, whether
+    /// the passed string is delimited on both sides.
+    ///
+    /// \param sLine const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
 	bool ParserBase::checkDelimiter(const std::string& sLine)
 	{
 		bool isDelimitedLeft = false;
@@ -3330,10 +3674,19 @@ namespace mu
 	}
 
 
+    /////////////////////////////////////////////////
+    /// \brief This member function replaces var
+    /// occurences with the names of local variables.
+    ///
+    /// \param sLine std::string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserBase::replaceLocalVars(std::string& sLine)
 	{
 		if (!mVarMapPntr || !mVarMapPntr->size())
 			return;
+
 		for (auto iter = mVarMapPntr->begin(); iter != mVarMapPntr->end(); ++iter)
 		{
 			for (unsigned int i = 0; i < sLine.length(); i++)
@@ -3352,3 +3705,4 @@ namespace mu
 	}
 
 } // namespace mu
+

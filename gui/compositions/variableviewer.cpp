@@ -50,7 +50,14 @@ BEGIN_EVENT_TABLE(VariableViewer, wxcode::wxTreeListCtrl)
 END_EVENT_TABLE()
 
 
-// Constructor
+/////////////////////////////////////////////////
+/// \brief Constructor.
+///
+/// \param parent wxWindow*
+/// \param mainWin NumeReWindow*
+/// \param fieldsize int
+///
+/////////////////////////////////////////////////
 VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fieldsize) : wxTreeListCtrl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_ROW_LINES | wxTR_NO_LINES | wxTR_HIDE_ROOT)
 {
     debuggerMode = false;
@@ -83,8 +90,16 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     SetItemBold(clusterRoot, true);
 }
 
-// This member function checks, whether a variable was already
-// part of the previous variable set (only used in debug mode)
+
+/////////////////////////////////////////////////
+/// \brief This member function checks, whether a
+/// variable was already part of the previous
+/// variable set (only used in debug mode).
+///
+/// \param sVar const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool VariableViewer::checkPresence(const std::string& sVar)
 {
     for (size_t i = 0; i < vLastVarSet.size(); i++)
@@ -96,8 +111,16 @@ bool VariableViewer::checkPresence(const std::string& sVar)
     return false;
 }
 
-// This member functions checks for special variable names,
-// which is used to highlight them out of the debug mode
+
+/////////////////////////////////////////////////
+/// \brief This member functions checks for
+/// special variable names, to highlight them
+/// (not used in debug mode).
+///
+/// \param sVar const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool VariableViewer::checkSpecialVals(const std::string& sVar)
 {
     if (sVar.substr(0, sVar.find('\t')) == "data()")
@@ -126,10 +149,18 @@ bool VariableViewer::checkSpecialVals(const std::string& sVar)
     return false;
 }
 
-// This member function splits the passed variable at
-// tabulator characters and adds its contents to the
-// current tree item. It will also create the tooltip
-// for this item
+
+/////////////////////////////////////////////////
+/// \brief This member function splits the passed
+/// variable at tabulator characters and adds its
+/// contents to the current tree item. It will
+/// also create the tooltip for this item.
+///
+/// \param rootNode wxTreeItemId
+/// \param sVar std::string
+/// \return wxTreeItemId
+///
+/////////////////////////////////////////////////
 wxTreeItemId VariableViewer::AppendVariable(wxTreeItemId rootNode, std::string sVar)
 {
     wxString tooltip;
@@ -152,12 +183,21 @@ wxTreeItemId VariableViewer::AppendVariable(wxTreeItemId rootNode, std::string s
 
     // Set the internal variable's name as a
     // VarData object
-    SetItemData(currentItem, new VarData(sVar.substr(sVar.find('\t')+1)));
+    // NOTE: STRING::RFIND is necessary to avoid issues with
+    // tabulator characters in the VALUECOLUMN
+    SetItemData(currentItem, new VarData(sVar.substr(sVar.rfind('\t')+1)));
 
     return currentItem;
 }
 
-// A simple helper function to clean the tree
+
+/////////////////////////////////////////////////
+/// \brief A simple helper function to clean the
+/// tree.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::ClearTree()
 {
     DeleteChildren(numRoot);
@@ -172,8 +212,16 @@ void VariableViewer::ClearTree()
         DeleteChildren(globalRoot);
 }
 
-// This member function handles every task, which
-// is specific to the debug mode after a variable update
+
+/////////////////////////////////////////////////
+/// \brief This member function handles every
+/// task, which is specific to the debug mode
+/// after a variable update.
+///
+/// \param vVarList const std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::HandleDebugActions(const std::vector<std::string>& vVarList)
 {
     if (!debuggerMode)
@@ -182,14 +230,31 @@ void VariableViewer::HandleDebugActions(const std::vector<std::string>& vVarList
     vLastVarSet = vVarList;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns the internal variable name of
+/// the selected variable.
+///
+/// \param id wxTreeItemId
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString VariableViewer::GetInternalName(wxTreeItemId id)
 {
     return static_cast<VarData*>(GetItemData(id))->sInternalName;
 }
 
-// This member function handles the menu events created
-// from the popup menu and redirects the control to the
-// corresponding functions
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the menu
+/// events created from the popup menu and
+/// redirects the control to the corresponding
+/// functions.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::OnMenuEvent(wxCommandEvent& event)
 {
     switch (event.GetId())
@@ -215,9 +280,15 @@ void VariableViewer::OnMenuEvent(wxCommandEvent& event)
     }
 }
 
-// This member function displays a text entry dialog
-// to enter the new table names and sends the corresponding
-// command to the kernel
+
+/////////////////////////////////////////////////
+/// \brief This member function displays a text
+/// entry dialog to enter the new table names and
+/// sends the corresponding command to the kernel.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::OnNewTable()
 {
     wxTextEntryDialog textEntry(this, _guilang.get("GUI_VARVIEWER_NEWTABLE_QUESTION"), _guilang.get("GUI_VARVIEWER_NEWTABLE"), "table()");
@@ -265,14 +336,31 @@ void VariableViewer::OnNewTable()
     mainWindow->pass_command("new " + tables + " -free");
 }
 
-// This member function displays the selected table
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// selected table.
+///
+/// \param table const wxString&
+/// \param tableDisplayName const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::OnShowTable(const wxString& table, const wxString& tableDisplayName)
 {
     mainWindow->showTable(table, tableDisplayName);
 }
 
-// This member function displays a text entry dialog
-// to choose a new name for the selected table
+
+/////////////////////////////////////////////////
+/// \brief This member function displays a text
+/// entry dialog to choose a new name for the
+/// selected table.
+///
+/// \param table const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::OnRenameTable(const wxString& table)
 {
     wxTextEntryDialog textEntry(this, _guilang.get("GUI_VARVIEWER_NEWNAME_QUESTION"), _guilang.get("GUI_VARVIEWER_NEWNAME"), table);
@@ -283,20 +371,45 @@ void VariableViewer::OnRenameTable(const wxString& table)
     mainWindow->pass_command("rename " + table + ", " + textEntry.GetValue());
 }
 
-// This member function removes the selected table
+
+/////////////////////////////////////////////////
+/// \brief This member function removes the
+/// selected table.
+///
+/// \param table const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::OnRemoveTable(const wxString& table)
 {
     mainWindow->pass_command("remove " + table);
 }
 
-// This member function saves the selected table
+
+/////////////////////////////////////////////////
+/// \brief This member function saves the
+/// selected table.
+///
+/// \param table const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::OnSaveTable(const wxString& table)
 {
     mainWindow->pass_command("save " + table);
 }
 
-// This member function displays a text entry dialog
-// ot choose the file name for the selected table
+
+/////////////////////////////////////////////////
+/// \brief This member function displays a text
+/// entry dialog to choose the file name for the
+/// selected table, which is then used to create
+/// a save file containing the table data.
+///
+/// \param table const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::OnSaveasTable(const wxString& table)
 {
     wxTextEntryDialog textEntry(this, _guilang.get("GUI_VARVIEWER_SAVENAME_QUESTION"), _guilang.get("GUI_VARVIEWER_SAVENAME"), table);
@@ -307,8 +420,14 @@ void VariableViewer::OnSaveasTable(const wxString& table)
     mainWindow->pass_command("save " + table + " -file=\"" + textEntry.GetValue() + "\"");
 }
 
-// This member function expands all nodes, which
-// contain child nodes.
+
+/////////////////////////////////////////////////
+/// \brief This member function expands all
+/// nodes, which contain child nodes.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::ExpandAll()
 {
     if (HasChildren(numRoot))
@@ -330,9 +449,17 @@ void VariableViewer::ExpandAll()
         Expand(globalRoot);
 }
 
-// This member function creates the pop-up menu
-// in the var viewer case (it does nothing in
-// debugger mode and also nothing for non-tables).
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// pop-up menu in the var viewer case (it does
+/// nothing in debugger mode and also nothing for
+/// non-tables).
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::OnRightClick(wxTreeEvent& event)
 {
     // do nothing in the debugger case
@@ -382,7 +509,15 @@ void VariableViewer::OnRightClick(wxTreeEvent& event)
     PopupMenu(&popUpmenu, event.GetPoint());
 }
 
-// This event handler displays the selected table
+
+/////////////////////////////////////////////////
+/// \brief This event handler displays the
+/// selected table.
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::OnDoubleClick(wxTreeEvent& event)
 {
     if (GetItemParent(event.GetItem()) != tableRoot && GetItemParent(event.GetItem()) != clusterRoot)
@@ -402,8 +537,16 @@ void VariableViewer::OnDoubleClick(wxTreeEvent& event)
     OnShowTable(GetInternalName(event.GetItem()), GetItemText(event.GetItem()));
 }
 
-// This member function creates or removes unneeded
-// tree root items and handles the debugger mode
+
+/////////////////////////////////////////////////
+/// \brief This member function creates or
+/// removes unneeded tree root items and handles
+/// the debugger mode.
+///
+/// \param mode bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::setDebuggerMode(bool mode)
 {
     debuggerMode = mode;
@@ -440,8 +583,22 @@ void VariableViewer::setDebuggerMode(bool mode)
     }
 }
 
-// This member function is used to update the variable
-// list, which is displayed by this control.
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to update
+/// the variable list, which is displayed by this
+/// control.
+///
+/// \param vVarList const std::vector<std::string>&
+/// \param nNumerics size_t
+/// \param nStrings size_t
+/// \param nTables size_t
+/// \param nClusters size_t
+/// \param nArguments size_t
+/// \param nGlobals size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void VariableViewer::UpdateVariables(const std::vector<std::string>& vVarList, size_t nNumerics, size_t nStrings, size_t nTables, size_t nClusters, size_t nArguments, size_t nGlobals)
 {
     // Clear the tree first

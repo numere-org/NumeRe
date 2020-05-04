@@ -495,6 +495,54 @@ struct Axis
     double dMax;
 };
 
+// Structure for using time axes
+struct TimeAxis
+{
+    string sTimeFormat;
+    bool use;
+
+    TimeAxis() : sTimeFormat(""), use(false) {}
+
+    void activate(const string& sFormat = "")
+    {
+        use = true;
+        sTimeFormat = sFormat;
+
+        if (!sTimeFormat.length())
+            return;
+
+        if (sTimeFormat.find("YYYY") != string::npos)
+            sTimeFormat.replace(sTimeFormat.find("YYYY"), 4, "%Y");
+
+        if (sTimeFormat.find("YY") != string::npos)
+            sTimeFormat.replace(sTimeFormat.find("YY"), 2, "%y");
+
+        if (sTimeFormat.find("MM") != string::npos)
+            sTimeFormat.replace(sTimeFormat.find("MM"), 2, "%m");
+
+        if (sTimeFormat.find("DD") != string::npos)
+            sTimeFormat.replace(sTimeFormat.find("DD"), 2, "%d");
+
+        if (sTimeFormat.find("HH") != string::npos)
+            sTimeFormat.replace(sTimeFormat.find("HH"), 2, "%H");
+
+        if (sTimeFormat.find("hh") != string::npos)
+            sTimeFormat.replace(sTimeFormat.find("hh"), 2, "%H");
+
+        if (sTimeFormat.find("mm") != string::npos)
+            sTimeFormat.replace(sTimeFormat.find("mm"), 2, "%M");
+
+        if (sTimeFormat.find("ss") != string::npos)
+            sTimeFormat.replace(sTimeFormat.find("ss"), 2, "%S");
+    }
+
+    void deactivate()
+    {
+        use = false;
+        sTimeFormat.clear();
+    }
+};
+
 // Structure as wrapper for the return value of procedures (which may be numerical or string values or a mixture of both)
 struct Returnvalue
 {

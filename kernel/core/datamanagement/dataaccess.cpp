@@ -21,9 +21,17 @@
 #include "../../kernel.hpp"
 #include <vector>
 
-// DataAccessParser constructor. This function will parse the passed
-// command string into the first found data access and determine, whether
-// it is a cluster and calculate the corresponding index set
+
+/////////////////////////////////////////////////
+/// \brief DataAccessParser constructor. This
+/// function will parse the passed command string
+/// into the first found data access and
+/// determine, whether it is a cluster and
+/// calculate the corresponding index set.
+///
+/// \param sCommand const string&
+///
+/////////////////////////////////////////////////
 DataAccessParser::DataAccessParser(const string& sCommand)
 {
     size_t pos = string::npos;
@@ -96,19 +104,40 @@ DataAccessParser::DataAccessParser(const string& sCommand)
 
 }
 
-// Returns a reference to the data object identifier
+
+/////////////////////////////////////////////////
+/// \brief Returns a reference to the data object
+/// identifier.
+///
+/// \return string&
+///
+/////////////////////////////////////////////////
 string& DataAccessParser::getDataObject()
 {
     return sDataObject;
 }
 
-// Returns a reference to the stored indices
+
+/////////////////////////////////////////////////
+/// \brief Returns a reference to the stored
+/// indices.
+///
+/// \return Indices&
+///
+/////////////////////////////////////////////////
 Indices& DataAccessParser::getIndices()
 {
     return idx;
 }
 
-// Determines, whether the data access references a cluster
+
+/////////////////////////////////////////////////
+/// \brief Determines, whether the data access
+/// references a cluster.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool DataAccessParser::isCluster()
 {
     return bIsCluster;
@@ -518,7 +547,18 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 }
 
 
-// This function handles cached data access strings, which may be available in the parser
+/////////////////////////////////////////////////
+/// \brief This function handles cached data
+/// access strings, which may be available in the
+/// parser.
+///
+/// \param sLine string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return string
+///
+/////////////////////////////////////////////////
 static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	mu::CachedDataAccess _access;
@@ -571,7 +611,16 @@ static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _
 }
 
 
-// This function simply replaces every occurences of the entity with its replacement
+/////////////////////////////////////////////////
+/// \brief This function simply replaces every
+/// occurences of the entity with its replacement.
+///
+/// \param sLine string&
+/// \param sEntityOccurence const string&
+/// \param sEntityStringReplacement const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement)
 {
 	size_t nPos = 0;
@@ -581,7 +630,24 @@ static void replaceEntityStringOccurence(string& sLine, const string& sEntityOcc
 	}
 }
 
-// This function replaces every occurence of the entity with either the vector name for the parser or with its statistics value
+
+/////////////////////////////////////////////////
+/// \brief This function replaces every occurence
+/// of the entity with either the vector name for
+/// the parser or with its statistics value.
+///
+/// \param sLine string&
+/// \param sEntityOccurence const string&
+/// \param sEntityName const string&
+/// \param sEntityReplacement const string&
+/// \param _idx const Indices&
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param _option const Settings&
+/// \param isCluster bool
+/// \return void
+///
+/////////////////////////////////////////////////
 static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option, bool isCluster)
 {
 	sLine = " " + sLine + " ";
@@ -759,7 +825,17 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 }
 
 
-// This function handles the MAF data access using methods
+/////////////////////////////////////////////////
+/// \brief This function handles the MAF data
+/// access using methods.
+///
+/// \param sLine string&
+/// \param sMafAccess const string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, Datafile& _data)
 {
 	size_t nPos = 0;
@@ -786,8 +862,16 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 }
 
 
-// This function returns the modifier list obtained from the method string
-// Pass 'DATA().FNC().cols().lines().grid().every(a,b)'
+/////////////////////////////////////////////////
+/// \brief This function returns the modifier
+/// list obtained from the method string.
+///
+/// \param sAccessString const string&
+/// \param _parser Parser&
+/// \return string
+///
+/// Pass 'DATA().FNC().cols().lines().grid().every(a,b)'
+/////////////////////////////////////////////////
 static string createMafDataAccessString(const string& sAccessString, Parser& _parser)
 {
 	string sDataMaf;
@@ -805,7 +889,14 @@ static string createMafDataAccessString(const string& sAccessString, Parser& _pa
 }
 
 
-// This function returns the name of the MAF
+/////////////////////////////////////////////////
+/// \brief This function returns the name of the
+/// MAF.
+///
+/// \param sAccessString const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 static string getMafFromAccessString(const string& sAccessString)
 {
 	// Store these values statically
@@ -821,7 +912,15 @@ static string getMafFromAccessString(const string& sAccessString)
 }
 
 
-// This function returns the first MAF access in the passed sLine string
+/////////////////////////////////////////////////
+/// \brief This function returns the first MAF
+/// access in the passed sLine string.
+///
+/// \param sLine const string&
+/// \param sEntity const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 static string getMafAccessString(const string& sLine, const string& sEntity)
 {
 	size_t nPos = 0;
@@ -848,7 +947,17 @@ static string getMafAccessString(const string& sLine, const string& sEntity)
 }
 
 
-// This function simply performs the MAF access and returns the vector of the results
+/////////////////////////////////////////////////
+/// \brief This function simply performs the MAF
+/// access and returns the vector of the results.
+///
+/// \param _data Datafile&
+/// \param sMafname const string&
+/// \param sCache const string&
+/// \param sMafAccess const string&
+/// \return vector<double>
+///
+/////////////////////////////////////////////////
 static vector<double> MafDataAccess(Datafile& _data, const string& sMafname, const string& sCache, const string& sMafAccess)
 {
 	if (sMafname == "std")
@@ -883,7 +992,16 @@ static vector<double> MafDataAccess(Datafile& _data, const string& sMafname, con
 }
 
 
-// This function creates an every definition from the methods, which the Datafile class is able to parse
+/////////////////////////////////////////////////
+/// \brief This function creates an every
+/// definition from the methods, which the
+/// Datafile class is able to parse.
+///
+/// \param sLine const string&
+/// \param _parser Parser&
+/// \return string
+///
+/////////////////////////////////////////////////
 static string createEveryDefinition(const string& sLine, Parser& _parser)
 {
 	value_type* v = 0;
@@ -911,7 +1029,15 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 }
 
 
-// This function simply returns the vector name obtained from the MAF method string
+/////////////////////////////////////////////////
+/// \brief This function simply returns the
+/// vector name obtained from the MAF method
+/// string.
+///
+/// \param sAccessString string
+/// \return string
+///
+/////////////////////////////////////////////////
 static string createMafVectorName(string sAccessString)
 {
 	sAccessString.replace(sAccessString.find("()"), 2, "[");
@@ -920,7 +1046,15 @@ static string createMafVectorName(string sAccessString)
 }
 
 
-// This function returns the last token of the current string, e.g. a function name, etc.
+/////////////////////////////////////////////////
+/// \brief This function returns the last token
+/// of the current string, e.g. a function name,
+/// etc.
+///
+/// \param sLine const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 static string getLastToken(const string& sLine)
 {
 	string sToken = sLine;
@@ -947,9 +1081,22 @@ static string getLastToken(const string& sLine)
 }
 
 
-// this function is for extracting the desired number of columns of the data out of the data object
-// and storing it to a continous block of memory used for example for
-// regularize, spline, pulse, stfa
+/////////////////////////////////////////////////
+/// \brief This function is for extracting the
+/// desired number of columns out of the data
+/// object and storing it to a continous block of
+/// memory used for example for regularize,
+/// spline, pulse, stfa.
+///
+/// \param sTableName const string&
+/// \param _idx Indices&
+/// \param _data const Datafile&
+/// \param _cache Datafile&
+/// \param nDesiredCols int
+/// \param bSort bool
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Datafile& _cache, int nDesiredCols, bool bSort)
 {
 	// write the data
@@ -999,7 +1146,17 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
 }
 
 
-// This function will extract the needed data into a table object
+/////////////////////////////////////////////////
+/// \brief This function will extract the needed
+/// data into a table object.
+///
+/// \param sDataExpression const string&
+/// \param _parser Parser&
+/// \param _data Datafile&
+/// \param _option const Settings&
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option)
 {
 	string sDatatable = "data";                             // Int fuer die Position des aktuellen find-Treffers eines Daten-Objekts
@@ -1022,7 +1179,22 @@ NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser,
 }
 
 
-// This function evaluates the column indices and returns the final dimension of the columns
+/////////////////////////////////////////////////
+/// \brief This function evaluates the column
+/// indices and returns the final dimension of
+/// the columns.
+///
+/// \param _data Datafile&
+/// \param _parser Parser&
+/// \param sDatatable const string&
+/// \param sDataExpression const string&
+/// \param _idx Indices&
+/// \param nColumns int
+/// \param isCluster bool
+/// \param _option const Settings&
+/// \return int
+///
+/////////////////////////////////////////////////
 static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option)
 {
     int nDim = 0;
@@ -1055,9 +1227,21 @@ static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, co
 	return nDim;
 }
 
-// This function will calculate the indices from the passed
-// data expression and return them optimized for the plotting
-// and the fitting algorithm
+
+/////////////////////////////////////////////////
+/// \brief This function will calculate the
+/// indices from the passed data expression and
+/// return them optimized for the plotting and
+/// the fitting algorithm.
+///
+/// \param sExpression const string&
+/// \param sDataTable string&
+/// \param nColumns int&
+/// \param openEnd bool&
+/// \param isCluster bool&
+/// \return Indices
+///
+/////////////////////////////////////////////////
 Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster)
 {
     Indices _idx;
@@ -1101,7 +1285,18 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
     return _idx;
 }
 
-// This function will copy the contents to the target table and extract the table
+
+/////////////////////////////////////////////////
+/// \brief This function will copy the contents
+/// to the target table and extract the table.
+///
+/// \param _data Datafile&
+/// \param sDatatable const string&
+/// \param _idx const Indices&
+/// \param nDim int
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const Indices& _idx, int nDim)
 {
     MemoryManager _cache;
@@ -1136,8 +1331,16 @@ static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, c
 	return _cache.extractTable(sDatatable);
 }
 
-// This is a static helper function to identify, whether "data(" is used in the
-// current expression
+
+/////////////////////////////////////////////////
+/// \brief This is a static helper function to
+/// identify, whether "data(" is used in the
+/// current expression.
+///
+/// \param sLine const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool findDataTable(const string& sLine)
 {
     size_t nQuotes = 0;
@@ -1154,7 +1357,16 @@ static bool findDataTable(const string& sLine)
     return false;
 }
 
-// --> Prueft, ob ein Ausdruck Nicht-Leer ist (also auch, dass er nicht nur aus Leerzeichen besteht) <--
+
+/////////////////////////////////////////////////
+/// \brief This function checks, whether the
+/// passed expression is non-empty (i.e. it
+/// contains more than white spaces).
+///
+/// \param sExpr const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool isNotEmptyExpression(const string& sExpr)
 {
 	if (!sExpr.length())
@@ -1162,10 +1374,20 @@ bool isNotEmptyExpression(const string& sExpr)
 	return sExpr.find_first_not_of(' ') != string::npos;
 }
 
-// This function checks, whether the passed command line contains
-// the syntax for a cluster candidate, splits up the command line
-// (if selected using doCut) and declares the new cluster, if it
-// is not known up to now.
+
+/////////////////////////////////////////////////
+/// \brief This function checks, whether the
+/// passed command line contains the syntax for a
+/// cluster candidate, splits up the command line
+/// (if selected using doCut) and declares the
+/// new cluster, if it is not known up to now.
+///
+/// \param sLine string&
+/// \param sCluster string&
+/// \param doCut bool
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 {
     // Do nothing, if the current line does not contain
@@ -1226,8 +1448,19 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
     return false;
 }
 
-// This function returns the data from the selected object
-// and switches automatically between tables and clusters
+
+/////////////////////////////////////////////////
+/// \brief This function returns the data from
+/// the selected object and switches
+/// automatically between tables and clusters.
+///
+/// \param sObject const string&
+/// \param i long longint
+/// \param j long longint
+/// \param isCluster bool
+/// \return double
+///
+/////////////////////////////////////////////////
 double getDataFromObject(const string& sObject, long long int i, long long int j, bool isCluster)
 {
     // Get a reference to the datafile object
@@ -1242,9 +1475,17 @@ double getDataFromObject(const string& sObject, long long int i, long long int j
     return isCluster ? _data.getCluster(sObject).getDouble(i) : _data.getElement(i, j, sObject);
 }
 
-/* --> Diese Funktion prueft, ob das Argument, dass sich zwischen sLeft und sRight befindet, in einer
- *     Multi-Argument-Funktion steht <--
- */
+
+/////////////////////////////////////////////////
+/// \brief This function checks, whether the
+/// argument located between sLeft and sRight is
+/// part of a multi-argument function.
+///
+/// \param sLeft const string&
+/// \param sRight const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
 {
     // Get the last token form the left side (can be the name of a function, for example)
@@ -1312,7 +1553,16 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
 }
 
 
-// --> Prueft, ob der zweite Index groesser als der erste ist und vertauscht sie ggf. <--
+/////////////////////////////////////////////////
+/// \brief This function checks, whether the
+/// second index is greater than the first one
+/// exchanges them if necessary.
+///
+/// \param nIndex_1 int&
+/// \param nIndex_2 int&
+/// \return void
+///
+/////////////////////////////////////////////////
 void parser_CheckIndices(int& nIndex_1, int& nIndex_2)
 {
 	if (nIndex_1 < 0)
@@ -1329,7 +1579,14 @@ void parser_CheckIndices(int& nIndex_1, int& nIndex_2)
 }
 
 
-// --> Prueft, ob der zweite Index groesser als der erste ist und vertauscht sie ggf. <--
+/////////////////////////////////////////////////
+/// \brief Override for long long integers.
+///
+/// \param nIndex_1 long longint&
+/// \param nIndex_2 long longint&
+/// \return void
+///
+/////////////////////////////////////////////////
 void parser_CheckIndices(long long int& nIndex_1, long long int& nIndex_2)
 {
 	if (nIndex_1 < 0)

@@ -36,6 +36,11 @@ using namespace mu;
 
 void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData);
 
+
+/////////////////////////////////////////////////
+/// \brief This class handles the complete
+/// plotting process.
+/////////////////////////////////////////////////
 class Plot
 {
     private:

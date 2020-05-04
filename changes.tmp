@@ -7,3 +7,18 @@ Fixed	Flow control statements in install sections should now not be folded erron
 Added	NumeRe may now create a DoxyGen-like documentation block in front of the current procedure.
 Fixed	Functions with more than one argument may now be called correctly in "matop" mode.
 Fixed	Matrix extractions using indices in "matop" mode work now correclty again.
+Added	It's now possible to remove entries from the documentation index using the "delete" attribute.
+Fixed	Expressions like "and(data(:, 1) == data(:, 2))" will now return a single, correct result.
+Fixed	Resolved a crash during saving, which occured in combination with many non-ASCII characters in a line.
+New	Added the function "getkeyval()", which can be used to return the value from a key-value based list.
+Fixed	Resolved a strange bug occuring only late in any calculation and only in some occurences, where values seem to be overwritten by strange values.
+Fixed	The "Busy" indicator is now also pulsing, if one double-clicks the history.
+New	Added the "shuffle(sel,val)" matrix function.
+Fixed	Resolved the issue that clusters could not be used correctly in matrix expressions.
+Fixed	Resolved a rare case, where double-clicking on a cluster in the variable viewer didn't show its contents.
+Added	The new command "implot" was created to create an image-specific plot.
+Added	Created the new plot option "obps", which will export the plot as *.eps file using bitmap representation (in contrast to option "oeps").
+Applied	NumeRe features now 20 different plotting styles (instead of 14).
+Applied	NumeRe may now use time values for axis in plots and format them correspondingly using the "timeaxes=(AXES,FORMAT)" option
+Fixed	The LaTeX macro "\times" may now be used in legends and labels of plots.
+Added	The "cmp()" function can now also find the first value, which smaller/larger/equal than the comparison value using the function types +/-3 and +/-4.

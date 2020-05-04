@@ -157,7 +157,9 @@ namespace NumeRe
                         {
                             // Do not replace vector variables, which are part
                             // of a string
-                            if (isInQuotes(currentline, nMatch))
+                            if (isInQuotes(currentline, nMatch)
+                                || (nMatch && !isDelimiter(currentline[nMatch-1]))
+                                || (nMatch + iter->first.length() < currentline.length() && !isDelimiter(currentline[nMatch+iter->first.length()])))
                             {
                                 nMatch++;
                                 continue;

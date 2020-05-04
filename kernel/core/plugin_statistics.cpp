@@ -223,9 +223,9 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 		_out.setPrefix("stats");
 		// --> Wenn sCmd einen Eintrag enthaelt, dann soll die Ausgabe automatische in eine Datei geschrieben werden <--
 
-        sOverview = new string*[nStatsFields-2 + nHeadlines];
+        sOverview = new string*[nStatsFields-1 + nHeadlines];
 
-        for (int i = 0; i < nStatsFields-2+nHeadlines; i++)
+        for (int i = 0; i < nStatsFields-1+nHeadlines; i++)
             sOverview[i] = new string[nCol+1];
 
         sOverview[0][0] = " ";
@@ -246,7 +246,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
                 }
             }
 
-            for (int n = 0; n < nStatsFields-2; n++)
+            for (int n = 0; n < nStatsFields-1; n++)
             {
                 sOverview[n + nHeadlines][j+1] = sOut[nHeadlines + nLine+n+1][j].substr(sOut[nHeadlines + nLine+n+1][j].find(':')+1);
 
@@ -276,13 +276,13 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
         make_hline();
         NumeReKernel::print("NUMERE: " + toSystemCodePage(toUpperCase(_lang.get("STATS_HEADLINE"))));
         make_hline();
-        _out.format(sOverview, nCol+1, nStatsFields-2+nHeadlines, _option, true, nHeadlines);
+        _out.format(sOverview, nCol+1, nStatsFields-1+nHeadlines, _option, true, nHeadlines);
         _out.reset();
         NumeReKernel::toggleTableStatus();
         make_hline();
         // --> Speicher wieder freigeben! <--
 
-        for (int i = 0; i < nStatsFields-2+nHeadlines; i++)
+        for (int i = 0; i < nStatsFields-1+nHeadlines; i++)
             delete[] sOverview[i];
 
         delete[] sOverview;

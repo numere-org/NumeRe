@@ -40,7 +40,10 @@ extern value_type vAns;
 // avoiding inclusion of "tools"
 string toString(double, int);
 
-// Default constructor
+
+/////////////////////////////////////////////////
+/// \brief Default constructor.
+/////////////////////////////////////////////////
 FlowCtrl::FlowCtrl()
 {
 	vVarArray = nullptr;
@@ -85,14 +88,24 @@ FlowCtrl::FlowCtrl()
 	bEvaluatingFlowControlStatements = false;
 }
 
-// Generalized constructor. Delegates to the default
-// constructor
+
+/////////////////////////////////////////////////
+/// \brief Generalized constructor. Delegates to
+/// the default constructor.
+///
+/// \param _nDefaultLength int
+///
+/////////////////////////////////////////////////
 FlowCtrl::FlowCtrl(int _nDefaultLength) : FlowCtrl()
 {
 	nDefaultLength = _nDefaultLength;
 }
 
-// Destructor. Cleanes the memory, if necessary
+
+/////////////////////////////////////////////////
+/// \brief Destructor. Cleanes the memory, if
+/// necessary.
+/////////////////////////////////////////////////
 FlowCtrl::~FlowCtrl()
 {
 	// Clean the variables array
@@ -108,9 +121,18 @@ FlowCtrl::~FlowCtrl()
 	}
 }
 
-// This member function realizes the FOR control flow
-// statement. The return value is either a error value or
-// the end of the current flow control statement
+
+/////////////////////////////////////////////////
+/// \brief This member function realizes the FOR
+/// control flow statement. The return value is
+/// either an error value or the end of the
+/// current flow control statement.
+///
+/// \param nth_Cmd int
+/// \param nth_loop int
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 {
 	int nVarAdress = 0;
@@ -304,9 +326,18 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 	return nJumpTable[nth_Cmd][BLOCK_END];
 }
 
-// This member function realizes the WHILE control flow
-// statement. The return value is either a error value or
-// the end of the current flow control statement
+
+/////////////////////////////////////////////////
+/// \brief This member function realizes the
+/// WHILE control flow statement. The return
+/// value is either an error value or the end of
+/// the current flow control statement.
+///
+/// \param nth_Cmd int
+/// \param nth_loop int
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 {
 	string sWhile_Condition = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1, vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
@@ -465,9 +496,18 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 	return vCmdArray.size();
 }
 
-// This member function realizes the IF-ELSE control flow
-// statement. The return value is either a error value or
-// the end of the current flow control statement
+
+/////////////////////////////////////////////////
+/// \brief This member function realizes the
+/// IF-ELSE control flow statement. The return
+/// value is either an error value or the end of
+/// the current flow control statement.
+///
+/// \param nth_Cmd int
+/// \param nth_loop int
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 {
 	string sIf_Condition;
@@ -713,9 +753,18 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 	return vCmdArray.size();
 }
 
-// This member function realizes the SWITCH-CASE control flow
-// statement. The return value is either a error value or
-// the end of the current flow control statement
+
+/////////////////////////////////////////////////
+/// \brief This member function realizes the
+/// SWITCH-CASE control flow statement. The
+/// return value is either an error value or the
+/// end of the current flow control statement.
+///
+/// \param nth_Cmd int
+/// \param nth_loop int
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 {
 	string sSwitch_Condition = vCmdArray[nth_Cmd].sCommand.substr(vCmdArray[nth_Cmd].sCommand.find('(') + 1, vCmdArray[nth_Cmd].sCommand.rfind(')') - vCmdArray[nth_Cmd].sCommand.find('(') - 1);
@@ -854,10 +903,21 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 	return vCmdArray.size();
 }
 
-// This member function abstracts the evaluation of all
-// flow control headers. It will return an array of
-// evaluated return values, although only the first
-// (one/two) are used here
+
+/////////////////////////////////////////////////
+/// \brief This member function abstracts the
+/// evaluation of all flow control headers. It
+/// will return an array of evaluated return
+/// values, although only the first (one/two) are
+/// used here.
+///
+/// \param nNum int&
+/// \param sHeadExpression string&
+/// \param bIsForHead bool
+/// \param nth_Cmd int
+/// \return value_type*
+///
+/////////////////////////////////////////////////
 value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsForHead, int nth_Cmd)
 {
 	value_type* v = nullptr;
@@ -998,9 +1058,17 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
 	return v;
 }
 
-// This member function handles the evaluation of
-// flow control statements from the viewpoint of a
-// loop flow control
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// evaluation of flow control statements from
+/// the viewpoint of a loop control flow.
+///
+/// \param __j int
+/// \param nth_loop int
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::evalLoopFlowCommands(int __j, int nth_loop)
 {
     // Do nothing, if here's no flow command
@@ -1053,9 +1121,17 @@ int FlowCtrl::evalLoopFlowCommands(int __j, int nth_loop)
 	return FLOWCTRL_NO_CMD;
 }
 
-// This member function handles the evaluation of
-// flow control statements from the viewpoint of a
-// if-else flow control
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// evaluation of flow control statements from
+/// the viewpoint of an if-else control flow.
+///
+/// \param __i int
+/// \param nth_loop int
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
 {
     // Do nothing,if here's no flow command
@@ -1142,9 +1218,18 @@ int FlowCtrl::evalForkFlowCommands(int __i, int nth_loop)
 	return FLOWCTRL_NO_CMD;
 }
 
-// This member function is used to set a command line
-// from the outside into the flow control statement class.
-// The internal flow control command buffer grows as needed.
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to set a
+/// command line from the outside into the flow
+/// control statement class. The internal flow
+/// control command buffer grows as needed.
+///
+/// \param __sCmd string&
+/// \param nCurrentLine int
+/// \return void
+///
+/////////////////////////////////////////////////
 void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
 {
 	bool bDebuggingBreakPoint = (__sCmd.substr(__sCmd.find_first_not_of(' '), 2) == "|>");
@@ -1482,9 +1567,15 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
 	return;
 }
 
-// This member function prepares the command array by
-// pre-evaluating all constant stuff or function calls
-// whereever possible
+
+/////////////////////////////////////////////////
+/// \brief This member function prepares the
+/// command array by pre-evaluating all constant
+/// stuff or function calls whereever possible.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void FlowCtrl::eval()
 {
 	nReturnType = 1;
@@ -1671,8 +1762,15 @@ void FlowCtrl::eval()
 	return;
 }
 
-// This function clears the memory of the this FlowCtrl
-// object and sets everything back to its original state
+
+/////////////////////////////////////////////////
+/// \brief This function clears the memory of
+/// this FlowCtrl object and sets everything back
+/// to its original state.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void FlowCtrl::reset()
 {
     vCmdArray.clear();
@@ -1795,10 +1893,20 @@ void FlowCtrl::reset()
 	return;
 }
 
-// This member function does the hard work and calculates
-// the numerical and string results for the current command
-// line. It will used the previously determined bytecode
-// whereever possible
+
+/////////////////////////////////////////////////
+/// \brief This member function does the hard
+/// work and calculates the numerical and string
+/// results for the current command line. It will
+/// use the previously determined bytecode
+/// whereever possible.
+///
+/// \param sLine string
+/// \param nthCmd int
+/// \param sBlock string
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 {
 	string sLine_Temp = sLine;
@@ -2494,8 +2602,16 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 	return FLOWCTRL_OK;
 }
 
-// This member function is used to replace variable occurences
-// with their internal name
+
+/////////////////////////////////////////////////
+/// \brief This member function is used to
+/// replace variable occurences with their
+/// (auto-determined) internal name.
+///
+/// \param sLine string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void FlowCtrl::replaceLocalVars(string& sLine)
 {
 	if (!mVarMap.size())
@@ -2519,8 +2635,17 @@ void FlowCtrl::replaceLocalVars(string& sLine)
 	return;
 }
 
-// This member function checks, whether the passed
-// flow control argument is valid or not
+
+/////////////////////////////////////////////////
+/// \brief This member function checks, whether
+/// the passed flow control argument is valid or
+/// not.
+///
+/// \param sFlowControlArgument const string&
+/// \param isForLoop bool
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool FlowCtrl::checkFlowControlArgument(const string& sFlowControlArgument, bool isForLoop)
 {
     // The argument shall be enclosed in parentheses
@@ -2548,8 +2673,15 @@ bool FlowCtrl::checkFlowControlArgument(const string& sFlowControlArgument, bool
     return true;
 }
 
-// This member function checks, whether the entered case
-// definition is valid or not
+
+/////////////////////////////////////////////////
+/// \brief This member function checks, whether
+/// the entered case definition is valid or not.
+///
+/// \param sCaseDefinition const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool FlowCtrl::checkCaseValue(const string& sCaseDefinition)
 {
     // Colon operator is missing
@@ -2580,9 +2712,15 @@ bool FlowCtrl::checkCaseValue(const string& sCaseDefinition)
     return true;
 }
 
-// Read the flow control statements only and
-// extract the index variables and the flow
-// control flags
+
+/////////////////////////////////////////////////
+/// \brief Read the flow control statements only
+/// and extract the index variables and the flow
+/// control flags.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string FlowCtrl::extractFlagsAndIndexVariables()
 {
     string sVars = ";";
@@ -2635,11 +2773,17 @@ string FlowCtrl::extractFlagsAndIndexVariables()
 	return sVars;
 }
 
-// Go again through the whole command set and fill
-// the jump table with the corresponding block ends
-// and pre-evaluate the recursive expressions.
-// Furthermore, determine, whether the loop parsing
-// mode is reasonable.
+
+/////////////////////////////////////////////////
+/// \brief Go again through the whole command set
+/// and fill the jump table with the
+/// corresponding block ends and pre-evaluate the
+/// recursive expressions. Furthermore, determine,
+/// whether the loop parsing mode is reasonable.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void FlowCtrl::fillJumpTableAndExpandRecursives()
 {
 	for (size_t i = 0; i < vCmdArray.size(); i++)
@@ -2824,7 +2968,15 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
 
 }
 
-// This member function will prepare the single logical switch expression
+
+/////////////////////////////////////////////////
+/// \brief This member function will prepare the
+/// single logical switch expression.
+///
+/// \param nSwitchStart int
+/// \return void
+///
+/////////////////////////////////////////////////
 void FlowCtrl::prepareSwitchExpression(int nSwitchStart)
 {
     // Extract the condition of the "switch"
@@ -2874,14 +3026,20 @@ void FlowCtrl::prepareSwitchExpression(int nSwitchStart)
     vCmdArray[nSwitchStart].sCommand += "(" + sSwitchArgument + ")";
 }
 
-// If the loop parsing mode is active, ensure that only
-// inline procedures are used in this case. Otherwise
-// turn it off again. Additionally check for "to_cmd()"
-// function, which will also turn the loop parsing mode
-// off.
-// If no function definition commands are found in the
-// command block, replace the definitions with their
-// expanded form.
+
+/////////////////////////////////////////////////
+/// \brief If the loop parsing mode is active,
+/// ensure that only inline procedures are used
+/// in this case. Otherwise turn it off again.
+/// Additionally check for "to_cmd()" function,
+/// which will also turn the loop parsing mode
+/// off. If no function definition commands are
+/// found in the command block, replace the
+/// definitions with their expanded form.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void FlowCtrl::checkParsingModeAndExpandDefinitions()
 {
     const int INLINING_GLOBALINRETURN = 2;
@@ -2977,9 +3135,17 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
     }
 }
 
-// This method prepares the local variables including
-// their names and replaces them in the command lines
-// in the current command block
+
+/////////////////////////////////////////////////
+/// \brief This method prepares the local
+/// variables including their names and replaces
+/// them in the command lines in the current
+/// command block.
+///
+/// \param sVars string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
 {
     // Prepare the array for the local variables
@@ -3050,9 +3216,15 @@ void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
 	}
 }
 
-// This member function returns the current line number
-// as enumerated during passing the commands via
-// "setCommand()"
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// current line number as enumerated during
+/// passing the commands via "setCommand()".
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::getCurrentLineNumber() const
 {
     if (vCmdArray.size() > (size_t)nCurrentCommand)
@@ -3061,9 +3233,15 @@ int FlowCtrl::getCurrentLineNumber() const
     return 0;
 }
 
-// This member function returns the current command
-// line, which will or has been evaluated in the
-// current line
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// current command line, which will or has been
+/// evaluated in the current line.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string FlowCtrl::getCurrentCommand() const
 {
     if (!vCmdArray.size())
@@ -3074,31 +3252,87 @@ string FlowCtrl::getCurrentCommand() const
 
 
 // VIRTUAL FUNCTION IMPLEMENTATIONS
+/////////////////////////////////////////////////
+/// \brief Dummy implementation.
+///
+/// \param sLine string&
+/// \param _parser Parser&
+/// \param _functions Define&
+/// \param _data Datafile&
+/// \param _out Output&
+/// \param _pData PlotData&
+/// \param _script Script&
+/// \param _option Settings&
+/// \param nth_loop unsigned int
+/// \param nth_command int
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
 {
 	return 1;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Dummy implementation.
+///
+/// \param sLine string&
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::procedureCmdInterface(string& sLine)
 {
 	return 1;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Dummy implementation.
+///
+/// \param sProc const string&
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::isInline(const string& sProc)
 {
 	return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Dummy implementation.
+///
+/// \param _parser Parser&
+/// \param _option Settings&
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::evalDebuggerBreakPoint(Parser& _parser, Settings& _option)
 {
 	return 0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Dummy implementation.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int FlowCtrl::getErrorInformationForDebugger()
 {
     return 0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Dummy implementation.
+///
+/// \param sLine string&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> FlowCtrl::expandInlineProcedures(string& sLine)
 {
     return vector<string>();

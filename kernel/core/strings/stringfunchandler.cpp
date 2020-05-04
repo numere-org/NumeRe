@@ -259,9 +259,7 @@ namespace NumeRe
                 size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, nIntArg1, nIntArg2);
 
                 if (!nMaxArgs)
-                {
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
 
                 if (funcHandle.bTakesMultiArguments)
                 {
@@ -335,44 +333,89 @@ namespace NumeRe
                 s_vect sStringArg1, sStringArg2, sStringArg3;
                 n_vect nIntArg1, nIntArg2;
                 size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
-                if (!nMaxArgs)
-                {
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
-                for (size_t i = 0; i < nMaxArgs; i++)
-                {
-                    if (i < sStringArg1.size())
-                        stringArgs.sArg1 = sStringArg1[i];
-                    else if (sStringArg1.size() == 1)
-                        stringArgs.sArg1 = sStringArg1[0];
-                    else
-                        stringArgs.sArg1 = "";
-                    if (i < sStringArg2.size())
-                        stringArgs.sArg2 = sStringArg2[i];
-                    else if (sStringArg2.size() == 1)
-                        stringArgs.sArg2 = sStringArg2[0];
-                    else
-                        stringArgs.sArg2 = "";
-                    if (i < sStringArg3.size())
-                        stringArgs.sArg3 = sStringArg3[i];
-                    else if (sStringArg3.size() == 1)
-                        stringArgs.sArg3 = sStringArg3[0];
-                    else
-                        stringArgs.sArg3 = "";
-                    if (i < nIntArg1.size())
-                        stringArgs.nArg1 = nIntArg1[i];
-                    else if (nIntArg1.size() == 1)
-                        stringArgs.nArg1 = nIntArg1[0];
-                    else
-                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
-                    if (i < nIntArg2.size())
-                        stringArgs.nArg2 = nIntArg2[i];
-                    else if (nIntArg2.size() == 1)
-                        stringArgs.nArg2 = nIntArg2[0];
-                    else
-                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
 
-                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                if (!nMaxArgs)
+                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+                if (funcHandle.bTakesMultiArguments)
+                {
+                    stringArgs.sMultiArg = sStringArg1;
+                    nMaxArgs = max(max(max(sStringArg2.size(), sStringArg3.size()), nIntArg1.size()), nIntArg2.size());
+
+                    for (size_t i = 0; i < nMaxArgs; i++)
+                    {
+                        if (i < sStringArg2.size())
+                            stringArgs.sArg2 = sStringArg2[i];
+                        else if (sStringArg2.size() == 1)
+                            stringArgs.sArg2 = sStringArg2[0];
+                        else
+                            stringArgs.sArg2 = "";
+
+                        if (i < sStringArg3.size())
+                            stringArgs.sArg3 = sStringArg3[i];
+                        else if (sStringArg3.size() == 1)
+                            stringArgs.sArg3 = sStringArg3[0];
+                        else
+                            stringArgs.sArg3 = "";
+
+                        if (i < nIntArg1.size())
+                            stringArgs.nArg1 = nIntArg1[i];
+                        else if (nIntArg1.size() == 1)
+                            stringArgs.nArg1 = nIntArg1[0];
+                        else
+                            stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
+                        if (i < nIntArg2.size())
+                            stringArgs.nArg2 = nIntArg2[i];
+                        else if (nIntArg2.size() == 1)
+                            stringArgs.nArg2 = nIntArg2[0];
+                        else
+                            stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                    }
+                }
+                else
+                {
+                    for (size_t i = 0; i < nMaxArgs; i++)
+                    {
+                        if (i < sStringArg1.size())
+                            stringArgs.sArg1 = sStringArg1[i];
+                        else if (sStringArg1.size() == 1)
+                            stringArgs.sArg1 = sStringArg1[0];
+                        else
+                            stringArgs.sArg1 = "";
+
+                        if (i < sStringArg2.size())
+                            stringArgs.sArg2 = sStringArg2[i];
+                        else if (sStringArg2.size() == 1)
+                            stringArgs.sArg2 = sStringArg2[0];
+                        else
+                            stringArgs.sArg2 = "";
+
+                        if (i < sStringArg3.size())
+                            stringArgs.sArg3 = sStringArg3[i];
+                        else if (sStringArg3.size() == 1)
+                            stringArgs.sArg3 = sStringArg3[0];
+                        else
+                            stringArgs.sArg3 = "";
+
+                        if (i < nIntArg1.size())
+                            stringArgs.nArg1 = nIntArg1[i];
+                        else if (nIntArg1.size() == 1)
+                            stringArgs.nArg1 = nIntArg1[0];
+                        else
+                            stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
+                        if (i < nIntArg2.size())
+                            stringArgs.nArg2 = nIntArg2[i];
+                        else if (nIntArg2.size() == 1)
+                            stringArgs.nArg2 = nIntArg2[0];
+                        else
+                            stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
+                    }
                 }
             }
 
@@ -1325,7 +1368,12 @@ namespace NumeRe
         {
             // Found an occurence -> call the string function handler
             if (sLine.find(iter->first + "(") != string::npos)
+            {
                 evalFunction(sLine, iter->first, iter->second);
+
+                if (sLine.find('(') == string::npos)
+                    break;
+            }
         }
 
         return sLine;

@@ -36,6 +36,8 @@ namespace NumeRe
         // Clear the contents first
         clear();
 
+        nGlobalType = cluster.nGlobalType;
+
         // Fill the cluster with copies from the passed cluster
         for (size_t i = 0; i < cluster.vClusterArray.size(); i++)
         {
@@ -54,6 +56,8 @@ namespace NumeRe
         // clear the contents first
         clear();
 
+        nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
+
         // Fill the cluster with new double items
         for (size_t i = 0; i < vVals.size(); i++)
         {
@@ -69,6 +73,8 @@ namespace NumeRe
         // Clear the contents first
         clear();
 
+        nGlobalType = ClusterItem::ITEMTYPE_STRING;
+
         // Fill the cluster with new string items
         for (size_t i = 0; i < vStrings.size(); i++)
         {
@@ -80,6 +86,8 @@ namespace NumeRe
     // using vectors as indices
     void Cluster::assignVectorResults(Indices _idx, int nNum, double* data)
     {
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
+
         // Assign the single results
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
@@ -175,6 +183,12 @@ namespace NumeRe
     {
         if (item)
             vClusterArray.push_back(item);
+
+        if (nGlobalType == ClusterItem::ITEMTYPE_INVALID)
+            return;
+
+        if (item->getType() != nGlobalType)
+            nGlobalType = ClusterItem::ITEMTYPE_MIXED;
     }
 
     // This member function constructs a new double cluster
@@ -182,6 +196,12 @@ namespace NumeRe
     void Cluster::push_back(double val)
     {
         vClusterArray.push_back(new ClusterDoubleItem(val));
+
+        if (nGlobalType == ClusterItem::ITEMTYPE_INVALID)
+            return;
+
+        if (nGlobalType == ClusterItem::ITEMTYPE_STRING)
+            nGlobalType = ClusterItem::ITEMTYPE_MIXED;
     }
 
     // This member function constructs a new string cluster
@@ -189,6 +209,12 @@ namespace NumeRe
     void Cluster::push_back(const string& strval)
     {
         vClusterArray.push_back(new ClusterStringItem(strval));
+
+        if (nGlobalType == ClusterItem::ITEMTYPE_INVALID)
+            return;
+
+        if (nGlobalType == ClusterItem::ITEMTYPE_DOUBLE)
+            nGlobalType = ClusterItem::ITEMTYPE_MIXED;
     }
 
     // This member function removes the last item in the internal
@@ -199,6 +225,8 @@ namespace NumeRe
         {
             delete vClusterArray.back();
             vClusterArray.pop_back();
+
+            nGlobalType = ClusterItem::ITEMTYPE_INVALID;
         }
     }
 
@@ -238,6 +266,7 @@ namespace NumeRe
         }
 
         vClusterArray.clear();
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
     // This member function returns, whether the data in the
@@ -247,6 +276,9 @@ namespace NumeRe
         // Only do something, if the array has a length
         if (vClusterArray.size())
         {
+            if (nGlobalType != ClusterItem::ITEMTYPE_INVALID)
+                return nGlobalType == ClusterItem::ITEMTYPE_MIXED;
+
             // Store the first type
             int nFirstType = vClusterArray[0]->getType();
 
@@ -254,7 +286,10 @@ namespace NumeRe
             {
                 // Is there any item with a different type?
                 if (vClusterArray[i]->getType() != nFirstType)
+                {
+                    nGlobalType = ClusterItem::ITEMTYPE_MIXED;
                     return true;
+                }
             }
 
             return false;
@@ -270,6 +305,9 @@ namespace NumeRe
         // Only do something, if the array has a length
         if (vClusterArray.size())
         {
+            if (nGlobalType != ClusterItem::ITEMTYPE_INVALID)
+                return nGlobalType == ClusterItem::ITEMTYPE_DOUBLE;
+
             for (size_t i = 0; i < vClusterArray.size(); i++)
             {
                 // Is there any item, which is NOT a double?
@@ -277,6 +315,7 @@ namespace NumeRe
                     return false;
             }
 
+            nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
             return true;
         }
 
@@ -290,6 +329,9 @@ namespace NumeRe
         // Only do something, if the array has a length
         if (vClusterArray.size())
         {
+            if (nGlobalType != ClusterItem::ITEMTYPE_INVALID)
+                return nGlobalType == ClusterItem::ITEMTYPE_STRING;
+
             for (size_t i = 0; i < vClusterArray.size(); i++)
             {
                 // Is there any item, which is NOT a string?
@@ -297,6 +339,7 @@ namespace NumeRe
                     return false;
             }
 
+            nGlobalType = ClusterItem::ITEMTYPE_STRING;
             return true;
         }
 
@@ -341,6 +384,8 @@ namespace NumeRe
         }
         else
             vClusterArray[i]->setDouble(value);
+
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
     // This member function returns the data of all cluster
@@ -409,6 +454,8 @@ namespace NumeRe
             else
                 vClusterArray[i]->setDouble(vVals[i]);
         }
+
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
     // This member function assigns a doubles as data for
@@ -432,6 +479,8 @@ namespace NumeRe
             else
                 vClusterArray[i]->setDouble(data[i]);
         }
+
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
     // This member function assigns a calculation results
@@ -484,6 +533,8 @@ namespace NumeRe
         }
         else
             vClusterArray[i]->setString(strval);
+
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
     // This member function returns the data of all cluster
@@ -521,6 +572,8 @@ namespace NumeRe
             else
                 vClusterArray[i]->setString(sVals[i]);
         }
+
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
     // This member function constructs a plain vector
@@ -675,6 +728,8 @@ namespace NumeRe
             else
                 ++iter;
         }
+
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
     // This public member function erases elements located from
@@ -704,6 +759,8 @@ namespace NumeRe
             else
                 ++iter;
         }
+
+        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
     }
 
     //
@@ -1107,13 +1164,41 @@ namespace NumeRe
     // the referenced value and returns indices or values depending
     // on the passed type. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::cmp(const VectorIndex& _vLine, double dRef, int nType)
+    double Cluster::cmp(const VectorIndex& _vLine, double dRef, int _nType)
     {
         if (!vClusterArray.size())
             return NAN;
 
-        double dKeep = 0.0;
+        enum
+        {
+            RETURN_VALUE = 1,
+            RETURN_LE = 2,
+            RETURN_GE = 4,
+            RETURN_FIRST = 8
+        };
+
+        int nType = 0;
+
+        double dKeep = dRef;
         int nKeep = -1;
+
+        if (_nType > 0)
+            nType = RETURN_GE;
+        else if (_nType < 0)
+            nType = RETURN_LE;
+
+        switch (intCast(fabs(_nType)))
+        {
+            case 2:
+                nType |= RETURN_VALUE;
+                break;
+            case 3:
+                nType |= RETURN_FIRST;
+                break;
+            case 4:
+                nType |= RETURN_FIRST | RETURN_VALUE;
+                break;
+        }
 
         // Apply the operation and ignore invalid or non-double items
         for (long long int i = 0; i < _vLine.size(); i++)
@@ -1126,15 +1211,21 @@ namespace NumeRe
 
             if (vClusterArray[_vLine[i]]->getDouble() == dRef)
             {
-                if (abs(nType) <= 1)
-                {
-                    return _vLine[i] + 1;
-                }
-                else
+                if (nType & RETURN_VALUE)
                     return vClusterArray[_vLine[i]]->getDouble();
+
+                return _vLine[i] + 1;
             }
-            else if ((nType == 1 || nType == 2) && vClusterArray[_vLine[i]]->getDouble() > dRef)
+            else if (nType & RETURN_GE && vClusterArray[_vLine[i]]->getDouble() > dRef)
             {
+                if (nType & RETURN_FIRST)
+                {
+                    if (nType & RETURN_VALUE)
+                        return vClusterArray[_vLine[i]]->getDouble();
+
+                    return _vLine[i]+1;
+                }
+
                 if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble() < dKeep)
                 {
                     dKeep = vClusterArray[_vLine[i]]->getDouble();
@@ -1143,8 +1234,16 @@ namespace NumeRe
                 else
                     continue;
             }
-            else if ((nType == -1 || nType == -2) && vClusterArray[_vLine[i]]->getDouble() < dRef)
+            else if (nType & RETURN_LE && vClusterArray[_vLine[i]]->getDouble() < dRef)
             {
+                if (nType & RETURN_FIRST)
+                {
+                    if (nType & RETURN_VALUE)
+                        return vClusterArray[_vLine[i]]->getDouble();
+
+                    return _vLine[i]+1;
+                }
+
                 if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble() > dKeep)
                 {
                     dKeep = vClusterArray[_vLine[i]]->getDouble();
@@ -1157,10 +1256,10 @@ namespace NumeRe
 
         if (nKeep == -1)
             return NAN;
-        else if (abs(nType) == 2)
+        else if (nType & RETURN_VALUE)
             return dKeep;
-        else
-            return nKeep + 1;
+
+        return nKeep+1;
     }
 
     // This member function calculates the median value

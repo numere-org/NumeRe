@@ -209,8 +209,24 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
     // If it is a single column or row, then we simply
     // summarize its contents, otherwise we calculate the
     // integral with the trapezoidal method
-    if (_idx.row.size() == 1 || _idx.col.size() == 1)
+    if ((_idx.row.size() == 1 || _idx.col.size() == 1) && !bReturnFunctionPoints)
         vResult.push_back(_data.sum(sDatatable, _idx.row, _idx.col));
+    else if (_idx.row.size() == 1 || _idx.col.size() == 1)
+    {
+        // cumulative sum
+        vResult.push_back(_data.getElement(_idx.row[0], _idx.col[0], sDatatable));
+
+        if (_idx.row.size() == 1)
+        {
+            for (size_t i = 1; i < _idx.col.size(); i++)
+                vResult.push_back(vResult.back() + _data.getElement(_idx.row[0], _idx.col[i], sDatatable));
+        }
+        else
+        {
+            for (size_t i = 1; i < _idx.row.size(); i++)
+                vResult.push_back(vResult.back() + _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+        }
+    }
     else
     {
         Datafile _cache;
@@ -4015,7 +4031,7 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
 			_data.writeToTable(_iTargetIndex.row[i], _iTargetIndex.col[j+2], sTargetCache, vZVals[i][j]);
 
 			if (!i)
-				_data.setHeadLineElement(_iTargetIndex.col[j+2], sTargetCache, "z[" + toString((int)j + 1) + "]");
+				_data.setHeadLineElement(_iTargetIndex.col[j+2], sTargetCache, "z(x(:),y(" + toString((int)j + 1) + "))");
 		}
 	}
 

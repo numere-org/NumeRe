@@ -8067,6 +8067,7 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["ifndef"] = cmd_ifndefined;
     mCommandFuncMap["ifndefined"] = cmd_ifndefined;
     mCommandFuncMap["imread"] = cmd_imread;
+    mCommandFuncMap["implot"] = cmd_plotting;
     mCommandFuncMap["info"] = cmd_credits;
     mCommandFuncMap["install"] = cmd_install;
     mCommandFuncMap["list"] = cmd_list;

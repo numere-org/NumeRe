@@ -24,6 +24,7 @@
 #include <memory>
 #include <fstream>
 #include <sstream>
+#include <wx/encconv.h>
 
 #define COMPRESSIONLEVEL 6
 
@@ -109,10 +110,9 @@ wxString FileRevisions::convertLineEndings(const wxString& content)
 /////////////////////////////////////////////////
 wxString FileRevisions::readRevision(const wxString& revString)
 {
-    wxMBConvUTF8 conv;
     wxFFileInputStream in(m_revisionPath.GetFullPath());
     wxZipInputStream zip(in);
-    wxTextInputStream txt(zip);
+    wxTextInputStream txt(zip, " \t", wxConvUTF8); // Convert from UTF-8 to Unicode on-the-fly
 
     std::unique_ptr<wxZipEntry> entry;
 
@@ -125,10 +125,11 @@ wxString FileRevisions::readRevision(const wxString& revString)
         {
             wxString revision;
 
-            // Read the whole entry, convert multibyte characters
-            // into wide ones and append windows line endings
+            // Read the whole entry and append windows line endings. The
+            // necessary conversion from UTF-8 is done by the text input
+            // stream on-the-fly
             while (!zip.Eof())
-                revision += wxString(conv.cMB2WC(txt.ReadLine())) + "\r\n";
+                revision += wxString(txt.ReadLine()) + "\r\n";
 
             // Remove the last line's endings
             revision.erase(revision.length()-2);

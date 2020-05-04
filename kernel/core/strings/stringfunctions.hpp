@@ -1408,6 +1408,64 @@ static string strfnc_locate(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the getkeyval()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_getkeyval(StringFuncArgs& funcArgs)
+{
+    string sValues;
+
+    // Remove the masked strings
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
+
+    // Set the default tolerance mode, if necessary
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = 0;
+
+    // Ensure that the length of the array is
+    // even
+    if (funcArgs.sMultiArg.size() % 2)
+        funcArgs.sMultiArg.pop_back();
+
+    // Examine the whole string array
+    for (size_t i = 0; i < funcArgs.sMultiArg.size(); i+=2)
+    {
+        // Remove the masked strings
+        funcArgs.sMultiArg[i] = removeMaskedStrings(funcArgs.sMultiArg[i]);
+
+        // Remove surrounding whitespaces and compare
+        StripSpaces(funcArgs.sMultiArg[i]);
+
+        if (funcArgs.sMultiArg[i] == funcArgs.sArg2)
+            sValues += funcArgs.sMultiArg[i+1] + ",";
+    }
+
+    // Pop the trailing comma, if the string has a length.
+    // Otherwise set values to the default values and probably
+    // issue a warning
+    if (sValues.length())
+        sValues.pop_back();
+    else
+    {
+        if (funcArgs.nArg1)
+            NumeReKernel::issueWarning(_lang.get("PARSERFUNCS_LISTFUNC_GETKEYVAL_WARNING", "\"" + funcArgs.sArg2 + "\""));
+
+        if (funcArgs.sArg3.find_first_not_of("0123456789.eE+-(){},") != string::npos && funcArgs.sArg3.front() != '"')
+            sValues = "\"" + funcArgs.sArg3 + "\"";
+        else
+            sValues = funcArgs.sArg3;
+    }
+
+    return sValues;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the findtoken()
 /// function.
 ///
@@ -1608,49 +1666,23 @@ static map<string, StringFuncHandle> getStringFuncHandles()
 {
 	map<string, StringFuncHandle> mHandleTable;
 
-	mHandleTable["strlen"]              = StringFuncHandle(STR, strfnc_strlen, false);
-	mHandleTable["ascii"]               = StringFuncHandle(STR, strfnc_ascii, false);
-	mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
-	mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
-	mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
-	mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
-	mHandleTable["getenvvar"]           = StringFuncHandle(STR, strfnc_getenvvar, false);
-	mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
-	mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
-	mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
-	mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
-	mHandleTable["strfnd"]              = StringFuncHandle(STR_STR_VALOPT, strfnc_strfnd, false);
-	mHandleTable["strmatch"]            = StringFuncHandle(STR_STR_VALOPT, strfnc_strmatch, false);
-	mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
-	mHandleTable["strrfnd"]             = StringFuncHandle(STR_STR_VALOPT, strfnc_strrfnd, false);
-	mHandleTable["strrmatch"]           = StringFuncHandle(STR_STR_VALOPT, strfnc_strrmatch, false);
-	mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
-	mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
-	mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
-	mHandleTable["repeat"]              = StringFuncHandle(STR_VAL, strfnc_repeat, false);
-	mHandleTable["timeformat"]          = StringFuncHandle(STR_VAL, strfnc_timeformat, false);
-	mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
-	mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
-	mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false); // fehler
-	mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
-	mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
-	mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);
-	mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
-	mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
-	mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
-	mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
 	mHandleTable["and"]                 = StringFuncHandle(VAL, strfnc_and, true);
-	mHandleTable["or"]                  = StringFuncHandle(VAL, strfnc_or, true);
-	mHandleTable["xor"]                 = StringFuncHandle(VAL, strfnc_xor, true);
-	mHandleTable["num"]                 = StringFuncHandle(STR, strfnc_num, true);
+	mHandleTable["ascii"]               = StringFuncHandle(STR, strfnc_ascii, false);
+	mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
 	mHandleTable["cnt"]                 = StringFuncHandle(STR, strfnc_cnt, true);
-	mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
-	mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
-	mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
-
-	mHandleTable["is_blank"]            = StringFuncHandle(STR, strfnc_isblank, false);
+	mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
+	mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
+	mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);
+	mHandleTable["getenvvar"]           = StringFuncHandle(STR, strfnc_getenvvar, false);
+	mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
+	mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
+	mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
+	mHandleTable["getkeyval"]           = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_getkeyval, true);
+	mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
+	mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
 	mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);
     mHandleTable["is_alpha"]            = StringFuncHandle(STR, strfnc_isalpha, false);
+	mHandleTable["is_blank"]            = StringFuncHandle(STR, strfnc_isblank, false);
     mHandleTable["is_cntrl"]            = StringFuncHandle(STR, strfnc_iscntrl, false);
     mHandleTable["is_digit"]            = StringFuncHandle(STR, strfnc_isdigit, false);
     mHandleTable["is_graph"]            = StringFuncHandle(STR, strfnc_isgraph, false);
@@ -1659,8 +1691,33 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["is_punct"]            = StringFuncHandle(STR, strfnc_ispunct, false);
     mHandleTable["is_space"]            = StringFuncHandle(STR, strfnc_isspace, false);
     mHandleTable["is_upper"]            = StringFuncHandle(STR, strfnc_isupper, false);
-    mHandleTable["is_xdigit"]            = StringFuncHandle(STR, strfnc_isxdigit, false);
-
+    mHandleTable["is_xdigit"]           = StringFuncHandle(STR, strfnc_isxdigit, false);
+	mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
+	mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
+	mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
+	mHandleTable["num"]                 = StringFuncHandle(STR, strfnc_num, true);
+	mHandleTable["or"]                  = StringFuncHandle(VAL, strfnc_or, true);
+	mHandleTable["repeat"]              = StringFuncHandle(STR_VAL, strfnc_repeat, false);
+	mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false);
+	mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
+	mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
+	mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
+	mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
+	mHandleTable["strfnd"]              = StringFuncHandle(STR_STR_VALOPT, strfnc_strfnd, false);
+	mHandleTable["strlen"]              = StringFuncHandle(STR, strfnc_strlen, false);
+	mHandleTable["strmatch"]            = StringFuncHandle(STR_STR_VALOPT, strfnc_strmatch, false);
+	mHandleTable["strrfnd"]             = StringFuncHandle(STR_STR_VALOPT, strfnc_strrfnd, false);
+	mHandleTable["strrmatch"]           = StringFuncHandle(STR_STR_VALOPT, strfnc_strrmatch, false);
+	mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
+	mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
+	mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
+	mHandleTable["timeformat"]          = StringFuncHandle(STR_VAL, strfnc_timeformat, false);
+	mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
+	mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
+	mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
+	mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
+	mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
+	mHandleTable["xor"]                 = StringFuncHandle(VAL, strfnc_xor, true);
 
 	return mHandleTable;
 }

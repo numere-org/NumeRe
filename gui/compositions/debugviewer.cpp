@@ -35,7 +35,16 @@ BEGIN_EVENT_TABLE(DebugViewer, ViewerFrame)
     EVT_MENU_RANGE(ID_DEBUG_CONTINUE, ID_DEBUG_LEAVE, DebugViewer::OnMenuEvent)
 END_EVENT_TABLE()
 
-// Constructor. Creates the necessary controls of the debugger window
+
+/////////////////////////////////////////////////
+/// \brief Constructor. Creates the necessary
+/// controls of the debugger window.
+///
+/// \param parent wxWindow*
+/// \param _options Options*
+/// \param title const wxString&
+///
+/////////////////////////////////////////////////
 DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& title) : ViewerFrame(parent, title)
 {
     m_options = _options;
@@ -123,8 +132,14 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
     m_expression->SetFocus();
 }
 
-// This private member function creates the toolbar
-// of the debugger window
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the toolbar of the debugger window.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void DebugViewer::initializeToolbar()
 {
     // Get the frame toolbar
@@ -154,9 +169,18 @@ void DebugViewer::initializeToolbar()
     tb->Realize();
 }
 
-// This private member function updates the expression element
-// in the debugger window and changes the colour of the characters
-// correspondingly
+
+/////////////////////////////////////////////////
+/// \brief This private member function updates
+/// the expression element in the debugger window
+/// and changes the colour of the characters
+/// correspondingly.
+///
+/// \param sLineNumber const string&
+/// \param sExpression const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DebugViewer::setExpression(const string& sLineNumber, const string& sExpression)
 {
     string sColours = m_terminal->getSyntax()->highlightLine("|<- " + sExpression).substr(4);
@@ -193,15 +217,31 @@ void DebugViewer::setExpression(const string& sLineNumber, const string& sExpres
     }
 }
 
-// This member function is the event handler function
-// for double-clicking on an stack item
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handler function for double-clicking on a
+/// stack item.
+///
+/// \param event wxListEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DebugViewer::OnStackItemActivate(wxListEvent& event)
 {
     getInformationByStackId(m_stacktrace->GetItemCount() - event.GetIndex() - 1);
 }
 
-// This private member function gets the debugger information
-// from the selected stack id
+
+/////////////////////////////////////////////////
+/// \brief This private member function gets the
+/// debugger information from the selected stack
+/// ID.
+///
+/// \param id size_t
+/// \return void
+///
+/////////////////////////////////////////////////
 void DebugViewer::getInformationByStackId(size_t id)
 {
     vector<string> vModuleInfo;
@@ -275,8 +315,15 @@ void DebugViewer::getInformationByStackId(size_t id)
     m_varViewer->UpdateVariables(vNumVars, n_num, s_num, t_num, c_num, a_num, g_num);
 }
 
-// This member function is the event handler routine
-// for the toolbar functions
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handler routine for the toolbar functions.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DebugViewer::OnMenuEvent(wxCommandEvent& event)
 {
     switch (event.GetId())
@@ -322,6 +369,15 @@ void DebugViewer::OnMenuEvent(wxCommandEvent& event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function may enable or
+/// disable the debugger toolbar.
+///
+/// \param enable bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void DebugViewer::EnableDebugger(bool enable)
 {
     wxToolBar* tb = GetToolBar();
@@ -333,9 +389,16 @@ void DebugViewer::EnableDebugger(bool enable)
     tb->EnableTool(ID_DEBUG_LEAVE, enable);
 }
 
-// This member function should be called after the user modified
-// the application settings. It will propagate the necessary application
-// settings into the debugger
+
+/////////////////////////////////////////////////
+/// \brief This member function should be called
+/// after the user modified the application
+/// settings. It will propagate the necessary
+/// application settings into the debugger.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void DebugViewer::updateSettings()
 {
     // Update the variable viewer
@@ -354,9 +417,18 @@ void DebugViewer::updateSettings()
         m_stacktrace->SetColumnWidth(nModuleColumn, wxLIST_AUTOSIZE_USEHEADER);
 }
 
-// This member function is used from the main window
-// to update the debugger window with the information of
-// the current debug event (aka the new stack)
+
+/////////////////////////////////////////////////
+/// \brief This member function is used from the
+/// main window to update the debugger window
+/// with the information of the current debug
+/// event (aka the new stack).
+///
+/// \param title const wxString&
+/// \param vStack const vector<string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vStack)
 {
     // Update the title
@@ -401,9 +473,17 @@ void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vSta
         getInformationByStackId(0);
 }
 
-// This member function is called upon closing the
-// debugger window: it won't be destroyed but hidden
-// and the kernel will get a CONTINUE signal
+
+/////////////////////////////////////////////////
+/// \brief This member function is called upon
+/// closing the debugger window: it won't be
+/// destroyed but hidden and the kernel will get
+/// a CONTINUE signal.
+///
+/// \param event wxCloseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DebugViewer::OnClose(wxCloseEvent& event)
 {
     if (b_transferredControl)
@@ -413,6 +493,18 @@ void DebugViewer::OnClose(wxCloseEvent& event)
     event.Veto();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function will inform the
+/// debugger window that the execution of the
+/// current code has ben finished.
+///
+/// \return void
+///
+/// The debugger window will disable its toolbar
+/// and display a corresponding message in the
+/// status bar.
+/////////////////////////////////////////////////
 void DebugViewer::OnExecutionFinished()
 {
     EnableDebugger(false);

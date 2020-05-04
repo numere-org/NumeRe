@@ -2462,15 +2462,14 @@ double Datafile::norm(const string& sCache, const VectorIndex& _vLine, const Vec
     return sqrt(dNorm);
 }
 
-double Datafile::cmp(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, double dRef, int nType)
+double Datafile::cmp(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, double dRef, int _nType)
 {
     //cerr << sCache << i1 << " " << i2 << " " << j1 << " " << j2 << " " << dRef << " " << nType << endl;
     if (sCache != "data")
-        return MemoryManager::cmp(sCache, i1, i2, j1, j2, dRef, nType);
+        return MemoryManager::cmp(sCache, i1, i2, j1, j2, dRef, _nType);
+
     if (!bValidData)
-        return NAN;
-    double dKeep = 0.0;
-    int nKeep = -1;
+		return NAN;
 
     if (i2 == -1)
         i2 = i1;
@@ -2498,123 +2497,229 @@ double Datafile::cmp(const string& sCache, long long int i1, long long int i2, l
     if (j2 >= getCols("data"))
         j2 = getCols("data")-1;
 
-    for (long long int i = i1; i <= i2; i++)
+    enum
     {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dDatafile[i][j]))
-                continue;
-            if (dDatafile[i][j] == dRef)
-            {
-                if (abs(nType) <= 1)
-                {
-                    if (i1 == i2)
-                        return j+1;
-                    else
-                        return i+1;
-                }
-                else
-                    return dDatafile[i][j];
-            }
-            else if ((nType == 1 || nType == 2) && dDatafile[i][j] > dRef)
-            {
-                if (nKeep == -1 || dDatafile[i][j] < dKeep)
-                {
-                    dKeep = dDatafile[i][j];
-                    if (i1 == i2)
-                        nKeep = j;
-                    else
-                        nKeep = i;
-                }
-                else
-                    continue;
-            }
-            else if ((nType == -1 || nType == -2) && dDatafile[i][j] < dRef)
-            {
-                if (nKeep == -1 || dDatafile[i][j] > dKeep)
-                {
-                    dKeep = dDatafile[i][j];
-                    if (i1 == i2)
-                        nKeep = j;
-                    else
-                        nKeep = i;
-                }
-                else
-                    continue;
-            }
-        }
-    }
-    if (nKeep == -1)
-        return NAN;
-    else if (abs(nType) == 2)
-        return dKeep;
-    else
-        return nKeep+1;
-}
+        RETURN_VALUE = 1,
+        RETURN_LE = 2,
+        RETURN_GE = 4,
+        RETURN_FIRST = 8
+    };
 
-double Datafile::cmp(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int nType)
-{
-    if (sCache != "data")
-        return MemoryManager::cmp(sCache, _vLine, _vCol, dRef, nType);
-    if (!bValidData)
-        return NAN;
-    double dKeep = 0.0;
+    int nType = 0;
+
+    double dKeep = dRef;
     int nKeep = -1;
 
-    for (long long int i = 0; i < _vLine.size(); i++)
+    if (_nType > 0)
+        nType = RETURN_GE;
+    else if (_nType < 0)
+        nType = RETURN_LE;
+
+    switch (intCast(fabs(_nType)))
     {
-        for (long long int j = 0; j < _vCol.size(); j++)
-        {
-            if (_vLine[i] < 0 || _vLine[i] >= getTableLines(sCache, false) || _vCol[j] < 0 || _vCol[j] >= getCols(sCache))
-                continue;
-            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))// || !bValidEntry[_vLine[i]][_vCol[j]])
-                continue;
-            if (dDatafile[_vLine[i]][_vCol[j]] == dRef)
-            {
-                if (abs(nType) <= 1)
-                {
-                    if (_vLine[0] == _vLine[_vLine.size()-1])
-                        return _vCol[j]+1;
-                    else
-                        return _vLine[i]+1;
-                }
-                else
-                    return dDatafile[_vLine[i]][_vCol[j]];
-            }
-            else if ((nType == 1 || nType == 2) && dDatafile[_vLine[i]][_vCol[j]] > dRef)
-            {
-                if (nKeep == -1 || dDatafile[_vLine[i]][_vCol[j]] < dKeep)
-                {
-                    dKeep = dDatafile[_vLine[i]][_vCol[j]];
-                    if (_vLine[0] == _vLine[_vLine.size()-1])
-                        nKeep = _vCol[j];
-                    else
-                        nKeep = _vLine[i];
-                }
-                else
-                    continue;
-            }
-            else if ((nType == -1 || nType == -2) && dDatafile[_vLine[i]][_vCol[j]] < dRef)
-            {
-                if (nKeep == -1 || dDatafile[_vLine[i]][_vCol[j]] > dKeep)
-                {
-                    dKeep = dDatafile[_vLine[i]][_vCol[j]];
-                    if (_vLine[0] == _vLine[_vLine.size()-1])
-                        nKeep = _vCol[j];
-                    else
-                        nKeep = _vLine[i];
-                }
-                else
-                    continue;
-            }
-        }
+        case 2:
+            nType |= RETURN_VALUE;
+            break;
+        case 3:
+            nType |= RETURN_FIRST;
+            break;
+        case 4:
+            nType |= RETURN_FIRST | RETURN_VALUE;
+            break;
     }
-    if (nKeep == -1)
-        return NAN;
-    else if (abs(nType) == 2)
-        return dKeep;
-    else
-        return nKeep+1;
+
+	for (long long int i = i1; i <= i2; i++)
+	{
+		for (long long int j = j1; j <= j2; j++)
+		{
+			if (isnan(dDatafile[i][j]))
+				continue;
+
+			if (dDatafile[i][j] == dRef)
+			{
+				if (nType & RETURN_VALUE)
+					return dDatafile[i][j];
+
+                if (i1 == i2)
+                    return j + 1;
+
+                return i + 1;
+			}
+			else if (nType & RETURN_GE && dDatafile[i][j] > dRef)
+			{
+			    if (nType & RETURN_FIRST)
+                {
+                    if (nType & RETURN_VALUE)
+                        return dDatafile[i][j];
+
+                    if (i1 == i2)
+						return j + 1;
+
+					return i + 1;
+                }
+
+				if (nKeep == -1 || dDatafile[i][j] < dKeep)
+				{
+					dKeep = dDatafile[i][j];
+					if (i1 == i2)
+						nKeep = j;
+					else
+						nKeep = i;
+				}
+				else
+					continue;
+			}
+			else if (nType & RETURN_LE && dDatafile[i][j] < dRef)
+			{
+				if (nType & RETURN_FIRST)
+                {
+                    if (nType & RETURN_VALUE)
+                        return dDatafile[i][j];
+
+                    if (i1 == i2)
+						return j + 1;
+
+					return i + 1;
+                }
+
+                if (nKeep == -1 || dDatafile[i][j] > dKeep)
+				{
+					dKeep = dDatafile[i][j];
+					if (i1 == i2)
+						nKeep = j;
+					else
+						nKeep = i;
+				}
+				else
+					continue;
+			}
+		}
+	}
+
+	if (nKeep == -1)
+		return NAN;
+	else if (nType & RETURN_VALUE)
+		return dKeep;
+	else
+		return nKeep + 1;
+}
+
+double Datafile::cmp(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int _nType)
+{
+    if (sCache != "data")
+        return MemoryManager::cmp(sCache, _vLine, _vCol, dRef, _nType);
+
+	if (!bValidData)
+		return NAN;
+
+    enum
+    {
+        RETURN_VALUE = 1,
+        RETURN_LE = 2,
+        RETURN_GE = 4,
+        RETURN_FIRST = 8
+    };
+
+    int nType = 0;
+
+    double dKeep = dRef;
+    int nKeep = -1;
+
+    if (_nType > 0)
+        nType = RETURN_GE;
+    else if (_nType < 0)
+        nType = RETURN_LE;
+
+    switch (intCast(fabs(_nType)))
+    {
+        case 2:
+            nType |= RETURN_VALUE;
+            break;
+        case 3:
+            nType |= RETURN_FIRST;
+            break;
+        case 4:
+            nType |= RETURN_FIRST | RETURN_VALUE;
+            break;
+    }
+
+	for (long long int i = 0; i < _vLine.size(); i++)
+	{
+		for (long long int j = 0; j < _vCol.size(); j++)
+		{
+			if (_vLine[i] < 0 || _vLine[i] >= nLines || _vCol[j] < 0 || _vCol[j] >= nCols)
+				continue;
+
+			if (isnan(dDatafile[_vLine[i]][_vCol[j]]))
+				continue;
+
+			if (dDatafile[_vLine[i]][_vCol[j]] == dRef)
+			{
+				if (nType & RETURN_VALUE)
+					return dDatafile[_vLine[i]][_vCol[j]];
+
+                if (_vLine[0] == _vLine[_vLine.size() - 1])
+                    return _vCol[j] + 1;
+
+                return _vLine[i] + 1;
+			}
+			else if (nType & RETURN_GE && dDatafile[_vLine[i]][_vCol[j]] > dRef)
+			{
+			    if (nType & RETURN_FIRST)
+                {
+                    if (nType & RETURN_VALUE)
+                        return dDatafile[_vLine[i]][_vCol[j]];
+
+                    if (_vLine[0] == _vLine[_vLine.size() - 1])
+						return _vCol[j] + 1;
+
+					return _vLine[i] + 1;
+                }
+
+				if (nKeep == -1 || dDatafile[_vLine[i]][_vCol[j]] < dKeep)
+				{
+					dKeep = dDatafile[_vLine[i]][_vCol[j]];
+					if (_vLine[0] == _vLine[_vLine.size() - 1])
+						nKeep = _vCol[j];
+					else
+						nKeep = _vLine[i];
+				}
+				else
+					continue;
+			}
+			else if (nType & RETURN_LE && dDatafile[_vLine[i]][_vCol[j]] < dRef)
+			{
+				if (nType & RETURN_FIRST)
+                {
+                    if (nType & RETURN_VALUE)
+                        return dDatafile[_vLine[i]][_vCol[j]];
+
+                    if (_vLine[0] == _vLine[_vLine.size() - 1])
+						return _vCol[j] + 1;
+
+					return _vLine[i] + 1;
+                }
+
+                if (nKeep == -1 || dDatafile[_vLine[i]][_vCol[j]] > dKeep)
+				{
+					dKeep = dDatafile[_vLine[i]][_vCol[j]];
+					if (_vLine[0] == _vLine[_vLine.size() - 1])
+						nKeep = _vCol[j];
+					else
+						nKeep = _vLine[i];
+				}
+				else
+					continue;
+			}
+		}
+	}
+
+	if (nKeep == -1)
+		return NAN;
+	else if (nType & RETURN_VALUE)
+		return dKeep;
+	else
+		return nKeep + 1;
 }
 
 double Datafile::med(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)
