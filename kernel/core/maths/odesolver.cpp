@@ -40,18 +40,12 @@ Odesolver::Odesolver()
     nDimensions = 0;
 }
 
-Odesolver::Odesolver(Parser* _parser, Datafile* _data, Define* _functions, Settings* _option)
+Odesolver::Odesolver(Parser* _parser, Datafile* _data, Define* _functions, Settings* _option) : Odesolver()
 {
-    Odesolver();
     _odeParser = _parser;
     _odeData = _data;
     _odeFunctions = _functions;
     _odeSettings = _option;
-
-    //cerr << odeEvolve << endl;
-    //cerr << odeControl << endl;
-    //cerr << odeStep << endl;
-
 }
 
 Odesolver::~Odesolver()
@@ -101,9 +95,9 @@ bool Odesolver::solve(const string& sCmd)
         return false;
 
     // Warum auch immer diese Pointer an dieser Stelle bereits eine Adresse hatten...???
-    odeEvolve = 0;
-    odeControl = 0;
-    odeStep = 0;
+    //odeEvolve = 0;
+    //odeControl = 0;
+    //odeStep = 0;
 
     const gsl_odeiv_step_type* odeStepType_ly = 0;
     gsl_odeiv_step* odeStep_ly = 0;
@@ -308,6 +302,7 @@ bool Odesolver::solve(const string& sCmd)
     //cerr << 7 << endl;
 
     parser_iVars.vValue[0][0] = t0;
+    t = t0;
 
     // Dimension des ODE-Systems bestimmen: odesolve dy1 = y2*x, dy2 = sin(y1)
     _odeParser->SetExpr(sFunc);
@@ -376,7 +371,8 @@ bool Odesolver::solve(const string& sCmd)
         odeSystem_ly.params = 0;
     }
 
-    NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ..."));
+    if (_odeSettings->getSystemPrintStatus())
+        NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ..."));
     if (bAllowCacheClearance || !_idx.row.front())
         _odeData->setHeadLineElement(_idx.col.front(), sTarget, "x");
 
@@ -402,7 +398,7 @@ bool Odesolver::solve(const string& sCmd)
     // integrieren
     for (size_t i = 0; i < (size_t)nSamples; i++)
     {
-        if (time(0) - tTimeControl > 1)
+        if (time(0) - tTimeControl > 1 && _odeSettings->getSystemPrintStatus())
         {
             NumeReKernel::printPreFmt(toSystemCodePage("\r|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ... " + toString((int)(i*100.0/(double)nSamples)) + " %"));
         }
@@ -509,7 +505,8 @@ bool Odesolver::solve(const string& sCmd)
     if (y2)
         delete[] y2;
 
-    NumeReKernel::printPreFmt(" " + _lang.get("COMMON_SUCCESS") + ".\n");
+    if (_odeSettings->getSystemPrintStatus())
+        NumeReKernel::printPreFmt(" " + _lang.get("COMMON_SUCCESS") + ".\n");
     return true;
 }
 
