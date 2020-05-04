@@ -3113,10 +3113,12 @@ string replaceToVectorname(const string& sExpression)
 // This function replaces all occurences of the string sToRep
 // in the string sToModify with the new value sNewValue. The
 // Boundaries limit the range of processing
-void replaceAll(string& sToModify, const string& sToRep, const string& sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
+void replaceAll(string& sToModify, const char* sToRep, const char* sNewValue, size_t nStart /*= 0*/, size_t nEnd /*= string::npos*/)
 {
+    size_t nRepLength = strlen(sToRep);
+    size_t nNewLength = strlen(sNewValue);
     // Ensure the values are correct
-    if (!sToModify.length() || !sToRep.length())
+    if (!sToModify.length() || !nRepLength)
 		return;
 
     // check the boundaries
@@ -3131,11 +3133,11 @@ void replaceAll(string& sToModify, const string& sToRep, const string& sNewValue
 	{
 		if (i == sToModify.length())
 			break;
-		if (sToModify.substr(i, sToRep.length()) == sToRep)
+		if (sToModify.substr(i, nRepLength) == sToRep)
 		{
-			sToModify.replace(i, sToRep.length(), sNewValue);
-			nEnd += sNewValue.length() - sToRep.length() + 1;
-			i += sNewValue.length() - 1;
+			sToModify.replace(i, nRepLength, sNewValue);
+			nEnd += nNewLength - nRepLength + 1;
+			i += nNewLength - 1;
 		}
 	}
 }

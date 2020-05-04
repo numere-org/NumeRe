@@ -1086,7 +1086,6 @@ namespace NumeRe
         if (parserFlags & NO_QUOTES && parserFlags & PEEK)
         {
             string sConsoleOut = "|-> ";
-            static const string sConsoleIndent = "|   ";
             bool bLineBreaks = false;
 
             // Every result in the current return values
@@ -1170,7 +1169,7 @@ namespace NumeRe
             // Replace all line break characters with the console
             // indentation, if that is needed
             if (bLineBreaks)
-                replaceAll(sConsoleOut, "\n", "\n" + sConsoleIndent);
+                replaceAll(sConsoleOut, "\n", "\n|   ");
 
             return sConsoleOut;
 

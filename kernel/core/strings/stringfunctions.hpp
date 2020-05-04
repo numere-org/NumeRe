@@ -1526,7 +1526,7 @@ static string strfnc_replaceall(StringFuncArgs& funcArgs)
 	if (!funcArgs.sArg2.length())
 		return "\"" + funcArgs.sArg1 + "\"";
 
-    replaceAll(funcArgs.sArg1, funcArgs.sArg2, funcArgs.sArg3, funcArgs.nArg1-1, funcArgs.nArg2-1);
+    replaceAll(funcArgs.sArg1, funcArgs.sArg2.c_str(), funcArgs.sArg3.c_str(), funcArgs.nArg1-1, funcArgs.nArg2-1);
 
 	return "\"" + funcArgs.sArg1 + "\"";
 }
