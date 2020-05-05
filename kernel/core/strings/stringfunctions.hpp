@@ -34,26 +34,26 @@
 /////////////////////////////////////////////////
 string removeMaskedStrings(const string& sString)
 {
-	if (sString.find("\\\"") == string::npos && sString.find("\\t") == string::npos && sString.find("\\n") == string::npos && sString.find("\\ ") == string::npos)
-		return sString;
+    if (sString.find("\\\"") == string::npos && sString.find("\\t") == string::npos && sString.find("\\n") == string::npos && sString.find("\\ ") == string::npos)
+        return sString;
 
-	string sRet = sString;
+    string sRet = sString;
 
-	// Go through the string and remove all relevant escape characters
-	// Omit the characters, which are identifying LaTeX command sequences
-	for (size_t i = 0; i < sRet.length(); i++)
-	{
-		if (sRet.substr(i, 2) == "\\\"")
-			sRet.erase(i, 1);
-		if (sRet.substr(i, 2) == "\\t" && sRet.substr(i, 4) != "\\tau" && sRet.substr(i, 6) != "\\theta")
-			sRet.replace(i, 2, "\t");
-		if (sRet.substr(i, 2) == "\\n" && sRet.substr(i, 3) != "\\nu")
-			sRet.replace(i, 2, "\n");
-		if (sRet.substr(i, 2) == "\\ ")
-			sRet.erase(i + 1, 1);
-	}
+    // Go through the string and remove all relevant escape characters
+    // Omit the characters, which are identifying LaTeX command sequences
+    for (size_t i = 0; i < sRet.length(); i++)
+    {
+        if (sRet.substr(i, 2) == "\\\"")
+            sRet.erase(i, 1);
+        if (sRet.substr(i, 2) == "\\t" && sRet.substr(i, 4) != "\\tau" && sRet.substr(i, 6) != "\\theta")
+            sRet.replace(i, 2, "\t");
+        if (sRet.substr(i, 2) == "\\n" && sRet.substr(i, 3) != "\\nu")
+            sRet.replace(i, 2, "\n");
+        if (sRet.substr(i, 2) == "\\ ")
+            sRet.erase(i + 1, 1);
+    }
 
-	return sRet;
+    return sRet;
 }
 
 
@@ -67,9 +67,9 @@ string removeMaskedStrings(const string& sString)
 /////////////////////////////////////////////////
 string removeQuotationMarks(const string& sString)
 {
-	if (sString.find('"') == string::npos || sString.front() != '"' || sString.back() != '"')
-		return sString;
-	return sString.substr(1, sString.length() - 2);
+    if (sString.find('"') == string::npos || sString.front() != '"' || sString.back() != '"')
+        return sString;
+    return sString.substr(1, sString.length() - 2);
 }
 
 
@@ -83,10 +83,10 @@ string removeQuotationMarks(const string& sString)
 /////////////////////////////////////////////////
 string addQuotationMarks(const string& sString)
 {
-	if (sString.front() == '"' && sString.back() == '"')
-		return sString;
-	else
-		return "\"" + sString + "\"";
+    if (sString.front() == '"' && sString.back() == '"')
+        return sString;
+    else
+        return "\"" + sString + "\"";
 }
 
 
@@ -103,11 +103,11 @@ static string strfnc_to_string(StringFuncArgs& funcArgs)
     if (!funcArgs.sArg1.length())
         return "\"\"";
 
-	if (funcArgs.sArg1.find_first_not_of(" ") != string::npos && funcArgs.sArg1[funcArgs.sArg1.find_first_not_of(" ")] == '"')
-		return funcArgs.sArg1; // Already is a string
+    if (funcArgs.sArg1.find_first_not_of(" ") != string::npos && funcArgs.sArg1[funcArgs.sArg1.find_first_not_of(" ")] == '"')
+        return funcArgs.sArg1; // Already is a string
 
     // Is not a string
-	return "\"" + funcArgs.sArg1 + "\"";
+    return "\"" + funcArgs.sArg1 + "\"";
 }
 
 
@@ -121,7 +121,7 @@ static string strfnc_to_string(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_to_uppercase(StringFuncArgs& funcArgs)
 {
-	return "\"" + toUpperCase(funcArgs.sArg1) + "\"";
+    return "\"" + toUpperCase(funcArgs.sArg1) + "\"";
 }
 
 
@@ -135,7 +135,7 @@ static string strfnc_to_uppercase(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_to_lowercase(StringFuncArgs& funcArgs)
 {
-	return "\"" + toLowerCase(funcArgs.sArg1) + "\"";
+    return "\"" + toLowerCase(funcArgs.sArg1) + "\"";
 }
 
 
@@ -196,21 +196,21 @@ static string strfnc_getFileParts(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_getfilelist(StringFuncArgs& funcArgs)
 {
-	if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
-		funcArgs.nArg1 = 0;
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = 0;
 
-	vector<string> vFileList = getFileList(removeMaskedStrings(funcArgs.sArg1), *(funcArgs.opt), funcArgs.nArg1);
-	string sFileList = "";
-	for (unsigned int i = 0; i < vFileList.size(); i++)
-	{
-		sFileList += "\"" + vFileList[i] + "\"";
-		if (i < vFileList.size() - 1)
-			sFileList += NEWSTRING;
-	}
-	if (!sFileList.length())
-		return "\"\"";
-	else
-		return sFileList;
+    vector<string> vFileList = getFileList(removeMaskedStrings(funcArgs.sArg1), *(funcArgs.opt), funcArgs.nArg1);
+    string sFileList = "";
+    for (unsigned int i = 0; i < vFileList.size(); i++)
+    {
+        sFileList += "\"" + vFileList[i] + "\"";
+        if (i < vFileList.size() - 1)
+            sFileList += NEWSTRING;
+    }
+    if (!sFileList.length())
+        return "\"\"";
+    else
+        return sFileList;
 }
 
 
@@ -224,21 +224,21 @@ static string strfnc_getfilelist(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_getfolderlist(StringFuncArgs& funcArgs)
 {
-	if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
-		funcArgs.nArg1 = 0;
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = 0;
 
-	vector<string> vFolderList = getFolderList(removeMaskedStrings(funcArgs.sArg1), *(funcArgs.opt), funcArgs.nArg1);
-	string sFolderList = "";
-	for (unsigned int i = 0; i < vFolderList.size(); i++)
-	{
-		sFolderList += "\"" + vFolderList[i] + "\"";
-		if (i < vFolderList.size() - 1)
-			sFolderList += NEWSTRING;
-	}
-	if (!sFolderList.length())
-		return "\"\"";
-	else
-		return sFolderList;
+    vector<string> vFolderList = getFolderList(removeMaskedStrings(funcArgs.sArg1), *(funcArgs.opt), funcArgs.nArg1);
+    string sFolderList = "";
+    for (unsigned int i = 0; i < vFolderList.size(); i++)
+    {
+        sFolderList += "\"" + vFolderList[i] + "\"";
+        if (i < vFolderList.size() - 1)
+            sFolderList += NEWSTRING;
+    }
+    if (!sFolderList.length())
+        return "\"\"";
+    else
+        return sFolderList;
 }
 
 
@@ -252,7 +252,7 @@ static string strfnc_getfolderlist(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_strlen(StringFuncArgs& funcArgs)
 {
-	return toString((int)removeMaskedStrings(funcArgs.sArg1).length());
+    return toString((int)removeMaskedStrings(funcArgs.sArg1).length());
 }
 
 
@@ -266,7 +266,7 @@ static string strfnc_strlen(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_getmatchingparens(StringFuncArgs& funcArgs)
 {
-	return toString((int)getMatchingParenthesis(removeMaskedStrings(funcArgs.sArg1)) + 1);
+    return toString((int)getMatchingParenthesis(removeMaskedStrings(funcArgs.sArg1)) + 1);
 }
 
 
@@ -280,15 +280,15 @@ static string strfnc_getmatchingparens(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_ascii(StringFuncArgs& funcArgs)
 {
-	string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
-	{
-		sCodes += toString((int)funcArgs.sArg1[i]);
-		if (i + 1 < funcArgs.sArg1.length())
-			sCodes += ",";
-	}
-	return sCodes;
+    string sCodes = "";
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        sCodes += toString((int)funcArgs.sArg1[i]);
+        if (i + 1 < funcArgs.sArg1.length())
+            sCodes += ",";
+    }
+    return sCodes;
 }
 
 
@@ -303,10 +303,10 @@ static string strfnc_ascii(StringFuncArgs& funcArgs)
 static string strfnc_isblank(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	static Umlauts _umlauts;
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    static Umlauts _umlauts;
 
-	for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
         if (isblank(funcArgs.sArg1[i]) && _umlauts.lower.find(funcArgs.sArg1[i]) == string::npos && _umlauts.upper.find(funcArgs.sArg1[i]) == string::npos)
             sCodes += "1";
@@ -331,8 +331,8 @@ static string strfnc_isblank(StringFuncArgs& funcArgs)
 static string strfnc_isalnum(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	static Umlauts _umlauts;
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    static Umlauts _umlauts;
 
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
@@ -359,8 +359,8 @@ static string strfnc_isalnum(StringFuncArgs& funcArgs)
 static string strfnc_isalpha(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	static Umlauts _umlauts;
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    static Umlauts _umlauts;
 
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
@@ -387,8 +387,8 @@ static string strfnc_isalpha(StringFuncArgs& funcArgs)
 static string strfnc_iscntrl(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	static Umlauts _umlauts;
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    static Umlauts _umlauts;
 
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
@@ -415,7 +415,7 @@ static string strfnc_iscntrl(StringFuncArgs& funcArgs)
 static string strfnc_isdigit(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
         if (isdigit(funcArgs.sArg1[i]))
@@ -444,7 +444,7 @@ static string strfnc_isdigit(StringFuncArgs& funcArgs)
 static string strfnc_isgraph(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     static Umlauts _umlauts;
 
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
@@ -472,11 +472,11 @@ static string strfnc_isgraph(StringFuncArgs& funcArgs)
 static string strfnc_islower(StringFuncArgs& funcArgs)
 {
     string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	// Get an Umlauts structure instance and store it statically
-	// (this variable will only be instantiated once and kept in
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    // Get an Umlauts structure instance and store it statically
+    // (this variable will only be instantiated once and kept in
     // memory afterwards, which is more efficient)
-	static Umlauts _umlauts;
+    static Umlauts _umlauts;
 
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
@@ -507,8 +507,8 @@ static string strfnc_islower(StringFuncArgs& funcArgs)
 static string strfnc_isprint(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	static Umlauts _umlauts;
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    static Umlauts _umlauts;
 
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
@@ -534,11 +534,11 @@ static string strfnc_isprint(StringFuncArgs& funcArgs)
 static string strfnc_ispunct(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
 
-	static Umlauts _umlauts;
+    static Umlauts _umlauts;
 
-	for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
+    for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
         if (ispunct(funcArgs.sArg1[i]) && _umlauts.lower.find(funcArgs.sArg1[i]) == string::npos && _umlauts.upper.find(funcArgs.sArg1[i]) == string::npos)
             sCodes += "1";
@@ -562,9 +562,9 @@ static string strfnc_ispunct(StringFuncArgs& funcArgs)
 static string strfnc_isspace(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
 
-	static Umlauts _umlauts;
+    static Umlauts _umlauts;
 
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
@@ -590,9 +590,9 @@ static string strfnc_isspace(StringFuncArgs& funcArgs)
 static string strfnc_isupper(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
 
-	static Umlauts _umlauts;
+    static Umlauts _umlauts;
 
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
@@ -618,7 +618,7 @@ static string strfnc_isupper(StringFuncArgs& funcArgs)
 static string strfnc_isxdigit(StringFuncArgs& funcArgs)
 {
    string sCodes = "";
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
     for (unsigned int i = 0; i < funcArgs.sArg1.length(); i++)
     {
         if (isxdigit(funcArgs.sArg1[i]))
@@ -646,12 +646,12 @@ static string strfnc_isxdigit(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_to_char(StringFuncArgs& funcArgs)
 {
-	string sToChar = "";
-	for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
-	{
-		sToChar += (char)(funcArgs.nMultiArg[i]);
-	}
-	return "\"" + sToChar + "\"";
+    string sToChar = "";
+    for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+    {
+        sToChar += (char)(funcArgs.nMultiArg[i]);
+    }
+    return "\"" + sToChar + "\"";
 }
 
 
@@ -665,14 +665,14 @@ static string strfnc_to_char(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_and(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.nMultiArg.size())
-		return "false";
-	for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
-	{
-		if (!funcArgs.nMultiArg[i])
-			return "false";
-	}
-	return "true";
+    if (!funcArgs.nMultiArg.size())
+        return "false";
+    for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+    {
+        if (!funcArgs.nMultiArg[i])
+            return "false";
+    }
+    return "true";
 }
 
 
@@ -686,13 +686,13 @@ static string strfnc_and(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_or(StringFuncArgs& funcArgs)
 {
-	string sToChar = "";
-	for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
-	{
-		if (funcArgs.nMultiArg[i])
-			return "true";
-	}
-	return "false";
+    string sToChar = "";
+    for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+    {
+        if (funcArgs.nMultiArg[i])
+            return "true";
+    }
+    return "false";
 }
 
 
@@ -706,21 +706,21 @@ static string strfnc_or(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_xor(StringFuncArgs& funcArgs)
 {
-	string sToChar = "";
-	bool isTrue = false;
-	for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
-	{
-		if (funcArgs.nMultiArg[i])
-		{
-			if (!isTrue)
-				isTrue = true;
-			else
-				return "false";
-		}
-	}
-	if (isTrue)
-		return "true";
-	return "false";
+    string sToChar = "";
+    bool isTrue = false;
+    for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+    {
+        if (funcArgs.nMultiArg[i])
+        {
+            if (!isTrue)
+                isTrue = true;
+            else
+                return "false";
+        }
+    }
+    if (isTrue)
+        return "true";
+    return "false";
 }
 
 
@@ -734,26 +734,26 @@ static string strfnc_xor(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_findfile(StringFuncArgs& funcArgs)
 {
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	FileSystem _fSys;
-	_fSys.setTokens(funcArgs.opt->getTokenPaths());
-	if (funcArgs.sArg2.length())
-		_fSys.setPath(removeMaskedStrings(funcArgs.sArg2), false, funcArgs.opt->getExePath());
-	else
-		_fSys.setPath(funcArgs.opt->getExePath(), false, funcArgs.opt->getExePath());
-	string sExtension = ".dat";
-	if (funcArgs.sArg1.rfind('.') != string::npos)
-	{
-		sExtension = funcArgs.sArg1.substr(funcArgs.sArg1.rfind('.'));
-		if (sExtension.find('*') != string::npos || sExtension.find('?') != string::npos)
-			sExtension = ".dat";
-		else
-			_fSys.declareFileType(sExtension);
-	}
-	funcArgs.sArg1 = _fSys.ValidFileName(funcArgs.sArg1, sExtension);
-	if (fileExists(funcArgs.sArg1))
-		return "true";
-	return "false";
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    FileSystem _fSys;
+    _fSys.setTokens(funcArgs.opt->getTokenPaths());
+    if (funcArgs.sArg2.length())
+        _fSys.setPath(removeMaskedStrings(funcArgs.sArg2), false, funcArgs.opt->getExePath());
+    else
+        _fSys.setPath(funcArgs.opt->getExePath(), false, funcArgs.opt->getExePath());
+    string sExtension = ".dat";
+    if (funcArgs.sArg1.rfind('.') != string::npos)
+    {
+        sExtension = funcArgs.sArg1.substr(funcArgs.sArg1.rfind('.'));
+        if (sExtension.find('*') != string::npos || sExtension.find('?') != string::npos)
+            sExtension = ".dat";
+        else
+            _fSys.declareFileType(sExtension);
+    }
+    funcArgs.sArg1 = _fSys.ValidFileName(funcArgs.sArg1, sExtension);
+    if (fileExists(funcArgs.sArg1))
+        return "true";
+    return "false";
 }
 
 
@@ -767,21 +767,21 @@ static string strfnc_findfile(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_split(StringFuncArgs& funcArgs)
 {
-	string sSplittedString = "";
-	if (!funcArgs.sArg2.length())
-		return "\"\"";
-	string sSep = removeMaskedStrings(funcArgs.sArg2);
-	sSep.erase(1);
-	boost::char_separator<char> cSep(sSep.c_str());
-	string sToSeparate = removeMaskedStrings(funcArgs.sArg1);
-	tokenizer<char_separator<char> > tok(sToSeparate, cSep);
-	for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
-	{
-		if (sSplittedString.length())
-			sSplittedString += NEWSTRING;
-		sSplittedString += "\"" + string(*iter) + "\"";
-	}
-	return /*addMaskedStrings*/ (sSplittedString);
+    string sSplittedString = "";
+    if (!funcArgs.sArg2.length())
+        return "\"\"";
+    string sSep = removeMaskedStrings(funcArgs.sArg2);
+    sSep.erase(1);
+    boost::char_separator<char> cSep(sSep.c_str());
+    string sToSeparate = removeMaskedStrings(funcArgs.sArg1);
+    tokenizer<char_separator<char> > tok(sToSeparate, cSep);
+    for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
+    {
+        if (sSplittedString.length())
+            sSplittedString += NEWSTRING;
+        sSplittedString += "\"" + string(*iter) + "\"";
+    }
+    return /*addMaskedStrings*/ (sSplittedString);
 }
 
 
@@ -795,60 +795,60 @@ static string strfnc_split(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_to_time(StringFuncArgs& funcArgs)
 {
-	string sTime = funcArgs.sArg2 + " ";
-	string sPattern = funcArgs.sArg1 + " ";
-	if (sTime.length() != sPattern.length())
-		return "nan";
-	time_t timeVal = time(nullptr);
-	tm* timeStruct = localtime(&timeVal);
-	TIME_ZONE_INFORMATION timezone;
-	GetTimeZoneInformation(&timezone);
-	char cCurrentChar = sPattern.front();
-	string sCurrentElement;
-	for (size_t i = 0; i < sPattern.length(); i++)
-	{
-		if (sPattern[i] != cCurrentChar)
-		{
-			switch (cCurrentChar)
-			{
-				case 'y':
-				case 'Y': // year is either four or two chars long. The structure expects the time to start at the year 1900
-					if (sCurrentElement.length() > 2)
-						timeStruct->tm_year = StrToInt(sCurrentElement) - 1900;
-					else
-						timeStruct->tm_year = StrToInt(sCurrentElement) + (100 * (timeStruct->tm_year / 100));
-					break;
-				case 'M':
-					timeStruct->tm_mon = StrToInt(sCurrentElement) - 1;
-					break;
-				case 'D':
-					timeStruct->tm_mday = StrToInt(sCurrentElement);
-					break;
-				case 'H':
-					timeStruct->tm_hour = StrToInt(sCurrentElement);
-					break;
-				case 'h':
-					timeStruct->tm_hour = StrToInt(sCurrentElement) - timezone.Bias / 60;
-					if (timeStruct->tm_hour < 0)
-						timeStruct->tm_hour += 24;
-					else if (timeStruct->tm_hour >= 24)
-						timeStruct->tm_hour -= 24;
-					break;
-				case 'm':
-					timeStruct->tm_min = StrToInt(sCurrentElement);
-					break;
-				case 's':
-					timeStruct->tm_sec = StrToInt(sCurrentElement);
-					break;
-			}
-			cCurrentChar = sPattern[i];
-			sCurrentElement.clear();
-		}
-		sCurrentElement += sTime[i];
-	}
+    string sTime = funcArgs.sArg2 + " ";
+    string sPattern = funcArgs.sArg1 + " ";
+    if (sTime.length() != sPattern.length())
+        return "nan";
+    time_t timeVal = time(nullptr);
+    tm* timeStruct = localtime(&timeVal);
+    TIME_ZONE_INFORMATION timezone;
+    GetTimeZoneInformation(&timezone);
+    char cCurrentChar = sPattern.front();
+    string sCurrentElement;
+    for (size_t i = 0; i < sPattern.length(); i++)
+    {
+        if (sPattern[i] != cCurrentChar)
+        {
+            switch (cCurrentChar)
+            {
+                case 'y':
+                case 'Y': // year is either four or two chars long. The structure expects the time to start at the year 1900
+                    if (sCurrentElement.length() > 2)
+                        timeStruct->tm_year = StrToInt(sCurrentElement) - 1900;
+                    else
+                        timeStruct->tm_year = StrToInt(sCurrentElement) + (100 * (timeStruct->tm_year / 100));
+                    break;
+                case 'M':
+                    timeStruct->tm_mon = StrToInt(sCurrentElement) - 1;
+                    break;
+                case 'D':
+                    timeStruct->tm_mday = StrToInt(sCurrentElement);
+                    break;
+                case 'H':
+                    timeStruct->tm_hour = StrToInt(sCurrentElement);
+                    break;
+                case 'h':
+                    timeStruct->tm_hour = StrToInt(sCurrentElement) - timezone.Bias / 60;
+                    if (timeStruct->tm_hour < 0)
+                        timeStruct->tm_hour += 24;
+                    else if (timeStruct->tm_hour >= 24)
+                        timeStruct->tm_hour -= 24;
+                    break;
+                case 'm':
+                    timeStruct->tm_min = StrToInt(sCurrentElement);
+                    break;
+                case 's':
+                    timeStruct->tm_sec = StrToInt(sCurrentElement);
+                    break;
+            }
+            cCurrentChar = sPattern[i];
+            sCurrentElement.clear();
+        }
+        sCurrentElement += sTime[i];
+    }
 
-	timeVal = mktime(timeStruct);
-	return toString((size_t)timeVal);
+    timeVal = mktime(timeStruct);
+    return toString((size_t)timeVal);
 }
 
 
@@ -862,17 +862,17 @@ static string strfnc_to_time(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_strfnd(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.sArg2.length())
-		return "0";
-	if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
-		funcArgs.nArg1 = 1;
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = 1;
 
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
 
-	if (funcArgs.sArg2.front() == '"')
-		funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
-	return toString((int)funcArgs.sArg2.find(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
+    return toString((int)funcArgs.sArg2.find(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -886,17 +886,17 @@ static string strfnc_strfnd(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_strmatch(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.sArg2.length())
-		return "0";
-	if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
-		funcArgs.nArg1 = 1;
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = 1;
 
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
 
-	if (funcArgs.sArg2.front() == '"')
-		funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
-	return toString((int)funcArgs.sArg2.find_first_of(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
+    return toString((int)funcArgs.sArg2.find_first_of(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -910,17 +910,17 @@ static string strfnc_strmatch(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_str_not_match(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.sArg2.length())
-		return "0";
-	if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
-		funcArgs.nArg1 = 1;
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = 1;
 
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
 
-	if (funcArgs.sArg2.front() == '"')
-		funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
-	return toString((int)funcArgs.sArg2.find_first_not_of(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
+    return toString((int)funcArgs.sArg2.find_first_not_of(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -934,17 +934,17 @@ static string strfnc_str_not_match(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_strrfnd(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.sArg2.length())
-		return "0";
-	if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
-		funcArgs.nArg1 = funcArgs.sArg2.length() + 1;
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = funcArgs.sArg2.length() + 1;
 
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
 
-	if (funcArgs.sArg2.front() == '"')
-		funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
-	return toString((int)funcArgs.sArg2.rfind(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
+    return toString((int)funcArgs.sArg2.rfind(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -958,17 +958,17 @@ static string strfnc_strrfnd(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_strrmatch(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.sArg2.length())
-		return "0";
-	if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
-		funcArgs.nArg1 = funcArgs.sArg2.length() + 1;
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = funcArgs.sArg2.length() + 1;
 
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
 
-	if (funcArgs.sArg2.front() == '"')
-		funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
-	return toString((int)funcArgs.sArg2.find_last_of(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
+    return toString((int)funcArgs.sArg2.find_last_of(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -982,17 +982,17 @@ static string strfnc_strrmatch(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.sArg2.length())
-		return "0";
-	if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
-		funcArgs.nArg1 = funcArgs.sArg2.length() + 1;
+    if (!funcArgs.sArg2.length())
+        return "0";
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = funcArgs.sArg2.length() + 1;
 
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
 
-	if (funcArgs.sArg2.front() == '"')
-		funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
-	return toString((int)funcArgs.sArg2.find_last_not_of(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
+    return toString((int)funcArgs.sArg2.find_last_not_of(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
 }
 
 
@@ -1006,26 +1006,26 @@ static string strfnc_str_not_rmatch(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_findparam(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.sArg2.length())
-		return "0";
-	size_t nMatch;
+    if (!funcArgs.sArg2.length())
+        return "0";
+    size_t nMatch;
 
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
-	funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
 
-	if (funcArgs.sArg3.length())
-	{
-		nMatch = findParameter(funcArgs.sArg2, funcArgs.sArg1, funcArgs.sArg3[0]);
-	}
-	else
-	{
-		nMatch = findParameter(funcArgs.sArg2, funcArgs.sArg1);
-	}
-	if (nMatch != string::npos)
-		return toString((int)(nMatch + 1));
-	else
-		return "0";
+    if (funcArgs.sArg3.length())
+    {
+        nMatch = findParameter(funcArgs.sArg2, funcArgs.sArg1, funcArgs.sArg3[0]);
+    }
+    else
+    {
+        nMatch = findParameter(funcArgs.sArg2, funcArgs.sArg1);
+    }
+    if (nMatch != string::npos)
+        return toString((int)(nMatch + 1));
+    else
+        return "0";
 }
 
 
@@ -1039,19 +1039,19 @@ static string strfnc_findparam(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_substr(StringFuncArgs& funcArgs)
 {
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	if (!funcArgs.sArg1.length())
-		return "\"\"";
-	if (funcArgs.nArg1 < 1)
-		funcArgs.nArg1 = 1;
-	if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
-		funcArgs.nArg1 = funcArgs.sArg1.length();
-	if (funcArgs.nArg2 < 0)
-		funcArgs.nArg2 = -1;
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
+    if (funcArgs.nArg1 < 1)
+        funcArgs.nArg1 = 1;
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
+        funcArgs.nArg1 = funcArgs.sArg1.length();
+    if (funcArgs.nArg2 < 0)
+        funcArgs.nArg2 = -1;
     string sRet = funcArgs.sArg1.substr(funcArgs.nArg1 - 1, funcArgs.nArg2);
     if (sRet.length() && sRet.back() == '\\')
         sRet += " ";
-	return "\"" + sRet + "\"";
+    return "\"" + sRet + "\"";
 }
 
 
@@ -1065,15 +1065,15 @@ static string strfnc_substr(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_repeat(StringFuncArgs& funcArgs)
 {
-	if (funcArgs.nArg1 <= 1)
-		return "\"" + funcArgs.sArg1 + "\"";
-	else
-	{
-		string sReturn;
-		for (int i = 0; i < funcArgs.nArg1; i++)
-			sReturn += funcArgs.sArg1;
-		return "\"" + sReturn + "\"";
-	}
+    if (funcArgs.nArg1 <= 1)
+        return "\"" + funcArgs.sArg1 + "\"";
+    else
+    {
+        string sReturn;
+        for (int i = 0; i < funcArgs.nArg1; i++)
+            sReturn += funcArgs.sArg1;
+        return "\"" + sReturn + "\"";
+    }
 }
 
 
@@ -1087,9 +1087,9 @@ static string strfnc_repeat(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string padWithZeros(int nTime, size_t nLength)
 {
-	string sPadded = toString(nTime);
-	sPadded.insert(0, nLength - sPadded.length(), '0');
-	return sPadded;
+    string sPadded = toString(nTime);
+    sPadded.insert(0, nLength - sPadded.length(), '0');
+    return sPadded;
 }
 
 
@@ -1103,61 +1103,61 @@ static string padWithZeros(int nTime, size_t nLength)
 /////////////////////////////////////////////////
 static string strfnc_timeformat(StringFuncArgs& funcArgs)
 {
-	string sFormattedTime = funcArgs.sArg1 + " "; // contains pattern
-	__time64_t nTime = llabs(funcArgs.nArg1);
-	tm* timeStruct = _localtime64(&nTime);
-	TIME_ZONE_INFORMATION timezone;
-	GetTimeZoneInformation(&timezone);
-	char cCurrentChar = sFormattedTime.front();
-	size_t currentElementStart = 0;
+    string sFormattedTime = funcArgs.sArg1 + " "; // contains pattern
+    __time64_t nTime = llabs(funcArgs.nArg1);
+    tm* timeStruct = _localtime64(&nTime);
+    TIME_ZONE_INFORMATION timezone;
+    GetTimeZoneInformation(&timezone);
+    char cCurrentChar = sFormattedTime.front();
+    size_t currentElementStart = 0;
 
-	for (size_t i = 0; i < sFormattedTime.length(); i++)
-	{
-		if (cCurrentChar != sFormattedTime[i])
-		{
-			switch (cCurrentChar)
-			{
-				case 'Y':
-				case 'y': // year is either four or two chars long. The structure expects the time to start at the year 1900
-					if (i - currentElementStart > 2)
-						sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_year + 1900, i - currentElementStart));
-					else
-						sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_year - (100 * (timeStruct->tm_year / 100)), i - currentElementStart));
-					break;
-				case 'M':
-					sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_mon + 1, i - currentElementStart));
-					break;
-				case 'D':
-					sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_mday, i - currentElementStart));
-					break;
-				case 'd':
-					sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_yday, i - currentElementStart));
-					break;
-				case 'H':
-					sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour, i - currentElementStart));
-					break;
-				case 'h':
-					if (timeStruct->tm_hour + timezone.Bias / 60 < 0)
-						sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour + 24 + timezone.Bias / 60, i - currentElementStart));
-					else if (timeStruct->tm_hour + timezone.Bias / 60 >= 24)
-						sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour - 24 + timezone.Bias / 60, i - currentElementStart));
-					else
-						sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour + timezone.Bias / 60, i - currentElementStart));
-					break;
-				case 'm':
-					sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_min, i - currentElementStart));
-					break;
-				case 's':
-					sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_sec, i - currentElementStart));
-					break;
-			}
+    for (size_t i = 0; i < sFormattedTime.length(); i++)
+    {
+        if (cCurrentChar != sFormattedTime[i])
+        {
+            switch (cCurrentChar)
+            {
+                case 'Y':
+                case 'y': // year is either four or two chars long. The structure expects the time to start at the year 1900
+                    if (i - currentElementStart > 2)
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_year + 1900, i - currentElementStart));
+                    else
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_year - (100 * (timeStruct->tm_year / 100)), i - currentElementStart));
+                    break;
+                case 'M':
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_mon + 1, i - currentElementStart));
+                    break;
+                case 'D':
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_mday, i - currentElementStart));
+                    break;
+                case 'd':
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_yday, i - currentElementStart));
+                    break;
+                case 'H':
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour, i - currentElementStart));
+                    break;
+                case 'h':
+                    if (timeStruct->tm_hour + timezone.Bias / 60 < 0)
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour + 24 + timezone.Bias / 60, i - currentElementStart));
+                    else if (timeStruct->tm_hour + timezone.Bias / 60 >= 24)
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour - 24 + timezone.Bias / 60, i - currentElementStart));
+                    else
+                        sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_hour + timezone.Bias / 60, i - currentElementStart));
+                    break;
+                case 'm':
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_min, i - currentElementStart));
+                    break;
+                case 's':
+                    sFormattedTime.replace(currentElementStart, i - currentElementStart, padWithZeros(timeStruct->tm_sec, i - currentElementStart));
+                    break;
+            }
 
-			currentElementStart = i;
-			cCurrentChar = sFormattedTime[i];
-		}
-	}
-	sFormattedTime.pop_back();
-	return "\"" + sFormattedTime + "\"";
+            currentElementStart = i;
+            cCurrentChar = sFormattedTime[i];
+        }
+    }
+    sFormattedTime.pop_back();
+    return "\"" + sFormattedTime + "\"";
 }
 
 
@@ -1171,12 +1171,12 @@ static string strfnc_timeformat(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_char(StringFuncArgs& funcArgs)
 {
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	if (funcArgs.nArg1 <= 1)
-		return "\"" + funcArgs.sArg1.substr(0, 1) + "\"";
-	if ((size_t)funcArgs.nArg1 >= funcArgs.sArg1.length())
-		return "\"" + funcArgs.sArg1.substr(funcArgs.sArg1.length() - 1) + "\"";
-	return "\"" + funcArgs.sArg1.substr(funcArgs.nArg1 - 1, 1) + "\"";
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    if (funcArgs.nArg1 <= 1)
+        return "\"" + funcArgs.sArg1.substr(0, 1) + "\"";
+    if ((size_t)funcArgs.nArg1 >= funcArgs.sArg1.length())
+        return "\"" + funcArgs.sArg1.substr(funcArgs.sArg1.length() - 1) + "\"";
+    return "\"" + funcArgs.sArg1.substr(funcArgs.nArg1 - 1, 1) + "\"";
 }
 
 
@@ -1190,13 +1190,13 @@ static string strfnc_char(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_getopt(StringFuncArgs& funcArgs)
 {
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	if (funcArgs.nArg1 <= 1)
-		funcArgs.nArg1 = 1;
-	if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
-		return "\"\"";
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    if (funcArgs.nArg1 <= 1)
+        funcArgs.nArg1 = 1;
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
+        return "\"\"";
 
-	return "\"" + getArgAtPos(funcArgs.sArg1, funcArgs.nArg1 - 1) + "\"";
+    return "\"" + getArgAtPos(funcArgs.sArg1, funcArgs.nArg1 - 1) + "\"";
 }
 
 
@@ -1210,19 +1210,19 @@ static string strfnc_getopt(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_replace(StringFuncArgs& funcArgs)
 {
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
 
-	if (!funcArgs.sArg1.length())
-		return "\"\"";
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
 
-	if (funcArgs.nArg1 < 1)
-		funcArgs.nArg1 = 1;
-	if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
-		funcArgs.nArg1 = funcArgs.sArg1.length();
-	if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
-		funcArgs.nArg2 = -1;
-	return "\"" + funcArgs.sArg1.replace(funcArgs.nArg1 - 1, funcArgs.nArg2, funcArgs.sArg2) + "\"";
+    if (funcArgs.nArg1 < 1)
+        funcArgs.nArg1 = 1;
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
+        funcArgs.nArg1 = funcArgs.sArg1.length();
+    if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
+        funcArgs.nArg2 = -1;
+    return "\"" + funcArgs.sArg1.replace(funcArgs.nArg1 - 1, funcArgs.nArg2, funcArgs.sArg2) + "\"";
 }
 
 
@@ -1510,25 +1510,25 @@ static string strfnc_findtoken(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_replaceall(StringFuncArgs& funcArgs)
 {
-	funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
-	funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
-	funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
 
-	if (!funcArgs.sArg1.length())
-		return "\"\"";
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
 
-	if (funcArgs.nArg1 < 1)
-		funcArgs.nArg1 = 1;
-	if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
-		funcArgs.nArg1 = funcArgs.sArg1.length();
-	if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
-		funcArgs.nArg2 = funcArgs.sArg1.length() + 1;
-	if (!funcArgs.sArg2.length())
-		return "\"" + funcArgs.sArg1 + "\"";
+    if (funcArgs.nArg1 < 1)
+        funcArgs.nArg1 = 1;
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg1.length())
+        funcArgs.nArg1 = funcArgs.sArg1.length();
+    if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
+        funcArgs.nArg2 = funcArgs.sArg1.length() + 1;
+    if (!funcArgs.sArg2.length())
+        return "\"" + funcArgs.sArg1 + "\"";
 
     replaceAll(funcArgs.sArg1, funcArgs.sArg2.c_str(), funcArgs.sArg3.c_str(), funcArgs.nArg1-1, funcArgs.nArg2-1);
 
-	return "\"" + funcArgs.sArg1 + "\"";
+    return "\"" + funcArgs.sArg1 + "\"";
 }
 
 
@@ -1542,13 +1542,13 @@ static string strfnc_replaceall(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_cnt(StringFuncArgs& funcArgs)
 {
-	if (funcArgs.sMultiArg.size())
-	{
-		return toString((int)funcArgs.sMultiArg.size());
-	}
-	else if (funcArgs.nMultiArg.size())
-		return toString((int)funcArgs.nMultiArg.size());
-	return "0";
+    if (funcArgs.sMultiArg.size())
+    {
+        return toString((int)funcArgs.sMultiArg.size());
+    }
+    else if (funcArgs.nMultiArg.size())
+        return toString((int)funcArgs.nMultiArg.size());
+    return "0";
 }
 
 
@@ -1562,21 +1562,21 @@ static string strfnc_cnt(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_num(StringFuncArgs& funcArgs)
 {
-	if (funcArgs.sMultiArg.size())
-	{
-		int nRet = 0;
-		for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
-		{
-			if (funcArgs.sMultiArg[i].length())
-				nRet++;
-		}
-		return toString(nRet);
-	}
-	else if (funcArgs.nMultiArg.size())
-	{
-		return toString((int)funcArgs.nMultiArg.size());
-	}
-	return "0";
+    if (funcArgs.sMultiArg.size())
+    {
+        int nRet = 0;
+        for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+        {
+            if (funcArgs.sMultiArg[i].length())
+                nRet++;
+        }
+        return toString(nRet);
+    }
+    else if (funcArgs.nMultiArg.size())
+    {
+        return toString((int)funcArgs.nMultiArg.size());
+    }
+    return "0";
 }
 
 
@@ -1590,15 +1590,15 @@ static string strfnc_num(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_min(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.sMultiArg.size())
-		return "\"\"";
-	string sMin = funcArgs.sMultiArg[0];
-	for (size_t i = 1; i < funcArgs.sMultiArg.size(); i++)
-	{
-		if (sMin > funcArgs.sMultiArg[i])
-			sMin = funcArgs.sMultiArg[i];
-	}
-	return "\"" + sMin + "\"";
+    if (!funcArgs.sMultiArg.size())
+        return "\"\"";
+    string sMin = funcArgs.sMultiArg[0];
+    for (size_t i = 1; i < funcArgs.sMultiArg.size(); i++)
+    {
+        if (sMin > funcArgs.sMultiArg[i])
+            sMin = funcArgs.sMultiArg[i];
+    }
+    return "\"" + sMin + "\"";
 }
 
 
@@ -1612,15 +1612,15 @@ static string strfnc_min(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_max(StringFuncArgs& funcArgs)
 {
-	if (!funcArgs.sMultiArg.size())
-		return "\"\"";
-	string sMax = funcArgs.sMultiArg[0];
-	for (size_t i = 1; i < funcArgs.sMultiArg.size(); i++)
-	{
-		if (sMax < funcArgs.sMultiArg[i])
-			sMax = funcArgs.sMultiArg[i];
-	}
-	return "\"" + sMax + "\"";
+    if (!funcArgs.sMultiArg.size())
+        return "\"\"";
+    string sMax = funcArgs.sMultiArg[0];
+    for (size_t i = 1; i < funcArgs.sMultiArg.size(); i++)
+    {
+        if (sMax < funcArgs.sMultiArg[i])
+            sMax = funcArgs.sMultiArg[i];
+    }
+    return "\"" + sMax + "\"";
 }
 
 
@@ -1634,21 +1634,21 @@ static string strfnc_max(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_sum(StringFuncArgs& funcArgs)
 {
-	if (funcArgs.sMultiArg.size())
-	{
-		string sRet = "";
-		for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
-			sRet += funcArgs.sMultiArg[i];
-		return "\"" + sRet + "\"";
-	}
-	else if (funcArgs.nMultiArg.size())
-	{
-		int nRet = 0;
-		for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
-			nRet += funcArgs.nMultiArg[i];
-		return toString(nRet);
-	}
-	return "\"\"";
+    if (funcArgs.sMultiArg.size())
+    {
+        string sRet = "";
+        for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+            sRet += funcArgs.sMultiArg[i];
+        return "\"" + sRet + "\"";
+    }
+    else if (funcArgs.nMultiArg.size())
+    {
+        int nRet = 0;
+        for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
+            nRet += funcArgs.nMultiArg[i];
+        return toString(nRet);
+    }
+    return "\"\"";
 }
 
 
@@ -1664,25 +1664,25 @@ static string strfnc_sum(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static map<string, StringFuncHandle> getStringFuncHandles()
 {
-	map<string, StringFuncHandle> mHandleTable;
+    map<string, StringFuncHandle> mHandleTable;
 
-	mHandleTable["and"]                 = StringFuncHandle(VAL, strfnc_and, true);
-	mHandleTable["ascii"]               = StringFuncHandle(STR, strfnc_ascii, false);
-	mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
-	mHandleTable["cnt"]                 = StringFuncHandle(STR, strfnc_cnt, true);
-	mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
-	mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
-	mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);
-	mHandleTable["getenvvar"]           = StringFuncHandle(STR, strfnc_getenvvar, false);
-	mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
-	mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
-	mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
-	mHandleTable["getkeyval"]           = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_getkeyval, true);
-	mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
-	mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
-	mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);
+    mHandleTable["and"]                 = StringFuncHandle(VAL, strfnc_and, true);
+    mHandleTable["ascii"]               = StringFuncHandle(STR, strfnc_ascii, false);
+    mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
+    mHandleTable["cnt"]                 = StringFuncHandle(STR, strfnc_cnt, true);
+    mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
+    mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
+    mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);
+    mHandleTable["getenvvar"]           = StringFuncHandle(STR, strfnc_getenvvar, false);
+    mHandleTable["getfilelist"]         = StringFuncHandle(STR_VALOPT, strfnc_getfilelist, false);
+    mHandleTable["getfileparts"]        = StringFuncHandle(STR, strfnc_getFileParts, false);
+    mHandleTable["getfolderlist"]       = StringFuncHandle(STR_VALOPT, strfnc_getfolderlist, false);
+    mHandleTable["getkeyval"]           = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_getkeyval, true);
+    mHandleTable["getmatchingparens"]   = StringFuncHandle(STR, strfnc_getmatchingparens, false);
+    mHandleTable["getopt"]              = StringFuncHandle(STR_VAL, strfnc_getopt, false);
+    mHandleTable["is_alnum"]            = StringFuncHandle(STR, strfnc_isalnum, false);
     mHandleTable["is_alpha"]            = StringFuncHandle(STR, strfnc_isalpha, false);
-	mHandleTable["is_blank"]            = StringFuncHandle(STR, strfnc_isblank, false);
+    mHandleTable["is_blank"]            = StringFuncHandle(STR, strfnc_isblank, false);
     mHandleTable["is_cntrl"]            = StringFuncHandle(STR, strfnc_iscntrl, false);
     mHandleTable["is_digit"]            = StringFuncHandle(STR, strfnc_isdigit, false);
     mHandleTable["is_graph"]            = StringFuncHandle(STR, strfnc_isgraph, false);
@@ -1692,34 +1692,34 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["is_space"]            = StringFuncHandle(STR, strfnc_isspace, false);
     mHandleTable["is_upper"]            = StringFuncHandle(STR, strfnc_isupper, false);
     mHandleTable["is_xdigit"]           = StringFuncHandle(STR, strfnc_isxdigit, false);
-	mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
-	mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
-	mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
-	mHandleTable["num"]                 = StringFuncHandle(STR, strfnc_num, true);
-	mHandleTable["or"]                  = StringFuncHandle(VAL, strfnc_or, true);
-	mHandleTable["repeat"]              = StringFuncHandle(STR_VAL, strfnc_repeat, false);
-	mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false);
-	mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
-	mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
-	mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
-	mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
-	mHandleTable["strfnd"]              = StringFuncHandle(STR_STR_VALOPT, strfnc_strfnd, false);
-	mHandleTable["strlen"]              = StringFuncHandle(STR, strfnc_strlen, false);
-	mHandleTable["strmatch"]            = StringFuncHandle(STR_STR_VALOPT, strfnc_strmatch, false);
-	mHandleTable["strrfnd"]             = StringFuncHandle(STR_STR_VALOPT, strfnc_strrfnd, false);
-	mHandleTable["strrmatch"]           = StringFuncHandle(STR_STR_VALOPT, strfnc_strrmatch, false);
-	mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
-	mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
-	mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
-	mHandleTable["timeformat"]          = StringFuncHandle(STR_VAL, strfnc_timeformat, false);
-	mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
-	mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
-	mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
-	mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
-	mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
-	mHandleTable["xor"]                 = StringFuncHandle(VAL, strfnc_xor, true);
+    mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
+    mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
+    mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
+    mHandleTable["num"]                 = StringFuncHandle(STR, strfnc_num, true);
+    mHandleTable["or"]                  = StringFuncHandle(VAL, strfnc_or, true);
+    mHandleTable["repeat"]              = StringFuncHandle(STR_VAL, strfnc_repeat, false);
+    mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false);
+    mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);
+    mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
+    mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
+    mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
+    mHandleTable["strfnd"]              = StringFuncHandle(STR_STR_VALOPT, strfnc_strfnd, false);
+    mHandleTable["strlen"]              = StringFuncHandle(STR, strfnc_strlen, false);
+    mHandleTable["strmatch"]            = StringFuncHandle(STR_STR_VALOPT, strfnc_strmatch, false);
+    mHandleTable["strrfnd"]             = StringFuncHandle(STR_STR_VALOPT, strfnc_strrfnd, false);
+    mHandleTable["strrmatch"]           = StringFuncHandle(STR_STR_VALOPT, strfnc_strrmatch, false);
+    mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
+    mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
+    mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
+    mHandleTable["timeformat"]          = StringFuncHandle(STR_VAL, strfnc_timeformat, false);
+    mHandleTable["to_char"]             = StringFuncHandle(VAL, strfnc_to_char, true);
+    mHandleTable["to_lowercase"]        = StringFuncHandle(STR, strfnc_to_lowercase, false);
+    mHandleTable["to_string"]           = StringFuncHandle(STR, strfnc_to_string, false);
+    mHandleTable["to_time"]             = StringFuncHandle(STR_STR, strfnc_to_time, false);
+    mHandleTable["to_uppercase"]        = StringFuncHandle(STR, strfnc_to_uppercase, false);
+    mHandleTable["xor"]                 = StringFuncHandle(VAL, strfnc_xor, true);
 
-	return mHandleTable;
+    return mHandleTable;
 }
 
 

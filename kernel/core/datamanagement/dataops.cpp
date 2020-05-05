@@ -1774,7 +1774,7 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 		// Strip the spaces and ensure that there are other characters
 		StripSpaces(sFileName);
 		if (!sFileName.length())
-			return false;
+			return "";
 
         // If the filename contains a extension, extract it here and declare it as a valid file type
 		if (sFileName.find('.') != string::npos)
@@ -1815,7 +1815,7 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 		// Strip the spaces and ensure that there's something left
 		StripSpaces(sFileName);
 		if (!sFileName.length())
-			return false;
+			return "";
 
         // If there's a string in the file name, parse it here
 		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFileName))

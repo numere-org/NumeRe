@@ -626,7 +626,7 @@ wxString SearchController::FindProcedureDefinitionInOtherFile(const wxString& pa
 		bool bBlockComment = false;
 		wxString sDocumentation;
 		bool bDocFound = false;
-		procedure_in.open((pathname + ".nprc").c_str());
+		procedure_in.open((pathname + ".nprc").ToStdString().c_str());
 
 		// Ensure that the file is in good state
 		if (!procedure_in.good())

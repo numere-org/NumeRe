@@ -2772,7 +2772,7 @@ static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType,
 static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position)
 {
     // Ensure that the size is non-zero
-    if (!(_mMatrix1.size() * _mMatrix2.size()) || !(_mMatrix1[0].size() * _mMatrix2[0].size()))
+    if (!(_mMatrix1.size() && _mMatrix2.size()) || !(_mMatrix1[0].size() && _mMatrix2[0].size()))
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix1.size()) +"x"+ toString(_mMatrix1[0].size()) + ", " + toString(_mMatrix2.size()) +"x"+ toString(_mMatrix2[0].size()));
 
     // Resize the matrices to fit their counterparts

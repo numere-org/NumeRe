@@ -399,7 +399,7 @@ vector<string> Documentation::loadDocumentationArticle(const string& sFileName, 
             sLine.erase(sLine.find("</article>"));
             StripSpaces(sLine);
 
-            if (!sLine.length());
+            if (!sLine.length())
                 break;
         }
 

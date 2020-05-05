@@ -53,34 +53,34 @@ class mglCanvasWX : public mglCanvasWnd
 {
 friend class wxMGL;
 public:
-	int sshow;			///< Current state of animation switch (toggle button)
-	wxMGL *WMGL;		///< Control which draw graphics
-	wxWindow *Wnd;		///< Pointer to window
+    int sshow;			///< Current state of animation switch (toggle button)
+    wxMGL *WMGL;		///< Control which draw graphics
+    wxWindow *Wnd;		///< Pointer to window
 
-	mglCanvasWX();
-	virtual ~mglCanvasWX();
+    mglCanvasWX();
+    virtual ~mglCanvasWX();
 
-	/// Create a window for plotting. Now implemeted only for GLUT.
-	void Window(int argc, char **argv, int (*draw)(mglBase *gr, void *p), const char *title,
-				void *par=NULL, void (*reload)(void *p)=NULL, bool maximize=false);
-	/// Switch on/off transparency (do not overwrite switches in user drawing function)
-	void ToggleAlpha();
-	/// Switch on/off lighting (do not overwrite switches in user drawing function)
-	void ToggleLight();
-	void ToggleRotate();	///< Switch on/off rotation by mouse
-	void ToggleZoom();		///< Switch on/off zooming by mouse
-	void ToggleNo();		///< Switch off all zooming and rotation
-	void Update();			///< Update picture by calling user drawing function
-	void Adjust();			///< Adjust size of bitmap to window size
-	void GotoFrame(int d);	///< Show arbitrary frame (use relative step)
-	void Animation();	///< Run animation (I'm too lasy to change it)
+    /// Create a window for plotting. Now implemeted only for GLUT.
+    void Window(int argc, char **argv, int (*draw)(mglBase *gr, void *p), const char *title,
+                void *par=NULL, void (*reload)(void *p)=NULL, bool maximize=false);
+    /// Switch on/off transparency (do not overwrite switches in user drawing function)
+    void ToggleAlpha();
+    /// Switch on/off lighting (do not overwrite switches in user drawing function)
+    void ToggleLight();
+    void ToggleRotate();	///< Switch on/off rotation by mouse
+    void ToggleZoom();		///< Switch on/off zooming by mouse
+    void ToggleNo();		///< Switch off all zooming and rotation
+    void Update();			///< Update picture by calling user drawing function
+    void Adjust();			///< Adjust size of bitmap to window size
+    void GotoFrame(int d);	///< Show arbitrary frame (use relative step)
+    void Animation();	///< Run animation (I'm too lasy to change it)
 
 protected:
-	wxScrolledWindow *scroll;	///< Scrolling area
-	wxMenu *popup;			///< Popup menu
+    wxScrolledWindow *scroll;	///< Scrolling area
+    wxMenu *popup;			///< Popup menu
 //	wxSpinCtrl *tet, *phi;	///< Spin box for angles // TODO
 
-	void MakeMenu();		///< Create menu, toolbar and popup menu
+    void MakeMenu();		///< Create menu, toolbar and popup menu
 };
 
 //-----------------------------------------------------------------------------
@@ -88,35 +88,35 @@ const wxString ScriptName(L"default");
 
 enum
 {
-	TIMER_ID=1000,
-	LAST_ID
+    TIMER_ID=1000,
+    LAST_ID
 };
 
 BEGIN_EVENT_TABLE(wxMGL, wxWindow)
-	EVT_TIMER	    (TIMER_ID,	wxMGL::OnNextSlide)
-	EVT_PAINT	    (wxMGL::OnPaint)
-	EVT_ERASE_BACKGROUND(wxMGL::OnEraseBackground)
-	EVT_SIZE	    (wxMGL::OnSize)
-	EVT_LEFT_DOWN	(wxMGL::OnMouseLeftDown)
-	EVT_RIGHT_DOWN	(wxMGL::OnMouseDown)
-	EVT_MIDDLE_DOWN	(wxMGL::OnMouseDown)
-	EVT_LEFT_UP		(wxMGL::OnMouseLeftUp)
-	EVT_RIGHT_UP	(wxMGL::OnMouseRightUp)
-	EVT_MOTION		(wxMGL::OnMouseMove)
-	EVT_KEY_DOWN    (wxMGL::OnKeyDown)
-	EVT_NAVIGATION_KEY(wxMGL::OnNavigationKey)
-	EVT_ENTER_WINDOW(wxMGL::OnEnter)
-	EVT_CLOSE       (wxMGL::OnClose)
+    EVT_TIMER	    (TIMER_ID,	wxMGL::OnNextSlide)
+    EVT_PAINT	    (wxMGL::OnPaint)
+    EVT_ERASE_BACKGROUND(wxMGL::OnEraseBackground)
+    EVT_SIZE	    (wxMGL::OnSize)
+    EVT_LEFT_DOWN	(wxMGL::OnMouseLeftDown)
+    EVT_RIGHT_DOWN	(wxMGL::OnMouseDown)
+    EVT_MIDDLE_DOWN	(wxMGL::OnMouseDown)
+    EVT_LEFT_UP		(wxMGL::OnMouseLeftUp)
+    EVT_RIGHT_UP	(wxMGL::OnMouseRightUp)
+    EVT_MOTION		(wxMGL::OnMouseMove)
+    EVT_KEY_DOWN    (wxMGL::OnKeyDown)
+    EVT_NAVIGATION_KEY(wxMGL::OnNavigationKey)
+    EVT_ENTER_WINDOW(wxMGL::OnEnter)
+    EVT_CLOSE       (wxMGL::OnClose)
 
-	EVT_MENU        (ID_GRAPH_EXPORT, wxMGL::OnMenuEvent)
-	EVT_MENU        (ID_GRAPH_COPY, wxMGL::OnMenuEvent)
-	EVT_MENU        (ID_GRAPH_LIGHT, wxMGL::OnMenuEvent)
-	EVT_MENU        (ID_GRAPH_ALPHA, wxMGL::OnMenuEvent)
-	EVT_MENU        (ID_GRAPH_RESET, wxMGL::OnMenuEvent)
-	EVT_MENU        (ID_GRAPH_ROTATE, wxMGL::OnMenuEvent)
-	EVT_MENU        (ID_GRAPH_ZOOM, wxMGL::OnMenuEvent)
-	EVT_MENU_RANGE  (ID_GRAPH_NEXT, ID_GRAPH_STOP, wxMGL::OnMenuEvent)
-	EVT_MENU_RANGE  (ID_GRAPH_DRAW_FIRST, ID_GRAPH_DRAW_LAST, wxMGL::OnMenuEvent)
+    EVT_MENU        (ID_GRAPH_EXPORT, wxMGL::OnMenuEvent)
+    EVT_MENU        (ID_GRAPH_COPY, wxMGL::OnMenuEvent)
+    EVT_MENU        (ID_GRAPH_LIGHT, wxMGL::OnMenuEvent)
+    EVT_MENU        (ID_GRAPH_ALPHA, wxMGL::OnMenuEvent)
+    EVT_MENU        (ID_GRAPH_RESET, wxMGL::OnMenuEvent)
+    EVT_MENU        (ID_GRAPH_ROTATE, wxMGL::OnMenuEvent)
+    EVT_MENU        (ID_GRAPH_ZOOM, wxMGL::OnMenuEvent)
+    EVT_MENU_RANGE  (ID_GRAPH_NEXT, ID_GRAPH_STOP, wxMGL::OnMenuEvent)
+    EVT_MENU_RANGE  (ID_GRAPH_DRAW_FIRST, ID_GRAPH_DRAW_LAST, wxMGL::OnMenuEvent)
 END_EVENT_TABLE()
 //-----------------------------------------------------------------------------
 //
@@ -125,30 +125,30 @@ END_EVENT_TABLE()
 //-----------------------------------------------------------------------------
 wxMGL::wxMGL(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxWindow(parent, id, pos, size, style, name)
 {
-	AutoResize = true;
-	draw_par = nullptr;
-	draw_func = 0;
-	gr = nullptr;
-	popup = nullptr;
-	dAzimutalViewPoint = dPolarViewPoint = dPerspective = 0.0;
-	x1 = y1 = 0;
-	x2 = y2 = 1;
-	l_x1 = l_y1 = 0;
-	start_x = start_y = 0;
-	alpha = light = bZoomingMode = zoomactive = bRotatingMode = false;
-	drawMode = DM_NONE;
-	drawModeActive = false;
-	skiprotate = 0;
-	nFrameCounter = 0;
-	nFramesToSkip = 2;
-	timer = new wxTimer(this, TIMER_ID);
-	m_parentFrame = static_cast<wxFrame*>(parent);
-	animation = false;
+    AutoResize = true;
+    draw_par = nullptr;
+    draw_func = 0;
+    gr = nullptr;
+    popup = nullptr;
+    dAzimutalViewPoint = dPolarViewPoint = dPerspective = 0.0;
+    x1 = y1 = 0;
+    x2 = y2 = 1;
+    l_x1 = l_y1 = 0;
+    start_x = start_y = 0;
+    alpha = light = bZoomingMode = zoomactive = bRotatingMode = false;
+    drawMode = DM_NONE;
+    drawModeActive = false;
+    skiprotate = 0;
+    nFrameCounter = 0;
+    nFramesToSkip = 2;
+    timer = new wxTimer(this, TIMER_ID);
+    m_parentFrame = static_cast<wxFrame*>(parent);
+    animation = false;
 
-	SetOwnBackgroundColour(*wxWHITE);
+    SetOwnBackgroundColour(*wxWHITE);
 
-	// Initialize the toolbar
-	InitializeToolbar();
+    // Initialize the toolbar
+    InitializeToolbar();
 
     m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_EXPORT);
     m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_COPY);
@@ -279,20 +279,20 @@ void wxMGL::OnExport()
 // selected by the wxMGL::Repaint() function
 void wxMGL::OnPaint(wxPaintEvent& event)
 {
-	wxPaintDC dc(this);
+    wxPaintDC dc(this);
 
-	if (!pic.IsOk())
+    if (!pic.IsOk())
         Update();
 
     // Draw the bitmap, which was selected by the
     // Repaint function
-	dc.DrawBitmap(pic, 0, 0, false);
+    dc.DrawBitmap(pic, 0, 0, false);
 
-	// Prepare the brushes for the drawing tools
-	dc.SetBrush(*wxTRANSPARENT_BRUSH);
-	dc.SetPen(*wxBLACK_DASHED_PEN);
+    // Prepare the brushes for the drawing tools
+    dc.SetBrush(*wxTRANSPARENT_BRUSH);
+    dc.SetPen(*wxBLACK_DASHED_PEN);
 
-	// Draw the zooming rectangle
+    // Draw the zooming rectangle
     if (zoomactive)
         dc.DrawRectangle(x0, y0, xe-x0, ye-y0);
 
@@ -325,23 +325,23 @@ void wxMGL::OnEraseBackground(wxEraseEvent& event)
 // This member function is the resizing event handler
 void wxMGL::OnSize(wxSizeEvent& event)
 {
-	wxSize ev = event.GetSize();
+    wxSize ev = event.GetSize();
 
-	// Do nothing, if the graph does not exist
-	if (!gr)
+    // Do nothing, if the graph does not exist
+    if (!gr)
         return;
 
     // Do nothing if the size did not change
-	if (mgl_get_width(gr->Self()) == ev.GetWidth() && mgl_get_height(gr->Self()) == ev.GetHeight())
-		return;
+    if (mgl_get_width(gr->Self()) == ev.GetWidth() && mgl_get_height(gr->Self()) == ev.GetHeight())
+        return;
 
-	// Resize the image canvas
-	if (AutoResize && ev.GetWidth() > 0 && ev.GetHeight() > 0)
-	{
+    // Resize the image canvas
+    if (AutoResize && ev.GetWidth() > 0 && ev.GetHeight() > 0)
+    {
         gr->SetSize(ev.GetWidth(), ev.GetHeight(), false);
         Update();
     }
-	else
+    else
         SetSize(mgl_get_width(gr->Self()), mgl_get_height(gr->Self()));
 }
 
@@ -581,48 +581,48 @@ void wxMGL::DrawCurrentObject(int end_x, int end_y)
 // the view modifications completely
 void wxMGL::Restore()
 {
-	SetPhi(0);
-	SetTet(0);
-	SetPer(0);
-	x1 = y1 = 0;
-	x2 = y2 = 1;
-	bZoomingMode = bRotatingMode = false;
-	Repaint();
+    SetPhi(0);
+    SetTet(0);
+    SetPer(0);
+    x1 = y1 = 0;
+    x2 = y2 = 1;
+    bZoomingMode = bRotatingMode = false;
+    Repaint();
 }
 
 // Unneeded member function
 void wxMGL::ZoomIn()
 {
-	mreal d;
-	d = (y2-y1)/4;
-	y1 += d;
-	y2 -= d;
-	d = (x2-x1)/4;
-	x1 += d;
-	x2 -= d;
-	Repaint();
+    mreal d;
+    d = (y2-y1)/4;
+    y1 += d;
+    y2 -= d;
+    d = (x2-x1)/4;
+    x1 += d;
+    x2 -= d;
+    Repaint();
 }
 
 // Unneeded member function
 void wxMGL::ZoomOut()
 {
-	mreal d;
-	d = (y2-y1)/2;
-	y1 -= d;
-	y2 += d;
-	d = (x2-x1)/2;
-	x1 -= d;
-	x2 += d;
-	Repaint();
+    mreal d;
+    d = (y2-y1)/2;
+    y1 -= d;
+    y2 += d;
+    d = (x2-x1)/2;
+    x1 -= d;
+    x2 += d;
+    Repaint();
 }
 
 // This member function tells the internal
 // mglGraph object to draw its contents
 void wxMGL::Update()
 {
-	if (draw_func || draw_cl)
-	{
-	    if (!vAnimationBuffer.size() || vAnimationBuffer.size() < (size_t)gr->GetNumFrame())
+    if (draw_func || draw_cl)
+    {
+        if (!vAnimationBuffer.size() || vAnimationBuffer.size() < (size_t)gr->GetNumFrame())
         {
             if (bRotatingMode)
                 gr->Zoom(0,0,1,1);
@@ -642,16 +642,16 @@ void wxMGL::Update()
                 dlg.ShowModal();
             }
         }
-	}
-	else if (mgl_get_num_frame(gr->Self())>0)
-	{
-		mgl_set_alpha(gr->Self(),alpha);
-		mgl_set_light(gr->Self(),light);
-		mgl_get_frame(gr->Self(),0);
-	}
+    }
+    else if (mgl_get_num_frame(gr->Self())>0)
+    {
+        mgl_set_alpha(gr->Self(),alpha);
+        mgl_set_light(gr->Self(),light);
+        mgl_get_frame(gr->Self(),0);
+    }
 
-	MousePos.Empty();
-	Repaint();
+    MousePos.Empty();
+    Repaint();
 }
 
 // This member function converts the RGB image
@@ -660,12 +660,12 @@ void wxMGL::Update()
 // be used to create a bitmap from
 wxImage wxMGL::ConvertFromGraph()
 {
-	const unsigned char *bb = mgl_get_rgb(gr->Self());
-	int w = mgl_get_width(gr->Self());
-	int h = mgl_get_height(gr->Self());
-	unsigned char *tmp = (unsigned char*)malloc(3*w*h);
-	memcpy(tmp, bb, 3*w*h);
-	return wxImage(w, h, tmp);
+    const unsigned char *bb = mgl_get_rgb(gr->Self());
+    int w = mgl_get_width(gr->Self());
+    int h = mgl_get_height(gr->Self());
+    unsigned char *tmp = (unsigned char*)malloc(3*w*h);
+    memcpy(tmp, bb, 3*w*h);
+    return wxImage(w, h, tmp);
 }
 
 // This member function sets the current drawing
@@ -688,14 +688,14 @@ void wxMGL::Repaint()
     // Set the new bitmap
     setBitmap();
 
-	wxSize sz = GetSize();
+    wxSize sz = GetSize();
 
-	// Resize the current window, if the picture does
-	// not fit
-	if (pic.GetWidth() != sz.GetWidth() || pic.GetHeight() != sz.GetHeight())
-		SetSize(pic.GetWidth(), pic.GetHeight());
+    // Resize the current window, if the picture does
+    // not fit
+    if (pic.GetWidth() != sz.GetWidth() || pic.GetHeight() != sz.GetHeight())
+        SetSize(pic.GetWidth(), pic.GetHeight());
 
-	Refresh();
+    Refresh();
     wxWindow::Update();
 }
 
@@ -703,14 +703,14 @@ void wxMGL::Repaint()
 // applied, when the user presses the left mouse button
 void wxMGL::OnMouseLeftDown(wxMouseEvent &ev)
 {
-	long x=ev.GetX(), y=ev.GetY();
+    long x=ev.GetX(), y=ev.GetY();
 
-	if (!bZoomingMode && !bRotatingMode)
-	{
-		Refresh();
-	}
+    if (!bZoomingMode && !bRotatingMode)
+    {
+        Refresh();
+    }
 
-	if (bZoomingMode)
+    if (bZoomingMode)
         zoomactive = true;
 
     if (drawMode != DM_NONE)
@@ -720,9 +720,9 @@ void wxMGL::OnMouseLeftDown(wxMouseEvent &ev)
         drawModeActive = true;
     }
 
-	xe = x0 = x;
-	ye = y0 = y;
-	ev.Skip();
+    xe = x0 = x;
+    ye = y0 = y;
+    ev.Skip();
 }
 
 // This member function is the event handling function
@@ -740,42 +740,42 @@ void wxMGL::OnMouseDown(wxMouseEvent &ev)
 void wxMGL::OnMouseLeftUp(wxMouseEvent& event)
 {
     // Apply the zooming
-	if (bZoomingMode)
-	{
-		int w1 = GetSize().GetWidth(), h1 = GetSize().GetHeight();
-		mreal _x1, _x2, _y1, _y2;
-		_x1 = x1+(x2-x1)*(x0-GetPosition().x)/mreal(w1);
-		_y1 = y2-(y2-y1)*(ye-GetPosition().y)/mreal(h1);
-		_x2 = x1+(x2-x1)*(xe-GetPosition().x)/mreal(w1);
-		_y2 = y2-(y2-y1)*(y0-GetPosition().y)/mreal(h1);
-		x1 = _x1;
-		x2 = _x2;
-		y1 = _y1;
-		y2 = _y2;
+    if (bZoomingMode)
+    {
+        int w1 = GetSize().GetWidth(), h1 = GetSize().GetHeight();
+        mreal _x1, _x2, _y1, _y2;
+        _x1 = x1+(x2-x1)*(x0-GetPosition().x)/mreal(w1);
+        _y1 = y2-(y2-y1)*(ye-GetPosition().y)/mreal(h1);
+        _x2 = x1+(x2-x1)*(xe-GetPosition().x)/mreal(w1);
+        _y2 = y2-(y2-y1)*(y0-GetPosition().y)/mreal(h1);
+        x1 = _x1;
+        x2 = _x2;
+        y1 = _y1;
+        y2 = _y2;
 
-		if (x1 > x2)
-		{
+        if (x1 > x2)
+        {
             _x1 = x1;
             x1 = x2;
             x2 = _x1;
         }
 
-		if (y1 > y2)
-		{
+        if (y1 > y2)
+        {
             _x1 = y1;
             y1 = y2;
             y2 = _x1;
         }
 
-		x0 = xe;
-		y0 = ye;
-		zoomactive = false;
-		Update();
-	}
+        x0 = xe;
+        y0 = ye;
+        zoomactive = false;
+        Update();
+    }
 
-	// Refresh the drawing after rotation
-	if (bRotatingMode)
-	{
+    // Refresh the drawing after rotation
+    if (bRotatingMode)
+    {
         gr->SetQuality(MGL_DRAW_NORM);
         skiprotate = 0;
         Update();
@@ -808,13 +808,13 @@ void wxMGL::OnMouseRightUp(wxMouseEvent &ev)
 // applied, when the user moves the mouse
 void wxMGL::OnMouseMove(wxMouseEvent &ev)
 {
-	long w = GetSize().GetWidth(), h = GetSize().GetHeight();
-	xe = ev.GetX();
-	ye = ev.GetY();
-	mglPoint p = gr->CalcXYZ(xe, ye);
+    long w = GetSize().GetWidth(), h = GetSize().GetHeight();
+    xe = ev.GetX();
+    ye = ev.GetY();
+    mglPoint p = gr->CalcXYZ(xe, ye);
 
-	if (zoomactive)
-	{
+    if (zoomactive)
+    {
         mglPoint start = gr->CalcXYZ(x0,y0);
         MousePos.Printf(wxT("[%.4g, %.4g] --> [%.4g, %.4g]"), start.x, start.y, p.x, p.y);
     }
@@ -828,66 +828,66 @@ void wxMGL::OnMouseMove(wxMouseEvent &ev)
 
     // Apply the transformations related to the rotation
     // mode
-	if (bRotatingMode && ev.ButtonIsDown(wxMOUSE_BTN_ANY))
-	{
+    if (bRotatingMode && ev.ButtonIsDown(wxMOUSE_BTN_ANY))
+    {
         gr->SetQuality(MGL_DRAW_DOTS);
         skiprotate++;
 
         // Apply the rotation effect
-		if (ev.ButtonIsDown(wxMOUSE_BTN_LEFT))
-		{
-			mreal ff = 240/sqrt(mreal(w*h));
-			dAzimutalViewPoint += int((x0-xe)*ff);
-			dPolarViewPoint += int((y0-ye)*ff);
+        if (ev.ButtonIsDown(wxMOUSE_BTN_LEFT))
+        {
+            mreal ff = 240/sqrt(mreal(w*h));
+            dAzimutalViewPoint += int((x0-xe)*ff);
+            dPolarViewPoint += int((y0-ye)*ff);
 
-			if (dAzimutalViewPoint > 180)
+            if (dAzimutalViewPoint > 180)
                 dAzimutalViewPoint -= 360;
 
             if (dAzimutalViewPoint < -180)
                 dAzimutalViewPoint += 360;
 
-			if (dPolarViewPoint > 180)
+            if (dPolarViewPoint > 180)
                 dPolarViewPoint -= 360;
 
             if (dPolarViewPoint < -180)
                 dPolarViewPoint += 360;
-		}
+        }
 
-		// Apply the perspective effect
-		if (ev.ButtonIsDown(wxMOUSE_BTN_RIGHT))
-		{
-			mreal ff = 2.*(y0-ye)/w, gg = 0.5*(xe-x0)/h;
-			mreal cx = (x1+x2)/2, cy = (y1+y2)/2;
-			x1 = cx+(x1-cx)*exp(-ff);
-			x2 = cx+(x2-cx)*exp(-ff);
-			y1 = cy+(y1-cy)*exp(-ff);
-			y2 = cy+(y2-cy)*exp(-ff);
-			dPerspective = dPerspective + gg;
+        // Apply the perspective effect
+        if (ev.ButtonIsDown(wxMOUSE_BTN_RIGHT))
+        {
+            mreal ff = 2.*(y0-ye)/w, gg = 0.5*(xe-x0)/h;
+            mreal cx = (x1+x2)/2, cy = (y1+y2)/2;
+            x1 = cx+(x1-cx)*exp(-ff);
+            x2 = cx+(x2-cx)*exp(-ff);
+            y1 = cy+(y1-cy)*exp(-ff);
+            y2 = cy+(y2-cy)*exp(-ff);
+            dPerspective = dPerspective + gg;
 
-			if (dPerspective < 0)
+            if (dPerspective < 0)
                 dPerspective = 0;
 
             if (dPerspective >= 1)
                 dPerspective = 0.9999;
-		}
+        }
 
-		// Apply the shift effect (probably not used)
-		if (ev.ButtonIsDown(wxMOUSE_BTN_MIDDLE))
-		{
-			mreal ff = 1./sqrt(mreal(w*h));
-			mreal dx = (x0-xe)*ff*(x2-x1), dy = (y0-ye)*ff*(y2-y1);
-			x1 += dx;
-			x2 += dx;
-			y1 -= dy;
-			y2 -= dy;
-		}
+        // Apply the shift effect (probably not used)
+        if (ev.ButtonIsDown(wxMOUSE_BTN_MIDDLE))
+        {
+            mreal ff = 1./sqrt(mreal(w*h));
+            mreal dx = (x0-xe)*ff*(x2-x1), dy = (y0-ye)*ff*(y2-y1);
+            x1 += dx;
+            x2 += dx;
+            y1 -= dy;
+            y2 -= dy;
+        }
 
-		x0 = xe;
-		y0 = ye;
-		Update();
-	}
+        x0 = xe;
+        y0 = ye;
+        Update();
+    }
 
-	if (bZoomingMode || drawMode != DM_NONE)
+    if (bZoomingMode || drawMode != DM_NONE)
         Refresh(0);
 
     statusbar->SetStatusText(MousePos);
@@ -1025,7 +1025,7 @@ void wxMGL::setBitmap()
 // filename, if needed
 wxString mglSetExtension(const wxString &fname, const wxString& ext)
 {
-	if (fname.find('.') == string::npos)
+    if (fname.find('.') == string::npos)
         return fname + "." + ext;
     return fname;
 }
@@ -1033,90 +1033,90 @@ wxString mglSetExtension(const wxString &fname, const wxString& ext)
 // NOTE: this is replacement for wxString::char_str() which is for v.2.8 or later
 const char* mglw_str(const wxString &str)
 {
-	return str.c_str();
+    return str.c_str();
 }
 //-----------------------------------------------------------------------------
 void wxMGL::ExportPNG(wxString fname)
 {
-	if (fname.IsEmpty())
+    if (fname.IsEmpty())
         fname = ScriptName;
-	if (fname.IsEmpty())
+    if (fname.IsEmpty())
         wxMessageBox(appName, wxT("No filename."),wxOK|wxICON_ERROR ,this);
-	else
+    else
         gr->WriteFrame(mglw_str(mglSetExtension(fname,"png")));
 }
 //-----------------------------------------------------------------------------
 void wxMGL::ExportPNGs(wxString fname)
 {
-	if (fname.IsEmpty())
+    if (fname.IsEmpty())
         fname = ScriptName;
-	if (fname.IsEmpty())
+    if (fname.IsEmpty())
         wxMessageBox(appName, wxT("No filename."),wxOK|wxICON_ERROR ,this);
-	else
+    else
         gr->WriteFrame(mglw_str(mglSetExtension(fname,"png")));
-	//mgl_write_png_solid(gr->Self(),mglw_str(mglSetExtension(fname,"png")), mglw_str(appName));
+    //mgl_write_png_solid(gr->Self(),mglw_str(mglSetExtension(fname,"png")), mglw_str(appName));
 }
 //-----------------------------------------------------------------------------
 void wxMGL::ExportJPG(wxString fname)
 {
-	if (fname.IsEmpty())
+    if (fname.IsEmpty())
         fname = ScriptName;
-	if (fname.IsEmpty())
+    if (fname.IsEmpty())
         wxMessageBox(appName, wxT("No filename."),wxOK|wxICON_ERROR ,this);
-	else
+    else
         gr->WriteFrame(mglw_str(mglSetExtension(fname,"jpg")));
-	//mgl_write_jpg(gr->Self(),mglw_str(mglSetExtension(fname,"jpg")), mglw_str(appName));
+    //mgl_write_jpg(gr->Self(),mglw_str(mglSetExtension(fname,"jpg")), mglw_str(appName));
 }
 //-----------------------------------------------------------------------------
 void wxMGL::ExportBPS(wxString fname)
 {
-	if(fname.IsEmpty())	fname = ScriptName;
-	if(fname.IsEmpty())	wxMessageBox(appName, wxT("No filename."),wxOK|wxICON_ERROR ,this);
-	else
-	{
-		setlocale(LC_ALL, "C");
-		mgl_write_bps(gr->Self(),mglw_str(mglSetExtension(fname,"eps")), mglw_str(appName));
-		setlocale(LC_ALL, "");
-	}
+    if(fname.IsEmpty())	fname = ScriptName;
+    if(fname.IsEmpty())	wxMessageBox(appName, wxT("No filename."),wxOK|wxICON_ERROR ,this);
+    else
+    {
+        setlocale(LC_ALL, "C");
+        mgl_write_bps(gr->Self(),mglw_str(mglSetExtension(fname,"eps")), mglw_str(appName));
+        setlocale(LC_ALL, "");
+    }
 }
 //-----------------------------------------------------------------------------
 void wxMGL::ExportEPS(wxString fname)
 {
-	if(fname.IsEmpty())
+    if(fname.IsEmpty())
         fname = ScriptName;
-	if(fname.IsEmpty())
+    if(fname.IsEmpty())
         wxMessageBox(appName, wxT("No filename."),wxOK|wxICON_ERROR ,this);
-	else
-	{
-		setlocale(LC_ALL, "C");
-		gr->WriteFrame(mglw_str(mglSetExtension(fname,"eps")));
-		//mgl_write_eps(gr->Self(),mglw_str(mglSetExtension(fname,"eps")), mglw_str(appName));
-		setlocale(LC_ALL, "");
-	}
+    else
+    {
+        setlocale(LC_ALL, "C");
+        gr->WriteFrame(mglw_str(mglSetExtension(fname,"eps")));
+        //mgl_write_eps(gr->Self(),mglw_str(mglSetExtension(fname,"eps")), mglw_str(appName));
+        setlocale(LC_ALL, "");
+    }
 }
 //-----------------------------------------------------------------------------
 void wxMGL::ExportSVG(wxString fname)
 {
-	if(fname.IsEmpty())
+    if(fname.IsEmpty())
         fname = ScriptName;
-	if(fname.IsEmpty())
+    if(fname.IsEmpty())
         wxMessageBox(appName, wxT("No filename."),wxOK|wxICON_ERROR ,this);
-	else
-	{
-		setlocale(LC_ALL, "C");
-		gr->WriteFrame(mglw_str(mglSetExtension(fname,"svg")));
-		//mgl_write_svg(gr->Self(),mglw_str(mglSetExtension(fname,"svg")), mglw_str(appName));
-		setlocale(LC_ALL, "");
-	}
+    else
+    {
+        setlocale(LC_ALL, "C");
+        gr->WriteFrame(mglw_str(mglSetExtension(fname,"svg")));
+        //mgl_write_svg(gr->Self(),mglw_str(mglSetExtension(fname,"svg")), mglw_str(appName));
+        setlocale(LC_ALL, "");
+    }
 }
 //-----------------------------------------------------------------------------
 void wxMGL::Copy()
 {
-	if (wxTheClipboard->Open())
-	{
-		wxTheClipboard->SetData( new wxBitmapDataObject(pic) );
-		wxTheClipboard->Close();
-	}
+    if (wxTheClipboard->Open())
+    {
+        wxTheClipboard->SetData( new wxBitmapDataObject(pic) );
+        wxTheClipboard->Close();
+    }
 }
 //-----------------------------------------------------------------------------
 void wxMGL::SetSize(int w, int h)
@@ -1128,16 +1128,16 @@ void wxMGL::SetSize(int w, int h)
 //-----------------------------------------------------------------------------
 void wxMGL::Adjust()
 {
-	wxSize sz=GetSize();
-	gr->SetSize(sz.GetWidth(), sz.GetHeight(), false);
-	Repaint();
+    wxSize sz=GetSize();
+    gr->SetSize(sz.GetWidth(), sz.GetHeight(), false);
+    Repaint();
 }
 
 // This member function displays the next slide
 void wxMGL::NextSlide()
 {
-	if (gr->GetNumFrame() > 1)
-	{
+    if (gr->GetNumFrame() > 1)
+    {
         // Fill the animation buffer, if needed
         if (vAnimationBuffer.size() < (size_t)gr->GetNumFrame())
         {
@@ -1164,7 +1164,7 @@ void wxMGL::NextSlide()
 // This member function displays the previous slide
 void wxMGL::PrevSlide()
 {
-	if (gr->GetNumFrame() > 1)
+    if (gr->GetNumFrame() > 1)
     {
         nFrameCounter--;
 
@@ -1187,8 +1187,8 @@ void wxMGL::Animation(bool st)
     if (gr->GetNumFrame() <= 1)
         return;
 
-	if (st)
-	{
+    if (st)
+    {
         bZoomingMode = zoomactive = bRotatingMode = false;
         skiprotate = 0;
         SetDrawMode(DM_NONE);
@@ -1210,8 +1210,8 @@ void wxMGL::Animation(bool st)
         animation = true;
 
         timer->Start(40);
-	}
-	else
+    }
+    else
     {
         timer->Stop();
         toptoolbar->EnableTool(ID_GRAPH_EXPORT, true);

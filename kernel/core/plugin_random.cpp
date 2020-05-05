@@ -28,27 +28,27 @@ const string PI_RAND = "0.2.3";
 
 void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _option, bool bAllowOverride)
 {
-	long long int nDataPoints = 0;			// Variable zur Festlegung, wie viele Datenpunkte erzeugt werden sollen
-	long long int nDataRows = 0;
-	long long int nFilledCols = 0;
-	if (_data.isValidCache() && !bAllowOverride)       // Frage die Zahl der (irgendwie) vollgeschriebenen Spalten ab
+    long long int nDataPoints = 0;			// Variable zur Festlegung, wie viele Datenpunkte erzeugt werden sollen
+    long long int nDataRows = 0;
+    long long int nFilledCols = 0;
+    if (_data.isValidCache() && !bAllowOverride)       // Frage die Zahl der (irgendwie) vollgeschriebenen Spalten ab
         nFilledCols = _data.getTableCols("cache", false);
-	double dDistributionWidth = 1.0; // Die Breite der Verteilung
-	double dDistributionMean = 0.0;	// Der Mittelwert der Verteilung
-	unsigned int nFreedoms = 1;
-	double dShape = 1.0;
-	double dScale = 1.0;
-	double dProbability = 0.5;
-	unsigned int nUpperBound = 1;
-	unsigned int nDistribution = 0;
-	static double dSeedBase = 1.0;
+    double dDistributionWidth = 1.0; // Die Breite der Verteilung
+    double dDistributionMean = 0.0;	// Der Mittelwert der Verteilung
+    unsigned int nFreedoms = 1;
+    double dShape = 1.0;
+    double dScale = 1.0;
+    double dProbability = 0.5;
+    unsigned int nUpperBound = 1;
+    unsigned int nDistribution = 0;
+    static double dSeedBase = 1.0;
 
     string sDistrib = "normalverteilte";
-	double dRandomNumber = 0.0;
-	string sInput = "";
-	time_t now = dSeedBase * time(0);			// Aktuelle Zeit fuer einen Seed initialisieren
+    double dRandomNumber = 0.0;
+    string sInput = "";
+    time_t now = dSeedBase * time(0);			// Aktuelle Zeit fuer einen Seed initialisieren
 
-	default_random_engine randomGenerator (now); // Zufallszahlengenerator initialisieren
+    default_random_engine randomGenerator (now); // Zufallszahlengenerator initialisieren
 
     // --> Zunaechst extrahieren wir die ggf. uebergebenen Parameter <--
     if (findParameter(sCmd, "lines", '=') || findParameter(sCmd, "l", '='))
@@ -179,9 +179,9 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
     }
 
 
-	//cerr << "|-> ZUFALLSZAHLENGENERATOR (v " << PI_RAND << ")" << endl;
-	//cerr << "|   " << std::setfill((char)196) << std::setw(32) << (char)196 << endl;
-	//cerr << LineBreak("|-> Generiert einen oder mehrere Datensaetze an Zufallszahlen und speichert diese(n) in den Cache.", _option) << endl;
+    //cerr << "|-> ZUFALLSZAHLENGENERATOR (v " << PI_RAND << ")" << endl;
+    //cerr << "|   " << std::setfill((char)196) << std::setw(32) << (char)196 << endl;
+    //cerr << LineBreak("|-> Generiert einen oder mehrere Datensaetze an Zufallszahlen und speichert diese(n) in den Cache.", _option) << endl;
 
 
     if (!nDataRows)
@@ -195,13 +195,13 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
     }
 
 
-	// --> Zufallsverteilungen erzeugen <--
-	normal_distribution<double> normalDistribution(dDistributionMean, dDistributionWidth);  // 0
-	poisson_distribution<int> poissonDistribution(dDistributionMean);                       // 1
-	gamma_distribution<double> gammaDistribution(dShape, dScale);                           // 2
-	uniform_real_distribution<double> uniformDistribution(dDistributionMean-0.5*dDistributionWidth, dDistributionMean+0.5*dDistributionWidth);  // 3
-	binomial_distribution<int> binomialDistribution(nUpperBound, dProbability);             // 4
-	student_t_distribution<double> studentTDistribution(nFreedoms);                         // 5
+    // --> Zufallsverteilungen erzeugen <--
+    normal_distribution<double> normalDistribution(dDistributionMean, dDistributionWidth);  // 0
+    poisson_distribution<int> poissonDistribution(dDistributionMean);                       // 1
+    gamma_distribution<double> gammaDistribution(dShape, dScale);                           // 2
+    uniform_real_distribution<double> uniformDistribution(dDistributionMean-0.5*dDistributionWidth, dDistributionMean+0.5*dDistributionWidth);  // 3
+    binomial_distribution<int> binomialDistribution(nUpperBound, dProbability);             // 4
+    student_t_distribution<double> studentTDistribution(nFreedoms);                         // 5
     if (nDataPoints * nDataRows > 1e6)
         NumeReKernel::printPreFmt(toSystemCodePage("|-> "+_lang.get("RANDOM_RESERVING_MEM")+" ... "));
     if (!_data.setCacheSize(nDataPoints, nDataRows+nFilledCols, "cache"))
@@ -212,10 +212,10 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
     if (_option.getbDebug())
         cerr << "|-> DEBUG: Cache angepasst!" << endl;
 
-	for (long long int i = 0; i < nDataPoints; i++)
-	{
-		for (long long int j = 0; j < nDataRows; j++)
-		{
+    for (long long int i = 0; i < nDataPoints; i++)
+    {
+        for (long long int j = 0; j < nDataRows; j++)
+        {
             if (nDistribution == 0)
                 dRandomNumber = normalDistribution(randomGenerator);
             else if (nDistribution == 1)
@@ -228,20 +228,20 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
                 dRandomNumber = binomialDistribution(randomGenerator);
             else if (nDistribution == 5)
                 dRandomNumber = studentTDistribution(randomGenerator);
-			_data.writeToTable(i, j+nFilledCols, "cache", dRandomNumber);
+            _data.writeToTable(i, j+nFilledCols, "cache", dRandomNumber);
 
-			if ((!i && !j) || dSeedBase == 0.0)
-			{
+            if ((!i && !j) || dSeedBase == 0.0)
+            {
                 if (dSeedBase == dRandomNumber)
                     dSeedBase = 0.0;
                 else
                     dSeedBase = dRandomNumber;
             }
-		}
-	}
+        }
+    }
 
-	NumeReKernel::print(LineBreak(_lang.get("RANDOM_SUCCESS", toString(nDataRows*nDataPoints), sDistrib), _option));
-	//cerr << LineBreak("|-> Es wurde(n) " + toString(nDataRows*nDataPoints) + " " + sDistrib + " Zufallszahlen erfolgreich in den Cache geschrieben.", _option) << endl;
-	//cerr << "|-> Das Plugin wurde erfolgreich beendet." << endl;
-	return;
+    NumeReKernel::print(LineBreak(_lang.get("RANDOM_SUCCESS", toString(nDataRows*nDataPoints), sDistrib), _option));
+    //cerr << LineBreak("|-> Es wurde(n) " + toString(nDataRows*nDataPoints) + " " + sDistrib + " Zufallszahlen erfolgreich in den Cache geschrieben.", _option) << endl;
+    //cerr << "|-> Das Plugin wurde erfolgreich beendet." << endl;
+    return;
 }

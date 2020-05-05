@@ -27,66 +27,66 @@
 // --> Standardkonstruktor <--
 Output::Output() : FileSystem()
 {
-	Output::reset();			// Aus Gruenden der Konsistenz ist es sinnvoll die Resetmethode aufzurufen, damit die Defaultwerte
-								//		nur an einer Stelle im Code geaenderte werden muessen
+    Output::reset();			// Aus Gruenden der Konsistenz ist es sinnvoll die Resetmethode aufzurufen, damit die Defaultwerte
+                                //		nur an einer Stelle im Code geaenderte werden muessen
 }
 
 // --> Allgemeiner Konstruktor <--
 Output::Output(bool bStatus, string sFile) : FileSystem()
 {
-	Output::reset();			// Hier rufen wir ebenfalls die reset()-Methode und ueberschreiben dann lieber die nicht-defaults
-	bFile = bStatus;
+    Output::reset();			// Hier rufen wir ebenfalls die reset()-Methode und ueberschreiben dann lieber die nicht-defaults
+    bFile = bStatus;
 
-	if (bStatus) 				// Wenn ein Datenfile verwendet werden soll, erzeuge dieses sogleich
-	{
-		setFileName(sFile);		// sFile wird nur in diesem Fall uebernommen, damit hier so Schlauberger, die Output _out(false,0); aufrufen
-								// 		keinen Muell machen koennen
-		start();				// Datenfile anlegen
-	}
+    if (bStatus) 				// Wenn ein Datenfile verwendet werden soll, erzeuge dieses sogleich
+    {
+        setFileName(sFile);		// sFile wird nur in diesem Fall uebernommen, damit hier so Schlauberger, die Output _out(false,0); aufrufen
+                                // 		keinen Muell machen koennen
+        start();				// Datenfile anlegen
+    }
 
-	sPath = "save";
-	return;
+    sPath = "save";
+    return;
 }
 
 // --> Destruktor <--
 Output::~Output()
 {
-	if (bFile == true && bFileOpen == true)
-	{
-		end();					// Schliesse Datei, falls eine geoeffnet ist
-	}
+    if (bFile == true && bFileOpen == true)
+    {
+        end();					// Schliesse Datei, falls eine geoeffnet ist
+    }
 
-	return;
+    return;
 }
 
 // --> Methoden <--
 void Output::setStatus(bool bStatus)
 {
-	if (bFile == true && bFileOpen == true)
-		end();					// Falls zuvor bereits ein Datenfile erzeugt wurde, schliesse dieses zuerst
+    if (bFile == true && bFileOpen == true)
+        end();					// Falls zuvor bereits ein Datenfile erzeugt wurde, schliesse dieses zuerst
 
-	bFile = bStatus;			// Weise den neuen Wert an den Bool bFile zu.
-	return;
+    bFile = bStatus;			// Weise den neuen Wert an den Bool bFile zu.
+    return;
 }
 
 // --> setzt Output auf die Defaultwerte zurueck <--
 void Output::reset()
 {
-	if(bFile && bFileOpen)
-		end();
+    if(bFile && bFileOpen)
+        end();
 
-	bFile = false;
-	bFileOpen = false;
-	bCompact = false;
-	bSumBar = false;
-	bPrintTeX = false;
-	bPrintCSV = false;
-	sPluginName = "";
-	sFileName = "";
-	sCommentLine = "";
-	sPluginPrefix = "data";
-	generateFileName();
-	return;
+    bFile = false;
+    bFileOpen = false;
+    bCompact = false;
+    bSumBar = false;
+    bPrintTeX = false;
+    bPrintCSV = false;
+    sPluginName = "";
+    sFileName = "";
+    sCommentLine = "";
+    sPluginPrefix = "data";
+    generateFileName();
+    return;
 }
 
 string Output::replaceTeXControls(const string& _sText)
@@ -144,84 +144,84 @@ void Output::setCompact(bool _bCompact)
 
 bool Output::isFile() const
 {
-	return bFile;				// Ausgabe an Datei: TRUE/FALSE
+    return bFile;				// Ausgabe an Datei: TRUE/FALSE
 }
 
 
 void Output::setFileName(string sFile)
 {
-	if (bFileOpen)				// Ist bereits eine Datei offen? Besser wir schliessen sie vorher.
-	{
-		end();
-	}
+    if (bFileOpen)				// Ist bereits eine Datei offen? Besser wir schliessen sie vorher.
+    {
+        end();
+    }
 
-	if (sFile != "0")		// Ist sFile != 0, pruefe und korrigiere sFile und weise dann an
-	{							//		sFileName zu, sonst verwende den Default
+    if (sFile != "0")		// Ist sFile != 0, pruefe und korrigiere sFile und weise dann an
+    {							//		sFileName zu, sonst verwende den Default
         if (sFile.rfind('.') != string::npos
             && (sFile.substr(sFile.rfind('.')) == ".ndat"
                     || sFile.substr(sFile.rfind('.')) == ".nprc"
                     || sFile.substr(sFile.rfind('.')) == ".nscr"))
             sFile = sFile.substr(0,sFile.rfind('.'));
 
-		sFileName = FileSystem::ValidFileName(sFile);	// Rufe die Methode der PARENT-Klasse auf, um den Namen zu pruefen
+        sFileName = FileSystem::ValidFileName(sFile);	// Rufe die Methode der PARENT-Klasse auf, um den Namen zu pruefen
 
-		if (sFileName.substr(sFileName.rfind('.')) == ".tex")
+        if (sFileName.substr(sFileName.rfind('.')) == ".tex")
             bPrintTeX = true;
         else if (sFileName.substr(sFileName.rfind('.')) == ".csv")
             bPrintCSV = true;
-	}
-	else
-	{
-		generateFileName();		// Generiere einen Dateinamen aus data_YYYY-MM-DD-hhmmss.dat
-	}
+    }
+    else
+    {
+        generateFileName();		// Generiere einen Dateinamen aus data_YYYY-MM-DD-hhmmss.dat
+    }
 
-	return;
+    return;
 }
 
 
 string Output::getFileName() const
 {
-	return sFileName;			// Gib den aktuellen Dateinamen zurueck
+    return sFileName;			// Gib den aktuellen Dateinamen zurueck
 }
 
 
 void Output::start()
 {
-	if (bFile == true && bFileOpen == false)
-	{
-		file_out.open(sFileName.c_str(), ios_base::out | ios_base::trunc);	// Oeffne die Datei
-		bFileOpen = true;		// Setze den Boolean auf TRUE
-		print_legal();			// Schreibe das Copyright
-	}
+    if (bFile == true && bFileOpen == false)
+    {
+        file_out.open(sFileName.c_str(), ios_base::out | ios_base::trunc);	// Oeffne die Datei
+        bFileOpen = true;		// Setze den Boolean auf TRUE
+        print_legal();			// Schreibe das Copyright
+    }
 
-	return;						// Mach nichts, wenn gar nicht in eine Datei geschrieben werden soll,
-								// 		oder die Datei bereits geoeffnet ist
+    return;						// Mach nichts, wenn gar nicht in eine Datei geschrieben werden soll,
+                                // 		oder die Datei bereits geoeffnet ist
 }
 
 
 void Output::setPluginName(string _sPluginName)
 {
-	sPluginName = _sPluginName;	// Setze sPluginName = _sPluginName
-	return;
+    sPluginName = _sPluginName;	// Setze sPluginName = _sPluginName
+    return;
 }
 
 
 void Output::setCommentLine(string _sCommentLine)
 {
-	sCommentLine = _sCommentLine;	// setze sCommentLine = _sCommentLine;
-	return;
+    sCommentLine = _sCommentLine;	// setze sCommentLine = _sCommentLine;
+    return;
 }
 
 
 string Output::getPluginName() const
 {
-	return sPluginName;			// gib sPlugin zurueck
+    return sPluginName;			// gib sPlugin zurueck
 }
 
 
 string Output::getCommentLine() const
 {
-	return sCommentLine;		// gib sCommentLine zurueck
+    return sCommentLine;		// gib sCommentLine zurueck
 }
 
 
@@ -240,41 +240,41 @@ void Output::print_legal()		// Pro forma Kommentare in die Datei
     sBuild += AutoVersion::MONTH;
     sBuild += "-";
     sBuild += AutoVersion::DATE;
-	print(sCommentSign);
-	print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE1"));
-	print(sCommentSign + " NumeRe: Framework für Numerische Rechnungen");
-	print(sCommentSign + "=============================================");
-	print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild));
-	print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0,4)));
-	print(sCommentSign + "");
-	print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getDate(false)));
-	print(sCommentSign + "");
+    print(sCommentSign);
+    print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE1"));
+    print(sCommentSign + " NumeRe: Framework für Numerische Rechnungen");
+    print(sCommentSign + "=============================================");
+    print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE2", sVersion, sBuild));
+    print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE3", sBuild.substr(0,4)));
+    print(sCommentSign + "");
+    print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_LINE4", getDate(false)));
+    print(sCommentSign + "");
 
-	if (bPrintTeX)
+    if (bPrintTeX)
         print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_TEX"));
     else
         print(sCommentSign + " " + _lang.get("OUTPUT_PRINTLEGAL_STD"));
 
-	print(sCommentSign);
-	return;
+    print(sCommentSign);
+    return;
 }
 
 void Output::end()
 {
-	if (bFile == true && bFileOpen == true)
-	{
-		file_out.close();		// Schliesse die Datei
-		bFileOpen = false;		// Setze den Boolean auf FALSE
-	}
+    if (bFile == true && bFileOpen == true)
+    {
+        file_out.close();		// Schliesse die Datei
+        bFileOpen = false;		// Setze den Boolean auf FALSE
+    }
 
-	return;						// Mach nichts, wenn gar nicht in eine Datei geschrieben wurde,
-								//		oder die Datei bereits geschlossen ist
+    return;						// Mach nichts, wenn gar nicht in eine Datei geschrieben wurde,
+                                //		oder die Datei bereits geschlossen ist
 }
 
 
 void Output::print(string sOutput)
 {
-	if (sOutput.find("---------") != string::npos || sOutput.find("<<SUMBAR>>") != string::npos)
+    if (sOutput.find("---------") != string::npos || sOutput.find("<<SUMBAR>>") != string::npos)
     {
         if (sOutput.find("<<SUMBAR>>") != string::npos)
         {
@@ -292,50 +292,50 @@ void Output::print(string sOutput)
             sOutput = "\\midrule";
 
         bSumBar = true;
-	}
+    }
 
-	if (bFile)
-	{
-		if (!bFileOpen)
-		{
-			start();			// Wenn in eine Datei geschrieben werden soll, aber diese noch nicht geoeffnet wurde,
-								// 		rufe die Methode start() auf.
-		}
+    if (bFile)
+    {
+        if (!bFileOpen)
+        {
+            start();			// Wenn in eine Datei geschrieben werden soll, aber diese noch nicht geoeffnet wurde,
+                                // 		rufe die Methode start() auf.
+        }
 
-		if (file_out.fail())	// Fehlermeldung, falls nicht in die Datei geschrieben werden kann
-		{
-			NumeReKernel::printPreFmt("*************************************************\n");
-			NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE1")) + "\n");
-			NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE2")) + "\n");
-			NumeReKernel::printPreFmt("|   \"" + sFileName + "\"\n");
-			NumeReKernel::printPreFmt("|   " + toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE3")) + "\n");
-			NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE4")) + "\n");
-			NumeReKernel::printPreFmt("*************************************************\n");
-			end();				// Schliesse ggf. die Datei
-			bFile = false;		// Setze den Boolean auf FALSE
-			print(sOutput);		// Wiederhole den Aufruf dieser Methode und schreibe von nun an auf die Konsole
-		}
-		else if (bSumBar && !bPrintTeX && !bPrintCSV)					// Ausgabe in die Datei
-			file_out << "#" << sOutput.substr(1) << endl;
+        if (file_out.fail())	// Fehlermeldung, falls nicht in die Datei geschrieben werden kann
+        {
+            NumeReKernel::printPreFmt("*************************************************\n");
+            NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE1")) + "\n");
+            NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE2")) + "\n");
+            NumeReKernel::printPreFmt("|   \"" + sFileName + "\"\n");
+            NumeReKernel::printPreFmt("|   " + toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE3")) + "\n");
+            NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("OUTPUT_PRINT_INACCESSIBLE4")) + "\n");
+            NumeReKernel::printPreFmt("*************************************************\n");
+            end();				// Schliesse ggf. die Datei
+            bFile = false;		// Setze den Boolean auf FALSE
+            print(sOutput);		// Wiederhole den Aufruf dieser Methode und schreibe von nun an auf die Konsole
+        }
+        else if (bSumBar && !bPrintTeX && !bPrintCSV)					// Ausgabe in die Datei
+            file_out << "#" << sOutput.substr(1) << endl;
         else
             file_out << sOutput << endl;
-	}
-	else if (bSumBar)						// Ausgabe auf die Konsole. Kann in Linux mit dem Umlenker '>' trotzdem in eine Datei ausgegeben werden.
-	{
-		NumeReKernel::printPreFmt("|   " + sOutput.substr(4) + "\n");
-	}
-	else
+    }
+    else if (bSumBar)						// Ausgabe auf die Konsole. Kann in Linux mit dem Umlenker '>' trotzdem in eine Datei ausgegeben werden.
+    {
+        NumeReKernel::printPreFmt("|   " + sOutput.substr(4) + "\n");
+    }
+    else
         NumeReKernel::printPreFmt(sOutput + "\n");
 
-	return;
+    return;
 }
 
 
 void Output::generateFileName()	// Generiert einen Dateinamen auf Basis des aktuellen Datums
 {								//		Der Dateinamen hat das Format: data_YYYY-MM-DD_hhmmss.dat
-	string sTime;
+    string sTime;
 
-	if (sPath.find('"') != string::npos)
+    if (sPath.find('"') != string::npos)
         sTime = sPath.substr(1,sPath.length()-2);
     else
         sTime = sPath;
@@ -344,57 +344,57 @@ void Output::generateFileName()	// Generiert einen Dateinamen auf Basis des aktu
         sTime[sTime.find('\\')] = '/';
 
     sTime += "/" + sPluginPrefix + "_";		// Prefix laden
-	sTime += getDate(true);		// Datum aus der Klasse laden
-	sTime += ".dat";
-	sFileName = sTime;			// Dateinamen an sFileName zuweisen
-	return;
+    sTime += getDate(true);		// Datum aus der Klasse laden
+    sTime += ".dat";
+    sFileName = sTime;			// Dateinamen an sFileName zuweisen
+    return;
 }
 
 
 string Output::getDate(bool bForFile)	// Der Boolean entscheidet, ob ein Dateinamen-Datum oder ein "Kommentar-Datum" gewuenscht ist
 {
-	time_t now = time(0);		// Aktuelle Zeit initialisieren
-	tm *ltm = localtime(&now);
-	ostringstream Temp_str;
-	Temp_str << 1900+ltm->tm_year << "-"; //YYYY-
+    time_t now = time(0);		// Aktuelle Zeit initialisieren
+    tm *ltm = localtime(&now);
+    ostringstream Temp_str;
+    Temp_str << 1900+ltm->tm_year << "-"; //YYYY-
 
-	if(1+ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
-		Temp_str << "0";
+    if(1+ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
+        Temp_str << "0";
 
-	Temp_str << 1+ltm->tm_mon << "-"; // MM-
+    Temp_str << 1+ltm->tm_mon << "-"; // MM-
 
-	if(ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
-		Temp_str << "0";
+    if(ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
+        Temp_str << "0";
 
-	Temp_str << ltm->tm_mday; 	// DD
+    Temp_str << ltm->tm_mday; 	// DD
 
-	if(bForFile)
-		Temp_str << "_";		// Unterstrich im Dateinamen
-	else
-		Temp_str << ", um ";	// Komma im regulaeren Datum
+    if(bForFile)
+        Temp_str << "_";		// Unterstrich im Dateinamen
+    else
+        Temp_str << ", um ";	// Komma im regulaeren Datum
 
-	if(ltm->tm_hour < 10)
-		Temp_str << "0";
+    if(ltm->tm_hour < 10)
+        Temp_str << "0";
 
-	Temp_str << ltm->tm_hour; 	// hh
+    Temp_str << ltm->tm_hour; 	// hh
 
-	if(!bForFile)
-		Temp_str << ":";		// ':' im regulaeren Datum
+    if(!bForFile)
+        Temp_str << ":";		// ':' im regulaeren Datum
 
-	if(ltm->tm_min < 10)
-		Temp_str << "0";
+    if(ltm->tm_min < 10)
+        Temp_str << "0";
 
-	Temp_str << ltm->tm_min;	// mm
+    Temp_str << ltm->tm_min;	// mm
 
-	if(!bForFile)
-		Temp_str << ":";
+    if(!bForFile)
+        Temp_str << ":";
 
-	if(ltm->tm_sec < 10)
-		Temp_str << "0";
+    if(ltm->tm_sec < 10)
+        Temp_str << "0";
 
-	Temp_str << ltm->tm_sec;	// ss
+    Temp_str << ltm->tm_sec;	// ss
 
-	return Temp_str.str();
+    return Temp_str.str();
 }
 
 
@@ -403,12 +403,12 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
     if (!nHeadLineCount)
         nHeadLineCount = 1;
 
-	unsigned int nLongest[_nCol];		// Int fuer die laengste Zeichenkette: unsigned da string::length() einen unsigned zurueck gibt
-	unsigned int nLen = 0;			// Int fuer die aktuelle Laenge: dito
-	string sPrint = "";				// String fuer die endgueltige Ausgabe
-	string sLabel = sFileName;
+    unsigned int nLongest[_nCol];		// Int fuer die laengste Zeichenkette: unsigned da string::length() einen unsigned zurueck gibt
+    unsigned int nLen = 0;			// Int fuer die aktuelle Laenge: dito
+    string sPrint = "";				// String fuer die endgueltige Ausgabe
+    string sLabel = sFileName;
 
-	if (sLabel.find('/') != string::npos)
+    if (sLabel.find('/') != string::npos)
         sLabel.erase(0,sLabel.rfind('/')+1);
 
     if (sLabel.find(".tex") != string::npos)
@@ -417,8 +417,8 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
     while (sLabel.find(' ') != string::npos)
         sLabel[sLabel.find(' ')] = '_';
 
-	string cRerun = "";				// String fuer den erneuten Aufruf
-									// Wegen dem Rueckgabewert von string::length() sind alle Schleifenindices unsigned
+    string cRerun = "";				// String fuer den erneuten Aufruf
+                                    // Wegen dem Rueckgabewert von string::length() sind alle Schleifenindices unsigned
 
     if ((!bCompact || _nLine < 12) && !bPrintCSV)
     {
@@ -476,9 +476,9 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
 
             nLongest[j] += 2;
         }
-	}
-	else if (!bPrintCSV)
-	{
+    }
+    else if (!bPrintCSV)
+    {
         for (long long int j = 0; j < _nCol; j++)
         {
             nLongest[j] = 0;
@@ -496,7 +496,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
 
             nLongest[j] += 2;
         }
-	}
+    }
 
     if (bCompact)
     {
@@ -507,9 +507,9 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         }
     }
 
-	nLen = 0;
+    nLen = 0;
 
-	for (long long int j = 0; j < _nCol; j++)
+    for (long long int j = 0; j < _nCol; j++)
         nLen += nLongest[j];
 
     if (bFile && !bPrintTeX && !bPrintCSV)
@@ -888,20 +888,20 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
         }
     }
 
-	return;
+    return;
 }
 
 // --> setzt sPluginPrefix auf _sPrefix <--
 void Output::setPrefix(string _sPrefix)
 {
-	sPluginPrefix = _sPrefix;
-	return;
+    sPluginPrefix = _sPrefix;
+    return;
 }
 
 // --> gibt sPluginPrefix zureuck <--
 string Output::getPrefix() const
 {
-	return sPluginPrefix;
+    return sPluginPrefix;
 }
 
 
