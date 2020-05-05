@@ -28,32 +28,30 @@
 /// \brief This function removes the escape
 /// characters from the passed string.
 ///
-/// \param sString const string&
+/// \param sString string
 /// \return string
 ///
 /////////////////////////////////////////////////
-string removeMaskedStrings(const string& sString)
+string removeMaskedStrings(string sString)
 {
-	if (sString.find("\\\"") == string::npos && sString.find("\\t") == string::npos && sString.find("\\n") == string::npos && sString.find("\\ ") == string::npos)
-		return sString;
-
-	string sRet = sString;
-
 	// Go through the string and remove all relevant escape characters
 	// Omit the characters, which are identifying LaTeX command sequences
-	for (size_t i = 0; i < sRet.length(); i++)
+	for (size_t i = 0; i < sString.length(); i++)
 	{
-		if (sRet.substr(i, 2) == "\\\"")
-			sRet.erase(i, 1);
-		if (sRet.substr(i, 2) == "\\t" && sRet.substr(i, 4) != "\\tau" && sRet.substr(i, 6) != "\\theta")
-			sRet.replace(i, 2, "\t");
-		if (sRet.substr(i, 2) == "\\n" && sRet.substr(i, 3) != "\\nu")
-			sRet.replace(i, 2, "\n");
-		if (sRet.substr(i, 2) == "\\ ")
-			sRet.erase(i + 1, 1);
+		if (sString.substr(i, 2) == "\\\"")
+			sString.erase(i, 1);
+
+		if (sString.substr(i, 2) == "\\t" && sString.substr(i, 4) != "\\tau" && sString.substr(i, 6) != "\\theta" && sString.substr(i, 6) != "\\times")
+			sString.replace(i, 2, "\t");
+
+		if (sString.substr(i, 2) == "\\n" && sString.substr(i, 3) != "\\nu")
+			sString.replace(i, 2, "\n");
+
+		if (sString.substr(i, 2) == "\\ ")
+			sString.erase(i + 1, 1);
 	}
 
-	return sRet;
+	return sString;
 }
 
 

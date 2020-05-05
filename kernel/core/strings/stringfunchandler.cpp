@@ -104,10 +104,10 @@ namespace NumeRe
         size_t nEndPosition = 0;
 
         // While the function signature can be found
-        while ((nStartPosition = findNextFunction(sFuncName + "(", sLine, nStartPosition, nEndPosition)) != string::npos)
+        while ((nStartPosition = findNextFunction(sFuncName, sLine, nStartPosition, nEndPosition)) != string::npos)
         {
             // Extract the argument of the current found function and process it
-            string sFunctionArgument = getFunctionArgumentList(sFuncName + "(", sLine, nStartPosition, nEndPosition);
+            string sFunctionArgument = getFunctionArgumentList(sFuncName, sLine, nStartPosition, nEndPosition);
             vector<string> vReturnValues;
             StringFuncArgs stringArgs;
             stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
@@ -119,10 +119,10 @@ namespace NumeRe
             {
                 n_vect nIntArg;
                 size_t nMaxArgs = argumentParser(sFunctionArgument, nIntArg);
+
                 if (!nMaxArgs)
-                {
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
+
                 if (funcHandle.bTakesMultiArguments)
                 {
                     stringArgs.nMultiArg = nIntArg;
@@ -142,7 +142,7 @@ namespace NumeRe
                 s_vect sStringArg;
                 size_t nMaxArgs = 0;
 
-                if (sFuncName == "to_string" && !containsStrings(sFunctionArgument))
+                if (sFuncName == "to_string(" && !containsStrings(sFunctionArgument))
                 {
                     sStringArg.push_back(sFunctionArgument);
                     nMaxArgs = 1;
@@ -151,15 +151,13 @@ namespace NumeRe
                     nMaxArgs = argumentParser(sFunctionArgument, sStringArg, bLogicalOnly);
 
                 if (!nMaxArgs)
-                {
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
 
                 // These five multiargument functions are also defined for numerical values.
                 // If the return value for the current functions arguments is an only logical
                 // value, ignore the current function call
                 if (bLogicalOnly
-                    && (sFuncName == "min" || sFuncName == "max" || sFuncName == "cnt" || sFuncName == "num" || sFuncName == "sum"))
+                    && (sFuncName == "min(" || sFuncName == "max(" || sFuncName == "cnt(" || sFuncName == "num(" || sFuncName == "sum("))
                 {
                     nStartPosition++;
                     continue;
@@ -184,10 +182,10 @@ namespace NumeRe
                 s_vect sStringArg;
                 n_vect nIntArg1, nIntArg2;
                 size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg, nIntArg1, nIntArg2);
+
                 if (!nMaxArgs)
-                {
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
+
                 for (size_t i = 0; i < nMaxArgs; i++)
                 {
                     if (i < sStringArg.size())
@@ -196,12 +194,14 @@ namespace NumeRe
                         stringArgs.sArg1 = sStringArg[0];
                     else
                         stringArgs.sArg1 = "";
+
                     if (i < nIntArg1.size())
                         stringArgs.nArg1 = nIntArg1[i];
                     else if (nIntArg1.size() == 1)
                         stringArgs.nArg1 = nIntArg1[0];
                     else
                         stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
                     if (i < nIntArg2.size())
                         stringArgs.nArg2 = nIntArg2[i];
                     else if (nIntArg2.size() == 1)
@@ -218,10 +218,10 @@ namespace NumeRe
                 s_vect sStringArg1, sStringArg2;
                 n_vect nIntArg1, nIntArg2;
                 size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, nIntArg1, nIntArg2, sStringArg2);
+
                 if (!nMaxArgs)
-                {
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
+
                 for (size_t i = 0; i < nMaxArgs; i++)
                 {
                     if (i < sStringArg1.size())
@@ -230,18 +230,21 @@ namespace NumeRe
                         stringArgs.sArg1 = sStringArg1[0];
                     else
                         stringArgs.sArg1 = "";
+
                     if (i < sStringArg2.size())
                         stringArgs.sArg2 = sStringArg2[i];
                     else if (sStringArg2.size() == 1)
                         stringArgs.sArg2 = sStringArg2[0];
                     else
                         stringArgs.sArg2 = "";
+
                     if (i < nIntArg1.size())
                         stringArgs.nArg1 = nIntArg1[i];
                     else if (nIntArg1.size() == 1)
                         stringArgs.nArg1 = nIntArg1[0];
                     else
                         stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
                     if (i < nIntArg2.size())
                         stringArgs.nArg2 = nIntArg2[i];
                     else if (nIntArg2.size() == 1)
@@ -1364,12 +1367,16 @@ namespace NumeRe
     /////////////////////////////////////////////////
     string StringFuncHandler::applyStringFuncs(string sLine)
     {
+        string sFunctionName;
+
         for (auto iter = m_mStringFuncs.begin(); iter != m_mStringFuncs.end(); ++iter)
         {
+            sFunctionName = iter->first + "(";
+
             // Found an occurence -> call the string function handler
-            if (sLine.find(iter->first + "(") != string::npos)
+            if (sLine.find(sFunctionName) != string::npos)
             {
-                evalFunction(sLine, iter->first, iter->second);
+                evalFunction(sLine, sFunctionName, iter->second);
 
                 if (sLine.find('(') == string::npos)
                     break;
