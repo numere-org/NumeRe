@@ -1367,16 +1367,12 @@ namespace NumeRe
     /////////////////////////////////////////////////
     string StringFuncHandler::applyStringFuncs(string sLine)
     {
-        string sFunctionName;
-
         for (auto iter = m_mStringFuncs.begin(); iter != m_mStringFuncs.end(); ++iter)
         {
-            sFunctionName = iter->first + "(";
-
             // Found an occurence -> call the string function handler
-            if (sLine.find(sFunctionName) != string::npos)
+            if (sLine.find(iter->first + "(") != string::npos)
             {
-                evalFunction(sLine, sFunctionName, iter->second);
+                evalFunction(sLine, iter->first + "(", iter->second);
 
                 if (sLine.find('(') == string::npos)
                     break;

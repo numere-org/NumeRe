@@ -86,7 +86,8 @@ namespace NumeRe
     // using vectors as indices
     void Cluster::assignVectorResults(Indices _idx, int nNum, double* data)
     {
-        nGlobalType = ClusterItem::ITEMTYPE_INVALID;
+        if (nGlobalType != ClusterItem::ITEMTYPE_DOUBLE)
+            nGlobalType = ClusterItem::ITEMTYPE_INVALID;
 
         // Assign the single results
         for (size_t i = 0; i < _idx.row.size(); i++)
@@ -312,7 +313,12 @@ namespace NumeRe
             {
                 // Is there any item, which is NOT a double?
                 if (vClusterArray[i]->getType() != ClusterItem::ITEMTYPE_DOUBLE)
+                {
+                    if (i)
+                        nGlobalType = ClusterItem::ITEMTYPE_MIXED;
+
                     return false;
+                }
             }
 
             nGlobalType = ClusterItem::ITEMTYPE_DOUBLE;
@@ -323,7 +329,7 @@ namespace NumeRe
     }
 
     // This member function returns, whether the data in the
-    // cluster have only double as type
+    // cluster have only string as type
     bool Cluster::isString() const
     {
         // Only do something, if the array has a length
@@ -336,7 +342,12 @@ namespace NumeRe
             {
                 // Is there any item, which is NOT a string?
                 if (vClusterArray[i]->getType() != ClusterItem::ITEMTYPE_STRING)
+                {
+                    if (i)
+                        nGlobalType = ClusterItem::ITEMTYPE_MIXED;
+
                     return false;
+                }
             }
 
             nGlobalType = ClusterItem::ITEMTYPE_STRING;

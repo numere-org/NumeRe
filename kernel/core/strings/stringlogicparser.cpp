@@ -19,7 +19,7 @@
 #include "stringlogicparser.hpp"
 #include "../../kernel.hpp"
 
-string removeMaskedStrings(string sString);
+string removeMaskedStrings(const string& sString);
 
 namespace NumeRe
 {

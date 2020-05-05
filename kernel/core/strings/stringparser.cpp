@@ -564,14 +564,14 @@ namespace NumeRe
     /// StringParser::storeStringResults(). It will
     /// store the strings into the data tables.
     ///
-    /// \param vFinal const vector<string>&
+    /// \param strRes StringResult&
     /// \param sObject string&
     /// \param nCurrentComponent size_t&
     /// \param nStrings size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void StringParser::storeStringToDataObjects(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings)
+    void StringParser::storeStringToDataObjects(StringResult& strRes, string& sObject, size_t& nCurrentComponent, size_t nStrings)
     {
         // Identify the correct table
         DataAccessParser _accessParser(sObject);
@@ -596,12 +596,12 @@ namespace NumeRe
 
             for (int n = nCurrentComponent; n < (int)nStrings; n++)
             {
-                if (!vFinal[n].length()
+                if (!strRes.vResult[n].length()
                     || (_idx.col[n] == VectorIndex::INVALID)
                     || (sTableName == "data" && _idx.col[n] >= _data.getCols("data")))
                     break;
 
-                _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(maskControlCharacters(vFinal[n])));
+                _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(maskControlCharacters(strRes.vResult[n])));
             }
 
             nCurrentComponent = nStrings;
@@ -620,28 +620,29 @@ namespace NumeRe
             if (_idx.row.back() == -2 && _idx.row.front() == 0)
                 cluster.clear();
 
-            for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
+            for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
             {
                 // Set expression and evaluate it (not efficient but currently necessary)
-                if (vFinal[i].front() == '"')
+                if (strRes.vResult[i].front() == '"')
                 {
                     // Special case: only one single value
                     if (_idx.row.size() == 1 && _idx.col.size() == 1)
                     {
-                        cluster.setString(_idx.row.front(), vFinal[i]);
+                        cluster.setString(_idx.row.front(), strRes.vResult[i]);
                         break;
                     }
 
                     if (_idx.row[nthComponent] == VectorIndex::INVALID)
                         break;
 
-                    cluster.setString(_idx.row[nthComponent], vFinal[i]);
+                    cluster.setString(_idx.row[nthComponent], strRes.vResult[i]);
                     nthComponent++;
                 }
                 else
                 {
-                    _parser.SetExpr(vFinal[i]);
+                    _parser.SetExpr(strRes.vResult[i]);
                     v = _parser.Eval(nResults);
+                    strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
 
                     // Special case: only one single value
                     if (_idx.row.size() == 1 && _idx.col.size() == 1)
@@ -678,45 +679,55 @@ namespace NumeRe
             int nResults = 0;
             int nthComponent = 0;
             string sExpr;
+            size_t nOffset = 0;
+            const size_t nMAXSETLENGTH = 5000;
+            size_t nVectorOffset = strRes.vNumericalValues.size();
 
-            for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
+            while (nCurrentComponent + nOffset < strRes.vResult.size())
             {
-                sExpr += vFinal[i] + ",";
+                sExpr.clear();
+
+                for (size_t i = nCurrentComponent + nOffset; i < min(nCurrentComponent+nOffset+nMAXSETLENGTH, strRes.vResult.size()); i++)
+                {
+                    sExpr += strRes.vResult[i] + ",";
+                }
+
+                // Set expression and evaluate it (not efficient but currently necessary)
+                _parser.SetExpr(sExpr.substr(0, sExpr.length()-1));
+                v = _parser.Eval(nResults);
+                strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
+                nOffset += nMAXSETLENGTH;
             }
-            // Set expression and evaluate it (not efficient but currently necessary)
-            _parser.SetExpr(sExpr.substr(0, sExpr.length()-1));
-            v = _parser.Eval(nResults);
 
             // Special case: only one single value
             if (_idx.row.size() == 1 && _idx.col.size() == 1)
             {
-                _data.writeToTable(_idx.row.front(), _idx.col.front(), sTableName, v[0]);
+                _data.writeToTable(_idx.row.front(), _idx.col.front(), sTableName, strRes.vNumericalValues[nVectorOffset]);
             }
             else
             {
-
-
                 // Write the single values
-                for (int j = 0; j < nResults; j++)
+                for (size_t j = nVectorOffset; j < strRes.vNumericalValues.size(); j++)
                 {
                     if (_idx.row.size() == 1 && _idx.col.size() > 1)
                     {
                         if (_idx.col[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, v[j]);
+                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, strRes.vNumericalValues[j]);
                     }
                     else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                     {
                         if (_idx.row[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, v[j]);
+                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, strRes.vNumericalValues[j]);
                     }
 
                     nthComponent++;
                 }
             }
+
 
             nCurrentComponent = nStrings;
         }
@@ -763,24 +774,25 @@ namespace NumeRe
     /// processed and calculated string results in
     /// their desired targets.
     ///
-    /// \param vFinal vector<string>&
-    /// \param vIsNoStringValue const vector<bool>&
+    /// \param strRes StringResult&
     /// \param __sObject string
     /// \return int
     ///
     /////////////////////////////////////////////////
-    int StringParser::storeStringResults(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string __sObject)
+    int StringParser::storeStringResults(StringResult& strRes, string __sObject)
     {
         // Only do something, if the target object is not empty
         if (!__sObject.length())
             return 1;
+
+        strRes.vNumericalValues.clear();
 
         // Handle remaining vector braces
         if (__sObject.find('{') != string::npos)
             convertVectorToExpression(__sObject, _option);
 
         string sObject;
-        size_t nStrings = vFinal.size();
+        size_t nStrings = strRes.vResult.size();
         size_t nCurrentComponent = 0;
 
         // As long as the target object is not empty
@@ -793,12 +805,12 @@ namespace NumeRe
             if (sObject.find("data(") != string::npos || _data.containsTablesOrClusters(sObject))
             {
                 // Store the strings into the data object
-                storeStringToDataObjects(vFinal, sObject, nCurrentComponent, nStrings);
+                storeStringToDataObjects(strRes, sObject, nCurrentComponent, nStrings);
             }
             else if (sObject.find("string(") != string::npos)
             {
                 // Store the strings into the string object
-                storeStringToStringObject(vFinal, sObject, nCurrentComponent, nStrings);
+                storeStringToStringObject(strRes.vResult, sObject, nCurrentComponent, nStrings);
             }
             else if (containsStringVars(sObject))
             {
@@ -811,7 +823,7 @@ namespace NumeRe
                     if (nCurrentComponent >= nStrings)
                         setStringValue(sObject, "");
                     else
-                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(vFinal[nCurrentComponent])));
+                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(strRes.vResult[nCurrentComponent])));
                     nCurrentComponent++;
                 }
                 catch (...)
@@ -831,21 +843,21 @@ namespace NumeRe
                 // Search for the adress of the current variable
                 if (getPointerToVariable(sObject, _parser))
                 {
-                    if (vIsNoStringValue.size() > nCurrentComponent && !vIsNoStringValue[nCurrentComponent])
+                    if (strRes.vNoStringVal.size() > nCurrentComponent && !strRes.vNoStringVal[nCurrentComponent])
                     {
                         return 0;
                     }
                 }
 
                 // If this is a numerical value
-                if (vIsNoStringValue.size() > nCurrentComponent && vIsNoStringValue[nCurrentComponent])
+                if (strRes.vNoStringVal.size() > nCurrentComponent && strRes.vNoStringVal[nCurrentComponent])
                 {
                     try
                     {
                         // Parse and store it
                         int nResults = 0;
                         value_type* v = 0;
-                        _parser.SetExpr(sObject + " = " + vFinal[nCurrentComponent]);
+                        _parser.SetExpr(sObject + " = " + strRes.vResult[nCurrentComponent]);
                         v = _parser.Eval(nResults);
 
                         // Replace the evaluated expression with its result,
@@ -857,6 +869,7 @@ namespace NumeRe
                             NumeReKernel::getInstance()->getAns().clear();
                             NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
                             string sValues;
+                            strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
 
                             // Transform the results into a string
                             for (int n = 0; n < nResults; n++)
@@ -866,7 +879,7 @@ namespace NumeRe
                             sValues.pop_back();
 
                             // replace the current expression
-                            vFinal[nCurrentComponent] = sValues;
+                            strRes.vResult[nCurrentComponent] = sValues;
                         }
 
                         nCurrentComponent++;
@@ -876,7 +889,7 @@ namespace NumeRe
                         throw;
                     }
                 }
-                else if (vIsNoStringValue.size() <= nCurrentComponent)
+                else if (strRes.vNoStringVal.size() <= nCurrentComponent)
                 {
                     // Fallback: try to find the variable address
                     // although it doesn't seem to be a numerical value
@@ -900,7 +913,7 @@ namespace NumeRe
                     try
                     {
                         // Create a new string variable
-                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(vFinal[nCurrentComponent])));
+                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(strRes.vResult[nCurrentComponent])));
                         nCurrentComponent++;
                     }
                     catch (...)
@@ -940,10 +953,16 @@ namespace NumeRe
         // numerical only here
         if (StrRes.bOnlyLogicals)
         {
-            for (size_t i = 0; i < vFinal.size(); i++)
-                sLine += removeQuotationMarks(vFinal[i]) + ",";
+            if (StrRes.vNumericalValues.size())
+                sLine = NumeReKernel::getInstance()->getParser().CreateTempVectorVar(StrRes.vNumericalValues);
+            else
+            {
+                for (size_t i = 0; i < vFinal.size(); i++)
+                    sLine += vFinal[i] + ",";
 
-            sLine.pop_back();
+                sLine.pop_back();
+
+            }
 
             return sLine;
         }
@@ -1865,7 +1884,7 @@ namespace NumeRe
         strRes.vNoStringVal = applyElementaryStringOperations(strRes.vResult, strRes.bOnlyLogicals);
 
         // store the string results in the variables or inb "string()" respectively
-        if (!storeStringResults(strRes.vResult, strRes.vNoStringVal, strExpr.sAssignee))
+        if (!storeStringResults(strRes, strExpr.sAssignee))
             throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
         // Return the evaluated string command line
@@ -1961,7 +1980,7 @@ namespace NumeRe
 
         for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
         {
-            if (iter->second.isString())
+            if (!iter->second.isDouble())
             {
                 size_t pos = sExpression.find(iter->first + "{");
 

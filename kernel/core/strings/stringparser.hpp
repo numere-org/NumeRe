@@ -54,12 +54,12 @@ namespace NumeRe
             string parseStringsInIndices(string sIndexExpression);
             void replaceDataOccurence(string& sLine, const string& sOccurence);
             string numToString(const string& sLine);
-            int storeStringResults(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string sObject);
+            int storeStringResults(StringResult& strRes, string sObject);
             string createStringOutput(StringResult& strRes, string& sLine, int parserFlags, bool bSilent);
             string createTerminalOutput(StringResult& strRes, int parserFlags);
             vector<bool> applyElementaryStringOperations(vector<string>& vFinal, bool& bReturningLogicals);
             void concatenateStrings(string& sExpr);
-            void storeStringToDataObjects(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings);
+            void storeStringToDataObjects(StringResult& strRes, string& sObject, size_t& nCurrentComponent, size_t nStrings);
             void storeStringToStringObject(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings);
             int decodeStringParams(string& sLine);
             bool isSimpleString(const string& sLine);

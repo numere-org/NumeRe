@@ -140,11 +140,7 @@ struct StringResult
 	    bOnlyLogicals = true;
 	    vResult.push_back(sRet);
         vNoStringVal.resize(nvals, true);
-
-	    for (int i = 0; i < nvals; i++)
-        {
-            vNumericalValues.push_back(vals[i]);
-        }
+        vNumericalValues.assign(vals, vals+nvals);
 	}
 
 	vector<string> vResult;

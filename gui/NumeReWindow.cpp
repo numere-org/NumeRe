@@ -124,7 +124,7 @@ std::string replacePathSeparator(const std::string&);
 string toString(const vector<int>& vVector);
 vector<int> toVector(string sString);
 string removeQuotationMarks(const string& sString);
-string removeMaskedStrings(string sString);
+string removeMaskedStrings(const string& sString);
 
 string prepareStringsForDialog(const string& sString)
 {
