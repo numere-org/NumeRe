@@ -66,15 +66,33 @@ void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _optio
 
 static mglData duplicatePoints(const mglData& _mData)
 {
-    mglData _temp(_mData.GetNN()*2);
-
-    for (int i = 0; i < _mData.GetNN(); i++)
+    if (_mData.GetNy() > 1)
     {
-        _temp.a[2*i] = _mData.a[i];
-        _temp.a[2*i+1] = _mData.a[i];
-    }
+        mglData _temp(_mData.GetNx()*2, _mData.GetNy());
 
-    return _temp;
+        for (int j = 0; j < _mData.GetNy(); j++)
+        {
+            for (int i = 0; i < _mData.GetNx(); i++)
+            {
+                _temp.a[2*i + j*_temp.GetNx()] = _mData.a[i+j*_mData.GetNx()];
+                _temp.a[2*i+1+j*_temp.GetNx()] = _mData.a[i+j*_mData.GetNx()];
+            }
+        }
+
+        return _temp;
+    }
+    else
+    {
+        mglData _temp(_mData.GetNN()*2);
+
+        for (int i = 0; i < _mData.GetNx(); i++)
+        {
+            _temp.a[2*i] = _mData.a[i];
+            _temp.a[2*i+1] = _mData.a[i];
+        }
+
+        return _temp;
+    }
 }
 
 static void removeNegativeValues(mglData& _mData)
@@ -820,8 +838,8 @@ void Plot::applyPlotSizeAndQualitySettings(PlotData& _pData)
 
     // Copy the font and select the font size
     _graph->CopyFont(&_fontData);
-    _graph->SetFontSizePT(8 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
-    //_graph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
+    //_graph->SetFontSizePT(8 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
+    _graph->SetFontSizeCM(0.22 * (1.0 + _pData.getTextSize()) / 6.0, 72);
     _graph->SetFlagAdv(1, MGL_FULL_CURV);
     //_graph->SubPlot(1,1,0, "");
 
@@ -1864,7 +1882,7 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
 			if (_pData.getInterpolate() && countValidElements(_mData) >= (size_t)_pInfo.nSamples)
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion() && !_pData.getStepplot())
-					_graph->Plot(_mAxisVals, _mData, expandStyleForCurveArray("a" + _pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1).c_str());
+					_graph->Plot(_mAxisVals, _mData, ("a" + expandStyleForCurveArray(_pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
 				else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion() && !_pData.getStepplot())
 					_graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
 				else if (_pData.getRegion() && getNN(_mData2[0]) > 1)
