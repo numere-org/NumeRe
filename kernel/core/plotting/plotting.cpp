@@ -64,6 +64,25 @@ void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _optio
 }
 
 
+static mglData duplicatePoints(const mglData& _mData)
+{
+    mglData _temp(_mData.GetNN()*2);
+
+    for (int i = 0; i < _mData.GetNN(); i++)
+    {
+        _temp.a[2*i] = _mData.a[i];
+        _temp.a[2*i+1] = _mData.a[i];
+    }
+
+    return _temp;
+}
+
+static void removeNegativeValues(mglData& _mData)
+{
+    for (int i = 0; i < _mData.GetNN(); i++)
+        _mData.a[i] = _mData.a[i] >= 0.0 ? _mData.a[i] : NAN;
+}
+
 
 /////////////////////////////////////////////////
 /// \brief Plotting object constructor. This
@@ -801,7 +820,9 @@ void Plot::applyPlotSizeAndQualitySettings(PlotData& _pData)
 
     // Copy the font and select the font size
     _graph->CopyFont(&_fontData);
-    _graph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
+    _graph->SetFontSizePT(8 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
+    //_graph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
+    _graph->SetFlagAdv(1, MGL_FULL_CURV);
     //_graph->SubPlot(1,1,0, "");
 
 }
@@ -972,15 +993,11 @@ bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _par
         // and the 2D-Plots (mesh, surf, etc.)
         if (_pInfo.b2D || _pInfo.sCommand == "implot")        // 2D-Plot
         {
-            create2dPlot(_pData, _data, _parser, _option,
-                         vType,
-                         nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
+            create2dPlot(_pData, _data, _parser, _option, vType, nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
         }
         else if (_pInfo.sCommand != "plot3d" && !_pInfo.b3D && !_pInfo.b3DVect && !_pInfo.b2DVect && !_pInfo.bDraw3D && !_pInfo.bDraw)      // Standardplot
         {
-            createStdPlot(_pData, _data, _parser, _option,
-                          vType,
-                          nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
+            createStdPlot(_pData, _data, _parser, _option, vType, nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
         }
         else if (_pInfo.b3D)   // 3D-Plot
         {
@@ -1004,9 +1021,7 @@ bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _par
         }
         else            // 3D-Trajektorie
         {
-            createStd3dPlot(_pData, _data, _parser, _option,
-                            vType,
-                            nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
+            createStd3dPlot(_pData, _data, _parser, _option, vType, nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
         }
 
         // Finalize the GIF frame
@@ -1804,24 +1819,39 @@ void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, con
 /////////////////////////////////////////////////
 bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType)
 {
+    // FIXME: Temporary fix for MathGL misbehavior
+    if (!_pData.getBoxplot() && !_pData.getyError() && !_pData.getxError() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
+    {
+        _mData = duplicatePoints(_mData);
+        _mAxisVals = duplicatePoints(_mAxisVals);
+        _mData2[0] = duplicatePoints(_mData2[0]);
+        _mData2[1] = duplicatePoints(_mData2[1]);
+
+        if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT)
+        {
+            removeNegativeValues(_mData);
+            removeNegativeValues(_mData2[0]);
+        }
+    }
+
 	if (nType == 1)
 	{
-		if (!_pData.getArea() && !_pData.getRegion())
-			_graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+	    if (!_pData.getArea() && !_pData.getRegion())
+			_graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
 		else if (_pData.getRegion() && getNN(_mData2[0]) > 1)
 		{
 			if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-				_graph->Region(_mAxisVals, _mData, _mData2[0], ("{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
+				_graph->Region(_mAxisVals, _mData, _mData2[0], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
 			else
-				_graph->Region(_mAxisVals, _mData, _mData2[0], ("{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
-			_graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+				_graph->Region(_mAxisVals, _mData, _mData2[0], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
+			_graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
 			if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-				_graph->Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[0].c_str());
+				_graph->Plot(_mAxisVals, _mData2[0], ("a" + _pInfo.sLineStyles[0]).c_str());
 			else
-				_graph->Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[*_pInfo.nStyle + 1].c_str());
+				_graph->Plot(_mAxisVals, _mData2[0], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
 		}
 		else if (_pData.getArea() || _pData.getRegion())
-			_graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+			_graph->Area(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
 	}
 	else
 	{
@@ -1834,41 +1864,41 @@ bool Plot::plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglDa
 			if (_pData.getInterpolate() && countValidElements(_mData) >= (size_t)_pInfo.nSamples)
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion() && !_pData.getStepplot())
-					_graph->Plot(_mAxisVals, _mData, expandStyleForCurveArray(_pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1).c_str());
+					_graph->Plot(_mAxisVals, _mData, expandStyleForCurveArray("a" + _pInfo.sLineStyles[*_pInfo.nStyle], _mData.ny > 1).c_str());
 				else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion() && !_pData.getStepplot())
 					_graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
 				else if (_pData.getRegion() && getNN(_mData2[0]) > 1)
 				{
 					if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-						_graph->Region(_mAxisVals, _mData, _mData2[0], ("{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
+						_graph->Region(_mAxisVals, _mData, _mData2[0], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
 					else
-						_graph->Region(_mAxisVals, _mData, _mData2[0], ("{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
-					_graph->Plot(_mAxisVals, _mData, _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+						_graph->Region(_mAxisVals, _mData, _mData2[0], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
+					_graph->Plot(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
 					if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-						_graph->Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[0].c_str());
+						_graph->Plot(_mAxisVals, _mData2[0], ("a" + _pInfo.sLineStyles[0]).c_str());
 					else
-						_graph->Plot(_mAxisVals, _mData2[0], _pInfo.sLineStyles[*_pInfo.nStyle + 1].c_str());
+						_graph->Plot(_mAxisVals, _mData2[0], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
 				}
 				else if (_pData.getArea() || _pData.getRegion())
-					_graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+					_graph->Area(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
 				else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
 					_graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
 			}
 			else if (_pData.getConnectPoints() || (_pData.getInterpolate() && countValidElements(_mData) >= 0.9 * _pInfo.nSamples))
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getStepplot())
-					_graph->Plot(_mAxisVals, _mData, expandStyleForCurveArray(_pInfo.sConPointStyles[*_pInfo.nStyle], _mData.ny > 1).c_str());
+					_graph->Plot(_mAxisVals, _mData, ("a" + expandStyleForCurveArray(_pInfo.sConPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
 				else if (_pData.getBars() && !_pData.getArea())
 					_graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
 				else if (!_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && _pData.getStepplot())
 					_graph->Step(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
 				else
-					_graph->Area(_mAxisVals, _mData, (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+					_graph->Area(_mAxisVals, _mData, ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
 			}
 			else
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
-					_graph->Plot(_mAxisVals, _mData, expandStyleForCurveArray(_pInfo.sPointStyles[*_pInfo.nStyle], _mData.ny > 1).c_str());
+					_graph->Plot(_mAxisVals, _mData, ("a" + expandStyleForCurveArray(_pInfo.sPointStyles[*_pInfo.nStyle], _mData.ny > 1)).c_str());
 				else if (_pData.getBars() && !_pData.getArea() && !_pData.getHBars() && !_pData.getStepplot())
 					_graph->Bars(_mAxisVals, _mData, (composeColoursForBarChart(_mData.ny) + "^").c_str());
 				else if (!_pData.getBars() && !_pData.getArea() && _pData.getHBars() && !_pData.getStepplot())
@@ -3178,24 +3208,40 @@ void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, c
 /////////////////////////////////////////////////
 bool Plot::plotstd3d(PlotData& _pData, mglData _mData[3], mglData _mData2[3], const short nType)
 {
+    // FIXME: Temporary fix for MathGL misbehavior
+    if (!_pData.getBoxplot() && !_pData.getyError() && !_pData.getxError() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            _mData[i] = duplicatePoints(_mData[i]);
+            _mData2[i] = duplicatePoints(_mData2[i]);
+        }
+
+        if (_pData.getCoords() == PlotData::POLAR_PZ || _pData.getCoords() == PlotData::SPHERICAL_PT)
+        {
+            removeNegativeValues(_mData[2]);
+            removeNegativeValues(_mData2[2]);
+        }
+    }
+
 	if (nType == 1)
 	{
 		if (!_pData.getArea() && !_pData.getRegion())
-			_graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+			_graph->Plot(_mData[0], _mData[1], _mData[2], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
 		else if (_pData.getRegion() && getNN(_mData2[0]))
 		{
 			if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-				_graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
+				_graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(0, 1) + "7}").c_str());
 			else
-				_graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
-			_graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+				_graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("a{" + _pData.getColors().substr(*_pInfo.nStyle, 1) + "7}{" + _pData.getColors().substr(*_pInfo.nStyle + 1, 1) + "7}").c_str());
+			_graph->Plot(_mData[0], _mData[1], _mData[2], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
 			if (*_pInfo.nStyle == _pInfo.nStyleMax - 1)
-				_graph->Plot(_mData2[0], _mData2[1], _mData2[2], _pInfo.sLineStyles[0].c_str());
+				_graph->Plot(_mData2[0], _mData2[1], _mData2[2], ("a" + _pInfo.sLineStyles[0]).c_str());
 			else
-				_graph->Plot(_mData2[0], _mData2[1], _mData2[2], _pInfo.sLineStyles[*_pInfo.nStyle + 1].c_str());
+				_graph->Plot(_mData2[0], _mData2[1], _mData2[2], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle + 1]).c_str());
 		}
 		else
-			_graph->Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+			_graph->Area(_mData[0], _mData[1], _mData[2], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
 	}
 	else
 	{
@@ -3205,38 +3251,25 @@ bool Plot::plotstd3d(PlotData& _pData, mglData _mData[3], mglData _mData2[3], co
 			if (_pData.getInterpolate() && countValidElements(_mData[0]) >= (size_t)_pInfo.nSamples)
 			{
 				if (!_pData.getArea() && !_pData.getBars() && !_pData.getRegion())
-					_graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sLineStyles[*_pInfo.nStyle].c_str());
+					_graph->Plot(_mData[0], _mData[1], _mData[2], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle]).c_str());
 				else if (_pData.getBars() && !_pData.getArea() && !_pData.getRegion())
 					_graph->Bars(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
-				/*else if (_pData.getRegion() && j+1 < nDataPlots)
-				{
-				    if (nStyle == nStyleMax-1)
-				        _graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) +"7}{"+ _pData.getColors().substr(0,1)+"7}").c_str());
-				    else
-				        _graph->Region(_mData[0], _mData[1], _mData[2], _mData2[0], _mData2[1], _mData2[2], ("{"+_pData.getColors().substr(nStyle,1) +"7}{"+ _pData.getColors().substr(nStyle+1,1)+"7}").c_str());
-				    _graph->Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle].c_str());
-				    j++;
-				    if (nStyle == nStyleMax-1)_mData
-				        _graph->Plot(_mData[0], _mData[1], _mData[2], sLineStyles[0].c_str());
-				    else
-				        _graph->Plot(_mData[0], _mData[1], _mData[2], sLineStyles[nStyle+1].c_str());
-				}*/
 				else
-					_graph->Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+					_graph->Area(_mData[0], _mData[1], _mData[2], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
 			}
 			else if (_pData.getConnectPoints() || (_pData.getInterpolate() && countValidElements(_mData[0]) >= 0.9 * _pInfo.nSamples))
 			{
 				if (!_pData.getArea() && !_pData.getBars())
-					_graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sConPointStyles[*_pInfo.nStyle].c_str());
+					_graph->Plot(_mData[0], _mData[1], _mData[2], ("a" + _pInfo.sConPointStyles[*_pInfo.nStyle]).c_str());
 				else if (_pData.getBars() && !_pData.getArea())
 					_graph->Bars(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "^").c_str());
 				else
-					_graph->Area(_mData[0], _mData[1], _mData[2], (_pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
+					_graph->Area(_mData[0], _mData[1], _mData[2], ("a" + _pInfo.sLineStyles[*_pInfo.nStyle] + "{" + _pData.getColors()[*_pInfo.nStyle] + "9}").c_str());
 			}
 			else
 			{
 				if (!_pData.getArea() && !_pData.getMarks() && !_pData.getBars() && !_pData.getStepplot() && !_pData.getCrust())
-					_graph->Plot(_mData[0], _mData[1], _mData[2], _pInfo.sPointStyles[*_pInfo.nStyle].c_str());
+					_graph->Plot(_mData[0], _mData[1], _mData[2], ("a" + _pInfo.sPointStyles[*_pInfo.nStyle]).c_str());
 				else if (_pData.getMarks() && !_pData.getCrust() && !_pData.getBars() && !_pData.getArea() && !_pData.getStepplot())
 					_graph->Dots(_mData[0], _mData[1], _mData[2], _pData.getColorScheme(toString(_pData.getMarks())).c_str());
 				else if (_pData.getCrust() && !_pData.getMarks() && !_pData.getBars() && !_pData.getArea() && !_pData.getStepplot())

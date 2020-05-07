@@ -336,6 +336,7 @@
 			<Add option="-lgsl" />
 			<Add option="-lgslcblas" />
 			<Add option="-Wl,--stack,8388608" />
+			<Add option="-static-libstdc++" />
 		</Linker>
 		<Unit filename="Chameleon.rc">
 			<Option compilerVar="WINDRES" />

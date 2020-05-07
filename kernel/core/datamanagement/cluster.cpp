@@ -293,6 +293,7 @@ namespace NumeRe
                 }
             }
 
+            nGlobalType = nFirstType;
             return false;
         }
 

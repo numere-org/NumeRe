@@ -1980,7 +1980,7 @@ namespace NumeRe
 
         for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
         {
-            if (!iter->second.isDouble())
+            if (iter->second.isMixed() || iter->second.isString())
             {
                 size_t pos = sExpression.find(iter->first + "{");
 
