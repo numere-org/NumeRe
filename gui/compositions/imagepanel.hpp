@@ -31,6 +31,7 @@ class ImagePanel : public wxPanel
     int w, h, sized_w, sized_h;
     wxArrayString getFileList(const wxString& dirname);
     void LoadImage(const wxString& filename, wxBitmapType = wxBITMAP_TYPE_ANY, bool doUpdateFrame = true);
+    bool LoadNextImage(const wxFileName& filename);
 
 
 public:

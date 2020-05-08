@@ -89,7 +89,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
             if (filename.length() < 5)
                 return wxDIR_CONTINUE;
 
-            filespec = "*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.bmp;";
+            filespec = "*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.bmp;*.tif;*.tiff;";
 
             if (filespec.find("*."+extension+";") == string::npos)
                 return wxDIR_CONTINUE;

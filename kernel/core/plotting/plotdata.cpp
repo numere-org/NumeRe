@@ -1553,6 +1553,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         || findParameter(sCmd, "obps", '=')
         || findParameter(sCmd, "osvg", '=')
         || findParameter(sCmd, "otex", '=')
+        || findParameter(sCmd, "otif", '=')
         || findParameter(sCmd, "ogif", '=')) && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = 0;
@@ -1572,6 +1573,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             nPos = findParameter(sCmd, "osvg", '=') + 4;
         else if (findParameter(sCmd, "otex", '='))
             nPos = findParameter(sCmd, "otex", '=') + 4;
+        else if (findParameter(sCmd, "otif", '='))
+            nPos = findParameter(sCmd, "otif", '=') + 4;
         else if (findParameter(sCmd, "ogif", '='))
             nPos = findParameter(sCmd, "ogif", '=') + 4;
 
@@ -1594,6 +1597,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 sFileName += ".svg";
             else if (sExtension != ".tex" && findParameter(sCmd, "otex", '='))
                 sFileName += ".tex";
+            else if (sExtension != ".tif" && sExtension != ".tiff" && findParameter(sCmd, "otif", '='))
+                sFileName += ".tiff";
             else if (sExtension != ".gif" && findParameter(sCmd, "ogif", '='))
                 sFileName += ".gif";
             else if ((findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '=')) && sFileName.rfind('.') == string::npos)

@@ -34,6 +34,7 @@ class VariableViewer : public wxcode::wxTreeListCtrl
         bool debuggerMode;
         std::vector<std::string> vLastVarSet;
         int nDataFieldSize;
+        bool bExpandedState[6];
         wxTreeItemId numRoot;
         wxTreeItemId stringRoot;
         wxTreeItemId tableRoot;

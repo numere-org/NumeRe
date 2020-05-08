@@ -88,6 +88,11 @@ VariableViewer::VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fiel
     SetItemBold(stringRoot, true);
     SetItemBold(tableRoot, true);
     SetItemBold(clusterRoot, true);
+
+    for (size_t i = 0; i < 6; i++)
+    {
+        bExpandedState[i] = true;
+    }
 }
 
 
@@ -200,16 +205,38 @@ wxTreeItemId VariableViewer::AppendVariable(wxTreeItemId rootNode, std::string s
 /////////////////////////////////////////////////
 void VariableViewer::ClearTree()
 {
+    if (HasChildren(numRoot))
+        bExpandedState[0] = IsExpanded(numRoot);
+
+    if (HasChildren(stringRoot))
+        bExpandedState[1] = IsExpanded(stringRoot);
+
+    if (HasChildren(tableRoot))
+        bExpandedState[2] = IsExpanded(tableRoot);
+
+    if (HasChildren(clusterRoot))
+        bExpandedState[3] = IsExpanded(clusterRoot);
+
     DeleteChildren(numRoot);
     DeleteChildren(stringRoot);
     DeleteChildren(tableRoot);
     DeleteChildren(clusterRoot);
 
     if (argumentRoot.IsOk())
+    {
+        if (HasChildren(argumentRoot))
+            bExpandedState[4] = IsExpanded(argumentRoot);
+
         DeleteChildren(argumentRoot);
+    }
 
     if (globalRoot.IsOk())
+    {
+        if (HasChildren(globalRoot))
+            bExpandedState[5] = IsExpanded(globalRoot);
+
         DeleteChildren(globalRoot);
+    }
 }
 
 
@@ -430,22 +457,22 @@ void VariableViewer::OnSaveasTable(const wxString& table)
 /////////////////////////////////////////////////
 void VariableViewer::ExpandAll()
 {
-    if (HasChildren(numRoot))
+    if (HasChildren(numRoot) && bExpandedState[0])
         Expand(numRoot);
 
-    if (HasChildren(stringRoot))
+    if (HasChildren(stringRoot) && bExpandedState[1])
         Expand(stringRoot);
 
-    if (HasChildren(tableRoot))
+    if (HasChildren(tableRoot) && bExpandedState[2])
         Expand(tableRoot);
 
-    if (HasChildren(clusterRoot))
+    if (HasChildren(clusterRoot) && bExpandedState[3])
         Expand(clusterRoot);
 
-    if (argumentRoot.IsOk() && HasChildren(argumentRoot))
+    if (argumentRoot.IsOk() && HasChildren(argumentRoot) && bExpandedState[4])
         Expand(argumentRoot);
 
-    if (globalRoot.IsOk() && HasChildren(globalRoot))
+    if (globalRoot.IsOk() && HasChildren(globalRoot) && bExpandedState[5])
         Expand(globalRoot);
 }
 

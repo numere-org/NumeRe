@@ -449,7 +449,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_filterExecutableFiles = _guilang.get("GUI_FILTER_EXECUTABLES") + " (*.nscr, *.nprc)|*.nscr;*.nprc";
     m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";//"NumeRe files (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";
     m_filterDataFiles = _guilang.get("GUI_FILTER_DATAFILES");// + " (*.dat, *.txt, *.csv, *.jdx, *.dx, *.jcm)|*.dat;*.txt;*.csv;*.jdx;*.dx;*.jcm";
-    m_filterImageFiles = _guilang.get("GUI_FILTER_IMAGEFILES") + " (*.png, *.jpeg, *.eps, *.svg, *.gif)|*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif";
+    m_filterImageFiles = _guilang.get("GUI_FILTER_IMAGEFILES") + " (*.png, *.jpeg, *.eps, *.svg, *.gif, *.tiff)|*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.tif;*.tiff";
     m_filterTeXSource = _guilang.get("GUI_FILTER_TEXSOURCE") + " (*.tex)|*.tex";
     m_filterNonsource = _guilang.get("GUI_FILTER_NONSOURCE");
     m_filterSupportedFiles = _guilang.get("GUI_FILTER_ALLSUPPORTEDFILES");
@@ -1776,6 +1776,8 @@ void NumeReWindow::openImage(wxFileName filename)
         _panel = new ImagePanel(frame, filename.GetFullPath(), wxBITMAP_TYPE_GIF);
     else if (filename.GetExt() == "jpg" || filename.GetExt() == "jpeg")
         _panel = new ImagePanel(frame, filename.GetFullPath(), wxBITMAP_TYPE_JPEG);
+    else if (filename.GetExt() == "tif" || filename.GetExt() == "tiff")
+        _panel = new ImagePanel(frame, filename.GetFullPath(), wxBITMAP_TYPE_TIF);
     else
     {
         delete frame;
@@ -3690,7 +3692,9 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
         || filename.GetExt() == "jpeg"
         || filename.GetExt() == "jpg"
         || filename.GetExt() == "bmp"
-        || filename.GetExt() == "gif")
+        || filename.GetExt() == "gif"
+        || filename.GetExt() == "tif"
+        || filename.GetExt() == "tiff")
     {
         openImage(filename);
         CallAfter(&NumeReWindow::setViewerFocus);

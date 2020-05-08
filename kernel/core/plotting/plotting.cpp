@@ -16,10 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <wx/image.h>
 
 #include "plotting.hpp"
 #include "../maths/parser_functions.hpp"
 #include "../../kernel.hpp"
+
 
 extern Integration_Vars parser_iVars;
 extern mglGraph _fontData;
@@ -99,6 +101,18 @@ static void removeNegativeValues(mglData& _mData)
 {
     for (int i = 0; i < _mData.GetNN(); i++)
         _mData.a[i] = _mData.a[i] >= 0.0 ? _mData.a[i] : NAN;
+}
+
+static void writeTiff(mglGraph* _graph, const string& sOutputName)
+{
+    const unsigned char* bb = _graph->GetRGB();
+    int w = _graph->GetWidth();
+    int h = _graph->GetHeight();
+    unsigned char *tmp = (unsigned char*)malloc(3*w*h);
+    memcpy(tmp, bb, 3*w*h);
+    wxImage tiffimage(w, h, tmp);
+
+    tiffimage.SaveFile(sOutputName, wxBITMAP_TYPE_TIF);
 }
 
 
@@ -336,6 +350,8 @@ Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, De
                 sOutputName[sOutputName.length()-3] = 'e';
                 _graph->WriteBPS(sOutputName.c_str());
             }
+            else if (sOutputName.substr(sOutputName.length()-4) == ".tif" || sOutputName.substr(sOutputName.length()-5) == ".tiff")
+                writeTiff(_graph, sOutputName);
             else
                 _graph->WriteFrame(sOutputName.c_str());
 

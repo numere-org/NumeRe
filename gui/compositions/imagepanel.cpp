@@ -96,6 +96,32 @@ void ImagePanel::LoadImage(const wxString& filename, wxBitmapType format, bool d
 }
 
 
+bool ImagePanel::LoadNextImage(const wxFileName& filename)
+{
+    if (filename.GetExt() == "png" || filename.GetExt() == "bmp" || filename.GetExt() == "jpg"  || filename.GetExt() == "jpeg" || filename.GetExt() == "gif" || filename.GetExt() == "tif" || filename.GetExt() == "tiff")
+    {
+        wxBitmapType format;
+
+        if (filename.GetExt() == "png")
+            format = wxBITMAP_TYPE_PNG;
+        if (filename.GetExt() == "bmp")
+            format = wxBITMAP_TYPE_BMP;
+        if (filename.GetExt() == "jpg" || filename.GetExt() == "jpeg")
+            format = wxBITMAP_TYPE_JPEG;
+        if (filename.GetExt() == "gif")
+            format = wxBITMAP_TYPE_GIF;
+        if (filename.GetExt() == "tif" || filename.GetExt() == "tiff")
+            format = wxBITMAP_TYPE_TIF;
+
+        //wxFileName current(currentFile);
+        LoadImage(filename.GetFullPath(), format);
+        return true;
+    }
+
+    return false;
+}
+
+
 wxArrayString ImagePanel::getFileList(const wxString& dirname)
 {
     wxArrayString filelist;
@@ -255,21 +281,9 @@ void ImagePanel::OnNextImage(wxCommandEvent& event)
     {
         if (nIndex+i == filelist.size())
             nIndex = -(int)i;
-        wxFileName currentFileName(filelist[i+nIndex]);
-        if (currentFileName.GetExt() == "png" || currentFileName.GetExt() == "bmp" || currentFileName.GetExt() == "jpg" || currentFileName.GetExt() == "gif")
-        {
-            wxBitmapType format;
-            if (currentFileName.GetExt() == "png")
-                format = wxBITMAP_TYPE_PNG;
-            if (currentFileName.GetExt() == "bmp")
-                format = wxBITMAP_TYPE_BMP;
-            if (currentFileName.GetExt() == "jpg")
-                format = wxBITMAP_TYPE_JPEG;
-            if (currentFileName.GetExt() == "gif")
-                format = wxBITMAP_TYPE_GIF;
-            this->LoadImage(filename.GetVolume() +":"+ filelist[i+nIndex], format);
+
+        if (LoadNextImage(filelist[i+nIndex]))
             return;
-        }
     }
 }
 
@@ -287,21 +301,9 @@ void ImagePanel::OnPreviousImage(wxCommandEvent& event)
     {
         if (nIndex+i < 0)
             nIndex = filelist.size()-i-1;
-        wxFileName currentFileName(filelist[nIndex+i]);
-        if (currentFileName.GetExt() == "png" || currentFileName.GetExt() == "bmp" || currentFileName.GetExt() == "jpg" || currentFileName.GetExt() == "gif")
-        {
-            wxBitmapType format;
-            if (currentFileName.GetExt() == "png")
-                format = wxBITMAP_TYPE_PNG;
-            if (currentFileName.GetExt() == "bmp")
-                format = wxBITMAP_TYPE_BMP;
-            if (currentFileName.GetExt() == "jpg")
-                format = wxBITMAP_TYPE_JPEG;
-            if (currentFileName.GetExt() == "gif")
-                format = wxBITMAP_TYPE_GIF;
-            this->LoadImage(filename.GetVolume() +":"+ filelist[i+nIndex], format);
+
+        if (LoadNextImage(filelist[i+nIndex]))
             return;
-        }
     }
 }
 
