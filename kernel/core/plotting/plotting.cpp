@@ -66,6 +66,15 @@ void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _optio
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function is a fix for the
+/// MathGL bug, which connects points outside of
+/// the data range.
+///
+/// \param _mData const mglData&
+/// \return mglData
+///
+/////////////////////////////////////////////////
 static mglData duplicatePoints(const mglData& _mData)
 {
     if (_mData.GetNy() > 1)
@@ -97,12 +106,35 @@ static mglData duplicatePoints(const mglData& _mData)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function is a fix for the
+/// MathGL bug to connect points, which are out
+/// of data range. This fix is used in curved
+/// coordinates case, where the calculated
+/// coordinate is r or rho.
+///
+/// \param _mData mglData&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void removeNegativeValues(mglData& _mData)
 {
     for (int i = 0; i < _mData.GetNN(); i++)
         _mData.a[i] = _mData.a[i] >= 0.0 ? _mData.a[i] : NAN;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function uses wxWidgets
+/// functionality to add TIFF exporting support
+/// to MathGL.
+///
+/// \param _graph mglGraph*
+/// \param sOutputName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void writeTiff(mglGraph* _graph, const string& sOutputName)
 {
     const unsigned char* bb = _graph->GetRGB();

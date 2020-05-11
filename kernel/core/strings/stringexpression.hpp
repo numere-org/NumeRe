@@ -27,16 +27,32 @@ using namespace std;
 namespace NumeRe
 {
 
+    /////////////////////////////////////////////////
+    /// \brief This struct encodes a string
+    /// expression. It tracks the position of an
+    /// equal sign in the expression indicating the
+    /// expression part and its assignee.
+    /////////////////////////////////////////////////
     struct StringExpression
     {
         string& sLine;
         string sAssignee;
         size_t nEqPos;
 
+
+        /////////////////////////////////////////////////
+        /// \brief Constructor of this structure.
+        /// Searches for the equal sign upon construction.
+        ///
+        /// \param _sLine string&
+        /// \param sCache const string&
+        ///
+        /////////////////////////////////////////////////
         StringExpression(string& _sLine, const string& sCache = "") : sLine(_sLine), sAssignee(sCache), nEqPos(1)
         {
             findAssignmentOperator();
         }
+
 
         /////////////////////////////////////////////////
         /// \brief This member function determines, whether
@@ -55,8 +71,20 @@ namespace NumeRe
             return sLine[eq_pos - 1] != '!' && sLine[eq_pos - 1] != '<' && sLine[eq_pos - 1] != '>' && sLine[eq_pos + 1] != '=' && sLine[eq_pos - 1] != '=';
         }
 
+
+        /////////////////////////////////////////////////
+        /// \brief Searches for the assignment operator
+        /// (the equal sign separating expression and
+        /// assignee). If nothing was found, the position
+        /// is set to 0. If the position was set to 0 in
+        /// advance, nothing is searched.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         void findAssignmentOperator()
         {
+            // Do nothing, if the position is already 0
             if (!nEqPos)
                 return;
 
@@ -67,6 +95,8 @@ namespace NumeRe
 
             size_t nQuotes = 0;
 
+            // Search for the operator while considering the
+            // quotation marks in the expression
             for (size_t i = 0; i < sLine.length(); i++)
             {
                 if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
@@ -86,6 +116,14 @@ namespace NumeRe
             }
         }
 
+
+        /////////////////////////////////////////////////
+        /// \brief Splits expression and its assignee and
+        /// sets the assignment operator position to 0.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         void split()
         {
             if (nEqPos)

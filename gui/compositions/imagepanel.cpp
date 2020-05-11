@@ -55,6 +55,14 @@ END_EVENT_TABLE()
 
 
 
+/////////////////////////////////////////////////
+/// \brief ImagePanel constructor
+///
+/// \param parent wxFrame*
+/// \param file wxString
+/// \param format wxBitmapType
+///
+/////////////////////////////////////////////////
 ImagePanel::ImagePanel(wxFrame* parent, wxString file, wxBitmapType format) : wxPanel(parent)
 {
     // load the file... ideally add a check to see if loading was successful
@@ -78,6 +86,17 @@ ImagePanel::ImagePanel(wxFrame* parent, wxString file, wxBitmapType format) : wx
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method loads the specified file,
+/// updates the parent frame's size (if desired)
+/// and displays the image as a bitmap.
+///
+/// \param filename const wxString&
+/// \param format wxBitmapType
+/// \param doUpdateFrame bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::LoadImage(const wxString& filename, wxBitmapType format, bool doUpdateFrame)
 {
     image.LoadFile(filename, format);
@@ -86,6 +105,7 @@ void ImagePanel::LoadImage(const wxString& filename, wxBitmapType format, bool d
     sized_w = -1;
     sized_h = -1;
     currentFile = filename;
+
     if (doUpdateFrame)
     {
         this->SetSize(this->getRelation()*600,600);
@@ -96,6 +116,15 @@ void ImagePanel::LoadImage(const wxString& filename, wxBitmapType format, bool d
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method tries to load the desired
+/// image file and returns, whether it was
+/// successful or not.
+///
+/// \param filename const wxFileName&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool ImagePanel::LoadNextImage(const wxFileName& filename)
 {
     if (filename.GetExt() == "png" || filename.GetExt() == "bmp" || filename.GetExt() == "jpg"  || filename.GetExt() == "jpeg" || filename.GetExt() == "gif" || filename.GetExt() == "tif" || filename.GetExt() == "tiff")
@@ -122,6 +151,15 @@ bool ImagePanel::LoadNextImage(const wxFileName& filename)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method returns a list of all
+/// files in the current folder (used for
+/// iterating over all images).
+///
+/// \param dirname const wxString&
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
 wxArrayString ImagePanel::getFileList(const wxString& dirname)
 {
     wxArrayString filelist;
@@ -131,12 +169,16 @@ wxArrayString ImagePanel::getFileList(const wxString& dirname)
 }
 
 
-/*
- * Called by the system of by wxWidgets when the panel needs
- * to be redrawn. You can also trigger this call by
- * calling Refresh()/Update().
- */
-
+/////////////////////////////////////////////////
+/// \brief Called by the system of by wxWidgets
+/// when the panel needs to be redrawn. You can
+/// also trigger this call by calling
+/// Refresh()/Update().
+///
+/// \param evt wxPaintEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::paintEvent(wxPaintEvent & evt)
 {
     // depending on your system you may need to look at double-buffered dcs
@@ -144,14 +186,20 @@ void ImagePanel::paintEvent(wxPaintEvent & evt)
     render(dc);
 }
 
-/*
- * Alternatively, you can use a clientDC to paint on the panel
- * at any time. Using this generally does not free you from
- * catching paint events, since it is possible that e.g. the window
- * manager throws away your drawing when the window comes to the
- * background, and expects you will redraw it when the window comes
- * back (by sending a paint event).
- */
+
+/////////////////////////////////////////////////
+/// \brief Alternatively, you can use a clientDC
+/// to paint on the panel at any time. Using this
+/// generally does not free you from catching
+/// paint events, since it is possible that e.g.
+/// the window manager throws away your drawing
+/// when the window comes to the background, and
+/// expects you will redraw it when the window
+/// comes back (by sending a paint event).
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::paintNow()
 {
     // depending on your system you may need to look at double-buffered dcs
@@ -159,11 +207,17 @@ void ImagePanel::paintNow()
     render(dc);
 }
 
-/*
- * Here we do the actual rendering. I put it in a separate
- * method so that it can work no matter what type of DC
- * (e.g. wxPaintDC or wxClientDC) is used.
- */
+
+/////////////////////////////////////////////////
+/// \brief Here we do the actual rendering. I put
+/// it in a separate method so that it can work
+/// no matter what type of DC (e.g. wxPaintDC or
+/// wxClientDC) is used.
+///
+/// \param dc wxDC&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::render(wxDC&  dc)
 {
     int neww, newh;
@@ -191,10 +245,17 @@ void ImagePanel::render(wxDC&  dc)
     }
 }
 
-/*
- * Here we call refresh to tell the panel to draw itself again.
- * So when the user resizes the image panel the image should be resized too.
- */
+
+/////////////////////////////////////////////////
+/// \brief Here we call refresh to tell the panel
+/// to draw itself again. So when the user
+/// resizes the image panel the image should be
+/// resized too.
+///
+/// \param event wxSizeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::OnSize(wxSizeEvent& event)
 {
     Refresh();
@@ -203,6 +264,14 @@ void ImagePanel::OnSize(wxSizeEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function closes the parent frame,
+/// if the user presses the ESC key.
+///
+/// \param event wxKeyEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::keyPressed(wxKeyEvent& event)
 {
     // connecting the ESC Key with closing the image
@@ -210,6 +279,16 @@ void ImagePanel::keyPressed(wxKeyEvent& event)
         m_parent->Close();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function chooses the next
+/// or previous image in the file list, depending
+/// on the arrow key pressed by the user.
+///
+/// \param event wxNavigationKeyEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::OnNavigationKey(wxNavigationKeyEvent& event)
 {
     // connect the navigation keys with next and previous image
@@ -220,6 +299,15 @@ void ImagePanel::OnNavigationKey(wxNavigationKeyEvent& event)
         OnPreviousImage(commandevent);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief On enter event handler focuses this
+/// panel.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::OnEnter(wxMouseEvent& event)
 {
     this->SetFocus();
@@ -227,12 +315,27 @@ void ImagePanel::OnEnter(wxMouseEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief On focus event handler.
+///
+/// \param event wxFocusEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::OnFocus(wxFocusEvent& event)
 {
     //m_parent->SetTransparent(wxIMAGE_ALPHA_OPAQUE);
     event.Skip();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief On lose focus event handler.
+///
+/// \param event wxFocusEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::OnLoseFocus(wxFocusEvent& event)
 {
     //m_parent->SetTransparent(80);
@@ -240,6 +343,14 @@ void ImagePanel::OnLoseFocus(wxFocusEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// "save as" toolbar option of the parent frame.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::OnSaveAs(wxCommandEvent& event)
 {
     wxString title = _guilang.get("GUI_DLG_SAVEAS");
@@ -258,6 +369,15 @@ void ImagePanel::OnSaveAs(wxCommandEvent& event)
     image.SaveFile(fileName.GetFullName());
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// "copy" toolbar option of the parent frame.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::OnCopy(wxCommandEvent& event)
 {
     if (wxTheClipboard->Open())
@@ -267,6 +387,15 @@ void ImagePanel::OnCopy(wxCommandEvent& event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the next
+/// image in the current folder.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::OnNextImage(wxCommandEvent& event)
 {
     wxFileName filename(currentFile);
@@ -287,6 +416,15 @@ void ImagePanel::OnNextImage(wxCommandEvent& event)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// previous image in the current folder.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ImagePanel::OnPreviousImage(wxCommandEvent& event)
 {
     wxFileName filename(currentFile);

@@ -20,7 +20,17 @@
 
 #include "DirTraverser.hpp"
 
-// Constructor
+
+/////////////////////////////////////////////////
+/// \brief Constuctor.
+///
+/// \param therootNode wxTreeCtrl*
+/// \param theiconmanager IconManager*
+/// \param theid wxTreeItemId
+/// \param thepath const wxString&
+/// \param thefilespec FileFilterType
+///
+/////////////////////////////////////////////////
 DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager, wxTreeItemId theid, const wxString& thepath, FileFilterType thefilespec)
 {
     rootNode = therootNode;
@@ -39,10 +49,17 @@ DirTraverser::DirTraverser(wxTreeCtrl* therootNode, IconManager* theiconmanager,
     }
 }
 
-// This method classifies the files found during
-// traversing the directory and appends them to the
-// tree, if they correspond to one of the selected
-// file filter types
+
+/////////////////////////////////////////////////
+/// \brief This method classifies the files found
+/// during traversing the directory and appends
+/// them to the tree, if they correspond to one
+/// of the selected file filter types.
+///
+/// \param filename const wxString&
+/// \return wxDirTraverseResult
+///
+/////////////////////////////////////////////////
 wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
 {
     if (filename.find('.') == string::npos || filename.find(".revisions") != string::npos)
@@ -120,8 +137,16 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
     return wxDIR_CONTINUE;
 }
 
-// This method appends the folders found during traversing
-// the directory to the file tree
+
+/////////////////////////////////////////////////
+/// \brief This method appends the folders found
+/// during traversing the directory to the file
+/// tree.
+///
+/// \param dirname const wxString&
+/// \return wxDirTraverseResult
+///
+/////////////////////////////////////////////////
 wxDirTraverseResult DirTraverser::OnDir(const wxString& dirname)
 {
     if (dirname.find(".revisions") != string::npos)
