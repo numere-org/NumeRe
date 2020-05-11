@@ -22,3 +22,4 @@ Applied	NumeRe features now 20 different plotting styles (instead of 14).
 Applied	NumeRe may now use time values for axis in plots and format them correspondingly using the "timeaxes=(AXES,FORMAT)" option
 Fixed	The LaTeX macro "\times" may now be used in legends and labels of plots.
 Added	The "cmp()" function can now also find the first value, which smaller/larger/equal than the comparison value using the function types +/-3 and +/-4.
+Applied	OpenMP support was enabled and is used in some occurences.

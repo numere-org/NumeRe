@@ -7281,7 +7281,10 @@ void Plot::CoordSettings(const PlotData& _pData)
 					 && _pInfo.nMaxPlotDim <= 2 //(sCommand.find("3d") == string::npos && !(_pInfo.b2D && sCommand != "dens"))
 					)
 			{
-				_graph->SetOrigin(0.0, 0.0, 0.0);
+			    if (_pInfo.sCommand == "dens" || _pInfo.sCommand == "density")
+                    _graph->SetOrigin(0.0, 0.0, _pInfo.dRanges[ZCOORD][1]);
+                else
+                    _graph->SetOrigin(0.0, 0.0, 0.0);
 				if (!_pData.getSchematic())
 					_graph->Axis("AKDTVISO");
 				else
@@ -7331,11 +7334,17 @@ void Plot::CoordSettings(const PlotData& _pData)
 			{
 				if (_pInfo.dRanges[XCOORD][0] <= 0.0 && _pInfo.dRanges[XCOORD][1] >= 0.0)
 				{
-					_graph->SetOrigin(0.0, _pInfo.dRanges[YCOORD][0]);
+					if (_pInfo.sCommand == "dens" || _pInfo.sCommand == "density")
+                        _graph->SetOrigin(0.0, _pInfo.dRanges[YCOORD][0], _pInfo.dRanges[ZCOORD][1]);
+                    else
+                        _graph->SetOrigin(0.0, _pInfo.dRanges[YCOORD][0]);
 				}
 				else if (_pInfo.dRanges[YCOORD][0] <= 0.0 && _pInfo.dRanges[YCOORD][1] >= 0.0)
 				{
-					_graph->SetOrigin(_pInfo.dRanges[XCOORD][0], 0.0);
+					if (_pInfo.sCommand == "dens" || _pInfo.sCommand == "density")
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], 0.0, _pInfo.dRanges[ZCOORD][1]);
+                    else
+                        _graph->SetOrigin(_pInfo.dRanges[XCOORD][0], 0.0);
 				}
 				else
 					_graph->SetOrigin(_pInfo.dRanges[XCOORD][0], _pInfo.dRanges[YCOORD][0]);
@@ -7478,7 +7487,11 @@ void Plot::CoordSettings(const PlotData& _pData)
 				 && _pInfo.nMaxPlotDim <= 2 //(sCommand.find("3d") == string::npos && !(_pInfo.b2D && sCommand != "dens"))
 				)
 		{
-			_graph->SetOrigin(0.0, 0.0, 0.0);
+			if (_pInfo.sCommand == "dens" || _pInfo.sCommand == "density")
+                _graph->SetOrigin(0.0, 0.0, _pInfo.dRanges[ZCOORD][1]);
+            else
+                _graph->SetOrigin(0.0, 0.0, 0.0);
+
 			if (!_pData.getSchematic())
 				_graph->Axis("AKDTVISO");
 			else

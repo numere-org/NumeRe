@@ -48,6 +48,8 @@ struct StringFuncArgs
 	long long int nArg1, nArg2;
 	n_vect nMultiArg;
 	const Settings* opt;
+
+	StringFuncArgs() : nArg1(INT_MIN), nArg2(INT_MIN), opt(nullptr) {}
 };
 
 

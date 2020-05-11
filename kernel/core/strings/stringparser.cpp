@@ -1386,7 +1386,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     vector<bool> StringParser::applyElementaryStringOperations(vector<string>& vFinal, bool& bReturningLogicals)
     {
-        vector<bool> vIsNoStringValue;
+        vector<bool> vIsNoStringValue(vFinal.size(), false);
 
         // Examine the whole passed vector
         for (unsigned int n = 0; n < vFinal.size(); n++)
@@ -1413,9 +1413,7 @@ namespace NumeRe
             // Determine, whether the current component is a string
             // or a numerical expression
             if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
-                vIsNoStringValue.push_back(true);
-            else
-                vIsNoStringValue.push_back(false);
+                vIsNoStringValue[n] = true;
         }
 
         // check, whether there's a string left

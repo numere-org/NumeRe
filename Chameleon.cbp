@@ -173,6 +173,8 @@
 					<Add option="-O3" />
 					<Add option="-Wall" />
 					<Add option="-std=gnu++11" />
+					<Add option="-fopenmp" />
+					<Add option="-mthreads" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
 					<Add option="-DwxUSE_REGEX" />
 					<Add option="-DwxDIALOG_MODAL" />
@@ -228,6 +230,7 @@
 					<Add option="-Wall" />
 					<Add option="-std=gnu++11" />
 					<Add option="-mthreads" />
+					<Add option="-fopenmp" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
 					<Add option="-DwxUSE_REGEX" />
 					<Add option="-DwxDIALOG_MODAL" />
@@ -332,11 +335,12 @@
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />
 		</Compiler>
 		<Linker>
+			<Add option="-static-libstdc++" />
 			<Add option="-lmgl" />
 			<Add option="-lgsl" />
 			<Add option="-lgslcblas" />
 			<Add option="-Wl,--stack,8388608" />
-			<Add option="-static-libstdc++" />
+			<Add option="-fopenmp" />
 		</Linker>
 		<Unit filename="Chameleon.rc">
 			<Option compilerVar="WINDRES" />

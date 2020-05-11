@@ -48,6 +48,11 @@ namespace NumeRe
             size_t argumentParser(const string&, s_vect&, s_vect&, n_vect&, n_vect&);
             size_t argumentParser(const string&, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&);
 
+            vector<string> callFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, size_t);
+            vector<string> callFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, size_t);
+            vector<string> callMultiFunction(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, size_t);
+            vector<string> callMultiFunctionParallel(StringFuncHandle, s_vect&, s_vect&, s_vect&, n_vect&, n_vect&, size_t);
+
         protected:
             string applySpecialStringFuncs(string sLine);
             string applyStringFuncs(string sLine);

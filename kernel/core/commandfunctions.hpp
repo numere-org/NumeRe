@@ -7293,7 +7293,7 @@ static CommandReturnValues cmd_delete(string& sCmd)
         }
         else
         {
-            NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"));
+            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"), _option));
 
             do
             {
