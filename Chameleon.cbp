@@ -173,6 +173,8 @@
 					<Add option="-O3" />
 					<Add option="-Wall" />
 					<Add option="-std=gnu++11" />
+					<Add option="-fopenmp" />
+					<Add option="-mthreads" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
 					<Add option="-DwxUSE_REGEX" />
 					<Add option="-DwxDIALOG_MODAL" />
@@ -228,6 +230,7 @@
 					<Add option="-Wall" />
 					<Add option="-std=gnu++11" />
 					<Add option="-mthreads" />
+					<Add option="-fopenmp" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
 					<Add option="-DwxUSE_REGEX" />
 					<Add option="-DwxDIALOG_MODAL" />
@@ -332,10 +335,12 @@
 			<Add option="-D__MSVCRT_VERSION__=0x0601" />
 		</Compiler>
 		<Linker>
+			<Add option="-static-libstdc++" />
 			<Add option="-lmgl" />
 			<Add option="-lgsl" />
 			<Add option="-lgslcblas" />
 			<Add option="-Wl,--stack,8388608" />
+			<Add option="-fopenmp" />
 		</Linker>
 		<Unit filename="Chameleon.rc">
 			<Option compilerVar="WINDRES" />
@@ -604,6 +609,7 @@
 		<Unit filename="kernel/core/settings.cpp" />
 		<Unit filename="kernel/core/settings.hpp" />
 		<Unit filename="kernel/core/strings/stringdatastructures.hpp" />
+		<Unit filename="kernel/core/strings/stringexpression.hpp" />
 		<Unit filename="kernel/core/strings/stringfunchandler.cpp" />
 		<Unit filename="kernel/core/strings/stringfunchandler.hpp" />
 		<Unit filename="kernel/core/strings/stringfunctions.hpp" />
@@ -620,6 +626,13 @@
 		<Unit filename="kernel/core/ui/language.hpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.cpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.hpp" />
+		<Unit filename="kernel/core/utils/timer.hpp">
+			<Option target="Debug" />
+			<Option target="Release_dynamic" />
+			<Option target="Debug_dynamic" />
+			<Option target="Profiling" />
+			<Option target="Deep Debug" />
+		</Unit>
 		<Unit filename="kernel/core/utils/tinyxml2.cpp" />
 		<Unit filename="kernel/core/utils/tinyxml2.h" />
 		<Unit filename="kernel/core/utils/tools.cpp" />

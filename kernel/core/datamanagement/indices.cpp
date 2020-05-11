@@ -39,23 +39,23 @@ static bool isCandidateForCasuals(vector<string>& vLines, vector<string>& vCols)
  */
 Indices getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
 {
-	Indices _idx;
+    Indices _idx;
 
-	string sArgument = "";
-	string sTableName = "";
-	unsigned int nPos = 0;
+    string sArgument = "";
+    string sTableName = "";
+    unsigned int nPos = 0;
 
-	// Check, whether indices are available
-	if (sCmd.find_first_of("({") == string::npos)
-		return _idx;
+    // Check, whether indices are available
+    if (sCmd.find_first_of("({") == string::npos)
+        return _idx;
 
-	// Find parenthesis position and get the matching closing parenthesis
-	nPos = sCmd.find_first_of("({");
-	size_t nClosingParens = getMatchingParenthesis(sCmd.substr(sCmd.find_first_of("({")));
+    // Find parenthesis position and get the matching closing parenthesis
+    nPos = sCmd.find_first_of("({");
+    size_t nClosingParens = getMatchingParenthesis(sCmd.substr(sCmd.find_first_of("({")));
 
-	// Return, if the closing parenthesis is missing
-	if (nClosingParens == string::npos)
-		return _idx;
+    // Return, if the closing parenthesis is missing
+    if (nClosingParens == string::npos)
+        return _idx;
 
     sTableName = sCmd.substr(0, sCmd.find_first_of("({"));
 
@@ -65,22 +65,22 @@ Indices getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const S
 
     StripSpaces(sTableName);
 
-	sArgument = sCmd.substr(nPos + 1, nClosingParens - 1);
+    sArgument = sCmd.substr(nPos + 1, nClosingParens - 1);
 
-	// Remove not necessary white spaces
-	StripSpaces(sArgument);
+    // Remove not necessary white spaces
+    StripSpaces(sArgument);
 
-	// This is the handler for the abbreviation TABLE() == TABLE(:,:)
-	if (!sArgument.length())
-	{
-		_idx.row = VectorIndex(0LL, VectorIndex::OPEN_END);
-		_idx.col = VectorIndex(0LL, VectorIndex::OPEN_END);
-		return _idx;
-	}
+    // This is the handler for the abbreviation TABLE() == TABLE(:,:)
+    if (!sArgument.length())
+    {
+        _idx.row = VectorIndex(0LL, VectorIndex::OPEN_END);
+        _idx.col = VectorIndex(0LL, VectorIndex::OPEN_END);
+        return _idx;
+    }
 
-	// If the argument contains tables, get their values. This leads to a recursion!
-	if (sArgument.find("data(") != string::npos || _data.containsTablesOrClusters(sArgument))
-		getDataElements(sArgument, _parser, _data, _option);
+    // If the argument contains tables, get their values. This leads to a recursion!
+    if (sArgument.find("data(") != string::npos || _data.containsTablesOrClusters(sArgument))
+        getDataElements(sArgument, _parser, _data, _option);
 
     // update the dimension variables
     if (sCmd[nPos] == '(')
@@ -88,13 +88,13 @@ Indices getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const S
     else
         _data.updateClusterSizeVariables(sTableName);
 
-	// Store the obtained argument (this will contain the results from the recursion)
-	_idx.sCompiledAccessEquation = sArgument;
+    // Store the obtained argument (this will contain the results from the recursion)
+    _idx.sCompiledAccessEquation = sArgument;
 
-	// If the argument contains a comma, handle it as a usual index list
+    // If the argument contains a comma, handle it as a usual index list
     handleArgumentForIndices(_idx, _parser, _data, sArgument, sCmd);
 
-	return _idx;
+    return _idx;
 }
 
 
@@ -104,49 +104,49 @@ Indices getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const S
 
 static void handleArgumentForIndices(Indices& _idx, Parser& _parser, Datafile& _data, string& sArgument, const string& sCmd)
 {
-	vector<string> vLines {"<<NONE>>", "<<NONE>>"};
-	vector<string> vCols {"<<NONE>>", "<<NONE>>"};
+    vector<string> vLines {"<<NONE>>", "<<NONE>>"};
+    vector<string> vCols {"<<NONE>>", "<<NONE>>"};
 
-	// extract the (textual) indices from the argument list and store it in sI and sJ
-	extractIndexList(sArgument, vLines, vCols);
+    // extract the (textual) indices from the argument list and store it in sI and sJ
+    extractIndexList(sArgument, vLines, vCols);
 
-	// Ensure that the access equation contains at least one vector
-	if (isCandidateForVectors(vLines, vCols))
-	{
+    // Ensure that the access equation contains at least one vector
+    if (isCandidateForVectors(vLines, vCols))
+    {
         // Try to match the textual indices to vectors
         handleIndexVectors(_parser, _idx, vLines, vCols);
-	}
+    }
 
-	// Ensure that the indices are casuals and no indices
-	if (isCandidateForCasuals(vLines, vCols))
+    // Ensure that the indices are casuals and no indices
+    if (isCandidateForCasuals(vLines, vCols))
     {
         // Handle the casual indices
         handleCasualIndices(_parser, _idx, vLines, vCols, sCmd);
     }
 
-	if (_idx.row.numberOfNodes() > 2 || _idx.col.numberOfNodes() > 2)
-	{
-		// Expand the casual indices to vectors if needed
-		expandIndexVectors(_idx, _data, sCmd);
-	}
+    if (_idx.row.numberOfNodes() > 2 || _idx.col.numberOfNodes() > 2)
+    {
+        // Expand the casual indices to vectors if needed
+        expandIndexVectors(_idx, _data, sCmd);
+    }
 }
 
 // separates the argument into its up to four parts and returns the position after the last operator
 static void extractIndexList(string& sArgument, vector<string>& vLines, vector<string>& vCols)
 {
-	string sLines;
-	string sCols = sArgument + " ";
-	size_t nElement = 0;
+    string sLines;
+    string sCols = sArgument + " ";
+    size_t nElement = 0;
 
-	// Split line and column indices at
-	// the comma (if it is available). Otherwise
-	// only the line indices are available
-	sLines = getNextArgument(sCols, true) + " ";
+    // Split line and column indices at
+    // the comma (if it is available). Otherwise
+    // only the line indices are available
+    sLines = getNextArgument(sCols, true) + " ";
 
-	// Split the line indices
-	vLines[0] = getNextIndex(sLines);
+    // Split the line indices
+    vLines[0] = getNextIndex(sLines);
 
-	if (sLines.length())
+    if (sLines.length())
         vLines[1] = sLines;
 
     // If the column indices are available,
@@ -186,65 +186,65 @@ static void extractIndexList(string& sArgument, vector<string>& vLines, vector<s
 // This function will evaluate the indices and it tries to match it to a vector
 static void handleIndexVectors(Parser& _parser, Indices& _idx, vector<string>& vLines, vector<string>& vCols)
 {
-	value_type* v;
-	int nResults;
+    value_type* v;
+    int nResults;
 
-	// Evaluate the line indices
-	if (vLines[0] != "<<NONE>>" && vLines[1] == "<<NONE>>")
-	{
-		if (vLines[0] == "#")
-			_idx.row.front() = VectorIndex::STRING;
+    // Evaluate the line indices
+    if (vLines[0] != "<<NONE>>" && vLines[1] == "<<NONE>>")
+    {
+        if (vLines[0] == "#")
+            _idx.row.front() = VectorIndex::STRING;
         else if (vLines[0] == "<<EMPTY>>")
             _idx.row.front() = 0;
-		else
-		{
-			_parser.SetExpr(vLines[0]);
-			v = _parser.Eval(nResults);
+        else
+        {
+            _parser.SetExpr(vLines[0]);
+            v = _parser.Eval(nResults);
 
-			if (nResults > 1)
-			{
-				// vector
-				_idx.row = VectorIndex(v, nResults, 0);
-			}
-			else // single index
-				_idx.row.front() = intCast(v[0]) - 1;
-		}
-	}
+            if (nResults > 1)
+            {
+                // vector
+                _idx.row = VectorIndex(v, nResults, 0);
+            }
+            else // single index
+                _idx.row.front() = intCast(v[0]) - 1;
+        }
+    }
 
-	// Evalute the column indices
-	if (vCols[0] != "<<NONE>>" && vCols[1] == "<<NONE>>")
-	{
-		if (vCols[0] == "#")
-			_idx.col.front() = VectorIndex::STRING;
+    // Evalute the column indices
+    if (vCols[0] != "<<NONE>>" && vCols[1] == "<<NONE>>")
+    {
+        if (vCols[0] == "#")
+            _idx.col.front() = VectorIndex::STRING;
         else if (vCols[0] == "<<EMPTY>>")
             _idx.col.front() = 0;
-		else
-		{
-			_parser.SetExpr(vCols[0]);
-			v = _parser.Eval(nResults);
+        else
+        {
+            _parser.SetExpr(vCols[0]);
+            v = _parser.Eval(nResults);
 
-			if (nResults > 1)
-			{
-				// vector
-				_idx.col = VectorIndex(v, nResults, 0);
-			}
-			else // single index
-				_idx.col.front() = intCast(v[0]) - 1;
-		}
-	}
+            if (nResults > 1)
+            {
+                // vector
+                _idx.col = VectorIndex(v, nResults, 0);
+            }
+            else // single index
+                _idx.col.front() = intCast(v[0]) - 1;
+        }
+    }
 }
 
 // This function will evaluate all indices at once and store them into the Indices object
 static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& vLines, vector<string>& vCols, const string& sCmd)
 {
-	value_type* v = 0;
-	int nResults = 0;
-	string sIndexExpressions;
-	vector<int> vIndexNumbers;
+    value_type* v = 0;
+    int nResults = 0;
+    string sIndexExpressions;
+    vector<int> vIndexNumbers;
 
-	// Go through all indices and connect them to one single equation
-	// store the assignment of the indices
-	if (!_idx.row.isValid())
+    // Go through all indices and connect them to one single equation
+    // store the assignment of the indices
+    if (!_idx.row.isValid())
     {
         for (size_t n = 0; n < vLines.size(); n++)
         {
@@ -271,9 +271,9 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& 
         }
     }
 
-	// Go through the column indices separately,
-	// because they might be more than two
-	if (!_idx.col.isValid())
+    // Go through the column indices separately,
+    // because they might be more than two
+    if (!_idx.col.isValid())
     {
         for (size_t n = 0; n < vCols.size(); n++)
         {
@@ -300,47 +300,47 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& 
         }
     }
 
-	// If the index expression list has a length, evaluate it
-	if (sIndexExpressions.length())
-	{
-		_parser.SetExpr(sIndexExpressions);
-		v = _parser.Eval(nResults);
+    // If the index expression list has a length, evaluate it
+    if (sIndexExpressions.length())
+    {
+        _parser.SetExpr(sIndexExpressions);
+        v = _parser.Eval(nResults);
 
-		// check whether the number of the results is matching
-		if ((size_t)nResults != vIndexNumbers.size())
-			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+        // check whether the number of the results is matching
+        if ((size_t)nResults != vIndexNumbers.size())
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
-		// map the results to their assignments
-		for (int i = 0; i < nResults; i++)
-		{
-			if (isinf(v[i])) // infinity => last possible index
-				v[i] = -1; // only -1 because it will be decremented in the following lines
-			else if (isnan(v[i]) || intCast(v[i]) <= 0)
-				throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+        // map the results to their assignments
+        for (int i = 0; i < nResults; i++)
+        {
+            if (isinf(v[i])) // infinity => last possible index
+                v[i] = -1; // only -1 because it will be decremented in the following lines
+            else if (isnan(v[i]) || intCast(v[i]) <= 0)
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
 
-			if (vIndexNumbers[i] > 0)
-				_idx.row.setIndex(vIndexNumbers[i] - 1, intCast(v[i]) - 1);
-			else
+            if (vIndexNumbers[i] > 0)
+                _idx.row.setIndex(vIndexNumbers[i] - 1, intCast(v[i]) - 1);
+            else
                 _idx.col.setIndex(abs(vIndexNumbers[i]) - 1, intCast(v[i]) - 1);
-		}
-	}
+        }
+    }
 }
 
 // This function will expand casual indices into vectors
 static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCmd)
 {
-	// Get the cache name from the command string
-	// should now only contain the name of the table
-	string sCache = sCmd.substr(0, sCmd.find_first_of("({"));
-	bool isCluster = sCmd[sCmd.find_first_of("({")] == '{';
+    // Get the cache name from the command string
+    // should now only contain the name of the table
+    string sCache = sCmd.substr(0, sCmd.find_first_of("({"));
+    bool isCluster = sCmd[sCmd.find_first_of("({")] == '{';
 
-	// remove leading whitespaces
-	if (sCache.find(' ') != string::npos)
-		sCache.erase(0, sCache.rfind(' ') + 1);
+    // remove leading whitespaces
+    if (sCache.find(' ') != string::npos)
+        sCache.erase(0, sCache.rfind(' ') + 1);
 
-	// check, whether it exists
-	if (!sCache.length())
-		throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
+    // check, whether it exists
+    if (!sCache.length())
+        throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
 
     // Ensure that the indices are valid
     if (!_idx.row.isValid() || !_idx.col.isValid())
@@ -353,9 +353,9 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
         return;
     }
 
-	// If the cache is not really a cache
-	if (sCache.find("data") == string::npos && !isCluster && !_data.isTable(sCache))
-		throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
+    // If the cache is not really a cache
+    if (sCache.find("data") == string::npos && !isCluster && !_data.isTable(sCache))
+        throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
 }
 
 // This static function expands the indices into vectors, if the

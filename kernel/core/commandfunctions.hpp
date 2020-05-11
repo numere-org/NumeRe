@@ -2395,7 +2395,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
 {
     // Get references to the main objects
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Output& _out = NumeReKernel::getInstance()->getOutput();
+    //Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
@@ -3914,7 +3914,7 @@ static CommandReturnValues cmd_data(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    //Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
     int nArgument;
@@ -4571,7 +4571,7 @@ static CommandReturnValues cmd_edit(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_taylor(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    //Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Define& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -4673,7 +4673,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    //Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
     int nArgument;
@@ -5315,7 +5315,7 @@ static CommandReturnValues cmd_credits(string& sCmd)
 static CommandReturnValues cmd_append(string& sCmd)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    //Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '='))
@@ -5420,7 +5420,7 @@ static CommandReturnValues cmd_imread(string& sCmd)
 static CommandReturnValues cmd_write(string& sCmd)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    //Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (sCmd.length() > 6 && findParameter(sCmd, "file", '='))
@@ -7293,7 +7293,7 @@ static CommandReturnValues cmd_delete(string& sCmd)
         }
         else
         {
-            NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"));
+            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"), _option));
 
             do
             {

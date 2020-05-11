@@ -225,47 +225,47 @@ bool HelpViewer::Print()
     if (!g_printData->IsOk())
         m_mainFrame->OnPrintSetup();
 
-	wxPrintDialogData printDialogData( *g_printData);
+    wxPrintDialogData printDialogData( *g_printData);
 
-	// Create a new html printout class and apply the
-	// necessary settings
-	wxHtmlPrintout* printout = new wxHtmlPrintout();
-	printout->SetFonts(wxEmptyString, "Consolas");
-	printout->SetMargins(12.6f, 12.6f, 12.6f, 12.6f, 2.5f);
-	printout->SetFooter("<div align=\"center\">@PAGENUM@ / @PAGESCNT@</div>");
+    // Create a new html printout class and apply the
+    // necessary settings
+    wxHtmlPrintout* printout = new wxHtmlPrintout();
+    printout->SetFonts(wxEmptyString, "Consolas");
+    printout->SetMargins(12.6f, 12.6f, 12.6f, 12.6f, 2.5f);
+    printout->SetFooter("<div align=\"center\">@PAGENUM@ / @PAGESCNT@</div>");
 
-	// Obtain the content of the page from the history
-	wxString htmlText = vHistory[m_nHistoryPointer];
+    // Obtain the content of the page from the history
+    wxString htmlText = vHistory[m_nHistoryPointer];
 
-	// Depending on the type of the content of the history,
-	// assign it directly or obtain the page data from the
-	// kernel
-	if (htmlText.substr(0,15) == "<!DOCTYPE html>")
+    // Depending on the type of the content of the history,
+    // assign it directly or obtain the page data from the
+    // kernel
+    if (htmlText.substr(0,15) == "<!DOCTYPE html>")
         printout->SetHtmlText(htmlText);
     else
         printout->SetHtmlText(m_mainFrame->GetDocContent(htmlText));
 
     // Create a new preview object
-	wxPrintPreview *preview = new wxPrintPreview(printout, printout, g_printData);
+    wxPrintPreview *preview = new wxPrintPreview(printout, printout, g_printData);
 
-	// Ensure that the preview is filled correctly
-	if (!preview->Ok())
-	{
-		delete preview;
-		wxMessageBox(_guilang.get("GUI_PREVIEW_ERROR"), _guilang.get("GUI_PREVIEW_ERROR_HEAD"), wxOK | wxICON_WARNING);
-		return false;
-	}
+    // Ensure that the preview is filled correctly
+    if (!preview->Ok())
+    {
+        delete preview;
+        wxMessageBox(_guilang.get("GUI_PREVIEW_ERROR"), _guilang.get("GUI_PREVIEW_ERROR_HEAD"), wxOK | wxICON_WARNING);
+        return false;
+    }
 
-	// Obtain the screen size and create a new preview frame
-	wxRect rect = m_mainFrame->DeterminePrintSize();
-	wxPreviewFrame *frame = new wxPreviewFrame (preview, this, _guilang.get("GUI_PREVIEW_HEAD"));
+    // Obtain the screen size and create a new preview frame
+    wxRect rect = m_mainFrame->DeterminePrintSize();
+    wxPreviewFrame *frame = new wxPreviewFrame (preview, this, _guilang.get("GUI_PREVIEW_HEAD"));
 
-	// Start the frame and display it
-	frame->SetSize(rect);
-	frame->Centre(wxBOTH);
-	frame->Initialize();
-	frame->Show(true);
-	frame->Maximize();
+    // Start the frame and display it
+    frame->SetSize(rect);
+    frame->Centre(wxBOTH);
+    frame->Initialize();
+    frame->Show(true);
+    frame->Maximize();
 
     return true;
 }

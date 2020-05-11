@@ -1531,7 +1531,8 @@ namespace mu
 						continue;
 
 					case  cmPOW:
-						Stack[--sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
+					    --sidx;
+						Stack[sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
 						continue;
 
 					case  cmLAND:
@@ -1811,7 +1812,8 @@ namespace mu
 						continue;
 
 					case  cmPOW:
-						Stack[--sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
+					    --sidx;
+						Stack[sidx]  = MathImpl<value_type>::Pow(Stack[sidx], Stack[1 + sidx]);
 						continue;
 
 					case  cmLAND:

@@ -1249,10 +1249,6 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
     isCluster = false;
     sDataTable = "data";
 
-    Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
     // Search for tables and clusters
     DataAccessParser _accessParser(sExpression);
 

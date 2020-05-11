@@ -384,7 +384,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nF
 		{
 			for (; i < nLastPosition; i++)
 			{
-				if ((!m_editor->GetStyleAt(i) == wxSTC_NSCR_STRING && (m_editor->GetCharAt(i) == ' ' || m_editor->GetCharAt(i) == ';')) || m_editor->GetCharAt(i) == '\r' || m_editor->GetCharAt(i) == '\n')
+				if ((m_editor->GetStyleAt(i) != wxSTC_NSCR_STRING && (m_editor->GetCharAt(i) == ' ' || m_editor->GetCharAt(i) == ';')) || m_editor->GetCharAt(i) == '\r' || m_editor->GetCharAt(i) == '\n')
 					break;
 			}
 		}

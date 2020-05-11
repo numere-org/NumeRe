@@ -298,7 +298,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
                                         else
                                             sLine = LineBreak(sLine, _option, false, nIndent, nLengthMax+11);
                                         sFinalLine += sLine.substr(0,sLine.find('\n'));
-                                        if (sLine.find('\n') != string::npos);
+                                        if (sLine.find('\n') != string::npos)
                                             sFinalLine += '\n';
                                         sRemainingLine.erase(0,sLine.substr(nLengthMax+11, sLine.find('\n')-nLengthMax-11).length());
                                         if (sRemainingLine.front() == ' ')

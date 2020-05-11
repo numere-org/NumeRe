@@ -18,7 +18,10 @@
 
 #include "stringparser.hpp"
 #include "stringfunctions.hpp"
+#include "stringexpression.hpp"
 #include <algorithm>
+
+#include "../utils/timer.hpp"
 
 extern value_type vAns;
 
@@ -63,6 +66,9 @@ namespace NumeRe
         // Get the contents of "string()", "data()" and the other caches
         string sDummy;
         size_t nEndPosition;
+
+        if (sLine.find_first_of("({") == string::npos)
+            return sLine;
 
         // {str} = string(...)
         while ((n_pos = findNextFunction("string(", sLine, n_pos, nEndPosition)) != string::npos)
@@ -120,16 +126,35 @@ namespace NumeRe
             n_pos++;
         }
 
+        if (sLine.find_first_of("({") == string::npos)
+            return sLine;
+
         // Replace calls to "data()"
         replaceDataOccurence(sLine, "data(");
 
+        if (sLine.find_first_of("({") == string::npos)
+            return sLine;
+
         // Replace calls to any table
         for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+        {
+            if (sLine.find('(') == string::npos)
+                break;
+
             replaceDataOccurence(sLine, iter->first + "(");
+        }
+
+        if (sLine.find('{') == string::npos)
+            return sLine;
 
         // Replace calls to any cluster
         for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
+        {
+            if (sLine.find('{') == string::npos)
+                break;
+
             replaceDataOccurence(sLine, iter->first + "{");
+        }
 
         return sLine;
     }
@@ -539,14 +564,14 @@ namespace NumeRe
     /// StringParser::storeStringResults(). It will
     /// store the strings into the data tables.
     ///
-    /// \param vFinal const vector<string>&
+    /// \param strRes StringResult&
     /// \param sObject string&
     /// \param nCurrentComponent size_t&
     /// \param nStrings size_t
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void StringParser::storeStringToDataObjects(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings)
+    void StringParser::storeStringToDataObjects(StringResult& strRes, string& sObject, size_t& nCurrentComponent, size_t nStrings)
     {
         // Identify the correct table
         DataAccessParser _accessParser(sObject);
@@ -571,12 +596,12 @@ namespace NumeRe
 
             for (int n = nCurrentComponent; n < (int)nStrings; n++)
             {
-                if (!vFinal[n].length()
+                if (!strRes.vResult[n].length()
                     || (_idx.col[n] == VectorIndex::INVALID)
                     || (sTableName == "data" && _idx.col[n] >= _data.getCols("data")))
                     break;
 
-                _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(maskControlCharacters(vFinal[n])));
+                _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(maskControlCharacters(strRes.vResult[n])));
             }
 
             nCurrentComponent = nStrings;
@@ -595,28 +620,29 @@ namespace NumeRe
             if (_idx.row.back() == -2 && _idx.row.front() == 0)
                 cluster.clear();
 
-            for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
+            for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
             {
                 // Set expression and evaluate it (not efficient but currently necessary)
-                if (vFinal[i].front() == '"')
+                if (strRes.vResult[i].front() == '"')
                 {
                     // Special case: only one single value
                     if (_idx.row.size() == 1 && _idx.col.size() == 1)
                     {
-                        cluster.setString(_idx.row.front(), vFinal[i]);
+                        cluster.setString(_idx.row.front(), strRes.vResult[i]);
                         break;
                     }
 
                     if (_idx.row[nthComponent] == VectorIndex::INVALID)
                         break;
 
-                    cluster.setString(_idx.row[nthComponent], vFinal[i]);
+                    cluster.setString(_idx.row[nthComponent], strRes.vResult[i]);
                     nthComponent++;
                 }
                 else
                 {
-                    _parser.SetExpr(vFinal[i]);
+                    _parser.SetExpr(strRes.vResult[i]);
                     v = _parser.Eval(nResults);
+                    strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
 
                     // Special case: only one single value
                     if (_idx.row.size() == 1 && _idx.col.size() == 1)
@@ -652,42 +678,56 @@ namespace NumeRe
             value_type* v = nullptr;
             int nResults = 0;
             int nthComponent = 0;
+            string sExpr;
+            size_t nOffset = 0;
+            const size_t nMAXSETLENGTH = 5000;
+            size_t nVectorOffset = strRes.vNumericalValues.size();
 
-            for (size_t i = nCurrentComponent; i < vFinal.size(); i++)
+            while (nCurrentComponent + nOffset < strRes.vResult.size())
             {
-                // Set expression and evaluate it (not efficient but currently necessary)
-                _parser.SetExpr(vFinal[i]);
-                v = _parser.Eval(nResults);
+                sExpr.clear();
 
-                // Special case: only one single value
-                if (_idx.row.size() == 1 && _idx.col.size() == 1)
+                for (size_t i = nCurrentComponent + nOffset; i < min(nCurrentComponent+nOffset+nMAXSETLENGTH, strRes.vResult.size()); i++)
                 {
-                    _data.writeToTable(_idx.row.front(), _idx.col.front(), sTableName, v[0]);
-
-                    break;
+                    sExpr += strRes.vResult[i] + ",";
                 }
 
+                // Set expression and evaluate it (not efficient but currently necessary)
+                _parser.SetExpr(sExpr.substr(0, sExpr.length()-1));
+                v = _parser.Eval(nResults);
+                strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
+                nOffset += nMAXSETLENGTH;
+            }
+
+            // Special case: only one single value
+            if (_idx.row.size() == 1 && _idx.col.size() == 1)
+            {
+                _data.writeToTable(_idx.row.front(), _idx.col.front(), sTableName, strRes.vNumericalValues[nVectorOffset]);
+            }
+            else
+            {
                 // Write the single values
-                for (int j = 0; j < nResults; j++)
+                for (size_t j = nVectorOffset; j < strRes.vNumericalValues.size(); j++)
                 {
                     if (_idx.row.size() == 1 && _idx.col.size() > 1)
                     {
                         if (_idx.col[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, v[j]);
+                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, strRes.vNumericalValues[j]);
                     }
                     else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                     {
                         if (_idx.row[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, v[j]);
+                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, strRes.vNumericalValues[j]);
                     }
 
                     nthComponent++;
                 }
             }
+
 
             nCurrentComponent = nStrings;
         }
@@ -734,24 +774,25 @@ namespace NumeRe
     /// processed and calculated string results in
     /// their desired targets.
     ///
-    /// \param vFinal vector<string>&
-    /// \param vIsNoStringValue const vector<bool>&
+    /// \param strRes StringResult&
     /// \param __sObject string
     /// \return int
     ///
     /////////////////////////////////////////////////
-    int StringParser::storeStringResults(vector<string>& vFinal, const vector<bool>& vIsNoStringValue, string __sObject)
+    int StringParser::storeStringResults(StringResult& strRes, string __sObject)
     {
         // Only do something, if the target object is not empty
         if (!__sObject.length())
             return 1;
+
+        strRes.vNumericalValues.clear();
 
         // Handle remaining vector braces
         if (__sObject.find('{') != string::npos)
             convertVectorToExpression(__sObject, _option);
 
         string sObject;
-        size_t nStrings = vFinal.size();
+        size_t nStrings = strRes.vResult.size();
         size_t nCurrentComponent = 0;
 
         // As long as the target object is not empty
@@ -764,12 +805,12 @@ namespace NumeRe
             if (sObject.find("data(") != string::npos || _data.containsTablesOrClusters(sObject))
             {
                 // Store the strings into the data object
-                storeStringToDataObjects(vFinal, sObject, nCurrentComponent, nStrings);
+                storeStringToDataObjects(strRes, sObject, nCurrentComponent, nStrings);
             }
             else if (sObject.find("string(") != string::npos)
             {
                 // Store the strings into the string object
-                storeStringToStringObject(vFinal, sObject, nCurrentComponent, nStrings);
+                storeStringToStringObject(strRes.vResult, sObject, nCurrentComponent, nStrings);
             }
             else if (containsStringVars(sObject))
             {
@@ -782,7 +823,7 @@ namespace NumeRe
                     if (nCurrentComponent >= nStrings)
                         setStringValue(sObject, "");
                     else
-                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(vFinal[nCurrentComponent])));
+                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(strRes.vResult[nCurrentComponent])));
                     nCurrentComponent++;
                 }
                 catch (...)
@@ -802,21 +843,21 @@ namespace NumeRe
                 // Search for the adress of the current variable
                 if (getPointerToVariable(sObject, _parser))
                 {
-                    if (vIsNoStringValue.size() > nCurrentComponent && !vIsNoStringValue[nCurrentComponent])
+                    if (strRes.vNoStringVal.size() > nCurrentComponent && !strRes.vNoStringVal[nCurrentComponent])
                     {
                         return 0;
                     }
                 }
 
                 // If this is a numerical value
-                if (vIsNoStringValue.size() > nCurrentComponent && vIsNoStringValue[nCurrentComponent])
+                if (strRes.vNoStringVal.size() > nCurrentComponent && strRes.vNoStringVal[nCurrentComponent])
                 {
                     try
                     {
                         // Parse and store it
                         int nResults = 0;
                         value_type* v = 0;
-                        _parser.SetExpr(sObject + " = " + vFinal[nCurrentComponent]);
+                        _parser.SetExpr(sObject + " = " + strRes.vResult[nCurrentComponent]);
                         v = _parser.Eval(nResults);
 
                         // Replace the evaluated expression with its result,
@@ -828,6 +869,7 @@ namespace NumeRe
                             NumeReKernel::getInstance()->getAns().clear();
                             NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
                             string sValues;
+                            strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
 
                             // Transform the results into a string
                             for (int n = 0; n < nResults; n++)
@@ -837,7 +879,7 @@ namespace NumeRe
                             sValues.pop_back();
 
                             // replace the current expression
-                            vFinal[nCurrentComponent] = sValues;
+                            strRes.vResult[nCurrentComponent] = sValues;
                         }
 
                         nCurrentComponent++;
@@ -847,7 +889,7 @@ namespace NumeRe
                         throw;
                     }
                 }
-                else if (vIsNoStringValue.size() <= nCurrentComponent)
+                else if (strRes.vNoStringVal.size() <= nCurrentComponent)
                 {
                     // Fallback: try to find the variable address
                     // although it doesn't seem to be a numerical value
@@ -871,7 +913,7 @@ namespace NumeRe
                     try
                     {
                         // Create a new string variable
-                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(vFinal[nCurrentComponent])));
+                        setStringValue(sObject, removeQuotationMarks(maskControlCharacters(strRes.vResult[nCurrentComponent])));
                         nCurrentComponent++;
                     }
                     catch (...)
@@ -911,10 +953,16 @@ namespace NumeRe
         // numerical only here
         if (StrRes.bOnlyLogicals)
         {
-            for (size_t i = 0; i < vFinal.size(); i++)
-                sLine += removeQuotationMarks(vFinal[i]) + ",";
+            if (StrRes.vNumericalValues.size())
+                sLine = NumeReKernel::getInstance()->getParser().CreateTempVectorVar(StrRes.vNumericalValues);
+            else
+            {
+                for (size_t i = 0; i < vFinal.size(); i++)
+                    sLine += vFinal[i] + ",";
 
-            sLine.pop_back();
+                sLine.pop_back();
+
+            }
 
             return sLine;
         }
@@ -1057,7 +1105,6 @@ namespace NumeRe
         if (parserFlags & NO_QUOTES && parserFlags & PEEK)
         {
             string sConsoleOut = "|-> ";
-            static const string sConsoleIndent = "|   ";
             bool bLineBreaks = false;
 
             // Every result in the current return values
@@ -1141,7 +1188,7 @@ namespace NumeRe
             // Replace all line break characters with the console
             // indentation, if that is needed
             if (bLineBreaks)
-                replaceAll(sConsoleOut, "\n", "\n" + sConsoleIndent);
+                replaceAll(sConsoleOut, "\n", "\n|   ");
 
             return sConsoleOut;
 
@@ -1252,24 +1299,6 @@ namespace NumeRe
 
     /////////////////////////////////////////////////
     /// \brief This member function determines, whether
-    /// the equal sign at \c eq_pos is an assignment
-    /// operator and no boolean expression.
-    ///
-    /// \param sLine const string&
-    /// \param eq_pos size_t
-    /// \return bool
-    ///
-    /////////////////////////////////////////////////
-    bool StringParser::isAssignmentOperator(const string& sLine, size_t eq_pos)
-    {
-        if (!eq_pos || eq_pos >= sLine.length())
-            return false;
-        return sLine[eq_pos - 1] != '!' && sLine[eq_pos - 1] != '<' && sLine[eq_pos - 1] != '>' && sLine[eq_pos + 1] != '=';
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief This member function determines, whether
     /// the passed string is simple, i.e. it is a
     /// string literal without any operation.
     ///
@@ -1308,18 +1337,20 @@ namespace NumeRe
     /// \brief Determines, whether the passed token
     /// can be found at the passed position.
     ///
-    /// \param sToken const string&
+    /// \param sToken const char*
     /// \param sLine const string&
     /// \param pos size_t
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool StringParser::isToken(const string& sToken, const string& sLine, size_t pos)
+    bool StringParser::isToken(const char* sToken, const string& sLine, size_t pos)
     {
-        if (sLine.length() < pos + sToken.length())
+        size_t nLength = strlen(sToken);
+
+        if (sLine.length() < pos + nLength)
             return false;
 
-        if (sLine.substr(pos, sToken.length()) == sToken && (sLine.length() == pos+sToken.length() || isDelimiter(sLine[pos+sToken.length()])))
+        if (sLine.substr(pos, nLength) == sToken && (sLine.length() == pos+nLength || isDelimiter(sLine[pos+nLength])))
             return true;
 
         return false;
@@ -1355,7 +1386,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     vector<bool> StringParser::applyElementaryStringOperations(vector<string>& vFinal, bool& bReturningLogicals)
     {
-        vector<bool> vIsNoStringValue;
+        vector<bool> vIsNoStringValue(vFinal.size(), false);
 
         // Examine the whole passed vector
         for (unsigned int n = 0; n < vFinal.size(); n++)
@@ -1377,14 +1408,12 @@ namespace NumeRe
 
             // Concatenate the strings
             if (vFinal[n].front() == '"' || vFinal[n].back() == '"')
-                vFinal[n] = concatenateStrings(vFinal[n]);
+                concatenateStrings(vFinal[n]);
 
             // Determine, whether the current component is a string
             // or a numerical expression
             if (vFinal[n].front() != '"' && vFinal[n].back() != '"')
-                vIsNoStringValue.push_back(true);
-            else
-                vIsNoStringValue.push_back(false);
+                vIsNoStringValue[n] = true;
         }
 
         // check, whether there's a string left
@@ -1408,28 +1437,27 @@ namespace NumeRe
     /// actual string concatenation of the passed
     /// string expression.
     ///
-    /// \param sExpr const string&
-    /// \return string
+    /// \param sExpr string&
+    /// \return void
     ///
     /// This member is called by
     /// StringParser::applyElementaryStringOperations()
     /// for the concatenation.
     /////////////////////////////////////////////////
-    string StringParser::concatenateStrings(const string& sExpr)
+    void StringParser::concatenateStrings(string& sExpr)
     {
-        string sConcatenated = sExpr;
         size_t nQuotes = 0;
 
-        for (unsigned int i = 0; i < sConcatenated.length(); i++)
+        for (unsigned int i = 0; i < sExpr.length(); i++)
         {
-            if (sConcatenated[i] == '"' && (!i || sConcatenated[i-1] != '\\'))
+            if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
                 nQuotes++;
 
             // Search for the concatenation operator (aka "+")
-            if (!(nQuotes % 2) && sConcatenated[i] == '+')
+            if (!(nQuotes % 2) && sExpr[i] == '+')
             {
-                string sLeft = sConcatenated.substr(0, i);
-                string sRight = sConcatenated.substr(i+1);
+                string sLeft = sExpr.substr(0, i);
+                string sRight = sExpr.substr(i+1);
 
                 StripSpaces(sLeft);
                 StripSpaces(sRight);
@@ -1437,17 +1465,17 @@ namespace NumeRe
                 // Determine the correct concatenation process
                 if (sLeft == "\"\"" && sRight != "\"\"")
                 {
-                    sConcatenated = " " + sRight;
+                    sExpr = " " + sRight;
                     i = 0;
                 }
                 else if (sLeft != "\"\"" && sRight == "\"\"")
                 {
-                    sConcatenated = sLeft;
+                    sExpr = sLeft;
                     break;
                 }
                 else if (sLeft.back() == '"' && sRight.front() == '"')
                 {
-                    sConcatenated = sLeft.substr(0, sLeft.length()-1) + sRight.substr(1);
+                    sExpr = sLeft.substr(0, sLeft.length()-1) + sRight.substr(1);
 
                     // We removed some characters
                     i = sLeft.length()-2;
@@ -1460,9 +1488,7 @@ namespace NumeRe
             }
         }
 
-        StripSpaces(sConcatenated);
-
-        return sConcatenated;
+        StripSpaces(sExpr);
     }
 
 
@@ -1481,7 +1507,6 @@ namespace NumeRe
     {
         StringResult strRes;
 
-        string sObject;
         bool bObjectContainsTablesOrClusters = false;
 
         // If the current line is a simple string,
@@ -1500,138 +1525,55 @@ namespace NumeRe
             return strRes;
         }
 
-        // Identify target vectors and parse this as a list
-        size_t eq_pos = sLine.find('=');
-        size_t brace_pos = sLine.find('{');
-        size_t string_pos = sLine.find("string(");
-
-        if (brace_pos != string::npos
-            && eq_pos != string::npos
-            && brace_pos < eq_pos
-            && isAssignmentOperator(sLine, eq_pos))
-        {
-            // find the actual equal sign in the current string expression
-            while (isInQuotes(sLine, eq_pos) && sLine.find('=', eq_pos + 1) != string::npos)
-                eq_pos = sLine.find('=', eq_pos + 1);
-
-            // Did we find an actual equal sign?
-            if (!isInQuotes(sLine, eq_pos) && isAssignmentOperator(sLine, eq_pos))
-            {
-                // Store the left side and erase it from the original string
-                string sLeftSide = sLine.substr(0, eq_pos + 1);
-                sLine.erase(0, eq_pos + 1);
-
-                // Apply the string parser core to the right side of the assignment
-                // Create a string vector variable from the result of the string parser
-                StringResult _res = eval(sLine, "");
-                string strvar = createStringVectorVar(_res.vResult);
-
-                if (!strvar.length())
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                // Combine the left side and the string vector variable to
-                // a new assignment
-                sLine = sLeftSide + strvar;
-            }
-        }
-        else if (brace_pos != string::npos
-            && string_pos != string::npos
-            && eq_pos != string::npos
-            && string_pos < brace_pos
-            && eq_pos > string_pos
-            && eq_pos < brace_pos
-            && isAssignmentOperator(sLine, eq_pos))
-        {
-            // Examine the left side of the assignment
-            for (unsigned int i = 0; i < sLine.find('='); i++)
-            {
-                // Search for a character, which isn't a whitespace
-                if (sLine[i] != ' ')
-                {
-                    // If the current character is the beginning of "string()"
-                    if (sLine.substr(i, 7) == "string(")
-                    {
-                        // Jump over the argument parenthesis
-                        i += getMatchingParenthesis(sLine.substr(i + 6)) + 6;
-
-                        // Find the next non-whitespace character and check, whether it is an equal sign
-                        if (sLine.find_first_not_of(' ', i) == sLine.find('='))
-                        {
-                            // Store the left side and erase it from the original string
-                            string sLeftSide = sLine.substr(0, sLine.find('=') + 1);
-                            sLine.erase(0, sLine.find('=') + 1);
-
-                            // Apply the string parser core to the right side of the assignment
-                            // Create a string vector variable from the result of the string parser
-                            StringResult _res = eval(sLine, "");
-                            string strvar = createStringVectorVar(_res.vResult);
-
-                            if (!strvar.length())
-                                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                            // Combine the left side and the string vector variable to
-                            // a new assignment
-                            sLine = sLeftSide + strvar;
-                        }
-                        break;
-                    }
-                    else
-                    {
-                        // Otherwise parse as a vector expression
-                        convertVectorToExpression(sLine, _option);
-                        break;
-                    }
-                }
-            }
-        }
-
-        eq_pos = sLine.find('=');
+        StringExpression strExpr(sLine, sCache);
 
         // Recurse for multiple store targets
         // Nur Rekursionen durchfuehren, wenn auch '=' in dem String gefunden wurde. Nur dann ist sie naemlich noetig.
-        if (eq_pos != string::npos && sLine.find(',') != string::npos && !isInQuotes(sLine, eq_pos))
+        if (strExpr.nEqPos && strExpr.sLine.find(',') != string::npos)
         {
             // Get the left part of the assignment
-            string sStringObject = sLine.substr(0, eq_pos);
+            string sStringObject = strExpr.sLine.substr(0, strExpr.nEqPos);
 
             // Ensure that the left part contains a data or a string object,
             // otherwise it is cleared
             if (sStringObject.substr(sStringObject.find_first_not_of(' '), 7) == "string("
                     || sStringObject.substr(sStringObject.find_first_not_of(' '), 5) == "data("
-                    || _data.containsTablesOrClusters(sStringObject))
+                    || _data.containsTablesOrClusters(sStringObject)
+                    || sStringObject[sStringObject.find_first_not_of(' ')] == '{')
             {
                 // Find the equal sign after the closing parenthesis
-                size_t nPos = getMatchingParenthesis(sLine);
-                nPos = sLine.find('=', nPos);
+                size_t nPos = getMatchingParenthesis(strExpr.sLine);
+                nPos = strExpr.sLine.find('=', nPos);
 
                 // Ensure that it exists
                 if (nPos == string::npos)
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
                 // Get the data object including the assignment operator and
                 // cut this part from the original line
-                if (sLine[nPos + 1] == '=')
+                if (strExpr.sLine[nPos + 1] == '=')
                     nPos++;
-                sStringObject = sLine.substr(0, nPos + 1);
-                sLine.erase(0, nPos + 1);
+
+                sStringObject = strExpr.sLine.substr(0, nPos + 1);
+                strExpr.sLine.erase(0, nPos + 1);
             }
             else
                 sStringObject.clear();
 
             // Remove whitespaces
-            StripSpaces(sLine);
+            StripSpaces(strExpr.sLine);
 
             // If the current line contains more than one string expressions
-            if (sLine != getNextArgument(sLine, false))
+            if (strExpr.sLine != getNextArgument(strExpr.sLine, false))
             {
                 string sRecursion = "";
                 vector<string> vResult;
 
                 // While the current line is not empty
-                while (sLine.length())
+                while (strExpr.sLine.length())
                 {
                     // Cut of the first argument
-                    sRecursion = getNextArgument(sLine, true);
+                    sRecursion = getNextArgument(strExpr.sLine, true);
 
                     // Apply the string parser on the current argument and store its
                     // results in a common vector
@@ -1642,154 +1584,141 @@ namespace NumeRe
                 }
 
                 // Create a new string vector variable from the results
-                sLine = createStringVectorVar(vResult);
+                strExpr.sLine = createStringVectorVar(vResult);
             }
 
             // Prepend the stored string object to the current input line
             if (sStringObject.length())
-                sLine = sStringObject + sLine;
+                strExpr.sLine = sStringObject + strExpr.sLine;
+
+            strExpr.findAssignmentOperator();
         }
 
         // Find the start of the asignee
         size_t n_pos = 0;
-        eq_pos = sLine.find('=');
 
-        if (!sObject.length()
-            && eq_pos != string::npos
-            && !isInQuotes(sLine, eq_pos)
-            && isAssignmentOperator(sLine, eq_pos))
-            n_pos = eq_pos + 1;
+        if (strExpr.nEqPos)
+            n_pos = strExpr.nEqPos+1;
 
         // Get the string variables
-        if (containsStringVars(sLine.substr(n_pos)))
-            getStringValues(sLine, n_pos);
+        if (containsStringVars(strExpr.sLine.substr(n_pos)))
+            getStringValues(strExpr.sLine, n_pos);
 
         // Does the current line contain candidates
         // for string functions?
-        if (sLine.find('(') != string::npos)
+        if (strExpr.sLine.find('(') != string::npos)
         {
+            //Timer timer("String function application");
             // Apply the standard string functions
-            sLine = applyStringFuncs(sLine);
+            strExpr.sLine = applyStringFuncs(strExpr.sLine);
 
             // Apply the special string functions
-            sLine = applySpecialStringFuncs(sLine);
+            strExpr.sLine = applySpecialStringFuncs(strExpr.sLine);
 
             // Get the position of the equal sign after the
             // application of all string functions
-            eq_pos = sLine.find('=');
+            strExpr.findAssignmentOperator();
         }
 
-        // Extract target object
-        if (!sObject.length()
-            && eq_pos != string::npos
-            && !isInQuotes(sLine, eq_pos)
-            && isAssignmentOperator(sLine, eq_pos))
-        {
-            if (sLine.substr(0, eq_pos).find("data(") != string::npos || _data.containsTablesOrClusters(sLine.substr(0, eq_pos)))
-            {
-                sObject = sLine.substr(0, eq_pos);
-                sLine.erase(0, eq_pos + 1);
-            }
-        }
-        else if (!sObject.length() && sCache.length())
-        {
-            sObject = sCache;
-        }
+        strExpr.split();
 
-        if (_data.containsTablesOrClusters(sObject))
+        if (strExpr.sAssignee.length() && _data.containsTablesOrClusters(strExpr.sAssignee))
             bObjectContainsTablesOrClusters = true;
 
         // Get the contents of "string()", "data()" and the other caches
-        sLine = getDataForString(sLine, n_pos);
+        strExpr.sLine = getDataForString(strExpr.sLine, 0);
 
         // If the line now doesn't contain any strings, return with the onlyLogicals flag set
-        if (!isStringExpression(sLine) && !bObjectContainsTablesOrClusters)
+        if (!isStringExpression(strExpr.sLine) && !bObjectContainsTablesOrClusters)
         {
             // make sure that there are parseable characters between the operators
-            if (sLine.find_first_not_of("+-*/:?!.,;%&<>=^ ") != string::npos && bParseNumericals)
+            if (strExpr.sLine.find_first_not_of("+-*/:?!.,;%&<>=^ ") != string::npos && bParseNumericals)
             {
                 int nResults = 0;
                 value_type* v = 0;
 
                 // Parse the epression
-                _parser.SetExpr(sLine);
+                if (strExpr.sAssignee.length())
+                    _parser.SetExpr(strExpr.sAssignee + "=" + strExpr.sLine);
+                else
+                    _parser.SetExpr(strExpr.sLine);
+
                 v = _parser.Eval(nResults);
                 vAns = v[0];
                 NumeReKernel::getInstance()->getAns().clear();
                 NumeReKernel::getInstance()->getAns().setDoubleArray(nResults, v);
-                eq_pos = sLine.find('=');
+                //eq_pos = strExpr.sLine.find('=');
+                //strExpr.findAssignmentOperator();
 
                 // Remove the left part of the assignment, because it's already assigned
-                if (eq_pos != string::npos
-                    && eq_pos
-                    && eq_pos < sLine.length() + 1
-                    && isAssignmentOperator(sLine, eq_pos))
-                    sLine.erase(0, eq_pos + 1);
+                //if (eq_pos != string::npos
+                //    && eq_pos
+                //    && eq_pos < sLine.length() + 1
+                //    && isAssignmentOperator(sLine, eq_pos))
+                //    sLine.erase(0, eq_pos + 1);
 
-                StripSpaces(sLine);
+                StripSpaces(strExpr.sLine);
 
                 // Return with the numbers already contained
-                return StringResult(sLine, v, nResults);
+                return StringResult(strExpr.sLine, v, nResults);
             }
 
             // return with the onlyLogicals flag
-            return StringResult(sLine, true);
+            return StringResult(strExpr.sLine, true);
         }
-        else if (!bObjectContainsTablesOrClusters && !sObject.length() && isSimpleString(sLine))
+        else if (!bObjectContainsTablesOrClusters && !strExpr.sAssignee.length() && isSimpleString(strExpr.sLine))
         {
             // After the data objects are resolved,
             // it's quite possible that there are only
             // simple strings left in this recursion
-            StripSpaces(sLine);
+            StripSpaces(strExpr.sLine);
 
-            while (sLine.length())
+            while (strExpr.sLine.length())
             {
-                strRes.vResult.push_back(getNextArgument(sLine, true));
+                strRes.vResult.push_back(getNextArgument(strExpr.sLine, true));
                 strRes.vNoStringVal.push_back(false);
             }
 
             return strRes;
         }
 
-        n_pos = 0;
-
         // If there are any opening parentheses, it is possible that we need
         // to pre-evaluate its contents
-        if (sLine.find('(') != string::npos)
+        if (strExpr.sLine.find('(') != string::npos)
         {
             size_t nQuotes = 0;
 
             // Examine the whole command line
-            for (size_t i = 0; i < sLine.length(); i++)
+            for (size_t i = 0; i < strExpr.sLine.length(); i++)
             {
                 // Jump over string literals
-                if (sLine[i] == '"')
+                if (strExpr.sLine[i] == '"')
                 {
-                    if (i && sLine[i - 1] == '\\')
+                    if (i && strExpr.sLine[i - 1] == '\\')
                         continue;
                     nQuotes++;
                 }
 
                 // Consider the var parsing feature
-                if (sLine[i] == '#' && !(nQuotes % 2))
+                if (strExpr.sLine[i] == '#' && !(nQuotes % 2))
                 {
                     // Examine, whether the var parsing feature was used
                     // correctly and search for the end of its current application
-                    for (size_t j = i; j < sLine.length(); j++)
+                    for (size_t j = i; j < strExpr.sLine.length(); j++)
                     {
-                        if (sLine[j] == '"')
-                            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                        if (strExpr.sLine[j] == '"')
+                            throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
-                        if ((sLine[j] == '(' || sLine[j] == '{') && getMatchingParenthesis(sLine.substr(j)) != string::npos)
+                        if ((strExpr.sLine[j] == '(' || strExpr.sLine[j] == '{') && getMatchingParenthesis(strExpr.sLine.substr(j)) != string::npos)
                             j += getMatchingParenthesis(sLine.substr(j));
 
-                        if (sLine[j] == ' ' || sLine[j] == '+')
+                        if (strExpr.sLine[j] == ' ' || strExpr.sLine[j] == '+')
                         {
                             i = j;
                             break;
                         }
 
-                        if (j + 1 == sLine.length())
+                        if (j + 1 == strExpr.sLine.length())
                         {
                             i = j;
                         }
@@ -1798,22 +1727,22 @@ namespace NumeRe
 
                 // Examine the current parenthesis: is it able to pre-evaluate the
                 // current parenthesis?
-                if (sLine[i] == '(' && !(nQuotes % 2))
+                if (strExpr.sLine[i] == '(' && !(nQuotes % 2))
                 {
                     // Ensure that its counterpart exists
-                    if (getMatchingParenthesis(sLine.substr(i)) == string::npos)
-                        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, i);
+                    if (getMatchingParenthesis(strExpr.sLine.substr(i)) == string::npos)
+                        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, strExpr.sLine, i);
 
-                    size_t nPos = getMatchingParenthesis(sLine.substr(i)) + i;
+                    size_t nPos = getMatchingParenthesis(strExpr.sLine.substr(i)) + i;
 
                     // Ignore any calls to "string()"
-                    if (i < 6 || (i >= 6 && sLine.substr(i - 6, 6) != "string"))
+                    if (i < 6 || (i >= 6 && strExpr.sLine.substr(i - 6, 6) != "string"))
                     {
                         // The contents of the parenthesis
-                        string sString = sLine.substr(i + 1, nPos - i - 1);
+                        string sString = strExpr.sLine.substr(i + 1, nPos - i - 1);
 
                         // Pre-evaluate the contents of the parenthesis
-                        if (i > 0 && !checkDelimiter(sLine.substr(i - 1, nPos - i + 2))) // this is probably a numerical function. Keep the parentheses
+                        if (i > 0 && !checkDelimiter(strExpr.sLine.substr(i - 1, nPos - i + 2))) // this is probably a numerical function. Keep the parentheses
                         {
                             // Do only something, if the contents are containings strings
                             if (isStringExpression(sString))
@@ -1822,9 +1751,9 @@ namespace NumeRe
                                 string strvar = createStringVectorVar(_res.vResult);
 
                                 if (!strvar.length())
-                                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                                    throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
-                                sLine = sLine.substr(0, i + 1) + strvar + sLine.substr(nPos);
+                                strExpr.sLine = strExpr.sLine.substr(0, i + 1) + strvar + strExpr.sLine.substr(nPos);
                             }
                         }
                         else // replace the whole parenthesis
@@ -1836,9 +1765,9 @@ namespace NumeRe
                                 string strvar = createStringVectorVar(_res.vResult);
 
                                 if (!strvar.length())
-                                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                                    throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
-                                sLine = sLine.substr(0, i) + strvar + sLine.substr(nPos + 1);
+                                strExpr.sLine = strExpr.sLine.substr(0, i) + strvar + strExpr.sLine.substr(nPos + 1);
                             }
                         }
                     }
@@ -1847,29 +1776,20 @@ namespace NumeRe
         }
 
         // Are there any vector braces left?
-        if (sLine.find('{') != string::npos)
+        if (strExpr.sLine.find('{') != string::npos)
         {
-            n_pos = 0;
-            eq_pos = sLine.find('=');
-
-            if (eq_pos != string::npos
-                && isAssignmentOperator(sLine, eq_pos)
-                && !sObject.length()
-                && !isInQuotes(sLine, eq_pos))
-                n_pos = eq_pos + 1;
-
             size_t nQuotes = 0;
 
             // Examine each vector brace
-            for (size_t i = n_pos; i < sLine.length(); i++)
+            for (size_t i = 0; i < strExpr.sLine.length(); i++)
             {
-                if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
+                if (strExpr.sLine[i] == '"' && (!i || strExpr.sLine[i-1] != '\\'))
                     nQuotes++;
 
-                if (!(nQuotes % 2) && sLine[i] == '{')
+                if (!(nQuotes % 2) && strExpr.sLine[i] == '{')
                 {
-                    size_t nmatching = getMatchingParenthesis(sLine.substr(i));
-                    string sVectorTemp = sLine.substr(i+1, nmatching-1);
+                    size_t nmatching = getMatchingParenthesis(strExpr.sLine.substr(i));
+                    string sVectorTemp = strExpr.sLine.substr(i+1, nmatching-1);
 
                     // Does the vector brace contain colons? Then it
                     // might be a numerical vector expansion if it
@@ -1888,11 +1808,11 @@ namespace NumeRe
                             // Store the result in a vector and
                             // create a temporary vector variable
                             vector<double> vRes(res, res + nRes);
-                            sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
+                            strExpr.sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
 
                             continue;
                         }
-                        else if (sVectorTemp.front() != '"' && sVectorTemp.back() != '"')
+                        else if (sVectorTemp.find('"') == string::npos)
                             continue;
                     }
 
@@ -1907,7 +1827,7 @@ namespace NumeRe
                         // Store the result in a vector and
                         // create a temporary vector variable
                         vector<double> vRes(res, res + nRes);
-                        sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
+                        strExpr.sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
 
                         continue;
                     }
@@ -1915,7 +1835,7 @@ namespace NumeRe
                     StringResult tempres = eval(sVectorTemp, "");
 
                     if (!tempres.vResult.size())
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+                        throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
                     // Create a string vector variable from the returned vector
                     // if it is a string. Otherwise we create a new temporary
@@ -1925,57 +1845,45 @@ namespace NumeRe
                     else
                         sVectorTemp = _parser.CreateTempVectorVar(tempres.vNumericalValues);
 
-                    sLine.replace(i, nmatching+1, sVectorTemp);
+                    strExpr.sLine.replace(i, nmatching+1, sVectorTemp);
                 }
             }
         }
 
         // Strip all whitespaces and ensure, that there's something left
-        StripSpaces(sLine);
+        StripSpaces(strExpr.sLine);
 
-        if (!sLine.length())
+        if (!strExpr.sLine.length())
             return StringResult("");
 
         // If the current line doesn't contain any further string literals or return values
         // return it
-        if (sLine.find('"') == string::npos && sLine.find('#') == string::npos && !containsStringVectorVars(sLine) && !bObjectContainsTablesOrClusters)
+        if (strExpr.sLine.find('"') == string::npos && strExpr.sLine.find('#') == string::npos && !containsStringVectorVars(strExpr.sLine) && !bObjectContainsTablesOrClusters)
         {
             // Ensure that this is no false positive
-            if (sLine.find("string(") != string::npos || containsStringVars(sLine))
-                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+            if (strExpr.sLine.find("string(") != string::npos || containsStringVars(strExpr.sLine))
+                throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
             // return the current line
-            return StringResult(sLine);
-        }
-
-        // Extract the object, if not already done
-        eq_pos = sLine.find('=');
-
-        if (!sObject.length()
-            && eq_pos != string::npos
-            && !isInQuotes(sLine, eq_pos)
-            && isAssignmentOperator(sLine, eq_pos))
-        {
-            sObject = sLine.substr(0, eq_pos);
-            sLine = sLine.substr(eq_pos + 1);
+            return StringResult(strExpr.sLine);
         }
 
         // Apply the "#" parser to the string
-        sLine = numToString(sLine);
+        strExpr.sLine = numToString(strExpr.sLine);
 
         // Split the list to a vector
-        strRes.vResult = evaluateStringVectors(sLine);
+        strRes.vResult = evaluateStringVectors(strExpr.sLine);
 
         // Ensure that there is at least one result
         if (!strRes.vResult.size())
-            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
         // Apply some elementary operations such as concatenation and logical operations
         strRes.vNoStringVal = applyElementaryStringOperations(strRes.vResult, strRes.bOnlyLogicals);
 
         // store the string results in the variables or inb "string()" respectively
-        if (!storeStringResults(strRes.vResult, strRes.vNoStringVal, sObject))
-            throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+        if (!storeStringResults(strRes, strExpr.sAssignee))
+            throw SyntaxError(SyntaxError::STRING_ERROR, strExpr.sLine, SyntaxError::invalid_position);
 
         // Return the evaluated string command line
         return strRes;
@@ -1995,6 +1903,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     StringParser::StringParserRetVal StringParser::evalAndFormat(string& sLine, string& sCache, bool bSilent)
     {
+        //Timer timer(sLine);
         sLine = " " + sLine + " ";
 
         // Process the parameters and store their
@@ -2052,8 +1961,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool StringParser::isStringExpression(const string& sExpression)
     {
-        if (sExpression.find('"') != string::npos
-			|| sExpression.find('#') != string::npos
+        if (sExpression.find_first_of("\"#") != string::npos
 			|| sExpression.find("string(") != string::npos
 			|| sExpression.find("string_cast(") != string::npos
 			|| sExpression.find("char(") != string::npos
@@ -2063,11 +1971,14 @@ namespace NumeRe
 		if (containsStringVars(sExpression) || containsStringVectorVars(sExpression))
             return true;
 
+        if (sExpression.find('{') == string::npos)
+            return false;
+
         const map<string,NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
 
         for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
         {
-            if (iter->second.isString())
+            if (iter->second.isMixed() || iter->second.isString())
             {
                 size_t pos = sExpression.find(iter->first + "{");
 

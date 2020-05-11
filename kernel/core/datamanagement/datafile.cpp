@@ -36,107 +36,107 @@ size_t qSortDouble(double* dArray, size_t nlength);
 // --> Standard-Konstruktor <--
 Datafile::Datafile() : MemoryManager()
 {
-	nLines = 0;
-	nCols = 0;
-	dDatafile = 0;
-	//bValidEntry = 0;
-	sHeadLine = 0;
-	nAppendedZeroes = 0;
-	bValidData = false;
-	bUseCache = false;
-	bPauseOpening = false;
-	bLoadEmptyCols = false;
-	bLoadEmptyColsInNextFile = false;
-	sDataFile = "";
-	sOutputFile = "";
-	sPrefix = "data";
-	sSavePath = "<savepath>";
+    nLines = 0;
+    nCols = 0;
+    dDatafile = 0;
+    //bValidEntry = 0;
+    sHeadLine = 0;
+    nAppendedZeroes = 0;
+    bValidData = false;
+    bUseCache = false;
+    bPauseOpening = false;
+    bLoadEmptyCols = false;
+    bLoadEmptyColsInNextFile = false;
+    sDataFile = "";
+    sOutputFile = "";
+    sPrefix = "data";
+    sSavePath = "<savepath>";
 
-	tableColumnsCount = 0.0;
-	tableLinesCount = 0.0;
+    tableColumnsCount = 0.0;
+    tableLinesCount = 0.0;
 }
 
 // --> Allgemeiner Konstruktor <--
 Datafile::Datafile(long long int _nLines, long long int _nCols) : MemoryManager()
 {
-	nLines = _nLines;
-	nCols = _nCols;
-	bValidData = false;
-	bUseCache = false;
-	bPauseOpening = false;
-	bLoadEmptyCols = false;
-	bLoadEmptyColsInNextFile = false;
-	sDataFile = "";
-	sOutputFile = "";
-	sPrefix = "data";
-	sSavePath = "<savepath>";
-	nAppendedZeroes = 0;
+    nLines = _nLines;
+    nCols = _nCols;
+    bValidData = false;
+    bUseCache = false;
+    bPauseOpening = false;
+    bLoadEmptyCols = false;
+    bLoadEmptyColsInNextFile = false;
+    sDataFile = "";
+    sOutputFile = "";
+    sPrefix = "data";
+    sSavePath = "<savepath>";
+    nAppendedZeroes = 0;
 
-	// --> Bereite gleich den Speicher auf Basis der beiden ints vor <--
-	dDatafile = new double*[nLines];
-	sHeadLine = new string[nCols];
+    // --> Bereite gleich den Speicher auf Basis der beiden ints vor <--
+    dDatafile = new double*[nLines];
+    sHeadLine = new string[nCols];
 
-	for (long long int i = 0; i < nLines; i++)
-	{
-		dDatafile[i] = new double[nCols];
+    for (long long int i = 0; i < nLines; i++)
+    {
+        dDatafile[i] = new double[nCols];
 
-		for (long long int j = 0; j < nCols; j++)
-		{
-			sHeadLine[j] = "";
-			dDatafile[i][j] = 0.0;
-		}
-	}
+        for (long long int j = 0; j < nCols; j++)
+        {
+            sHeadLine[j] = "";
+            dDatafile[i][j] = 0.0;
+        }
+    }
 }
 
 // --> Destruktor <--
 Datafile::~Datafile()
 {
-	// --> Gib alle Speicher frei, sofern sie belegt sind! (Pointer != 0) <--
-	if(dDatafile)
-	{
-		for(long long int i = 0; i < nLines; i++)
-		{
-			delete[] dDatafile[i];
-		}
-		delete[] dDatafile;
-	}
-	if(sHeadLine)
-		delete[] sHeadLine;
-	if(nAppendedZeroes)
-		delete[] nAppendedZeroes;
-	if(file_in.is_open())
-		file_in.close();
+    // --> Gib alle Speicher frei, sofern sie belegt sind! (Pointer != 0) <--
+    if(dDatafile)
+    {
+        for(long long int i = 0; i < nLines; i++)
+        {
+            delete[] dDatafile[i];
+        }
+        delete[] dDatafile;
+    }
+    if(sHeadLine)
+        delete[] sHeadLine;
+    if(nAppendedZeroes)
+        delete[] nAppendedZeroes;
+    if(file_in.is_open())
+        file_in.close();
 }
 
 // --> Generiere eine neue Matrix auf Basis der gesetzten Werte. Pruefe zuvor, ob nicht schon eine vorhanden ist <--
 void Datafile::Allocate()
 {
-	if (nLines && nCols && !dDatafile && !nAppendedZeroes)// && !bValidEntry)
-	{
+    if (nLines && nCols && !dDatafile && !nAppendedZeroes)// && !bValidEntry)
+    {
         if (!sHeadLine)
         {
             sHeadLine = new string[nCols];
-		}
+        }
 
-		nAppendedZeroes = new long long int[nCols];
+        nAppendedZeroes = new long long int[nCols];
 
-		for (long long int i = 0; i < nCols; i++)
-		{
-			nAppendedZeroes[i] = nLines;
-		}
+        for (long long int i = 0; i < nCols; i++)
+        {
+            nAppendedZeroes[i] = nLines;
+        }
 
-		dDatafile = new double*[nLines];
+        dDatafile = new double*[nLines];
 
-		for (long long int i = 0; i < nLines; i++)
-		{
-			dDatafile[i] = new double[nCols];
+        for (long long int i = 0; i < nLines; i++)
+        {
+            dDatafile[i] = new double[nCols];
 
-			for (long long int j = 0; j < nCols; j++)
-			{
-				dDatafile[i][j] = NAN;
-			}
-		}
-	}
+            for (long long int j = 0; j < nCols; j++)
+            {
+                dDatafile[i][j] = NAN;
+            }
+        }
+    }
 }
 
 // This function creates the table column headers,
@@ -264,26 +264,26 @@ NumeRe::FileHeaderInfo Datafile::openFile(string _sFile, Settings& _option, bool
         }
 
     }
-	else		// Oh! Es waren doch schon Daten vorhanden... Was jetzt? Anhaengen? / Ueberschreiben?
-	{
-		string cReplace = "";
-		NumeReKernel::print(LineBreak(_lang.get("DATA_OPENFILE_OVERWRITE_DATA", sDataFile), _option));
-		NumeReKernel::printPreFmt("|\n|<- ");
-		NumeReKernel::getline(cReplace);
+    else		// Oh! Es waren doch schon Daten vorhanden... Was jetzt? Anhaengen? / Ueberschreiben?
+    {
+        string cReplace = "";
+        NumeReKernel::print(LineBreak(_lang.get("DATA_OPENFILE_OVERWRITE_DATA", sDataFile), _option));
+        NumeReKernel::printPreFmt("|\n|<- ");
+        NumeReKernel::getline(cReplace);
 
-		if (cReplace == _lang.YES())
-		{
-			removeData();				// Zuerst mal die Daten loeschen
-			return openFile(_sFile, _option, bAutoSave, bIgnore);	// Jetzt die Methode erneut aufrufen
-		}
-		else
-		{
-			NumeReKernel::print(toSystemCodePage(_lang.get("COMMON_CANCEL")));
-		}
+        if (cReplace == _lang.YES())
+        {
+            removeData();				// Zuerst mal die Daten loeschen
+            return openFile(_sFile, _option, bAutoSave, bIgnore);	// Jetzt die Methode erneut aufrufen
+        }
+        else
+        {
+            NumeReKernel::print(toSystemCodePage(_lang.get("COMMON_CANCEL")));
+        }
 
-	}
+    }
 
-	return info;
+    return info;
 }
 
 vector<string> Datafile::getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens)
@@ -746,48 +746,48 @@ bool Datafile::isValue(int line, int col)
 // --> Setzt nCols <--
 void Datafile::setCols(long long int _nCols)
 {
-	nCols = _nCols;
-	return;
+    nCols = _nCols;
+    return;
 }
 
 // --> Setzt nLines <--
 void Datafile::setLines(long long int _nLines)
 {
-	nLines = _nLines;
-	return;
+    nLines = _nLines;
+    return;
 }
 
 // --> gibt nCols zurueck <--
 long long int Datafile::getCols(const string& sCache, bool _bFull) const
 {
-	if (sCache != "data")
-		return getTableCols(sCache, _bFull);
+    if (sCache != "data")
+        return getTableCols(sCache, _bFull);
     else if (!dDatafile)
         return 0;
-	else
-		return nCols;
+    else
+        return nCols;
 }
 
 // --> gibt nLines zurueck <--
 long long int Datafile::getLines(const string& sCache, bool _bFull) const
 {
-	if (sCache != "data")
-		return getTableLines(sCache, _bFull);
+    if (sCache != "data")
+        return getTableLines(sCache, _bFull);
     else if (!dDatafile)
         return 0;
-	else
-		return nLines;
+    else
+        return nLines;
 }
 
 // --> gibt das Element der _nLine-ten Zeile und der _nCol-ten Spalte zurueck <--
 double Datafile::getElement(long long int _nLine, long long int _nCol, const string& sCache) const
 {
-	if (sCache != "data")	// Daten aus dem Cache uebernehmen?
-		return readFromTable(_nLine, _nCol, sCache);
+    if (sCache != "data")	// Daten aus dem Cache uebernehmen?
+        return readFromTable(_nLine, _nCol, sCache);
     else if (_nLine >= nLines || _nCol >= nCols || _nLine < 0 || _nCol < 0)
         return NAN;
-	else if (dDatafile)		// Sonst werden die Daten des Datafiles verwendet
-		return dDatafile[_nLine][_nCol];
+    else if (dDatafile)		// Sonst werden die Daten des Datafiles verwendet
+        return dDatafile[_nLine][_nCol];
     else
         return NAN;
 }
@@ -858,55 +858,55 @@ void Datafile::copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLi
 // --> loescht den Inhalt des Datenfile-Objekts, ohne selbiges zu zerstoeren <--
 void Datafile::removeData(bool bAutoSave)
 {
-	if(bValidData)	// Sind ueberhaupt Daten vorhanden?
-	{
-		// --> Speicher, wo denn noetig freigeben <--
-		for (long long int i = 0; i < nLines; i++)
-		{
-			delete[] dDatafile[i];
-			//delete[] bValidEntry[i];
-		}
-		delete[] dDatafile;
-		//delete[] bValidEntry;
-		if (nAppendedZeroes)
-		{
-			delete[] nAppendedZeroes;
-			nAppendedZeroes = 0;
-		}
-		if (sHeadLine)
-		{
-			delete[] sHeadLine;
-			sHeadLine = 0;
-		}
+    if(bValidData)	// Sind ueberhaupt Daten vorhanden?
+    {
+        // --> Speicher, wo denn noetig freigeben <--
+        for (long long int i = 0; i < nLines; i++)
+        {
+            delete[] dDatafile[i];
+            //delete[] bValidEntry[i];
+        }
+        delete[] dDatafile;
+        //delete[] bValidEntry;
+        if (nAppendedZeroes)
+        {
+            delete[] nAppendedZeroes;
+            nAppendedZeroes = 0;
+        }
+        if (sHeadLine)
+        {
+            delete[] sHeadLine;
+            sHeadLine = 0;
+        }
 
-		// --> Variablen zuruecksetzen <--
-		nLines = 0;
-		nCols = 0;
-		dDatafile = 0;
-		bValidData = false;
-		//bValidEntry = 0;
-		sDataFile = "";
+        // --> Variablen zuruecksetzen <--
+        nLines = 0;
+        nCols = 0;
+        dDatafile = 0;
+        bValidData = false;
+        //bValidEntry = 0;
+        sDataFile = "";
 
-	}
-	return;
+    }
+    return;
 }
 
 // --> gibt den Wert von bValidData zurueck <--
 bool Datafile::isValid() const
 {
-	if(bUseCache)
-		return isValidCache();
-	else
-		return bValidData;
+    if(bUseCache)
+        return isValidCache();
+    else
+        return bValidData;
 }
 
 // --> gibt den Wert von sDataFile zurueck <--
 string Datafile::getDataFileName(const string& sCache) const
 {
-	if (sCache != "data")
-		return sCache;
-	else
-		return sDataFile;
+    if (sCache != "data")
+        return sCache;
+    else
+        return sDataFile;
 }
 
 // --> gibt den Wert von sDataFile (ggf. gekuerzt) zurueck <--
@@ -942,14 +942,14 @@ string Datafile::getDataFileNameShort() const
 // --> gibt das _i-te Element der gespeicherten Kopfzeile zurueck <--
 string Datafile::getHeadLineElement(long long int _i, const string& sCache) const
 {
-	if (sCache != "data")
-	{
-		return getTableHeadlineElement(_i, sCache);
-	}
-	else if (_i >= nCols)
+    if (sCache != "data")
+    {
+        return getTableHeadlineElement(_i, sCache);
+    }
+    else if (_i >= nCols)
         return _lang.get("COMMON_COL") + " " + toString((int)_i+1) + " (leer)";
-	else
-		return sHeadLine[_i];
+    else
+        return sHeadLine[_i];
 }
 
 vector<string> Datafile::getHeadLineElement(const VectorIndex& _vCol, const string& sCache) const
@@ -969,8 +969,8 @@ vector<string> Datafile::getHeadLineElement(const VectorIndex& _vCol, const stri
 // --> schreibt _sHead in das _i-te Element der Kopfzeile <--
 bool Datafile::setHeadLineElement(long long int _i, const string& sCache, string _sHead)
 {
-	for (unsigned int i = 0; i < _sHead.length(); i++)
-	{
+    for (unsigned int i = 0; i < _sHead.length(); i++)
+    {
         if (_sHead[i] == (char)142)
             _sHead[i] = 'Ä';
         else if (_sHead[i] == (char)132)
@@ -996,35 +996,35 @@ bool Datafile::setHeadLineElement(long long int _i, const string& sCache, string
         }
         else
             continue;
-	}
+    }
 
-	// --> Jetzt koennen wir den String verwenden <--
-	if (sCache != "data")
-	{
-		if (!setTableHeadlineElement(_i, sCache, _sHead))
+    // --> Jetzt koennen wir den String verwenden <--
+    if (sCache != "data")
+    {
+        if (!setTableHeadlineElement(_i, sCache, _sHead))
             return false;
-	}
-	else if (_i < nCols)
-		sHeadLine[_i] = _sHead;
+    }
+    else if (_i < nCols)
+        sHeadLine[_i] = _sHead;
     else
         return false;
-	return true;
+    return true;
 }
 
 // --> gibt die Zahl der in der _i-ten Spalte angehaengten Nullzeilen zurueck <--
 long long int Datafile::getAppendedZeroes(long long int _i, const string& sCache) const
 {
-	if (sCache != "data")
-	{
-		return MemoryManager::getAppendedZeroes(_i, sCache);
-	}
-	else
-	{
-		if (nAppendedZeroes && _i < nCols)
-			return nAppendedZeroes[_i];
-		else
-			return nLines;
-	}
+    if (sCache != "data")
+    {
+        return MemoryManager::getAppendedZeroes(_i, sCache);
+    }
+    else
+    {
+        if (nAppendedZeroes && _i < nCols)
+            return nAppendedZeroes[_i];
+        else
+            return nLines;
+    }
 }
 
 // This function counts the headline lines of the whole table
@@ -1061,193 +1061,193 @@ int Datafile::getHeadlineCount(const string& sCache) const
 // --> gibt zurueck, ob das Element der _nLine-ten Zeile und der _nCol-ten Spalte ueberhaupt gueltig ist <--
 bool Datafile::isValidEntry(long long int _nLine, long long int _nCol, const string& sCache) const
 {
-	if (sCache != "data")
-	{
-		return isValidElement(_nLine,_nCol,sCache);
-	}
-	else if (_nLine < nLines && _nLine >= 0 && _nCol < nCols && _nCol >= 0 && dDatafile)
-		return !isnan(dDatafile[_nLine][_nCol]);
-	else
-		return false;
+    if (sCache != "data")
+    {
+        return isValidElement(_nLine,_nCol,sCache);
+    }
+    else if (_nLine < nLines && _nLine >= 0 && _nCol < nCols && _nCol >= 0 && dDatafile)
+        return !isnan(dDatafile[_nLine][_nCol]);
+    else
+        return false;
 }
 
 // --> Spannend: Macht aus den Daten zweier Datafile-Objekte eine Tabelle, die im operierenden Objekt gespeichert wird <--
 void Datafile::melt(Datafile& _cache)
 {
-	if(_cache.bValidData) // Ist denn im zweiten Objekt ueberhaupt eine Information vorhanden?
-	{
-		// --> Temporaere Variablen initialisieren <--
-		long long int nOldCols = nCols;
-		long long int nOldLines = nLines;
-		sDataFile = "Merged Data"; 				// "merged Data" bietet sich einfach an ...
-		long long int nNewCols = nCols + _cache.nCols;	// Die neue Zahl der Spalten ist einfach die Summe beider Spalten
-		long long int nNewLines;							// Die neue Zahl der Zeilen wird durch das Datafile-Objekt mit den meisten Zeilen bestimmt
-		if (nLines >= _cache.nLines)
-			nNewLines = nLines;
-		else
-			nNewLines = _cache.nLines;
+    if(_cache.bValidData) // Ist denn im zweiten Objekt ueberhaupt eine Information vorhanden?
+    {
+        // --> Temporaere Variablen initialisieren <--
+        long long int nOldCols = nCols;
+        long long int nOldLines = nLines;
+        sDataFile = "Merged Data"; 				// "merged Data" bietet sich einfach an ...
+        long long int nNewCols = nCols + _cache.nCols;	// Die neue Zahl der Spalten ist einfach die Summe beider Spalten
+        long long int nNewLines;							// Die neue Zahl der Zeilen wird durch das Datafile-Objekt mit den meisten Zeilen bestimmt
+        if (nLines >= _cache.nLines)
+            nNewLines = nLines;
+        else
+            nNewLines = _cache.nLines;
 
-		// --> Speicher fuer Kopie anlegen <--
-		double** dDataFileOld = new double*[nOldLines];
-		//bool** bValidEntryOld = new bool*[nOldLines];
-		for (long long int i = 0; i < nOldLines; i++)
-		{
-			//bValidEntryOld[i] = new bool[nOldCols];
-			dDataFileOld[i] = new double[nOldCols];
-		}
-		long long int* nAppendedZeroesOld = new long long int[nOldCols];
-		string* sHeadLineOld = new string[nOldCols];
+        // --> Speicher fuer Kopie anlegen <--
+        double** dDataFileOld = new double*[nOldLines];
+        //bool** bValidEntryOld = new bool*[nOldLines];
+        for (long long int i = 0; i < nOldLines; i++)
+        {
+            //bValidEntryOld[i] = new bool[nOldCols];
+            dDataFileOld[i] = new double[nOldCols];
+        }
+        long long int* nAppendedZeroesOld = new long long int[nOldCols];
+        string* sHeadLineOld = new string[nOldCols];
 
-		// --> Kopieren der bisherigen Daten <--
-		for (long long int i = 0; i < nOldLines; i++)
-		{
-			for (long long int j = 0; j < nOldCols; j++)
-			{
-				if(i == 0)
-				{
-					sHeadLineOld[j] = sHeadLine[j];
-					if(nAppendedZeroes)	// Waren schon irgendwo Nullzeilen angehaengt? Ebenfalls uebernehmen ...
-						nAppendedZeroesOld[j] = nAppendedZeroes[j];
-					else
-						nAppendedZeroesOld[j] = 0;
-				}
-				dDataFileOld[i][j] = dDatafile[i][j];
-				//bValidEntryOld[i][j] = bValidEntry[i][j];
-			}
-		}
+        // --> Kopieren der bisherigen Daten <--
+        for (long long int i = 0; i < nOldLines; i++)
+        {
+            for (long long int j = 0; j < nOldCols; j++)
+            {
+                if(i == 0)
+                {
+                    sHeadLineOld[j] = sHeadLine[j];
+                    if(nAppendedZeroes)	// Waren schon irgendwo Nullzeilen angehaengt? Ebenfalls uebernehmen ...
+                        nAppendedZeroesOld[j] = nAppendedZeroes[j];
+                    else
+                        nAppendedZeroesOld[j] = 0;
+                }
+                dDataFileOld[i][j] = dDatafile[i][j];
+                //bValidEntryOld[i][j] = bValidEntry[i][j];
+            }
+        }
 
-		// --> Alten Speicher freigeben, sonst kann der nicht neu beschrieben werden! <--
-		delete[] sHeadLine;
-		sHeadLine = 0;
-		if(nAppendedZeroes)
-		{
-			delete[] nAppendedZeroes;
-			nAppendedZeroes = 0;
-		}
-		for (long long int i = 0; i < nOldLines; i++)
-		{
-			delete[] dDatafile[i];
-			//delete[] bValidEntry[i];
-		}
-		delete[] dDatafile;
-		//delete[] bValidEntry;
-		dDatafile = 0;
-		//bValidEntry = 0;
+        // --> Alten Speicher freigeben, sonst kann der nicht neu beschrieben werden! <--
+        delete[] sHeadLine;
+        sHeadLine = 0;
+        if(nAppendedZeroes)
+        {
+            delete[] nAppendedZeroes;
+            nAppendedZeroes = 0;
+        }
+        for (long long int i = 0; i < nOldLines; i++)
+        {
+            delete[] dDatafile[i];
+            //delete[] bValidEntry[i];
+        }
+        delete[] dDatafile;
+        //delete[] bValidEntry;
+        dDatafile = 0;
+        //bValidEntry = 0;
 
-		// --> Neuen Speicher mit neuer Groesse allozieren <--
-		dDatafile = new double*[nNewLines];
-		//bValidEntry = new bool*[nNewLines];
-		for (long long int i = 0; i < nNewLines; i++)
-		{
-			//bValidEntry[i] = new bool[nNewCols];
-			dDatafile[i] = new double[nNewCols];
-		}
-		sHeadLine = new string[nNewCols];
-		nAppendedZeroes = new long long int[nNewCols];
+        // --> Neuen Speicher mit neuer Groesse allozieren <--
+        dDatafile = new double*[nNewLines];
+        //bValidEntry = new bool*[nNewLines];
+        for (long long int i = 0; i < nNewLines; i++)
+        {
+            //bValidEntry[i] = new bool[nNewCols];
+            dDatafile[i] = new double[nNewCols];
+        }
+        sHeadLine = new string[nNewCols];
+        nAppendedZeroes = new long long int[nNewCols];
 
-		// --> Alte Eintraege wieder einfuegen <--
-		for (long long int i = 0; i < nNewLines; i++)
-		{
-			for (long long int j = 0; j < nOldCols; j++)
-			{
-				if (i == 0)
-				{
-					sHeadLine[j] = sHeadLineOld[j];
-					nAppendedZeroes[j] = nAppendedZeroesOld[j];
-					if (nOldLines < nNewLines)		// Falls Nullzeilen noetig sind: speichern!
-						nAppendedZeroes[j] += (nNewLines - nOldLines);
-				}
-				if (i >= nOldLines)
-				{
-					dDatafile[i][j] = NAN;			// Nullzeilen, falls noetig
-					//bValidEntry[i][j] = false;
-					continue;
-				}
-				else
-				{
-					dDatafile[i][j] = dDataFileOld[i][j];
-					//bValidEntry[i][j] = bValidEntryOld[i][j];
-				}
+        // --> Alte Eintraege wieder einfuegen <--
+        for (long long int i = 0; i < nNewLines; i++)
+        {
+            for (long long int j = 0; j < nOldCols; j++)
+            {
+                if (i == 0)
+                {
+                    sHeadLine[j] = sHeadLineOld[j];
+                    nAppendedZeroes[j] = nAppendedZeroesOld[j];
+                    if (nOldLines < nNewLines)		// Falls Nullzeilen noetig sind: speichern!
+                        nAppendedZeroes[j] += (nNewLines - nOldLines);
+                }
+                if (i >= nOldLines)
+                {
+                    dDatafile[i][j] = NAN;			// Nullzeilen, falls noetig
+                    //bValidEntry[i][j] = false;
+                    continue;
+                }
+                else
+                {
+                    dDatafile[i][j] = dDataFileOld[i][j];
+                    //bValidEntry[i][j] = bValidEntryOld[i][j];
+                }
 
-			}
-		}
+            }
+        }
 
-		// --> Neue Eintraege aus dem Objekt _cache hinzufuegen <--
-		for (long long int i = 0; i < nNewLines; i++)
-		{
-			for (long long int j = 0; j < _cache.nCols; j++)
-			{
-				if (i == 0)
-				{
-					sHeadLine[j+nOldCols] = _cache.sHeadLine[j];
-					if (_cache.nAppendedZeroes)
-						nAppendedZeroes[j+nOldCols] = _cache.nAppendedZeroes[j];
-					else
-						nAppendedZeroes[j+nOldCols] = 0;
-					if (_cache.nLines < nNewLines)		// Ebenfalls die Nullzeilen merken, falls denn welche noetig sind
-						nAppendedZeroes[j+nOldCols] += (nNewLines - _cache.nLines);
-				}
-				if (i >= _cache.nLines)
-				{
-					dDatafile[i][j+nOldCols] = NAN;		// Nullzeilen, falls noetig
-					//bValidEntry[i][j+nOldCols] = false;
-					continue;
-				}
-				else
-				{
-					//bValidEntry[i][j+nOldCols] = _cache.bValidEntry[i][j];
-					dDatafile[i][j+nOldCols] = _cache.dDatafile[i][j];
-				}
-			}
-		}
+        // --> Neue Eintraege aus dem Objekt _cache hinzufuegen <--
+        for (long long int i = 0; i < nNewLines; i++)
+        {
+            for (long long int j = 0; j < _cache.nCols; j++)
+            {
+                if (i == 0)
+                {
+                    sHeadLine[j+nOldCols] = _cache.sHeadLine[j];
+                    if (_cache.nAppendedZeroes)
+                        nAppendedZeroes[j+nOldCols] = _cache.nAppendedZeroes[j];
+                    else
+                        nAppendedZeroes[j+nOldCols] = 0;
+                    if (_cache.nLines < nNewLines)		// Ebenfalls die Nullzeilen merken, falls denn welche noetig sind
+                        nAppendedZeroes[j+nOldCols] += (nNewLines - _cache.nLines);
+                }
+                if (i >= _cache.nLines)
+                {
+                    dDatafile[i][j+nOldCols] = NAN;		// Nullzeilen, falls noetig
+                    //bValidEntry[i][j+nOldCols] = false;
+                    continue;
+                }
+                else
+                {
+                    //bValidEntry[i][j+nOldCols] = _cache.bValidEntry[i][j];
+                    dDatafile[i][j+nOldCols] = _cache.dDatafile[i][j];
+                }
+            }
+        }
 
-		// --> Zeilen- und Spaltenzahlen in die eigentlichen Variablen uebernehmen <--
-		nLines = nNewLines;
-		nCols = nNewCols;
+        // --> Zeilen- und Spaltenzahlen in die eigentlichen Variablen uebernehmen <--
+        nLines = nNewLines;
+        nCols = nNewCols;
 
-		// --> temporaeren Speicher wieder freigeben <--
-		delete[] sHeadLineOld;
-		delete[] nAppendedZeroesOld;
-		for (long long int i = 0; i < nOldLines; i++)
-		{
-			delete[] dDataFileOld[i];
-			//delete[] bValidEntryOld[i];
-		}
-		delete[] dDataFileOld;
-		//delete[] bValidEntryOld;
+        // --> temporaeren Speicher wieder freigeben <--
+        delete[] sHeadLineOld;
+        delete[] nAppendedZeroesOld;
+        for (long long int i = 0; i < nOldLines; i++)
+        {
+            delete[] dDataFileOld[i];
+            //delete[] bValidEntryOld[i];
+        }
+        delete[] dDataFileOld;
+        //delete[] bValidEntryOld;
 
-	}
-	return;
+    }
+    return;
 }
 
 void Datafile::setCacheStatus(bool _bCache)
 {
-	bUseCache = _bCache;
-	return;
+    bUseCache = _bCache;
+    return;
 }
 
 bool Datafile::getCacheStatus() const
 {
-	return bUseCache;
+    return bUseCache;
 }
 
 bool Datafile::isValidCache() const
 {
-	return MemoryManager::isValid();
+    return MemoryManager::isValid();
 }
 
 void Datafile::clearCache()
 {
-	if (isValidCache())
-		removeDataInMemory();
-	return;
+    if (isValidCache())
+        removeDataInMemory();
+    return;
 }
 
 bool Datafile::setCacheSize(long long int _nLines, long long int _nCols, const string& _sCache)
 {
-	if (!resizeTables(_nLines, _nCols, _sCache))
+    if (!resizeTables(_nLines, _nCols, _sCache))
         return false;
-	return true;
+    return true;
 }
 
 void Datafile::openAutosave(string _sFile, Settings& _option)
@@ -1538,43 +1538,43 @@ bool Datafile::saveFile(const string& sCache, string _sFileName, unsigned short 
 
 void Datafile::generateFileName()
 {
-	string sTime;
-	if (sSavePath.find('"') != string::npos)
+    string sTime;
+    if (sSavePath.find('"') != string::npos)
         sTime = sSavePath.substr(1,sSavePath.length()-2);
     else
         sTime = sSavePath;
     while (sTime.find('\\') != string::npos)
         sTime[sTime.find('\\')] = '/';
     sTime += "/" + sPrefix + "_";		// Prefix laden
-	sTime += getDate();		// Datum aus der Klasse laden
-	sTime += ".ndat";
-	sOutputFile = sTime;			// Dateinamen an sFileName zuweisen
-	return;
+    sTime += getDate();		// Datum aus der Klasse laden
+    sTime += ".ndat";
+    sOutputFile = sTime;			// Dateinamen an sFileName zuweisen
+    return;
 }
 
 string Datafile::getDate()	// Der Boolean entscheidet, ob ein Dateinamen-Datum oder ein "Kommentar-Datum" gewuenscht ist
 {
-	time_t now = time(0);		// Aktuelle Zeit initialisieren
-	tm *ltm = localtime(&now);
-	ostringstream Temp_str;
-	Temp_str << 1900+ltm->tm_year << "-"; //YYYY-
-	if(1+ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
-		Temp_str << "0";
-	Temp_str << 1+ltm->tm_mon << "-"; // MM-
-	if(ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
-		Temp_str << "0";
-	Temp_str << ltm->tm_mday; 	// DD
-		Temp_str << "_";		// Unterstrich im Dateinamen
-	if(ltm->tm_hour < 10)
-		Temp_str << "0";
-	Temp_str << ltm->tm_hour; 	// hh
-	if(ltm->tm_min < 10)
-		Temp_str << "0";
-	Temp_str << ltm->tm_min;	// mm
-	if(ltm->tm_sec < 10)
-		Temp_str << "0";
-	Temp_str << ltm->tm_sec;	// ss
-	return Temp_str.str();
+    time_t now = time(0);		// Aktuelle Zeit initialisieren
+    tm *ltm = localtime(&now);
+    ostringstream Temp_str;
+    Temp_str << 1900+ltm->tm_year << "-"; //YYYY-
+    if(1+ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
+        Temp_str << "0";
+    Temp_str << 1+ltm->tm_mon << "-"; // MM-
+    if(ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
+        Temp_str << "0";
+    Temp_str << ltm->tm_mday; 	// DD
+        Temp_str << "_";		// Unterstrich im Dateinamen
+    if(ltm->tm_hour < 10)
+        Temp_str << "0";
+    Temp_str << ltm->tm_hour; 	// hh
+    if(ltm->tm_min < 10)
+        Temp_str << "0";
+    Temp_str << ltm->tm_min;	// mm
+    if(ltm->tm_sec < 10)
+        Temp_str << "0";
+    Temp_str << ltm->tm_sec;	// ss
+    return Temp_str.str();
 }
 
 void Datafile::openFromCmdLine(Settings& _option, string _sFile, bool bOpen)
@@ -2469,7 +2469,7 @@ double Datafile::cmp(const string& sCache, long long int i1, long long int i2, l
         return MemoryManager::cmp(sCache, i1, i2, j1, j2, dRef, _nType);
 
     if (!bValidData)
-		return NAN;
+        return NAN;
 
     if (i2 == -1)
         i2 = i1;
@@ -2528,80 +2528,80 @@ double Datafile::cmp(const string& sCache, long long int i1, long long int i2, l
             break;
     }
 
-	for (long long int i = i1; i <= i2; i++)
-	{
-		for (long long int j = j1; j <= j2; j++)
-		{
-			if (isnan(dDatafile[i][j]))
-				continue;
+    for (long long int i = i1; i <= i2; i++)
+    {
+        for (long long int j = j1; j <= j2; j++)
+        {
+            if (isnan(dDatafile[i][j]))
+                continue;
 
-			if (dDatafile[i][j] == dRef)
-			{
-				if (nType & RETURN_VALUE)
-					return dDatafile[i][j];
+            if (dDatafile[i][j] == dRef)
+            {
+                if (nType & RETURN_VALUE)
+                    return dDatafile[i][j];
 
                 if (i1 == i2)
                     return j + 1;
 
                 return i + 1;
-			}
-			else if (nType & RETURN_GE && dDatafile[i][j] > dRef)
-			{
-			    if (nType & RETURN_FIRST)
+            }
+            else if (nType & RETURN_GE && dDatafile[i][j] > dRef)
+            {
+                if (nType & RETURN_FIRST)
                 {
                     if (nType & RETURN_VALUE)
                         return dDatafile[i][j];
 
                     if (i1 == i2)
-						return j + 1;
+                        return j + 1;
 
-					return i + 1;
+                    return i + 1;
                 }
 
-				if (nKeep == -1 || dDatafile[i][j] < dKeep)
-				{
-					dKeep = dDatafile[i][j];
-					if (i1 == i2)
-						nKeep = j;
-					else
-						nKeep = i;
-				}
-				else
-					continue;
-			}
-			else if (nType & RETURN_LE && dDatafile[i][j] < dRef)
-			{
-				if (nType & RETURN_FIRST)
+                if (nKeep == -1 || dDatafile[i][j] < dKeep)
+                {
+                    dKeep = dDatafile[i][j];
+                    if (i1 == i2)
+                        nKeep = j;
+                    else
+                        nKeep = i;
+                }
+                else
+                    continue;
+            }
+            else if (nType & RETURN_LE && dDatafile[i][j] < dRef)
+            {
+                if (nType & RETURN_FIRST)
                 {
                     if (nType & RETURN_VALUE)
                         return dDatafile[i][j];
 
                     if (i1 == i2)
-						return j + 1;
+                        return j + 1;
 
-					return i + 1;
+                    return i + 1;
                 }
 
                 if (nKeep == -1 || dDatafile[i][j] > dKeep)
-				{
-					dKeep = dDatafile[i][j];
-					if (i1 == i2)
-						nKeep = j;
-					else
-						nKeep = i;
-				}
-				else
-					continue;
-			}
-		}
-	}
+                {
+                    dKeep = dDatafile[i][j];
+                    if (i1 == i2)
+                        nKeep = j;
+                    else
+                        nKeep = i;
+                }
+                else
+                    continue;
+            }
+        }
+    }
 
-	if (nKeep == -1)
-		return NAN;
-	else if (nType & RETURN_VALUE)
-		return dKeep;
-	else
-		return nKeep + 1;
+    if (nKeep == -1)
+        return NAN;
+    else if (nType & RETURN_VALUE)
+        return dKeep;
+    else
+        return nKeep + 1;
 }
 
 double Datafile::cmp(const string& sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int _nType)
@@ -2609,8 +2609,8 @@ double Datafile::cmp(const string& sCache, const VectorIndex& _vLine, const Vect
     if (sCache != "data")
         return MemoryManager::cmp(sCache, _vLine, _vCol, dRef, _nType);
 
-	if (!bValidData)
-		return NAN;
+    if (!bValidData)
+        return NAN;
 
     enum
     {
@@ -2643,83 +2643,83 @@ double Datafile::cmp(const string& sCache, const VectorIndex& _vLine, const Vect
             break;
     }
 
-	for (long long int i = 0; i < _vLine.size(); i++)
-	{
-		for (long long int j = 0; j < _vCol.size(); j++)
-		{
-			if (_vLine[i] < 0 || _vLine[i] >= nLines || _vCol[j] < 0 || _vCol[j] >= nCols)
-				continue;
+    for (long long int i = 0; i < _vLine.size(); i++)
+    {
+        for (long long int j = 0; j < _vCol.size(); j++)
+        {
+            if (_vLine[i] < 0 || _vLine[i] >= nLines || _vCol[j] < 0 || _vCol[j] >= nCols)
+                continue;
 
-			if (isnan(dDatafile[_vLine[i]][_vCol[j]]))
-				continue;
+            if (isnan(dDatafile[_vLine[i]][_vCol[j]]))
+                continue;
 
-			if (dDatafile[_vLine[i]][_vCol[j]] == dRef)
-			{
-				if (nType & RETURN_VALUE)
-					return dDatafile[_vLine[i]][_vCol[j]];
+            if (dDatafile[_vLine[i]][_vCol[j]] == dRef)
+            {
+                if (nType & RETURN_VALUE)
+                    return dDatafile[_vLine[i]][_vCol[j]];
 
                 if (_vLine[0] == _vLine[_vLine.size() - 1])
                     return _vCol[j] + 1;
 
                 return _vLine[i] + 1;
-			}
-			else if (nType & RETURN_GE && dDatafile[_vLine[i]][_vCol[j]] > dRef)
-			{
-			    if (nType & RETURN_FIRST)
+            }
+            else if (nType & RETURN_GE && dDatafile[_vLine[i]][_vCol[j]] > dRef)
+            {
+                if (nType & RETURN_FIRST)
                 {
                     if (nType & RETURN_VALUE)
                         return dDatafile[_vLine[i]][_vCol[j]];
 
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
-						return _vCol[j] + 1;
+                        return _vCol[j] + 1;
 
-					return _vLine[i] + 1;
+                    return _vLine[i] + 1;
                 }
 
-				if (nKeep == -1 || dDatafile[_vLine[i]][_vCol[j]] < dKeep)
-				{
-					dKeep = dDatafile[_vLine[i]][_vCol[j]];
-					if (_vLine[0] == _vLine[_vLine.size() - 1])
-						nKeep = _vCol[j];
-					else
-						nKeep = _vLine[i];
-				}
-				else
-					continue;
-			}
-			else if (nType & RETURN_LE && dDatafile[_vLine[i]][_vCol[j]] < dRef)
-			{
-				if (nType & RETURN_FIRST)
+                if (nKeep == -1 || dDatafile[_vLine[i]][_vCol[j]] < dKeep)
+                {
+                    dKeep = dDatafile[_vLine[i]][_vCol[j]];
+                    if (_vLine[0] == _vLine[_vLine.size() - 1])
+                        nKeep = _vCol[j];
+                    else
+                        nKeep = _vLine[i];
+                }
+                else
+                    continue;
+            }
+            else if (nType & RETURN_LE && dDatafile[_vLine[i]][_vCol[j]] < dRef)
+            {
+                if (nType & RETURN_FIRST)
                 {
                     if (nType & RETURN_VALUE)
                         return dDatafile[_vLine[i]][_vCol[j]];
 
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
-						return _vCol[j] + 1;
+                        return _vCol[j] + 1;
 
-					return _vLine[i] + 1;
+                    return _vLine[i] + 1;
                 }
 
                 if (nKeep == -1 || dDatafile[_vLine[i]][_vCol[j]] > dKeep)
-				{
-					dKeep = dDatafile[_vLine[i]][_vCol[j]];
-					if (_vLine[0] == _vLine[_vLine.size() - 1])
-						nKeep = _vCol[j];
-					else
-						nKeep = _vLine[i];
-				}
-				else
-					continue;
-			}
-		}
-	}
+                {
+                    dKeep = dDatafile[_vLine[i]][_vCol[j]];
+                    if (_vLine[0] == _vLine[_vLine.size() - 1])
+                        nKeep = _vCol[j];
+                    else
+                        nKeep = _vLine[i];
+                }
+                else
+                    continue;
+            }
+        }
+    }
 
-	if (nKeep == -1)
-		return NAN;
-	else if (nType & RETURN_VALUE)
-		return dKeep;
-	else
-		return nKeep + 1;
+    if (nKeep == -1)
+        return NAN;
+    else if (nType & RETURN_VALUE)
+        return dKeep;
+    else
+        return nKeep + 1;
 }
 
 double Datafile::med(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2)

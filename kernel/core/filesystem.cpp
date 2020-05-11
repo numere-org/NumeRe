@@ -22,12 +22,15 @@
 
 string toLowerCase(const string&);
 
-// --> Standard-Konstruktor <--
+
+/////////////////////////////////////////////////
+/// \brief Default constructor.
+/////////////////////////////////////////////////
 FileSystem::FileSystem()
 {
     sPath = "";
     sWhere = "";
-    sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.bps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.xls;.xlsx;.chm;.h;.hpp;.cxx;.cpp;.c;.m;";
+    sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.bps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.xls;.xlsx;.chm;.h;.hpp;.cxx;.cpp;.c;.m;.tif;.tiff;";
     for (int i = 0; i < 7; i++)
     {
         sTokens[i][0] = "";
@@ -35,7 +38,17 @@ FileSystem::FileSystem()
     }
 }
 
-// clean the passed file path
+
+/////////////////////////////////////////////////
+/// \brief This function cleans the passed file
+/// path, i.e. replaces the character encoding of
+/// umlauts, replaces path separators and path
+/// placeholders.
+///
+/// \param sFilePath string
+/// \return string
+///
+/////////////////////////////////////////////////
 string FileSystem::cleanPath(string sFilePath) const
 {
     for (size_t i = 0; i < sFilePath.length(); i++)
@@ -48,8 +61,8 @@ string FileSystem::cleanPath(string sFilePath) const
     if (sFilePath.find_last_not_of(" \t") != string::npos)
         sFilePath.erase(sFilePath.find_last_not_of(" \t")+1);
 
-	if (sFilePath[0] == '<')
-	{
+    if (sFilePath[0] == '<')
+    {
         for (int i = 0; i < 7; i++)
         {
             if (sFilePath.substr(0,sTokens[i][0].length()) == sTokens[i][0])
@@ -68,10 +81,10 @@ string FileSystem::cleanPath(string sFilePath) const
             else
                 sFilePath = sTokens[0][1] + sFilePath.substr(6);
         }
-	}
+    }
 
-	for (unsigned int i = 0; i < sFilePath.length(); i++)
-	{
+    for (unsigned int i = 0; i < sFilePath.length(); i++)
+    {
         if (sFilePath[i] == (char)142)
             sFilePath[i] = 'Ä';
         else if (sFilePath[i] == (char)132)
@@ -88,16 +101,26 @@ string FileSystem::cleanPath(string sFilePath) const
             sFilePath[i] = 'ß';
         else
             continue;
-	}
+    }
 
-	return sFilePath;
+    return sFilePath;
 }
 
-// Resolve wildcards in paths
+
+/////////////////////////////////////////////////
+/// \brief This member function resolves all
+/// wildcards, which may be found in the passed
+/// filename.
+///
+/// \param _sFileName string&
+/// \param isFile bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void FileSystem::resolveWildCards(string& _sFileName, bool isFile) const
 {
     if (_sFileName.find('*') != string::npos || _sFileName.find('?') != string::npos)
-	{
+    {
         WIN32_FIND_DATA FindFileData;
         HANDLE hFind = INVALID_HANDLE_VALUE;
         hFind = FindFirstFile(_sFileName.c_str(), &FindFileData);
@@ -157,10 +180,18 @@ void FileSystem::resolveWildCards(string& _sFileName, bool isFile) const
             else
                 _sFileName = sNewFileName;
         }
-	}
+    }
 }
 
-// Create the missing folders in the path
+
+/////////////////////////////////////////////////
+/// \brief This member function creates all
+/// missing directories in the passed path.
+///
+/// \param _sPath const string&
+/// \return int
+///
+/////////////////////////////////////////////////
 int FileSystem::createFolders(const string& _sPath) const
 {
     // Create the folder (returns false, if there's more
@@ -195,23 +226,34 @@ int FileSystem::createFolders(const string& _sPath) const
 }
 
 
-// --> Pruefe den string _sFileName, ob er als Dateiname verwendet werden kann
+/////////////////////////////////////////////////
+/// \brief This member function evaluates,
+/// whether the passed filename is a valid
+/// filename. One may supply a preferred filename
+/// extension.
+///
+/// \param _sFileName string
+/// \param sExtension const string
+/// \param checkExtension bool
+/// \return string
+///
+/////////////////////////////////////////////////
 string FileSystem::ValidFileName(string _sFileName, const string sExtension, bool checkExtension) const
 {
-	string sValid = "";
-	sValidExtensions = toLowerCase(sValidExtensions);
+    string sValid = "";
+    sValidExtensions = toLowerCase(sValidExtensions);
 
-	_sFileName = cleanPath(_sFileName);
+    _sFileName = cleanPath(_sFileName);
 
     // Find the position of the last colon in the string
     // should be directly after the drive letter
-	unsigned int nPos = _sFileName.find_last_of(':');
+    unsigned int nPos = _sFileName.find_last_of(':');
 
-	// If there's no colon in the current path, then it is a
-	// network address
-	if (nPos == string::npos)
-	{
-	    if (_sFileName.substr(0, 2) != "//")
+    // If there's no colon in the current path, then it is a
+    // network address
+    if (nPos == string::npos)
+    {
+        if (_sFileName.substr(0, 2) != "//")
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
     }
 
@@ -226,30 +268,30 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension, boo
     // consecutive character should be a path
     // separator. In this case, we'll add the
     // default extension
-	if (nPos == string::npos
+    if (nPos == string::npos
         || (nPos == 0 || nPos == 1)
         || (_sFileName.find('/', nPos) != string::npos || _sFileName.find('\\', nPos) != string::npos))
-		sValid = _sFileName + sExtension;
-	else if (checkExtension)
-	{
-	    // Extract the string part after the last
-	    // dot in the file path
-		sValid = _sFileName.substr(nPos);
+        sValid = _sFileName + sExtension;
+    else if (checkExtension)
+    {
+        // Extract the string part after the last
+        // dot in the file path
+        sValid = _sFileName.substr(nPos);
 
-		// Remove the possible trailing quotation
-		// mark from the extension
-		if (sValid.back() == '"')
+        // Remove the possible trailing quotation
+        // mark from the extension
+        if (sValid.back() == '"')
             sValid.pop_back();
 
-		// Ensure that the found extension is valid.
-		// Otherwise the extension will be exchanged
-		// automatically
-		if (sValidExtensions.find(";"+toLowerCase(sValid)+";") != string::npos)
-		{
-			sValid = _sFileName;
-		}
-		else
-		{
+        // Ensure that the found extension is valid.
+        // Otherwise the extension will be exchanged
+        // automatically
+        if (sValidExtensions.find(";"+toLowerCase(sValid)+";") != string::npos)
+        {
+            sValid = _sFileName;
+        }
+        else
+        {
             if (sValid == ".*")
                 sValid = _sFileName.substr(0,nPos);
             else
@@ -257,60 +299,78 @@ string FileSystem::ValidFileName(string _sFileName, const string sExtension, boo
                 NumeReKernel::printPreFmt("|-> WARNUNG: Dieser Datentyp ist unbekannt oder geschuetzt! Die Endung wurde automatisch durch \".dat\" ersetzt!\n");
                 sValid = _sFileName.substr(0, nPos) + ".dat";
             }
-		}
-	}
-	else
+        }
+    }
+    else
         sValid = _sFileName;
 
-	// It's possible, that a new wildcard was added to the
-	// file path. Resolve it here
-	resolveWildCards(sValid, true);
+    // It's possible, that a new wildcard was added to the
+    // file path. Resolve it here
+    resolveWildCards(sValid, true);
 
-	// Ensure that the file path separators are unix-like
-	for (unsigned int i = 0; i < sValid.length(); i++)
-	{
+    // Ensure that the file path separators are unix-like
+    for (unsigned int i = 0; i < sValid.length(); i++)
+    {
         if (sValid[i] == '\\')
             sValid[i] = '/';
-	}
+    }
 
-	return sValid;
+    return sValid;
 }
 
-// --> Pruefe den string _sFileName, ob er als Dateiname verwendet werden kann
+
+/////////////////////////////////////////////////
+/// \brief This member function evaluates,
+/// whether the passed foldername is a valid
+/// foldername.
+///
+/// \param _sFileName string
+/// \return string
+///
+/////////////////////////////////////////////////
 string FileSystem::ValidFolderName(string _sFileName) const
 {
-	_sFileName = cleanPath(_sFileName);
+    _sFileName = cleanPath(_sFileName);
 
     // Find the position of the last colon in the string
     // should be directly after the drive letter
-	unsigned int nPos = _sFileName.find_last_of(':');
+    unsigned int nPos = _sFileName.find_last_of(':');
 
-	// If there's no colon in the current path, then it is a
-	// network address
-	if (nPos == string::npos)
-	{
-	    if (_sFileName.substr(0,2) != "//")
+    // If there's no colon in the current path, then it is a
+    // network address
+    if (nPos == string::npos)
+    {
+        if (_sFileName.substr(0,2) != "//")
             _sFileName = sPath.substr(1, sPath.length()-2) + "/" + _sFileName;
     }
 
     // Resolve wildcards in the passed file name
     resolveWildCards(_sFileName, false);
 
-	// Ensure that the file path separators are unix-like
-	for (unsigned int i = 0; i < _sFileName.length(); i++)
-	{
+    // Ensure that the file path separators are unix-like
+    for (unsigned int i = 0; i < _sFileName.length(); i++)
+    {
         if (_sFileName[i] == '\\')
             _sFileName[i] = '/';
-	}
+    }
 
-	// Append a trailing path separator, if it is missing
-	if (_sFileName.back() != '/')
+    // Append a trailing path separator, if it is missing
+    if (_sFileName.back() != '/')
         _sFileName += "/";
-	return _sFileName;
+    return _sFileName;
 }
 
-// This member function validizes the passed file name and
-// creates the needed folders on-the-fly
+
+/////////////////////////////////////////////////
+/// \brief This member function validizes the
+/// passed file name and creates the needed
+/// folders on-the-fly.
+///
+/// \param _sFileName const string&
+/// \param sExtension const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string FileSystem::ValidizeAndPrepareName(const string& _sFileName, const string& sExtension) const
 {
     string sValid = ValidFileName(_sFileName, sExtension);
@@ -319,6 +379,17 @@ string FileSystem::ValidizeAndPrepareName(const string& _sFileName, const string
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function may be used to
+/// set the preferred file path of the current
+/// FileSystem instance.
+///
+/// \param _sPath string
+/// \param bMkDir bool
+/// \param _sWhere string
+/// \return int
+///
+/////////////////////////////////////////////////
 int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
 {
 
@@ -327,7 +398,7 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
         sWhere = sWhere.substr(1);
     if (sWhere[sWhere.length()-1] == '"')
         sWhere = sWhere.substr(0,sWhere.length()-1);
-	sPath = fromSystemCodePage(_sPath);
+    sPath = fromSystemCodePage(_sPath);
 
     //cerr << sWhere << "\\" << sPath << endl;
 
@@ -351,8 +422,8 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
     }
     while (sPath.find('\\') != string::npos)
         sPath[sPath.find('\\')] = '/';
-	if (sPath.find(':') == string::npos)
-	{
+    if (sPath.find(':') == string::npos)
+    {
         if (sPath.length() > 3 && sPath.substr(0,3) != "..\\" && sPath.substr(0,3) != "../" && sPath.substr(0,2) != ".\\" && sPath.substr(0,2) != "./")
             sPath = "\"" + sWhere + "\\" + sPath + "\"";
         else if (sPath.length() > 2 && (sPath.substr(0,2) == ".\\" || sPath.substr(0,2) == "./"))
@@ -374,27 +445,34 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
         }
         else
             sPath = "\"" + sWhere + "\\" + sPath + "\"";
-	}
-	if (sPath[0] == '"')
+    }
+    if (sPath[0] == '"')
         sPath = sPath.substr(1);
     if (sPath[sPath.length()-1] == '"')
         sPath = sPath.substr(0, sPath.length()-1);
 
 
-	if (bMkDir)
-	{
-	    int nReturn = createFolders(sPath);
-	    sPath = "\"" + sPath + "\"";
-	    return nReturn;
-	}
+    if (bMkDir)
+    {
+        int nReturn = createFolders(sPath);
+        sPath = "\"" + sPath + "\"";
+        return nReturn;
+    }
 
     sPath = "\"" + sPath + "\"";
 
-	return 1;
+    return 1;
 }
 
-// This member function creates the hidden revisions folders
-// for the version control system
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// hidden revisions folders for the version
+/// control system.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void FileSystem::createRevisionsFolder()
 {
     string sRevisionsPath = sPath.substr(1, sPath.length()-2) + "/.revisions";
@@ -402,6 +480,14 @@ void FileSystem::createRevisionsFolder()
     SetFileAttributesA(sRevisionsPath.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns the default path of this
+/// FileSystem instance.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string FileSystem::getPath() const
 {
     if (sPath[0] == '"' && sPath[sPath.length()-1] == '"')
@@ -409,7 +495,18 @@ string FileSystem::getPath() const
     return sPath;
 }
 
-// C:/Software/NumeRe/numere.exe -> C, Software/NumeRe, numere, exe
+
+/////////////////////////////////////////////////
+/// \brief This member function separates all
+/// path parts into single strings: the drive
+/// letter, the path, the name and the extension.
+/// This function may also handle folder paths
+/// and network paths.
+///
+/// \param sFilePath const string&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> FileSystem::getFileParts(const string& sFilePath) const
 {
     vector<string> vFileParts;
@@ -454,6 +551,16 @@ vector<string> FileSystem::getFileParts(const string& sFilePath) const
     return vFileParts;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function may be used to
+/// update the path placeholders of the current
+/// FileSystem instance.
+///
+/// \param _sTokens string
+/// \return void
+///
+/////////////////////////////////////////////////
 void FileSystem::setTokens(string _sTokens)
 {
     for (int i = 0; i < 7; i++)
@@ -466,7 +573,15 @@ void FileSystem::setTokens(string _sTokens)
     }
 }
 
-// Determine, whether a path name indicates a file or a folder
+
+/////////////////////////////////////////////////
+/// \brief This function determines, whether a
+/// path name indicates a file or a folder.
+///
+/// \param _sPath const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool FileSystem::isFile(const string& _sPath) const
 {
     if (fileExists(_sPath))

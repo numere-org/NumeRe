@@ -104,319 +104,84 @@ namespace NumeRe
         size_t nEndPosition = 0;
 
         // While the function signature can be found
-        while ((nStartPosition = findNextFunction(sFuncName + "(", sLine, nStartPosition, nEndPosition)) != string::npos)
+        while ((nStartPosition = findNextFunction(sFuncName, sLine, nStartPosition, nEndPosition)) != string::npos)
         {
             // Extract the argument of the current found function and process it
-            string sFunctionArgument = getFunctionArgumentList(sFuncName + "(", sLine, nStartPosition, nEndPosition);
+            string sFunctionArgument = getFunctionArgumentList(sFuncName, sLine, nStartPosition, nEndPosition);
             vector<string> vReturnValues;
             StringFuncArgs stringArgs;
             stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
             bool bLogicalOnly = false;
 
+            // Create function argument vector variables
+            s_vect sStringArg1, sStringArg2, sStringArg3;
+            n_vect nIntArg1, nIntArg2;
+            size_t nMaxArgs = 0;
+
             // Apply the parser as specified by the function signature. After that call the corresponding
             // string function with the returned arguments as many times as it's needed
             if (funcHandle.fType >= PARSER_INT && funcHandle.fType < PARSER_STRING)
-            {
-                n_vect nIntArg;
-                size_t nMaxArgs = argumentParser(sFunctionArgument, nIntArg);
-                if (!nMaxArgs)
-                {
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
-                if (funcHandle.bTakesMultiArguments)
-                {
-                    stringArgs.nMultiArg = nIntArg;
-                    vReturnValues.push_back(funcHandle.fHandle(stringArgs));
-                }
-                else
-                {
-                    for (size_t i = 0; i < nMaxArgs; i++)
-                    {
-                        stringArgs.nArg1 = nIntArg[i];
-                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                    }
-                }
-            }
+                nMaxArgs = argumentParser(sFunctionArgument, nIntArg1);
             else if (funcHandle.fType >= PARSER_STRING && funcHandle.fType < PARSER_STRING_INT_INT)
             {
-                s_vect sStringArg;
-                size_t nMaxArgs = 0;
-
-                if (sFuncName == "to_string" && !containsStrings(sFunctionArgument))
+                if (sFuncName == "to_string(" && !containsStrings(sFunctionArgument))
                 {
-                    sStringArg.push_back(sFunctionArgument);
+                    sStringArg1.push_back(sFunctionArgument);
                     nMaxArgs = 1;
                 }
                 else
-                    nMaxArgs = argumentParser(sFunctionArgument, sStringArg, bLogicalOnly);
+                    nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, bLogicalOnly);
 
                 if (!nMaxArgs)
-                {
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
 
                 // These five multiargument functions are also defined for numerical values.
                 // If the return value for the current functions arguments is an only logical
                 // value, ignore the current function call
                 if (bLogicalOnly
-                    && (sFuncName == "min" || sFuncName == "max" || sFuncName == "cnt" || sFuncName == "num" || sFuncName == "sum"))
+                    && (sFuncName == "min(" || sFuncName == "max(" || sFuncName == "cnt(" || sFuncName == "num(" || sFuncName == "sum("))
                 {
                     nStartPosition++;
                     continue;
                 }
+            }
+            else if (funcHandle.fType >= PARSER_STRING_INT_INT && funcHandle.fType < PARSER_STRING_INT_INT_STRING)
+                nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, nIntArg1, nIntArg2);
+            else if (funcHandle.fType >= PARSER_STRING_INT_INT_STRING && funcHandle.fType < PARSER_STRING_STRING_INT_INT)
+                nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, nIntArg1, nIntArg2, sStringArg2);
+            else if (funcHandle.fType >= PARSER_STRING_STRING_INT_INT && funcHandle.fType < PARSER_STRING_STRING_STRING_INT_INT)
+                nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, nIntArg1, nIntArg2);
+            else if (funcHandle.fType >= PARSER_STRING_STRING_STRING_INT_INT)
+                nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
 
-                if (funcHandle.bTakesMultiArguments)
+            // Ensure that at least a single argument is available
+            if (!nMaxArgs)
+                throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
+
+            // Evaluate the function calls
+            if (funcHandle.bTakesMultiArguments)
+            {
+                if (funcHandle.fType >= PARSER_INT && funcHandle.fType < PARSER_STRING)
                 {
-                    stringArgs.sMultiArg = sStringArg;
+                    stringArgs.nMultiArg = nIntArg1;
                     vReturnValues.push_back(funcHandle.fHandle(stringArgs));
                 }
                 else
                 {
-                    for (size_t i = 0; i < nMaxArgs; i++)
-                    {
-                        stringArgs.sArg1 = sStringArg[i];
-                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                    }
+                    nMaxArgs = max(max(max(max(sStringArg2.size(), sStringArg3.size()), nIntArg1.size()), nIntArg2.size()), 1u);
+
+                    if (nMaxArgs < 500)
+                        vReturnValues = callMultiFunction(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, nMaxArgs);
+                    else
+                        vReturnValues = callMultiFunctionParallel(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, nMaxArgs);
                 }
             }
-            else if (funcHandle.fType >= PARSER_STRING_INT_INT && funcHandle.fType < PARSER_STRING_INT_INT_STRING)
+            else
             {
-                s_vect sStringArg;
-                n_vect nIntArg1, nIntArg2;
-                size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg, nIntArg1, nIntArg2);
-                if (!nMaxArgs)
-                {
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
-                for (size_t i = 0; i < nMaxArgs; i++)
-                {
-                    if (i < sStringArg.size())
-                        stringArgs.sArg1 = sStringArg[i];
-                    else if (sStringArg.size() == 1)
-                        stringArgs.sArg1 = sStringArg[0];
-                    else
-                        stringArgs.sArg1 = "";
-                    if (i < nIntArg1.size())
-                        stringArgs.nArg1 = nIntArg1[i];
-                    else if (nIntArg1.size() == 1)
-                        stringArgs.nArg1 = nIntArg1[0];
-                    else
-                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
-                    if (i < nIntArg2.size())
-                        stringArgs.nArg2 = nIntArg2[i];
-                    else if (nIntArg2.size() == 1)
-                        stringArgs.nArg2 = nIntArg2[0];
-                    else
-                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
-
-                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                }
-
-            }
-            else if (funcHandle.fType >= PARSER_STRING_INT_INT_STRING && funcHandle.fType < PARSER_STRING_STRING_INT_INT)
-            {
-                s_vect sStringArg1, sStringArg2;
-                n_vect nIntArg1, nIntArg2;
-                size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, nIntArg1, nIntArg2, sStringArg2);
-                if (!nMaxArgs)
-                {
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-                }
-                for (size_t i = 0; i < nMaxArgs; i++)
-                {
-                    if (i < sStringArg1.size())
-                        stringArgs.sArg1 = sStringArg1[i];
-                    else if (sStringArg1.size() == 1)
-                        stringArgs.sArg1 = sStringArg1[0];
-                    else
-                        stringArgs.sArg1 = "";
-                    if (i < sStringArg2.size())
-                        stringArgs.sArg2 = sStringArg2[i];
-                    else if (sStringArg2.size() == 1)
-                        stringArgs.sArg2 = sStringArg2[0];
-                    else
-                        stringArgs.sArg2 = "";
-                    if (i < nIntArg1.size())
-                        stringArgs.nArg1 = nIntArg1[i];
-                    else if (nIntArg1.size() == 1)
-                        stringArgs.nArg1 = nIntArg1[0];
-                    else
-                        stringArgs.nArg1 = DEFAULT_NUM_ARG;
-                    if (i < nIntArg2.size())
-                        stringArgs.nArg2 = nIntArg2[i];
-                    else if (nIntArg2.size() == 1)
-                        stringArgs.nArg2 = nIntArg2[0];
-                    else
-                        stringArgs.nArg2 = DEFAULT_NUM_ARG;
-
-                    vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                }
-            }
-            else if (funcHandle.fType >= PARSER_STRING_STRING_INT_INT && funcHandle.fType < PARSER_STRING_STRING_STRING_INT_INT)
-            {
-                s_vect sStringArg1, sStringArg2;
-                n_vect nIntArg1, nIntArg2;
-                size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, nIntArg1, nIntArg2);
-
-                if (!nMaxArgs)
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                if (funcHandle.bTakesMultiArguments)
-                {
-                    stringArgs.sMultiArg = sStringArg1;
-                    nMaxArgs = max(max(sStringArg2.size(), nIntArg1.size()), nIntArg2.size());
-
-                    for (size_t i = 0; i < nMaxArgs; i++)
-                    {
-                        if (i < sStringArg2.size())
-                            stringArgs.sArg2 = sStringArg2[i];
-                        else if (sStringArg2.size() == 1)
-                            stringArgs.sArg2 = sStringArg2[0];
-                        else
-                            stringArgs.sArg2 = "";
-
-                        if (i < nIntArg1.size())
-                            stringArgs.nArg1 = nIntArg1[i];
-                        else if (nIntArg1.size() == 1)
-                            stringArgs.nArg1 = nIntArg1[0];
-                        else
-                            stringArgs.nArg1 = DEFAULT_NUM_ARG;
-
-                        if (i < nIntArg2.size())
-                            stringArgs.nArg2 = nIntArg2[i];
-                        else if (nIntArg2.size() == 1)
-                            stringArgs.nArg2 = nIntArg2[0];
-                        else
-                            stringArgs.nArg2 = DEFAULT_NUM_ARG;
-
-                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                    }
-                }
+                if (nMaxArgs < 500)
+                    vReturnValues = callFunction(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, nMaxArgs);
                 else
-                {
-                    for (size_t i = 0; i < nMaxArgs; i++)
-                    {
-                        if (i < sStringArg1.size())
-                            stringArgs.sArg1 = sStringArg1[i];
-                        else if (sStringArg1.size() == 1)
-                            stringArgs.sArg1 = sStringArg1[0];
-                        else
-                            stringArgs.sArg1 = "";
-
-                        if (i < sStringArg2.size())
-                            stringArgs.sArg2 = sStringArg2[i];
-                        else if (sStringArg2.size() == 1)
-                            stringArgs.sArg2 = sStringArg2[0];
-                        else
-                            stringArgs.sArg2 = "";
-
-                        if (i < nIntArg1.size())
-                            stringArgs.nArg1 = nIntArg1[i];
-                        else if (nIntArg1.size() == 1)
-                            stringArgs.nArg1 = nIntArg1[0];
-                        else
-                            stringArgs.nArg1 = DEFAULT_NUM_ARG;
-
-                        if (i < nIntArg2.size())
-                            stringArgs.nArg2 = nIntArg2[i];
-                        else if (nIntArg2.size() == 1)
-                            stringArgs.nArg2 = nIntArg2[0];
-                        else
-                            stringArgs.nArg2 = DEFAULT_NUM_ARG;
-
-                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                    }
-                }
-            }
-            else if (funcHandle.fType >= PARSER_STRING_STRING_STRING_INT_INT)
-            {
-                s_vect sStringArg1, sStringArg2, sStringArg3;
-                n_vect nIntArg1, nIntArg2;
-                size_t nMaxArgs = argumentParser(sFunctionArgument, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2);
-
-                if (!nMaxArgs)
-                    throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
-
-                if (funcHandle.bTakesMultiArguments)
-                {
-                    stringArgs.sMultiArg = sStringArg1;
-                    nMaxArgs = max(max(max(sStringArg2.size(), sStringArg3.size()), nIntArg1.size()), nIntArg2.size());
-
-                    for (size_t i = 0; i < nMaxArgs; i++)
-                    {
-                        if (i < sStringArg2.size())
-                            stringArgs.sArg2 = sStringArg2[i];
-                        else if (sStringArg2.size() == 1)
-                            stringArgs.sArg2 = sStringArg2[0];
-                        else
-                            stringArgs.sArg2 = "";
-
-                        if (i < sStringArg3.size())
-                            stringArgs.sArg3 = sStringArg3[i];
-                        else if (sStringArg3.size() == 1)
-                            stringArgs.sArg3 = sStringArg3[0];
-                        else
-                            stringArgs.sArg3 = "";
-
-                        if (i < nIntArg1.size())
-                            stringArgs.nArg1 = nIntArg1[i];
-                        else if (nIntArg1.size() == 1)
-                            stringArgs.nArg1 = nIntArg1[0];
-                        else
-                            stringArgs.nArg1 = DEFAULT_NUM_ARG;
-
-                        if (i < nIntArg2.size())
-                            stringArgs.nArg2 = nIntArg2[i];
-                        else if (nIntArg2.size() == 1)
-                            stringArgs.nArg2 = nIntArg2[0];
-                        else
-                            stringArgs.nArg2 = DEFAULT_NUM_ARG;
-
-                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                    }
-                }
-                else
-                {
-                    for (size_t i = 0; i < nMaxArgs; i++)
-                    {
-                        if (i < sStringArg1.size())
-                            stringArgs.sArg1 = sStringArg1[i];
-                        else if (sStringArg1.size() == 1)
-                            stringArgs.sArg1 = sStringArg1[0];
-                        else
-                            stringArgs.sArg1 = "";
-
-                        if (i < sStringArg2.size())
-                            stringArgs.sArg2 = sStringArg2[i];
-                        else if (sStringArg2.size() == 1)
-                            stringArgs.sArg2 = sStringArg2[0];
-                        else
-                            stringArgs.sArg2 = "";
-
-                        if (i < sStringArg3.size())
-                            stringArgs.sArg3 = sStringArg3[i];
-                        else if (sStringArg3.size() == 1)
-                            stringArgs.sArg3 = sStringArg3[0];
-                        else
-                            stringArgs.sArg3 = "";
-
-                        if (i < nIntArg1.size())
-                            stringArgs.nArg1 = nIntArg1[i];
-                        else if (nIntArg1.size() == 1)
-                            stringArgs.nArg1 = nIntArg1[0];
-                        else
-                            stringArgs.nArg1 = DEFAULT_NUM_ARG;
-
-                        if (i < nIntArg2.size())
-                            stringArgs.nArg2 = nIntArg2[i];
-                        else if (nIntArg2.size() == 1)
-                            stringArgs.nArg2 = nIntArg2[0];
-                        else
-                            stringArgs.nArg2 = DEFAULT_NUM_ARG;
-
-                        vReturnValues.push_back(addMaskedStrings(funcHandle.fHandle(stringArgs)));
-                    }
-                }
+                    vReturnValues = callFunctionParallel(funcHandle, sStringArg1, sStringArg2, sStringArg3, nIntArg1, nIntArg2, nMaxArgs);
             }
 
             // copy the return values to the final variable
@@ -860,6 +625,262 @@ namespace NumeRe
         }
 
         return nMaxLength;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Calls the selected string function
+    /// using the passed string function arguments
+    /// sequentially.
+    ///
+    /// \param funcHandle StringFuncHandle
+    /// \param sStringArg1 s_vect&
+    /// \param sStringArg2 s_vect&
+    /// \param sStringArg3 s_vect&
+    /// \param nIntArg1 n_vect&
+    /// \param nIntArg2 n_vect&
+    /// \param nMaxArgs size_t
+    /// \return vector<string>
+    ///
+    /////////////////////////////////////////////////
+    vector<string> StringFuncHandler::callFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, size_t nMaxArgs)
+    {
+        vector<string> vReturnValues(nMaxArgs);
+
+        StringFuncArgs stringArgs;
+        stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
+
+        for (size_t i = 0; i < nMaxArgs; i++)
+        {
+            if (i < sStringArg1.size())
+                stringArgs.sArg1 = sStringArg1[i];
+            else if (sStringArg1.size() == 1)
+                stringArgs.sArg1 = sStringArg1[0];
+            else if (sStringArg1.size())
+                stringArgs.sArg1 = "";
+
+            if (i < sStringArg2.size())
+                stringArgs.sArg2 = sStringArg2[i];
+            else if (sStringArg2.size() == 1)
+                stringArgs.sArg2 = sStringArg2[0];
+            else if (sStringArg2.size())
+                stringArgs.sArg2 = "";
+
+            if (i < sStringArg3.size())
+                stringArgs.sArg3 = sStringArg3[i];
+            else if (sStringArg3.size() == 1)
+                stringArgs.sArg3 = sStringArg3[0];
+            else if (sStringArg3.size())
+                stringArgs.sArg3 = "";
+
+            if (i < nIntArg1.size())
+                stringArgs.nArg1 = nIntArg1[i];
+            else if (nIntArg1.size() == 1)
+                stringArgs.nArg1 = nIntArg1[0];
+            else if (nIntArg1.size())
+                stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
+            if (i < nIntArg2.size())
+                stringArgs.nArg2 = nIntArg2[i];
+            else if (nIntArg2.size() == 1)
+                stringArgs.nArg2 = nIntArg2[0];
+            else if (nIntArg2.size())
+                stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+            vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
+        }
+
+        return vReturnValues;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Calls the selected string function
+    /// using the passed string function arguments
+    /// parallel using OpenMP.
+    ///
+    /// \param funcHandle StringFuncHandle
+    /// \param sStringArg1 s_vect&
+    /// \param sStringArg2 s_vect&
+    /// \param sStringArg3 s_vect&
+    /// \param nIntArg1 n_vect&
+    /// \param nIntArg2 n_vect&
+    /// \param nMaxArgs size_t
+    /// \return vector<string>
+    ///
+    /////////////////////////////////////////////////
+    vector<string> StringFuncHandler::callFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, size_t nMaxArgs)
+    {
+        vector<string> vReturnValues(nMaxArgs);
+
+        StringFuncArgs stringArgs;
+        stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
+
+        #pragma omp parallel for firstprivate(stringArgs)
+        for (size_t i = 0; i < nMaxArgs; i++)
+        {
+            if (i < sStringArg1.size())
+                stringArgs.sArg1 = sStringArg1[i];
+            else if (sStringArg1.size() == 1)
+                stringArgs.sArg1 = sStringArg1[0];
+            else if (sStringArg1.size())
+                stringArgs.sArg1 = "";
+
+            if (i < sStringArg2.size())
+                stringArgs.sArg2 = sStringArg2[i];
+            else if (sStringArg2.size() == 1)
+                stringArgs.sArg2 = sStringArg2[0];
+            else if (sStringArg2.size())
+                stringArgs.sArg2 = "";
+
+            if (i < sStringArg3.size())
+                stringArgs.sArg3 = sStringArg3[i];
+            else if (sStringArg3.size() == 1)
+                stringArgs.sArg3 = sStringArg3[0];
+            else if (sStringArg3.size())
+                stringArgs.sArg3 = "";
+
+            if (i < nIntArg1.size())
+                stringArgs.nArg1 = nIntArg1[i];
+            else if (nIntArg1.size() == 1)
+                stringArgs.nArg1 = nIntArg1[0];
+            else if (nIntArg1.size())
+                stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
+            if (i < nIntArg2.size())
+                stringArgs.nArg2 = nIntArg2[i];
+            else if (nIntArg2.size() == 1)
+                stringArgs.nArg2 = nIntArg2[0];
+            else if (nIntArg2.size())
+                stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+            vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
+        }
+
+        return vReturnValues;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Calls the selected string function
+    /// accepting multiple values as first argument
+    /// using the passed string function arguments
+    /// sequentially.
+    ///
+    /// \param funcHandle StringFuncHandle
+    /// \param sStringArg1 s_vect&
+    /// \param sStringArg2 s_vect&
+    /// \param sStringArg3 s_vect&
+    /// \param nIntArg1 n_vect&
+    /// \param nIntArg2 n_vect&
+    /// \param nMaxArgs size_t
+    /// \return vector<string>
+    ///
+    /////////////////////////////////////////////////
+    vector<string> StringFuncHandler::callMultiFunction(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, size_t nMaxArgs)
+    {
+        vector<string> vReturnValues(nMaxArgs);
+
+        StringFuncArgs stringArgs;
+        stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
+        stringArgs.sMultiArg = sStringArg1;
+
+        for (size_t i = 0; i < nMaxArgs; i++)
+        {
+            if (i < sStringArg2.size())
+                stringArgs.sArg2 = sStringArg2[i];
+            else if (sStringArg2.size() == 1)
+                stringArgs.sArg2 = sStringArg2[0];
+            else if (sStringArg2.size())
+                stringArgs.sArg2 = "";
+
+            if (i < sStringArg3.size())
+                stringArgs.sArg3 = sStringArg3[i];
+            else if (sStringArg3.size() == 1)
+                stringArgs.sArg3 = sStringArg3[0];
+            else if (sStringArg3.size())
+                stringArgs.sArg3 = "";
+
+            if (i < nIntArg1.size())
+                stringArgs.nArg1 = nIntArg1[i];
+            else if (nIntArg1.size() == 1)
+                stringArgs.nArg1 = nIntArg1[0];
+            else if (nIntArg1.size())
+                stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
+            if (i < nIntArg2.size())
+                stringArgs.nArg2 = nIntArg2[i];
+            else if (nIntArg2.size() == 1)
+                stringArgs.nArg2 = nIntArg2[0];
+            else if (nIntArg2.size())
+                stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+            vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
+        }
+
+        return vReturnValues;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Calls the selected string function
+    /// accepting multiple values as first argument
+    /// using the passed string function arguments
+    /// parallel using OpenMP.
+    ///
+    /// \param funcHandle StringFuncHandle
+    /// \param sStringArg1 s_vect&
+    /// \param sStringArg2 s_vect&
+    /// \param sStringArg3 s_vect&
+    /// \param nIntArg1 n_vect&
+    /// \param nIntArg2 n_vect&
+    /// \param nMaxArgs size_t
+    /// \return vector<string>
+    ///
+    /////////////////////////////////////////////////
+    vector<string> StringFuncHandler::callMultiFunctionParallel(StringFuncHandle funcHandle, s_vect& sStringArg1, s_vect& sStringArg2, s_vect& sStringArg3, n_vect& nIntArg1, n_vect& nIntArg2, size_t nMaxArgs)
+    {
+        vector<string> vReturnValues(nMaxArgs);
+
+        StringFuncArgs stringArgs;
+        stringArgs.opt = &NumeReKernel::getInstance()->getSettings();
+        stringArgs.sMultiArg = sStringArg1;
+
+        #pragma omp parallel for firstprivate(stringArgs)
+        for (size_t i = 0; i < nMaxArgs; i++)
+        {
+            if (i < sStringArg2.size())
+                stringArgs.sArg2 = sStringArg2[i];
+            else if (sStringArg2.size() == 1)
+                stringArgs.sArg2 = sStringArg2[0];
+            else if (sStringArg2.size())
+                stringArgs.sArg2 = "";
+
+            if (i < sStringArg3.size())
+                stringArgs.sArg3 = sStringArg3[i];
+            else if (sStringArg3.size() == 1)
+                stringArgs.sArg3 = sStringArg3[0];
+            else if (sStringArg3.size())
+                stringArgs.sArg3 = "";
+
+            if (i < nIntArg1.size())
+                stringArgs.nArg1 = nIntArg1[i];
+            else if (nIntArg1.size() == 1)
+                stringArgs.nArg1 = nIntArg1[0];
+            else if (nIntArg1.size())
+                stringArgs.nArg1 = DEFAULT_NUM_ARG;
+
+            if (i < nIntArg2.size())
+                stringArgs.nArg2 = nIntArg2[i];
+            else if (nIntArg2.size() == 1)
+                stringArgs.nArg2 = nIntArg2[0];
+            else if (nIntArg2.size())
+                stringArgs.nArg2 = DEFAULT_NUM_ARG;
+
+            vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
+        }
+
+        return vReturnValues;
     }
 
 
@@ -1368,7 +1389,12 @@ namespace NumeRe
         {
             // Found an occurence -> call the string function handler
             if (sLine.find(iter->first + "(") != string::npos)
-                evalFunction(sLine, iter->first, iter->second);
+            {
+                evalFunction(sLine, iter->first + "(", iter->second);
+
+                if (sLine.find('(') == string::npos)
+                    break;
+            }
         }
 
         return sLine;

@@ -120,7 +120,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         double dAspect;             // Seitenverhaeltnis des Plots
         double dAxisScale[4];
         int nMarks;                 // Groesse der Marks
-        int nTextsize;
+        double dTextsize;
         string sColors;
         string sGreys;
         string sPointStyles;
@@ -385,8 +385,8 @@ class PlotData : public FileSystem  // CHILD von Filesystem
             {return bCrust;}
         inline double getPerspective() const
             {return dPerspective;}
-        inline int getTextSize() const
-            {return nTextsize;}
+        inline double getTextSize() const
+            {return dTextsize;}
         inline int getLegendPosition() const
             {return nLegendPosition;}
         inline double getOrigin(int nDir = 0) const
@@ -482,9 +482,9 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                     _AddAxes[i].dMin = _dMin;
                     _AddAxes[i].dMax = _dMax;
                     if (!i && !_AddAxes[i].sLabel.length())
-                        _AddAxes[i].sLabel = "@{\\i x}";
+                        _AddAxes[i].sLabel = "\\i x";
                     else if (!_AddAxes[i].sLabel.length())
-                        _AddAxes[i].sLabel = "@{\\i y}";
+                        _AddAxes[i].sLabel = "\\i y";
                 }
                 return;
             }

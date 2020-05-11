@@ -484,7 +484,7 @@ void TableViewer::copyContents()
                     sSelection += "\t";
             }
 
-            if (i < GetRows()-1);
+            if (i < GetRows()-1)
                 sSelection += "\n";
         }
     }

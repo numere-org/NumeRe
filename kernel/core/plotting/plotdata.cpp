@@ -159,7 +159,7 @@ PlotData::PlotData(const PlotData& _pData) : PlotData()
     nCoords = _pData.nCoords;
     dAspect = _pData.dAspect;
     nMarks = _pData.nMarks;
-    nTextsize = _pData.nTextsize;
+    dTextsize = _pData.dTextsize;
     sColors = _pData.sColors;
     sGreys = _pData.sGreys;
     sPointStyles = _pData.sPointStyles;
@@ -631,13 +631,13 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     {
         unsigned int nPos = findParameter(sCmd, "textsize", '=')+8;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        nTextsize = (int)_parser.Eval();
-        if (!nTextsize || isinf(_parser.Eval()) || isnan(_parser.Eval()))
-            nTextsize = 5;
-        if (nTextsize > 19)
-            nTextsize = 19;
-        if (nTextsize < 1)
-            nTextsize = 1;
+        dTextsize = _parser.Eval();
+
+        if (isinf(dTextsize) || isnan(dTextsize))
+            dTextsize = 5;
+
+        if (dTextsize <= -1)
+            dTextsize = 5;
     }
     if (findParameter(sCmd, "aspect", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
@@ -971,7 +971,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 _AddAxes[0].dMax = _parser.Eval();
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[0].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0)+"}";
+                    _AddAxes[0].sLabel = getArgAtPos(getNextArgument(sTemp, true),0);
                     if (getNextArgument(sTemp, false).length())
                     {
                         _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
@@ -981,12 +981,12 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 }
                 else
                 {
-                    _AddAxes[0].sLabel = "@{\\i x}";
+                    _AddAxes[0].sLabel = "\\i x";
                 }
             }
             else
             {
-                _AddAxes[0].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0)+"}";
+                _AddAxes[0].sLabel = getArgAtPos(getNextArgument(sTemp, true),0);
                 if (getNextArgument(sTemp, false).length())
                 {
                     _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
@@ -1012,7 +1012,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 _AddAxes[1].dMax = _parser.Eval();
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[1].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0) + "}";
+                    _AddAxes[1].sLabel = getArgAtPos(getNextArgument(sTemp, true),0);
                     if (getNextArgument(sTemp, false).length())
                     {
                         _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
@@ -1022,12 +1022,12 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 }
                 else
                 {
-                    _AddAxes[1].sLabel = "@{\\i y}";
+                    _AddAxes[1].sLabel = "\\i y";
                 }
             }
             else
             {
-                _AddAxes[1].sLabel = "@{"+getArgAtPos(getNextArgument(sTemp, true),0)+"}";
+                _AddAxes[1].sLabel = getArgAtPos(getNextArgument(sTemp, true),0);
                 if (getNextArgument(sTemp, false).length())
                 {
                     _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
@@ -1553,6 +1553,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         || findParameter(sCmd, "obps", '=')
         || findParameter(sCmd, "osvg", '=')
         || findParameter(sCmd, "otex", '=')
+        || findParameter(sCmd, "otif", '=')
         || findParameter(sCmd, "ogif", '=')) && (nType == ALL || nType & SUPERGLOBAL))
     {
         unsigned int nPos = 0;
@@ -1572,6 +1573,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             nPos = findParameter(sCmd, "osvg", '=') + 4;
         else if (findParameter(sCmd, "otex", '='))
             nPos = findParameter(sCmd, "otex", '=') + 4;
+        else if (findParameter(sCmd, "otif", '='))
+            nPos = findParameter(sCmd, "otif", '=') + 4;
         else if (findParameter(sCmd, "ogif", '='))
             nPos = findParameter(sCmd, "ogif", '=') + 4;
 
@@ -1594,6 +1597,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 sFileName += ".svg";
             else if (sExtension != ".tex" && findParameter(sCmd, "otex", '='))
                 sFileName += ".tex";
+            else if (sExtension != ".tif" && sExtension != ".tiff" && findParameter(sCmd, "otif", '='))
+                sFileName += ".tiff";
             else if (sExtension != ".gif" && findParameter(sCmd, "ogif", '='))
                 sFileName += ".gif";
             else if ((findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '=')) && sFileName.rfind('.') == string::npos)
@@ -1657,8 +1662,6 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         for (int i = 0; i < 3; i++)
         {
             StripSpaces(sAxisLabels[i]);
-            if (sAxisLabels[i].length())
-                sAxisLabels[i] = "@{" + sAxisLabels[i] + "}";
         }
     }
     if ((findParameter(sCmd, "xticks", '=')
@@ -1962,7 +1965,7 @@ void PlotData::reset()
     nAnimateSamples = 50;
     nRanges = 0;
     nMarks = 0;
-    nTextsize = 5;
+    dTextsize = 5;
     sFileName = "";
     sPlotTitle = "";
     sComposedTitle = "";
@@ -2311,7 +2314,7 @@ string PlotData::getParams(const Settings& _option, bool asstr) const
     if (bSilentMode)
         sReturn += "silent mode" + sSepString;
     sReturn += "t=" + toString(dtParam[0], _option) + ":" + toString(dtParam[1], _option) + sSepString;
-    sReturn += "textsize=" + toString(nTextsize) + sSepString;
+    sReturn += "textsize=" + toString(dTextsize, _option) + sSepString;
     sReturn += "tickstemplate=[";
     for (int i = 0; i < 4; i++)
     {
@@ -2918,16 +2921,16 @@ string PlotData::getxLabel() const
         switch (nCoords)
         {
             case CARTESIAN:
-                return "@{\\i x}";
+                return "\\i x";
             case POLAR_PZ:
             case SPHERICAL_PT:
-                return "@{\\varphi  [\\pi]}";
+                return "\\varphi  [\\pi]";
             case POLAR_RP:
             case POLAR_RZ:
-                return "@{\\rho}";
+                return "\\rho";
             case SPHERICAL_RP:
             case SPHERICAL_RT:
-                return "@{\\i r}";
+                return "\\i r";
         }
     }
     return "";
@@ -2942,16 +2945,16 @@ string PlotData::getyLabel() const
         switch (nCoords)
         {
             case CARTESIAN:
-                return "@{\\i y}";
+                return "\\i y";
             case POLAR_PZ:
             case POLAR_RZ:
-                return "@{\\i z}";
+                return "\\i z";
             case POLAR_RP:
             case SPHERICAL_RP:
-                return "@{\\varphi  [\\pi]}";
+                return "\\varphi  [\\pi]";
             case SPHERICAL_PT:
             case SPHERICAL_RT:
-                return "@{\\vartheta  [\\pi]}";
+                return "\\vartheta  [\\pi]";
         }
     }
     return "";
@@ -2967,16 +2970,16 @@ string PlotData::getzLabel() const
         {
             case CARTESIAN:
             case POLAR_RP:
-                return "@{\\i z}";
+                return "\\i z";
             case POLAR_PZ:
-                return "@{\\rho}";
+                return "\\rho";
             case SPHERICAL_PT:
-                return "@{\\i r}";
+                return "\\i r";
             case SPHERICAL_RP:
-                return "@{\\vartheta  [\\pi]}";
+                return "\\vartheta  [\\pi]";
             case POLAR_RZ:
             case SPHERICAL_RT:
-                return "@{\\varphi  [\\pi]}";
+                return "\\varphi  [\\pi]";
         }
     }
     return "";

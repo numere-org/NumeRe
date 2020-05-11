@@ -48,6 +48,8 @@ struct StringFuncArgs
 	long long int nArg1, nArg2;
 	n_vect nMultiArg;
 	const Settings* opt;
+
+	StringFuncArgs() : nArg1(INT_MIN), nArg2(INT_MIN), opt(nullptr) {}
 };
 
 
@@ -140,11 +142,7 @@ struct StringResult
 	    bOnlyLogicals = true;
 	    vResult.push_back(sRet);
         vNoStringVal.resize(nvals, true);
-
-	    for (int i = 0; i < nvals; i++)
-        {
-            vNumericalValues.push_back(vals[i]);
-        }
+        vNumericalValues.assign(vals, vals+nvals);
 	}
 
 	vector<string> vResult;
