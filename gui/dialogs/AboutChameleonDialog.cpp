@@ -28,6 +28,7 @@
 #include "AboutChameleonDialog.h"
 #include "../../common/verinfo.h"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/version.h"
 
 class AboutDialogTextCtrl : public wxTextCtrl
 {
@@ -171,7 +172,7 @@ void AboutChameleonDialog::CreateControls()
     m_lblVersion->SetFont(wxFont(12, wxSWISS, wxNORMAL, wxBOLD, false, _T("Arial")));
     m_sizerProgram->Add(m_lblVersion, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
 
-    wxStaticText* licenceStaticText = new wxStaticText( mainAboutPanel, wxID_STATIC, _(_guilang.get("GUI_ABOUT_LICENCE_SHORT")), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText* licenceStaticText = new wxStaticText( mainAboutPanel, wxID_STATIC, _(_guilang.get("GUI_ABOUT_LICENCE_SHORT", AutoVersion::YEAR)), wxDefaultPosition, wxDefaultSize, 0 );
     licenceStaticText->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxNORMAL, false, _T("Arial")));
     m_sizerProgram->Add(licenceStaticText, 0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxADJUST_MINSIZE, 5);
 
