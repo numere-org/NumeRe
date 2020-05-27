@@ -82,7 +82,7 @@ namespace NumeRe
                 _idx.col.back() = VectorIndex::INVALID;
 
             if (_idx.row.isOpenEnd())
-                _idx.row.setRange(0, _data.getStringElements()-1);
+                _idx.row.setRange(0, _data.getStringElements(_idx.col.front())-1);
 
             if (!_idx.col.isValid())
                 _idx.col.front() = 0;

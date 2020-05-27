@@ -26,6 +26,45 @@
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function to detect free
+/// operators in a procedure argument. Those
+/// arguments need to be surrounded by parentheses
+/// as long as arguments are not converted into
+/// real variables.
+///
+/// \param sString const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool containsFreeOperators(const string& sString)
+{
+    size_t nQuotes = 0;
+    static string sOperators = "+-*/&|?!^<>=";
+
+    for (size_t i = 0; i < sString.length(); i++)
+    {
+        if (sString[i] == '"' && (!i || sString[i-1] != '\\'))
+            nQuotes++;
+
+        if (nQuotes % 2)
+            continue;
+
+        if (sString[i] == '(' || sString[i] == '[' || sString[i] == '{')
+        {
+            size_t nMatch;
+
+            if ((nMatch = getMatchingParenthesis(sString.substr(i))) != string::npos)
+                i += nMatch;
+        }
+        else if (sOperators.find(sString[i]) != string::npos)
+            return true;
+    }
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Constructor
 /////////////////////////////////////////////////
 ProcedureVarFactory::ProcedureVarFactory()
@@ -613,7 +652,7 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                 }
             }
 
-            if (sArgumentMap[i][1].find_first_of("+-*/&|?!^<>=") != string::npos && (sArgumentMap[i][1].front() != '{' || getMatchingParenthesis(sArgumentMap[i][1]) != sArgumentMap[i][1].length()-1))
+            if (containsFreeOperators(sArgumentMap[i][1]))
                 sArgumentMap[i][1] = "(" + sArgumentMap[i][1] + ")";
         }
 

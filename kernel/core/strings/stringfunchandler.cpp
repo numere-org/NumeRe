@@ -656,35 +656,35 @@ namespace NumeRe
                 stringArgs.sArg1 = sStringArg1[i];
             else if (sStringArg1.size() == 1)
                 stringArgs.sArg1 = sStringArg1[0];
-            else if (sStringArg1.size())
-                stringArgs.sArg1 = "";
+            else
+                stringArgs.sArg1.clear();
 
             if (i < sStringArg2.size())
                 stringArgs.sArg2 = sStringArg2[i];
             else if (sStringArg2.size() == 1)
                 stringArgs.sArg2 = sStringArg2[0];
-            else if (sStringArg2.size())
-                stringArgs.sArg2 = "";
+            else
+                stringArgs.sArg2.clear();
 
             if (i < sStringArg3.size())
                 stringArgs.sArg3 = sStringArg3[i];
             else if (sStringArg3.size() == 1)
                 stringArgs.sArg3 = sStringArg3[0];
-            else if (sStringArg3.size())
-                stringArgs.sArg3 = "";
+            else
+                stringArgs.sArg3.clear();
 
             if (i < nIntArg1.size())
                 stringArgs.nArg1 = nIntArg1[i];
             else if (nIntArg1.size() == 1)
                 stringArgs.nArg1 = nIntArg1[0];
-            else if (nIntArg1.size())
+            else
                 stringArgs.nArg1 = DEFAULT_NUM_ARG;
 
             if (i < nIntArg2.size())
                 stringArgs.nArg2 = nIntArg2[i];
             else if (nIntArg2.size() == 1)
                 stringArgs.nArg2 = nIntArg2[0];
-            else if (nIntArg2.size())
+            else
                 stringArgs.nArg2 = DEFAULT_NUM_ARG;
 
             vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
@@ -723,35 +723,35 @@ namespace NumeRe
                 stringArgs.sArg1 = sStringArg1[i];
             else if (sStringArg1.size() == 1)
                 stringArgs.sArg1 = sStringArg1[0];
-            else if (sStringArg1.size())
-                stringArgs.sArg1 = "";
+            else
+                stringArgs.sArg1.clear();
 
             if (i < sStringArg2.size())
                 stringArgs.sArg2 = sStringArg2[i];
             else if (sStringArg2.size() == 1)
                 stringArgs.sArg2 = sStringArg2[0];
-            else if (sStringArg2.size())
-                stringArgs.sArg2 = "";
+            else
+                stringArgs.sArg2.clear();
 
             if (i < sStringArg3.size())
                 stringArgs.sArg3 = sStringArg3[i];
             else if (sStringArg3.size() == 1)
                 stringArgs.sArg3 = sStringArg3[0];
-            else if (sStringArg3.size())
-                stringArgs.sArg3 = "";
+            else
+                stringArgs.sArg3.clear();
 
             if (i < nIntArg1.size())
                 stringArgs.nArg1 = nIntArg1[i];
             else if (nIntArg1.size() == 1)
                 stringArgs.nArg1 = nIntArg1[0];
-            else if (nIntArg1.size())
+            else
                 stringArgs.nArg1 = DEFAULT_NUM_ARG;
 
             if (i < nIntArg2.size())
                 stringArgs.nArg2 = nIntArg2[i];
             else if (nIntArg2.size() == 1)
                 stringArgs.nArg2 = nIntArg2[0];
-            else if (nIntArg2.size())
+            else
                 stringArgs.nArg2 = DEFAULT_NUM_ARG;
 
             vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
@@ -791,28 +791,28 @@ namespace NumeRe
                 stringArgs.sArg2 = sStringArg2[i];
             else if (sStringArg2.size() == 1)
                 stringArgs.sArg2 = sStringArg2[0];
-            else if (sStringArg2.size())
-                stringArgs.sArg2 = "";
+            else
+                stringArgs.sArg2.clear();
 
             if (i < sStringArg3.size())
                 stringArgs.sArg3 = sStringArg3[i];
             else if (sStringArg3.size() == 1)
                 stringArgs.sArg3 = sStringArg3[0];
-            else if (sStringArg3.size())
-                stringArgs.sArg3 = "";
+            else
+                stringArgs.sArg3.clear();
 
             if (i < nIntArg1.size())
                 stringArgs.nArg1 = nIntArg1[i];
             else if (nIntArg1.size() == 1)
                 stringArgs.nArg1 = nIntArg1[0];
-            else if (nIntArg1.size())
+            else
                 stringArgs.nArg1 = DEFAULT_NUM_ARG;
 
             if (i < nIntArg2.size())
                 stringArgs.nArg2 = nIntArg2[i];
             else if (nIntArg2.size() == 1)
                 stringArgs.nArg2 = nIntArg2[0];
-            else if (nIntArg2.size())
+            else
                 stringArgs.nArg2 = DEFAULT_NUM_ARG;
 
             vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));
@@ -853,28 +853,28 @@ namespace NumeRe
                 stringArgs.sArg2 = sStringArg2[i];
             else if (sStringArg2.size() == 1)
                 stringArgs.sArg2 = sStringArg2[0];
-            else if (sStringArg2.size())
-                stringArgs.sArg2 = "";
+            else
+                stringArgs.sArg2.clear();
 
             if (i < sStringArg3.size())
                 stringArgs.sArg3 = sStringArg3[i];
             else if (sStringArg3.size() == 1)
                 stringArgs.sArg3 = sStringArg3[0];
-            else if (sStringArg3.size())
-                stringArgs.sArg3 = "";
+            else
+                stringArgs.sArg3.clear();
 
             if (i < nIntArg1.size())
                 stringArgs.nArg1 = nIntArg1[i];
             else if (nIntArg1.size() == 1)
                 stringArgs.nArg1 = nIntArg1[0];
-            else if (nIntArg1.size())
+            else
                 stringArgs.nArg1 = DEFAULT_NUM_ARG;
 
             if (i < nIntArg2.size())
                 stringArgs.nArg2 = nIntArg2[i];
             else if (nIntArg2.size() == 1)
                 stringArgs.nArg2 = nIntArg2[0];
-            else if (nIntArg2.size())
+            else
                 stringArgs.nArg2 = DEFAULT_NUM_ARG;
 
             vReturnValues[i] = addMaskedStrings(funcHandle.fHandle(stringArgs));

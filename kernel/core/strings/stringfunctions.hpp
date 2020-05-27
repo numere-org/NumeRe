@@ -43,13 +43,13 @@ string removeMaskedStrings(const string& sString)
     // Omit the characters, which are identifying LaTeX command sequences
     for (size_t i = 0; i < sRet.length(); i++)
     {
-        if (sRet.substr(i, 2) == "\\\"")
+        if (sRet.compare(i, 2, "\\\"") == 0)
             sRet.erase(i, 1);
-        if (sRet.substr(i, 2) == "\\t" && sRet.substr(i, 4) != "\\tau" && sRet.substr(i, 6) != "\\theta")
+        if (sRet.compare(i, 2, "\\t") == 0 && sRet.compare(i, 4, "\\tau") != 0 && sRet.compare(i, 6, "\\theta") != 0 && sRet.compare(i, 6, "\\times") != 0)
             sRet.replace(i, 2, "\t");
-        if (sRet.substr(i, 2) == "\\n" && sRet.substr(i, 3) != "\\nu")
+        if (sRet.compare(i, 2, "\\n") == 0 && sRet.compare(i, 3, "\\nu") != 0)
             sRet.replace(i, 2, "\n");
-        if (sRet.substr(i, 2) == "\\ ")
+        if (sRet.compare(i, 2, "\\ ") == 0)
             sRet.erase(i + 1, 1);
     }
 
