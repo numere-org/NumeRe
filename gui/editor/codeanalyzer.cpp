@@ -1013,18 +1013,18 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
         sSyntaxElement += "()";
 
     // Is the current function called without a target variable?
-    if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && m_editor->PositionFromLine(m_nCurrentLine) == wordstart && !isContinuedLine)
+    if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && m_editor->PositionFromLine(m_nCurrentLine) == wordstart && !isContinuedLine && sSyntaxElement != "sleep()")
     {
         // The function is called at the first position without a target variable
         AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
     }
-    else
+    else if (sSyntaxElement != "sleep()")
     {
         // Try to find a assignment operator before the function
         // Other possibilities are commands and procedure calls
         for (int j = m_editor->PositionFromLine(m_nCurrentLine); j < wordstart; j++)
         {
-            if (m_editor->GetCharAt(j) == '=' || m_editor->isStyleType(NumeReEditor::STYLE_COMMAND, j) || m_editor->isStyleType(NumeReEditor::STYLE_PROCEDURE, j))
+            if (m_editor->GetCharAt(j) == '=' || m_editor->isStyleType(NumeReEditor::STYLE_COMMAND, j) || m_editor->isStyleType(NumeReEditor::STYLE_PROCEDURE, j) || m_editor->isStyleType(NumeReEditor::STYLE_DATAOBJECT, j))
             {
                 canContinue = true;
                 break;
@@ -1138,7 +1138,11 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
         // nothing found
         if (!bOK)
         {
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_GLOBALVARIABLE")), ANNOTATION_WARN);
+            wxString currentline = m_editor->GetLine(m_nCurrentLine);
+
+            // Ignore y* variables from odesolve
+            if (currentline.substr(currentline.find_first_not_of(" \t"), 9) != "odesolve " || !(sSyntaxElement[0] == 'y' && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("0123456789", 1) == string::npos))
+                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_GLOBALVARIABLE")), ANNOTATION_WARN);
         }
     }
 
