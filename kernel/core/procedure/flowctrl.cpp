@@ -939,12 +939,8 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
             _parserRef->PauseLoopMode();
 
         // Handle calls to "data()"
-        if (sHeadExpression.find("data(") != string::npos && _dataRef->isValid() && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
+        if (sHeadExpression.find("data(") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
             replaceDataEntities(sHeadExpression, "data(", *_dataRef, *_parserRef, *_optionRef, true);
-        else if (sHeadExpression.find("data(") != string::npos && !_dataRef->isValid() && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
-        {
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sHeadExpression, SyntaxError::invalid_position);
-        }
 
         // Handle calls to an arbitrary "CACHE()"
         if (_dataRef->containsTablesOrClusters(sHeadExpression))

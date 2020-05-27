@@ -252,15 +252,6 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 	// --> Findest du "data("? <--
 	if (findDataTable(sLine))
 	{
-		// --> Sind ueberhaupt Daten vorhanden? <--
-		if (!_data.isValid())
-		{
-			/* --> Nein? Mitteilen, BOOLEAN setzen (der die gesamte, weitere Auswertung abbricht)
-			 *     und zurueck zur aufrufenden Funktion <--
-			 */
-			throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sLine, SyntaxError::invalid_position);
-		}
-
 		// --> Ist rechts von "data(" noch ein "=" und gehoert das nicht zu einem Logik-Ausdruck? <--
 		eq_pos = sLine.find("=", sLine.find("data(") + 5);
 
