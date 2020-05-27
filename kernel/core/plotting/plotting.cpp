@@ -3392,23 +3392,28 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
 {
     string sDummy;
     if (_pInfo.sPlotParams.find("??") != string::npos)
-    {
         _pInfo.sPlotParams = promptForUserInput(_pInfo.sPlotParams);
-    }
+
     if (!_functions.call(_pInfo.sPlotParams))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, _pInfo.sPlotParams, SyntaxError::invalid_position);
+
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_pInfo.sPlotParams) && _pInfo.sPlotParams.find('=') != string::npos)
     {
         unsigned int nPos = 0;
+
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(_pInfo.sPlotParams))
             NumeReKernel::getInstance()->getStringParser().getStringValues(_pInfo.sPlotParams);
+
         while (_pInfo.sPlotParams.find('=', nPos) != string::npos)
         {
             nPos = _pInfo.sPlotParams.find('=', nPos) + 1;
+
             if (nPos >= _pInfo.sPlotParams.length())
                 break;
+
             while (_pInfo.sPlotParams[nPos] == ' ')
                 nPos++;
+
             if ((_pInfo.sPlotParams[nPos] != '"'
                     && _pInfo.sPlotParams[nPos] != '#'
                     && _pInfo.sPlotParams[nPos] != '('
@@ -3428,9 +3433,11 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
                     && !_data.containsTablesOrClusters(_pInfo.sPlotParams.substr(nPos)))
                     || isInQuotes(_pInfo.sPlotParams, nPos - 1))
                 continue;
+
             if (_data.containsTablesOrClusters(_pInfo.sPlotParams.substr(nPos)))
             {
                 bool bMatch = false;
+
                 for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
                 {
                     if (_pInfo.sPlotParams.substr(nPos, (iter->first).length() + 1) == iter->first + "(")
@@ -3439,15 +3446,19 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
                         break;
                     }
                 }
+
                 if (!bMatch)
                     continue;
             }
+
             if (_pInfo.sPlotParams.substr(nPos, 4) == "min(" || _pInfo.sPlotParams.substr(nPos, 4) == "max(" || _pInfo.sPlotParams.substr(nPos, 4) == "sum(")
             {
                 int nPos_temp = getMatchingParenthesis(_pInfo.sPlotParams.substr(nPos + 3)) + nPos + 3;
+
                 if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(_pInfo.sPlotParams.substr(nPos + 3, nPos_temp - nPos - 3)))
                     continue;
             }
+
             for (unsigned int i = nPos; i < _pInfo.sPlotParams.length(); i++)
             {
                 if (_pInfo.sPlotParams[i] == '(')
@@ -3455,20 +3466,26 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
                     i += getMatchingParenthesis(_pInfo.sPlotParams.substr(i));
                     continue;
                 }
+
                 if (((_pInfo.sPlotParams[i] == ' ' || _pInfo.sPlotParams[i] == ')') && !isInQuotes(_pInfo.sPlotParams, i)) || i + 1 == _pInfo.sPlotParams.length())
                 {
                     string sParsedString;
                     string sToParse;
                     string sCurrentString;
+
                     if (i + 1 == _pInfo.sPlotParams.length())
                         sToParse = _pInfo.sPlotParams.substr(nPos);
                     else
                         sToParse = _pInfo.sPlotParams.substr(nPos, i - nPos);
+
                     StripSpaces(sToParse);
+
                     if (sToParse.front() == '(')
                         sToParse.erase(0, 1);
+
                     if (sToParse.back() == ')')
                         sToParse.erase(sToParse.length() - 1);
+
                     while (sToParse.length())
                     {
                         sCurrentString = getNextArgument(sToParse, true);
@@ -3477,25 +3494,24 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
                         if (containsStrings(sCurrentString))
                             NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentString, sDummy, true);
 
+
                         if (bVector && sCurrentString.find('{') == string::npos)
                             sCurrentString = "{" + sCurrentString + "}";
+
                         if (sParsedString.length())
                             sParsedString += "," + sCurrentString;
                         else
                             sParsedString = sCurrentString;
                     }
-                    /*if (containsStrings(sParsedString) && !parser_StringParser(sParsedString, sDummy, _data, _parser, _option, true))
-                    {
-                        throw SyntaxError(SyntaxError::STRING_ERROR, sParsedString, SyntaxError::invalid_position);
-                    }*/
+
                     if (_pInfo.sPlotParams[nPos] == '(' && sParsedString.front() != '(')
-                    {
                         sParsedString = "(" + sParsedString + ")";
-                    }
+
                     if (i + 1 == _pInfo.sPlotParams.length())
                         _pInfo.sPlotParams.replace(nPos, string::npos, sParsedString);
                     else
                         _pInfo.sPlotParams.replace(nPos, i - nPos, sParsedString);
+
                     break;
                 }
             }

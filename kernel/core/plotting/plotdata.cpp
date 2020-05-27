@@ -23,6 +23,32 @@
 
 extern mglGraph _fontData;
 
+static value_type* evaluateNumerical(int& nResults, string sExpression)
+{
+    Datafile& _data = NumeReKernel::getInstance()->getData();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+
+    if (_data.containsTablesOrClusters(sExpression))
+        getDataElements(sExpression, _parser, _data, NumeReKernel::getInstance()->getSettings());
+
+    _parser.SetExpr(sExpression);
+
+    return _parser.Eval(nResults);
+}
+
+static string evaluateString(string sExpression)
+{
+    string sDummy;
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpression))
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true);
+
+    return sExpression;
+}
+
+
+
+
+
 // --> Konstruktor <--
 PlotData::PlotData() : FileSystem()
 {
@@ -766,9 +792,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "maxline", '=')+7);
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
-        _lHlines[0].sDesc = getArgAtPos(getNextArgument(sTemp, true),0);
+        _lHlines[0].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
         if (sTemp.length())
-            _lHlines[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+            _lHlines[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
         replaceControlChars(_lHlines[0].sDesc);
     }
     if (findParameter(sCmd, "minline", '=') && (nType == ALL || nType & LOCAL))
@@ -776,9 +802,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         string sTemp = getArgAtPos(__sCmd, findParameter(sCmd, "minline", '=')+7);
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
-        _lHlines[1].sDesc = getArgAtPos(getNextArgument(sTemp, true),0);
+        _lHlines[1].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
         if (sTemp.length())
-            _lHlines[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+            _lHlines[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
         replaceControlChars(_lHlines[1].sDesc);
     }
     if ((findParameter(sCmd, "hline", '=') || findParameter(sCmd, "hlines", '=')) && (nType == ALL || nType & LOCAL))
@@ -792,10 +818,10 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
-            _parser.SetExpr(getNextArgument(sTemp, true));
+
             value_type* v = nullptr;
             int nResults = 0;
-            v = _parser.Eval(nResults);
+            v = evaluateNumerical(nResults, getNextArgument(sTemp, true));
 
             for (int i = 0; i < nResults; i++)
             {
@@ -805,7 +831,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 _lHlines[i+2].dPos = v[i];
             }
 
-            string sDescList = getArgAtPos(getNextArgument(sTemp, true),0);
+            string sDescList = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
             if (sDescList.front() == '{')
                 sDescList.erase(0,1);
             if (sDescList.back() == '}')
@@ -820,7 +847,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
 
             if (sTemp.length())
             {
-                string sStyles = getArgAtPos(getNextArgument(sTemp, true),0);
+                string sStyles = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                 if (sStyles.front() == '{')
                     sStyles.erase(0,1);
                 if (sStyles.back() == '}')
@@ -845,10 +872,10 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
-            _parser.SetExpr(getNextArgument(sTemp, true));
+
             value_type* v = nullptr;
             int nResults = 0;
-            v = _parser.Eval(nResults);
+            v = evaluateNumerical(nResults, getNextArgument(sTemp, true));
 
             for (int i = 0; i < nResults; i++)
             {
@@ -858,7 +885,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 _lVLines[i+2].dPos = v[i];
             }
 
-            string sDescList = getArgAtPos(getNextArgument(sTemp, true),0);
+            string sDescList = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
+
             if (sDescList.front() == '{')
                 sDescList.erase(0,1);
             if (sDescList.back() == '}')
@@ -873,7 +901,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
 
             if (sTemp.length())
             {
-                string sStyles = getArgAtPos(getNextArgument(sTemp, true),0);
+                string sStyles = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                 if (sStyles.front() == '{')
                     sStyles.erase(0,1);
                 if (sStyles.back() == '}')
@@ -895,7 +923,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
             sTemp = sTemp.substr(1,sTemp.length()-2);
 
-        string sAxesList = getArgAtPos(getNextArgument(sTemp, true),0);
+        string sAxesList = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
 
         if (sAxesList.front() == '{')
             sAxesList.erase(0,1);
@@ -907,7 +935,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
 
         if (sTemp.length())
         {
-            sFormat = getArgAtPos(getNextArgument(sTemp, true),0);
+            sFormat = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
 
             if (sFormat.front() == '{')
                 sFormat.erase(0,1);
@@ -935,9 +963,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
             _lVLines[0].dPos = _parser.Eval();
-            _lVLines[0].sDesc = getArgAtPos(getNextArgument(sTemp, true),0);
+            _lVLines[0].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
             if (sTemp.length())
-                _lVLines[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                _lVLines[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
         }
         replaceControlChars(_lVLines[0].sDesc);
     }
@@ -950,9 +978,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
             _lVLines[1].dPos = _parser.Eval();
-            _lVLines[1].sDesc = getArgAtPos(getNextArgument(sTemp, true),0);
+            _lVLines[1].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
             if (sTemp.length())
-                _lVLines[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                _lVLines[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
         }
         replaceControlChars(_lVLines[1].sDesc);
     }
@@ -971,10 +999,10 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 _AddAxes[0].dMax = _parser.Eval();
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[0].sLabel = getArgAtPos(getNextArgument(sTemp, true),0);
+                    _AddAxes[0].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                     if (getNextArgument(sTemp, false).length())
                     {
-                        _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                        _AddAxes[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                         if (!checkColorChars(_AddAxes[0].sStyle))
                             _AddAxes[0].sStyle = "k";
                     }
@@ -986,10 +1014,10 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
             else
             {
-                _AddAxes[0].sLabel = getArgAtPos(getNextArgument(sTemp, true),0);
+                _AddAxes[0].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[0].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                    _AddAxes[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                     if (!checkColorChars(_AddAxes[0].sStyle))
                         _AddAxes[0].sStyle = "k";
                 }
@@ -1012,10 +1040,10 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 _AddAxes[1].dMax = _parser.Eval();
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[1].sLabel = getArgAtPos(getNextArgument(sTemp, true),0);
+                    _AddAxes[1].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                     if (getNextArgument(sTemp, false).length())
                     {
-                        _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                        _AddAxes[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                         if (!checkColorChars(_AddAxes[0].sStyle))
                             _AddAxes[1].sStyle = "k";
                     }
@@ -1027,10 +1055,10 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             }
             else
             {
-                _AddAxes[1].sLabel = getArgAtPos(getNextArgument(sTemp, true),0);
+                _AddAxes[1].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                 if (getNextArgument(sTemp, false).length())
                 {
-                    _AddAxes[1].sStyle = getArgAtPos(getNextArgument(sTemp, true),0);
+                    _AddAxes[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
                     if (!checkColorChars(_AddAxes[1].sStyle))
                         _AddAxes[1].sStyle = "k";
                 }
