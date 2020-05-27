@@ -32,8 +32,15 @@ ProcedureElement* ProcedureLibrary::constructProcedureElement(const string& sPro
 {
     if (fileExists(sProcedureFileName))
     {
-        ProcedureElement* element = new ProcedureElement(getFileContents(sProcedureFileName), sProcedureFileName);
-        return element;
+        try
+        {
+            ProcedureElement* element = new ProcedureElement(getFileContents(sProcedureFileName), sProcedureFileName);
+            return element;
+        }
+        catch(...)
+        {
+            return nullptr;
+        }
     }
     return nullptr;
 }

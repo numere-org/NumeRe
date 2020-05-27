@@ -79,6 +79,11 @@ Dependencies::Dependencies(ProcedureElement* procedureFile)
         else
             sThisNameSpace = "main";
     }
+    else if (sThisNameSpace.length())
+    {
+        while (sThisNameSpace.back() == '/')
+            sThisNameSpace.pop_back();
+    }
 
     // Call Dependcies::walk() to calculate the dependencies
     walk(procedureFile);
@@ -125,8 +130,10 @@ int Dependencies::getProcedureDependencies(ProcedureElement* procedureFile, int 
 
     // Insert the "thisfile" namespace, if the current procedure is not
     // the main procedure of the current file
-    if (procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('~')+1) + ".nprc")
+    if (sProcedureName.find('~') != string::npos && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('~')+1) + ".nprc")
         sProcedureName.insert(sProcedureName.rfind('~')+1, sThisFileNameSpacePrefix + "thisfile~");
+    else if (sProcedureName.find('/') != string::npos && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('/')+1) + ".nprc")
+        sProcedureName.insert(sProcedureName.rfind('/')+1, sThisFileNameSpacePrefix + "thisfile~");
     else
         sMainProcedure = sProcedureName;
 
@@ -163,6 +170,9 @@ string Dependencies::getProcedureName(string sCommandLine)
     if (sCommandLine.find("procedure ") == string::npos || sCommandLine.find('$') == string::npos)
         return "";
 
+    if (sThisNameSpace.find('/') != string::npos)
+        return "$" + sThisNameSpace + "/" + sCommandLine.substr(sCommandLine.find('$')+1, sCommandLine.find('(') - sCommandLine.find('$')-1);
+
     return "$" + sThisNameSpace + "~" + sCommandLine.substr(sCommandLine.find('$')+1, sCommandLine.find('(') - sCommandLine.find('$')-1);
 }
 
@@ -196,6 +206,9 @@ void Dependencies::resolveProcedureCalls(string sLine, const string& sProcedureN
                 // Handle explicit procedure file names
                 if (sLine[nPos] == '\'')
                     __sName = sLine.substr(nPos + 1, sLine.find('\'', nPos + 1) - nPos - 1);
+
+                if (__sName.find('/') != string::npos && __sName.find("thisfile~") == string::npos)
+                    replaceAll(__sName, "~", "/");
 
                 // Add procedure name and called procedure file name to the
                 // dependency list

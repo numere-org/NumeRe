@@ -5825,10 +5825,10 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
             pathname.replace(0, 1, vPaths[5] + "/");
         else if (pathname.find(':') == string::npos)
             pathname.insert(0, vPaths[5]);
-        else // pathname.find(':') != string::npos
-        {
+        else if (pathname.find('\'') != string::npos)
             pathname = pathname.substr(pathname.find('\'') + 1, pathname.rfind('\'') - pathname.find('\'') - 1);
-        }
+        else if (pathname[0] == '$')
+            pathname.erase(0, 1);
     }
 
     wxArrayString pathnames;

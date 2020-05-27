@@ -123,7 +123,15 @@ PackageDialog::PackageDialog(wxWindow* parent, wxTerm* terminal, IconManager* ic
 // This is the event handler for the autodetect button
 void PackageDialog::OnAutoDetect(wxCommandEvent& event)
 {
-    autoDetect(getProcedures());
+    try
+    {
+        autoDetect(getProcedures());
+    }
+    catch (...)
+    {
+        EndModal(wxID_CANCEL);
+        throw;
+    }
 }
 
 // This is the event handler for the add files button

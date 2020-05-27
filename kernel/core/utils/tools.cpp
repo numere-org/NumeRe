@@ -2290,13 +2290,14 @@ static string getNextCommandLineToken(string& sArgList, bool bCut, char cSep)
     if (!sArgList.length())
         return "";
     unsigned int nPos = 0;
+    size_t nMatching = 0;
 
     // Go through the complete string
     for (unsigned int i = 0; i < sArgList.length(); i++)
     {
         // Jump over parentheses
-        if ((sArgList[i] == '(' || sArgList[i] == '[' || sArgList[i] == '{' ) && !isInQuotes(sArgList, i, true))
-            i += getMatchingParenthesis(sArgList.substr(i));
+        if ((sArgList[i] == '(' || sArgList[i] == '[' || sArgList[i] == '{' ) && !isInQuotes(sArgList, i, true) && (nMatching = getMatchingParenthesis(sArgList.substr(i))) != string::npos)
+            i += nMatching;
 
         // A comma was found -> break the loop
         if (sArgList[i] == cSep && !isInQuotes(sArgList, i, true))
