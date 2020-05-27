@@ -1462,6 +1462,9 @@ static size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd,
 /////////////////////////////////////////////////
 static Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mLeft.size() || !_mLeft[0].size() || !_mRight.size() || !_mRight[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mResult;
     vector<double> vLine;
     double dEntry = 0.0;
@@ -1551,6 +1554,9 @@ Matrix transposeMatrix(const Matrix& _mMatrix)
 /////////////////////////////////////////////////
 static Matrix parser_IdentityMatrix(unsigned int nSize)
 {
+    if (!nSize)
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
+
     Matrix _mIdentity;
     vector<double> vLine;
     for (unsigned int i = 0; i < nSize; i++)
@@ -1581,6 +1587,9 @@ static Matrix parser_IdentityMatrix(unsigned int nSize)
 /////////////////////////////////////////////////
 static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols)
 {
+    if (!nLines || !nCols)
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
+
     Matrix _mOnes;
     vector<double> vLine(nCols, 1.0);
     for (unsigned int i = 0; i < nLines; i++)
@@ -1604,6 +1613,9 @@ static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols)
 /////////////////////////////////////////////////
 Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols)
 {
+    if (!nLines || !nCols)
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
+
     Matrix _mZeroes;
     vector<double> vLine(nCols, 0.0);
     for (unsigned int i = 0; i < nLines; i++)
@@ -1624,6 +1636,9 @@ Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols)
 /////////////////////////////////////////////////
 static Matrix parser_shuffleMatrix(unsigned int nShuffle, unsigned int nBase)
 {
+    if (!nBase)
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
+
     Matrix _mBase = createZeroesMatrix(nBase, 1);
     static double dSeed = 1;
 
@@ -1674,7 +1689,9 @@ static Matrix parser_shuffleMatrix(unsigned int nShuffle, unsigned int nBase)
 /////////////////////////////////////////////////
 static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
-    //cerr << _mMatrix.size() << "  " << _mMatrix[0].size() << endl;
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     if (_mMatrix.size() != _mMatrix[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
     // Gauss-Elimination???
@@ -2031,6 +2048,9 @@ static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _da
         _diag.push_back(vector<double>(1,NAN));
     }
 
+    if (!vLine.size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
+
     _diag = createZeroesMatrix(vLine.size(),vLine.size());
 
     for (unsigned int i = 0; i < _diag.size(); i++)
@@ -2055,6 +2075,9 @@ static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _da
 /////////////////////////////////////////////////
 static Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = parser_IdentityMatrix(1);
     vector<int> vRemovedLines(_mMatrix.size(), 0);
 
@@ -2145,6 +2168,9 @@ static double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemove
 /////////////////////////////////////////////////
 static Matrix parser_MatrixLogToIndex(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     vector<int> vLines;
     vector<int> vRows;
 
@@ -2206,6 +2232,9 @@ static Matrix parser_MatrixLogToIndex(const Matrix& _mMatrix, const string& sCmd
 /////////////////////////////////////////////////
 static Matrix parser_MatrixIndexToLog(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     if (_mMatrix.size() == 1 || _mMatrix[0].size() == 1)
     {
         Matrix _mMatrixMax = parser_MatrixMax(_mMatrix, sCmd, sExpr, position);
@@ -2288,6 +2317,9 @@ static Matrix parser_MatrixIndexToLog(const Matrix& _mMatrix, const string& sCmd
 /////////////////////////////////////////////////
 static Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(2,1);
     if (_mMatrix.size() == 1 && _mMatrix[0].size() == 1 && isnan(_mMatrix[0][0]))
         return _mReturn;
@@ -2310,6 +2342,9 @@ static Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, cons
 /////////////////////////////////////////////////
 static Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = parser_IdentityMatrix(1);
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -2339,6 +2374,9 @@ static Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -2368,6 +2406,9 @@ static Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const 
 /////////////////////////////////////////////////
 static Matrix parser_MatrixXor(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     bool isTrue = false;
     for (size_t i = 0; i < _mMatrix.size(); i++)
@@ -2402,6 +2443,9 @@ static Matrix parser_MatrixXor(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixSum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -2428,6 +2472,9 @@ static Matrix parser_MatrixSum(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixStd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     Matrix _mAvg = parser_MatrixAvg(_mMatrix, sCmd, sExpr, position);
     Matrix _mNum = parser_MatrixNum(_mMatrix, sCmd, sExpr, position);
@@ -2457,6 +2504,9 @@ static Matrix parser_MatrixStd(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixAvg(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     Matrix _mSum = parser_MatrixSum(_mMatrix, sCmd, sExpr, position);
     Matrix _mNum = parser_MatrixNum(_mMatrix, sCmd, sExpr, position);
@@ -2478,6 +2528,9 @@ static Matrix parser_MatrixAvg(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixPrd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = parser_IdentityMatrix(1);
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -2504,6 +2557,9 @@ static Matrix parser_MatrixPrd(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixCnt(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     _mReturn[0][0] = _mMatrix.size() * _mMatrix[0].size();
     return _mReturn;
@@ -2523,6 +2579,9 @@ static Matrix parser_MatrixCnt(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixNum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -2549,6 +2608,9 @@ static Matrix parser_MatrixNum(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixNorm(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -2576,6 +2638,9 @@ static Matrix parser_MatrixNorm(const Matrix& _mMatrix, const string& sCmd, cons
 /////////////////////////////////////////////////
 static Matrix parser_MatrixMin(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -2604,6 +2669,9 @@ static Matrix parser_MatrixMin(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -2632,6 +2700,9 @@ static Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     Datafile _cache;
 
@@ -2662,6 +2733,9 @@ static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     Datafile _cache;
 
@@ -2693,6 +2767,9 @@ static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = createZeroesMatrix(1,1);
     Matrix _mCoords = createZeroesMatrix(2,1);
     _mCoords[0][0] = -1;
@@ -2771,6 +2848,9 @@ static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType,
 /////////////////////////////////////////////////
 static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix1.size() || !_mMatrix1[0].size() || !_mMatrix2.size() || !_mMatrix2[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     // Ensure that the size is non-zero
     if (!(_mMatrix1.size() && _mMatrix2.size()) || !(_mMatrix1[0].size() && _mMatrix2[0].size()))
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix1.size()) +"x"+ toString(_mMatrix1[0].size()) + ", " + toString(_mMatrix2.size()) +"x"+ toString(_mMatrix2[0].size()));
@@ -2823,6 +2903,9 @@ static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix
 /////////////////////////////////////////////////
 static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix1.size() || !_mMatrix1[0].size() || !_mMatrix2.size() || !_mMatrix2[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     // Ensure that their size is equal
     if (_mMatrix1.size() != _mMatrix2.size() || _mMatrix1[0].size() != _mMatrix2[0].size() || !_mMatrix1.size() || !_mMatrix1[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix1.size()) +"x"+ toString(_mMatrix1[0].size()) + " != " + toString(_mMatrix2.size()) +"x"+ toString(_mMatrix2[0].size()));
@@ -2868,6 +2951,9 @@ static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2
 /////////////////////////////////////////////////
 static Matrix parser_Normalize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mReturn = _mMatrix;
     Matrix _mMax = parser_MatrixMax(_mMatrix, sCmd, sExpr, position);
     Matrix _mMin = parser_MatrixMin(_mMatrix, sCmd, sExpr, position);
@@ -2904,6 +2990,9 @@ static Matrix parser_Normalize(const Matrix& _mMatrix, const string& sCmd, const
 /////////////////////////////////////////////////
 static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size() || !nLines || !nCols)
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     if (nLines * nCols != _mMatrix.size() * _mMatrix[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(nLines) + "x" + toString(nCols) + "=" + toString(nLines*nCols) +" vs. "+ toString(_mMatrix.size()) + "x" +  toString(_mMatrix[0].size()) + "=" + toString(_mMatrix.size()*_mMatrix[0].size()));
     Matrix _mReturn = createZeroesMatrix(nLines, nCols);
@@ -2931,8 +3020,9 @@ static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t
 /////////////////////////////////////////////////
 static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)
 {
-    if (!nLines || !nCols)
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(nLines) + "x" + toString(nCols));
+    if (!_mMatrix.size() || !_mMatrix[0].size() || !nLines || !nCols)
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     if (nLines == _mMatrix.size() && nCols == _mMatrix[0].size())
         return _mMatrix;
     Matrix _mReturn = createZeroesMatrix(nLines, nCols);
@@ -2961,6 +3051,9 @@ static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t 
 /////////////////////////////////////////////////
 static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     // Create a std::list and the return value
     std::list<double> dataList;
     Matrix _mReturn;
@@ -3088,6 +3181,9 @@ static void parser_fillMissingMatrixElements(Matrix& _mMatrix)
 /////////////////////////////////////////////////
 static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mResult = createZeroesMatrix(_mMatrix[0].size()-1,1);
     Matrix _mToSolve = _mMatrix;
 
@@ -3233,6 +3329,9 @@ static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _
 /////////////////////////////////////////////////
 static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     Matrix _mResult = createZeroesMatrix(_mMatrix.size(),1);
     vector<int> vRemovedLines(_mMatrix.size(), 0);
     if (_mMatrix.size() == 1)
@@ -3305,6 +3404,9 @@ static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd
 /////////////////////////////////////////////////
 __attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     if (_mMatrix.size() != _mMatrix[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
     Matrix _mEigenVals;
@@ -3472,6 +3574,9 @@ static void parser_makeReal(Matrix& _mMatrix)
 /////////////////////////////////////////////////
 static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     if (_mMatrix.size() != _mMatrix[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
 
@@ -3504,6 +3609,9 @@ static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, cons
 /////////////////////////////////////////////////
 static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     if (_mMatrix.size() != _mMatrix[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
     Matrix _mReturn = createZeroesMatrix(1,1);
@@ -3725,6 +3833,9 @@ static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _opt
 /////////////////////////////////////////////////
 static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
 {
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
     string sSolution = "sle(";
     vector<string> vResult(_mMatrix[0].size()-1, "");
     bool bIsZeroesLine = true;

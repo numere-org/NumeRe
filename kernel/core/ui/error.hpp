@@ -130,6 +130,7 @@ class SyntaxError
             LOOP_THROW=2200,
             MATRIX_IS_NOT_INVERTIBLE=2300,
             MATRIX_IS_NOT_SYMMETRIC,
+            MATRIX_CANNOT_HAVE_ZERO_SIZE,
             MISSING_DEFAULT_VALUE=2400,
             NO_CACHED_DATA=2500,
             NO_COLS,
