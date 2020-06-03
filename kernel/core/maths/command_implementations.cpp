@@ -1869,6 +1869,39 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function for
+/// findExtremaInData
+///
+/// \param v value_type*
+/// \param nResults int
+/// \param start int
+/// \param nOrder int
+/// \param nanShiftStart int
+/// \param nNewNanShift int&
+/// \return double
+///
+/////////////////////////////////////////////////
+static double calculateMedian(value_type* v, int nResults, int start, int nOrder, int nanShiftStart, int& nNewNanShift)
+{
+    vector<double> data;
+
+    for (int i = start; i < start + nOrder; i++)
+    {
+        while (isnan(v[i + nanShiftStart + nNewNanShift]) && i + nanShiftStart + nNewNanShift < nResults - 1)
+            nNewNanShift++;
+
+        if (i + nanShiftStart + nNewNanShift >= nResults)
+            break;
+
+        data.push_back(v[i + nanShiftStart + nNewNanShift]);
+    }
+
+    gsl_sort(&data[0], 1, data.size());
+    return gsl_stats_median_from_sorted_data(&data[0], 1, data.size());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function finds extrema in
 /// the selected data sets.
 ///
@@ -1893,8 +1926,6 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
             nOrder = nResults / 3;
 
         double dMedian = 0.0, dExtremum = 0.0;
-        double* data = 0;
-        data = new double[nOrder];
         int nDir = 0;
         int nanShift = 0;
         vector<double> vResults;
@@ -1905,35 +1936,12 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
             return false;
         }
 
-        for (int i = 0; i + nanShift < nResults; i++)
-        {
-            if (i == nOrder)
-                break;
-
-            while (isnan(v[i + nanShift]) && i + nanShift < nResults - 1)
-                nanShift++;
-
-            data[i] = v[i + nanShift];
-        }
-
-        gsl_sort(data, 1, nOrder);
-        dExtremum = gsl_stats_median_from_sorted_data(data, 1, nOrder);
+        dExtremum = calculateMedian(v, nResults, 0, nOrder, 0, nanShift);
 
         for (int i = nOrder; i + nanShift < nResults - nOrder; i++)
         {
             int currNanShift = 0;
-            dMedian = 0.0;
-
-            for (int j = i; j < i + nOrder; j++)
-            {
-                while (isnan(v[j + nanShift + currNanShift]) && j + nanShift + currNanShift < nResults - 1)
-                    currNanShift++;
-
-                data[j - i] = v[j + nanShift + currNanShift];
-            }
-
-            gsl_sort(data, 1, nOrder);
-            dMedian = gsl_stats_median_from_sorted_data(data, 1, nOrder);
+            dMedian = calculateMedian(v, nResults, i, nOrder, nanShift, currNanShift);
 
             if (!nDir)
             {
@@ -1951,22 +1959,23 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
                     if (!nMode || nMode == nDir)
                     {
                         int nExtremum = i + nanShift;
-                        double dExtremum = v[i + nanShift];
+                        double dLocalExtremum = v[i + nanShift];
 
                         for (long long int k = i + nanShift; k >= 0; k--)
                         {
-                            if (k == i - nOrder)
+                            if (k == i + nanShift - nOrder)
                                 break;
 
-                            if (nDir*v[k] > nDir*dExtremum)
+                            if (nDir*v[k] > nDir*dLocalExtremum)
                             {
                                 nExtremum = k;
-                                dExtremum = v[k];
+                                dLocalExtremum = v[k];
                             }
                         }
 
                         vResults.push_back(nExtremum + 1);
                         i = nExtremum + nOrder;
+                        nanShift = 0;
                     }
 
                     nDir = 0;
@@ -1977,9 +1986,6 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
 
             nanShift += currNanShift;
         }
-
-        if (data)
-            delete[] data;
 
         if (!vResults.size())
             vResults.push_back(NAN);
