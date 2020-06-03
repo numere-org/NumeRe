@@ -198,14 +198,10 @@ wxString SearchController::FindMarkedInclude(int charpos)
 	}
 
 	// Prepend the script folder, if necessary
-	if (clickedWord.find('/') != string::npos || clickedWord.find('\\') != string::npos)
-	{
+	if (clickedWord.length() > 2 && ((isalpha(clickedWord[0]) && clickedWord[1] == ':') || clickedWord[0] == '.'))
 		m_editor->m_clickedInclude = clickedWord + ".nscr";
-	}
 	else
-	{
 		m_editor->m_clickedInclude = m_terminal->getPathSettings()[SCRIPTPATH] + "/" + clickedWord + ".nscr";
-	}
 
 	return replacePathSeparator(clickedWord.ToStdString());
 }
