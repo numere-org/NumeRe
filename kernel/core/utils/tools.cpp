@@ -427,6 +427,10 @@ bool getStringArgument(const string& sCmd, string& sArgument)
 /////////////////////////////////////////////////
 string extractStringToken(const string& sCmd, size_t nPos)
 {
+    // Increment the first position, if the command string begins with an equal sign
+    if (sCmd.front() == '=')
+        nPos++;
+
     size_t nPos_2 = 0;
     size_t nQuotes = isInQuotes(sCmd, nPos, true);
 
@@ -496,10 +500,6 @@ string extractStringToken(const string& sCmd, size_t nPos)
             break;
         }
     }
-
-    // Increment the first position, if the command string begins with an equal sign
-    if (sCmd.front() == '=')
-        nPos++;
 
     // Cut out the identified argument
     if (!nPos_2)
