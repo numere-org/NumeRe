@@ -485,13 +485,14 @@ string extractStringToken(const string& sCmd, size_t nPos)
             {
                 // A plus sign was found
                 // Jump over the following whitespaces around the plus sign
-                i = sCmd.find_first_not_of(" +", i);
+                i = sCmd.find_first_not_of(" +", i)-1;
+                continue;
             }
         }
 
         // If it's the last character or the current character is a
         // punctuation character
-        if (i >= sCmd.length() - 1 || (ispunct(sCmd[i]) && sCmd[i] != '_' && sCmd[i] != '+'))
+        if (i >= sCmd.length() - 1 || (ispunct(sCmd[i]) && sCmd[i] != '_' && sCmd[i] != '+' && sCmd[i] != '#'))
         {
             if (i == string::npos)
                 nPos_2 = sCmd.length();

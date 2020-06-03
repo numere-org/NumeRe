@@ -3422,6 +3422,14 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
             {
                 size_t nLength = sOptionValue.length();
                 string sParsedString;
+
+                // Remove surrounding parentheses
+                if (sOptionValue.front() == '(' && sOptionValue.back() == ')')
+                {
+                    sOptionValue.erase(0, 1);
+                    sOptionValue.pop_back();
+                }
+
                 // Parse the current option value and consider
                 // vector braces
                 while (sOptionValue.length())
