@@ -3404,116 +3404,48 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(_pInfo.sPlotParams))
             NumeReKernel::getInstance()->getStringParser().getStringValues(_pInfo.sPlotParams);
 
-        while (_pInfo.sPlotParams.find('=', nPos) != string::npos)
+        // Search for all option values in the current string
+        while ((nPos = _pInfo.sPlotParams.find('=', nPos)) != string::npos)
         {
-            nPos = _pInfo.sPlotParams.find('=', nPos) + 1;
+            nPos++;
 
             if (nPos >= _pInfo.sPlotParams.length())
                 break;
 
+            // Find the actual value (jump over white spaces)
             while (_pInfo.sPlotParams[nPos] == ' ')
                 nPos++;
 
-            if ((_pInfo.sPlotParams[nPos] != '"'
-                    && _pInfo.sPlotParams[nPos] != '#'
-                    && _pInfo.sPlotParams[nPos] != '('
-                    && _pInfo.sPlotParams.substr(nPos, 10) != "to_string("
-                    && _pInfo.sPlotParams.substr(nPos, 12) != "string_cast("
-                    && _pInfo.sPlotParams.substr(nPos, 8) != "to_char("
-                    && _pInfo.sPlotParams.substr(nPos, 8) != "replace("
-                    && _pInfo.sPlotParams.substr(nPos, 11) != "replaceall("
-                    && _pInfo.sPlotParams.substr(nPos, 5) != "char("
-                    && _pInfo.sPlotParams.substr(nPos, 7) != "string("
-                    && _pInfo.sPlotParams.substr(nPos, 7) != "substr("
-                    && _pInfo.sPlotParams.substr(nPos, 6) != "split("
-                    && _pInfo.sPlotParams.substr(nPos, 6) != "sum("
-                    && _pInfo.sPlotParams.substr(nPos, 6) != "min("
-                    && _pInfo.sPlotParams.substr(nPos, 6) != "max("
-                    && _pInfo.sPlotParams.substr(nPos, 5) != "data("
-                    && !_data.containsTablesOrClusters(_pInfo.sPlotParams.substr(nPos)))
-                    || isInQuotes(_pInfo.sPlotParams, nPos - 1))
-                continue;
+            string sOptionValue = extractStringToken(_pInfo.sPlotParams, nPos);
 
-            if (_data.containsTablesOrClusters(_pInfo.sPlotParams.substr(nPos)))
+            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sOptionValue))
             {
-                bool bMatch = false;
-
-                for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+                size_t nLength = sOptionValue.length();
+                string sParsedString;
+                // Parse the current option value and consider
+                // vector braces
+                while (sOptionValue.length())
                 {
-                    if (_pInfo.sPlotParams.substr(nPos, (iter->first).length() + 1) == iter->first + "(")
-                    {
-                        bMatch = true;
-                        break;
-                    }
-                }
+                    string sCurrentString = getNextArgument(sOptionValue, true);
+                    bool bVector = sCurrentString.find('{') != string::npos;
 
-                if (!bMatch)
-                    continue;
-            }
+                    if (containsStrings(sCurrentString))
+                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentString, sDummy, true);
 
-            if (_pInfo.sPlotParams.substr(nPos, 4) == "min(" || _pInfo.sPlotParams.substr(nPos, 4) == "max(" || _pInfo.sPlotParams.substr(nPos, 4) == "sum(")
-            {
-                int nPos_temp = getMatchingParenthesis(_pInfo.sPlotParams.substr(nPos + 3)) + nPos + 3;
+                    if (bVector && sCurrentString.find('{') == string::npos)
+                        sCurrentString = "{" + sCurrentString + "}";
 
-                if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(_pInfo.sPlotParams.substr(nPos + 3, nPos_temp - nPos - 3)))
-                    continue;
-            }
-
-            for (unsigned int i = nPos; i < _pInfo.sPlotParams.length(); i++)
-            {
-                if (_pInfo.sPlotParams[i] == '(')
-                {
-                    i += getMatchingParenthesis(_pInfo.sPlotParams.substr(i));
-                    continue;
-                }
-
-                if (((_pInfo.sPlotParams[i] == ' ' || _pInfo.sPlotParams[i] == ')') && !isInQuotes(_pInfo.sPlotParams, i)) || i + 1 == _pInfo.sPlotParams.length())
-                {
-                    string sParsedString;
-                    string sToParse;
-                    string sCurrentString;
-
-                    if (i + 1 == _pInfo.sPlotParams.length())
-                        sToParse = _pInfo.sPlotParams.substr(nPos);
+                    if (sParsedString.length())
+                        sParsedString += "," + sCurrentString;
                     else
-                        sToParse = _pInfo.sPlotParams.substr(nPos, i - nPos);
-
-                    StripSpaces(sToParse);
-
-                    if (sToParse.front() == '(')
-                        sToParse.erase(0, 1);
-
-                    if (sToParse.back() == ')')
-                        sToParse.erase(sToParse.length() - 1);
-
-                    while (sToParse.length())
-                    {
-                        sCurrentString = getNextArgument(sToParse, true);
-                        bool bVector = sCurrentString.find('{') != string::npos;
-
-                        if (containsStrings(sCurrentString))
-                            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentString, sDummy, true);
-
-
-                        if (bVector && sCurrentString.find('{') == string::npos)
-                            sCurrentString = "{" + sCurrentString + "}";
-
-                        if (sParsedString.length())
-                            sParsedString += "," + sCurrentString;
-                        else
-                            sParsedString = sCurrentString;
-                    }
-
-                    if (_pInfo.sPlotParams[nPos] == '(' && sParsedString.front() != '(')
-                        sParsedString = "(" + sParsedString + ")";
-
-                    if (i + 1 == _pInfo.sPlotParams.length())
-                        _pInfo.sPlotParams.replace(nPos, string::npos, sParsedString);
-                    else
-                        _pInfo.sPlotParams.replace(nPos, i - nPos, sParsedString);
-
-                    break;
+                        sParsedString = sCurrentString;
                 }
+
+                if (_pInfo.sPlotParams[nPos] == '(' && sParsedString.front() != '(')
+                    sParsedString = "(" + sParsedString + ")";
+
+                // Replace the parsed string
+                _pInfo.sPlotParams.replace(nPos, nLength, sParsedString);
             }
         }
     }

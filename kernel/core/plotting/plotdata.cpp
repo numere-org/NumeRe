@@ -1606,7 +1606,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         else if (findParameter(sCmd, "ogif", '='))
             nPos = findParameter(sCmd, "ogif", '=') + 4;
 
-        sFileName = getArgAtPos(__sCmd, nPos);
+        sFileName = evaluateString(getArgAtPos(__sCmd, nPos));
         StripSpaces(sFileName);
         if (sFileName.length())
         {

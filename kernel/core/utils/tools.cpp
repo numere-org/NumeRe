@@ -351,13 +351,22 @@ int findParameter(const string& sCmd, const string& sParam, const char cFollowin
     return 0;
 }
 
-// Diese Funktion sucht nach einem String-Argument in einem Kommando und schreibt dieses in sArgument. Falls
-// keines gefunden wird, gibt die Funktion FALSE zurueck, anderenfalls TRUE
-//
+
+/////////////////////////////////////////////////
+/// \brief This function searches for the first
+/// string value in the passed expression and
+/// writes that into sArgument. If nothing was
+/// found, this function returns false, true
+/// otherwise.
+///
+/// \param sCmd const string&
+/// \param sArgument string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool getStringArgument(const string& sCmd, string& sArgument)
 {
-    unsigned int nPos = 0;
-    unsigned int nPos_2 = 0;
+    size_t nPos = 0;
 
     // --> Wenn kein '"' oder kein '#' zu finden ist, gibt es auch kein String-Argument: FALSE zurueckgeben <--
     if (!containsStrings(sCmd))
@@ -399,16 +408,47 @@ bool getStringArgument(const string& sCmd, string& sArgument)
     }
 
     // Try to find the end of the string block
-    for (unsigned int i = nPos; i < sCmd.length(); i++)
+    // and cut out the identified argument
+    sArgument = extractStringToken(sCmd, nPos);
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function extracts a string token
+/// at the selected position. If the position is
+/// start of an option value, the possible equal
+/// sign is ignored.
+///
+/// \param sCmd const string&
+/// \param nPos size_t
+/// \return string
+///
+/////////////////////////////////////////////////
+string extractStringToken(const string& sCmd, size_t nPos)
+{
+    size_t nPos_2 = 0;
+    size_t nQuotes = isInQuotes(sCmd, nPos, true);
+
+    for (size_t i = nPos; i < sCmd.length(); i++)
     {
+        if (sCmd[i] == '"' && (!i || sCmd[i-1] != '\\'))
+        {
+            nQuotes++;
+            continue;
+        }
+
+        if (nQuotes % 2)
+            continue;
+
         // Jump over each parenthesis block
-        if (!isInQuotes(sCmd, i) && (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{'))
+        if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
             i += getMatchingParenthesis(sCmd.substr(i));
 
         // Handle the variable to string parser
         if (sCmd[i] == '#')
         {
-            for (unsigned int j = i; j < sCmd.length(); j++)
+            for (size_t j = i; j < sCmd.length(); j++)
             {
                 if (sCmd[j] == ' ')
                 {
@@ -417,9 +457,8 @@ bool getStringArgument(const string& sCmd, string& sArgument)
                 }
                 // jump over parentheses
                 if (sCmd[j] == '(')
-                {
                     j += getMatchingParenthesis(sCmd.substr(j));
-                }
+
                 if (j == sCmd.length() - 1)
                 {
                     i = j;
@@ -428,8 +467,8 @@ bool getStringArgument(const string& sCmd, string& sArgument)
             }
         }
 
-        // If there's a whitepace and it is not part of a quotation marks pair
-        if (sCmd[i] == ' ' && !isInQuotes(sCmd, i))
+        // If there's a whitespace
+        if (sCmd[i] == ' ')
         {
             // Try to find a trailing plus sign
             if (sCmd.find_first_not_of(' ', i) != string::npos && sCmd[sCmd.find_first_not_of(' ', i)] != '+')
@@ -441,18 +480,14 @@ bool getStringArgument(const string& sCmd, string& sArgument)
             else
             {
                 // A plus sign was found
-                i = sCmd.find_first_not_of(' ', i);
-
                 // Jump over the following whitespaces around the plus sign
-                if (i < sCmd.length() - 1 && sCmd[i] == '+' && sCmd[i + 1] == ' ')
-                    i++;
-                while (i < sCmd.length() - 1 && sCmd[i] == ' ' && sCmd[i + 1] == ' ')
-                    i++;
+                i = sCmd.find_first_not_of(" +", i);
             }
         }
 
-        // If it's the last character or the current character is a minus sign
-        if (i >= sCmd.length() - 1 || (sCmd[i] == '-' && !isInQuotes(sCmd, i)))
+        // If it's the last character or the current character is a
+        // punctuation character
+        if (i >= sCmd.length() - 1 || (ispunct(sCmd[i]) && sCmd[i] != '_' && sCmd[i] != '+'))
         {
             if (i == string::npos)
                 nPos_2 = sCmd.length();
@@ -461,16 +496,27 @@ bool getStringArgument(const string& sCmd, string& sArgument)
             break;
         }
     }
+
     // Increment the first position, if the command string begins with an equal sign
     if (sCmd.front() == '=')
         nPos++;
 
     // Cut out the identified argument
-    sArgument = sCmd.substr(nPos, nPos_2 - nPos + 1);
-    return true;
+    if (!nPos_2)
+        return sCmd.substr(nPos);
+
+    return sCmd.substr(nPos, nPos_2 - nPos + 1);
 }
 
-// Entfernt fuehrende und angehaengte Leerstellen/Tabulatoren
+
+/////////////////////////////////////////////////
+/// \brief Removes leading and trailing white
+/// spaces and tabulator characters.
+///
+/// \param sToStrip string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void StripSpaces(string& sToStrip)
 {
     if (!sToStrip.length())
@@ -478,30 +524,38 @@ void StripSpaces(string& sToStrip)
     // --> Am Anfgang und am Ende weder ' ' noch '\t' gefunden? Zurueckkehren <--
     if (sToStrip.front() != ' ' && sToStrip.back() != ' ' && sToStrip.front() != '\t' && sToStrip.back() != '\t')
         return;
+
     sToStrip.erase(0, sToStrip.find_first_not_of(" \t"));
+
     if (sToStrip.length() && (sToStrip.back() == ' ' || sToStrip.back() == '\t'))
         sToStrip.erase(sToStrip.find_last_not_of(" \t") + 1);
-
-    // --> Zurueckkehren <--
-    return;
 }
 
-// Aus einem String einen Integer machen
+
+/////////////////////////////////////////////////
+/// \brief Converts a string into an integer.
+///
+/// \param sString const string&
+/// \return int
+///
+/////////////////////////////////////////////////
 int StrToInt(const string& sString)
 {
-    int nReturn = 0;
-    istringstream Temp(sString);
-    Temp >> nReturn;
-    return nReturn;
+    return atoi(sString.c_str());
 }
 
-// Aus einem String einen Double machen
+
+/////////////////////////////////////////////////
+/// \brief Converts a string into a double.
+///
+/// \param sString const string&
+/// \return double
+///
+/////////////////////////////////////////////////
 double StrToDb(const string& sString)
 {
-    double dReturn = 0.0;
-    istringstream Temp(sString);
-    Temp >> dReturn;
-    return dReturn;
+    return atof(sString.c_str());
+    //return std::stod(sString);
 }
 
 

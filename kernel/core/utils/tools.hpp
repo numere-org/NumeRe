@@ -143,6 +143,7 @@ string wcstombs(const wstring& wStr);
 void StripSpaces(string&);
 int findParameter(const string& sCmd, const string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const string& sCmd, string& sArgument);
+string extractStringToken(const string& sCmd, size_t nPos);
 int StrToInt(const string&);
 double StrToDb(const string&);
 unsigned int getMatchingParenthesis(const string&);
