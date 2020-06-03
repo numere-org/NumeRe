@@ -4465,8 +4465,12 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
             //
             // GetModificationTime() fails if the file is not readable
             // therefore we check this first
-            if (!filename.IsFileReadable() || (wxDateTime::Now() - filename.GetModificationTime()).GetSeconds() > 2)
-                continue;
+            {
+                wxLogNull logNull;
+
+                if (filename.IsDir() || !filename.IsFileReadable() || !filename.GetModificationTime().IsValid() || (wxDateTime::Now() - filename.GetModificationTime()).GetSeconds() > 2)
+                    continue;
+            }
 
             // Add a new revision in the list of revisions that
             // the file was modified from the outside. Files with
@@ -6921,8 +6925,17 @@ void NumeReWindow::OnCalculateDependencies()
         return;
 
     ProcedureLibrary& procLib = m_terminal->getKernel().getProcedureLibrary();
-    DependencyDialog dlg(this, wxID_ANY, _guilang.get("GUI_DEPDLG_HEAD", m_currentEd->GetFilenameString().ToStdString()), m_currentEd->GetFileNameAndPath().ToStdString(), procLib);
-    dlg.ShowModal();
+
+    try
+    {
+        DependencyDialog dlg(this, wxID_ANY, _guilang.get("GUI_DEPDLG_HEAD", m_currentEd->GetFilenameString().ToStdString()), m_currentEd->GetFileNameAndPath().ToStdString(), procLib);
+        dlg.ShowModal();
+    }
+    catch (SyntaxError& e)
+    {
+        wxMessageBox(_guilang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3])), _guilang.get("ERR_NR_HEAD"), wxCENTER | wxICON_ERROR | wxOK);
+    }
+
 }
 
 
@@ -6936,49 +6949,56 @@ void NumeReWindow::OnCalculateDependencies()
 /////////////////////////////////////////////////
 void NumeReWindow::OnCreatePackage()
 {
-    PackageDialog dlg(this, m_terminal, m_iconManager);
-
-    if (m_currentEd->getFileType() == FILE_NPRC)
-        dlg.setMainFile(m_currentEd->GetFileNameAndPath());
-
-    if (dlg.ShowModal() == wxID_OK)
+    try
     {
-        wxString installinfo = dlg.getInstallInfo();
-        wxString identifier = (dlg.isPlugin() ? "plgn_" : "pkg_") + dlg.getPackageIdentifier();
-        wxArrayString procedures = dlg.getProcedures();
-        string sProcPath = m_terminal->getPathSettings()[PROCPATH];
+        PackageDialog dlg(this, m_terminal, m_iconManager);
 
-        // Ensure that the user provided at least a single
-        // procedure for the new package
-        if (!procedures.size())
-            return;
+        if (m_currentEd->getFileType() == FILE_NPRC)
+            dlg.setMainFile(m_currentEd->GetFileNameAndPath());
 
-        NewFile(FILE_NSCR, identifier);
-
-        m_currentEd->AddText("<install>\n" + installinfo + "\n");
-
-        for (size_t i = 0; i < procedures.size(); i++)
+        if (dlg.ShowModal() == wxID_OK)
         {
-            vector<string> procContents = getProcedureFileForInstaller(procedures[i].ToStdString(), sProcPath);
+            wxString installinfo = dlg.getInstallInfo();
+            wxString identifier = (dlg.isPlugin() ? "plgn_" : "pkg_") + dlg.getPackageIdentifier();
+            wxArrayString procedures = dlg.getProcedures();
+            string sProcPath = m_terminal->getPathSettings()[PROCPATH];
 
-            for (size_t j = 0; j < procContents.size(); j++)
+            // Ensure that the user provided at least a single
+            // procedure for the new package
+            if (!procedures.size())
+                return;
+
+            NewFile(FILE_NSCR, identifier);
+
+            m_currentEd->AddText("<install>\n" + installinfo + "\n");
+
+            for (size_t i = 0; i < procedures.size(); i++)
             {
-                if (procContents[j].length() && procContents[j].find_first_not_of(" \t") != string::npos)
-                    m_currentEd->AddText("\t" + procContents[j] + "\n");
+                vector<string> procContents = getProcedureFileForInstaller(procedures[i].ToStdString(), sProcPath);
+
+                for (size_t j = 0; j < procContents.size(); j++)
+                {
+                    if (procContents[j].length() && procContents[j].find_first_not_of(" \t") != string::npos)
+                        m_currentEd->AddText("\t" + procContents[j] + "\n");
+                }
+
+                m_currentEd->AddText("\n");
             }
 
-            m_currentEd->AddText("\n");
-        }
+            if (dlg.includeDocs())
+            {
+                m_currentEd->AddText("\t<helpindex>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" idxkey=\"" + dlg.getPackageIdentifier()
+                                     + "\" />\n\t\t\t<keywords>\n\t\t\t\t<keyword>" + dlg.getPackageIdentifier() + "</keyword>\n\t\t\t</keywords>\n\t\t</article>\n\t</helpindex>\n\n");
+                m_currentEd->AddText("\t<helpfile>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" />\n\t\t\t(...)\n\t\t</article>\n\t</helpfile>\n\n");
+            }
 
-        if (dlg.includeDocs())
-        {
-            m_currentEd->AddText("\t<helpindex>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" idxkey=\"" + dlg.getPackageIdentifier()
-                                 + "\" />\n\t\t\t<keywords>\n\t\t\t\t<keyword>" + dlg.getPackageIdentifier() + "</keyword>\n\t\t\t</keywords>\n\t\t</article>\n\t</helpindex>\n\n");
-            m_currentEd->AddText("\t<helpfile>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" />\n\t\t\t(...)\n\t\t</article>\n\t</helpfile>\n\n");
+            m_currentEd->AddText("\treturn;\n<endinstall>\n");
+            m_currentEd->AddText("\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\n");
         }
-
-        m_currentEd->AddText("\treturn;\n<endinstall>\n");
-        m_currentEd->AddText("\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\n");
+    }
+    catch (SyntaxError& e)
+    {
+        wxMessageBox(_guilang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3])), _guilang.get("ERR_NR_HEAD"), wxCENTER | wxICON_ERROR | wxOK);
     }
 }
 
