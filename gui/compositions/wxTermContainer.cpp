@@ -133,6 +133,21 @@ void wxTermContainer::CreateControls()
 ////@end wxTermContainer content construction
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Updates the thumb position after every
+/// scroll operation except of the click-drag
+/// scrolling.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void wxTermContainer::updateThumbPosition()
+{
+    m_lastThumbPosition = m_terminal->GetScrollHeight() - m_terminal->Height() - m_terminal->GetScrollPosition();
+}
+
+
 /*!
  * wxEVT_SCROLL_LINEUP event handler for ID_SCROLLBAR
  */
@@ -149,16 +164,17 @@ void wxTermContainer::CreateControls()
 //////////////////////////////////////////////////////////////////////////////
 void wxTermContainer::OnScrollbarScrollLineUp( wxScrollEvent& event )
 {
-    // Insert custom code here
     event.Skip();
 
 	//wxLogDebug("OnScrollbarScrollPageUp()");
 	m_terminal->ScrollTerminal(1, true);
+	updateThumbPosition();
 }
 
 void wxTermContainer::OnWheelScroll(wxMouseEvent& event)
 {
     m_terminal->ScrollTerminal(3, (event.GetWheelRotation() > 0));
+    updateThumbPosition();
 }
 
 /*!
@@ -177,10 +193,9 @@ void wxTermContainer::OnWheelScroll(wxMouseEvent& event)
 //////////////////////////////////////////////////////////////////////////////
 void wxTermContainer::OnScrollbarScrollLineDown( wxScrollEvent& event )
 {
-    // Insert custom code here
     event.Skip();
 	m_terminal->ScrollTerminal(1, false);
-
+    updateThumbPosition();
 }
 
 /*!
@@ -199,10 +214,9 @@ void wxTermContainer::OnScrollbarScrollLineDown( wxScrollEvent& event )
 //////////////////////////////////////////////////////////////////////////////
 void wxTermContainer::OnScrollbarScrollPageUp( wxScrollEvent& event )
 {
-    // Insert custom code here
     event.Skip();
-	m_terminal->ScrollTerminal(10, true);
-
+	m_terminal->ScrollTerminal(m_terminal->Height(), true);
+    updateThumbPosition();
 }
 
 /*!
@@ -221,9 +235,9 @@ void wxTermContainer::OnScrollbarScrollPageUp( wxScrollEvent& event )
 //////////////////////////////////////////////////////////////////////////////
 void wxTermContainer::OnScrollbarScrollPageDown( wxScrollEvent& event )
 {
-    // Insert custom code here
     event.Skip();
-	m_terminal->ScrollTerminal(10, false);
+	m_terminal->ScrollTerminal(m_terminal->Height(), false);
+	updateThumbPosition();
 }
 
 /*!
@@ -242,7 +256,6 @@ void wxTermContainer::OnScrollbarScrollPageDown( wxScrollEvent& event )
 //////////////////////////////////////////////////////////////////////////////
 void wxTermContainer::OnScrollbarScrollThumbtrack( wxScrollEvent& event )
 {
-    // Insert custom code here
     event.Skip();
 	//wxLogDebug("Scroll event.  Value: %d", event.GetPosition());
 
@@ -286,40 +299,25 @@ bool wxTermContainer::ShowToolTips()
 //////////////////////////////////////////////////////////////////////////////
 void wxTermContainer::SetTerminal(wxTerm* terminal)
 {
-
 	m_terminal = terminal;
 
 	m_sizer->Prepend(m_terminal, 1, wxGROW, 0);
 
 	int termHeight = m_terminal->Height();
-	m_scrollbar->SetScrollbar(100 - termHeight, termHeight, 100, 10);
-
-	//m_scrollbar->SetScrollbar(90, 10, 100, 10);
+	m_scrollbar->SetScrollbar(100 - termHeight, termHeight, 100, termHeight);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Empty OnSize event handler.
+///
+/// \param event wxSizeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxTermContainer::OnSize(wxSizeEvent &event)
 {
 	event.Skip();
-
-	/*
-	int newHeight = 0;
-	int numLinesReceived = 0;
-
-	if(m_terminal != NULL)
-	{
-		//m_terminal->UpdateSize(newHeight, numLinesReceived);
-		m_terminal->UpdateSize();
-
-		int height = m_terminal->Height();
-
-		int maxSize = m_terminal->MaxHeight();
-		int pageSize = maxSize / 10;
-		m_scrollbar->SetScrollbar(maxSize - height, height, maxSize, pageSize);
-	}
-	*/
-
-
-
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -334,53 +332,59 @@ void wxTermContainer::OnSize(wxSizeEvent &event)
 //////////////////////////////////////////////////////////////////////////////
 void wxTermContainer::OnUpdateUI(wxUpdateUIEvent &event)
 {
-	//bool enableScrollbar = true;
-
 	int scrollHeight = m_terminal->GetScrollHeight();
 
 	int thumbSize = m_terminal->Height();
 
-	if(scrollHeight <= thumbSize)
+	if (scrollHeight <= thumbSize)
 	{
 		m_scrollbar->Disable();
 		return;
 	}
 
 	m_scrollbar->Enable();
-	int pageSize = scrollHeight / 10;
-
-	if(pageSize == 0)
-	{
-		pageSize = 10;
-	}
-
 
 	int thumbPosition = scrollHeight - thumbSize - m_terminal->GetScrollPosition();
 
-	if(scrollHeight != m_lastLinesReceived)
+	if (scrollHeight != m_lastLinesReceived)
 	{
 		//wxLogDebug("linesReceived: %d, thumbSize: %d, thumbPosition: %d", scrollHeight, thumbSize, thumbPosition);
 		m_lastLinesReceived = scrollHeight;
 		m_lastThumbPosition = thumbPosition;
 	}
 
-	if(thumbPosition < 0)
-	{
+	if (thumbPosition < 0)
 		thumbPosition = 0;
-	}
 
 	event.Enable(true);
-	m_scrollbar->SetScrollbar(thumbPosition, thumbSize, scrollHeight, pageSize);
+	m_scrollbar->SetScrollbar(thumbPosition, thumbSize, scrollHeight, thumbSize);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Changes the size of the terminal
+/// history buffer.
+///
+/// \param newSize int
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxTermContainer::SetTerminalHistory(int newSize)
 {
 	m_terminal->SetTerminalHistory(newSize);
-	//m_scrollbar->SetScrollbar(100 - termHeight, termHeight, 100, 10);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Changes the blinking duration of the
+/// terminal caret.
+///
+/// \param newTime int
+/// \return void
+///
+/////////////////////////////////////////////////
 void wxTermContainer::SetCaretBlinkTime(int newTime)
 {
 	m_terminal->SetCursorBlinkRate(newTime);
-	//m_scrollbar->SetScrollbar(100 - termHeight, termHeight, 100, 10);
 }
+

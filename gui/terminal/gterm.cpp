@@ -17,6 +17,13 @@
 
 #endif
 
+
+/////////////////////////////////////////////////
+/// \brief Simple wrapper around update_changes()
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::Update()
 {
 	update_changes();
@@ -49,13 +56,17 @@ void GenericTerminal::ProcessInput(int len, const string& sData)
 
 }
 
-/** \brief Processes output returned from the kernel and hands it over to the internal buffer
- *
- * \param len int
- * \param sData const string&
- * \return void
- *
- */
+
+/////////////////////////////////////////////////
+/// \brief Processes output returned from the
+/// kernel and hands it over to the internal
+/// buffer.
+///
+/// \param len int
+/// \param sData const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::ProcessOutput(int len, const string& sData)
 {
     // Copy the input
@@ -68,6 +79,13 @@ void GenericTerminal::ProcessOutput(int len, const string& sData)
 	return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Simple wrapper around reset().
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::Reset()
 {
 	reset();
@@ -131,12 +149,13 @@ void GenericTerminal::ResizeTerminal(int w, int h)
 }
 
 
-/** \brief Constructor
- *
- * \param w int
- * \param h int
- *
- */
+/////////////////////////////////////////////////
+/// \brief Constructor.
+///
+/// \param w int
+/// \param h int
+///
+/////////////////////////////////////////////////
 GenericTerminal::GenericTerminal(int w, int h) : width(w), height(h)
 {
 	doing_update = 0;
@@ -156,9 +175,14 @@ GenericTerminal::GenericTerminal(int w, int h) : width(w), height(h)
 	resetAutoComp();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Empty destructor.
+/////////////////////////////////////////////////
 GenericTerminal::~GenericTerminal()
 {
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual IsSelected
@@ -178,6 +202,7 @@ GenericTerminal::IsSelected(int x, int y)
 		return tm.isSelected(ViewCursor(x, y));
 	return 0;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual Select
@@ -200,7 +225,16 @@ GenericTerminal::Select(int x, int y, int select)
 	}
 }
 
-// Gets the character at the selected location
+
+/////////////////////////////////////////////////
+/// \brief Gets the character at the selected
+/// location.
+///
+/// \param x int
+/// \param y int
+/// \return unsigned char
+///
+/////////////////////////////////////////////////
 unsigned char GenericTerminal::GetChar(int x, int y)
 {
 	if (x >= 0 && x < Width() && y >= 0 && y < Height())
@@ -209,17 +243,31 @@ unsigned char GenericTerminal::GetChar(int x, int y)
 	return 0;
 }
 
-// Gets the selected text (if any)
+
+/////////////////////////////////////////////////
+/// \brief Gets the selected text (if any).
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string GenericTerminal::get_selected_text()
 {
 	return tm.getSelectedText();
 }
 
-// Get a pointer to the internal text buffer
+
+/////////////////////////////////////////////////
+/// \brief Get a pointer to the internal text
+/// buffer.
+///
+/// \return TextManager*
+///
+/////////////////////////////////////////////////
 TextManager* GenericTerminal::GetTM()
 {
 	return &tm;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public Scroll
@@ -243,11 +291,19 @@ bool GenericTerminal::Scroll(int numLines, bool scrollUp)
 	return false;
 }
 
-// Determine, whether the terminal is scrolled up
+
+/////////////////////////////////////////////////
+/// \brief Determine, whether the terminal is
+/// scrolled up.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::IsScrolledUp()
 {
 	return (tm.GetNumLinesScrolled() != 0);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetScrollHeight
@@ -262,26 +318,39 @@ int GenericTerminal::GetScrollHeight()
 	int scrollHeight = tm.GetLinesReceived();
 
 	int maxSize = tm.GetMaxSize();
+
 	if (scrollHeight > maxSize)
-	{
 		scrollHeight = maxSize;
-	}
-	else
-	{
-		scrollHeight--;
-	}
 
 	return scrollHeight;
 }
 
-// Return the current scroll position
+
+/////////////////////////////////////////////////
+/// \brief Returns the current scroll position.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int GenericTerminal::GetScrollPosition()
 {
 	return tm.GetNumLinesScrolled();
 }
 
-// Set the terminal buffer size (not the length of the input history)
+
+/////////////////////////////////////////////////
+/// \brief Set the terminal buffer size (not the
+/// length of the input history). The length of
+/// the history (i.e. the terminal length) is
+/// determined by the width of the terminal and
+/// the number of calculated line breaks.
+///
+/// \param size int
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::SetTerminalHistory(int size)
 {
 	tm.SetMaxSize(size);
 }
+

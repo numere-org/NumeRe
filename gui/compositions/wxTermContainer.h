@@ -108,6 +108,8 @@ private:
 	int m_lastThumbPosition;
 	wxBoxSizer* m_sizer;
 	int m_lastLinesReceived;
+
+	void updateThumbPosition();
 };
 
 #endif

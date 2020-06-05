@@ -37,8 +37,11 @@
 
 using namespace std;
 
-// The terminal class for the GUI
-// It's a specialisation of the GenericTerminal
+
+/////////////////////////////////////////////////
+/// \brief The terminal class for the GUI. It's a
+/// specialisation of the GenericTerminal.
+/////////////////////////////////////////////////
 class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 {
     // Easier to use the NumeReKernel as a friend
