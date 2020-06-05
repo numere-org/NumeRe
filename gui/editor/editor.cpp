@@ -182,6 +182,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* 
     m_dragging = false;
 
     m_nFirstLine = m_nLastLine = 0;
+    m_nLastReleasedKey = 0;
     m_nDuplicateCodeFlag = 0;
     m_procedureViewer = nullptr;
 
@@ -1518,6 +1519,8 @@ void NumeReEditor::OnKeyRel(wxKeyEvent& event)
     if (this->GetSelections() <= 1)
         MakeBraceCheck();
 
+    m_nLastReleasedKey = event.GetKeyCode();
+
     MakeBlockCheck();
     event.Skip();
     CallAfter(NumeReEditor::AsynchActions);
@@ -1535,6 +1538,7 @@ void NumeReEditor::OnKeyRel(wxKeyEvent& event)
 /////////////////////////////////////////////////
 void NumeReEditor::OnMouseUp(wxMouseEvent& event)
 {
+    m_nLastReleasedKey = 0;
     MakeBraceCheck();
     MakeBlockCheck();
     CallAfter(NumeReEditor::AsynchActions);
@@ -5228,6 +5232,34 @@ void NumeReEditor::markLocalVariableOfType(const wxString& command, bool bForceR
 
 
 /////////////////////////////////////////////////
+/// \brief This method is a simple helper for
+/// AsynchActions to determine, which key should
+/// not trigger the autoindention feature.
+///
+/// \param keycode int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReEditor::isNoAutoIndentionKey(int keycode)
+{
+    return keycode == WXK_BACK
+        || keycode == WXK_DELETE
+        || keycode == WXK_TAB
+        || keycode == WXK_SHIFT
+        || keycode == WXK_CAPITAL
+        || keycode == WXK_ALT
+        || keycode == WXK_CONTROL
+        || keycode == WXK_ESCAPE
+        || keycode == WXK_LEFT
+        || keycode == WXK_RIGHT
+        || keycode == WXK_UP
+        || keycode == WXK_DOWN
+        || keycode == WXK_HOME
+        || keycode == WXK_END;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Performs asynchronous actions and is
 /// called automatically.
 ///
@@ -5240,7 +5272,10 @@ void NumeReEditor::markLocalVariableOfType(const wxString& command, bool bForceR
 /////////////////////////////////////////////////
 void NumeReEditor::AsynchActions()
 {
-    if (!this->AutoCompActive() && this->getEditorSetting(SETTING_INDENTONTYPE) && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP))
+    if (!this->AutoCompActive()
+        && this->getEditorSetting(SETTING_INDENTONTYPE)
+        && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
+        && !isNoAutoIndentionKey(m_nLastReleasedKey))
         ApplyAutoIndentation(0, this->GetCurrentLine() + 1);
 
     HandleFunctionCallTip();
