@@ -118,6 +118,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_MENU            (ID_RENAME_SYMBOLS, NumeReEditor::OnRenameSymbols)
     EVT_MENU            (ID_ABSTRAHIZE_SECTION, NumeReEditor::OnAbstrahizeSection)
     EVT_IDLE            (NumeReEditor::OnIdle)
+    EVT_TIMER           (ID_ANALYZERTIMER, NumeReEditor::OnAnalyzerTimer)
 END_EVENT_TABLE()
 
 int CompareInts(int n1, int n2)
@@ -185,6 +186,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* 
     m_nLastReleasedKey = 0;
     m_nDuplicateCodeFlag = 0;
     m_procedureViewer = nullptr;
+    m_analyzerTimer = new wxTimer(this, ID_ANALYZERTIMER);
 
     Bind(wxEVT_THREAD, &NumeReEditor::OnThreadUpdate, this);
 
@@ -667,13 +669,13 @@ bool NumeReEditor::Modified ()
 void NumeReEditor::OnChar( wxStyledTextEvent& event )
 {
     ClearDblClkIndicator();
-    //CallAfter(NumeReEditor::AsynchActions);
     const wxChar chr = event.GetKey();
     const int currentLine = GetCurrentLine();
     const int currentPos = GetCurrentPos();
     const int wordstartpos = WordStartPosition(currentPos, true);
 
     MarkerDeleteAll(MARKER_FOCUSEDLINE);
+
     if (chr == WXK_TAB)
     {
         event.Skip(true);
@@ -692,13 +694,9 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
             int lineIndent = this->GetLineIndentation(i);
 
             if (doIndent)
-            {
                 this->SetLineIndentation(i, lineIndent + indentWidth);
-            }
             else
-            {
                 this->SetLineIndentation(i, lineIndent - indentWidth);
-            }
         }
     }
 
@@ -714,17 +712,13 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         }
 
         if (previousLineInd == 0)
-        {
             return;
-        }
 
         SetLineIndentation(currentLine, previousLineInd);
 
         // If tabs are being used then change previousLineInd to tab sizes
         if (GetUseTabs())
-        {
             previousLineInd /= GetTabWidth();
-        }
 
         GotoPos(PositionFromLine(currentLine) + previousLineInd);
         return;
@@ -735,11 +729,14 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         if (GetStyleAt(currentPos) != wxSTC_NSCR_STRING && GetStyleAt(currentPos) != wxSTC_NPRC_STRING)
             InsertText(currentPos, "\"");
     }
+
     if (chr == '(' || chr == '[' || chr == '{')
     {
         int nMatchingPos = currentPos;
+
         if (this->HasSelection())
             nMatchingPos = this->GetSelectionEnd();
+
         if (this->BraceMatch(currentPos - 1) == wxSTC_INVALID_POSITION)
         {
             if (chr == '(')
@@ -754,15 +751,16 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
     int lenEntered = currentPos - wordstartpos;
 
     if (lenEntered > 1
-            && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-            && !isStyleType(STYLE_COMMENT_LINE, wordstartpos)
-            && !isStyleType(STYLE_COMMENT_BLOCK, wordstartpos)
-            && !isStyleType(STYLE_STRING, wordstartpos)
-            && !isStyleType(STYLE_PROCEDURE, wordstartpos))
+        && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        && !isStyleType(STYLE_COMMENT_LINE, wordstartpos)
+        && !isStyleType(STYLE_COMMENT_BLOCK, wordstartpos)
+        && !isStyleType(STYLE_STRING, wordstartpos)
+        && !isStyleType(STYLE_PROCEDURE, wordstartpos))
     {
         this->AutoCompSetIgnoreCase(true);
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
         wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompList(GetTextRange(wordstartpos, currentPos).ToStdString()));
+
         if (sAutoCompList.length())
             this->AutoCompShow(lenEntered, sAutoCompList);
     }
@@ -774,6 +772,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         this->AutoCompSetIgnoreCase(true);
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
         wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompListMATLAB(GetTextRange(wordstartpos, currentPos).ToStdString()));
+
         if (sAutoCompList.length())
             this->AutoCompShow(lenEntered, sAutoCompList);
     }
@@ -786,6 +785,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         this->AutoCompSetIgnoreCase(true);
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
         wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompListCPP(GetTextRange(wordstartpos, currentPos).ToStdString()));
+
         if (sAutoCompList.length())
             this->AutoCompShow(lenEntered, sAutoCompList);
     }
@@ -796,12 +796,12 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         wxString sNamespace;
         wxString sSelectedNamespace;
         int nNameSpacePosition = wordstartpos;
+
         while (GetStyleAt(nNameSpacePosition - 1) == wxSTC_NSCR_PROCEDURES && GetCharAt(nNameSpacePosition - 1) != '$')
             nNameSpacePosition--;
+
         if (nNameSpacePosition == wordstartpos)
-        {
             sNamespace = m_search->FindNameSpaceOfProcedure(wordstartpos) + "~";
-        }
         else
             sSelectedNamespace = GetTextRange(nNameSpacePosition, wordstartpos);
 
@@ -811,15 +811,20 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
             string filename = GetFileNameAndPath().ToStdString();
             filename = replacePathSeparator(filename);
             vector<string> vPaths = m_terminal->getPathSettings();
+
             if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
             {
                 filename.erase(0, vPaths[PROCPATH].length());
+
                 if (filename.find('/') != string::npos)
                     filename.erase(filename.rfind('/') + 1);
+
                 while (filename.front() == '/')
                     filename.erase(0, 1);
+
                 while (filename.find('/') != string::npos)
                     filename[filename.find('/')] = '~';
+
                 sNamespace = filename;
             }
             else
@@ -830,15 +835,20 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
             string filename = GetFileNameAndPath().ToStdString();
             filename = replacePathSeparator(filename);
             vector<string> vPaths = m_terminal->getPathSettings();
+
             if (filename.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
             {
                 filename.erase(0, vPaths[PROCPATH].length());
+
                 if (filename.find('/') != string::npos)
                     filename.erase(filename.rfind('/') + 1);
+
                 while (filename.front() == '/')
                     filename.erase(0, 1);
+
                 while (filename.find('/') != string::npos)
                     filename[filename.find('/')] = '~';
+
                 sSelectedNamespace = filename;
             }
             else
@@ -870,6 +880,7 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         this->AutoCompSetIgnoreCase(true);
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
         wxString sAutoCompList = generateAutoCompList(GetTextRange(wordstartpos, currentPos), _syntax->getAutoCompListTeX(GetTextRange(wordstartpos, currentPos).ToStdString()));
+
         if (sAutoCompList.length())
             this->AutoCompShow(lenEntered, sAutoCompList);
     }
@@ -880,8 +891,9 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
         this->AutoCompShow(lenEntered, generateAutoCompList(GetTextRange(wordstartpos, currentPos), ""));
     }
+
     this->Colourise(0, -1);
-    //CallAfter(NumeReEditor::HandleFunctionCallTip);
+
     event.Skip();
 }
 
@@ -2031,8 +2043,10 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 /// \param event wxIdleEvent&
 /// \return void
 ///
-/// Calls the time-consuming asynchronous evaluation,
-/// if the editor contents had been modified before.
+/// Fires the analyzer timer, which will run for
+/// 750 msec and then fire another event. If the
+/// timer is started again in between, it is
+/// reset without firing the timer event.
 /////////////////////////////////////////////////
 void NumeReEditor::OnIdle(wxIdleEvent& event)
 {
@@ -2040,7 +2054,22 @@ void NumeReEditor::OnIdle(wxIdleEvent& event)
         return;
 
     m_modificationHappened = false;
-    CallAfter(NumeReEditor::AsynchEvaluations);
+    m_analyzerTimer->StartOnce(750);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This event handler fires, once the
+/// analyzer timer is finished and calls the time
+/// consuming analysis tasks.
+///
+/// \param event wxTimerEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::OnAnalyzerTimer(wxTimerEvent& event)
+{
+    AsynchEvaluations();
 }
 
 
@@ -4933,6 +4962,8 @@ void NumeReEditor::OnEditorModified(wxStyledTextEvent& event)
             this->markModified(nLine);
         else
             this->markModified(nLine);
+
+        //m_analyzerTimer->StartOnce(500);
     }
 
     event.Skip();

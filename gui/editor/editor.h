@@ -218,6 +218,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnRenameSymbolsFromMenu();
 		void OnAbstrahizeSection(wxCommandEvent& event);
 		void OnAbstrahizeSectionFromMenu();
+		void OnAnalyzerTimer(wxTimerEvent& event);
 		bool InitDuplicateCode();
 		void OnFindDuplicateCode(int nDuplicateFlag = 1, int nNumDuplicatedLines = 6); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals,
 		void IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, int nEnd2, int nSelectionLine);
@@ -473,6 +474,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		wxMenu m_popupMenu;
         wxMenu* m_refactoringMenu;
+        wxTimer* m_analyzerTimer;
 
 
 		DECLARE_EVENT_TABLE()
