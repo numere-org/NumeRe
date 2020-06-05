@@ -32,6 +32,7 @@ NumeReSyntax::NumeReSyntax()
     vConstants.push_back("NO_SYNTAX_ELEMENTS");
     vSpecialValues.push_back("NO_SYNTAX_ELEMENTS");
     vOperators.push_back("NO_SYNTAX_ELEMENTS");
+    vDocKeyWords.push_back("NO_SYNTAX_ELEMENTS");
     vMatlabKeyWords.push_back("NO_SYNTAX_ELEMENTS");
     vMatlabFunctions.push_back("NO_SYNTAX_ELEMENTS");
     vCppKeyWords.push_back("NO_SYNTAX_ELEMENTS");
@@ -92,6 +93,8 @@ void NumeReSyntax::loadSyntax(const string& sPath)
             vSpecialValues = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 9) == "OPERATORS")
             vOperators = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.substr(0, 11) == "DOCKEYWORDS")
+            vDocKeyWords = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 14) == "MATLABKEYWORDS")
             vMatlabKeyWords = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 15) == "MATLABFUNCTIONS")

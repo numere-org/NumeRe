@@ -68,9 +68,9 @@
 #define HIGHLIGHT_DIFFERENCE_SOURCE 11
 #define HIGHLIGHT_ANNOTATION 12
 #define HIGHLIGHT_LOCALVARIABLES 13
-#define ANNOTATION_NOTE 22
-#define ANNOTATION_WARN 23
-#define ANNOTATION_ERROR 24
+#define ANNOTATION_NOTE wxSTC_NSCR_PROCEDURE_COMMANDS+1
+#define ANNOTATION_WARN wxSTC_NSCR_PROCEDURE_COMMANDS+2
+#define ANNOTATION_ERROR wxSTC_NSCR_PROCEDURE_COMMANDS+3
 
 #define SEMANTICS_VAR 1
 #define SEMANTICS_STRING 2
@@ -754,13 +754,10 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 
     if (lenEntered > 1
             && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-            && GetStyleAt(wordstartpos) != wxSTC_NSCR_COMMENT_LINE
-            && GetStyleAt(wordstartpos) != wxSTC_NSCR_COMMENT_BLOCK
-            && GetStyleAt(wordstartpos) != wxSTC_NSCR_STRING
-            && GetStyleAt(wordstartpos) != wxSTC_NSCR_PROCEDURES
-            && GetStyleAt(wordstartpos) != wxSTC_NPRC_COMMENT_LINE
-            && GetStyleAt(wordstartpos) != wxSTC_NPRC_COMMENT_BLOCK
-            && GetStyleAt(wordstartpos) != wxSTC_NPRC_STRING)
+            && !isStyleType(STYLE_COMMENT_LINE, wordstartpos)
+            && !isStyleType(STYLE_COMMENT_BLOCK, wordstartpos)
+            && !isStyleType(STYLE_STRING, wordstartpos)
+            && !isStyleType(STYLE_PROCEDURE, wordstartpos))
     {
         this->AutoCompSetIgnoreCase(true);
         this->AutoCompSetCaseInsensitiveBehaviour(wxSTC_CASEINSENSITIVEBEHAVIOUR_IGNORECASE);
@@ -1235,9 +1232,9 @@ string NumeReEditor::GetCurrentArgument(const string& sCallTip, int nStartingBra
     for (int i = nStartingBrace + 1; i < nCurrentPos && i < this->GetLineEndPosition(this->GetCurrentLine()); i++)
     {
         // Ignore comments and strings
-        if (this->GetStyleAt(i) == wxSTC_NSCR_STRING
-                || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE
-                || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK)
+        if (isStyleType(StyleType::STYLE_STRING, i)
+            || isStyleType(StyleType::STYLE_COMMENT_LINE, i)
+            || isStyleType(StyleType::STYLE_COMMENT_BLOCK, i))
             continue;
 
         currentChar = this->GetCharAt(i);
@@ -2820,7 +2817,7 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
         // Determine the type of documentation,
         // into which the current and the following
         // characters shall be converted
-        if (GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE && GetTextRange(i, i + 3) == "##!") // That's a documentation
+        if (isStyleType(STYLE_COMMENT_SECTION_LINE, i)) // That's a documentation
         {
             if (!bTextMode)
             {
@@ -2834,7 +2831,7 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
             int j = i;
 
             // Find all combined documentation comment lines
-            while (GetStyleAt(j) == wxSTC_NSCR_COMMENT_LINE && GetTextRange(j, j + 3) == "##!")
+            while (isStyleType(STYLE_COMMENT_SECTION_LINE, j))
                 j = PositionFromLine(LineFromPosition(j) + 1);
 
             sFileContents += parseDocumentation(i + 3, GetLineEndPosition(LineFromPosition(j) - 1)) + "\n";
@@ -2849,7 +2846,7 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
             i = GetLineEndPosition(LineFromPosition(i)) + 1;
             startpos = i;
         }
-        else if (GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK && GetTextRange(i, i + 3) == "#*!") // that's also a documentation
+        else if (isStyleType(STYLE_COMMENT_SECTION_BLOCK, i)) // that's also a documentation
         {
             if (!bTextMode)
             {
@@ -2862,7 +2859,7 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
 
             for (int j = i + 3; j < GetLastPosition(); j++)
             {
-                if (GetStyleAt(j + 3) != wxSTC_NSCR_COMMENT_BLOCK || j + 1 == GetLastPosition())
+                if (!isStyleType(STYLE_COMMENT_SECTION_BLOCK, j+3) || j + 1 == GetLastPosition())
                 {
                     sFileContents += parseDocumentation(i + 3, j) + "\n";
                     i = j + 2;
@@ -2946,6 +2943,16 @@ string NumeReEditor::parseDocumentation(int nPos1, int nPos2)
     // Get the text range
     string sTextRange = this->GetStrippedRange(nPos1, nPos2, false);
 
+    // Handle procedure names
+    if (sTextRange.find("\\procedure ") != string::npos)
+    {
+        size_t nPos = sTextRange.find("\\procedure ")+10;
+        nPos = sTextRange.find_first_not_of(" \r\n", nPos);
+        nPos = sTextRange.find_first_of(" \r\n", nPos);
+        sTextRange.insert(nPos, "}");
+        sTextRange[sTextRange.find("\\procedure ")+10] = '{';
+    }
+
     // Handle unordered lists
     if (sTextRange.find("\n- ") != string::npos) // thats a unordered list
     {
@@ -2991,7 +2998,7 @@ string NumeReEditor::parseDocumentation(int nPos1, int nPos2)
                     continue;
                 }
 
-                if ((sTextRange[i] == '\n' && sTextRange.substr(i, 3) != "\n  ") || i + 1 == sTextRange.length())
+                if (i + 1 == sTextRange.length() || (sTextRange[i] == '\n' && sTextRange[i+1] == '\n'))
                 {
                     if (sTextRange[i] == '\n')
                         sTextRange.insert(i, "\\end{itemize}");
@@ -4026,7 +4033,8 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
             this->SetKeyWords(5, _syntax->getConstants());
             this->SetKeyWords(6, _syntax->getSpecial());
             this->SetKeyWords(7, _syntax->getOperators());
-            this->SetKeyWords(8, _syntax->getNPRCCommands());
+            this->SetKeyWords(8, _syntax->getDocKeyWords());
+            this->SetKeyWords(9, _syntax->getNPRCCommands());
         }
 
         for (int i = 0; i <= wxSTC_NSCR_PROCEDURE_COMMANDS; i++)
@@ -4044,6 +4052,13 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                 case wxSTC_NSCR_COMMENT_BLOCK:
                 case wxSTC_NSCR_COMMENT_LINE:
                     _style = m_options->GetSyntaxStyle(Options::COMMENT);
+                    break;
+                case wxSTC_NSCR_DOCCOMMENT_BLOCK:
+                case wxSTC_NSCR_DOCCOMMENT_LINE:
+                    _style = m_options->GetSyntaxStyle(Options::DOCCOMMENT);
+                    break;
+                case wxSTC_NSCR_DOCKEYWORD:
+                    _style = m_options->GetSyntaxStyle(Options::DOCKEYWORD);
                     break;
                 case wxSTC_NSCR_COMMAND:
                     _style = m_options->GetSyntaxStyle(Options::COMMAND);
@@ -4121,6 +4136,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
             this->SetKeyWords(5, _syntax->getConstants());
             this->SetKeyWords(6, _syntax->getSpecial());
             this->SetKeyWords(7, _syntax->getOperators());
+            this->SetKeyWords(8, _syntax->getDocKeyWords());
         }
 
 
@@ -4139,6 +4155,13 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                 case wxSTC_NPRC_COMMENT_BLOCK:
                 case wxSTC_NPRC_COMMENT_LINE:
                     _style = m_options->GetSyntaxStyle(Options::COMMENT);
+                    break;
+                case wxSTC_NPRC_DOCCOMMENT_BLOCK:
+                case wxSTC_NPRC_DOCCOMMENT_LINE:
+                    _style = m_options->GetSyntaxStyle(Options::DOCCOMMENT);
+                    break;
+                case wxSTC_NPRC_DOCKEYWORD:
+                    _style = m_options->GetSyntaxStyle(Options::DOCKEYWORD);
                     break;
                 case wxSTC_NPRC_COMMAND:
                     _style = m_options->GetSyntaxStyle(Options::COMMAND);
@@ -4303,6 +4326,14 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
                 case wxSTC_C_COMMENT:
                 case wxSTC_C_COMMENTLINE:
                     _style = m_options->GetSyntaxStyle(Options::COMMENT);
+                    break;
+                case wxSTC_C_COMMENTDOC:
+                case wxSTC_C_COMMENTLINEDOC:
+                    _style = m_options->GetSyntaxStyle(Options::DOCCOMMENT);
+                    break;
+                case wxSTC_C_COMMENTDOCKEYWORD:
+                case wxSTC_C_COMMENTDOCKEYWORDERROR:
+                    _style = m_options->GetSyntaxStyle(Options::DOCKEYWORD);
                     break;
                 case wxSTC_C_WORD:
                     _style = m_options->GetSyntaxStyle(Options::COMMAND);
@@ -4980,32 +5011,18 @@ void NumeReEditor::markSections(bool bForceRefresh)
         // in the file and add markers
         for (int i = startline; i < endline; i++)
         {
-            if (i && this->MarkerOnLine(i - 1, MARKER_SECTION))
-                continue;
-
-            for (int j = this->PositionFromLine(i); j < this->GetLineEndPosition(i) + 1; j++)
+            if (isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(i))
+                || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i)))
             {
-                if (this->GetCharAt(j) == ' ' || this->GetCharAt(j) == '\t')
-                    continue;
+                if (!this->MarkerOnLine(i, MARKER_SECTION))
+                    this->MarkerAdd(i, MARKER_SECTION);
 
-                if (isStyleType(STYLE_COMMENT_SECTION_LINE, j)
-                        || isStyleType(STYLE_COMMENT_SECTION_BLOCK, j))
-                {
-                    if (!this->MarkerOnLine(i, MARKER_SECTION))
-                        this->MarkerAdd(i, MARKER_SECTION);
-
-                    break;
-                }
-
-                // only section markers which are the first characters in line are interpreted
-                if (this->GetCharAt(j) != ' ' && this->GetCharAt(j) != '\t')
-                {
-                    if (this->MarkerOnLine(i, MARKER_SECTION))
-                        this->MarkerDelete(i, MARKER_SECTION);
-
-                    break;
-                }
+                while (isStyleType(STYLE_COMMENT_SECTION_LINE, GetLineIndentPosition(i+1))
+                    || isStyleType(STYLE_COMMENT_SECTION_BLOCK, GetLineIndentPosition(i+1)))
+                    i++;
             }
+            else if (this->MarkerOnLine(i, MARKER_SECTION))
+                this->MarkerDelete(i, MARKER_SECTION);
         }
     }
 
@@ -5768,7 +5785,7 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
             nminpos = FindText(nminpos, nmaxpos, "procedure", wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) + 1;
 
             // Check for comments
-            if (this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_BLOCK || this->GetStyleAt(nminpos) == wxSTC_NSCR_COMMENT_LINE)
+            if (isStyleType(STYLE_COMMENT_LINE, nminpos) || isStyleType(STYLE_COMMENT_BLOCK, nminpos))
                 continue;
 
             procedureline = GetLine(LineFromPosition(nminpos));
@@ -7167,12 +7184,12 @@ void NumeReEditor::AddBreakpoint( int linenum )
     for (int i = PositionFromLine(linenum); i < GetLineEndPosition(linenum); i++)
     {
         // Check the current character
-        if (GetStyleAt(i) != wxSTC_NSCR_COMMENT_BLOCK
-                && GetStyleAt(i) != wxSTC_NSCR_COMMENT_LINE
-                && GetCharAt(i) != '\r'
-                && GetCharAt(i) != '\n'
-                && GetCharAt(i) != ' '
-                && GetCharAt(i) != '\t')
+        if (!isStyleType(STYLE_COMMENT_LINE, i)
+            && !isStyleType(STYLE_COMMENT_BLOCK, i)
+            && GetCharAt(i) != '\r'
+            && GetCharAt(i) != '\n'
+            && GetCharAt(i) != ' '
+            && GetCharAt(i) != '\t')
         {
             // Add the breakpoint marker
             int markerNum = MarkerAdd(linenum, MARKER_BREAKPOINT);
@@ -7256,7 +7273,7 @@ void NumeReEditor::AddProcedureDocumentation()
     sProcedureName.erase(sProcedureName.find('('));
     replaceAll(sProcedureName, "_", "\\_");
 
-    string sDocumentation = "##! \\procedure{" + sProcedureName.substr(1) + "}\r\n##! [Procedure description]";
+    string sDocumentation = "##! \\procedure " + sProcedureName.substr(1) + "\r\n##! [Procedure description]";
 
     // Get the argument list
     string sFunctionArgumentList = getFunctionArgumentList(LineFromPosition(nProcedureHeadPosition)).ToStdString();
@@ -7547,8 +7564,8 @@ string NumeReEditor::getSemanticLineNSCR(int nLine, int nDuplicateFlag)
                 || this->GetCharAt(i) == '\t'
                 || this->GetCharAt(i) == '\r'
                 || this->GetCharAt(i) == '\n'
-                || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK
-                || this->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE)
+                || isStyleType(STYLE_COMMENT_LINE, i)
+                || isStyleType(STYLE_COMMENT_BLOCK, i))
             continue;
         else if ((nDuplicateFlag & SEMANTICS_VAR)
                  && (this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT
@@ -7939,13 +7956,17 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                     case STYLE_DEFAULT:
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_DEFAULT;
                     case STYLE_COMMENT_LINE:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE;
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE
+                                || this->GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE;
                     case STYLE_COMMENT_BLOCK:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK;
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK
+                                || this->GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK;
                     case STYLE_COMMENT_SECTION_LINE:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_LINE && this->GetTextRange(nPos, nPos + 3) == "##!";
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_LINE
+                                || this->GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
                     case STYLE_COMMENT_SECTION_BLOCK:
-                        return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMENT_BLOCK && this->GetTextRange(nPos, nPos + 3) == "#*!";
+                        return this->GetStyleAt(nPos) == wxSTC_NSCR_DOCCOMMENT_BLOCK
+                                || this->GetStyleAt(nPos) == wxSTC_NSCR_DOCKEYWORD;
                     case STYLE_COMMAND:
                         return this->GetStyleAt(nPos) == wxSTC_NSCR_COMMAND
                                || this->GetStyleAt(nPos) == wxSTC_NPRC_COMMAND;
@@ -8015,15 +8036,16 @@ bool NumeReEditor::isStyleType(StyleType _type, int nPos)
                         return this->GetStyleAt(nPos) == wxSTC_C_DEFAULT;
                     case STYLE_COMMENT_LINE:
                         return this->GetStyleAt(nPos) == wxSTC_C_COMMENTLINE
-                               || this->GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC
-                               || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
+                                    || this->GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC;
                     case STYLE_COMMENT_BLOCK:
                         return this->GetStyleAt(nPos) == wxSTC_C_COMMENT
-                               || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOC
-                               || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
+                                    || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOC;
                     case STYLE_COMMENT_SECTION_LINE:
+                        return this->GetStyleAt(nPos) == wxSTC_C_COMMENTLINEDOC
+                               || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
                     case STYLE_COMMENT_SECTION_BLOCK:
-                        return false;
+                        return this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOC
+                               || this->GetStyleAt(nPos) == wxSTC_C_COMMENTDOCKEYWORD;
                     case STYLE_COMMAND:
                         return this->GetStyleAt(nPos) == wxSTC_C_WORD;
                     case STYLE_FUNCTION:

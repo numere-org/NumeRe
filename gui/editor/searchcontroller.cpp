@@ -363,8 +363,8 @@ wxString SearchController::FindProceduresInCurrentFile(wxString sFirstChars, wxS
 		// Search for procedure commands
 		if (currentline.find("procedure") != string::npos
 				&& currentline.find('$', currentline.find("procedure")) != string::npos
-				&& m_editor->GetStyleAt(m_editor->PositionFromLine(i) + currentline.find("procedure")) != wxSTC_NSCR_COMMENT_BLOCK
-				&& m_editor->GetStyleAt(m_editor->PositionFromLine(i) + currentline.find("procedure")) != wxSTC_NSCR_COMMENT_LINE)
+				&& m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, m_editor->PositionFromLine(i) + currentline.find("procedure"))
+				&& m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_editor->PositionFromLine(i) + currentline.find("procedure")))
 		{
 			currentline.erase(0, currentline.find('$') + 1);
 
@@ -534,8 +534,7 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
             // the current line are preferred:
             for (int docline = m_editor->LineFromPosition(procedures[i])-1; docline >= 0; docline--)
             {
-                if (!m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_editor->GetLineIndentPosition(docline))
-                    && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_SECTION_LINE, m_editor->GetLineIndentPosition(docline))
+                if (!m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_SECTION_LINE, m_editor->GetLineIndentPosition(docline))
                     && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_SECTION_BLOCK, m_editor->GetLineIndentPosition(docline)))
                 {
                     if (docline < m_editor->LineFromPosition(procedures[i])-1)
@@ -562,8 +561,7 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
             {
                 for (int docline = m_editor->LineFromPosition(procedures[i])+1; docline < m_editor->GetLineCount(); docline++)
                 {
-                    if (!m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_editor->GetLineIndentPosition(docline))
-                        && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_SECTION_LINE, m_editor->GetLineIndentPosition(docline))
+                    if (!m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_SECTION_LINE, m_editor->GetLineIndentPosition(docline))
                         && !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_SECTION_BLOCK, m_editor->GetLineIndentPosition(docline)))
                     {
                         if (docline > m_editor->LineFromPosition(procedures[i])+1)
@@ -822,7 +820,12 @@ void SearchController::AppendToDocumentation(wxString& sDocumentation, const wxS
     static bool bBeginEnd = false;
 
     if (sNewDocLine.find_first_not_of(" \t") == string::npos)
+    {
+        if (sDocumentation.length())
+            sDocumentation += "\n    ";
+
         return;
+    }
 
     // Handle some special TeX commands and rudimentary lists
     if (sNewDocLine.find("\\begin{") != string::npos && sNewDocLine.find("\\end{") == string::npos)
@@ -855,6 +858,13 @@ void SearchController::AppendToDocumentation(wxString& sDocumentation, const wxS
 
     if (nPos != string::npos)
         sDocumentation.erase(nPos, sDocumentation.find('}', nPos)+1 - nPos);
+    else if ((nPos = sDocumentation.find("\\procedure ")) != string::npos)
+    {
+        size_t nPos2 = nPos + 10;
+        nPos2 = sDocumentation.find_first_not_of(" \r\n", nPos2);
+        nPos2 = sDocumentation.find_first_of(" \r\n", nPos2);
+        sDocumentation.erase(nPos, nPos2-nPos);
+    }
 }
 
 
@@ -887,7 +897,10 @@ string SearchController::CleanDocumentation(const wxString& __sDoc)
         if (nPos != string::npos)
         {
             // Insert a headline above the first parameter
-            sDocumentation.insert(nPos, "\n    " + toUpperCase(_guilang.get("GUI_EDITOR_CALLTIP_PROC_PARAMS")) + "\n    ");
+            if (nPos > 5 && sDocumentation.substr(nPos-5, 5) != "\n    ")
+                sDocumentation.insert(nPos, "\n    " + toUpperCase(_guilang.get("GUI_EDITOR_CALLTIP_PROC_PARAMS")) + "\n    ");
+            else
+                sDocumentation.insert(nPos, toUpperCase(_guilang.get("GUI_EDITOR_CALLTIP_PROC_PARAMS")) + "\n    ");
 
             while ((nPos = sDocumentation.find("\\param ")) != string::npos)
             {

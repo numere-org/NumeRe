@@ -1519,30 +1519,36 @@ static void ColouriseNullDoc(unsigned int startPos, int length, int, WordList *[
 #define SCE_NSCR_NUMBERS 17
 #define SCE_NSCR_CUSTOM_FUNCTION 18
 #define SCE_NSCR_CLUSTER 19
-#define SCE_NSCR_INSTALL 20
-#define SCE_NSCR_PROCEDURE_COMMANDS 21
+#define SCE_NSCR_DOCCOMMENT_LINE 20
+#define SCE_NSCR_DOCCOMMENT_BLOCK 21
+#define SCE_NSCR_DOCKEYWORD 22
+#define SCE_NSCR_INSTALL 23
+#define SCE_NSCR_PROCEDURE_COMMANDS 24
 
-#define SCE_NPRC_DEFAULT 0
-#define SCE_NPRC_IDENTIFIER 1
-#define SCE_NPRC_COMMENT_LINE 2
-#define SCE_NPRC_COMMENT_BLOCK 3
-#define SCE_NPRC_COMMAND 4
-#define SCE_NPRC_OPTION 5
-#define SCE_NPRC_FUNCTION 6
-#define SCE_NPRC_METHOD 7
-#define SCE_NPRC_CONSTANTS 8
-#define SCE_NPRC_PREDEFS 9
-#define SCE_NPRC_STRING 10
-#define SCE_NPRC_STRING_PARSER 11
-#define SCE_NPRC_DEFAULT_VARS 12
-#define SCE_NPRC_OPERATORS 13
-#define SCE_NPRC_OPERATOR_KEYWORDS 14
-#define SCE_NPRC_PROCEDURES 15
-#define SCE_NPRC_INCLUDES 16
-#define SCE_NPRC_NUMBERS 17
-#define SCE_NPRC_CUSTOM_FUNCTION 18
-#define SCE_NPRC_CLUSTER 19
-#define SCE_NPRC_FLAGS 20
+#define SCE_NPRC_DEFAULT SCE_NSCR_DEFAULT
+#define SCE_NPRC_IDENTIFIER SCE_NSCR_IDENTIFIER
+#define SCE_NPRC_COMMENT_LINE SCE_NSCR_COMMENT_LINE
+#define SCE_NPRC_COMMENT_BLOCK SCE_NSCR_COMMENT_BLOCK
+#define SCE_NPRC_COMMAND SCE_NSCR_COMMAND
+#define SCE_NPRC_OPTION SCE_NSCR_OPTION
+#define SCE_NPRC_FUNCTION SCE_NSCR_FUNCTION
+#define SCE_NPRC_METHOD SCE_NSCR_METHOD
+#define SCE_NPRC_CONSTANTS SCE_NSCR_CONSTANTS
+#define SCE_NPRC_PREDEFS SCE_NSCR_PREDEFS
+#define SCE_NPRC_STRING SCE_NSCR_STRING
+#define SCE_NPRC_STRING_PARSER SCE_NSCR_STRING_PARSER
+#define SCE_NPRC_DEFAULT_VARS SCE_NSCR_DEFAULT_VARS
+#define SCE_NPRC_OPERATORS SCE_NSCR_OPERATORS
+#define SCE_NPRC_OPERATOR_KEYWORDS SCE_NSCR_OPERATOR_KEYWORDS
+#define SCE_NPRC_PROCEDURES SCE_NSCR_PROCEDURES
+#define SCE_NPRC_INCLUDES SCE_NSCR_INCLUDES
+#define SCE_NPRC_NUMBERS SCE_NSCR_NUMBERS
+#define SCE_NPRC_CUSTOM_FUNCTION SCE_NSCR_CUSTOM_FUNCTION
+#define SCE_NPRC_CLUSTER SCE_NSCR_CLUSTER
+#define SCE_NPRC_DOCCOMMENT_LINE SCE_NSCR_DOCCOMMENT_LINE
+#define SCE_NPRC_DOCCOMMENT_BLOCK SCE_NSCR_DOCCOMMENT_BLOCK
+#define SCE_NPRC_DOCKEYWORD SCE_NSCR_DOCKEYWORD
+#define SCE_NPRC_FLAGS 23
 
 
 #define SCE_TXTADV_DEFAULT 0
@@ -1647,6 +1653,7 @@ static const char * const NSCRWordLists[] = {
 			"Constants",
 			"Special predefs",
 			"Operator keywords",
+			"Documentation keywords",
 			"Procedure commands",
 			0
 		};
@@ -1694,6 +1701,7 @@ class LexerNSCR : public ILexer {
 	WordList keywords7;
 	WordList keywords8;
 	WordList keywords9;
+	WordList keywords10;
 	/*
 	"Commands",
 	"Options",
@@ -1783,6 +1791,9 @@ int SCI_METHOD LexerNSCR::WordListSet(int n, const char *wl) {
 		break;
 	case 8:
 		wordListN = &keywords9;
+		break;
+	case 9:
+		wordListN = &keywords10;
 		break;
 	}
 	int firstModification = -1;
@@ -1937,7 +1948,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NSCR_OPERATOR_KEYWORDS);
 					}
-					else if (keywords9.InList(s))
+					else if (keywords10.InList(s))
 					{
 						sc.ChangeState(SCE_NSCR_PROCEDURE_COMMANDS);
 					}
@@ -1958,6 +1969,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 				}
 				break;
 			case SCE_NSCR_COMMENT_BLOCK:
+			case SCE_NSCR_DOCCOMMENT_BLOCK:
 				if (sc.Match('*', '#')) {
 					sc.Forward();
 					sc.ForwardSetState(SCE_NSCR_DEFAULT);
@@ -1965,6 +1977,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 				break;
 			case SCE_NSCR_INCLUDES:
 			case SCE_NSCR_COMMENT_LINE:
+			case SCE_NSCR_DOCCOMMENT_LINE:
 				if (sc.atLineStart) {
 					sc.SetState(SCE_NSCR_DEFAULT);
 				}
@@ -1982,13 +1995,6 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					sc.ForwardSetState(SCE_NSCR_DEFAULT);
 				}
 				break;
-			/*case SCE_NSCR_INSTALL:
-				if (sc.Match("<endinstall>"))
-				{
-					sc.Forward(12);
-					sc.SetState(SCE_NSCR_DEFAULT);
-				}
-				break;*/
 			case SCE_NSCR_FUNCTION:
 			case SCE_NSCR_PROCEDURES:
 				if (sc.ch == ' ' || sc.ch == '(' || sc.atLineStart)
@@ -1996,6 +2002,27 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					sc.SetState(SCE_NSCR_DEFAULT);
 				}
 				break;
+		}
+		
+		// Forward search for documentation keywords
+		if ((sc.state == SCE_NSCR_DOCCOMMENT_LINE || sc.state == SCE_NSCR_DOCCOMMENT_BLOCK) && sc.Match('\\'))
+		{
+			int nCurrentState = sc.state;
+			sc.SetState(SCE_NSCR_DEFAULT);
+			sc.Forward();
+			
+			while (sc.More() && IsWord(sc.ch))
+				sc.Forward();
+			
+			char s[1000];
+			sc.GetCurrent(s, sizeof(s));
+
+			if (keywords9.InList(s))
+				sc.ChangeState(SCE_NSCR_DOCKEYWORD);
+			else
+				sc.ChangeState(nCurrentState);
+			
+			sc.SetState(nCurrentState);
 		}
 
 		// Determine if a new state should be entered.
@@ -2015,6 +2042,16 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 			else if (sc.ch == '$')
 			{
 				sc.SetState(SCE_NSCR_PROCEDURES);
+			}
+			else if (sc.Match("#*!"))
+			{
+				sc.SetState(SCE_NSCR_DOCCOMMENT_BLOCK);
+				sc.Forward();   // Eat the * so it isn't used for the end of the comment
+			}
+			else if (sc.Match("##!"))
+			{
+				sc.SetState(SCE_NSCR_DOCCOMMENT_LINE);
+				sc.Forward();
 			}
 			else if (sc.Match('#', '*'))
 			{
@@ -2298,6 +2335,7 @@ static const char * const NPRCWordLists[] = {
 			"Constants",
 			"Special predefs",
 			"Operator keywords",
+			"Documentation keywords",
 			0
 		};
 
@@ -2343,6 +2381,7 @@ class LexerNPRC : public ILexer {
 	WordList keywords6;
 	WordList keywords7;
 	WordList keywords8;
+	WordList keywords9;
 	/*
 	"Commands",
 	"Options",
@@ -2429,6 +2468,9 @@ int SCI_METHOD LexerNPRC::WordListSet(int n, const char *wl) {
 		break;
 	case 7:
 		wordListN = &keywords8;
+		break;
+	case 8:
+		wordListN = &keywords9;
 		break;
 	}
 	int firstModification = -1;
@@ -2578,6 +2620,7 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 				}
 				break;
 			case SCE_NPRC_COMMENT_BLOCK:
+			case SCE_NPRC_DOCCOMMENT_BLOCK:
 				if (sc.Match('*', '#')) {
 					sc.Forward();
 					sc.ForwardSetState(SCE_NPRC_DEFAULT);
@@ -2586,6 +2629,7 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 			case SCE_NPRC_INCLUDES:
 			case SCE_NPRC_FLAGS:
 			case SCE_NPRC_COMMENT_LINE:
+			case SCE_NPRC_DOCCOMMENT_LINE:
 				if (sc.atLineStart) {
 					sc.SetState(SCE_NSCR_DEFAULT);
 				}
@@ -2611,6 +2655,27 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 				}
 				break;
 		}
+		
+		// Forward search for documentation keywords
+		if ((sc.state == SCE_NPRC_DOCCOMMENT_LINE || sc.state == SCE_NPRC_DOCCOMMENT_BLOCK) && sc.Match('\\'))
+		{
+			int nCurrentState = sc.state;
+			sc.SetState(SCE_NPRC_DEFAULT);
+			sc.Forward();
+			
+			while (sc.More() && IsWord(sc.ch))
+				sc.Forward();
+			
+			char s[1000];
+			sc.GetCurrent(s, sizeof(s));
+
+			if (keywords9.InList(s))
+				sc.ChangeState(SCE_NPRC_DOCKEYWORD);
+			else
+				sc.ChangeState(nCurrentState);
+			
+			sc.SetState(nCurrentState);
+		}
 
 		// Determine if a new state should be entered.
 		if (sc.state == SCE_NPRC_DEFAULT)
@@ -2629,6 +2694,16 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 			else if (sc.ch == '$')
 			{
 				sc.SetState(SCE_NPRC_PROCEDURES);
+			}
+			else if (sc.Match("#*!"))
+			{
+				sc.SetState(SCE_NPRC_DOCCOMMENT_BLOCK);
+				sc.Forward();   // Eat the * so it isn't used for the end of the comment
+			}
+			else if (sc.Match("##!"))
+			{
+				sc.SetState(SCE_NPRC_DOCCOMMENT_LINE);
+				sc.Forward();
 			}
 			else if (sc.Match('#', '*'))
 			{

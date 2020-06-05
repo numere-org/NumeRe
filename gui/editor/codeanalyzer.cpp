@@ -22,9 +22,10 @@
 #include "../../common/Options.h"
 #include "../../kernel/core/ui/language.hpp"
 
-#define ANNOTATION_NOTE 22
-#define ANNOTATION_WARN 23
-#define ANNOTATION_ERROR 24
+#define ANNOTATION_NOTE wxSTC_NSCR_PROCEDURE_COMMANDS+1
+#define ANNOTATION_WARN wxSTC_NSCR_PROCEDURE_COMMANDS+2
+#define ANNOTATION_ERROR wxSTC_NSCR_PROCEDURE_COMMANDS+3
+
 #define HIGHLIGHT_ANNOTATION 12
 
 extern Language _guilang;

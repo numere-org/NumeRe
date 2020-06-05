@@ -40,6 +40,7 @@ class NumeReSyntax
         vector<string> vConstants;
         vector<string> vSpecialValues;
         vector<string> vOperators;
+        vector<string> vDocKeyWords;
         vector<string> vMatlabKeyWords;
         vector<string> vMatlabFunctions;
         vector<string> vCppKeyWords;
@@ -95,6 +96,8 @@ class NumeReSyntax
             {return constructString(vSpecialValues);}
         string getOperators() const
             {return constructString(vOperators);}
+        string getDocKeyWords() const
+            {return constructString(vDocKeyWords);}
         string getMatlab() const
             {return constructString(vMatlabKeyWords);}
         string getMatlabFunctions() const

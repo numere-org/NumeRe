@@ -116,6 +116,8 @@ class Options
             CONSOLE_STD,
             COMMAND,
             COMMENT,
+            DOCCOMMENT,
+            DOCKEYWORD,
             OPTION,
             FUNCTION,
             CUSTOM_FUNCTION,

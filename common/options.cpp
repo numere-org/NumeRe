@@ -334,6 +334,18 @@ SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i)
             _style.foreground = wxColour(0,128,0);
             _style.background = wxColour(255,255,183);
             _style.defaultbackground = false;
+            //_style.bold = true;
+            break;
+        case Styles::DOCCOMMENT:
+            _style.foreground = wxColour(0,128,192);
+            _style.background = wxColour(255,255,183);
+            _style.defaultbackground = false;
+            _style.bold = true;
+            break;
+        case Styles::DOCKEYWORD:
+            _style.foreground = wxColour(128,0,0);
+            _style.background = wxColour(255,255,183);
+            _style.defaultbackground = false;
             _style.bold = true;
             break;
         case Styles::OPTION:
@@ -408,6 +420,8 @@ void Options::readColoursFromConfig(wxFileConfig* _config)
         "CONSOLE_STD",
         "COMMAND",
         "COMMENT",
+        "DOCCOMMENT",
+        "DOCKEYWORD",
         "OPTION",
         "FUNCTION",
         "CUSTOM_FUNCTION",
@@ -446,6 +460,8 @@ void Options::writeColoursToConfig(wxFileConfig* _config)
         "CONSOLE_STD",
         "COMMAND",
         "COMMENT",
+        "DOCCOMMENT",
+        "DOCKEYWORD",
         "OPTION",
         "FUNCTION",
         "CUSTOM_FUNCTION",
@@ -613,6 +629,8 @@ wxArrayString Options::GetStyleIdentifier()
     sReturn.Add("CONSOLE_STD");
     sReturn.Add("COMMAND");
     sReturn.Add("COMMENT");
+    sReturn.Add("DOCUMENTATIONCOMMENT");
+    sReturn.Add("DOCUMENTATIONKEYWORD");
     sReturn.Add("OPTION");
     sReturn.Add("FUNCTION");
     sReturn.Add("CUSTOM_FUNCTION");

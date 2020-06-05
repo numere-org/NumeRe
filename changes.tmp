@@ -1,1 +1,2 @@
 Fixed	The scrolling of the terminal now works as intended.
+Added	Two new styles were added to highlight documentation strings and their corresponding keywords.

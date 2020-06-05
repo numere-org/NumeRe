@@ -374,7 +374,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nF
 
 	for (int i = nFirstPosition; i < nLastPosition; i++)
 	{
-		if (m_editor->GetStyleAt(i) == wxSTC_NSCR_COMMENT_BLOCK || m_editor->GetStyleAt(i) == wxSTC_NSCR_COMMENT_LINE)
+		if (m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, i) || m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, i))
 			continue;
 
 		if (m_editor->GetCharAt(i) == '\r' || m_editor->GetCharAt(i) == '\n')
@@ -614,9 +614,9 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nF
 
 					if (nLine
 							&& m_editor->GetLine(nLine - 1).find_first_not_of(" \t\r\n") != string::npos
-							&& m_editor->GetStyleAt(m_editor->PositionFromLine(nLine - 1)) != wxSTC_NSCR_COMMENT_BLOCK
-							&& m_editor->GetStyleAt(m_editor->PositionFromLine(nLine - 1)) != wxSTC_NSCR_COMMENT_LINE
-							&& m_editor->GetStyleAt(position) != wxSTC_NSCR_COMMENT_LINE)
+							&& m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_editor->PositionFromLine(nLine - 1))
+							&& m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, m_editor->PositionFromLine(nLine - 1))
+							&& !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, position))
 					{
 						nLastPosition += insertTextAndMove(m_editor->PositionFromLine(nLine), "\r\n");
 						i += 2;
