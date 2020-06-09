@@ -362,6 +362,133 @@ void Datafile::reorderColumn(const vector<int>& vIndex, long long int i1, long l
     delete[] dSortVector;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function extracts and
+/// parses the \c every expression part of a MAF
+/// call.
+///
+/// \param sDir string&
+/// \param sTableName const string&
+/// \return VectorIndex
+///
+/////////////////////////////////////////////////
+VectorIndex Datafile::parseEvery(string& sDir, const string& sTableName)
+{
+    if (sDir.find("every=") != string::npos && (sDir.find("cols") != string::npos || sDir.find("lines") != string::npos))
+    {
+        string sEvery = getArgAtPos(sDir, sDir.find("every=")+6);
+        StripSpaces(sEvery);
+        Parser& _parser = NumeReKernel::getInstance()->getParser();
+        _parser.DisableAccessCaching();
+        sDir.erase(sDir.find("every="));
+
+        if (sEvery.front() == '(' && sEvery.back() == ')')
+            sEvery = sEvery.substr(1, sEvery.length()-2);
+
+        if (sEvery.front() == '{' && sEvery.back() == '}')
+        {
+            // Definition contains a vector expression
+            _parser.SetExpr(sEvery);
+            int nResults;
+            value_type* v = _parser.Eval(nResults);
+
+            return VectorIndex(v, nResults, 0);
+        }
+        else
+        {
+            // Usual expression
+            _parser.SetExpr(sEvery);
+            int nResults;
+            value_type* v = _parser.Eval(nResults);
+
+            if (nResults == 1)
+            {
+                // Single result: usual every=a,a representation
+                vector<long long int> idx;
+
+                for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[0]))
+                {
+                    idx.push_back(i);
+                }
+
+                return VectorIndex(idx);
+            }
+            else if (nResults == 2)
+            {
+                // Two results: usual every=a,b representation
+                vector<long long int> idx;
+
+                for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[1]))
+                {
+                    idx.push_back(i);
+                }
+
+                return VectorIndex(idx);
+            }
+            else //arbitrary results: use it as if it was a vector
+                return VectorIndex(v, nResults, 0);
+        }
+    }
+
+    return VectorIndex(0, (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false))-1);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is the abstract
+/// implementation of a MAF function call. Most
+/// of the MAFs use this abstraction (except
+/// \c cmp and \c pct).
+///
+/// \param sTableName string& const
+/// \param sDir string
+/// \param MAF (double*)
+/// \return vector<double>
+///
+/////////////////////////////////////////////////
+vector<double> Datafile::resolveMAF(const string& sTableName, string sDir, double (Datafile::*MAF)(const string&, long long int, long long int, long long int, long long int))
+{
+    vector<double> vResults;
+
+    // Find the "grid" parameter and use it as an offset
+    long long int nGridOffset = sDir.find("grid") != string::npos ? 2 : 0;
+
+    // Get the vector index corresponding to a possible
+    // every definition
+    VectorIndex _idx = parseEvery(sDir, sTableName);
+
+    // Resolve the actual call to the MAF
+    if (sDir.find("cols") != string::npos)
+    {
+        for (size_t i = 0; i < _idx.size(); i++)
+        {
+            if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset > getCols(sTableName, false))
+                continue;
+
+            vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false), _idx[i]+nGridOffset, -1));
+        }
+    }
+    else if (sDir.find("lines") != string::npos)
+    {
+        for (size_t i = 0; i < _idx.size(); i++)
+        {
+            if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset > getLines(sTableName, false))
+                continue;
+
+            vResults.push_back((this->*MAF)(sTableName, _idx[i]+nGridOffset, -1, 0, getCols(sTableName, false)));
+        }
+    }
+    else
+        vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false), nGridOffset, getCols(sTableName, false)));
+
+    if (!vResults.size())
+        vResults.push_back(NAN);
+
+    return vResults;
+}
+
+
 // --> Lese den Inhalt eines Tabellenpastes <--
 void Datafile::pasteLoad(const Settings& _option)
 {

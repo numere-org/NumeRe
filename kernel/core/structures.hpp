@@ -119,8 +119,16 @@ class VectorIndex
         // Constructor from a STL vector
         VectorIndex(const vector<long long int>& vIndex)
         {
-            vStorage = vIndex;
-            expand = false;
+            if (vIndex.size())
+            {
+                vStorage = vIndex;
+                expand = false;
+            }
+            else
+            {
+                vStorage.assign({INVALID, INVALID});
+                expand = true;
+            }
         }
 
         // Assignment operator overload for the same type
@@ -134,8 +142,12 @@ class VectorIndex
         // Assignment operator overload for STL vectors
         VectorIndex& operator=(const vector<long long int>& vIndex)
         {
-            vStorage = vIndex;
-            expand = false;
+            if (vIndex.size())
+            {
+                vStorage = vIndex;
+                expand = false;
+            }
+
             return *this;
         }
 

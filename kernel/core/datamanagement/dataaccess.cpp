@@ -995,28 +995,13 @@ static vector<double> MafDataAccess(Datafile& _data, const string& sMafname, con
 /////////////////////////////////////////////////
 static string createEveryDefinition(const string& sLine, Parser& _parser)
 {
-	value_type* v = 0;
-	int nResults = 0;
 	string sExpr = sLine.substr(sLine.find(".every(") + 6);
-	sExpr.erase(getMatchingParenthesis(sExpr));
-	string sEvery;
-	if (sExpr.front() == '(')
-		sExpr.erase(0, 1);
-	if (sExpr.back() == ')')
-		sExpr.pop_back();
+	sExpr.erase(getMatchingParenthesis(sExpr)+1);
 
-	// Disable the access caching in this case, because it might interfere with the bytecode caching
-	_parser.DisableAccessCaching();
-	_parser.SetExpr(sExpr);
-	v = _parser.Eval(nResults);
+	// Resolve possible remaining calls to data tables or clusters
+	getDataElements(sExpr, _parser, NumeReKernel::getInstance()->getData(), NumeReKernel::getInstance()->getSettings());
 
-	if (nResults > 1)
-	{
-		sEvery = "every=" + toString((int)v[0]) + "," + toString((int)v[1]) + " ";
-	}
-	else
-		sEvery = "every=" + toString((int)v[0]) + " ";
-	return sEvery;
+	return "every=" + sExpr + " ";
 }
 
 
