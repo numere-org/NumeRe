@@ -5306,7 +5306,8 @@ void NumeReEditor::AsynchActions()
     if (!this->AutoCompActive()
         && this->getEditorSetting(SETTING_INDENTONTYPE)
         && (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
-        && !isNoAutoIndentionKey(m_nLastReleasedKey))
+        && !isNoAutoIndentionKey(m_nLastReleasedKey)
+        && !HasSelection())
         ApplyAutoIndentation(0, this->GetCurrentLine() + 1);
 
     HandleFunctionCallTip();
