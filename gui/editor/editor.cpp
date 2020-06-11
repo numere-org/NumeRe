@@ -2776,7 +2776,8 @@ string NumeReEditor::GetStrippedRange(int nPos1, int nPos2, bool encode)
     size_t nCommentSeq;
 
     while ((nCommentSeq = sTextRange.find("\n##!")) != string::npos)
-        sTextRange.erase(nCommentSeq+1, sTextRange.find_first_not_of(" \t", nCommentSeq+4) - nCommentSeq-1);
+        sTextRange.erase(nCommentSeq+1, 3);
+        //sTextRange.erase(nCommentSeq+1, sTextRange.find_first_not_of(" \t", nCommentSeq+4) - nCommentSeq-1);
 
     // Convert umlauts, if the encode flag
     // has been set
@@ -2958,6 +2959,34 @@ bool NumeReEditor::writeLaTeXFile(const string& sLaTeXFileName)
 
 
 /////////////////////////////////////////////////
+/// \brief This static helper function finds the
+/// next list item in the passed documentation
+/// string.
+///
+/// \param sTextRange const string&
+/// \param nLength size_t&
+/// \return size_t
+///
+/////////////////////////////////////////////////
+static size_t findListItem(const string& sTextRange, size_t& nLength)
+{
+    size_t nItemCandidate = sTextRange.find("- ");
+
+    if (nItemCandidate == string::npos)
+        return nItemCandidate;
+
+    size_t nItemStart = sTextRange.find_last_not_of("- ", nItemCandidate);
+
+    if (nItemStart == string::npos || sTextRange[nItemStart] != '\n')
+        return nItemStart;
+
+    nLength = nItemCandidate - nItemStart + 2;
+
+    return nItemStart;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Converts the documentation into LaTeX code.
 ///
 /// \param nPos1 int
@@ -2987,24 +3016,28 @@ string NumeReEditor::parseDocumentation(int nPos1, int nPos2)
     }
 
     // Handle unordered lists
-    if (sTextRange.find("\n- ") != string::npos) // thats a unordered list
+    if (sTextRange.find("- ") != string::npos) // thats a unordered list
     {
-        while (sTextRange.find("\n- ") != string::npos)
+        size_t nItemizeStart = 0;
+        size_t nLength = 0;
+
+        while ((nItemizeStart = findListItem(sTextRange, nLength)) != string::npos)
         {
-            size_t nItemizeStart = sTextRange.find("\n- ");
+            string sItemStart = "\n" + string(nLength-3, ' ') + "- ";
+            string sIndent = "\n" + string(nLength-1, ' ');
 
             for (size_t i = nItemizeStart; i < sTextRange.length(); i++)
             {
-                if (sTextRange.substr(i, 3) == "\n- ")
+                if (sTextRange.substr(i, nLength) == sItemStart)
                 {
-                    sTextRange.replace(i + 1, 1, "\t\\item");
+                    sTextRange.replace(i + 1, nLength-2, "\t\\item");
                     continue;
                 }
 
-                if ((sTextRange[i] == '\n' && sTextRange.substr(i, 3) != "\n  ") || i + 1 == sTextRange.length())
+                if ((sTextRange[i] == '\n' && sTextRange.substr(i, nLength) != sIndent) || i + 1 == sTextRange.length())
                 {
                     if (sTextRange[i] == '\n')
-                        sTextRange.insert(i, "\\end{itemize}");
+                        sTextRange.insert(i+1, "\\end{itemize}");
                     else
                         sTextRange += "\n\\end{itemize}";
 
@@ -3016,18 +3049,18 @@ string NumeReEditor::parseDocumentation(int nPos1, int nPos2)
     }
 
     // Handle parameter lists
-    if (sTextRange.find("\n\\param ") != string::npos)
+    if (sTextRange.find("\\param ") != string::npos)
     {
-        while (sTextRange.find("\n\\param ") != string::npos)
+        while (sTextRange.find("\\param ") != string::npos)
         {
-            size_t nItemizeStart = sTextRange.find("\n\\param ");
+            size_t nItemizeStart = sTextRange.find("\\param ");
 
             for (size_t i = nItemizeStart; i < sTextRange.length(); i++)
             {
-                if (sTextRange.substr(i, 8) == "\n\\param ")
+                if (sTextRange.substr(i, 7) == "\\param ")
                 {
-                    sTextRange.replace(i + 1, 7, "\t\\item !!");
-                    sTextRange.insert(sTextRange.find(' ', i+9), "!!:");
+                    sTextRange.replace(i, 7, "\t\\item !!");
+                    sTextRange.insert(sTextRange.find(' ', i+8), "!!:");
                     continue;
                 }
 
@@ -3038,7 +3071,7 @@ string NumeReEditor::parseDocumentation(int nPos1, int nPos2)
                     else
                         sTextRange += "\n\\end{itemize}";
 
-                    sTextRange.insert(nItemizeStart + 1, "\\parameters\n\\begin{itemize}\n");
+                    sTextRange.insert(nItemizeStart, "\\parameters\n\\begin{itemize}\n");
                     break;
                 }
             }

@@ -887,9 +887,7 @@ string SearchController::CleanDocumentation(const wxString& __sDoc)
         sDocumentation.erase(0, sDocumentation.find_first_not_of(" \n"));
 
         if (sDocumentation.back() == ' ' || sDocumentation.back() == '\n')
-        {
             sDocumentation.erase(sDocumentation.find_last_not_of(" \n")+1);
-        }
 
         size_t nPos = sDocumentation.find("\\param ");
 
