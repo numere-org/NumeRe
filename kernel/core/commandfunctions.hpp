@@ -2168,7 +2168,7 @@ static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Defin
 /// The cache name is either extracted from the
 /// file header or constructed from the file name.
 /////////////////////////////////////////////////
-static string loadToCache(const string& sFileName, Datafile& _data, Settings& _option)
+static NumeRe::FileHeaderInfo loadToCache(const string& sFileName, Datafile& _data, Settings& _option)
 {
     Datafile _cache;
     _cache.setTokens(_option.getTokenPaths());
@@ -2195,7 +2195,7 @@ static string loadToCache(const string& sFileName, Datafile& _data, Settings& _o
         }
     }
 
-    return info.sTableName;
+    return info;
 }
 
 
@@ -5315,7 +5315,7 @@ static CommandReturnValues cmd_credits(string& sCmd)
 static CommandReturnValues cmd_append(string& sCmd)
 {
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    //Parser& _parser = NumeReKernel::getInstance()->getParser();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '='))
@@ -5325,9 +5325,16 @@ static CommandReturnValues cmd_append(string& sCmd)
         sCmd.replace(sCmd.find("data"), 4, "app");
         append_data(sCmd, _data, _option);
     }
-    else if (sCmd.length() > findCommand(sCmd).nPos + 7 && sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7) != string::npos)
+    else if (sCmd.length() > findCommand(sCmd, "append").nPos + 7 && sCmd.find_first_not_of(' ', findCommand(sCmd, "append").nPos + 7) != string::npos)
     {
         NumeReKernel::printPreFmt("\r");
+
+        Match _match = findCommand(sCmd, "append");
+        double j1 = _data.getCols("data") + 1;
+        string sExpr = sCmd;
+
+        sExpr.replace(_match.nPos, string::npos, "_~append[~_~]");
+        sCmd.erase(0, _match.nPos);
 
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
@@ -5360,6 +5367,16 @@ static CommandReturnValues cmd_append(string& sCmd)
 
         sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7), "-app=");
         append_data(sCmd, _data, _option);
+
+        sCmd = sExpr;
+        vector<double> vIndices;
+        vIndices.push_back(1);
+        vIndices.push_back(_data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"));
+        vIndices.push_back(j1);
+        vIndices.push_back(_data.getCols("data"));
+
+        _parser.SetVectorVar("_~append[~_~]", vIndices);
+        return COMMAND_HAS_RETURNVALUE;
     }
 
     return COMMAND_PROCESSED;
@@ -5405,7 +5422,7 @@ static CommandReturnValues cmd_imread(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     readImage(sCmd, _parser, _data, _option);
-    return COMMAND_PROCESSED;
+    return COMMAND_HAS_RETURNVALUE;
 }
 
 
@@ -7725,8 +7742,14 @@ static CommandReturnValues cmd_load(string& sCmd)
         }
         return COMMAND_PROCESSED;
     }
-    else if (sCmd.length() > findCommand(sCmd).nPos + 5 && sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5) != string::npos)
+    else if (sCmd.length() > findCommand(sCmd, "load").nPos + 5 && sCmd.find_first_not_of(' ', findCommand(sCmd, "load").nPos + 5) != string::npos)
     {
+        Match _match = findCommand(sCmd, "load");
+        string sExpr = sCmd;
+
+        sExpr.replace(_match.nPos, string::npos, "_~load[~_~]");
+        sCmd.erase(0, _match.nPos);
+
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
@@ -7763,9 +7786,21 @@ static CommandReturnValues cmd_load(string& sCmd)
 
         if (findParameter(sCmd, "app"))
         {
+            double j1 = _data.getCols("data") + 1;
+
             sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5), "-app=");
             append_data(sCmd, _data, _option);
-            return COMMAND_PROCESSED;
+
+            sCmd = sExpr;
+            vector<double> vIndices;
+            vIndices.push_back(1);
+            vIndices.push_back(_data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"));
+            vIndices.push_back(j1);
+            vIndices.push_back(_data.getCols("data"));
+
+            _parser.SetVectorVar("_~load[~_~]", vIndices);
+
+            return COMMAND_HAS_RETURNVALUE;
         }
 
         if (extractFirstParameterStringValue(sCmd, sArgument))
@@ -7783,10 +7818,22 @@ static CommandReturnValues cmd_load(string& sCmd)
             if (findParameter(sCmd, "tocache") && !findParameter(sCmd, "all"))
             {
                 // Single file directly to cache
-                sArgument = loadToCache(sArgument, _data, _option);
+                NumeRe::FileHeaderInfo info = loadToCache(sArgument, _data, _option);
 
-                if (_data.isValidCache() && _data.getCols(sArgument, false))
-                    NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", sArgument + "()", toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))));
+                if (_data.isValidCache() && _data.getCols(info.sTableName, false))
+                {
+                    NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
+                    sCmd = sExpr;
+                    vector<double> vIndices;
+                    vIndices.push_back(1);
+                    vIndices.push_back(info.nRows);
+                    vIndices.push_back(_data.getCols(info.sTableName)-info.nCols+1);
+                    vIndices.push_back(_data.getCols(info.sTableName));
+
+                    _parser.SetVectorVar("_~load[~_~]", vIndices);
+
+                    return COMMAND_HAS_RETURNVALUE;
+                }
 
                 return COMMAND_PROCESSED;
             }
@@ -7841,7 +7888,11 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (_data.isValid())
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
-                    return COMMAND_PROCESSED;
+                    vector<double> vIndices = {1, _data.getLines("data", false), 1, _data.getCols("data", false)};
+                    _parser.SetVectorVar("_~load[~_~]", vIndices);
+                    sCmd = sExpr;
+
+                    return COMMAND_HAS_RETURNVALUE;
                 }
 
                 // Provide headline
@@ -7858,8 +7909,17 @@ static CommandReturnValues cmd_load(string& sCmd)
                 else
                     _data.openFile(sArgument, _option, false, true, nArgument);
 
-                if (_data.isValid() && _option.getSystemPrintStatus())
-                    NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
+                if (_data.isValid())
+                {
+                    if (_option.getSystemPrintStatus())
+                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
+
+                    vector<double> vIndices = {1, _data.getLines("data", false), 1, _data.getCols("data", false)};
+                    _parser.SetVectorVar("_~load[~_~]", vIndices);
+                    sCmd = sExpr;
+
+                    return COMMAND_HAS_RETURNVALUE;
+                }
             }
             else
                 load_data(_data, _option, _parser, sArgument);
@@ -8029,7 +8089,6 @@ static map<string,CommandFunc> getCommandFunctions()
     map<string, CommandFunc> mCommandFuncMap;
 
     mCommandFuncMap["about"] = cmd_credits;
-    mCommandFuncMap["append"] = cmd_append;
     mCommandFuncMap["audio"] = cmd_audio;
     mCommandFuncMap["clear"] = cmd_clear;
     mCommandFuncMap["cont"] = cmd_plotting;
@@ -8066,12 +8125,10 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["hline"] = cmd_hline;
     mCommandFuncMap["ifndef"] = cmd_ifndefined;
     mCommandFuncMap["ifndefined"] = cmd_ifndefined;
-    mCommandFuncMap["imread"] = cmd_imread;
     mCommandFuncMap["implot"] = cmd_plotting;
     mCommandFuncMap["info"] = cmd_credits;
     mCommandFuncMap["install"] = cmd_install;
     mCommandFuncMap["list"] = cmd_list;
-    mCommandFuncMap["load"] = cmd_load;
     mCommandFuncMap["matop"] = cmd_matop;
     mCommandFuncMap["mesh"] = cmd_plotting;
     mCommandFuncMap["mesh3d"] = cmd_plotting;
@@ -8143,13 +8200,16 @@ static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
 {
     map<string, CommandFunc> mCommandFuncMap;
 
+    mCommandFuncMap["append"] = cmd_append;
     mCommandFuncMap["dialog"] = cmd_dialog;
     mCommandFuncMap["diff"] = cmd_diff;
     mCommandFuncMap["eval"] = cmd_eval;
     mCommandFuncMap["extrema"] = cmd_extrema;
     mCommandFuncMap["get"] = cmd_get;
+    mCommandFuncMap["imread"] = cmd_imread;
     mCommandFuncMap["integrate"] = cmd_integrate;
     mCommandFuncMap["integrate2d"] = cmd_integrate;
+    mCommandFuncMap["load"] = cmd_load;
     mCommandFuncMap["pulse"] = cmd_pulse;
     mCommandFuncMap["read"] = cmd_read;
     mCommandFuncMap["readline"] = cmd_readline;

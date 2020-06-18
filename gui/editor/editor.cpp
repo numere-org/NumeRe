@@ -4542,12 +4542,12 @@ void NumeReEditor::updateDefaultHighlightSettings()
     this->StyleSetSize(ANNOTATION_NOTE, nAnnotationFontSize);
     this->StyleSetItalic(ANNOTATION_NOTE, true);
     this->StyleSetFaceName(ANNOTATION_NOTE, "Segoe UI");
-    this->StyleSetBackground(ANNOTATION_WARN, wxColour(255, 255, 220));
-    this->StyleSetForeground(ANNOTATION_WARN, wxColour(160, 160, 0));
+    this->StyleSetBackground(ANNOTATION_WARN, wxColour(255, 240, 210));
+    this->StyleSetForeground(ANNOTATION_WARN, wxColour(200, 120, 0));
     this->StyleSetSize(ANNOTATION_WARN, nAnnotationFontSize);
     this->StyleSetItalic(ANNOTATION_WARN, true);
     this->StyleSetFaceName(ANNOTATION_WARN, "Segoe UI");
-    this->StyleSetBackground(ANNOTATION_ERROR, wxColour(255, 200, 200));
+    this->StyleSetBackground(ANNOTATION_ERROR, wxColour(255, 225, 225));
     this->StyleSetForeground(ANNOTATION_ERROR, wxColour(170, 0, 0));
     this->StyleSetSize(ANNOTATION_ERROR, nAnnotationFontSize);
     this->StyleSetItalic(ANNOTATION_ERROR, true);

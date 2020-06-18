@@ -1637,6 +1637,14 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 	string sParams = "";
 	string sTargetCache = "image";
 	Indices _idx;
+	vector<double> vIndices;
+
+	string sExpr = sCmd;
+
+	Match _match = findCommand(sCmd, "imread");
+
+	sExpr.replace(_match.nPos, string::npos, "_~imread[~_~]");
+	sCmd.erase(0, _match.nPos);
 
 	// Get the target cache from the command line or use the default one
 	sTargetCache = evaluateTargetOptionInCommand(sCmd, "image", _idx, _parser, _data, _option);
@@ -1679,6 +1687,11 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 
 	if (_idx.col.isOpenEnd())
 		_idx.col.setRange(0, _idx.col.front() + 2 + nHeight-1);
+
+    vIndices.push_back(_idx.row.min()+1);
+    vIndices.push_back(_idx.row.max()+1);
+    vIndices.push_back(_idx.col.min()+1);
+    vIndices.push_back(_idx.col.max()+1);
 
     // Write the axes to the target cache
 	for (int i = 0; i < nWidth; i++)
@@ -1727,6 +1740,9 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 			iData += 3;
 		}
 	}
+
+	_parser.SetVectorVar("_~imread[~_~]", vIndices);
+	sCmd = sExpr;
 
     // return true
 	return true;

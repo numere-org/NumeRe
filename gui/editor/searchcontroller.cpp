@@ -82,6 +82,9 @@ vector<int> SearchController::FindAll(const wxString& sSymbol, int nStyle, int n
     vector<int> vMatches;
     int nCurrentPos = 0;
 
+    if (!sSymbol.length())
+        return vMatches;
+
     // Change the style of the string parser to the identifier
     // style
     if ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC) && nStyle == wxSTC_NSCR_STRING_PARSER)

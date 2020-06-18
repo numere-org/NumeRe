@@ -456,6 +456,9 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     if (sSyntaxElement == "zeroes"
             || sSyntaxElement == "extrema"
             || sSyntaxElement == "integrate"
+            || sSyntaxElement == "load"
+            || sSyntaxElement == "append"
+            || sSyntaxElement == "imread"
             || sSyntaxElement == "eval"
             || sSyntaxElement == "get"
             || sSyntaxElement == "read"
@@ -476,7 +479,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
         // Was an assignment operator found?
         if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && !canContinue)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE", sSyntaxElement)), ANNOTATION_WARN);
     }
 
     // Examine the if, elseif and while commands
@@ -774,6 +777,9 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
                 StripSpaces(currentArg);
 
+                if (!currentArg.length())
+                    continue;
+
                 m_vLocalVariables.push_back(pair<string,int>(currentArg, nStyle));
 
                 // Try to find the variable in the remaining code
@@ -1017,7 +1023,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && m_editor->PositionFromLine(m_nCurrentLine) == wordstart && !isContinuedLine && sSyntaxElement != "sleep()")
     {
         // The function is called at the first position without a target variable
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE", sSyntaxElement)), ANNOTATION_WARN);
     }
     else if (sSyntaxElement != "sleep()")
     {
@@ -1034,7 +1040,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
 
         // Was an operator or a command found?
         if (m_options->GetAnalyzerOption(Options::RESULT_ASSIGNMENT) && !canContinue && !isContinuedLine)
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE")), ANNOTATION_WARN);
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sWarn, _guilang.get("GUI_ANALYZER_ASSIGNTOVARIABLE", sSyntaxElement)), ANNOTATION_WARN);
     }
 
     // There's a missing parenthesis?
@@ -1091,7 +1097,7 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
     if (!m_editor->m_search->FindProcedureDefinition().length())
     {
         // Procedure definition was not found
-        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1), m_sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND")), ANNOTATION_ERROR);
+        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1), m_sError, _guilang.get("GUI_ANALYZER_PROCEDURENOTFOUND", sSyntaxElement)), ANNOTATION_ERROR);
     }
 
     // return the number of gathered annotations
@@ -1143,7 +1149,7 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
 
             // Ignore y* variables from odesolve
             if (currentline.substr(currentline.find_first_not_of(" \t"), 9) != "odesolve " || !(sSyntaxElement[0] == 'y' && sSyntaxElement.length() > 1 && sSyntaxElement.find_first_not_of("0123456789", 1) == string::npos))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_GLOBALVARIABLE")), ANNOTATION_WARN);
+                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sWarn, _guilang.get("GUI_ANALYZER_GLOBALVARIABLE", sSyntaxElement)), ANNOTATION_WARN);
         }
     }
 
@@ -1159,7 +1165,7 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
     {
         // Too short
         if (m_options->GetAnalyzerOption(Options::VARIABLE_LENGTH) && !(sSyntaxElement.length() == 2 && ((sSyntaxElement[1] >= '0' && sSyntaxElement[1] <= '9') || sSyntaxElement[0] == 'd')))
-            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT")), ANNOTATION_NOTE);
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_VARNAMETOOSHORT", sSyntaxElement)), ANNOTATION_NOTE);
     }
 
     // Handle the variable's names: are they following guidelines?
@@ -1191,7 +1197,7 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
 
             // variable should begin with lowercase letter indicate its type
             if (m_options->GetAnalyzerOption(Options::TYPE_ORIENTATION))
-                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED")), ANNOTATION_NOTE);
+                AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sNote, _guilang.get("GUI_ANALYZER_VARNOTTYPEORIENTED", sSyntaxElement)), ANNOTATION_NOTE);
         }
         else if (m_options->GetAnalyzerOption(Options::ARGUMENT_UNDERSCORE) && m_hasProcedureDefinition && !shift && m_editor->m_fileType != FILE_MATLAB)
         {
@@ -1381,7 +1387,7 @@ string CodeAnalyzer::highlightFoundOccurence(const string& sElement, int nPos, i
 {
     m_editor->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
     m_editor->IndicatorFillRange(nPos, nLength);
-	return sElement + " ";
+	return sElement;
 }
 
 
