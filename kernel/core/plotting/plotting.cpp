@@ -3412,6 +3412,9 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _fu
             if (nPos >= _pInfo.sPlotParams.length())
                 break;
 
+            if (isInQuotes(_pInfo.sPlotParams, nPos))
+                continue;
+
             // Find the actual value (jump over white spaces)
             while (_pInfo.sPlotParams[nPos] == ' ')
                 nPos++;
