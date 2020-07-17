@@ -6441,25 +6441,71 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
-    int nArgument;
+    int nWindowSize = 1;
+    double dAlpha = NAN;
+    NumeRe::FilterSettings::FilterType _type = NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR;
+    MemoryManager::AppDir dir = MemoryManager::ALL;
 
-    // smooth cache(i1:i2,j1:j2) -order=1
+    // Find the window size
     if (findParameter(sCmd, "order", '='))
     {
-        nArgument = findParameter(sCmd, "order", '=') + 5;
-        if (_data.containsTablesOrClusters(sCmd.substr(nArgument)) || sCmd.substr(nArgument).find("data(") != string::npos)
+        nWindowSize = findParameter(sCmd, "order", '=') + 5;
+
+        if (_data.containsTablesOrClusters(sCmd.substr(nWindowSize)) || sCmd.substr(nWindowSize).find("data(") != string::npos)
         {
-            sArgument = sCmd.substr(nArgument);
+            sArgument = sCmd.substr(nWindowSize);
             getDataElements(sArgument, _parser, _data, _option);
+
             if (sArgument.find("{") != string::npos)
                 convertVectorToExpression(sArgument, _option);
-            sCmd = sCmd.substr(0, nArgument) + sArgument;
+
+            sCmd = sCmd.substr(0, nWindowSize) + sArgument;
         }
-        _parser.SetExpr(getArgAtPos(sCmd, nArgument));
-        nArgument = (int)_parser.Eval();
+
+        _parser.SetExpr(getArgAtPos(sCmd, nWindowSize));
+        nWindowSize = intCast(_parser.Eval());
     }
-    else
-        nArgument = 1;
+
+    // Find the window shape (used for type=gaussian)
+    if (findParameter(sCmd, "alpha", '='))
+    {
+        size_t pos = findParameter(sCmd, "alpha", '=') + 5;
+
+        if (_data.containsTablesOrClusters(sCmd.substr(pos)) || sCmd.substr(pos).find("data(") != string::npos)
+        {
+            sArgument = sCmd.substr(pos);
+            getDataElements(sArgument, _parser, _data, _option);
+
+            if (sArgument.find("{") != string::npos)
+                convertVectorToExpression(sArgument, _option);
+
+            sCmd = sCmd.substr(0, pos) + sArgument;
+        }
+
+        _parser.SetExpr(getArgAtPos(sCmd, pos));
+        dAlpha = _parser.Eval();
+    }
+
+    // Find the smoothing filter type
+    if (findParameter(sCmd, "type", '='))
+    {
+        string sFilterType = getArgAtPos(sCmd, findParameter(sCmd, "type", '=')+4);
+
+        if (sFilterType == "weightedlinear")
+            _type = NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR;
+        else if (sFilterType == "gaussian")
+            _type = NumeRe::FilterSettings::FILTER_GAUSSIAN;
+        else if (sFilterType == "savitzkygolay")
+            _type = NumeRe::FilterSettings::FILTER_SAVITZKY_GOLAY;
+    }
+
+    // Find the app dir
+    if (findParameter(sCmd, "grid"))
+        dir = MemoryManager::GRID;
+    else if (findParameter(sCmd, "lines"))
+        dir = MemoryManager::LINES;
+    else if (findParameter(sCmd, "cols"))
+        dir = MemoryManager::COLS;
 
     if (!_data.containsTablesOrClusters(sCmd))
         return COMMAND_PROCESSED;
@@ -6477,46 +6523,28 @@ static CommandReturnValues cmd_smooth(string& sCmd)
         if (_access.getIndices().col.isOpenEnd())
             _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
 
-        if (findParameter(sCmd, "grid"))
+        bool success = false;
+
+        // Apply the smoothing filter
+        switch (dir)
         {
-            if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::GRID))
-            {
-                if (_option.getSystemPrintStatus())
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + _access.getDataObject() + "\""));
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+            case MemoryManager::GRID:
+            case MemoryManager::ALL:
+                success = _data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, NumeRe::FilterSettings(_type, nWindowSize, nWindowSize, dAlpha), dir);
+                break;
+            case MemoryManager::LINES:
+            case MemoryManager::COLS:
+                success = _data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, NumeRe::FilterSettings(_type, nWindowSize, 1u, dAlpha), dir);
+                break;
         }
-        else if (!findParameter(sCmd, "lines") && !findParameter(sCmd, "cols"))
+
+        if (success)
         {
-            if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::ALL))
-            {
-                if (_option.getSystemPrintStatus())
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + _access.getDataObject() + "\""));
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+            if (_option.getSystemPrintStatus())
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + _access.getDataObject() + "\""));
         }
-        else if (findParameter(sCmd, "lines"))
-        {
-            if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::LINES))
-            {
-                if (_option.getSystemPrintStatus())
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_LINES")));
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
-        else if (findParameter(sCmd, "cols"))
-        {
-            if (_data.smooth(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::COLS))
-            {
-                if (_option.getSystemPrintStatus())
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", _lang.get("COMMON_COLS")));
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
+        else
+            throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
     }
     else
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);

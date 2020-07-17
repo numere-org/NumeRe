@@ -32,6 +32,7 @@
 #include "../utils/tools.hpp"
 #include "../version.h"
 #include "../maths/resampler.h"
+#include "../maths/filtering.hpp"
 #include "table.hpp"
 #include "sorter.hpp"
 
@@ -79,6 +80,8 @@ class Memory : public Sorter
         virtual bool isValue(int line, int col);
 		bool evaluateIndices(long long int& i1, long long int& i2, long long int& j1, long long int& j2);
 		void countAppendedZeroes();
+		void smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines);
+		void smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter);
 
     public:
 		Memory();										// Standard-Konstruktor
@@ -125,59 +128,29 @@ class Memory : public Sorter
         vector<int> sortElements(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
 
         void deleteEntry(long long int _nLine, long long int _nCol);
-        void deleteBulk(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0);
         void deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol);
 
         NumeRe::Table extractTable(const string& _sTable = "");
         void importTable(NumeRe::Table _table);
 
         // MAFIMPLEMENTATIONS
-        double std(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double std(const VectorIndex& _vLine, const VectorIndex& _vCol);
-
-        double avg(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double avg(const VectorIndex& _vLine, const VectorIndex& _vCol);
-
-        double max(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double max(const VectorIndex& _vLine, const VectorIndex& _vCol);
-
-        double min(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double min(const VectorIndex& _vLine, const VectorIndex& _vCol);
-
         double prd(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double prd(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-
         double sum(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double sum(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-
         double num(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double num(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-
-        double and_func(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double and_func(const VectorIndex& _vLine, const VectorIndex& _vCol);
-
-        double or_func(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double or_func(const VectorIndex& _vLine, const VectorIndex& _vCol);
-
-        double xor_func(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
         double xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol);
-
         double cnt(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double cnt(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-
         double norm(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double norm(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-
         double cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0);
-        double cmp(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dRef = 0.0, int nType = 0);
-
         double med(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double med(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-
         double pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5);
-        double pct(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dPct = 0.5);
 
-        bool smooth(VectorIndex _vLine, VectorIndex _vCol, unsigned int nOrder = 1, AppDir Direction = ALL);
+        bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);
         bool resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSamples = 0, AppDir Direction = ALL);
 

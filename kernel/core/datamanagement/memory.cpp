@@ -20,6 +20,7 @@
 #include "memory.hpp"
 #include "../../kernel.hpp"
 #include "../io/file.hpp"
+#include <memory>
 
 using namespace std;
 
@@ -798,7 +799,7 @@ NumeRe::Table Memory::extractTable(const string& _sTable)
 // Import data from a copy-efficient table object
 void Memory::importTable(NumeRe::Table _table)
 {
-    deleteBulk(0, nLines-1, 0, nCols-1);
+    deleteBulk(VectorIndex(0, -2), VectorIndex(0, -2));
     resizeMemory(_table.getLines(), _table.getCols());
 
     for (size_t i = 0; i < _table.getLines(); i++)
@@ -905,60 +906,6 @@ void Memory::deleteEntry(long long int _nLine, long long int _nCol)
                 bValidData = false;
         }
     }
-    return;
-}
-
-void Memory::deleteBulk(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    //cerr << i1 << " " << i2 << " " << j1 << " " << j2 << endl;
-    if (!Memory::getCols(false))
-        return;
-
-    if (i2 == -1)
-        i2 = i1;
-    else if (i2 >= nLines)
-        i2 = nLines-1;
-
-    if (j2 == -1)
-        j2 = j1;
-    else if (j2 >= nCols)
-        j2 = nCols-1;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            dMemTable[i][j] = NAN;
-        }
-    }
-    if (bIsSaved)
-    {
-        bIsSaved = false;
-        nLastSaved = time(0);
-    }
-    for (long long int j = nCols - 1; j >= 0; j--)
-    {
-        for (long long int i = nLines - 1; i >= 0; i--)
-        {
-            if (!isnan(dMemTable[i][j]))
-            {
-                nAppendedZeroes[j] = nLines - i - 1;
-                break;
-            }
-            if (!i && isnan(dMemTable[i][j]))
-            {
-                nAppendedZeroes[j] = nLines;
-                if (!i1 && j1 <= j && j <= j2)
-                {
-                    sHeadLine[j] = "Spalte_" + toString((int)j + 1);
-                    if (nWrittenHeadlines > j)
-                        nWrittenHeadlines = j;
-                }
-            }
-        }
-    }
-    if (!getLines(false) && !getCols(false))
-        bValidData = false;
     return;
 }
 
@@ -1077,44 +1024,6 @@ void Memory::countAppendedZeroes()
 }
 
 
-double Memory::std(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return NAN;
-    double dMean = 0.0;
-    double dStd = 0.0;
-    long long int nInvalid = 0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-            {
-                nInvalid++;
-                continue;
-            }
-            dMean += dMemTable[i][j];
-        }
-    }
-    dMean /= (double)((i2 - i1 + 1) * (j2 - j1 + 1) - nInvalid);
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-                continue;
-            dStd += (dMean - dMemTable[i][j]) * (dMean - dMemTable[i][j]);
-        }
-    }
-    dStd /= (double)((i2 - i1 + 1) * (j2 - j1 + 1) - 1 - nInvalid);
-    dStd = sqrt(dStd);
-    return dStd;
-}
 
 double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
@@ -1141,33 +1050,6 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return sqrt(dStd / ((_vLine.size() * _vCol.size()) - 1 - nInvalid));
 }
 
-
-double Memory::avg(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return NAN;
-    double dMean = 0.0;
-    long long int nInvalid = 0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-            {
-                nInvalid++;
-                continue;
-            }
-            dMean += dMemTable[i][j];
-        }
-    }
-    dMean /= (double)((i2 - i1 + 1) * (j2 - j1 + 1) - nInvalid);
-    return dMean;
-}
-
 double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1190,33 +1072,6 @@ double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (nInvalid >= _vLine.size()*_vCol.size())
         return NAN;
     return dAvg / (_vLine.size() * _vCol.size() - nInvalid);
-}
-
-
-double Memory::max(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return NAN;
-    double dMax = 0.0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-                continue;
-            if (i == i1 && j == j1)
-                dMax = dMemTable[i][j];
-            else if (dMemTable[i][j] > dMax)
-                dMax = dMemTable[i][j];
-            else
-                continue;
-        }
-    }
-    return dMax;
 }
 
 double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
@@ -1242,33 +1097,6 @@ double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return dMax;
 }
 
-
-double Memory::min(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return NAN;
-    double dMin = 0.0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-                continue;
-            if (i == i1 && j == j1)
-                dMin = dMemTable[i][j];
-            else if (dMemTable[i][j] < dMin)
-                dMin = dMemTable[i][j];
-            else
-                continue;
-        }
-    }
-    return dMin;
-}
-
 double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1292,29 +1120,6 @@ double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return dMin;
 }
 
-
-double Memory::prd(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return NAN;
-    double dPrd = 1.0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-                continue;
-            dPrd *= dMemTable[i][j];
-        }
-    }
-    return dPrd;
-
-}
-
 double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1333,28 +1138,6 @@ double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
         }
     }
     return dPrd;
-}
-
-
-double Memory::sum(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return NAN;
-    double dSum = 0.0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-                continue;
-            dSum += dMemTable[i][j];
-        }
-    }
-    return dSum;
 }
 
 double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
@@ -1377,27 +1160,6 @@ double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return dSum;
 }
 
-
-double Memory::num(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return 0;
-    int nInvalid = 0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-                nInvalid++;
-        }
-    }
-    return (double)((i2 - i1 + 1) * (j2 - j1 + 1) - nInvalid);
-}
-
 double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1415,32 +1177,6 @@ double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol)
         }
     }
     return (_vLine.size() * _vCol.size()) - nInvalid;
-}
-
-
-double Memory::and_func(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return 0.0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    double dRetVal = NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dRetVal))
-                dRetVal = 1.0;
-            if (isnan(dMemTable[i][j]) || dMemTable[i][j] == 0)
-                return 0.0;
-        }
-    }
-    if (isnan(dRetVal))
-        return 0.0;
-    return 1.0;
 }
 
 double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
@@ -1468,26 +1204,6 @@ double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return 1.0;
 }
 
-
-double Memory::or_func(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return 0.0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (!isnan(dMemTable[i][j]) && dMemTable[i][j] != 0.0)
-                return 1.0;
-        }
-    }
-    return 0.0;
-}
-
 double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1503,34 +1219,6 @@ double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
                 return 1.0;
         }
     }
-    return 0.0;
-}
-
-
-double Memory::xor_func(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return 0.0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    bool isTrue = false;
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (!isnan(dMemTable[i][j]) && dMemTable[i][j] != 0.0)
-            {
-                if (!isTrue)
-                    isTrue = true;
-                else
-                    return 0.0;
-            }
-        }
-    }
-    if (isTrue)
-        return 1.0;
     return 0.0;
 }
 
@@ -1560,23 +1248,6 @@ double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return 0.0;
 }
 
-
-double Memory::cnt(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return 0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    if (j2 >= nCols)
-        j2 = nCols - 1;
-    if (i2 >= nLines - getAppendedZeroes(j1))
-        i2 = nLines - 1 - getAppendedZeroes(j1);
-
-    return (double)((i2 - i1 + 1) * (j2 - j1 + 1));
-}
-
 double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1597,28 +1268,6 @@ double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return (_vLine.size() * _vCol.size()) - nInvalid;
 }
 
-
-double Memory::norm(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return NAN;
-    double dNorm = 0.0;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-                continue;
-            dNorm += dMemTable[i][j] * dMemTable[i][j];
-        }
-    }
-    return sqrt(dNorm);
-}
-
 double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1637,122 +1286,6 @@ double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
         }
     }
     return sqrt(dNorm);
-}
-
-
-double Memory::cmp(long long int i1, long long int i2, long long int j1, long long int j2, double dRef, int _nType)
-{
-    if (!bValidData)
-        return NAN;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    enum
-    {
-        RETURN_VALUE = 1,
-        RETURN_LE = 2,
-        RETURN_GE = 4,
-        RETURN_FIRST = 8
-    };
-
-    int nType = 0;
-
-    double dKeep = dRef;
-    int nKeep = -1;
-
-    if (_nType > 0)
-        nType = RETURN_GE;
-    else if (_nType < 0)
-        nType = RETURN_LE;
-
-    switch (intCast(fabs(_nType)))
-    {
-        case 2:
-            nType |= RETURN_VALUE;
-            break;
-        case 3:
-            nType |= RETURN_FIRST;
-            break;
-        case 4:
-            nType |= RETURN_FIRST | RETURN_VALUE;
-            break;
-    }
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (isnan(dMemTable[i][j]))
-                continue;
-
-            if (dMemTable[i][j] == dRef)
-            {
-                if (nType & RETURN_VALUE)
-                    return dMemTable[i][j];
-
-                if (i1 == i2)
-                    return j + 1;
-
-                return i + 1;
-            }
-            else if (nType & RETURN_GE && dMemTable[i][j] > dRef)
-            {
-                if (nType & RETURN_FIRST)
-                {
-                    if (nType & RETURN_VALUE)
-                        return dMemTable[i][j];
-
-                    if (i1 == i2)
-                        return j + 1;
-
-                    return i + 1;
-                }
-
-                if (nKeep == -1 || dMemTable[i][j] < dKeep)
-                {
-                    dKeep = dMemTable[i][j];
-                    if (i1 == i2)
-                        nKeep = j;
-                    else
-                        nKeep = i;
-                }
-                else
-                    continue;
-            }
-            else if (nType & RETURN_LE && dMemTable[i][j] < dRef)
-            {
-                if (nType & RETURN_FIRST)
-                {
-                    if (nType & RETURN_VALUE)
-                        return dMemTable[i][j];
-
-                    if (i1 == i2)
-                        return j + 1;
-
-                    return i + 1;
-                }
-
-                if (nKeep == -1 || dMemTable[i][j] > dKeep)
-                {
-                    dKeep = dMemTable[i][j];
-                    if (i1 == i2)
-                        nKeep = j;
-                    else
-                        nKeep = i;
-                }
-                else
-                    continue;
-            }
-        }
-    }
-
-    if (nKeep == -1)
-        return NAN;
-    else if (nType & RETURN_VALUE)
-        return dKeep;
-    else
-        return nKeep + 1;
 }
 
 double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int _nType)
@@ -1870,50 +1403,6 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
         return nKeep + 1;
 }
 
-
-double Memory::med(long long int i1, long long int i2, long long int j1, long long int j2)
-{
-    if (!bValidData)
-        return NAN;
-    Memory _cache;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (i1 != i2 && j1 != j2)
-            {
-                if (!isnan(dMemTable[i][j]))
-                    _cache.writeData((j - j1) + (i - i1) * (j2 - j1 + 1), 0, dMemTable[i][j]);
-            }
-            else if (i1 != i2)
-            {
-                if (!isnan(dMemTable[i][j]))
-                    _cache.writeData(i - i1, j - j1, dMemTable[i][j]);
-            }
-            else
-            {
-                if (!isnan(dMemTable[i][j]))
-                    _cache.writeData(j - j1, i - i1, dMemTable[i][j]);
-            }
-        }
-    }
-
-    _cache.sortElements(0, _cache.getLines(false) - 1, 0, _cache.getCols(false) - 1, "");
-
-    if (_cache.getLines(false) % 2)
-    {
-        return _cache.readMem(_cache.getLines(false) / 2, 0);
-    }
-    else
-    {
-        return (_cache.readMem(_cache.getLines(false) / 2, 0) + _cache.readMem(_cache.getLines(false) / 2 - 1, 0)) / 2.0;
-    }
-}
-
 double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1971,46 +1460,6 @@ double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
     delete[] dData;
 
     return dMed;
-}
-
-
-double Memory::pct(long long int i1, long long int i2, long long int j1, long long int j2, double dPct)
-{
-    if (!bValidData)
-        return NAN;
-    if (dPct >= 1 || dPct <= 0)
-        return NAN;
-    Memory _cache;
-
-    if (!evaluateIndices(i1, i2, j1, j2))
-        return NAN;
-
-    for (long long int i = i1; i <= i2; i++)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (i1 != i2 && j1 != j2)
-            {
-                if (!isnan(dMemTable[i][j]))
-                    _cache.writeData((j - j1) + (i - i1) * (j2 - j1 + 1), 0, dMemTable[i][j]);
-            }
-            else if (i1 != i2)
-            {
-                if (!isnan(dMemTable[i][j]))
-                    _cache.writeData(i - i1, j - j1, dMemTable[i][j]);
-            }
-            else
-            {
-                if (!isnan(dMemTable[i][j]))
-                    _cache.writeData(j - j1, i - i1, dMemTable[i][j]);
-            }
-        }
-    }
-
-    _cache.sortElements(0, _cache.getLines(false) - 1, 0, _cache.getCols(false) - 1, "");
-
-    return (1 - ((_cache.getLines(false) - 1) * dPct - floor((_cache.getLines(false) - 1) * dPct))) * _cache.readMem(floor((_cache.getLines(false) - 1) * dPct), 0)
-           + ((_cache.getLines(false) - 1) * dPct - floor((_cache.getLines(false) - 1) * dPct)) * _cache.readMem(floor((_cache.getLines(false) - 1) * dPct) + 1, 0);
 }
 
 double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct)
@@ -2175,8 +1624,8 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             if (j == _vCol.front())
                             {
                                 while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last()
-                                        && num(i + nOrder + 1, i + nOrder + 2, j, j + nOrder + 1) != cnt(i + nOrder + 1, i + nOrder + 2, j, j + nOrder + 1)
-                                        && num(i, i + nOrder + 2, j + nOrder + 1, j + nOrder + 2) != cnt(i, i + nOrder + 2, j + nOrder + 1, j + nOrder + 2))
+                                        && num(VectorIndex(i + nOrder + 1, i + nOrder + 2), VectorIndex(j, j + nOrder + 1)) != cnt(VectorIndex(i + nOrder + 1, i + nOrder + 2), VectorIndex(j, j + nOrder + 1))
+                                        && num(VectorIndex(i, i + nOrder + 2), VectorIndex(j + nOrder + 1, j + nOrder + 2)) != cnt(VectorIndex(i, i + nOrder + 2), VectorIndex(j + nOrder + 1, j + nOrder + 2)))
                                 {
                                     nOrder++;
                                 }
@@ -2184,7 +1633,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last())
                                 {
                                     RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(__i, __i + nOrder + 1, __j, __j + nOrder + 1));
+                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
 
                                     for (long long int _i = __i; _i <= __i + nOrder; _i++)
                                     {
@@ -2228,8 +1677,8 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 __j--;
 
                                 while (__i + nOrder + 1 <= _vLine.last() && __j >= _vCol.front() && __j + nOrder + 1 < _vCol.last()
-                                        && num(__i + nOrder + 1, __i + nOrder + 2, __j, __j + nOrder + 1) != cnt(__i + nOrder + 1, __i + nOrder + 2, __j, __j + nOrder + 1)
-                                        && num(__i, __i + nOrder + 2, __j, __j + 1) != cnt(__i, __i + nOrder + 2, __j, __j + 1))
+                                        && num(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 1)) != cnt(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 1))
+                                        && num(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j, __j + 1)) != cnt(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j, __j + 1)))
                                 {
                                     nOrder++;
 
@@ -2240,7 +1689,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 if (__i + nOrder + 1 <= _vLine.last() && __j >= _vCol.front() && __j + nOrder + 1 < _vCol.last())
                                 {
                                     RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(__i, __i + nOrder + 1, __j, __j + nOrder + 1));
+                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
 
                                     for (long long int _i = __i; _i <= __i + nOrder; _i++)
                                     {
@@ -2282,8 +1731,8 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             else
                             {
                                 while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last() && __j >= _vCol.front()
-                                        && num(__i + nOrder + 1, __i + nOrder + 2, __j, __j + nOrder + 2) != cnt(__i + nOrder + 1, __i + nOrder + 2, __j, __j + nOrder + 2)
-                                        && num(__i, __i + nOrder + 2, __j + nOrder + 1, __j + nOrder + 2) != cnt(__i, __i + nOrder + 2, __j + nOrder + 1, __j + nOrder + 2))
+                                        && num(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2)) != cnt(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2))
+                                        && num(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
                                 {
                                     if (__j > _vCol.front())
                                         nOrder += 2;
@@ -2297,7 +1746,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last() && __j >= _vCol.front())
                                 {
                                     RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(__i, __i + nOrder + 1, __j, __j + nOrder + 1));
+                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
 
                                     for (long long int _i = __i; _i <= __i + nOrder; _i++)
                                     {
@@ -2347,8 +1796,8 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 __j--;
 
                                 while (__i >= _vLine.front() && __j >= _vCol.front()
-                                        && num(__i, __i + 1, __j, __j + nOrder + 1) != cnt(__i, __i + 1, __j, __j + nOrder + 1)
-                                        && num(__i, __i + nOrder + 1, __j, __j + 1) != cnt(__i, __i + nOrder + 1, __j, __j + 1))
+                                        && num(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1)) != cnt(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1))
+                                        && num(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)) != cnt(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)))
                                 {
                                     if (__j > _vCol.front())
                                         __j--;
@@ -2362,7 +1811,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 if (__i >= _vLine.front() && __j >= _vCol.front())
                                 {
                                     RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(__i, __i + nOrder + 1, __j, __j + nOrder + 1));
+                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
 
                                     for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
                                     {
@@ -2404,8 +1853,8 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             else if (j == _vCol.front())
                             {
                                 while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last()
-                                        && num(__i + nOrder + 1, __i + nOrder + 2, __j, __j + nOrder + 2) != cnt(__i + nOrder + 1, __i + nOrder + 2, __j, __j + nOrder + 2)
-                                        && num(__i, __i + nOrder + 2, __j + nOrder + 1, __j + nOrder + 2) != cnt(__i, __i + nOrder + 2, __j + nOrder + 1, __j + nOrder + 2))
+                                        && num(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2)) != cnt(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2))
+                                        && num(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
                                 {
                                     if (__i > _vLine.front())
                                         __i--;
@@ -2416,7 +1865,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last())
                                 {
                                     RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(__i, __i + nOrder + 1, __j, __j + nOrder + 1));
+                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
 
                                     for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
                                     {
@@ -2458,8 +1907,8 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             else
                             {
                                 while (__i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last()
-                                        && num(__i, __i + 1, __j, __j + nOrder + 2) != cnt(__i, __i + 1, __j, __j + nOrder + 2)
-                                        && num(__i, __i + nOrder + 1, __j + nOrder + 1, __j + nOrder + 2) != cnt(__i, __i + nOrder + 1, __j + nOrder + 1, __j + nOrder + 2))
+                                        && num(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2))
+                                        && num(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
                                 {
                                     nOrder++;
 
@@ -2473,7 +1922,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 if (__i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last())
                                 {
                                     RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(__i, __i + nOrder + 1, __j, __j + nOrder));
+                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder)));
 
                                     for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
                                     {
@@ -2516,8 +1965,8 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                         else if (j == _vCol.front())
                         {
                             while (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last()
-                                    && num(__i, __i + 1, __j, __j + nOrder + 2) != cnt(__i, __i + 1, __j, __j + nOrder + 2)
-                                    && num(__i, __i + nOrder + 2, __j + nOrder + 1, __j + nOrder + 2) != cnt(__i, __i + nOrder + 2, __j + nOrder + 1, __j + nOrder + 2))
+                                    && num(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2))
+                                    && num(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
                             {
                                 if (__i > _vLine.front())
                                     nOrder += 2;
@@ -2531,7 +1980,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             if (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last())
                             {
                                 RetoqueRegion _region;
-                                prepareRegion(_region, nOrder + 2, med(__i, __i + nOrder + 1, __j, __j + nOrder + 1));
+                                prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
 
                                 for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
                                 {
@@ -2575,8 +2024,8 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             __j--;
 
                             while (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j >= _vCol.front()
-                                    && num(__i, __i + 1, __j, __j + nOrder + 1) != cnt(__i, __i + 1, __j, __j + nOrder + 1)
-                                    && num(__i, __i + nOrder + 1, __j, __j + 1) != cnt(__i, __i + nOrder + 1, __j, __j + 1))
+                                    && num(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1)) != cnt(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1))
+                                    && num(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)) != cnt(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)))
                             {
                                 nOrder++;
 
@@ -2590,7 +2039,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             if (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j - nOrder - 1 >= _vCol.front())
                             {
                                 RetoqueRegion _region;
-                                prepareRegion(_region, nOrder + 2, med(__i, __i + nOrder + 1, __j, __j + nOrder + 1));
+                                prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
 
                                 for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
                                 {
@@ -2679,7 +2128,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             continue;
 
                         RetoqueRegion _region;
-                        prepareRegion(_region, nOrder + 2, med(__i, __i + nOrder + 1, __j, __j + nOrder + 1));
+                        prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
 
                         for (long long int k = __i; k <= __i + nOrder + 1; k++)
                         {
@@ -2905,17 +2354,17 @@ bool Memory::retoqueRegion(long long int i1, long long int i2, long long int j1,
     {
         if (bUseAppendedZeroes)
         {
-            Memory::smooth(VectorIndex(i1, -2), VectorIndex(j1), nOrder, COLS);
-            Memory::smooth(VectorIndex(i1, -2), VectorIndex(j2), nOrder, COLS);
-            Memory::smooth(VectorIndex(i1), VectorIndex(j1, j2), nOrder, LINES);
-            Memory::smooth(VectorIndex(i2), VectorIndex(j1, j2), nOrder, LINES);
+            Memory::smooth(VectorIndex(i1, -2), VectorIndex(j1), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), COLS);
+            Memory::smooth(VectorIndex(i1, -2), VectorIndex(j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), COLS);
+            Memory::smooth(VectorIndex(i1), VectorIndex(j1, j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), LINES);
+            Memory::smooth(VectorIndex(i2), VectorIndex(j1, j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), LINES);
         }
         else
         {
-            Memory::smooth(VectorIndex(i1, i2), VectorIndex(j1), nOrder, COLS);
-            Memory::smooth(VectorIndex(i1, i2), VectorIndex(j2), nOrder, COLS);
-            Memory::smooth(VectorIndex(i1), VectorIndex(j1, j2), nOrder, LINES);
-            Memory::smooth(VectorIndex(i2), VectorIndex(j1, j2), nOrder, LINES);
+            Memory::smooth(VectorIndex(i1, i2), VectorIndex(j1), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), COLS);
+            Memory::smooth(VectorIndex(i1, i2), VectorIndex(j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), COLS);
+            Memory::smooth(VectorIndex(i1), VectorIndex(j1, j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), LINES);
+            Memory::smooth(VectorIndex(i2), VectorIndex(j1, j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), LINES);
         }
     }
 
@@ -2965,7 +2414,7 @@ bool Memory::retoqueRegion(long long int i1, long long int i2, long long int j1,
                                     && !isnan(dMemTable[i + nOrder + 1][j + nj])
                                     && !isnan(dMemTable[i][j + nj]))
                             {
-                                dMemTable[i + ni][j + nj] = 0.5 * med(i1, i2 + 1, j1, j2 + 1) + 0.25 * (
+                                dMemTable[i + ni][j + nj] = 0.5 * med(VectorIndex(i1, i2 + 1), VectorIndex(j1, j2 + 1)) + 0.25 * (
                                         dMemTable[i][j + nj] + (dMemTable[i + nOrder + 1][j + nj] - dMemTable[i][j + nj]) / (double)(nOrder + 1) * (double)ni
                                         + dMemTable[i + ni][j] + (dMemTable[i + ni][j + nOrder + 1] - dMemTable[i + ni][j]) / (double)(nOrder + 1) * (double)nj);
                             }
@@ -3146,8 +2595,105 @@ bool Memory::isValidDisc(VectorIndex _vLine, VectorIndex _vCol)
 }
 
 
-// This member function smoothes the data described by the passed coordinates using the order nOrder
-bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, unsigned int nOrder, AppDir Direction)
+/////////////////////////////////////////////////
+/// \brief This private member function realizes
+/// the application of a smoothing window to 1D
+/// data sets.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \param i size_t
+/// \param j size_t
+/// \param _filter NumeRe::Filter*
+/// \param smoothLines bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines)
+{
+    auto sizes = _filter->getWindowSize();
+
+    // Update the boundaries for the weighted linear filter
+    if (_filter->getType() == NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR)
+        static_cast<NumeRe::WeightedLinearFilter*>(_filter)->setBoundaries(readMem(_vLine.subidx(i-1*(!smoothLines),0), _vCol.subidx(j-1*smoothLines, 0)), readMem(_vLine.subidx(i+(sizes.first+1)*(!smoothLines),0), _vCol.subidx(j+(sizes.first+1)*smoothLines,0)));
+
+    double sum = 0.0;
+
+    // Apply the filter to the data
+    for (size_t n = 0; n < sizes.first; n++)
+    {
+        if (!_filter->isConvolution())
+            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines])));
+        else
+            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]));
+    }
+
+    // If the filter is a convolution, store the new value here
+    if (_filter->isConvolution())
+        writeData(_vLine[i + sizes.first/2*(!smoothLines)], _vCol[j + sizes.first/2*smoothLines], sum);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function realizes
+/// the application of a smoothing window to 2D
+/// data sets.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \param i size_t
+/// \param j size_t
+/// \param _filter NumeRe::Filter*
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter)
+{
+    auto sizes = _filter->getWindowSize();
+
+    // Update the boundaries for the weighted linear filter
+    if (_filter->getType() == NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR)
+    {
+        static_cast<NumeRe::WeightedLinearFilter*>(_filter)->setBoundaries(readMem(_vLine.subidx(i-1, sizes.first+2), _vCol.subidx(j-1, 0)),
+                                                                           readMem(_vLine.subidx(i-1, sizes.first+2), _vCol.subidx(j+sizes.second+1, 0)),
+                                                                           readMem(_vLine.subidx(i-1, 0), _vCol.subidx(j-1, sizes.second+2)),
+                                                                           readMem(_vLine.subidx(i+sizes.first+1, 0), _vCol.subidx(j-1, sizes.second+2)));
+    }
+
+    double sum = 0.0;
+
+    // Apply the filter to the data
+    for (size_t n = 0; n < sizes.first; n++)
+    {
+        for (size_t m = 0; m < sizes.second; m++)
+        {
+            if (!_filter->isConvolution())
+                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m])));
+            else
+                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]));
+        }
+    }
+
+    // If the filter is a convolution, store the new value here
+    if (_filter->isConvolution())
+        writeData(_vLine[i + sizes.first/2], _vCol[j + sizes.second/2], sum);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function smoothes the data
+/// described by the passed VectorIndex indices
+/// using the passed FilterSettings to construct
+/// the corresponding filter.
+///
+/// \param _vLine VectorIndex
+/// \param _vCol VectorIndex
+/// \param _settings NumeRe::FilterSettings
+/// \param Direction AppDir
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction)
 {
     bool bUseAppendedZeroes = false;
 
@@ -3174,7 +2720,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, unsigned int nOrder, 
         Direction = COLS;
 
     // Check the order
-    if (nOrder < 1 || (nOrder >= nLines && Direction == COLS) || (nOrder >= nCols && Direction == LINES) || ((nOrder >= nLines || nOrder >= nCols) && (Direction == ALL || Direction == GRID)))
+    if ((_settings.row >= nLines && Direction == COLS) || (_settings.col >= nCols && Direction == LINES) || ((_settings.row >= nLines || _settings.col >= nCols) && (Direction == ALL || Direction == GRID)))
         throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, "smooth", SyntaxError::invalid_position);
 
     // Get the appended zeros
@@ -3198,12 +2744,12 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, unsigned int nOrder, 
         // Will never return false
         if (bUseAppendedZeroes)
         {
-            if (!smooth(_vLine, VectorIndex(_vCol[0]), nOrder, COLS) || !smooth(_vLine, VectorIndex(_vCol[1]), nOrder, COLS))
+            if (!smooth(_vLine, VectorIndex(_vCol[0]), _settings, COLS) || !smooth(_vLine, VectorIndex(_vCol[1]), _settings, COLS))
                 return false;
         }
         else
         {
-            if (!smooth(_vLine, _vCol.subidx(0, 2), nOrder, COLS))
+            if (!smooth(_vLine, _vCol.subidx(0, 2), _settings, COLS))
                 return false;
         }
 
@@ -3214,154 +2760,84 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, unsigned int nOrder, 
     // framing points of the data section
     if (Direction == ALL || Direction == GRID)
     {
-        Memory::retoque(_vLine.subidx(0, 2), _vCol.subidx(0, 2), ALL);
+        // Retouch everything
+        Memory::retoque(_vLine, _vCol, ALL);
 
-        Memory::smooth(_vLine, VectorIndex(_vCol.front()), nOrder, COLS);
-        Memory::smooth(_vLine, VectorIndex(_vCol.last()), nOrder, COLS);
-        Memory::smooth(VectorIndex(_vLine.front()), _vCol, nOrder, LINES);
-        Memory::smooth(VectorIndex(_vLine.last()), _vCol, nOrder, LINES);
+        Memory::smooth(_vLine, VectorIndex(_vCol.front()), _settings, COLS);
+        Memory::smooth(_vLine, VectorIndex(_vCol.last()), _settings, COLS);
+        Memory::smooth(VectorIndex(_vLine.front()), _vCol, _settings, LINES);
+        Memory::smooth(VectorIndex(_vLine.last()), _vCol, _settings, LINES);
+
+        if (_settings.row == 1u && _settings.col != 1u)
+            _settings.row = _settings.col;
+        else if (_settings.row != 1u && _settings.col == 1u)
+            _settings.col = _settings.row;
     }
+    else
+    {
+        _settings.row = std::max(_settings.row, _settings.col);
+        _settings.col = 1u;
+    }
+
+    if (isnan(_settings.alpha))
+        _settings.alpha = 1.0;
 
     // Apply the actual smoothing of the data
     if (Direction == LINES)
     {
+        // Pad the beginning and the of the vector with multiple copies
+        _vCol.prepend(vector<long long int>(_settings.row/2+1, _vCol.front()));
+        _vCol.append(vector<long long int>(_settings.row/2+1, _vCol.last()));
+
+        // Create a filter from the filter settings
+        std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
+
         // Smooth the lines
         for (size_t i = 0; i < _vLine.size(); i++)
         {
-            for (size_t j = 1; j < _vCol.size() - nOrder; j++)
+            for (size_t j = 1; j < _vCol.size() - _filterPtr.get()->getWindowSize().first-1; j++)
             {
-                for (unsigned int n = 0; n < nOrder; n++)
-                {
-                    // Smooth only, if the boundaries and the current point are real values.
-                    // Smooth by halving the distance to the average line between the boundaries
-                    if (!isnan(readMem(_vLine[i], _vCol[j-1])) && !isnan(readMem(_vLine[i], _vCol[j+nOrder])) && !isnan(readMem(_vLine[i], _vCol[j+n])))
-                        writeData(_vLine[i], _vCol[j+n], 0.5 * readMem(_vLine[i], _vCol[j+n])
-                            + 0.5 * (readMem(_vLine[i], _vCol[j-1]) + (readMem(_vLine[i], _vCol[j+nOrder]) - readMem(_vLine[i], _vCol[j-1])) / (double)(nOrder + 1) * (double)(n + 1)));
-                }
+                smoothingWindow1D(_vLine, _vCol, i, j, _filterPtr.get(), true);
             }
         }
     }
     else if (Direction == COLS)
     {
+        // Pad the beginning and end of the vector with multiple copies
+        _vLine.prepend(vector<long long int>(_settings.row/2+1, _vLine.front()));
+        _vLine.append(vector<long long int>(_settings.row/2+1, _vLine.last()));
+
+        // Create a filter from the settings
+        std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
+
         // Smooth the columns
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            for (size_t i = 1; i < _vLine.size() - nOrder; i++)
+            for (size_t i = 1; i < _vLine.size() - _filterPtr.get()->getWindowSize().first-1; i++)
             {
-                for (unsigned int n = 0; n < nOrder; n++)
-                {
-                    // Smooth only, if the boundaries and the current point are real values.
-                    // Smooth by halving the distance to the average line between the boundaries
-                    if (!isnan(readMem(_vLine[i-1], _vCol[j])) && !isnan(readMem(_vLine[i+nOrder], _vCol[j])) && !isnan(readMem(_vLine[i+n], _vCol[j])))
-                        writeData(_vLine[i+n], _vCol[j], 0.5 * readMem(_vLine[i+n], _vCol[j])
-                            + 0.5 * (readMem(_vLine[i-1], _vCol[j]) + (readMem(_vLine[i+nOrder], _vCol[j]) - readMem(_vLine[i-1], _vCol[j])) / (double)(nOrder + 1) * (double)(n + 1)));
-                }
+                smoothingWindow1D(_vLine, _vCol, i, j, _filterPtr.get(), false);
             }
         }
     }
     else if ((Direction == ALL || Direction == GRID) && _vLine.size() > 2 && _vCol.size() > 2)
     {
+        // Pad the beginning and end of both vectors with multiple copies
+        _vLine.prepend(vector<long long int>(_settings.row/2+1, _vLine.front()));
+        _vLine.append(vector<long long int>(_settings.row/2+1, _vLine.last()));
+        _vCol.prepend(vector<long long int>(_settings.col/2+1, _vCol.front()));
+        _vCol.append(vector<long long int>(_settings.col/2+1, _vCol.last()));
+
+        // Create a filter from the settings
+        std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
+
         // Smooth the data in two dimensions, if that is reasonable
         // Go through every point
-        for (size_t j = 0; j < _vCol.size() - nOrder - 1; j++)
+        for (size_t j = 1; j < _vCol.size() - _filterPtr.get()->getWindowSize().second-1; j++)
         {
-            for (size_t i = 0; i < _vLine.size() - nOrder - 1; i++)
+            for (size_t i = 1; i < _vLine.size() - _filterPtr.get()->getWindowSize().first-1; i++)
             {
-                // Only smooth the data points more left and further down in the data grid
-                for (unsigned int nj = 1; nj <= nOrder; nj++)
-                {
-                    for (unsigned int ni = 1; ni <= nOrder; ni++)
-                    {
-                        if (nOrder == 1)
-                        {
-                            // Simple case: nOrder == c1
-                            if (!isnan(readMem(_vLine[i+ni], _vCol[j+nOrder+1]))
-                                    && !isnan(readMem(_vLine[i+ni], _vCol[j]))
-                                    && !isnan(readMem(_vLine[i+nOrder+1], _vCol[j+nj]))
-                                    && !isnan(readMem(_vLine[i], _vCol[j+nj])))
-                            {
-                                // Smooth only, if the boundaries and the current point are real values.
-                                // Smooth by halving the distance to the average line between the boundaries
-                                if (!isnan(readMem(_vLine[i+ni], _vCol[j+nj])))
-                                    writeData(_vLine[i+ni], _vCol[j+nj], 0.5 * readMem(_vLine[i+ni], _vCol[j+nj]) + 0.25 * (
-                                            readMem(_vLine[i], _vCol[j+nj]) + (readMem(_vLine[i+nOrder+1], _vCol[j+nj]) - readMem(_vLine[i], _vCol[j+nj])) / (double)(nOrder + 1) * (double)ni
-                                            + readMem(_vLine[i+ni], _vCol[j]) + (readMem(_vLine[i+ni], _vCol[j+nOrder+1]) - readMem(_vLine[i+ni], _vCol[j])) / (double)(nOrder + 1) * (double)nj));
-                                else
-                                {
-                                    writeData(_vLine[i+ni], _vCol[j+nj], 0.5 * (
-                                            readMem(_vLine[i], _vCol[j+nj]) + (readMem(_vLine[i+nOrder+1], _vCol[j+nj]) - readMem(_vLine[i], _vCol[j+nj])) / (double)(nOrder + 1) * (double)ni
-                                            + readMem(_vLine[i+ni], _vCol[j]) + (readMem(_vLine[i+ni], _vCol[j+nOrder+1]) - readMem(_vLine[i+ni], _vCol[j])) / (double)(nOrder + 1) * (double)nj));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // More complicated case
-                            // evaluate first, whether the current data section is surrounded by valid values
-                            if (isValidDisc(_vLine.subidx(i, nOrder+1), _vCol.subidx(j, nOrder+1)))
-                            {
-                                // cross hair: summarize the linearily interpolated values along the rows and cols at the desired position
-                                // Summarize implies that the value is not averaged yet
-                                double dAverage = readMem(_vLine[i], _vCol[j+nj])
-                                                  + (readMem(_vLine[i+nOrder+1], _vCol[j+nj]) - readMem(_vLine[i], _vCol[j+nj])) / (double)(nOrder + 1) * (double)ni
-                                                  + readMem(_vLine[i+ni], _vCol[j])
-                                                  + (readMem(_vLine[i+ni], _vCol[j+nOrder+1]) - readMem(_vLine[i+ni], _vCol[j])) / (double)(nOrder + 1) * (double)nj;
-
-                                // Additional weighting because are the nearest neighbours
-                                dAverage *= 2.0;
-
-                                // Calculate along columns
-                                // Find the diagonal neighbours and interpolate the value
-                                if (ni >= nj)
-                                {
-                                    dAverage += readMem(_vLine[i], _vCol[j+(ni-nj)])
-                                                + (readMem(_vLine[i+nOrder+1-(ni-nj)], _vCol[j+nOrder+1]) - readMem(_vLine[i], _vCol[j+(ni-nj)])) / (double)(nOrder - (ni - nj) + 1) * (double)ni;
-                                }
-                                else
-                                {
-                                    dAverage += readMem(_vLine[i], _vCol[j+(nj-ni)])
-                                                + (readMem(_vLine[i+nOrder+1], _vCol[j+nOrder+1-(nj-ni)]) - readMem(_vLine[i+(nj-ni)], _vCol[j])) / (double)(nOrder - (nj - ni) + 1) * (double)ni;
-                                }
-
-                                // calculate along rows
-                                // Find the diagonal neighbours and interpolate the value
-                                if (ni + nj <= nOrder + 1)
-                                {
-                                    dAverage += readMem(_vLine[i+ni+nj], _vCol[j])
-                                                + (readMem(_vLine[i], _vCol[j+ni+nj]) - readMem(_vLine[i+ni+nj], _vCol[j])) / (double)(ni + nj) * (double)(nj);
-                                }
-                                else
-                                {
-                                    dAverage += readMem(_vLine[i+nOrder+1], _vCol[j+(ni+nj-nOrder-1)])
-                                                + (readMem(_vLine[i+(ni+nj-nOrder-1)], _vCol[j+nOrder+1]) - readMem(_vLine[i+nOrder+1], _vCol[j+(ni+nj-nOrder-1)]))
-                                                / (double)(2 * nOrder + 2 - (ni + nj)) * (double)(nj - (ni + nj - nOrder - 1));
-                                }
-
-                                // Restore the desired average
-                                dAverage /= 6.0;
-
-                                // Apply the actual smoothing
-                                if (!isnan(readMem(_vLine[i+ni], _vCol[j+nj])))
-                                {
-                                    writeData(_vLine[i+ni], _vCol[j+nj],
-                                                    0.5 * (1.0 - 0.5 * hypot(ni - (nOrder) / 2.0, nj - (nOrder) / 2.0) / (M_SQRT2 * ((nOrder) / 2.0)))
-                                                    * readMem(_vLine[i+ni], _vCol[j+nj])
-                                                    + 0.5 * (1.0 + 0.5 * hypot(ni - (nOrder) / 2.0, nj - (nOrder) / 2.0) / (M_SQRT2 * (nOrder / 2.0))) * dAverage);
-
-                                }
-                                else
-                                {
-                                    writeData(_vLine[i+ni], _vCol[j+nj], dAverage);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                i += nOrder / 2;
+                smoothingWindow2D(_vLine, _vCol, i, j, _filterPtr.get());
             }
-
-            j += nOrder / 2;
         }
     }
 

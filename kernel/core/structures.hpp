@@ -28,18 +28,29 @@ using namespace std;
 
 long long int intCast(double);
 
-// This class abstracts all the index logics, i.e.
-// the logical differences between single indices
-// and indices described by a vector
+
+/////////////////////////////////////////////////
+/// \brief This class abstracts all the index
+/// logics, i.e. the logical differences between
+/// single indices and indices described by a
+/// vector.
+/////////////////////////////////////////////////
 class VectorIndex
 {
     private:
         vector<long long int> vStorage;
         bool expand;
 
-        // This private memnber function calculates the index
-        // corresponding to the selected position n. Otherwise
-        // simply return the nth vector index
+        /////////////////////////////////////////////////
+        /// \brief This private memnber function
+        /// calculates the index corresponding to the
+        /// selected position n. Otherwise simply return
+        /// the n-th vector index.
+        ///
+        /// \param n size_t
+        /// \return long long int
+        ///
+        /////////////////////////////////////////////////
         inline long long int getIndex(size_t n) const
         {
             // If single indices are used, they will be expanded
@@ -79,23 +90,39 @@ class VectorIndex
             STRING = -3
         };
 
-        // Default constructor
+        /////////////////////////////////////////////////
+        /// \brief Default constructor.
+        ///
+        ///
+        /////////////////////////////////////////////////
         VectorIndex()
         {
             vStorage.assign({INVALID, INVALID});
             expand = true;
         }
 
-        // Copy constructor
+        /////////////////////////////////////////////////
+        /// \brief Copy constructor.
+        ///
+        /// \param vindex const VectorIndex&
+        ///
+        /////////////////////////////////////////////////
         VectorIndex(const VectorIndex& vindex)
         {
             vStorage = vindex.vStorage;
             expand = vindex.expand;
         }
 
-        // Constructor from an array of doubles. The third
-        // argument is used only to avoid misinterpretation of
-        // the compiler
+        /////////////////////////////////////////////////
+        /// \brief Constructor from an array of doubles.
+        /// The third argument is used only to avoid
+        /// misinterpretation from the compiler.
+        ///
+        /// \param indices const double*
+        /// \param nResults int
+        /// \param unused int
+        ///
+        /////////////////////////////////////////////////
         VectorIndex(const double* indices, int nResults, int unused)
         {
             // Store the indices and convert them to integers
@@ -109,14 +136,25 @@ class VectorIndex
             expand = false;
         }
 
-        // Constructor for single indices
+        /////////////////////////////////////////////////
+        /// \brief Constructor for single indices.
+        ///
+        /// \param nStart long longint
+        /// \param nEnd long long int nEnd
+        ///
+        /////////////////////////////////////////////////
         VectorIndex(long long int nStart, long long int nEnd = INVALID)
         {
             vStorage.assign({nStart, nEnd});
             expand = true;
         }
 
-        // Constructor from a STL vector
+        /////////////////////////////////////////////////
+        /// \brief Constructor from a STL vector.
+        ///
+        /// \param vIndex const vector<long long int>&
+        ///
+        /////////////////////////////////////////////////
         VectorIndex(const vector<long long int>& vIndex)
         {
             if (vIndex.size())
@@ -131,15 +169,29 @@ class VectorIndex
             }
         }
 
-        // Assignment operator overload for the same type
-        VectorIndex& operator=(const VectorIndex& vindex)
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator overload for the
+        /// same type.
+        ///
+        /// \param vIndex const VectorIndex&
+        /// \return VectorIndex&
+        ///
+        /////////////////////////////////////////////////
+        VectorIndex& operator=(const VectorIndex& vIndex)
         {
-            vStorage = vindex.vStorage;
-            expand = vindex.expand;
+            vStorage = vIndex.vStorage;
+            expand = vIndex.expand;
             return *this;
         }
 
-        // Assignment operator overload for STL vectors
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator overload for STL
+        /// vectors.
+        ///
+        /// \param vIndex const vector<long long int>&
+        /// \return VectorIndex&
+        ///
+        /////////////////////////////////////////////////
         VectorIndex& operator=(const vector<long long int>& vIndex)
         {
             if (vIndex.size())
@@ -151,37 +203,60 @@ class VectorIndex
             return *this;
         }
 
-        // This member function returns a subset of the
-        // internal stored index just like the substr()
-        // member function. Single indices are not expanded
-        // therefore the storage space used for the newly
-        // created index won't be larger than the current one
+        /////////////////////////////////////////////////
+        /// \brief This member function returns a subset
+        /// of the internal stored index just like the
+        /// std::string::substr() member function.
+        ///
+        /// Single indices are not expanded therefore
+        /// the storage space used for the newly created
+        /// index won't be larger than the current one.
+        /// However, already expanded indices will result
+        /// in an expanded subindex vector.
+        ///
+        /// \param pos size_t
+        /// \param nLen size_t
+        /// \return VectorIndex
+        ///
+        /////////////////////////////////////////////////
         VectorIndex subidx(size_t pos, size_t nLen = string::npos) const
         {
             // Consider some strange border cases
             if (pos >= size())
                 return VectorIndex();
 
-            if (nLen >= size())
+            if (nLen > size() - pos)
                 nLen = size() - pos;
 
             // Return a single index
             if (!nLen)
-            {
                 return VectorIndex(getIndex(pos));
-            }
 
             // Calculate the starting and ending indices for
-            // single indices
-            return VectorIndex(getIndex(pos), getIndex(pos+nLen-1));
+            // single indices. The last index is decremented,
+            // because the first and the last index already
+            // count as two indices.
+            if (expand)
+                return VectorIndex(getIndex(pos), getIndex(pos+nLen-1));
+
+            // Return a copy of the internal storage, if it is already
+            // expanded. The last index is not decremented, because
+            // terminating iterator always points after the last
+            // element in the list
+            return VectorIndex(vector<long long int>(vStorage.begin()+pos, vStorage.begin()+pos+nLen));
         }
 
-        // This member function linearizes the contents
-        // of a vector-described index set. The vectorial
-        // information is lost after using this function and
-        // the index will be described by single indices
-        // constructed from the minimal and maximal index
-        // values
+        /////////////////////////////////////////////////
+        /// \brief This member function linearizes the
+        /// contents of a vector-described index set. The
+        /// vectorial information is lost after using this
+        /// function and the index will be described by
+        /// single indices constructed from the minimal
+        /// and maximal index values.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         void linearize()
         {
             if (!expand)
@@ -195,18 +270,31 @@ class VectorIndex
             }
         }
 
-        // Overload for the access operator. Redirects the
-        // control to the private getIndex() member function
+        /////////////////////////////////////////////////
+        /// \brief Overload for the access operator.
+        /// Redirects the control to the private
+        /// getIndex() member function.
+        ///
+        /// \param n size_t
+        /// \return long long int
+        ///
+        /////////////////////////////////////////////////
         inline long long int operator[](size_t n) const
         {
             return getIndex(n);
         }
 
-        // This member function returns the size of the
-        // indices stored in this class. It will return
-        // either the size of the stored vectorial indices
-        // or the calculated size for expanded single
-        // indices
+        /////////////////////////////////////////////////
+        /// \brief This member function returns the size
+        /// of the indices stored in this class.
+        ///
+        /// It will return either the size of the stored
+        /// vectorial indices or the calculated size for
+        /// expanded single indices.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
         size_t size() const
         {
             if (vStorage.size() == 2 && !isValid())
@@ -221,11 +309,18 @@ class VectorIndex
                 return vStorage.size();
         }
 
-        // This member function returns the number of
-        // nodes describing the index set, which is
-        // stored internally. This is used in cases,
-        // where the indices will be interpreted slightly
-        // different than in the usual cases
+        /////////////////////////////////////////////////
+        /// \brief This member function returns the
+        /// number of nodes describing the index set,
+        /// which is stored internally.
+        ///
+        /// This is used in cases, where the indices will
+        /// be interpreted slightly different than in the
+        /// usual cases.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
         size_t numberOfNodes() const
         {
             if (!isValid())
@@ -236,8 +331,17 @@ class VectorIndex
                 return vStorage.size();
         }
 
-        // This member function determines, whether
-        // the single indices are in the correct order
+        /////////////////////////////////////////////////
+        /// \brief This member function determines,
+        /// whether the single indices are in the correct
+        /// order.
+        ///
+        /// This function won't return correct results for
+        /// already expanded vectors.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         bool isOrdered() const
         {
             if (isValid())
@@ -246,18 +350,31 @@ class VectorIndex
             return false;
         }
 
-        // This member function determines, whether
-        // the indices are calculated or actual
-        // vectorial indices
+        /////////////////////////////////////////////////
+        /// \brief This member function determines,
+        /// whether the indices are calculated or actual
+        /// vectorial indices.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         bool isExpanded() const
         {
             return expand;
         }
 
-        // This member function can be used to set the
-        // index at a special position. This will expand
-        // the internal storage and switch from single
-        // indices to vectorial ones automatically
+        /////////////////////////////////////////////////
+        /// \brief This member function can be used to
+        /// set the index at a special position. This
+        /// will expand the internal storage and switch
+        /// from single indices to vectorial ones
+        /// automatically.
+        ///
+        /// \param nthIndex size_t
+        /// \param nVal long long int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         void setIndex(size_t nthIndex, long long int nVal)
         {
             // If the size is large enough, simply store
@@ -284,10 +401,117 @@ class VectorIndex
             }
         }
 
-        // This member function returns a STL vector, which
-        // will resemble the indices stored internally. This
-        // includes that the single indices are expanded in
-        // the returned vector
+        /////////////////////////////////////////////////
+        /// \brief This function will append the passed
+        /// index value at the end of the index vector.
+        /// The internal storage is expanded first, if
+        /// necessary.
+        ///
+        /// \param nVal long long int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void push_back(long long int nVal)
+        {
+            if (expand)
+            {
+                vStorage = getVector();
+                expand = false;
+            }
+
+            vStorage.push_back(nVal);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This function will append the passed
+        /// vector to the end of the index vector. The
+        /// internal storage is expanded first, if
+        /// necessary.
+        ///
+        /// \param vVector const vector<long long int>&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void append(const vector<long long int>& vVector)
+        {
+            if (expand)
+            {
+                vStorage = getVector();
+                expand = false;
+            }
+
+            vStorage.insert(vStorage.end(), vVector.begin(), vVector.end());
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This function will append the passed
+        /// VectorIndex to the end of the index vector.
+        /// The internal storage is expanded first, if
+        /// necessary. This function is an overload for
+        /// convenience.
+        ///
+        /// \param vIndex const VectorIndex&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void append(const VectorIndex& vIndex)
+        {
+            if (vIndex.expand)
+                append(vIndex.getVector());
+            else
+                append(vIndex.vStorage);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This function will prepend the passed
+        /// vector before the beginning of the index
+        /// vector. The internal storage is expanded
+        /// first, if necessary.
+        ///
+        /// \param vVector const vector<long long int>&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void prepend(const vector<long long int>& vVector)
+        {
+            if (expand)
+            {
+                vStorage = getVector();
+                expand = false;
+            }
+
+            vStorage.insert(vStorage.begin(), vVector.begin(), vVector.end());
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This function will append the passed
+        /// VectorIndex before the beginning of the index
+        /// vector. The internal storage is expanded
+        /// first, if necessary. This function is an
+        /// overload for convenience.
+        ///
+        /// \param vIndex const VectorIndex&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void prepend(const VectorIndex& vIndex)
+        {
+            if (vIndex.expand)
+                prepend(vIndex.getVector());
+            else
+                prepend(vIndex.vStorage);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function returns a STL
+        /// vector, which will resemble the indices
+        /// stored internally. This includes that the
+        /// single indices are expanded in the returned
+        /// vector.
+        ///
+        /// \return vector<long long int>
+        ///
+        /////////////////////////////////////////////////
         vector<long long int> getVector() const
         {
             // Expand the single indices stored internally
@@ -307,8 +531,14 @@ class VectorIndex
             return vStorage;
         }
 
-        // This function calculates the maximal index value
-        // obtained from the values stored internally
+        /////////////////////////////////////////////////
+        /// \brief This function calculates the maximal
+        /// index value obtained from the values stored
+        /// internally.
+        ///
+        /// \return long long int
+        ///
+        /////////////////////////////////////////////////
         long long int max() const
         {
             if (expand)
@@ -325,8 +555,14 @@ class VectorIndex
             return nMax;
         }
 
-        // This member function calculates the minimal index
-        // value obtained from the values stored internally
+        /////////////////////////////////////////////////
+        /// \brief This member function calculates the
+        /// minimal index value obtained from the values
+        /// stored internally.
+        ///
+        /// \return long long int
+        ///
+        /////////////////////////////////////////////////
         long long int min() const
         {
             if (expand)
@@ -343,58 +579,105 @@ class VectorIndex
             return nMin;
         }
 
-        // This member function determines, whether the
-        // internal index set is valid
+        /////////////////////////////////////////////////
+        /// \brief This member function determines,
+        /// whether the internal index set is valid.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         inline bool isValid() const
         {
             return vStorage.front() != INVALID;
         }
 
-        // This member function determines, whether the
-        // internal index set has an open end
+        /////////////////////////////////////////////////
+        /// \brief This member function determines,
+        /// whether the internal index set has an open
+        /// end.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         inline bool isOpenEnd() const
         {
             return vStorage.back() == OPEN_END;
         }
 
-        // This member function determines, whether the
-        // internal index set referres to the table headlines
+        /////////////////////////////////////////////////
+        /// \brief This member function determines,
+        /// whether the internal index set referres to
+        /// the table headlines.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         inline bool isString() const
         {
             return vStorage.front() == STRING || vStorage.back() == STRING;
         }
 
-        // This member function returns a reference to
-        // the first index value stored internally
+        /////////////////////////////////////////////////
+        /// \brief This member function returns a
+        /// reference to the first index value stored
+        /// internally.
+        ///
+        /// \return long long int&
+        ///
+        /////////////////////////////////////////////////
         long long int& front()
         {
             return vStorage.front();
         }
 
-        // This member function returns a reference to
-        // the final index value stored internally
+        /////////////////////////////////////////////////
+        /// \brief This member function returns a
+        /// reference to the final index value stored
+        /// internally.
+        ///
+        /// \return long long int&
+        ///
+        /////////////////////////////////////////////////
         long long int& back()
         {
             return vStorage.back();
         }
 
-        // This member function returns a const reference to
-        // the first index value stored internally
+        /////////////////////////////////////////////////
+        /// \brief This member function returns a const
+        /// reference to the first index value stored
+        /// internally.
+        ///
+        /// \return const long long int&
+        ///
+        /////////////////////////////////////////////////
         const long long int& front() const
         {
             return vStorage.front();
         }
 
-        // This member function returns a const reference to
-        // the final index value stored internally
+        /////////////////////////////////////////////////
+        /// \brief This member function returns a const
+        /// reference to the final index value stored
+        /// internally.
+        ///
+        /// \return const long long int&
+        ///
+        /////////////////////////////////////////////////
         const long long int& back() const
         {
             return vStorage.back();
         }
 
-        // This member function returns the last index value,
-        // which can be reached by the values stored internally
-        // (this is most probably different from the final value)
+        /////////////////////////////////////////////////
+        /// \brief This member function returns the last
+        /// index value, which can be reached by the
+        /// values stored internally (this is most
+        /// probably different from the final value).
+        ///
+        /// \return long long int
+        ///
+        /////////////////////////////////////////////////
         long long int last() const
         {
             if (expand && vStorage.back() == INVALID)
@@ -403,10 +686,17 @@ class VectorIndex
             return vStorage.back();
         }
 
-        // This member function can be used to force the indices
-        // stored internally to be in a defined interval.
-        // If the values are already in a smaller interval,
-        // nothing happens.
+        /////////////////////////////////////////////////
+        /// \brief This member function can be used to
+        /// force the indices stored internally to be in
+        /// a defined interval. If the values are already
+        /// in a smaller interval, nothing happens.
+        ///
+        /// \param nMin long long int
+        /// \param nMax long long int
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         void setRange(long long int nMin, long long int nMax)
         {
             // Change the order of the minimal and
@@ -444,7 +734,6 @@ class VectorIndex
 };
 
 
-
 /////////////////////////////////////////////////
 /// \brief This class extends the std::vector for endlessness.
 ///
@@ -455,15 +744,43 @@ template<class T>
 class EndlessVector : public vector<T>
 {
     public:
+        /////////////////////////////////////////////////
+        /// \brief Default constructor
+        /////////////////////////////////////////////////
         EndlessVector() : vector<T>() {}
+
+        /////////////////////////////////////////////////
+        /// \brief Copy constructor from same.
+        ///
+        /// \param vec const EndlessVector&
+        ///
+        /////////////////////////////////////////////////
         EndlessVector(const EndlessVector& vec) : vector<T>(vec) {}
 
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator overload from
+        /// same.
+        ///
+        /// \param vec const EndlessVector&
+        /// \return EndlessVector&
+        ///
+        /////////////////////////////////////////////////
         EndlessVector& operator=(const EndlessVector& vec)
         {
             vector<T>::operator=(vec);
             return *this;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Access operator overload. Will return
+        /// default constructed instances of the template
+        /// type T, if the position n points to a
+        /// position beyond the internal array.
+        ///
+        /// \param n size_t
+        /// \return T
+        ///
+        /////////////////////////////////////////////////
         T operator[](size_t n)
         {
             if (n < vector<T>::size())
@@ -473,7 +790,16 @@ class EndlessVector : public vector<T>
         }
 };
 
-// Structure for the indices
+
+/////////////////////////////////////////////////
+/// \brief This structure is central for managing
+/// the indices of a table or cluster read or
+/// write data access. The contained indices are
+/// of the VectorIndex type. The structure also
+/// contains a precompiled data access equation,
+/// which is used to speed up the data access in
+/// loops.
+/////////////////////////////////////////////////
 struct Indices
 {
     VectorIndex row;

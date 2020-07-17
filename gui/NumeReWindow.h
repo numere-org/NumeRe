@@ -237,7 +237,7 @@ class NumeReWindow : public wxFrame
         void InitializeProgramOptions();
         void prepareSession();
 
-        void CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileType);
+        int CopyEditorSettings(FileFilterType _fileType);
 
         void OnMenuEvent(wxCommandEvent &event);
         void OpenFileByType(const wxFileName& filename);

@@ -342,6 +342,10 @@ namespace mu
 						}
 						break;
 
+                    default:
+                        break;
+                        // Nothing, just avoiding warnings
+
 				} // switch a_Oprt
 			}
 		}

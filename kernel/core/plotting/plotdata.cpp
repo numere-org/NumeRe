@@ -575,9 +575,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         bDrawPoints = true;
     if (findParameter(sCmd, "nopoints") && (nType == ALL || nType & LOCAL))
         bDrawPoints = false;
-    if (findParameter(sCmd, "open") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "open") && (nType == ALL || nType & SUPERGLOBAL))
         bOpenImage = true;
-    if (findParameter(sCmd, "noopen") && (nType == ALL || nType & GLOBAL))
+    if (findParameter(sCmd, "noopen") && (nType == ALL || nType & SUPERGLOBAL))
         bOpenImage = false;
     if (findParameter(sCmd, "interpolate") && (nType == ALL || nType & LOCAL))
         bInterpolate = true;

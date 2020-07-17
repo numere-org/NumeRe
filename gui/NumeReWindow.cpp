@@ -2877,13 +2877,14 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
     #endif
 
         edit->SetText("\r\n");
-        CopyEditorSettings(edit, _filetype);
+        int settings = CopyEditorSettings(_filetype);
 
         m_currentEd = edit;
 
         m_currentEd->EmptyUndoBuffer();
         m_currentPage = m_book->GetPageCount();
         m_book->AddPage (edit, noname, true);
+        m_currentEd->ToggleSettings(settings);
     }
     else if (_filetype == FILE_DIFF)
     {
@@ -2897,7 +2898,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         ProjectInfo* singleFileProject = new ProjectInfo();
         NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
         edit->SetText("DIFF");
-        CopyEditorSettings(edit, _filetype);
+        int settings = CopyEditorSettings(_filetype);
 
         m_currentEd = edit;
 
@@ -2909,6 +2910,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         // Add a new tab for the editor
         m_book->AddPage (edit, filename, true);
+        m_currentEd->ToggleSettings(settings);
     }
     else
     {
@@ -3032,7 +3034,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
         edit->SetText(template_file);
 
-        CopyEditorSettings(edit, _filetype);
+        int settings = CopyEditorSettings(_filetype);
 
         m_currentEd = edit;
 
@@ -3055,6 +3057,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
 
         // Add a new tab for the editor
         m_book->AddPage (edit, filename, true);
+        m_currentEd->ToggleSettings(settings);
     }
 }
 
@@ -3080,17 +3083,17 @@ void NumeReWindow::ShowRevision(const wxString& revisionName, const wxString& re
 
 
 /////////////////////////////////////////////////
-/// \brief This member function copies the settings
-/// from the current editor to the passed editor.
+/// \brief This member function returns the settings
+/// from the current editor for the passed
+/// FileFilterType.
 ///
-/// \param edit NumeReEditor*
 /// \param _fileType FileFilterType
-/// \return void
+/// \return int
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileType)
+int NumeReWindow::CopyEditorSettings(FileFilterType _fileType)
 {
-    if (m_currentEd && edit && !m_loadingFilesDuringStartup)
+    if (m_currentEd && !m_loadingFilesDuringStartup)
     {
         int settings = m_currentEd->getSettings();
 
@@ -3108,8 +3111,10 @@ void NumeReWindow::CopyEditorSettings(NumeReEditor* edit, FileFilterType _fileTy
                 settings &= ~NumeReEditor::SETTING_USETXTADV;
         }
 
-        edit->ToggleSettings(settings);
+        return settings;
     }
+
+    return 0;
 }
 
 
@@ -3698,13 +3703,9 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
     {
         openImage(filename);
         CallAfter(&NumeReWindow::setViewerFocus);
-        return;
     }
     else if (filename.GetExt() == "pdf")
-    {
         openPDF(filename);
-        return;
-    }
     else
     {
         wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
@@ -3755,18 +3756,14 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
         int pageNr = GetPageNum(newFileName);
 
         if (!GetFileContents(fnames[n], fileContents, fileNameNoPath))
-        {
             return;
-        }
 
         if (nOpenFileFlag & OPENFILE_BLACKLIST_ADD)
-        {
             addToReloadBlackList(fnames[n]);
-        }
+
         if (nOpenFileFlag & OPENFILE_BLACKLIST_REMOVE)
-        {
             removeFromReloadBlackList(fnames[n]);
-        }
+
         // filename is already open
         if (pageNr >= 0)
         {
@@ -3774,7 +3771,6 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             {
                 PageHasChanged(pageNr);
                 m_currentEd->FocusOnLine(nLine, true);
-                //m_currentEd->GotoLine(nLine);
             }
             else
             {
@@ -3785,11 +3781,10 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                         int modifiedFileResult = HandleModifiedFile(pageNr, MODIFIEDFILE_RELOAD);
 
                         // user canceled the open request, skip the reload
-                        if(modifiedFileResult == wxCANCEL)
-                        {
+                        if (modifiedFileResult == wxCANCEL)
                             continue;
-                        }
                     }
+
                     m_setSelection = true;
                     m_book->SetSelection (pageNr);
                     m_setSelection = false;
@@ -3805,8 +3800,8 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
         else
         {
             ProjectInfo* proj;
-
             FileFilterType _fileType;
+
             if (fnames[n].rfind(".nscr") != string::npos)
                 _fileType = FILE_NSCR;
             else if (fnames[n].rfind(".nprc") != string::npos)
@@ -3814,20 +3809,12 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             else
                 _fileType = FILE_NOTYPE;
 
-            if( (m_projMultiFiles != NULL) && (m_projMultiFiles->FileExistsInProject(fnames[n])))
-            {
+            if ((m_projMultiFiles != NULL) && (m_projMultiFiles->FileExistsInProject(fnames[n])))
                 proj = m_projMultiFiles;
-            }
             else
             {
                 proj = new ProjectInfo();
                 proj->SetRemote(m_remoteMode);
-
-                /*
-                wxString fullFileName = newFileName.GetFullPath();
-                FileFilterType filterType = proj->GetFileType(fullFileName);
-                proj->AddFileToProject(fullFileName, filterType);
-                */
             }
 
             // current buffer is empty and untouched, so load the file into it
@@ -3838,22 +3825,24 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                 m_book->SetPageText(m_currentPage, /*locationPrefix + */fileNameNoPath);
                 m_currentEd->SetProject(proj);
                 m_currentEd->LoadFileText(fileContents);
+                m_currentEd->SetFilename(newFileName, m_remoteMode);
             }
             // need to create a new buffer for the file
             else
             {
-                NumeReEditor *edit = new NumeReEditor (this, m_options, proj, m_book, -1, m_terminal->getSyntax(), m_terminal);
+                NumeReEditor *edit = new NumeReEditor(this, m_options, proj, m_book, -1, m_terminal->getSyntax(), m_terminal);
 #if wxUSE_DRAG_AND_DROP
                 edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
 #endif
                 edit->LoadFileText(fileContents);
-                CopyEditorSettings(edit, _fileType);
-                m_currentEd = edit;
+                int settings = CopyEditorSettings(_fileType);
                 m_currentPage = m_book->GetPageCount();
-                m_book->AddPage (m_currentEd, /*locationPrefix + */fileNameNoPath, true);
+                m_book->AddPage(edit, fileNameNoPath, true);
+                m_currentEd = edit;
+                m_currentEd->SetFilename(newFileName, m_remoteMode);
+                m_currentEd->ToggleSettings(settings);
             }
 
-            m_currentEd->SetFilename(newFileName, m_remoteMode);
             m_currentEd->UpdateSyntaxHighlighting();
 
             if (m_options->GetFoldDuringLoading())
@@ -3869,17 +3858,14 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
         }
 
         if (firstPageNr < 0)
-        {
             firstPageNr = m_currentPage;
-        }
 
     }
 
     // show the active tab, new or otherwise
     if (firstPageNr >= 0)
-    {
         PageHasChanged(firstPageNr);
-    }
+
     m_currentEd->SetFocus();
 }
 

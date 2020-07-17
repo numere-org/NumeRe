@@ -469,6 +469,7 @@
 		<Unit filename="kernel/core/maths/command_implementations.hpp" />
 		<Unit filename="kernel/core/maths/define.cpp" />
 		<Unit filename="kernel/core/maths/define.hpp" />
+		<Unit filename="kernel/core/maths/filtering.hpp" />
 		<Unit filename="kernel/core/maths/fitcontroller.cpp" />
 		<Unit filename="kernel/core/maths/fitcontroller.hpp" />
 		<Unit filename="kernel/core/maths/fitting.cpp" />

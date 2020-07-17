@@ -5,3 +5,5 @@ Applied	The static code analyzer is now timer-based and will wait 750msec after 
 Applied	The modifier ".every()" now accepts also a vector as first argument, which enables selecting single columns or lines directly.
 New	The commands "load", "append" and "imread" will now return indices of the loaded data in the target tables.
 Applied	Changed the style of the static code analyzer messages and the color of the warnings to enhance readability and visibility.
+Fixed	The static code analyzer will now calculate the results, if it is activated at file open time.
+Applied	Smoothing was changed slightly and allows now to use different filter types.
