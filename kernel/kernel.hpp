@@ -133,6 +133,7 @@ class NumeReKernel
         static NumeReKernel* kernelInstance;
 
         //datasets
+        FileSystem _fSys;
         Settings _option;
         Output _out;
         Datafile _data;
@@ -237,6 +238,11 @@ class NumeReKernel
         // Public member functions
         // Main loop function
         KernelStatus MainLoop(const string& sCommand);
+
+        FileSystem& getFileSystem()
+        {
+            return _fSys;
+        }
 
         Datafile& getData()
         {

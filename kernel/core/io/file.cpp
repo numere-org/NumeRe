@@ -23,6 +23,7 @@
 #include "../utils/tinyxml2.h"
 #include "../ui/language.hpp"
 #include "../version.h"
+#include "../../kernel.hpp"
 
 extern Language _lang;
 
@@ -38,6 +39,7 @@ namespace NumeRe
     GenericFile<double>* getFileByType(const string& filename)
     {
         FileSystem _fSys;
+        _fSys.initializeFromKernel();
 
         // Get the extension of the filename
         string sExt = toLowerCase(_fSys.getFileParts(filename).back());

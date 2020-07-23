@@ -40,6 +40,30 @@ FileSystem::FileSystem()
 
 
 /////////////////////////////////////////////////
+/// \brief Assignment member function to copy the
+/// settings from another FileSystem instance.
+///
+/// \param _fSys const FileSystem&
+/// \return FileSystem&
+///
+/////////////////////////////////////////////////
+FileSystem& FileSystem::assign(const FileSystem& _fSys)
+{
+    sPath = _fSys.sPath;
+    sWhere = _fSys.sWhere;
+    sValidExtensions = _fSys.sValidExtensions;
+
+    for (int i = 0; i < 7; i++)
+    {
+        sTokens[i][0] = _fSys.sTokens[i][0];
+        sTokens[i][1] = _fSys.sTokens[i][1];
+    }
+
+    return *this;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function cleans the passed file
 /// path, i.e. replaces the character encoding of
 /// umlauts, replaces path separators and path
@@ -605,5 +629,24 @@ bool FileSystem::isFile(const string& _sPath) const
     }
 
     return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Member function to remote-initialize
+/// the class from the kernel. Cannot be used
+/// during kernel start-up.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void FileSystem::initializeFromKernel()
+{
+    NumeReKernel* _instance = NumeReKernel::getInstance();
+
+    if (!_instance)
+        return;
+
+    assign(_instance->getFileSystem());
 }
 

@@ -22,6 +22,10 @@
 #include <utility>
 #include <vector>
 #include <cmath>
+#include "../io/file.hpp"
+#include "../utils/tools.hpp"
+
+//void showMatrix(const vector<vector<double> >&);
 
 namespace NumeRe
 {
@@ -206,6 +210,10 @@ namespace NumeRe
 
                 double mean_row = m_windowSize.first * 0.5;
                 double mean_col = m_windowSize.second * 0.5;
+
+                // Single dimension does not have any mean column
+                if (!is2D)
+                    mean_col = 0.0;
 
                 // Calculate the filter values
                 for (size_t i = 0; i < m_windowSize.first; i++)
@@ -489,6 +497,10 @@ namespace NumeRe
                 double mean_row = m_windowSize.first * 0.5;
                 double mean_col = m_windowSize.second * 0.5;
 
+                // Single dimension does not have any mean column
+                if (m_windowSize.second == 1)
+                    mean_col = 0.0;
+
                 for (size_t i = 0; i < m_windowSize.first; i++)
                 {
                     for (size_t j = 0; j < m_windowSize.second; j++)
@@ -594,7 +606,76 @@ namespace NumeRe
     class SavitzkyGolayFilter : public Filter
     {
         private:
-            vector<double> m_filterKernel;
+            std::vector<std::vector<double>> m_filterKernel;
+
+            /////////////////////////////////////////////////
+            /// \brief This private member function finds the
+            /// column, which either fits perfectly or is the
+            /// nearest possibility to the selected window
+            /// size.
+            ///
+            /// \param _view const FileView&
+            /// \return long long int
+            ///
+            /////////////////////////////////////////////////
+            long long int findColumn(const FileView& _view)
+            {
+                std::vector<size_t> vWindowSizes;
+
+                // Decode all contained window sizes
+                for (long long int j = 0; j < _view.getCols(); j++)
+                {
+                    vWindowSizes.push_back(StrToInt(_view.getColumnHead(j).substr(0, _view.getColumnHead(j).find('x'))));
+                }
+
+                // Window size is already smaller than the first
+                // available window size
+                if (m_windowSize.first < vWindowSizes.front())
+                {
+                    m_windowSize.first = vWindowSizes.front();
+                    m_windowSize.second = m_windowSize.first;
+                    m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
+
+                    return 0;
+                }
+
+                for (long long int j = 0; j < vWindowSizes.size(); j++)
+                {
+                    // Found a perfect match?
+                    if (m_windowSize.first == vWindowSizes[j])
+                    {
+                        m_windowSize.second = m_windowSize.first;
+                        m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
+
+                        return j;
+                    }
+
+                    // Is there a nearest match? (We assume
+                    // ascending order of the window sizes)
+                    if (m_windowSize.first > vWindowSizes[j] && j+1 < vWindowSizes.size() && m_windowSize.first < vWindowSizes[j+1])
+                    {
+                        // If the following fits better, increment the index
+                        if (m_windowSize.first - vWindowSizes[j] > vWindowSizes[j+1] - m_windowSize.first)
+                            j++;
+
+                        m_windowSize.first = vWindowSizes[j];
+                        m_windowSize.second = m_windowSize.first;
+                        m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
+
+                        return j;
+                    }
+                    else if (m_windowSize.first > vWindowSizes[j] && j+1 == vWindowSizes.size())
+                    {
+                        m_windowSize.first = vWindowSizes[j];
+                        m_windowSize.second = m_windowSize.first;
+                        m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
+
+                        return j;
+                    }
+                }
+
+                return 0;
+            }
 
             /////////////////////////////////////////////////
             /// \brief This method will create the filter's
@@ -609,11 +690,54 @@ namespace NumeRe
                 if (!(m_windowSize.first % 2))
                     m_windowSize.first++;
 
-                m_filterKernel.assign(m_windowSize.first, 0.0);
+                // Create a 2D kernel
+                if (m_windowSize.second > 1)
+                {
+                    // Create a file instance
+                    GenericFile<double>* _file = getFileByType("<>/params/savitzky_golay_coeffs_2D.dat");
+
+                    if (!_file)
+                        return;
+
+                    // Read the contents and assign it to a view
+                    try
+                    {
+                        _file->read();
+                    }
+                    catch (...)
+                    {
+                        delete _file;
+                        throw;
+                    }
+
+                    FileView _view(_file);
+
+                    // Find the possible window sizes
+                    long long int j = findColumn(_view);
+
+                    // First element in the column is the
+                    // central element in the matrix
+                    m_filterKernel[m_windowSize.first/2][m_windowSize.first/2] = _view.getElement(m_windowSize.first*m_windowSize.first/2, j);
+
+                    for (long long int i = 0; i < m_windowSize.first*m_windowSize.first/2; i++)
+                    {
+                        // left part
+                        m_filterKernel[m_windowSize.first - 1 - i % m_windowSize.first][i / m_windowSize.first] = _view.getElement(i, j);
+                        // right part
+                        m_filterKernel[i % m_windowSize.first][m_windowSize.first - i / m_windowSize.first - 1] = _view.getElement(i, j);
+                        // middle column
+                    }
+
+                    delete _file;
+                    return;
+                }
+
+                // Create a 1D kernel
+                m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
 
                 for (size_t i = 0; i < m_windowSize.first; i++)
                 {
-                    m_filterKernel[i] = (3.0*pow2(m_windowSize.first) - 7.0 - 20.0*pow2((int)i - (int)m_windowSize.first/2)) / 4.0 / (m_windowSize.first * (pow2(m_windowSize.first) - 4.0) / 3.0);
+                    m_filterKernel[i][0] = (3.0*pow2(m_windowSize.first) - 7.0 - 20.0*pow2((int)i - (int)m_windowSize.first/2)) / 4.0 / (m_windowSize.first * (pow2(m_windowSize.first) - 4.0) / 3.0);
                 }
             }
 
@@ -654,10 +778,10 @@ namespace NumeRe
             /////////////////////////////////////////////////
             virtual double operator()(size_t i, size_t j) const override
             {
-                if (i >= m_windowSize.first)
+                if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
 
-                return m_filterKernel[i];
+                return m_filterKernel[i][j];
             }
 
             /////////////////////////////////////////////////
@@ -674,13 +798,13 @@ namespace NumeRe
             /////////////////////////////////////////////////
             virtual double apply(size_t i, size_t j, double val) const override
             {
-                if (i >= m_windowSize.first)
+                if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
 
                 if (isnan(val))
                     return 0.0;
 
-                return m_filterKernel[i] * val;
+                return m_filterKernel[i][j] * val;
             }
     };
 
@@ -705,11 +829,11 @@ namespace NumeRe
             case FilterSettings::FILTER_NONE:
                 return nullptr;
             case FilterSettings::FILTER_WEIGHTED_LINEAR:
-                return new NumeRe::WeightedLinearFilter(_settings.row, _settings.col);
+                return new WeightedLinearFilter(_settings.row, _settings.col);
             case FilterSettings::FILTER_GAUSSIAN:
-                return new NumeRe::GaussianFilter(_settings.row, _settings.col, (std::max(_settings.row, _settings.col)-1)/(2*_settings.alpha));
+                return new GaussianFilter(_settings.row, _settings.col, (std::max(_settings.row, _settings.col)-1)/(2*_settings.alpha));
             case FilterSettings::FILTER_SAVITZKY_GOLAY:
-                return new NumeRe::SavitzkyGolayFilter(_settings.row, _settings.col);
+                return new SavitzkyGolayFilter(_settings.row, _settings.col);
         }
 
         return nullptr;

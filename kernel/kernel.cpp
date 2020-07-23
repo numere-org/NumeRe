@@ -216,6 +216,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
     }
 
     // Set the path tokens for all relevant objects
+    _fSys.setTokens(_option.getTokenPaths());
     _data.setTokens(_option.getTokenPaths());
     _out.setTokens(_option.getTokenPaths());
     _pData.setTokens(_option.getTokenPaths());
@@ -255,6 +256,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
     _option.setPath(_option.getExePath() + "/user/docs", true, sPath);
     _option.setPath(_option.getSavePath() + "/docs", true, sPath);
     _functions.setPath(_option.getExePath(), false, sPath);
+    _fSys.setPath(_option.getExePath(), false, sPath);
     addToLog("> SYSTEM: File system was verified.");
 
     // Load the documentation index file

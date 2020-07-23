@@ -38,5 +38,7 @@ Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols);
 Matrix transposeMatrix(const Matrix& _mMatrix);
 Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, const Settings& _option);
 
+void showMatrix(const vector<vector<double> >&);
+
 #endif // MATRIXOPERATIONS_HPP
 

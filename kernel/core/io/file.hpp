@@ -598,6 +598,8 @@ namespace NumeRe
             // Constructor from filename
             GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
             {
+                // Initializes the file system from the kernel
+                initializeFromKernel();
                 sFileName = ValidFileName(fileName, "", false);
                 sFileExtension = getFileParts(sFileName).back();
             }
@@ -866,6 +868,74 @@ namespace NumeRe
     // but references an instance of a derived class
     GenericFile<double>* getFileByType(const std::string& filename);
 
+    template <class DATATYPE>
+    class GenericFileView
+    {
+        private:
+            GenericFile<DATATYPE>* m_file;
+
+        public:
+            GenericFileView() : m_file(nullptr) {}
+            GenericFileView(GenericFile<DATATYPE>* _file) : m_file(_file) {}
+
+            void attach(GenericFile<DATATYPE>* _file)
+            {
+                m_file = _file;
+            }
+
+            GenericFile<DATATYPE>* getPtr()
+            {
+                return m_file;
+            }
+
+            long long int getCols() const
+            {
+                if (m_file)
+                    return m_file->getCols();
+
+                return 0;
+            }
+
+            long long int getRows() const
+            {
+                if (m_file)
+                    return m_file->getRows();
+
+                return 0;
+            }
+
+            DATATYPE getElement(long long int row, long long int col) const
+            {
+                if (m_file)
+                {
+                    if (row >= m_file->getRows() || col >= m_file->getCols())
+                        return 0;
+
+                    // dummy variable
+                    long long int r,c;
+                    return m_file->getData(r,c)[row][col];
+                }
+
+                return 0;
+            }
+
+            string getColumnHead(long long int col) const
+            {
+                if (m_file)
+                {
+                    if (col >= m_file->getCols())
+                        return "";
+
+                    // dummy variable
+                    long long int c;
+                    return m_file->getColumnHeadings(c)[col];
+                }
+
+                return "";
+            }
+    };
+
+    typedef GenericFileView<double> FileView;
 
 
     // This class resembles an arbitrary text data file, which is formatted in a

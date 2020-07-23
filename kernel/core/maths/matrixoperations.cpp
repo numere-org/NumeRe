@@ -4135,6 +4135,20 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
 
 
 /////////////////////////////////////////////////
+/// \brief Simple wrapper for the function
+/// parser_ShowMatrixResult() to be accessible
+/// from the outside.
+///
+/// \param _mMatrix const vector<vector<double>>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void showMatrix(const vector<vector<double> >& _mMatrix)
+{
+    parser_ShowMatrixResult(_mMatrix, NumeReKernel::getInstance()->getSettings());
+}
+
+/////////////////////////////////////////////////
 /// \brief Static helper function for
 /// parser_getIndicesForMatrix(), which will
 /// handle the return values of matrix evaluations.

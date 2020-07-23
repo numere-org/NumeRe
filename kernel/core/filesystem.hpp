@@ -54,6 +54,8 @@ class FileSystem
 	public:
         FileSystem();
 
+        FileSystem& assign(const FileSystem& _fSys);
+
 		string ValidFileName(string _sFileName, const string sExtension = ".dat", bool checkExtension = true) const;			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
 		string ValidFolderName(string _sFileName) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
 		string ValidizeAndPrepareName(const string& _sFileName, const string& sExtension = ".dat") const;
@@ -81,6 +83,7 @@ class FileSystem
             }
         void setTokens(string _sTokens);
         bool isFile(const string& _sPath) const;
+        void initializeFromKernel();
 };
 
 #endif
