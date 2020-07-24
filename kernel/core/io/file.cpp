@@ -89,13 +89,20 @@ namespace NumeRe
         // Empty constructor
     }
 
+
     TextDataFile::~TextDataFile()
     {
         // Empty destructor
     }
 
-    // This method reads the data in the referenced text file
-    // to memory
+
+    /////////////////////////////////////////////////
+    /// \brief This method reads the data in the
+    /// referenced text file to memory.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void TextDataFile::readFile()
     {
         open(ios::in);
@@ -198,8 +205,14 @@ namespace NumeRe
         }
     }
 
-    // This method writes the data in memory to the referenced text
-    // file
+
+    /////////////////////////////////////////////////
+    /// \brief This method writes the data in memory
+    /// to the referenced text file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void TextDataFile::writeFile()
     {
         // Open the file
@@ -221,8 +234,14 @@ namespace NumeRe
         writeTableContents(vColumns);
     }
 
-    // This member function writes the header lines for the
-    // text files
+
+    /////////////////////////////////////////////////
+    /// \brief This member function writes the header
+    /// lines or the text files.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void TextDataFile::writeHeader()
     {
         string sBuild = AutoVersion::YEAR;
@@ -243,8 +262,16 @@ namespace NumeRe
         fFileStream << "# " + _lang.get("OUTPUT_PRINTLEGAL_STD") << "\n#" << endl;
     }
 
-    // This member function is used to write the table heads
-    // into the target file
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to write
+    /// the table heads into the target file.
+    ///
+    /// \param vColumnWidth const vector<size_t>&
+    /// \param nNumberOfLines size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void TextDataFile::writeTableHeads(const vector<size_t>& vColumnWidth, size_t nNumberOfLines)
     {
         fFileStream << "# ";
@@ -269,8 +296,15 @@ namespace NumeRe
         }
     }
 
-    // This member function is used to write the data in
-    // memory to the target text file
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to write
+    /// the data in memory to the target text file.
+    ///
+    /// \param vColumnWidth const vector<size_t>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void TextDataFile::writeTableContents(const vector<size_t>& vColumnWidth)
     {
         for (long long int i = 0; i < nRows; i++)
@@ -293,8 +327,15 @@ namespace NumeRe
         }
     }
 
-    // This member function draws a separator line based
-    // upon the overall width of the columns
+
+    /////////////////////////////////////////////////
+    /// \brief This member function draws a separator
+    /// based upon the overall width of the columns.
+    ///
+    /// \param vColumnWidth const vector<size_t>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void TextDataFile::addSeparator(const vector<size_t>& vColumnWidth)
     {
         fFileStream << "#=";
@@ -312,8 +353,17 @@ namespace NumeRe
         fFileStream << "\n";
     }
 
-    // This member function decodes the table heads in the
-    // text file and stores them in memory
+
+    /////////////////////////////////////////////////
+    /// \brief This member function decodes the table
+    /// heads in the text file and stores them in
+    /// memory.
+    ///
+    /// \param vFileContents vector<string>&
+    /// \param nComment long longint
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void TextDataFile::decodeTableHeads(vector<string>& vFileContents, long long int nComment)
     {
 		long long int _nHeadline = 0;
@@ -703,9 +753,16 @@ namespace NumeRe
 		}
     }
 
-    // This member function calculates the widths of the columns
-    // and also determines the number of lines needed for the
-    // column heads
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculats the
+    /// widths of the columns and also determines the
+    /// number of lines needed for the column heads.
+    ///
+    /// \param nNumberOfLines size_t&
+    /// \return vector<size_t>
+    ///
+    /////////////////////////////////////////////////
     vector<size_t> TextDataFile::calculateColumnWidths(size_t& nNumberOfLines)
     {
         vector<size_t> vColumnWidths;
@@ -740,8 +797,14 @@ namespace NumeRe
         // Empty constructor
     }
 
-    // This copy constructor extents the copy constructor
-    // of the parent class
+
+    /////////////////////////////////////////////////
+    /// \brief This copy constructor extents the copy
+    /// constructor of the parent class.
+    ///
+    /// \param file const NumeReDataFile&
+    ///
+    /////////////////////////////////////////////////
     NumeReDataFile::NumeReDataFile(const NumeReDataFile& file) : GenericFile(file)
     {
         isLegacy = file.isLegacy;
@@ -752,16 +815,23 @@ namespace NumeRe
         versionBuild = file.versionBuild;
     }
 
+
     NumeReDataFile::~NumeReDataFile()
     {
         // Empty destructor
     }
 
-    // This member function writes the new standard
-    // header for NDAT files. It includes a dummy
-    // section, which older versions of NumeRe may
-    // read without errors, but which won't contain
-    // any reasonable information
+
+    /////////////////////////////////////////////////
+    /// \brief This member function writest the new
+    /// standard header for NDAT files. It includes
+    /// a dummy section, which older versions of
+    /// NumeRe may read without errors, but which
+    /// won't contain any reasonable information.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void NumeReDataFile::writeHeader()
     {
         writeNumField(AutoVersion::MAJOR);
@@ -794,10 +864,17 @@ namespace NumeRe
         writeNumField(nCols);
     }
 
-    // This member function will write the dummy
-    // header, which is readable in older versions
-    // of NumeRe. In principle, this is the old
-    // legacy format of NDAT files for a 1x1 data set
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will write the
+    /// dummy header, which is readable in older
+    /// versions of NumeRe. In a nutshell, this is
+    /// the legacy format of NDAT files for a 1x1
+    /// data set.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void NumeReDataFile::writeDummyHeader()
     {
         writeNumField(1LL);
@@ -811,8 +888,15 @@ namespace NumeRe
         fFileStream.write((char*)&valid, sizeof(bool));
     }
 
-    // This member funcion will write the data in
-    // the internal storage into the target file
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will write the
+    /// data in the internal storage into the target
+    /// file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void NumeReDataFile::writeFile()
     {
         // Open the file in binary mode and truncate
@@ -833,11 +917,17 @@ namespace NumeRe
         writeDataArray(fileData, nRows, nCols);
     }
 
-    // This member function will read the header
-    // in the selected file. It will automatically
-    // detect, whether the file is in legacy format
-    // or not. If the file format is newer than
-    // expected, it will throw an error
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will read the
+    /// header in the selected file. It will
+    /// automatically detect, whether the file is in
+    /// legacy format or not. If the file format is
+    /// newer than expected, it will throw an error.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void NumeReDataFile::readHeader()
     {
         // Read the basic information
@@ -902,9 +992,15 @@ namespace NumeRe
         nCols = readNumField<long long int>();
     }
 
-    // This function jumps over the dummy section
-    // in the new file format, because it doesn't
-    // contain any valid information
+
+    /////////////////////////////////////////////////
+    /// \brief This function jumps over the dummy
+    /// section in the new file format, because it
+    /// does not conatin any valid information.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void NumeReDataFile::skipDummyHeader()
     {
         readNumField<long long int>();
@@ -918,8 +1014,14 @@ namespace NumeRe
         fFileStream.read((char*)&valid, sizeof(bool));
     }
 
-    // This member function will read the contents
-    // of the target file
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will read the
+    /// contents of the target file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void NumeReDataFile::readFile()
     {
         // Open the file in binary mode, if it's not
@@ -952,10 +1054,16 @@ namespace NumeRe
         fileData = readDataArray(dataarrayrows, dataarraycols);
     }
 
-    // This member function reads the data section
-    // of the target file in legacy format. The
-    // function "readHeader()" determines, whether
-    // the target file is in legacy mode
+
+    /////////////////////////////////////////////////
+    /// \brief This member function reads the data
+    /// section of the target file in legacy format.
+    /// The function readHeader() determines, whether
+    /// the target file is in legacy mode.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void NumeReDataFile::readLegacyFormat()
     {
         // Prepare some POD arrays to read the
@@ -1023,9 +1131,18 @@ namespace NumeRe
         delete[] nAppendedZeros;
     }
 
-    // This member function will read a generic
-    // field from the header (the three fields,
-    // which can be used in future versions of NumeRe)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will read a
+    /// generic field from the header (the three
+    /// fields, which can be used in future versions
+    /// of NumeRe).
+    ///
+    /// \param type std::string&
+    /// \param size long longint&
+    /// \return void*
+    ///
+    /////////////////////////////////////////////////
     void* NumeReDataFile::readGenericField(std::string& type, long long int& size)
     {
         // Determine the field data type
@@ -1050,11 +1167,20 @@ namespace NumeRe
         return nullptr;
     }
 
-    // This member function will delete the data array
-    // obtained from the generic fields but convert
-    // them into their original type first, because
-    // deleting of void* is undefined (the length of
-    // the field in memory is not defined)
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will delete the
+    /// data array obtained from the generic fields
+    /// but convert them into their original type
+    /// first, because deleting of void* is undefined
+    /// behavior (the length of the field in memory
+    /// is not defined).
+    ///
+    /// \param data void*
+    /// \param type const string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void NumeReDataFile::deleteGenericData(void* data, const string& type)
     {
         if (data)
@@ -1066,10 +1192,17 @@ namespace NumeRe
         }
     }
 
-    // This member function is an overload for the
-    // assignment operator. It extends the already
-    // available assignment operator from the parent
-    // class
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is an overload
+    /// for the assignment operator. It extends the
+    /// already available assingnment operator of
+    /// the parent class.
+    ///
+    /// \param file NumeReDataFile&
+    /// \return NumeReDataFile&
+    ///
+    /////////////////////////////////////////////////
     NumeReDataFile& NumeReDataFile::operator=(NumeReDataFile& file)
     {
         assign(file);
@@ -1083,9 +1216,15 @@ namespace NumeRe
         return *this;
     }
 
-    // This simple member function returns the
-    // version string associated with the current
-    // file type
+
+    /////////////////////////////////////////////////
+    /// \brief This simple member function returns
+    /// the version string associated with the
+    /// current file type.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string NumeReDataFile::getVersionString()
     {
         return toString((int)versionMajor) + "." + toString((int)versionMinor) + "." + toString((int)versionBuild);
@@ -1101,9 +1240,12 @@ namespace NumeRe
         // Empty constructor
     }
 
-    // This destructor will write the offsets for
-    // the different tables to the file before
-    // the file stream will be closed
+
+    /////////////////////////////////////////////////
+    /// \brief This destructor will write the offsets
+    /// for the different tables to the file before
+    /// the file stream will be closed.
+    /////////////////////////////////////////////////
     CacheFile::~CacheFile()
     {
 
@@ -1114,10 +1256,16 @@ namespace NumeRe
         }
     }
 
-    // This member function will reset the string
-    // information and the internal storage. This
-    // is used before the next table will be read
-    // from the cache file to memory
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will reset the
+    /// string information and the internal storage.
+    /// This is used before the next table will be
+    /// read from the cache file to memory.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void CacheFile::reset()
     {
         sComment.clear();
@@ -1125,10 +1273,17 @@ namespace NumeRe
         clearStorage();
     }
 
-    // This member function will read the next table,
-    // which is available in the cache file, to the
-    // internal storage. It uses the "readFile()"
-    // function from its parent class
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will read the
+    /// next table, which is availale in the cache
+    /// file, to the internal stoage. It uses the
+    /// readFile() member function from its parent
+    /// class.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void CacheFile::readSome()
     {
         reset();
@@ -1137,13 +1292,19 @@ namespace NumeRe
             readFile();
     }
 
-    // This member function will write the current
-    // contents in the internal storage to the
-    // target file. Before writing, the function
-    // stores the current byte position in the
-    // target file to create the file index. The
-    // function uses the function "writeFile()"
-    // from the parent class for writing the data
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will write the
+    /// current contents in the internal storage to
+    /// the target file. Before writing, the function
+    /// stores the current byte position in the
+    /// target file to create the file index. The
+    /// funciton uses the member function writeFile()
+    /// from the parent class for writing the data.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void CacheFile::writeSome()
     {
         if (vFileIndex.size())
@@ -1163,9 +1324,15 @@ namespace NumeRe
         }
     }
 
-    // This member function will read the cache file
-    // header and ensure that the version of the
-    // file is not newer than expected
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will read the
+    /// cache file header and ensure that the version
+    /// of the file is not newer than expected.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void CacheFile::readCacheHeader()
     {
         // Open the file in binary mode
@@ -1210,8 +1377,14 @@ namespace NumeRe
         delete[] nIndex;
     }
 
-    // This member function will write the standard
-    // cache file header to the cache file
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will write the
+    /// standard cache file header to the cache file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void CacheFile::writeCacheHeader()
     {
         // Open the file in binary mode and truncate
@@ -1248,14 +1421,21 @@ namespace NumeRe
         // Empty constructor
     }
 
+
     CassyLabx::~CassyLabx()
     {
         // Empty destructor
     }
 
-    // This member function will read the contents
-    // of the associated LABX file to the internal
-    // storage
+
+    /////////////////////////////////////////////////
+    /// \brief This member function will read the
+    /// contents of the associated LABX file to the
+    /// internal storage.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void CassyLabx::readFile()
     {
         // Open the filestream in text mode
@@ -1367,8 +1547,15 @@ namespace NumeRe
 
     }
 
-    // This simple member function extracts the
-    // numerical value of the XML tag string
+
+    /////////////////////////////////////////////////
+    /// \brief This simple member function extracts
+    /// the numerical value of the XML tag string.
+    ///
+    /// \param sTag const string&
+    /// \return double
+    ///
+    /////////////////////////////////////////////////
     double CassyLabx::extractValueFromTag(const string& sTag)
     {
         return StrToDb(sTag.substr(7, sTag.find('<', 7)-7));
@@ -1384,13 +1571,20 @@ namespace NumeRe
         // Empty constructor
     }
 
+
     CommaSeparatedValues::~CommaSeparatedValues()
     {
         // Empty destructor
     }
 
-    // This member function is used to read the
-    // target file to the internal storage
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to read
+    /// the target file to memory.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void CommaSeparatedValues::readFile()
     {
         // Open the file stream in text mode
@@ -1555,9 +1749,15 @@ namespace NumeRe
         }
     }
 
-    // This member function is used to write the
-    // contents in the internal storage to the
-    // target file
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to write
+    /// the contents in the internal storage to the
+    /// target file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void CommaSeparatedValues::writeFile()
     {
         // Open the file in text mode and truncate
@@ -1590,12 +1790,18 @@ namespace NumeRe
         fFileStream.flush();
     }
 
-    // This member function determines the
-    // separator character used for the current
-    // file name. It does so by some simple
-    // heuristic: the most common characters
-    // are checked first and the uncommon ones
-    // afterwards
+
+    /////////////////////////////////////////////////
+    /// \brief This member function determines the
+    /// separator character used for the current file
+    /// name. It does so by some simple heuristic:
+    /// the most common characters are checked first
+    /// and the uncommon ones afterwards.
+    ///
+    /// \param vTextData const vector<string>&
+    /// \return char
+    ///
+    /////////////////////////////////////////////////
     char CommaSeparatedValues::findSeparator(const vector<string>& vTextData)
     {
         char cSep = 0;
@@ -1666,10 +1872,19 @@ namespace NumeRe
         return cSep;
     }
 
-    // This member function determines the number of
-    // columns available in the current file and alters
-    // the separator character, if the column counts
-    // are not consistent between the different lines
+
+    /////////////////////////////////////////////////
+    /// \brief This member function determines the
+    /// number of columns available in the current
+    /// file and alters the separator character, if
+    /// the column counts are not consistent between
+    /// the different lines.
+    ///
+    /// \param vTextData const std::vector<std::string>&
+    /// \param cSep char&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void CommaSeparatedValues::countColumns(const std::vector<std::string>& vTextData, char& cSep)
     {
         long long int nCol;
@@ -1718,14 +1933,21 @@ namespace NumeRe
         // Empty constructor
     }
 
+
     LaTeXTable::~LaTeXTable()
     {
         // Empty destructor
     }
 
-    // This member function is used to
-    // write the contents of the internal
-    // storage to the file
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to write
+    /// the contents of the internal storage to the
+    /// file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void LaTeXTable::writeFile()
     {
         // Open the file in text mode and
@@ -1837,8 +2059,14 @@ namespace NumeRe
         fFileStream << flush;
     }
 
-    // This member function writes the
-    // legal header to the file
+
+    /////////////////////////////////////////////////
+    /// \brief This member function writes the legal
+    /// header to the file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void LaTeXTable::writeHeader()
     {
         string sBuild = AutoVersion::YEAR;
@@ -1859,10 +2087,16 @@ namespace NumeRe
         fFileStream << "% " + _lang.get("OUTPUT_PRINTLEGAL_TEX") << "\n%" << endl;
     }
 
-    // This member funciton writes the
-    // table column heads to the file. The
-    // number of lines needed for the
-    // heads is considered in this case
+
+    /////////////////////////////////////////////////
+    /// \brief This member function writes the table
+    /// column heads to the file. The number of lines
+    /// needed for the heads is considered in this
+    /// case.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void LaTeXTable::writeTableHeads()
     {
         string sPrint = "";
@@ -1890,9 +2124,15 @@ namespace NumeRe
         fFileStream << sPrint;
     }
 
-    // This member function calculates the
-    // number of lines needed for the complete
-    // table column heads
+
+    /////////////////////////////////////////////////
+    /// \brief This member function calculates the
+    /// number of lines needed for the complete table
+    /// column heads.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t LaTeXTable::countHeadLines()
     {
         size_t headlines = 0u;
@@ -1911,9 +2151,16 @@ namespace NumeRe
         return headlines;
     }
 
-    // This member function replaces all
-    // non-ASCII characters into their
-    // corresponding LaTeX entities
+
+    /////////////////////////////////////////////////
+    /// \brief This member function replaces all non-
+    /// ASCII characters into their corresponding
+    /// LaTeX entities.
+    ///
+    /// \param _sText const string&
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string LaTeXTable::replaceNonASCII(const string& _sText)
     {
         string sReturn = _sText;
@@ -1967,8 +2214,15 @@ namespace NumeRe
         return sReturn;
     }
 
-    // This member function formats a double
-    // as LaTeX number string.
+
+    /////////////////////////////////////////////////
+    /// \brief This member function formats a double
+    /// as LaTeX number string.
+    ///
+    /// \param number double
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string LaTeXTable::formatNumber(double number)
     {
         string sNumber = toString(number, nPrecFields);
@@ -2008,14 +2262,22 @@ namespace NumeRe
         // Empty constructor
     }
 
+
     JcampDX::~JcampDX()
     {
         // Empty destructor
     }
 
-    // This member function is used to read the
-    // contents of the JCAMP-DX file to the
-    // internal storage
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to read
+    /// the conents of the JCAMP-DX file to the
+    /// internal storage.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void JcampDX::readFile()
     {
         // Open the file in text mode
@@ -2183,10 +2445,17 @@ namespace NumeRe
         }
     }
 
-    // This member function parses JCAMP-DX labels
-    // by removing whitespaces, minus characters and
-    // underscores from the label name itself and
-    // converting it into upper case
+
+    /////////////////////////////////////////////////
+    /// \brief This member function parses JCAMP-DX
+    /// labels by removing whitespaces, minus
+    /// characters and underscores from the label
+    /// name itself and converting it into upper case.
+    ///
+    /// \param sLine string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void JcampDX::parseLabel(string& sLine)
     {
         if (sLine.find("##") == string::npos || sLine.find('=') == string::npos)
@@ -2211,12 +2480,21 @@ namespace NumeRe
         }
     }
 
-    // This member function parses the current data
-    // line into numerical values by decoding the
-    // JCAMP-DX encoding scheme. The JCAMP-DX format
-    // is a textual data format, but the text data may
-    // compressed to save some storage space.
-    // Reference: http://www.jcamp-dx.org/protocols.html
+
+
+    /////////////////////////////////////////////////
+    /// \brief This member function parses the
+    /// current data line into numerical values by
+    /// decoding the JCAMP-DX encoding scheme. The
+    /// JCAMP-DX format is a textual data format, but
+    /// the text data may be compressed to save some
+    /// storage space.
+    /// Reference: http://www.jcamp-dx.org/protocols.html
+    ///
+    /// \param sLine const string&
+    /// \return vector<double>
+    ///
+    /////////////////////////////////////////////////
     vector<double> JcampDX::parseLine(const string& sLine)
     {
         vector<double> vLine;
@@ -2360,15 +2638,22 @@ namespace NumeRe
         // Empty constructor
     }
 
+
     OpenDocumentSpreadSheet::~OpenDocumentSpreadSheet()
     {
         // Empty destructor
     }
 
-    // This member function is used to read the
-    // target file into the internal storage. ODS
-    // is a ZIP file containing the data formatted
-    // as XML
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to read
+    /// the targed file into the internal storage.
+    /// ODS is a ZIP file containing the data
+    /// formatted as XML.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void OpenDocumentSpreadSheet::readFile()
     {
         string sODS = "";
@@ -2625,10 +2910,18 @@ namespace NumeRe
         }
     }
 
-    // This member function is used by readFile()
-    // to expand the XML-based table row string into
-    // the intermediate cell format. Compressed cells
-    // are extended as well
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used by the
+    /// readFile() member function to expand the XML-
+    /// based table row string into the intermediate
+    /// cell format. Compressed cells are extended
+    /// as well.
+    ///
+    /// \param sLine const string&
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string OpenDocumentSpreadSheet::expandLine(const string& sLine)
     {
         string sExpandedLine = "";
@@ -2724,14 +3017,21 @@ namespace NumeRe
         // Empty constructor
     }
 
+
     XLSSpreadSheet::~XLSSpreadSheet()
     {
         // Empty destructor
     }
 
-    // This member function is used to read the
-    // data from the XLS spreadsheet into the
-    // internal storage
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to read
+    /// the data from the XLS spreadsheet ino the
+    /// internal storage.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void XLSSpreadSheet::readFile()
     {
         YExcel::BasicExcel _excel;
@@ -2921,9 +3221,15 @@ namespace NumeRe
         }
     }
 
-    // This member function is used to write
-    // the data in the internal storage to the
-    // target XLS spreadsheet
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to write
+    /// the data in the internal storage to the
+    /// target XLS spreadsheet.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void XLSSpreadSheet::writeFile()
     {
         YExcel::BasicExcel _excel;
@@ -2988,15 +3294,22 @@ namespace NumeRe
         // Empty constructor
     }
 
+
     XLSXSpreadSheet::~XLSXSpreadSheet()
     {
         // Empty destructor
     }
 
-    // This member function is used to read the
-    // data from the XLSX spreadsheet into the
-    // internal storage. XLSX is a ZIP file
-    // containing the data formatted as XML
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to read
+    /// the data from the XLSX spreadsheet into the
+    /// internal storage. XLSX is a ZIP file
+    /// containing the data formatted as XML.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void XLSXSpreadSheet::readFile()
     {
         unsigned int nSheets = 0;
@@ -3250,8 +3563,17 @@ namespace NumeRe
         }
     }
 
-    // This member function converts the usual
-    // Excel indices in to numerical ones
+
+    /////////////////////////////////////////////////
+    /// \brief This member function converts the
+    /// usual Excel indices into numerical ones.
+    ///
+    /// \param _sIndices const string&
+    /// \param nLine int&
+    /// \param nCol int&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void XLSXSpreadSheet::evalIndices(const string& _sIndices, int& nLine, int& nCol)
     {
         //A1 -> IV65536
@@ -3290,22 +3612,35 @@ namespace NumeRe
         // Empty constructor
     }
 
-    // This copy constructor extents the copy
-    // constructor of the GenericFile class
+
+    /////////////////////////////////////////////////
+    /// \brief This copy constructor extends the copy
+    /// constructor of the GenericFile class.
+    ///
+    /// \param file const IgorBinaryWave&
+    ///
+    /////////////////////////////////////////////////
     IgorBinaryWave::IgorBinaryWave(const IgorBinaryWave& file) : GenericFile(file)
     {
         bXZSlice = file.bXZSlice;
     }
+
 
     IgorBinaryWave::~IgorBinaryWave()
     {
         // Empty destructor
     }
 
-    // This member function is used to read
-    // the contents of the IBW file into the
-    // internal storage. We use the IBW library
-    // read the binary file
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is used to read
+    /// the contents of the IBW file into the
+    /// internal storage. We use the IBW library to
+    /// read the binary file.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void IgorBinaryWave::readFile()
     {
         CP_FILE_REF _cp_file_ref;
@@ -3544,8 +3879,15 @@ namespace NumeRe
             free(vWaveDataPtr);
     }
 
-    // This is an overload for the assignment
-    // operator of the GenericFile class
+
+    /////////////////////////////////////////////////
+    /// \brief This is an overload for the assignment
+    /// operator of the GenericFile class.
+    ///
+    /// \param file const IgorBinaryWave&
+    /// \return IgorBinaryWave&
+    ///
+    /////////////////////////////////////////////////
     IgorBinaryWave& IgorBinaryWave::operator=(const IgorBinaryWave& file)
     {
         assign(file);

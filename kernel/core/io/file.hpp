@@ -31,6 +31,10 @@
 
 namespace NumeRe
 {
+    /////////////////////////////////////////////////
+    /// \brief This structure wraps all necessary
+    /// meta information of a single file.
+    /////////////////////////////////////////////////
     struct FileHeaderInfo
     {
         std::string sFileExtension;
@@ -47,10 +51,16 @@ namespace NumeRe
         FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0) {}
     };
 
-    // Template class representing a generic file. This class may be specified
-    // for the main data type contained in the read or written table. All other
-    // file classes are derived from this class. This class cannot be instantiated
-    // directly, because the read and write methods are declared as pure virtual
+
+    /////////////////////////////////////////////////
+    /// \brief Template class representing a generic
+    /// file. This class may be specified for the
+    /// main data type contained in the read or
+    /// written table. All other file classes are
+    /// derived from this class. This class cannot be
+    /// instantiated directly, because the read and
+    /// write methods are declared as pure virtual.
+    /////////////////////////////////////////////////
     template <class DATATYPE>
     class GenericFile : public FileSystem
     {
@@ -74,9 +84,15 @@ namespace NumeRe
             // The table column headlines
             std::string* fileTableHeads;
 
-            // This method has to be used, to open the target file in stream
-            // mode. If the file cannot be opened, this method throws an
-            // error
+            /////////////////////////////////////////////////
+            /// \brief This method has to be used to open the
+            /// target file in stream mode. If the file cannot
+            /// be opened, this method throws an error.
+            ///
+            /// \param mode std::ios::openmode
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void open(std::ios::openmode mode)
             {
                 if (fFileStream.is_open())
@@ -90,15 +106,29 @@ namespace NumeRe
                 openMode = mode;
             }
 
-            // This method strips trailing spaces from the passed string
+            /////////////////////////////////////////////////
+            /// \brief This method strips trailing spaces
+            /// from the passed string.
+            ///
+            /// \param _sToStrip std::string&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void stripTrailingSpaces(std::string& _sToStrip)
             {
                 if (_sToStrip.find_first_not_of(" \t") != std::string::npos)
                     _sToStrip.erase(_sToStrip.find_last_not_of(" \t")+1);
             }
 
-            // This method simply replaces commas with dots in the passed string
-            // to enable correct parsing into a double
+            /////////////////////////////////////////////////
+            /// \brief This method simply replaces commas
+            /// with dots in the passed string to enable
+            /// correct parsing into a double.
+            ///
+            /// \param _sToReplace std::string&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void replaceDecimalSign(std::string& _sToReplace)
             {
                 for (size_t i = 0; i < _sToReplace.length(); i++)
@@ -108,12 +138,22 @@ namespace NumeRe
                 }
             }
 
-            // This method replaces tabulator characters into whitespaces
-            // to simplify the column determination (the used tokenizer will
-            // only have to consider whitespaces as separator characters).
-            // Sometimes, replacing tabulators into whitespaces will destroy
-            // column information. To avoid this, placeholders (underscores) may
-            // be inserted as "empty" column cells.
+            /////////////////////////////////////////////////
+            /// \brief This method replaces tabulator
+            /// characters with whitespaces to simplify the
+            /// column determination (the used tokenizer will
+            /// only have to consider whitespaces as separator
+            /// characters). Sometimes, replacing tabulators
+            /// into whitespaces will destroy  column
+            /// information. To avoid this, placeholders
+            /// (underscores) may be inserted as "empty"
+            /// column cells.
+            ///
+            /// \param _sToReplace std::string&
+            /// \param bAddPlaceholders bool
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void replaceTabSign(std::string& _sToReplace, bool bAddPlaceholders = false)
             {
                 for (size_t i = 0; i < _sToReplace.length(); i++)
@@ -138,10 +178,18 @@ namespace NumeRe
                 }
             }
 
-            // This method calculates the extents of the passed string, if it
-            // is used as a table column headline. This method will return a
-            // std::pair<> with the maximal numbers of characters in a line
-            // in the first and the number of lines in the second component
+            /////////////////////////////////////////////////
+            /// \brief This method calculates the extents of
+            /// the passed string, if it is used as a table
+            /// column headlines. This method will return a
+            /// std::pair<> with the maximal number of
+            /// characters in a line in the first and the
+            /// number of lines in the second component.
+            ///
+            /// \param sContents const std::string&
+            /// \return std::pair<size_t, size_t>
+            ///
+            /////////////////////////////////////////////////
             std::pair<size_t, size_t> calculateCellExtents(const std::string& sContents)
             {
                 // Prepare the std::pair<> to contain the extents of the cell.
@@ -175,9 +223,18 @@ namespace NumeRe
                 return pCellExtents;
             }
 
-            // This method gets the selected line number from the table column
-            // headline in the selected column. If the selected text does not
-            // contain enough lines, a simple whitespace is returned
+            /////////////////////////////////////////////////
+            /// \brief This method gets the selected line
+            /// number from the table column headline in the
+            /// selected column. If the selected text does not
+            /// contain enough lines, a simple whitespaces is
+            /// returned.
+            ///
+            /// \param nCol long longint
+            /// \param nLineNumber size_t
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
             std::string getLineFromHead(long long int nCol, size_t nLineNumber)
             {
                 size_t nLastLineBreak = 0u;
@@ -209,8 +266,14 @@ namespace NumeRe
                 return " ";
             }
 
-            // This method is a template for reading an numeric field of the
-            // selected template type in binary mode
+            /////////////////////////////////////////////////
+            /// \brief This method is a template fo reading
+            /// a numeric field of the selected template type
+            /// in binary mode.
+            ///
+            /// \return T
+            ///
+            /////////////////////////////////////////////////
             template <typename T> T readNumField()
             {
                 T num;
@@ -218,8 +281,13 @@ namespace NumeRe
                 return num;
             }
 
-            // This method can be used to read a string field from the file
-            // in binary mode
+            /////////////////////////////////////////////////
+            /// \brief This mehtod can be used to read a
+            /// string field from the file in binary mode.
+            ///
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
             std::string readStringField()
             {
                 // Get the length of the field
@@ -243,8 +311,15 @@ namespace NumeRe
                 return sBuffer;
             }
 
-            // This method may be used to get the contents of an embedded file
-            // in a zipfile and return the contents as string
+            /////////////////////////////////////////////////
+            /// \brief This method may be used to get the
+            /// contents of an embedded file in a zipfile and
+            /// return the contents as string.
+            ///
+            /// \param filename const std::string&
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
             std::string getZipFileItem(const std::string& filename)
             {
                 // Create a Zipfile class object
@@ -268,8 +343,15 @@ namespace NumeRe
                 return sFileItem;
             }
 
-            // This method template is for reading a block of numeric data
-            // into memory in binary mode
+            /////////////////////////////////////////////////
+            /// \brief This method template is for reading a
+            /// block of numeric data into memory in binary
+            /// mode.
+            ///
+            /// \param size long longint&
+            /// \return template <typename T>T*
+            ///
+            /////////////////////////////////////////////////
             template <typename T> T* readNumBlock(long long int& size)
             {
                 // Get the number of values in the data block
@@ -288,8 +370,16 @@ namespace NumeRe
                 return data;
             }
 
-            // This method template is for reading a whole two-dimensional
-            // array of data into memory in binary mode
+            /////////////////////////////////////////////////
+            /// \brief This method template is for reading a
+            /// whole two-dimensional array of data into
+            /// memory in binary mode.
+            ///
+            /// \param rows long longint&
+            /// \param cols long longint&
+            /// \return DATATYPE**
+            ///
+            /////////////////////////////////////////////////
             DATATYPE** readDataArray(long long int& rows, long long int& cols)
             {
                 // Get the dimensions of the data block in memory
@@ -314,8 +404,14 @@ namespace NumeRe
                 return data;
             }
 
-            // This method can be used for reading a block of string data
-            // to memory in binary mode
+            /////////////////////////////////////////////////
+            /// \brief This method can be used for reading a
+            /// block of string data to memory in binary mode.
+            ///
+            /// \param size long longint&
+            /// \return std::string*
+            ///
+            /////////////////////////////////////////////////
             std::string* readStringBlock(long long int& size)
             {
                 // Get the number of strings in the current block
@@ -338,8 +434,15 @@ namespace NumeRe
                 return data;
             }
 
-            // This method may be used to read the file in text mode and
-            // to obtain the data as a vector
+            /////////////////////////////////////////////////
+            /// \brief This method may be used to read the
+            /// file in text mode and to obtain the data as
+            /// a vector.
+            ///
+            /// \param stripEmptyLines bool
+            /// \return std::vector<std::string>
+            ///
+            /////////////////////////////////////////////////
             std::vector<std::string> readTextFile(bool stripEmptyLines)
             {
                 std::vector<std::string> vTextFile;
@@ -364,10 +467,19 @@ namespace NumeRe
                 return vTextFile;
             }
 
-            // This method may be used to separate a line into multiple
-            // tokens using a set of separator characters. If empty tokens
-            // shall be skipped, then only tokens with a non-zero length
-            // are stored
+            /////////////////////////////////////////////////
+            /// \brief This method may be used to separater a
+            /// line into multiple tokens using a set of
+            /// separator characters. If empty token shall
+            /// be skipped, then only tokens with a non-zero
+            /// length are stored.
+            ///
+            /// \param sString std::string
+            /// \param sSeparators const std::string&
+            /// \param skipEmptyTokens bool
+            /// \return std::vector<std::string>
+            ///
+            /////////////////////////////////////////////////
             std::vector<std::string> tokenize(std::string sString, const std::string& sSeparators, bool skipEmptyTokens = false)
             {
                 std::vector<std::string> vTokens;
@@ -394,15 +506,27 @@ namespace NumeRe
                 return vTokens;
             }
 
-            // This method template can be used to write a numeric value
-            // to file in binary mode
+            /////////////////////////////////////////////////
+            /// \brief This method template can be used to
+            /// write a numeric value to file in binary mode.
+            ///
+            /// \param num T
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             template <typename T> void writeNumField(T num)
             {
                 fFileStream.write((char*)&num, sizeof(T));
             }
 
-            // This method may be used to write a string to file in
-            // binary mode
+            /////////////////////////////////////////////////
+            /// \brief This method may be used to write a
+            /// string to file in binary mode.
+            ///
+            /// \param sString const std::string&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void writeStringField(const std::string& sString)
             {
                 // Store the length of string as numeric value first
@@ -410,8 +534,16 @@ namespace NumeRe
                 fFileStream.write(sString.c_str(), sString.length());
             }
 
-            // This method template may be used to write a block of
-            // data of the selected type to the file in binary mode
+            /////////////////////////////////////////////////
+            /// \brief This method template may be used to
+            /// write a block of data of the selected type to
+            /// the file in binary mode.
+            ///
+            /// \param data T*
+            /// \param size long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             template <typename T> void writeNumBlock(T* data, long long int size)
             {
                 // Store the length of the data block first
@@ -419,8 +551,17 @@ namespace NumeRe
                 fFileStream.write((char*)data, sizeof(T)*size);
             }
 
-            // This method may be used to write a two-dimensional array of
-            // data to the file in binary mode
+            /////////////////////////////////////////////////
+            /// \brief This method may be used to write a
+            /// two-dimensional array of data to the file in
+            /// binary mode.
+            ///
+            /// \param data DATATYPE**
+            /// \param rows long long int
+            /// \param cols long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void writeDataArray(DATATYPE** data, long long int rows, long long int cols)
             {
                 // Store the dimensions of the array first
@@ -432,8 +573,15 @@ namespace NumeRe
                     fFileStream.write((char*)data[i], sizeof(DATATYPE)*cols);
             }
 
-            // This method may used to write a block of strings into the
-            // file in binary mode
+            /////////////////////////////////////////////////
+            /// \brief This method may be used to write a
+            /// block of strings into the file in binary mode.
+            ///
+            /// \param data std::string*
+            /// \param size long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void writeStringBlock(std::string* data, long long int size)
             {
                 // Store the number of fields first
@@ -447,9 +595,15 @@ namespace NumeRe
                 }
             }
 
-            // This method prepares the internal storage, so that it
-            // may contain the read data. This method is only used
-            // for textual files
+            /////////////////////////////////////////////////
+            /// \brief This method prepares the internal
+            /// storage, so that it may contain the read
+            /// data. This method is only used for textual
+            /// files.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void createStorage()
             {
                 if (nRows > 0 && nCols > 0 && !fileData && !fileTableHeads)
@@ -470,8 +624,14 @@ namespace NumeRe
                     throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
             }
 
-            // This method cleares the internal storage. This method
-            // is called by the destructor automatically
+            /////////////////////////////////////////////////
+            /// \brief This method cleares the internal
+            /// storage. This method is called by the
+            /// destructor automatically.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void clearStorage()
             {
                 // Only delete the storage, if it is internal data. Do
@@ -505,8 +665,18 @@ namespace NumeRe
                 nCols = 0;
             }
 
-            // This method may be used to copy two-dimensional arrays of
-            // data. Both source and target arrays have to exist in advance
+            /////////////////////////////////////////////////
+            /// \brief This method may be used to copy two-
+            /// dimensional arrays of data. Both source and
+            /// target arrays have to exist in advance.
+            ///
+            /// \param from DATATYPE**
+            /// \param to DATATYPE**
+            /// \param rows long long int
+            /// \param cols long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void copyDataArray(DATATYPE** from, DATATYPE** to, long long int rows, long long int cols)
             {
                 if (!from || !to || !rows || !cols)
@@ -519,8 +689,17 @@ namespace NumeRe
                 }
             }
 
-            // This method may be used to copy string arrays. Both
-            // source and target arrays have to exist in advance
+            /////////////////////////////////////////////////
+            /// \brief This method may be used to copy string
+            /// arrays. Both source and target arrays have to
+            /// exist in advance.
+            ///
+            /// \param from std::string*
+            /// \param to std::string*
+            /// \param nElements long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void copyStringArray(std::string* from, std::string* to, long long int nElements)
             {
                 if (!from || !to || !nElements)
@@ -530,9 +709,18 @@ namespace NumeRe
                     to[i] = from[i];
             }
 
-            // This method template may be used to copy arrays of data
-            // of the selected type. Both source and target arrays have
-            // to exist in advance
+            /////////////////////////////////////////////////
+            /// \brief This method template may be used to
+            /// copy arrays of data of the selected type.
+            /// Both source and target arrays have to exist
+            /// in advance.
+            ///
+            /// \param from T*
+            /// \param to T*
+            /// \param nElements long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             template <typename T> void copyArray(T* from, T* to, long long int nElements)
             {
                 if (!from || !to || !nElements)
@@ -542,8 +730,15 @@ namespace NumeRe
                     to[i] = from[i];
             }
 
-            // This method may be used to determine, whether a string
-            // contains only numeric data
+            /////////////////////////////////////////////////
+            /// \brief This method may be used to determine,
+            /// whether a string contains \em only numeric
+            /// data.
+            ///
+            /// \param sString const std::string&
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             bool isNumeric(const std::string& sString)
             {
                 if (!sString.length())
@@ -574,9 +769,15 @@ namespace NumeRe
                 return true;
             }
 
-            // This method is used by the assignment operator and
-            // the copy constructor to copy the contents of the
-            // passed GenericFile instance
+            /////////////////////////////////////////////////
+            /// \brief This method is used by the assignment
+            /// operator and the copy constructor to copy the
+            /// contents of the passed GenericFile instance.
+            ///
+            /// \param file const GenericFile&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void assign(const GenericFile& file)
             {
                 clearStorage();
@@ -596,6 +797,12 @@ namespace NumeRe
 
         public:
             // Constructor from filename
+            /////////////////////////////////////////////////
+            /// \brief Constructor from filename.
+            ///
+            /// \param fileName const std::string&
+            ///
+            /////////////////////////////////////////////////
             GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
             {
                 // Initializes the file system from the kernel
@@ -604,16 +811,24 @@ namespace NumeRe
                 sFileExtension = getFileParts(sFileName).back();
             }
 
-            // Copy constructor
+            /////////////////////////////////////////////////
+            /// \brief Copy constructor.
+            ///
+            /// \param file const GenericFile&
+            ///
+            /////////////////////////////////////////////////
             GenericFile(const GenericFile& file) : GenericFile(file.sFileName)
             {
                 assign(file);
             }
 
-            // Virtual destructor: we'll work with instances on the heap
-            // therefore we'll need virtual declared destructors. This
-            // destructor will clear the internal memory and closes the
-            // file stream, if it is still open
+            /////////////////////////////////////////////////
+            /// \brief Virtual destructor: we'll work with
+            /// instances on the heap, therefore we'll need
+            /// virtual declared destructors. This destructor
+            /// will clear the internal memory and closes the
+            /// file stream, if it is still open.
+            /////////////////////////////////////////////////
             virtual ~GenericFile()
             {
                 clearStorage();
@@ -622,68 +837,121 @@ namespace NumeRe
                     fFileStream.close();
             }
 
-            // Wrapper for fstream::is_open()
+            /////////////////////////////////////////////////
+            /// \brief Wrapper for fstream::is_open()
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             bool is_open()
             {
                 return fFileStream.is_open();
             }
 
-            // Wrapper for fstream::close(). Will also clear the internal
-            // memory
+            /////////////////////////////////////////////////
+            /// \brief Wrapper for fstream::close(). Will
+            /// also clear the internal memory.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void close()
             {
                 fFileStream.close();
                 clearStorage();
             }
 
-            // Wrapper for fstream::good()
+            /////////////////////////////////////////////////
+            /// \brief Wrapper for fstream::good()
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             bool good()
             {
                 return fFileStream.good();
             }
 
-            // Wrapper for fstream::tellg()
+            /////////////////////////////////////////////////
+            /// \brief Wrapper for fstream::tellg()
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
             size_t tellg()
             {
                 return fFileStream.tellg();
             }
 
-            // Wrapper for fstream::tellp()
+            /////////////////////////////////////////////////
+            /// \brief Wrapper for fstream::tellp()
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
             size_t tellp()
             {
                 return fFileStream.tellp();
             }
 
-            // Wrapper for fstream::seekg() with start from the
-            // beginning of the stream
+            /////////////////////////////////////////////////
+            /// \brief Wrapper for fstream::seekg() with
+            /// start from the beginning of the stream.
+            ///
+            /// \param pos size_t
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void seekg(size_t pos)
             {
                 fFileStream.seekg(pos, ios::beg);
             }
 
-            // Wrapper for fstream::seekp() with start from the
-            // beginning of the stream
+            /////////////////////////////////////////////////
+            /// \brief Wrapper for fstream::seekp() with
+            /// start from the beginning of the stream.
+            ///
+            /// \param pos size_t
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void seekp(size_t pos)
             {
                 fFileStream.seekp(pos, ios::beg);
             }
 
-            // Returns the file extension
+            /////////////////////////////////////////////////
+            /// \brief Returns the file extension.
+            ///
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
             std::string getExtension()
             {
                 return sFileExtension;
             }
 
-            // Returns the file name
+            /////////////////////////////////////////////////
+            /// \brief Returns the file name.
+            ///
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
             std::string getFileName()
             {
                 return sFileName;
             }
 
-            // Returns the table name referenced in the file. Will
-            // default to the file name with non-alnum characters
-            // replaced with underscores, if the file does not reference
-            // a table name by itself
+            /////////////////////////////////////////////////
+            /// \brief Returns the table name referenced in
+            /// the file. Will default to the file name with
+            /// non-alnum characters replaced with
+            /// underscores, if the file does not reference a
+            /// table name by itself.
+            ///
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
             std::string getTableName()
             {
                 // Has the table name not been defined yet
@@ -708,20 +976,35 @@ namespace NumeRe
                 return sTableName;
             }
 
-            // Returns the number of rows
+            /////////////////////////////////////////////////
+            /// \brief Returns the number of rows.
+            ///
+            /// \return long long int
+            ///
+            /////////////////////////////////////////////////
             long long int getRows()
             {
                 return nRows;
             }
 
-            // Returns the number of columns
+            /////////////////////////////////////////////////
+            /// \brief Returns the number of columns.
+            ///
+            /// \return long long int
+            ///
+            /////////////////////////////////////////////////
             long long int getCols()
             {
                 return nCols;
             }
 
-            // Returns the file header information
-            // structure
+            /////////////////////////////////////////////////
+            /// \brief Returns the file header information
+            /// structure.
+            ///
+            /// \return FileHeaderInfo
+            ///
+            /////////////////////////////////////////////////
             virtual FileHeaderInfo getFileHeaderInformation()
             {
                 FileHeaderInfo info;
@@ -735,32 +1018,67 @@ namespace NumeRe
                 return info;
             }
 
-            // Pure virtual declaration of read and write
-            // access methods. These have to be implemented in all
-            // derived classes
+            /////////////////////////////////////////////////
+            /// \brief Pure virtual declaration of the read
+            /// access method. Has to be implemented in all
+            /// derived classes and can be used to read the
+            /// contents of the file to memory.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             virtual bool read() = 0;
+
+            /////////////////////////////////////////////////
+            /// \brief Pure virtual declaration of the write
+            /// access method. Has to be implemented in all
+            /// derived classes and can be used to write the
+            /// contents in memory to the target file.
+            ///
+            /// \return bool
+            ///
+            /////////////////////////////////////////////////
             virtual bool write() = 0;
 
-            // Assignent operator definition
+            /////////////////////////////////////////////////
+            /// \brief Assignment operator definition.
+            ///
+            /// \param file const GenericFile&
+            /// \return GenericFile&
+            ///
+            /////////////////////////////////////////////////
             GenericFile& operator=(const GenericFile& file)
             {
                 assign(file);
                 return *this;
             }
 
-            // This method copies the internal data to the
-            // passed memory address. The target memory must
-            // exist
+            /////////////////////////////////////////////////
+            /// \brief This method copies the internal data
+            /// to the passed memory address. The target
+            /// memory must already exist.
+            ///
+            /// \param data DATATYPE**
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void getData(DATATYPE** data)
             {
                 copyDataArray(fileData, data, nRows, nCols);
             }
 
-            // This method returns a pointer to the internal
-            // memory with read and write access. This pointer
-            // shall not be stored for future use, because
-            // the referenced memory will be deleted upon
-            // destruction of this class instance
+            /////////////////////////////////////////////////
+            /// \brief This method returns a pointer to the
+            /// internal memory with read and write access.
+            /// This pointer shall not stored for future use,
+            /// because the referenced memory will be deleted
+            /// upon destruction of this class instance.
+            ///
+            /// \param rows long long int&
+            /// \param cols long long int&
+            /// \return DATATYPE**
+            ///
+            /////////////////////////////////////////////////
             DATATYPE** getData(long long int& rows, long long int& cols)
             {
                 rows = nRows;
@@ -769,29 +1087,48 @@ namespace NumeRe
                 return fileData;
             }
 
-            // This method copies the column headings of the
-            // internal data to the passed memory address.
-            // The target memory must exist
+            /////////////////////////////////////////////////
+            /// \brief This method copies the column headings
+            /// from the internal data to the passed memory
+            /// address. The target memory must already exist.
+            ///
+            /// \param sHead std::string*
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void getColumnHeadings(std::string* sHead)
             {
                 copyStringArray(fileTableHeads, sHead, nCols);
             }
 
-            // This method returns a pointer to the column
-            // headings of the internal memory with read and
-            // write access. This pointer shall not be stored
-            // for future use, because the referenced memory
-            // will be deleted upon destruction of this
-            // class instance
+            /////////////////////////////////////////////////
+            /// \brief This method returns a pointer to the
+            /// column headings of the internal memory with
+            /// read and write access. This pointer shall not
+            /// be stored for future use, because the
+            /// referenced memory will be deleted upon
+            /// destruction of this class instance.
+            ///
+            /// \param cols long long int&
+            /// \return std::string*
+            ///
+            /////////////////////////////////////////////////
             std::string* getColumnHeadings(long long int& cols)
             {
                 cols = nCols;
                 return fileTableHeads;
             }
 
-            // Sets the dimensions of the data table, which
-            // will be used in the future. Clears the internal
-            // memory in advance
+            /////////////////////////////////////////////////
+            /// \brief Sets the dimensions of the data table,
+            /// which will be used in the future. Clears the
+            /// internal memory in advance.
+            ///
+            /// \param rows long long int
+            /// \param cols long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void setDimensions(long long int rows, long long int cols)
             {
                 clearStorage();
@@ -800,21 +1137,43 @@ namespace NumeRe
                 nCols = cols;
             }
 
-            // Set the table's name
+            /////////////////////////////////////////////////
+            /// \brief Set the table's name.
+            ///
+            /// \param name const std::string&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void setTableName(const std::string& name)
             {
                 sTableName = name;
             }
 
-            // Set the precision, which shall be used to convert
-            // the floating point numbers into strings
+            /////////////////////////////////////////////////
+            /// \brief Set the precision, which shall be used
+            /// to convert the floating point numbers into
+            /// strings.
+            ///
+            /// \param nPrecision unsigned short
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void setTextfilePrecision(unsigned short nPrecision)
             {
                 nPrecFields = nPrecision;
             }
 
-            // This method creates the internal storage and copies
-            // the passed data to this storage
+            /////////////////////////////////////////////////
+            /// \brief This method created the internal
+            /// storage and copies the passed data to this
+            /// storage.
+            ///
+            /// \param data DATATYPE**
+            /// \param rows long long int
+            /// \param cols long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void addData(DATATYPE** data, long long int rows, long long int cols)
             {
                 if (!nRows && !nCols)
@@ -827,17 +1186,34 @@ namespace NumeRe
                 copyDataArray(data, fileData, rows, cols);
             }
 
-            // This method creates the internal storage (if not already
-            // done) and copies the passed column headings to this storage
+            /////////////////////////////////////////////////
+            /// \brief This method creates the internal
+            /// storage (if not already done) and copies the
+            /// passed column headings to this storage.
+            ///
+            /// \param sHead std::string*
+            /// \param cols long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void addColumnHeadings(std::string* sHead, long long int cols)
             {
                 createStorage();
                 copyStringArray(sHead, fileTableHeads, cols);
             }
 
-            // This method references the passed external data internally.
-            // The data is not copied and must exist as long as this class
-            // exists
+            /////////////////////////////////////////////////
+            /// \brief This method refernces the passed
+            /// external data internally. The data is not
+            /// copied and must exist as long as thos class
+            /// exists.
+            ///
+            /// \param data DATATYPE**
+            /// \param rows long long int
+            /// \param cols long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void setData(DATATYPE** data, long long int rows, long long int cols)
             {
                 useExternalData = true;
@@ -847,9 +1223,17 @@ namespace NumeRe
                 nCols = cols;
             }
 
-            // This method references the passed external column headings internally.
-            // The headings are not copied and must exist as long as this class
-            // exists
+            /////////////////////////////////////////////////
+            /// \brief This method references the passed
+            /// external column headings internally. The
+            /// headings are not copied as must exist as long
+            /// as this class exists.
+            ///
+            /// \param sHead std::string*
+            /// \param cols long long int
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void setColumnHeadings(std::string* sHead, long long int cols)
             {
                 useExternalData = true;
@@ -860,14 +1244,29 @@ namespace NumeRe
     };
 
 
-
-    // This function determines the correct class to be used for the filename
-    // passed to this function. If there's no fitting file type, a null pointer
-    // is returned. The calling function is responsible for clearing the
-    // created instance. The returned pointer is of the type of GenericFile<double>
-    // but references an instance of a derived class
+    /////////////////////////////////////////////////
+    /// \brief This function determines the correct
+    /// class to be used for the filename passed to
+    /// this function. If there's no fitting file
+    /// type, a null pointer is returned. The calling
+    /// function is responsible for clearing the
+    /// created instance. The returned pointer is of
+    /// the type GenericFile<double>, but actually
+    /// references an instance of a derived class.
+    ///
+    /// \param filename const std::string&
+    /// \return GenericFile<double>*
+    ///
+    /////////////////////////////////////////////////
     GenericFile<double>* getFileByType(const std::string& filename);
 
+
+    /////////////////////////////////////////////////
+    /// \brief This class is a facet for an arbitrary
+    /// GenericFile instance. It can be used to read
+    /// the contents of the contained file more
+    /// easily.
+    /////////////////////////////////////////////////
     template <class DATATYPE>
     class GenericFileView
     {
@@ -875,19 +1274,52 @@ namespace NumeRe
             GenericFile<DATATYPE>* m_file;
 
         public:
+            /////////////////////////////////////////////////
+            /// \brief Default constructor.
+            /////////////////////////////////////////////////
             GenericFileView() : m_file(nullptr) {}
+
+            /////////////////////////////////////////////////
+            /// \brief Constructor from an available
+            /// GenericFile instance.
+            ///
+            /// \param _file GenericFile<DATATYPE>*
+            ///
+            /////////////////////////////////////////////////
             GenericFileView(GenericFile<DATATYPE>* _file) : m_file(_file) {}
 
+            /////////////////////////////////////////////////
+            /// \brief Attaches a new GenericFile instance to
+            /// this facet class.
+            ///
+            /// \param _file GenericFile<DATATYPE>*
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void attach(GenericFile<DATATYPE>* _file)
             {
                 m_file = _file;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the internally stored
+            /// GenericFile instance pointer.
+            ///
+            /// \return GenericFile<DATATYPE>*
+            ///
+            /////////////////////////////////////////////////
             GenericFile<DATATYPE>* getPtr()
             {
                 return m_file;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the number of columns in the
+            /// internally stored GenericFile instance.
+            ///
+            /// \return long long int
+            ///
+            /////////////////////////////////////////////////
             long long int getCols() const
             {
                 if (m_file)
@@ -896,6 +1328,13 @@ namespace NumeRe
                 return 0;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the number of rows in the
+            /// internally stored GenericFile instance.
+            ///
+            /// \return long long int
+            ///
+            /////////////////////////////////////////////////
             long long int getRows() const
             {
                 if (m_file)
@@ -904,6 +1343,17 @@ namespace NumeRe
                 return 0;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the value stored at the passed
+            /// positions. A default constructed DATATYPE
+            /// object instance is returned, if the element
+            /// does not exist.
+            ///
+            /// \param row long long int
+            /// \param col long long int
+            /// \return DATATYPE
+            ///
+            /////////////////////////////////////////////////
             DATATYPE getElement(long long int row, long long int col) const
             {
                 if (m_file)
@@ -916,9 +1366,18 @@ namespace NumeRe
                     return m_file->getData(r,c)[row][col];
                 }
 
-                return 0;
+                return DATATYPE();
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the column heading stored for
+            /// the passed column. Returns an empty string,
+            /// if the column does not exist.
+            ///
+            /// \param col long long int
+            /// \return string
+            ///
+            /////////////////////////////////////////////////
             string getColumnHead(long long int col) const
             {
                 if (m_file)
@@ -935,12 +1394,16 @@ namespace NumeRe
             }
     };
 
+
     typedef GenericFileView<double> FileView;
 
 
-    // This class resembles an arbitrary text data file, which is formatted in a
-    // table-like manner. The columns may be separated using tabulators and/or
-    // whitespace characters.
+    /////////////////////////////////////////////////
+    /// \brief This class resembles an arbitrary text
+    /// data file, which is formatted in a table-like
+    /// manner. The columns may be separated using
+    /// tabulators and/or whitespace characters.
+    /////////////////////////////////////////////////
     class TextDataFile : public GenericFile<double>
     {
         private:
@@ -972,9 +1435,12 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles the binary NumeRe data file format. The data is
-    // read and written in binary mode using the methods from GenericFile
+    /////////////////////////////////////////////////
+    /// \brief This class resembles the binary NumeRe
+    /// data file format. The data is red and written
+    /// in binary mode using the methods from
+    /// GenericFile.
+    /////////////////////////////////////////////////
     class NumeReDataFile : public GenericFile<double>
     {
         protected:
@@ -1016,12 +1482,25 @@ namespace NumeRe
 
             NumeReDataFile& operator=(NumeReDataFile& file);
 
+            /////////////////////////////////////////////////
+            /// \brief Reads only the header of the
+            /// referenced file.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void readFileInformation()
             {
                 open(std::ios::in | std::ios::binary);
                 readHeader();
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the file timestamp.
+            ///
+            /// \return time_t
+            ///
+            /////////////////////////////////////////////////
             time_t getTimeStamp()
             {
                 return timeStamp;
@@ -1045,13 +1524,28 @@ namespace NumeRe
                 return info;
             }
 
-
             std::string getVersionString();
+
+            /////////////////////////////////////////////////
+            /// \brief Returns the comment stored with the
+            /// referenced file.
+            ///
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
             std::string getComment()
             {
                 return sComment;
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Sets the comment to be written to the
+            /// referencedfile.
+            ///
+            /// \param comment const std::string&
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void setComment(const std::string& comment)
             {
                 sComment = comment;
@@ -1059,13 +1553,18 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles the cache file used to auto save and recover the tables
-    // in memory. It's derived from the NumeRe data file format and uses its
-    // functionalities to layout the data in the file: the cache file starts with
-    // a header containing the number of tables in the file and the character
-    // positions in the file, where each table starts. The tables itself are written
-    // in the NumeRe data file format
+    /////////////////////////////////////////////////
+    /// \brief This class resembles the cache file
+    /// used to autosave and recover the tables in
+    /// memory. It is derived from the NumeRe data
+    /// file format and uses its functionalities to
+    /// layout the data in the file: the cache file
+    /// starts with a header containing the number of
+    /// tables in the file and the character
+    /// positions in the file, where each table
+    /// starts. The tables themselves are written in
+    /// the NumeRe data file format.
+    /////////////////////////////////////////////////
     class CacheFile : public NumeReDataFile
     {
         private:
@@ -1096,16 +1595,39 @@ namespace NumeRe
             void readCacheHeader();
             void writeCacheHeader();
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the number of tables stored in
+            /// the referenced cache file.
+            ///
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
             size_t getNumberOfTables()
             {
                 return vFileIndex.size();
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Sets the number of tables to be stored
+            /// in the referenced cache file.
+            ///
+            /// \param nTables size_t
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void setNumberOfTables(size_t nTables)
             {
                 vFileIndex = std::vector<size_t>(nTables, 0u);
             }
 
+            /////////////////////////////////////////////////
+            /// \brief Returns the character position of the
+            /// passed table index.
+            ///
+            /// \param nthTable size_t
+            /// \return size_t
+            ///
+            /////////////////////////////////////////////////
             size_t getPosition(size_t nthTable)
             {
                 if (nthTable < vFileIndex.size())
@@ -1116,9 +1638,12 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles the CASSYLab *.labx file format, which is based
-    // upon XML. Only reading from this file format is supported.
+    /////////////////////////////////////////////////
+    /// \brief This class resembles the CASSYLab
+    /// *.labx file format, which is based upon XML.
+    /// Only reading from this file format is
+    /// supported.
+    /////////////////////////////////////////////////
     class CassyLabx : public GenericFile<double>
     {
         private:
@@ -1143,10 +1668,13 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles a comma separated value file format (*.csv). The
-    // algorithm may detect the separator character automatically. Reading
-    // and writing is supported for this file format
+    /////////////////////////////////////////////////
+    /// \brief This class resembles a comma separated
+    /// value file format (*.csv). The algorithm may
+    /// detect the separator character automatically.
+    /// Reading and writing is supported for this
+    /// file format.
+    /////////////////////////////////////////////////
     class CommaSeparatedValues : public GenericFile<double>
     {
         private:
@@ -1173,11 +1701,14 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles a LaTeX table. This class formats the data
-    // into this format using some heuristics on whether a long table
-    // or a standard table is needed to contain the tabular data. Only
-    // writing is supported by this file format.
+    /////////////////////////////////////////////////
+    /// \brief This class resembles a LaTeX table.
+    /// This class formats the data into this format
+    /// using some heuristics on whether a long table
+    /// or a standard table is needed to contain the
+    /// tabular data. Only writing is supported by
+    /// this file format.
+    /////////////////////////////////////////////////
     class LaTeXTable : public GenericFile<double>
     {
         private:
@@ -1206,10 +1737,12 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles a JCAMP-DX file format (*.jcm, *.jdx, *.dx). The
-    // data in this format may be hashed somehow to save storage. Only reading
-    // is supported by this class.
+    /////////////////////////////////////////////////
+    /// \brief This class resembles a JCAMP-DX file
+    /// format (*.jcm, *.jdx, *.dx). The data in this
+    /// format may be hashed somehow to save storage.
+    /// Only reading is suported by this class.
+    /////////////////////////////////////////////////
     class JcampDX : public GenericFile<double>
     {
         private:
@@ -1235,10 +1768,13 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles a OpenDocument spreadsheet (*.ods), which is based
-    // upon a zipped XML file. The data is read using the Zipfile extractor
-    // from GenericFile. Only reading is supported by this class.
+    /////////////////////////////////////////////////
+    /// \brief This class resembles an OpenDocument
+    /// spreadsheet (*.ods), which is based upon a
+    /// zipped XML file. The data is read using the
+    /// Zipfile extractor from GenericFile. Only
+    /// reading is supported by this class.
+    /////////////////////////////////////////////////
     class OpenDocumentSpreadSheet : public GenericFile<double>
     {
         private:
@@ -1263,10 +1799,12 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles a Excel (97) workbook (*.xls), which is composed
-    // out of a compound file. Reading and writing is done using the BasicExcel
-    // library.
+    /////////////////////////////////////////////////
+    /// \brief This class resembles an Excel (97)
+    /// workbook (*.xls), which is composed out of a
+    /// compound file. Reading and writing is done
+    /// using the BasicExcel library.
+    /////////////////////////////////////////////////
     class XLSSpreadSheet : public GenericFile<double>
     {
         private:
@@ -1291,10 +1829,13 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles a Excel (2003) spreadsheet (*.xlsx), which is based
-    // upon a zipped XML file. The data is read using the Zipfile extractor
-    // from GenericFile. Only reading is supported by this class.
+    /////////////////////////////////////////////////
+    /// \brief This class resembles an Excel (2003)
+    /// spreadsheet (*.xlsx), which is based upon a
+    /// zipped XML file. The data is read using the
+    /// Zipfile extractor from GenericFile. Only
+    /// reading is supported by this class.
+    /////////////////////////////////////////////////
     class XLSXSpreadSheet : public GenericFile<double>
     {
         private:
@@ -1319,10 +1860,13 @@ namespace NumeRe
     };
 
 
-
-    // This class resembles a Igor binary wave file format (*.ibw). The data is
-    // read by the WaveMetrics implementation of the file format. Only reading is
-    // supported by this class.
+    /////////////////////////////////////////////////
+    /// \brief This class resemblers an Igor binary
+    /// wave file format (*.ibw). The data is read by
+    /// the WaveMetrics implementation of the file
+    /// format. Only reading is supported by this
+    /// class.
+    /////////////////////////////////////////////////
     class IgorBinaryWave : public GenericFile<double>
     {
         private:
@@ -1349,6 +1893,14 @@ namespace NumeRe
 
             IgorBinaryWave& operator=(const IgorBinaryWave& file);
 
+            /////////////////////////////////////////////////
+            /// \brief Activates the XZ-slicing of the Igor
+            /// binary wave, which is used to roll out 3D
+            /// data in 2D slices.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
             void useXZSlicing()
             {
                 bXZSlice = true;
