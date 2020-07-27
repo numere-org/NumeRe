@@ -101,6 +101,7 @@
 #include "../common/DebugEvent.h"
 #include "../common/vcsmanager.hpp"
 #include "../common/filerevisions.hpp"
+#include "../common/ipc.hpp"
 
 #include "controls/treesearchctrl.hpp"
 
@@ -172,13 +173,56 @@ IMPLEMENT_APP(MyApp)
 //----------------------------------------------------------------------
 /////////////////////////////////////////////////
 /// \brief "Main program" equivalent: the program
-/// execution "starts" here.
+/// execution "starts" here. If we detect an
+/// already instance of NumeRe, we will send the
+/// command line contents to the existing
+/// instance and cancel the start up here.
 ///
 /// \return bool
 ///
 /////////////////////////////////////////////////
 bool MyApp::OnInit()
 {
+    wxString sInstanceLocation = wxStandardPaths::Get().GetDataDir();
+    sInstanceLocation.Replace(":\\", "~");
+    sInstanceLocation.Replace("\\", "~");
+    m_singlinst = new wxSingleInstanceChecker("NumeRe::" + sInstanceLocation + "::" + wxGetUserId(), wxGetHomeDir());
+    m_DDEServer = nullptr;
+
+    // Avoid starting up a second instance
+    if (m_singlinst->IsAnotherRunning())
+    {
+        // Create a new client
+        wxLogNull ln; // own error checking implemented -> avoid debug warnings
+        DDE::Client* client = new DDE::Client;
+        DDE::Connection* connection = (DDE::Connection*)client->MakeConnection("localhost", DDE_SERVICE, DDE_TOPIC);
+
+        if (connection)
+        {
+            // don't eval here just forward the whole command line to the other instance
+            wxString cmdLine;
+
+            for (int i = 1 ; i < argc; ++i)
+                cmdLine += wxString(argv[i]) + ' ';
+
+            if (!cmdLine.IsEmpty())
+            {
+                // escape openings and closings so it is easily possible to find the end on the rx side
+                cmdLine.Replace(_T("("), _T("\\("));
+                cmdLine.Replace(_T(")"), _T("\\)"));
+                connection->Execute(_T("[CmdLine({") + cmdLine + _T("})]"));
+            }
+
+            connection->Disconnect();
+            delete connection;
+        }
+
+        // free memory DDE-/IPC-clients
+        delete client;
+        delete m_singlinst;
+        return false;
+    }
+
     std::setlocale(LC_ALL, "C");
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     wxInitAllImageHandlers();
@@ -186,15 +230,23 @@ bool MyApp::OnInit()
 
     if (splashImage.LoadFile(f.GetPath(true)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
     {
-        wxSplashScreen* splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 4000, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
+        wxSplashScreen* splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 3000, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
         //wxApp::Yield();
-        wxSleep(3);
+        wxSleep(2);
         splash->Destroy();
     }
 
     g_findReplace = nullptr;
 
-    NumeReWindow *NumeReMainFrame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
+    // Create and initialize the main frame. Will also
+    // include loading the configuration, loading existing
+    // caches and preparing the editor.
+    NumeReWindow* NumeReMainFrame = new NumeReWindow("NumeRe: Framework für Numerische Rechnungen (v" + sVersion + ")", wxDefaultPosition, wxDefaultSize);
+
+    // Create the DDE server for the first (main)
+    // instance of the application
+    m_DDEServer = new DDE::Server(NumeReMainFrame);
+    m_DDEServer->Create(DDE_SERVICE);
 
     NumeReMainFrame->Show(true);
     NumeReMainFrame->Maximize();
@@ -238,8 +290,31 @@ bool MyApp::OnInit()
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Empty destructor.
+/////////////////////////////////////////////////
 MyApp::~MyApp()
 {
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Called on application shut down. Will
+/// free the memory of the IPC class instances.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
+int MyApp::OnExit()
+{
+    if (m_singlinst)
+        delete m_singlinst;
+
+    if (m_DDEServer)
+        delete m_DDEServer;
+
+    return 0;
 }
 
 //----------------------------------------------------------------------
@@ -248,7 +323,7 @@ MyApp::~MyApp()
 
 
 //////////////////////////////////////////////////////////////////////////////
-///  public constructor ChameleonWindow
+///  public constructor NumeReWindow
 ///  Responsible for instantiating pretty much everything.  It's all initialized here.
 ///
 ///  @param  title const wxString & The main window title
@@ -506,7 +581,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 
 //////////////////////////////////////////////////////////////////////////////
-///  public destructor ~ChameleonWindow
+///  public destructor ~NumeReWindow
 ///  Responsible for cleaning up almost everything.
 ///
 ///  @return void

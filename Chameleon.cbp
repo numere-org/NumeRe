@@ -277,6 +277,8 @@
 		<Unit filename="common/filewatcher.cpp" />
 		<Unit filename="common/filewatcher.hpp" />
 		<Unit filename="common/fixvsbug.h" />
+		<Unit filename="common/ipc.cpp" />
+		<Unit filename="common/ipc.hpp" />
 		<Unit filename="common/options.cpp" />
 		<Unit filename="common/recycler.cpp" />
 		<Unit filename="common/recycler.hpp" />
