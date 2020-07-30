@@ -49,7 +49,7 @@ class ProcedureVarFactory
         Parser* _parserRef;
         Datafile* _dataRef;
         Settings* _optionRef;
-        Define* _functionRef;
+        FunctionDefinitionManager* _functionRef;
         Output* _outRef;
         PlotData* _pDataRef;
         Script* _scriptRef;

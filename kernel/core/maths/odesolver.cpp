@@ -40,7 +40,7 @@ Odesolver::Odesolver()
     nDimensions = 0;
 }
 
-Odesolver::Odesolver(Parser* _parser, Datafile* _data, Define* _functions, Settings* _option) : Odesolver()
+Odesolver::Odesolver(Parser* _parser, Datafile* _data, FunctionDefinitionManager* _functions, Settings* _option) : Odesolver()
 {
     _odeParser = _parser;
     _odeData = _data;

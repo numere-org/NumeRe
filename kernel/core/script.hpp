@@ -58,7 +58,7 @@ class Script : public FileSystem
         string sInstallID;
         vector<string> vInstallPackages;
         unsigned int nCurrentPackage;
-        Define _localDef;
+        FunctionDefinitionManager _localDef;
 
         string stripLineComments(const string& sLine);
         string stripBlockComments(const string& sLine);

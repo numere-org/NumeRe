@@ -36,24 +36,88 @@
 
 using namespace std;
 
-class Plugin : public FileSystem
+
+/////////////////////////////////////////////////
+/// \brief This class implements a single
+/// declared plugin. It can be constructed
+/// directly from an install information string.
+/// It also supports importing from and exporting
+/// to the plugin definition file.
+/////////////////////////////////////////////////
+class Plugin
+{
+    private:
+        string getOptionValue(const string& sInstallInfoString, const string& sOption, const string& sDefault);
+
+    public:
+        string sCommand;
+        string sMainProcedure;
+        string sArgumentList;
+        string sType;
+        string sName;
+        string sVersion;
+        string sAuthor;
+        string sDescription;
+        string sDocumentationIndexID;
+
+        Plugin();
+        Plugin(const string& sInstallInfoString);
+
+        string exportDefinition();
+        void importDefinition(string sDefinitionString);
+
+        bool operator==(const Plugin& _plugin);
+        bool operator!=(const Plugin& _plugin);
+        void update(const Plugin& _plugin);
+        void incrementVersion();
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This class implements the procedure
+/// plugin system. It will be a parent class of
+/// the procedure class.
+///
+/// The plugin system is represented by dedicated
+/// NumeRe procedures, which one has to declare
+/// during plugin installation. This class will
+/// redirect the control to this dedicated "main"
+/// procedure once the plugin keyword has been
+/// found.
+/////////////////////////////////////////////////
+class PluginManager : public FileSystem
 {
     private:
         fstream fPlugins;
-        vector<vector<string> > vPluginInfo;
-        unsigned int nPlugins;
-        string sPlugins;
+        vector<Plugin> vPluginInfo;
+        string sPluginDefinitionFile;
 
         string sPluginProcName;
         string sPluginVarList;
-        void assign(const Plugin& _plugin);
+        void assign(const PluginManager& _pluginManager);
         void updatePluginFile();
 
+        /////////////////////////////////////////////////
+        /// \brief This private member function removes
+        /// the surrounding parentheses, if available.
+        ///
+        /// \param sString const string&
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        string stripParentheses(const string& sString) const
+        {
+            if (sString.front() == '(' && sString.back() == ')')
+                return sString.substr(1, sString.length()-2);
+
+            return sString;
+        }
+
     public:
-        Plugin();
-        Plugin(const Plugin& _plugin);
-        ~Plugin();
-        Plugin& operator= (const Plugin& _plugin);
+        PluginManager();
+        PluginManager(const PluginManager& _pluginManager);
+        ~PluginManager();
+        PluginManager& operator= (const PluginManager& _pluginManager);
 
         bool loadPlugins();
         bool evalPluginCmd(string& sCmd);
@@ -61,72 +125,134 @@ class Plugin : public FileSystem
         bool isPluginCmd(const string& sCmd) const;
         string deletePlugin(const string& sPlugin);
 
+        /////////////////////////////////////////////////
+        /// \brief Returns the number of installed
+        /// plugins.
+        ///
+        /// \return unsigned int
+        ///
+        /////////////////////////////////////////////////
         inline unsigned int getPluginCount() const
-            {return nPlugins;}
+            {return vPluginInfo.size();}
 
         string getPluginInfoPath();
         void addHelpIndex(const string& _sPluginName, string _sHelpId);
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the names of the installed
+        /// plugins.
+        ///
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         inline string getPluginNames() const
-            {
-                string sReturn = ";";
-                for (unsigned int i = 0; i < vPluginInfo.size(); i++)
-                {
-                    sReturn += vPluginInfo[i][0] + ";";
-                }
-                return sReturn;
-            }
+        {
+            string sReturn = ";";
+
+            for (unsigned int i = 0; i < vPluginInfo.size(); i++)
+                sReturn += vPluginInfo[i].sName + ";";
+
+            return sReturn;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current plugin's procedure
+        /// name.
+        ///
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         inline string getPluginProcName() const
             {return sPluginProcName;}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current plugin's procedure
+        /// argument list.
+        ///
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         inline string getPluginVarList() const
             {return sPluginVarList;}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the plugin command of the ith
+        /// plugin.
+        ///
+        /// \param i unsigned int i
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         inline string getPluginCommand(unsigned int i = 0) const
-            {
-                if (i < nPlugins)
-                {
-                    return vPluginInfo[i][0];
-                }
-                return "";
-            }
+        {
+            if (i < vPluginInfo.size())
+                return vPluginInfo[i].sCommand;
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the plugin name of the ith
+        /// plugin.
+        ///
+        /// \param i unsigned int
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         inline string getPluginName(unsigned int i = 0) const
-            {
-                if (i < nPlugins)
-                {
-                    if (vPluginInfo[i][4][0] == '(' && vPluginInfo[i][4][vPluginInfo[i][4].length()-1] == ')')
-                        return vPluginInfo[i][4].substr(1,vPluginInfo[i][4].length()-2);
-                    return vPluginInfo[i][4];
-                }
-                return "";
-            }
+        {
+            if (i < vPluginInfo.size())
+                return stripParentheses(vPluginInfo[i].sName);
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the version number string of
+        /// the ith plugin.
+        ///
+        /// \param i unsigned int
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         inline string getPluginVersion(unsigned int i = 0) const
-            {
-                if (i < nPlugins)
-                {
-                    if (vPluginInfo[i][5][0] == '(' && vPluginInfo[i][5][vPluginInfo[i][5].length()-1] == ')')
-                        return vPluginInfo[i][5].substr(1,vPluginInfo[i][5].length()-2);
-                    return vPluginInfo[i][5];
-                }
-                return "";
-            }
+        {
+            if (i < vPluginInfo.size())
+                return stripParentheses(vPluginInfo[i].sVersion);
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the author of the ith plugin.
+        ///
+        /// \param i unsigned int
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         inline string getPluginAuthor(unsigned int i = 0) const
-            {
-                if (i < nPlugins)
-                {
-                    if (vPluginInfo[i][6][0] == '(' && vPluginInfo[i][6][vPluginInfo[i][6].length()-1] == ')')
-                        return vPluginInfo[i][6].substr(1,vPluginInfo[i][6].length()-2);
-                    return vPluginInfo[i][6];
-                }
-                return "";
-            }
+        {
+            if (i < vPluginInfo.size())
+                return stripParentheses(vPluginInfo[i].sAuthor);
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the description of the ith
+        /// plugin.
+        ///
+        /// \param unsigned int i = 0
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         inline string getPluginDesc(unsigned int i = 0) const
-            {
-                if (i < nPlugins)
-                {
-                    if (vPluginInfo[i][7][0] == '(' && vPluginInfo[i][7][vPluginInfo[i][7].length()-1] == ')')
-                        return vPluginInfo[i][7].substr(1,vPluginInfo[i][7].length()-2);
-                    return vPluginInfo[i][7];
-                }
-                return "";
-            }
+        {
+            if (i < vPluginInfo.size())
+                return stripParentheses(vPluginInfo[i].sDescription);
+
+            return "";
+        }
 };
 
 #endif

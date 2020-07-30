@@ -23,7 +23,6 @@
 
 value_type vAns;
 extern mglGraph _fontData;
-Plugin _plugin;
 
 
 /////////////////////////////////////////////////
@@ -720,7 +719,7 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, bool bEraseInterval)
+vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval)
 {
 	vector<double> vInterval;
 	string sInterval[2] = {"", ""};

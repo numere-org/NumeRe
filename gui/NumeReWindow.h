@@ -219,6 +219,8 @@ class NumeReWindow : public wxFrame
         void runLaTeX();
         void compileLaTeX();
 
+        void refreshFunctionTree();
+
         Networking* GetNetworking();
 
         void PassImageList(wxImageList* imagelist);
@@ -364,7 +366,6 @@ class NumeReWindow : public wxFrame
         void setViewerFocus();
 
         void prepareFunctionTree();
-
         string prepareTooltip(const string& sTooltiptext);
 
         wxPrintData* setDefaultPrinterSettings();

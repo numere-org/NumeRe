@@ -300,7 +300,7 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sParams = "";        // Parameter-string
     string sIntegrationExpression;
@@ -695,7 +695,7 @@ static void refreshBoundaries(const string& sRenewBoundariesExpression, double& 
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string __sCmd = findCommand(sCmd).sString;
     string sParams = "";            // Parameter-string
@@ -1381,7 +1381,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions)
+vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sExpr = sCmd.substr(findCommand(sCmd).sString.length() + findCommand(sCmd).nPos);
     string sEps = "";
@@ -2012,7 +2012,7 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 21;
     int nOrder = 5;
@@ -2484,7 +2484,7 @@ static bool findZeroesInData(string& sCmd, string& sExpr, int nMode)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 21;
     double dVal[2];
@@ -2948,7 +2948,7 @@ static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, co
 /// The aproximated function is defined as a new
 /// custom function.
 /////////////////////////////////////////////////
-void taylor(string& sCmd, Parser& _parser, const Settings& _option, Define& _functions)
+void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sParams = "";
     string sVarName = "";
@@ -3590,7 +3590,7 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 100;
     double dLeft = 0.0;
@@ -3795,7 +3795,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     unsigned int nSamples = 100;
     string sXVals = "";
@@ -4302,7 +4302,7 @@ static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVal
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     using namespace little_endian_io;
 
@@ -4443,7 +4443,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _fun
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     int nSamples = 100;
     string sDataset = "";
@@ -4532,7 +4532,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 /// maximal amplitude (which is different from
 /// the FWHM) and the energy in the pulse.
 /////////////////////////////////////////////////
-bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDataset = "";
     Indices _idx;
@@ -4625,7 +4625,7 @@ bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, Define& _func
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDataset = "";
     Indices _idx, _target;
@@ -4779,7 +4779,7 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 /// The calculated spline polynomials are defined
 /// as new custom functions.
 /////////////////////////////////////////////////
-bool calculateSplines(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool calculateSplines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Indices _idx;
     Datafile _cache;

@@ -114,7 +114,8 @@ class NumeReKernel
             NUMERE_SHOW_STRING_TABLE,
             NUMERE_DEBUG_EVENT,
             NUMERE_ANSWER_READ,
-            NUMERE_SHOW_WINDOW
+            NUMERE_SHOW_WINDOW,
+            NUMERE_REFRESH_FUNCTIONTREE
         };
 
         enum DebuggerCodes
@@ -139,7 +140,7 @@ class NumeReKernel
         Datafile _data;
         Parser _parser;
         NumeRe::StringParser _stringParser;
-        Define _functions;
+        FunctionDefinitionManager _functions;
         PlotData _pData;
         Script _script;
         Procedure _procedure;
@@ -234,6 +235,7 @@ class NumeReKernel
         static int waitForContinue();
         static int evalDebuggerBreakPoint(const string& sCurrentCommand = "");
         static void addToLog(const string& sLogMessage);
+        void refreshFunctionTree();
 
         // Public member functions
         // Main loop function
@@ -264,7 +266,7 @@ class NumeReKernel
             return _stringParser;
         }
 
-        Define& getDefinitions()
+        FunctionDefinitionManager& getDefinitions()
         {
             return _functions;
         }

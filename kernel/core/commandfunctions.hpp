@@ -34,8 +34,6 @@ using namespace mu;
 typedef CommandReturnValues (*CommandFunc)(string&);
 
 extern mglGraph _fontData;
-/// \todo Move this global instance to the kernel or remove it completely.
-extern Plugin _plugin;
 
 string removeQuotationMarks(const string& sString);
 static CommandReturnValues cmd_data(string& sCmd) __attribute__ ((deprecated));
@@ -153,7 +151,7 @@ static string getVarList(const string& sCmd, Parser& _parser, Datafile& _data, S
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool undefineFunctions(string sFunctionList, Define& _functions, const Settings& _option)
+static bool undefineFunctions(string sFunctionList, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sSuccessFulRemoved;
 
@@ -1486,7 +1484,7 @@ static void listFunctions(const Settings& _option, const string& sType) //PRSRFU
 /// because the custom defined functions are also
 /// listed in the sidebar.
 /////////////////////////////////////////////////
-static void listDefinitions(const Define& _functions, const Settings& _option)
+static void listDefinitions(const FunctionDefinitionManager& _functions, const Settings& _option)
 {
 	NumeReKernel::toggleTableStatus();
 	make_hline();
@@ -1502,7 +1500,7 @@ static void listDefinitions(const Define& _functions, const Settings& _option)
 		for (unsigned int i = 0; i < _functions.getDefinedFunctions(); i++)
 		{
 		    // Print first the name of the function
-			NumeReKernel::printPreFmt(sectionHeadline(_functions.getFunction(i).substr(0, _functions.getFunction(i).rfind('('))));
+			NumeReKernel::printPreFmt(sectionHeadline(_functions.getFunctionSignature(i).substr(0, _functions.getFunctionSignature(i).rfind('('))));
 
 			// Print the comment, if it is available
 			if (_functions.getComment(i).length())
@@ -1511,7 +1509,7 @@ static void listDefinitions(const Define& _functions, const Settings& _option)
 			}
 
 			// Print the actual implementation of the function
-			NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunction(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
+			NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunctionSignature(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
         }
 		NumeReKernel::printPreFmt("|   -- " + toString((int)_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
 	}
@@ -1961,9 +1959,10 @@ static void listInstalledPlugins(Parser& _parser, Datafile& _data, const Setting
 	make_hline();
 	NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTPLUGINS_HEADLINE"))));
 	make_hline();
+	Procedure& _procedure = NumeReKernel::getInstance()->getProcedureInterpreter();
 
 	// Probably there's no plugin defined
-	if (!_plugin.getPluginCount())
+	if (!_procedure.getPluginCount())
 		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
 	else
 	{
@@ -1972,28 +1971,30 @@ static void listInstalledPlugins(Parser& _parser, Datafile& _data, const Setting
 
 		// Print all plugins (name, command and description)
 		// on the terminal
-		for (unsigned int i = 0; i < _plugin.getPluginCount(); i++)
+		for (unsigned int i = 0; i < _procedure.getPluginCount(); i++)
 		{
 			string sLine = "|   ";
-			if (_plugin.getPluginCommand(i).length() > 18)
-				sLine += _plugin.getPluginCommand(i).substr(0, 15) + "...";
+
+			if (_procedure.getPluginCommand(i).length() > 18)
+				sLine += _procedure.getPluginCommand(i).substr(0, 15) + "...";
 			else
-				sLine += _plugin.getPluginCommand(i);
+				sLine += _procedure.getPluginCommand(i);
+
 			sLine.append(23 - sLine.length(), ' ');
 
 			// Print basic information about the plugin
-			sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _plugin.getPluginName(i), _plugin.getPluginVersion(i), _plugin.getPluginAuthor(i));
+			sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _procedure.getPluginName(i), _procedure.getPluginVersion(i), _procedure.getPluginAuthor(i));
 
 			// Print the description
-			if (_plugin.getPluginDesc(i).length())
-			{
-				sLine += "$" + _plugin.getPluginDesc(i);
-			}
+			if (_procedure.getPluginDesc(i).length())
+				sLine += "$" + _procedure.getPluginDesc(i);
+
 			sLine = '"' + sLine + "\" -nq";
 			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDummy, true);
 			NumeReKernel::printPreFmt(LineBreak(sLine, _option, true, 0, 25) + "\n");
 		}
 	}
+
 	NumeReKernel::toggleTableStatus();
 	make_hline();
 	return;
@@ -2018,7 +2019,7 @@ static void listInstalledPlugins(Parser& _parser, Datafile& _data, const Setting
 /// chekbox. There's no command available to enable
 /// this command.
 /////////////////////////////////////////////////
-static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
 	if (!_option.getUseExecuteCommand())
 		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
@@ -2514,7 +2515,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "integrate").nPos;
     vector<double> vIntegrate;
@@ -2571,7 +2572,7 @@ static CommandReturnValues cmd_diff(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "diff").nPos;
     vector<double> vDiff;
@@ -2614,7 +2615,7 @@ static CommandReturnValues cmd_extrema(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "extrema").nPos;
     string sArgument;
@@ -2665,7 +2666,7 @@ static CommandReturnValues cmd_pulse(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!analyzePulse(sCmd, _parser, _data, _functions, _option))
     {
@@ -2690,7 +2691,7 @@ static CommandReturnValues cmd_eval(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "eval").nPos;
     string sArgument;
@@ -2734,7 +2735,7 @@ static CommandReturnValues cmd_zeroes(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "zeroes").nPos;
     string sArgument;
@@ -2783,7 +2784,7 @@ static CommandReturnValues cmd_sort(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "sort").nPos;
     string sArgument;
@@ -2970,7 +2971,7 @@ static CommandReturnValues cmd_plotting(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
 
     string sCommand = findCommand(sCmd).sString;
@@ -3030,7 +3031,7 @@ static CommandReturnValues cmd_fit(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (_data.isValid() || _data.isValidCache())
         fitDataSet(sCmd, _parser, _data, _functions, _option);
@@ -3776,7 +3777,7 @@ static CommandReturnValues cmd_get(string& sCmd)
 static CommandReturnValues cmd_undefine(string& sCmd)
 {
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     size_t nPos = findCommand(sCmd).nPos;
 
     if (sCmd.length() > 7)
@@ -4502,7 +4503,7 @@ static CommandReturnValues cmd_new(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (findParameter(sCmd, "dir", '=')
             || findParameter(sCmd, "script", '=')
@@ -4513,7 +4514,7 @@ static CommandReturnValues cmd_new(string& sCmd)
             || sCmd.find("()", findCommand(sCmd).nPos + 3) != string::npos
             || sCmd.find('$', findCommand(sCmd).nPos + 3) != string::npos)
     {
-        _data.setUserdefinedFuncs(_functions.getDefinesName());
+        _data.setUserdefinedFuncs(_functions.getNamesOfDefinedFunctions());
 
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
             sCmd = evaluateParameterValues(sCmd);
@@ -4574,7 +4575,7 @@ static CommandReturnValues cmd_taylor(string& sCmd)
     //Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (sCmd.length() > 7)
         taylor(sCmd, _parser, _option, _functions);
@@ -4640,7 +4641,7 @@ static CommandReturnValues cmd_odesolve(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (sCmd.length() > 9)
     {
@@ -5156,7 +5157,7 @@ static CommandReturnValues cmd_clear(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_ifndefined(string& sCmd)
 {
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (sCmd.find(' ') != string::npos)
@@ -5396,7 +5397,7 @@ static CommandReturnValues cmd_audio(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!writeAudioFile(sCmd, _parser, _data, _functions, _option))
         throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
@@ -5612,7 +5613,7 @@ static CommandReturnValues cmd_stfa(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
 
@@ -5638,7 +5639,7 @@ static CommandReturnValues cmd_spline(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!calculateSplines(sCmd, _parser, _data, _functions, _option))
         doc_Help("spline", _option);
@@ -5657,7 +5658,7 @@ static CommandReturnValues cmd_spline(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_save(string& sCmd)
 {
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (findParameter(sCmd, "define"))
@@ -5688,7 +5689,7 @@ static CommandReturnValues cmd_set(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Script& _script = NumeReKernel::getInstance()->getScript();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
@@ -6775,7 +6776,7 @@ static CommandReturnValues cmd_matop(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     performMatrixOperation(sCmd, _parser, _data, _functions, _option);
     return COMMAND_PROCESSED;
@@ -6816,7 +6817,7 @@ static CommandReturnValues cmd_random(string& sCmd)
 static CommandReturnValues cmd_redefine(string& sCmd)
 {
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (sCmd.length() > findCommand(sCmd).sString.length() + 1)
     {
@@ -7243,7 +7244,7 @@ static CommandReturnValues cmd_regularize(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!regularizeDataSet(sCmd, _parser, _data, _functions, _option))
         throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, SyntaxError::invalid_position);
@@ -7264,13 +7265,13 @@ static CommandReturnValues cmd_regularize(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_define(string& sCmd)
 {
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Datafile& _data = NumeReKernel::getInstance()->getData();
 
     if (sCmd.length() > 8)
     {
-        _functions.setCacheList(_data.getTableNames());
+        _functions.setTableList(_data.getTableNames());
 
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
@@ -7419,7 +7420,7 @@ static CommandReturnValues cmd_datagrid(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument = "grid";
 
@@ -7445,7 +7446,7 @@ static CommandReturnValues cmd_list(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
 
@@ -7534,7 +7535,7 @@ static CommandReturnValues cmd_load(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Script& _script = NumeReKernel::getInstance()->getScript();
 
     string sArgument;
@@ -7975,7 +7976,7 @@ static CommandReturnValues cmd_execute(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     executeCommand(sCmd, _parser, _data, _functions, _option);
     return COMMAND_PROCESSED;

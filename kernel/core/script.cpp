@@ -754,8 +754,6 @@ void Script::evaluateInstallInformation(bool& bFirstPassedInstallCommand)
 
         if (!bDISABLE_SCREEN_OUTPUT)
             NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_START_INSTALL")) + " ...");
-
-        bFirstPassedInstallCommand = false;
     }
 
     // Write the installation information string to the
@@ -763,8 +761,7 @@ void Script::evaluateInstallInformation(bool& bFirstPassedInstallCommand)
     if (sInstallInfoString.length())
     {
         fLogFile << "Installinfo: " << sInstallInfoString << endl;
-        if (!bFirstPassedInstallCommand)
-            sInstallInfoString.clear();
+            bFirstPassedInstallCommand = false;
     }
 }
 

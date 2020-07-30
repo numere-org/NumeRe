@@ -21,8 +21,10 @@
 #include "core/utils/tools.hpp"
 
 
-// Default constructor
-NumeReSyntax::NumeReSyntax()
+/////////////////////////////////////////////////
+/// \brief Default constructor.
+/////////////////////////////////////////////////
+NumeReSyntax::NumeReSyntax() : sPath("")
 {
     vNSCRCommands.push_back("NO_SYNTAX_ELEMENTS");
     vNPRCCommands.push_back("NO_SYNTAX_ELEMENTS");
@@ -43,24 +45,42 @@ NumeReSyntax::NumeReSyntax()
     sSingleOperators = "+-*/?=()[]{},;#^!&|<>%:";
 }
 
-// Specialized constructor. Will also load the syntax definitions
-NumeReSyntax::NumeReSyntax(const string& sPath) : NumeReSyntax()
+
+/////////////////////////////////////////////////
+/// \brief Specialized constructor. Delegates to
+/// the default constructor and will also load
+/// the syntax definitions.
+///
+/// \param _sPath const string&
+///
+/////////////////////////////////////////////////
+NumeReSyntax::NumeReSyntax(const string& _sPath) : NumeReSyntax()
 {
-    loadSyntax(sPath);
+    loadSyntax(_sPath);
 }
 
-// Member function for loading the syntax element definitions
-void NumeReSyntax::loadSyntax(const string& sPath)
+
+/////////////////////////////////////////////////
+/// \brief Member function for loading the syntax
+/// element definitions.
+///
+/// \param _sPath const string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReSyntax::loadSyntax(const string& _sPath)
 {
+    if (_sPath.length() && !sPath.length())
+        sPath = _sPath;
+
     ifstream file_in;
     string sLine;
 
     // Open the file and check, whether the file stream is valid
     file_in.open(sPath + "lang\\syntaxelements.nlng");
+
     if (!file_in.good())
-    {
         return;
-    }
 
     // Read the overall file
     while (!file_in.eof())
@@ -71,6 +91,7 @@ void NumeReSyntax::loadSyntax(const string& sPath)
         // Ignore it, if it's empty or if it starts with a comment sign
         if (!sLine.length())
             continue;
+
         if (sLine.front() == '#')
             continue;
 
@@ -108,15 +129,34 @@ void NumeReSyntax::loadSyntax(const string& sPath)
     }
 }
 
-// Add the plugin definitions to the command strings
+
+/////////////////////////////////////////////////
+/// \brief Add the plugin definitions to the
+/// command strings. Will reload the standard
+/// settings in advance to restore the default
+/// state.
+///
+/// \param vPlugins const vector<string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReSyntax::addPlugins(const vector<string>& vPlugins)
 {
-    if (!vPlugins.size())
-        return;
+    mAutoCompList.clear();
+
+    loadSyntax();
     vNSCRCommands.insert(vNSCRCommands.end(), vPlugins.begin(), vPlugins.end());
 }
 
-// Set the procedure tree (used for autocompleting)
+
+/////////////////////////////////////////////////
+/// \brief Set the procedure tree (used for
+/// autocompleting).
+///
+/// \param vTree const vector<string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReSyntax::setProcedureTree(const vector<string>& vTree)
 {
     // Copy the tree
@@ -128,14 +168,25 @@ void NumeReSyntax::setProcedureTree(const vector<string>& vTree)
     {
         while (vProcedureTree[i].find('/') != string::npos)
             vProcedureTree[i][vProcedureTree[i].find('/')] = '~';
+
         while (vProcedureTree[i].find('\\') != string::npos)
             vProcedureTree[i][vProcedureTree[i].find('\\')] = '~';
+
         if (vProcedureTree[i].find(".nprc") != string::npos)
             vProcedureTree[i].erase(vProcedureTree[i].rfind(".nprc"));
     }
 }
 
-// This member function concatenates the passed vector elements to a whitespace-separated single string
+
+/////////////////////////////////////////////////
+/// \brief This member function concatenates the
+/// passed vector elements to a whitespace-
+/// separated single string.
+///
+/// \param vVector const vector<string>&
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::constructString(const vector<string>& vVector) const
 {
     string sReturn = "";
@@ -145,10 +196,19 @@ string NumeReSyntax::constructString(const vector<string>& vVector) const
     {
         sReturn += vVector[i] + " ";
     }
+
     return sReturn;
 }
 
-// This function splits the passed string up into single string tokens
+
+/////////////////////////////////////////////////
+/// \brief This function splits the passed string
+/// up into single string tokens.
+///
+/// \param sString string
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> NumeReSyntax::splitString(string sString)
 {
     vector<string> vReturn;
@@ -180,10 +240,20 @@ vector<string> NumeReSyntax::splitString(string sString)
             break;
         }
     }
+
     return vReturn;
 }
 
-// This function searches for a match of the passed string in th passed vector
+
+/////////////////////////////////////////////////
+/// \brief This function searches for a match of
+/// the passed string in the passed vector.
+///
+/// \param vVector const vector<string>&
+/// \param sString const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool NumeReSyntax::matchItem(const vector<string>& vVector, const string& sString)
 {
     for (size_t i = 0; i < vVector.size(); i++)
@@ -197,7 +267,16 @@ bool NumeReSyntax::matchItem(const vector<string>& vVector, const string& sStrin
     return false;
 }
 
-// This function applies the highlighting colors to the command line (only used in the console)
+
+/////////////////////////////////////////////////
+/// \brief This function applies the highlighting
+/// colors to the command line (only used in the
+/// terminal).
+///
+/// \param sCommandLine const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::highlightLine(const string& sCommandLine)
 {
     // Ensure that a command line with a length is available
@@ -271,13 +350,10 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
         for (size_t k = sCommandLine.find('$'); k < sCommandLine.length(); k++)
         {
             if (sCommandLine[k] == '(' || sCommandLine[k] == ' ')
-            {
                 c = c_normal;
-            }
             else if (sCommandLine[k] == '$')
-            {
                 c = c_proc;
-            }
+
             if (colors[k] == '0'+SYNTAX_STD)
                 colors[k] = c;
             else
@@ -350,6 +426,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
                 // Commands
                 colors.replace(i, nLen, nLen, '0'+SYNTAX_COMMAND);
             }
+
             if (matchItem(vNPRCCommands, sCommandLine.substr(i,nLen)))
             {
                 // Commands for NPRC in NSCR (highlighted differently)
@@ -360,6 +437,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
             {
                 // Methods on string variables or on data sets
                 size_t nPos = sCommandLine.find('.', i)+1;
+
                 for (size_t n = nPos; n < i+nLen; n++)
                 {
                     if (sCommandLine[n] == '.')
@@ -368,6 +446,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
                             colors.replace(nPos, n-nPos, n-nPos, '0'+SYNTAX_METHODS);
                         nPos = n+1;
                     }
+
                     if (n+1 == i+nLen)
                     {
                         if (matchItem(vMethods, sCommandLine.substr(nPos, n-nPos+1)))
@@ -398,6 +477,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
                 // Special variables
                 colors.replace(i, nLen, nLen, '0'+SYNTAX_SPECIALVAL);
             }
+
             i += nLen;
         }
     }
@@ -406,7 +486,16 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
     return colors;
 }
 
-// Highlight an error message. We simply use the color of the operators (red as default)
+
+/////////////////////////////////////////////////
+/// \brief Highlight an error message. We simply
+/// use the color of the operators (which is red
+/// as default).
+///
+/// \param sCommandLine const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::highlightError(const string& sCommandLine)
 {
     string colors;
@@ -414,7 +503,16 @@ string NumeReSyntax::highlightError(const string& sCommandLine)
     return colors;
 }
 
-// Highlight a warning message. We simply use the color of numbers (orange as default)
+
+/////////////////////////////////////////////////
+/// \brief Highlight a warning message. We simply
+/// use the color of numbers (which is orange as
+/// default).
+///
+/// \param sCommandLine const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::highlightWarning(const string& sCommandLine)
 {
     string colors;
@@ -422,7 +520,16 @@ string NumeReSyntax::highlightWarning(const string& sCommandLine)
     return colors;
 }
 
-// This function returns the autocompletion list for the editor
+
+/////////////////////////////////////////////////
+/// \brief This function returns the
+/// autocompletion list for the editor.
+///
+/// \param sFirstChars string
+/// \param sType string
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
 {
     string sAutoCompList;
@@ -433,18 +540,25 @@ string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
         // Insert every element in the map
         for (size_t i = 0; i < vNSCRCommands.size(); i++)
             mAutoCompList[toLowerCase(vNSCRCommands[i])+" |"+vNSCRCommands[i]] = SYNTAX_COMMAND;
+
         for (size_t i = 0; i < vNPRCCommands.size(); i++)
             mAutoCompList[toLowerCase(vNPRCCommands[i])+" |"+vNPRCCommands[i]] = SYNTAX_COMMAND;
+
         for (size_t i = 0; i < vFunctions.size(); i++)
             mAutoCompList[toLowerCase(vFunctions[i])+" |"+vFunctions[i]+"("] = SYNTAX_FUNCTION;
+
         for (size_t i = 0; i < vMethods.size(); i++)
             mAutoCompList[toLowerCase(vMethods[i])+" |"+vMethods[i]+"("] = SYNTAX_METHODS;
+
         for (size_t i = 0; i < vOptions.size(); i++)
             mAutoCompList[toLowerCase(vOptions[i])+" |"+vOptions[i]] = SYNTAX_OPTION;
+
         for (size_t i = 0; i < vConstants.size(); i++)
             mAutoCompList[toLowerCase(vConstants[i])+" |"+vConstants[i]] = SYNTAX_CONSTANT;
+
         for (size_t i = 0; i < vSpecialValues.size(); i++)
             mAutoCompList[toLowerCase(vSpecialValues[i])+" |"+vSpecialValues[i]] = SYNTAX_SPECIALVAL;
+
         for (size_t i = 0; i < vOperators.size(); i++)
             mAutoCompList[toLowerCase(vOperators[i])+" |"+vOperators[i]] = SYNTAX_OPERATOR;
     }
@@ -459,6 +573,7 @@ string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
         {
             if (sType == "NSCR" && iter->second == SYNTAX_NPRC_COMMAND)
                 continue;
+
             if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
             {
                 if (iter->second == SYNTAX_NPRC_COMMAND)
@@ -475,26 +590,36 @@ string NumeReSyntax::getAutoCompList(string sFirstChars, string sType)
     return sAutoCompList;
 }
 
-// The same as above but specialized for MATLAB commands
+
+/////////////////////////////////////////////////
+/// \brief The same as above but specialized for
+/// MATLAB commands.
+///
+/// \param sFirstChars string
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::getAutoCompListMATLAB(string sFirstChars)
 {
     string sAutoCompList;
+
     if (!mAutoCompListMATLAB.size())
     {
         for (size_t i = 0; i < vMatlabKeyWords.size(); i++)
             mAutoCompListMATLAB[toLowerCase(vMatlabKeyWords[i])+" |"+vMatlabKeyWords[i]] = SYNTAX_COMMAND;
+
         for (size_t i = 0; i < vMatlabFunctions.size(); i++)
             mAutoCompListMATLAB[toLowerCase(vMatlabFunctions[i])+" |"+vMatlabFunctions[i]+"("] = SYNTAX_FUNCTION;
     }
+
     sFirstChars = toLowerCase(sFirstChars);
+
     for (auto iter = mAutoCompListMATLAB.begin(); iter != mAutoCompListMATLAB.end(); ++iter)
     {
         if ((iter->first).front() == sFirstChars.front())
         {
             if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
-            {
                 sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
-            }
         }
         else if ((iter->first).front() > sFirstChars.front())
             break;
@@ -503,26 +628,36 @@ string NumeReSyntax::getAutoCompListMATLAB(string sFirstChars)
     return sAutoCompList;
 }
 
-// The same as above but specialized for C++ Commands
+
+/////////////////////////////////////////////////
+/// \brief The same as above but specialized for
+/// C++ Commands.
+///
+/// \param sFirstChars string
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::getAutoCompListCPP(string sFirstChars)
 {
     string sAutoCompList;
+
     if (!mAutoCompListCPP.size())
     {
         for (size_t i = 0; i < vCppKeyWords.size(); i++)
             mAutoCompListCPP[toLowerCase(vCppKeyWords[i])+" |"+vCppKeyWords[i]] = SYNTAX_COMMAND;
+
         for (size_t i = 0; i < vCppFunctions.size(); i++)
             mAutoCompListCPP[toLowerCase(vCppFunctions[i])+" |"+vCppFunctions[i]+"("] = SYNTAX_FUNCTION;
     }
+
     sFirstChars = toLowerCase(sFirstChars);
+
     for (auto iter = mAutoCompListCPP.begin(); iter != mAutoCompListCPP.end(); ++iter)
     {
         if ((iter->first).front() == sFirstChars.front())
         {
             if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
-            {
                 sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
-            }
         }
         else if ((iter->first).front() > sFirstChars.front())
             break;
@@ -531,24 +666,33 @@ string NumeReSyntax::getAutoCompListCPP(string sFirstChars)
     return sAutoCompList;
 }
 
-// The same as above but specialized for LaTeX Commands
+
+/////////////////////////////////////////////////
+/// \brief The same as above but specialized for
+/// LaTeX Commands.
+///
+/// \param sFirstChars string
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::getAutoCompListTeX(string sFirstChars)
 {
     string sAutoCompList;
+
     if (!mAutoCompListTeX.size())
     {
         for (size_t i = 0; i < vTeXKeyWords.size(); i++)
             mAutoCompListTeX[toLowerCase(vTeXKeyWords[i])+" |"+vTeXKeyWords[i]] = SYNTAX_COMMAND;
     }
+
     sFirstChars = toLowerCase(sFirstChars);
+
     for (auto iter = mAutoCompListTeX.begin(); iter != mAutoCompListTeX.end(); ++iter)
     {
         if ((iter->first).front() == sFirstChars.front())
         {
             if (sFirstChars == (iter->first).substr(0,sFirstChars.length()))
-            {
                 sAutoCompList += (iter->first).substr((iter->first).find('|')+1) + "?" + toString((int)(iter->second)) + " ";
-            }
         }
         else if ((iter->first).front() > sFirstChars.front())
             break;
@@ -557,7 +701,18 @@ string NumeReSyntax::getAutoCompListTeX(string sFirstChars)
     return sAutoCompList;
 }
 
-// This function will return the autocompletion list for the procedures based upon the provided procedure tree
+
+/////////////////////////////////////////////////
+/// \brief This function will return the
+/// autocompletion list for the procedures based
+/// upon the provided procedure tree.
+///
+/// \param sFirstChars string
+/// \param sBaseNameSpace string
+/// \param sSelectedNameSpace string
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpace, string sSelectedNameSpace)
 {
     if (!vProcedureTree.size())
@@ -608,6 +763,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
             if (sSelectedNameSpace.length())
             {
                 sToken = vProcedureTree[i].substr(sSelectedNameSpace.length());
+
                 if (sToken.find('~', sFirstChars.length()) != string::npos)
                 {
                     sToken.erase(sToken.find('~', sFirstChars.length())+1);
@@ -626,6 +782,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
             {
                 if (sToken.substr(0, sBaseNameSpace.length()) == sBaseNameSpace)
                     sToken.erase(0, sBaseNameSpace.length());
+
                 if (sToken.front() == '~')
                     sToken.erase(0,1);
             }
@@ -640,7 +797,15 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
     return sAutoCompList.substr(1);
 }
 
-// This function returns the autocompletion list for the namespaces
+
+/////////////////////////////////////////////////
+/// \brief This function returns the
+/// autocompletion list for the namespaces.
+///
+/// \param sFirstChars string
+/// \return string
+///
+/////////////////////////////////////////////////
 string NumeReSyntax::getNameSpaceAutoCompList(string sFirstChars)
 {
     if (!vProcedureTree.size())
@@ -660,14 +825,14 @@ string NumeReSyntax::getNameSpaceAutoCompList(string sFirstChars)
 
     // Append all available namespaces
     string sToken;
+
     for (size_t i = 0; i < vProcedureTree.size(); i++)
     {
         if (vProcedureTree[i].substr(0, sProcName.length()) == sProcName)
         {
             if (vProcedureTree[i].find('~', sProcName.length()) != string::npos)
-            {
                 sToken = vProcedureTree[i].substr(0, vProcedureTree[i].find('~', sProcName.length())+1) + "?" + toString((int)(SYNTAX_PROCEDURE)) + " ";
-            }
+
             if (sAutoCompList.find(" " + sToken) == string::npos)
                 sAutoCompList += sToken;
         }

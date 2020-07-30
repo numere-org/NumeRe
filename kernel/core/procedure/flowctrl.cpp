@@ -3264,7 +3264,7 @@ string FlowCtrl::getCurrentCommand() const
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
+int FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
 {
     return 1;
 }

@@ -399,10 +399,9 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_splitEditorOutput->SetCharHeigth(m_terminal->getTextHeight());
     m_splitCommandHistory->SetCharHeigth(m_terminal->getTextHeight());
     _guilang.setTokens("<>="+getProgramFolder().ToStdString()+";");
+
     if (m_terminal->getKernelSettings().getUseCustomLanguageFiles())
-    {
         _guilang.loadStrings(true);
-    }
     else
         _guilang.loadStrings(false);
 
@@ -454,8 +453,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_projectFileFolders[3] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PROCEDURES"), idxFolderOpen);
     m_projectFileFolders[4] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_PLOTS"), idxFolderOpen);
 
-    _guilang.addToLanguage(m_terminal->getPluginLanguageStrings());
-    _guilang.addToLanguage(m_terminal->getFunctionLanguageStrings());
     prepareFunctionTree();
 
 #if wxUSE_DRAG_AND_DROP
@@ -5539,6 +5536,29 @@ void NumeReWindow::setViewerFocus()
 
 
 /////////////////////////////////////////////////
+/// \brief This member function is a simple
+/// wrapper for refreshing the contents of the
+/// function tree.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::refreshFunctionTree()
+{
+    _guilang.loadStrings(m_terminal->getKernelSettings().getUseCustomLanguageFiles());
+    prepareFunctionTree();
+    m_functionTree->Refresh();
+
+    // Update the syntax colors in the editor windows
+    for (size_t i = 0; i < m_book->GetPageCount(); i++)
+    {
+        static_cast<NumeReEditor*>(m_book->GetPage(i))->UpdateSyntaxHighlighting(true);
+    }
+
+    m_history->UpdateSyntaxHighlighting(true);
+}
+
+/////////////////////////////////////////////////
 /// \brief This member function creates the
 /// contents of the symbols tree.
 ///
@@ -5548,6 +5568,14 @@ void NumeReWindow::setViewerFocus()
 /////////////////////////////////////////////////
 void NumeReWindow::prepareFunctionTree()
 {
+    // Insert the plugin and function definitions
+    _guilang.addToLanguage(m_terminal->getPluginLanguageStrings());
+    _guilang.addToLanguage(m_terminal->getFunctionLanguageStrings());
+
+    // Clear all previously available items
+    if (!m_functionTree->IsEmpty())
+        m_functionTree->DeleteAllItems();
+
     vector<string> vDirList;
     vector<string> vKeyList;
     string sKeyList = _guilang.get("GUI_TREE_CMD_KEYLIST");

@@ -236,7 +236,7 @@ string evaluateParameterValues(const string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
 	string sReturn = sCmd;
 	string sTemp = "";

@@ -1268,7 +1268,7 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool sortData(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
 	vector<int> vSortIndex;
 	DataAccessParser _accessParser(sCmd);

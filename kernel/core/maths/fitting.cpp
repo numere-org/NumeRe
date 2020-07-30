@@ -71,7 +71,7 @@ static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, dou
 static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFile, const string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const vector<double>& vInitialVals, size_t nSize, const string& sFitAnalysis, const string& sFuncDisplay, const string& sFittedFunction, double dChisq);
 
 // This is the fitting main routine
-bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     // Declare the FittingData object first
     FittingData fitData;
@@ -390,9 +390,9 @@ bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _functio
 
     if (!_functions.isDefined(sFunctionDefString))
         bDefinitionSuccess = _functions.defineFunc(sFunctionDefString);
-    else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
+    else if (_functions.getDefinitionString(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
         bDefinitionSuccess = _functions.defineFunc(sFunctionDefString, true);
-    else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) == sFunctionDefString)
+    else if (_functions.getDefinitionString(_functions.getFunctionIndex(sFunctionDefString)) == sFunctionDefString)
         return true;
 
     if (bDefinitionSuccess)
@@ -410,7 +410,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     vector<double> vInterVal;
@@ -1165,7 +1165,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     Fitcontroller _fControl(&_parser);
@@ -1275,9 +1275,9 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
 
     if (!_functions.isDefined(sFunctionDefString))
         bDefinitionSuccess = _functions.defineFunc(sFunctionDefString);
-    else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
+    else if (_functions.getDefinitionString(_functions.getFunctionIndex(sFunctionDefString)) != sFunctionDefString)
         bDefinitionSuccess = _functions.defineFunc(sFunctionDefString, true);
-    else if (_functions.getDefine(_functions.getFunctionIndex(sFunctionDefString)) == sFunctionDefString)
+    else if (_functions.getDefinitionString(_functions.getFunctionIndex(sFunctionDefString)) == sFunctionDefString)
         return true;
 
     if (bDefinitionSuccess)
