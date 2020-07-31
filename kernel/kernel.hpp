@@ -41,7 +41,6 @@
 #include "core/procedure/flowctrl.hpp"
 #include "core/procedure/procedure.hpp"
 #include "core/debugger/debugger.hpp"
-#include "core/plugin.hpp"
 #include "core/ui/language.hpp"
 #include "core/procedure/procedurelibrary.hpp"
 #include "core/ParserLib/muParser.h"

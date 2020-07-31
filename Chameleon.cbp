@@ -459,12 +459,12 @@
 		<Unit filename="kernel/core/documentation/doc_helper.hpp" />
 		<Unit filename="kernel/core/documentation/documentation.cpp" />
 		<Unit filename="kernel/core/documentation/documentation.hpp" />
-		<Unit filename="kernel/core/filesystem.cpp" />
-		<Unit filename="kernel/core/filesystem.hpp" />
 		<Unit filename="kernel/core/io/file.cpp" />
 		<Unit filename="kernel/core/io/file.hpp" />
 		<Unit filename="kernel/core/io/fileops.cpp" />
 		<Unit filename="kernel/core/io/fileops.hpp" />
+		<Unit filename="kernel/core/io/filesystem.cpp" />
+		<Unit filename="kernel/core/io/filesystem.hpp" />
 		<Unit filename="kernel/core/io/output.cpp" />
 		<Unit filename="kernel/core/io/output.hpp" />
 		<Unit filename="kernel/core/maths/command_implementations.cpp" />
@@ -495,8 +495,6 @@
 		<Unit filename="kernel/core/plotting/plotinfo.hpp" />
 		<Unit filename="kernel/core/plotting/plotting.cpp" />
 		<Unit filename="kernel/core/plotting/plotting.hpp" />
-		<Unit filename="kernel/core/plugin.cpp" />
-		<Unit filename="kernel/core/plugin.hpp" />
 		<Unit filename="kernel/core/plugin_histogram.cpp" />
 		<Unit filename="kernel/core/plugin_random.cpp" />
 		<Unit filename="kernel/core/plugin_statistics.cpp" />
@@ -505,6 +503,8 @@
 		<Unit filename="kernel/core/procedure/dependency.hpp" />
 		<Unit filename="kernel/core/procedure/flowctrl.cpp" />
 		<Unit filename="kernel/core/procedure/flowctrl.hpp" />
+		<Unit filename="kernel/core/procedure/plugin.cpp" />
+		<Unit filename="kernel/core/procedure/plugin.hpp" />
 		<Unit filename="kernel/core/procedure/procedure.cpp" />
 		<Unit filename="kernel/core/procedure/procedure.hpp" />
 		<Unit filename="kernel/core/procedure/procedurecommandline.hpp" />

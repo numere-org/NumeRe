@@ -19,7 +19,8 @@
 
 
 #include "plugin.hpp"
-#include "../kernel.hpp"
+#include "../../kernel.hpp"
+#include "../utils/tools.hpp"
 
 //////////////////////
 // CLASS PLUGIN

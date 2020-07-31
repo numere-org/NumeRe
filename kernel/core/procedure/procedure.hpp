@@ -37,9 +37,9 @@
 #include "../maths/parser_functions.hpp"
 #include "../plotting/plotdata.hpp"
 #include "flowctrl.hpp"
-#include "../plugin.hpp"
+#include "plugin.hpp"
 #include "../maths/define.hpp"
-#include "../filesystem.hpp"
+#include "../io/filesystem.hpp"
 #include "../io/output.hpp"
 #include "../script.hpp"
 

@@ -1610,10 +1610,10 @@ bool Datafile::saveFile(const string& sCache, string _sFileName, unsigned short 
     else
     {
         string sTemp = sPath;
-        setPath(sSavePath, false, sWhere);
+        setPath(sSavePath, false, sExecutablePath);
 
         sOutputFile = FileSystem::ValidFileName(_sFileName, ".ndat");
-        setPath(sTemp, false, sWhere);
+        setPath(sTemp, false, sExecutablePath);
     }
 
     // Redirect the control to the memory manager, if not

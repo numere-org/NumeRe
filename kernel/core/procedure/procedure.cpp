@@ -51,7 +51,7 @@ Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), PluginManager(_p
 
     // Copy the relevant data
     sPath = _procedure.sPath;
-    sWhere = _procedure.sWhere;
+    sExecutablePath = _procedure.sExecutablePath;
     sCallingNameSpace = _procedure.sCallingNameSpace;
     sProcNames = _procedure.sProcNames;
 
