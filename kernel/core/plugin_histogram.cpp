@@ -32,47 +32,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 {
 	if (_option.getbDebug())
 		cerr << "|-> DEBUG: sCmd = " << sCmd << endl;
-	if (_data.isValid() || _data.isValidCache())			// Sind ueberhaupt Daten vorhanden?
+	if (_data.isValid())			// Sind ueberhaupt Daten vorhanden?
 	{
-
-		//cerr << "|-> HISTOGRAMM (v " << PI_HIST << ")" << endl;
-		//cerr << "|   " << std::setfill((char)196) << std::setw(20) << (char)196 << endl;
-		//cerr << LineBreak("|-> Dieses Plugin generiert den Datensatz eines Histogramms aus einer oder mehreren gegebenen Datenreihen.", _option) << endl;
-		if (!bUseCache && !bUseData)
-		{
-			if (!_data.isValid() && _data.isValidCache())
-			{
-				NumeReKernel::print(LineBreak(_lang.get("HIST_ONLY_CACHE"), _option));
-				_data.setCacheStatus(true);
-			}
-			else if (_data.isValid() && _data.isValidCache())
-			{
-				char c = 0;
-				NumeReKernel::print(LineBreak(_lang.get("HIST_ASK_DATASET"), _option));
-				NumeReKernel::printPreFmt("|\n|<- ");
-
-				cin >> c;
-
-				if (c == '0')
-				{
-					NumeReKernel::print(_lang.get("COMMON_CANCEL") + ".");
-					cin.ignore(1);
-					return;
-				}
-				else if (c == 'c')
-					_data.setCacheStatus(true);
-				NumeReKernel::print(LineBreak(_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option));
-			}
-			else
-			{
-				NumeReKernel::print(LineBreak(_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option));
-			}
-		}
-		else if (bUseCache || sCmd.find("-cache") != string::npos || _data.matchTableAsParameter(sCmd).length())
-		{
-			_data.setCacheStatus(true);
-		}
-
 		// --> ein Histogramm kann nur von einer Datenreihe erzeugt werden. Alles andere ist nicht sinnvoll umsetzbar <--
 		int nDataRow = 0;			// Variable zur Festlegung, mit welcher Datenreihe begonnen werden soll
 		int nDataRowFinal = 0;		// Variable zur Festlegung, mit welcher Datenreihe aufgehoehrt werden soll
@@ -544,7 +505,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			{
 				for (int j = nDataRow + 2 * bGrid; j < nDataRowFinal; j++)
 				{
-					if (_data.isValidEntry(i, j, sDatatable) && _data.getElement(i, j, sDatatable) <= dMax && _data.getElement(i, j, sDatatable) >= dMin)
+					if (_data.isValidElement(i, j, sDatatable) && _data.getElement(i, j, sDatatable) <= dMax && _data.getElement(i, j, sDatatable) >= dMin)
 						nMax++;
 				}
 			}
@@ -955,8 +916,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 
 			if (bWriteToCache)
 			{
-				_target.setCacheStatus(true);
-				int nFirstCol = _target.getTableCols(sTargettable, false);
+				int nFirstCol = _target.getCols(sTargettable, false);
 
 				_target.setHeadLineElement(nFirstCol, sTargettable, "Bins");
 				//cerr << "error" << endl;
@@ -975,7 +935,6 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 						//cerr << nFirstCol+j+1 << "  "  << (sDatatable == "data" ? "cache" : sDatatable) << endl;
 					}
 				}
-				_target.setCacheStatus(false);
 			}
 
 
@@ -1134,22 +1093,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 					NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option) + "\n");
 				}
 			}
-			/*if (_pData.getOpenImage() && !(_pData.getSilentMode() || bSilent))
-			{
-			    string sFileName = sHistSavePath;
-			    if (sFileName.find('/') != string::npos)
-			        sFileName = sFileName.substr(sFileName.rfind('/')+1, sFileName.length()-sFileName.rfind('/')-1);
-			    if (sFileName.find('\\') != string::npos)
-			        sFileName = sFileName.substr(sFileName.rfind('\\')+1, sFileName.length()-sFileName.rfind('\\')-1);
-			    string sPath = sHistSavePath.substr(0,sHistSavePath.length()-sFileName.length()-1);
 
-			    //cerr << "|-> Viewer-Fenster schliessen, um fortzufahren ... ";
-			    NumeReKernel::gotoLine(sPath+"/"+sFileName);
-			    //openExternally(sPath + "/" + sFileName, _option.getViewerPath(), sPath);
-			    //cerr << "OK" << endl;
-			}*/
 			_out.reset();
-			_data.setCacheStatus(false);
 		}
 		else
 		{
@@ -1277,7 +1222,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 			{
 				for (int j = nDataRow + 2; j < nDataRowFinal; j++)
 				{
-					if (_data.isValidEntry(i, j, sDatatable)
+					if (_data.isValidElement(i, j, sDatatable)
 							&& _data.getElement(i, nDataRow, sDatatable) <= dMax
 							&& _data.getElement(i, nDataRow, sDatatable) >= dMin
 							&& _data.getElement(i, nDataRow + 1, sDatatable) <= dMaxY
@@ -1388,9 +1333,9 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 				}
 				for (long long int i = 0; i < _data.getLines(sDatatable, false); i++)
 				{
-					if (_data.isValidEntry(i, nDataRow, sDatatable)
-							&& _data.isValidEntry(i, nDataRow + 1, sDatatable)
-							&& _data.isValidEntry(i, nDataRow + 2, sDatatable)
+					if (_data.isValidElement(i, nDataRow, sDatatable)
+							&& _data.isValidElement(i, nDataRow + 1, sDatatable)
+							&& _data.isValidElement(i, nDataRow + 2, sDatatable)
 							&& _data.getElement(i, nDataRow, sDatatable) <= dMax
 							&& _data.getElement(i, nDataRow, sDatatable) >= dMin
 							&& _data.getElement(i, nDataRow + 1, sDatatable) <= dMaxY
@@ -1419,7 +1364,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 					_hist2DData[1].a[i] = _data.getElement(i, nDataRow + 1, sDatatable);
 					for (int j = 0; j < nDataRowFinal - nDataRow - 2; j++)
 					{
-						if (_data.isValidEntry(i, j + nDataRow + 2, sDatatable)
+						if (_data.isValidElement(i, j + nDataRow + 2, sDatatable)
 								&& _data.getElement(i, nDataRow, sDatatable) <= dMax
 								&& _data.getElement(i, nDataRow, sDatatable) >= dMin
 								&& _data.getElement(i, nDataRow + 1, sDatatable) <= dMaxY
@@ -1442,7 +1387,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 				dSum = 0.0;
 				for (int i = 0; i < _data.getLines(sDatatable); i++)
 				{
-					if (_data.isValidEntry(i, nDataRow, sDatatable)
+					if (_data.isValidElement(i, nDataRow, sDatatable)
 							&& ((!_pData.getxLogscale()
 								 && _data.getElement(i, nDataRow, sDatatable) >= dMin + k * dIntervallLength
 								 && _data.getElement(i, nDataRow, sDatatable) < dMin + (k + 1)*dIntervallLength)
@@ -1454,8 +1399,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 					{
 						if (nDataRowFinal - nDataRow == 3)
 						{
-							if (_data.isValidEntry(i, nDataRow + 1, sDatatable)
-									&& _data.isValidEntry(i, nDataRow + 2, sDatatable)
+							if (_data.isValidElement(i, nDataRow + 1, sDatatable)
+									&& _data.isValidElement(i, nDataRow + 2, sDatatable)
 									&& _data.getElement(i, nDataRow + 1, sDatatable) >= dMinY
 									&& _data.getElement(i, nDataRow + 1, sDatatable) <= dMaxY)
 							{
@@ -1469,8 +1414,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 						{
 							for (int l = 0; l < _data.getLines(sDatatable); l++)
 							{
-								if (_data.isValidEntry(l, nDataRow + 1, sDatatable)
-										&& _data.isValidEntry(i, l + 2, sDatatable)
+								if (_data.isValidElement(l, nDataRow + 1, sDatatable)
+										&& _data.isValidElement(i, l + 2, sDatatable)
 										&& _data.getElement(l, nDataRow + 1, sDatatable) >= dMinY
 										&& _data.getElement(l, nDataRow + 1, sDatatable) <= dMaxY)
 									dSum += _data.getElement(i, l + 2, sDatatable);
@@ -1680,7 +1625,7 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 				dSum = 0.0;
 				for (int i = 0; i < _data.getLines(sDatatable); i++)
 				{
-					if (_data.isValidEntry(i, nDataRow + 1, sDatatable)
+					if (_data.isValidElement(i, nDataRow + 1, sDatatable)
 							&& ((!_pData.getyLogscale()
 								 && _data.getElement(i, nDataRow + 1, sDatatable) >= dMinY + k * dIntervallLengthY
 								 && _data.getElement(i, nDataRow + 1, sDatatable) < dMinY + (k + 1)*dIntervallLengthY)
@@ -1692,8 +1637,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 					{
 						if (nDataRowFinal - nDataRow == 3)
 						{
-							if (_data.isValidEntry(i, nDataRow, sDatatable)
-									&& _data.isValidEntry(i, nDataRow + 2, sDatatable)
+							if (_data.isValidElement(i, nDataRow, sDatatable)
+									&& _data.isValidElement(i, nDataRow + 2, sDatatable)
 									&& _data.getElement(i, nDataRow, sDatatable) >= dMin
 									&& _data.getElement(i, nDataRow, sDatatable) <= dMax)
 							{
@@ -1707,8 +1652,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 						{
 							for (int l = 0; l < _data.getLines(sDatatable); l++)
 							{
-								if (_data.isValidEntry(l, nDataRow, sDatatable)
-										&& _data.isValidEntry(l, i + 2, sDatatable)
+								if (_data.isValidElement(l, nDataRow, sDatatable)
+										&& _data.isValidElement(l, i + 2, sDatatable)
 										&& _data.getElement(l, nDataRow, sDatatable) >= dMin
 										&& _data.getElement(l, nDataRow, sDatatable) <= dMax)
 									dSum += _data.getElement(l, i + 2, sDatatable);
@@ -1917,22 +1862,8 @@ void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output&
 				if (!_out.isFile() && _option.getSystemPrintStatus() && !bSilent)
 					NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option) + "\n");
 			}
-			/*if (_pData.getOpenImage() && !_pData.getSilentMode())
-			{
-			string sFileName = sHistSavePath;
-			if (sFileName.find('/') != string::npos)
-			    sFileName = sFileName.substr(sFileName.rfind('/')+1, sFileName.length()-sFileName.rfind('/')-1);
-			if (sFileName.find('\\') != string::npos)
-			    sFileName = sFileName.substr(sFileName.rfind('\\')+1, sFileName.length()-sFileName.rfind('\\')-1);
-			string sPath = sHistSavePath.substr(0,sHistSavePath.length()-sFileName.length()-1);
 
-			//cerr << "|-> Viewer-Fenster schliessen, um fortzufahren ... ";
-			NumeReKernel::gotoLine(sPath+"/"+sFileName);
-			//openExternally(sPath + "/" + sFileName, _option.getViewerPath(), sPath);
-			//cerr << "OK" << endl;
-			}*/
 			_out.reset();
-			_data.setCacheStatus(false);
 		}
 	}
 	else

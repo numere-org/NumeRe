@@ -31,8 +31,8 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
     long long int nDataPoints = 0;			// Variable zur Festlegung, wie viele Datenpunkte erzeugt werden sollen
     long long int nDataRows = 0;
     long long int nFilledCols = 0;
-    if (_data.isValidCache() && !bAllowOverride)       // Frage die Zahl der (irgendwie) vollgeschriebenen Spalten ab
-        nFilledCols = _data.getTableCols("cache", false);
+    if (_data.isValid() && !bAllowOverride)       // Frage die Zahl der (irgendwie) vollgeschriebenen Spalten ab
+        nFilledCols = _data.getCols("cache", false);
     double dDistributionWidth = 1.0; // Die Breite der Verteilung
     double dDistributionMean = 0.0;	// Der Mittelwert der Verteilung
     unsigned int nFreedoms = 1;
@@ -204,7 +204,7 @@ void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _optio
     student_t_distribution<double> studentTDistribution(nFreedoms);                         // 5
     if (nDataPoints * nDataRows > 1e6)
         NumeReKernel::printPreFmt(toSystemCodePage("|-> "+_lang.get("RANDOM_RESERVING_MEM")+" ... "));
-    if (!_data.setCacheSize(nDataPoints, nDataRows+nFilledCols, "cache"))
+    if (!_data.resizeTable(nDataPoints, nDataRows+nFilledCols, "cache"))
         return;
     if (nDataPoints * nDataRows > 1e6)
         NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");

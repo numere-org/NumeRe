@@ -42,7 +42,7 @@ double* getPointerToVariable(const string& sVarName, Parser& _parser);
 string promptForUserInput(const string& __sCommand);
 int integralFactorial(int nNumber);
 bool evaluateIndices(const string& sCache, Indices& _idx, Datafile& _data);
-vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, bool bEraseInterval = false);
+vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval = false);
 unsigned int getPositionOfFirstDelimiter(const string&);
 
 #endif

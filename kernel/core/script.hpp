@@ -25,7 +25,7 @@
 #include <string>
 #include <fstream>
 
-#include "filesystem.hpp"
+#include "io/filesystem.hpp"
 #include "utils/tools.hpp"
 #include "version.h"
 #include "maths/define.hpp"
@@ -58,7 +58,7 @@ class Script : public FileSystem
         string sInstallID;
         vector<string> vInstallPackages;
         unsigned int nCurrentPackage;
-        Define _localDef;
+        FunctionDefinitionManager _localDef;
 
         string stripLineComments(const string& sLine);
         string stripBlockComments(const string& sLine);

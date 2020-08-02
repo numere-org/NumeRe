@@ -27,7 +27,7 @@
 
 #include "../utils/zip++.hpp"
 #include "../ui/error.hpp"
-#include "../filesystem.hpp"
+#include "filesystem.hpp"
 
 namespace NumeRe
 {

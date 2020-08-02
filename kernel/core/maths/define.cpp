@@ -21,7 +21,18 @@
 
 using namespace mu;
 
-// Constructor
+//////////////////////////////////
+// CLASS FUNCTIONDEFINITION
+//////////////////////////////////
+
+/////////////////////////////////////////////////
+/// \brief Constructor of the FunctionDefinition
+/// class. Creates a definition from the passed
+/// definition string.
+///
+/// \param _sDefinitionString const string&
+///
+/////////////////////////////////////////////////
 FunctionDefinition::FunctionDefinition(const string& _sDefinitionString)
 {
     sDefinitionString = _sDefinitionString;
@@ -30,6 +41,15 @@ FunctionDefinition::FunctionDefinition(const string& _sDefinitionString)
         decodeDefinition();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Assignment operator overload for the
+/// Function definition class.
+///
+/// \param _def const FunctionDefinition&
+/// \return FunctionDefinition&
+///
+/////////////////////////////////////////////////
 FunctionDefinition& FunctionDefinition::operator=(const FunctionDefinition& _def)
 {
     sDefinitionString = _def.sDefinitionString;
@@ -42,9 +62,17 @@ FunctionDefinition& FunctionDefinition::operator=(const FunctionDefinition& _def
     return *this;
 }
 
-// This member function parses the call to the contained
-// function definition and returns a function definition
-// string containing the passed values
+
+/////////////////////////////////////////////////
+/// \brief This member function parses the call
+/// to the contained function definition and
+/// returns a function definition string
+/// containing the passed values.
+///
+/// \param _sArgList const string&
+/// \return string
+///
+/////////////////////////////////////////////////
 string FunctionDefinition::parse(const string& _sArgList)
 {
     string sParsedDefinition = sParsedDefinitionString;
@@ -132,8 +160,15 @@ string FunctionDefinition::parse(const string& _sArgList)
     return sParsedDefinition;
 }
 
-// This member function creates the save string used
-// for writing to the definition file
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the save
+/// string used for writing to the definition
+/// file.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string FunctionDefinition::exportFunction()
 {
     string sExport = sName + "; " + sParsedDefinitionString + "; " + sDefinitionString + "; ";
@@ -145,9 +180,17 @@ string FunctionDefinition::exportFunction()
     return sExport;
 }
 
-// This member function imports a previously exported
-// definition string and distributes its contents
-// along the member variables
+
+/////////////////////////////////////////////////
+/// \brief This member function imports a
+/// previously exported definition string and
+/// distributes its contents along the member
+/// variables.
+///
+/// \param _sExportedString const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool FunctionDefinition::importFunction(const string& _sExportedString)
 {
     string sImport = _sExportedString;
@@ -193,8 +236,16 @@ bool FunctionDefinition::importFunction(const string& _sExportedString)
     return true;
 }
 
-// This member function appends a comment, which might
-// be set after the definition
+
+/////////////////////////////////////////////////
+/// \brief This member function appends a
+/// comment, which might be set after the
+/// definition.
+///
+/// \param _sComment const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool FunctionDefinition::appendComment(const string& _sComment)
 {
     sComment += _sComment;
@@ -214,8 +265,15 @@ bool FunctionDefinition::appendComment(const string& _sComment)
     return true;
 }
 
-// This member function returns the definition of the
-// function without the appended parameters
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// definition of the function without the
+/// appended parameters.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string FunctionDefinition::getDefinition() const
 {
     string sDefinition = sDefinitionString.substr(sDefinitionString.find(":=")+2);
@@ -231,8 +289,15 @@ string FunctionDefinition::getDefinition() const
     return sDefinition;
 }
 
-// This private member function decodes the definition in the
-// private member variable "sDefinitionString" into single fields.
+
+/////////////////////////////////////////////////
+/// \brief This private member function decodes
+/// the definition in the private member variable
+/// "sDefinitionString" into single fields.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool FunctionDefinition::decodeDefinition()
 {
     // Store the function identifier
@@ -296,8 +361,14 @@ bool FunctionDefinition::decodeDefinition()
     return true;
 }
 
-// This private member function validates the arguments
-// of the function definition
+
+/////////////////////////////////////////////////
+/// \brief This private member function validates
+/// the arguments of the function definition.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool FunctionDefinition::splitAndValidateArguments()
 {
     string sDelim = "+-*/^!=&| ><()?[]{}$%§~#:.,;";
@@ -338,8 +409,15 @@ bool FunctionDefinition::splitAndValidateArguments()
     return true;
 }
 
-// This private member function converts the selected
-// the passed variables into their values
+
+/////////////////////////////////////////////////
+/// \brief This private member function converts
+/// the selected of the passed variables into
+/// their values.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool FunctionDefinition::convertToValues()
 {
     if (findParameter(sDefinitionString, "asval", '='))
@@ -374,9 +452,15 @@ bool FunctionDefinition::convertToValues()
     return true;
 }
 
-// This private member function replaces all occurences
-// of the passed arguments with the corresponding new
-// placeholders
+
+/////////////////////////////////////////////////
+/// \brief This private member function replaces
+/// all occurences of the passed arguments with
+/// the corresponding new placeholders.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool FunctionDefinition::replaceArgumentOccurences()
 {
     size_t nPos = 0;
@@ -412,33 +496,54 @@ bool FunctionDefinition::replaceArgumentOccurences()
 
 
 
+//////////////////////////////////
+// CLASS FUNCTIONDEFINITIONMANAGER
+//////////////////////////////////
 
-// --> Standard-Konstruktor: Deklariert auch die Inhalte der Built-In-Funktionen- und der Kommando-Strings <--
-Define::Define() : FileSystem()
+/////////////////////////////////////////////////
+/// \brief Default constructor of the
+/// FunctionDefinitionManager class. Prepares the
+/// list of protected command strings.
+/////////////////////////////////////////////////
+FunctionDefinitionManager::FunctionDefinitionManager(bool _isLocal) : FileSystem()
 {
-    nDefinedFunctions = 0;
     sBuilt_In.clear();
     sCommands = ",for,if,while,endfor,endwhile,endif,else,elseif,continue,break,explicit,procedure,endprocedure,throw,return,switch,case,endswitch,default,";
     sFileName = "<>/functions.def";
-    sCaches = "";
+    sTables = "";
+    isLocal = _isLocal;
 }
 
-/* --> Kopierkonstruktor: Ruft zunaechst den Standard-Konstruktor auf, ehe die Werte und
- *     Definitionen des anderen Objekts kopiert werden <--
- */
-Define::Define(Define& _defined) : Define()
+
+/////////////////////////////////////////////////
+/// \brief FunctionDefinitionManager copy
+/// constructor. Delegates first to the default
+/// constructor.
+///
+/// \param _defined FunctionDefinitionManager&
+///
+/////////////////////////////////////////////////
+FunctionDefinitionManager::FunctionDefinitionManager(FunctionDefinitionManager& _defined) : FunctionDefinitionManager(true)
 {
-    nDefinedFunctions = _defined.nDefinedFunctions;
     sFileName = _defined.sFileName;
-    sCaches = _defined.sCaches;
+    sTables = _defined.sTables;
 
     mFunctionsMap = _defined.mFunctionsMap;
+    isLocal = _defined.isLocal;
 }
 
-// This private member function resolves recursive definitions,
-// which are handled by replacing the occuring function calls with
-// their previous definition
-string Define::resolveRecursiveDefinitions(string sDefinition)
+
+/////////////////////////////////////////////////
+/// \brief This private member function resolves
+/// recursive definitions, which are handled by
+/// replacing the occuring function calls with
+/// their previous definition.
+///
+/// \param sDefinition string
+/// \return string
+///
+/////////////////////////////////////////////////
+string FunctionDefinitionManager::resolveRecursiveDefinitions(string sDefinition)
 {
     // Get the different parts of the definition
     string sFunctionName = sDefinition.substr(0, sDefinition.find('(')+1);
@@ -473,9 +578,17 @@ string Define::resolveRecursiveDefinitions(string sDefinition)
     return sDefinition.substr(0, sDefinition.find(":=")) + " := " + sFunction;
 }
 
-// This private member function returns the iterator to
-// the function pointed by the passed ID
-map<string, FunctionDefinition>::const_iterator Define::findItemById(size_t id) const
+
+/////////////////////////////////////////////////
+/// \brief This private member function returns
+/// the iterator to the function pointed by the
+/// passed ID.
+///
+/// \param id size_t
+/// \return map<string, FunctionDefinition>::const_iterator
+///
+/////////////////////////////////////////////////
+map<string, FunctionDefinition>::const_iterator FunctionDefinitionManager::findItemById(size_t id) const
 {
     if (id >= mFunctionsMap.size())
         return mFunctionsMap.end();
@@ -501,8 +614,16 @@ map<string, FunctionDefinition>::const_iterator Define::findItemById(size_t id) 
     return mFunctionsMap.end();
 }
 
-// This method checks, whether the passed function is already defined
-bool Define::isDefined(const string& sFunc)
+
+/////////////////////////////////////////////////
+/// \brief This method checks, whether the passed
+/// function is already defined.
+///
+/// \param sFunc const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool FunctionDefinitionManager::isDefined(const string& sFunc)
 {
     // Only use the function name
     string sToLocate = sFunc.substr(0,sFunc.find('('));
@@ -520,8 +641,19 @@ bool Define::isDefined(const string& sFunc)
         return false;
 }
 
-// This function defines a custom function
-bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
+
+/////////////////////////////////////////////////
+/// \brief This function defines a custom
+/// function, by passing it to a new
+/// FunctionDefinition class instance.
+///
+/// \param sExpr const string&
+/// \param bRedefine bool
+/// \param bFallback bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
 {
     if (!NumeReKernel::getInstance())
         return false;
@@ -546,7 +678,7 @@ bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
     if (sExpr.find('(') == string::npos
         || (sExpr.find('(') != string::npos && sExpr.find('(') > sExpr.find(":="))
         || sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != string::npos
-        || (sCaches.length() && sCaches.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
+        || (sTables.length() && sTables.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
         || sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != string::npos
         || sExpr.find(":=") == string::npos)
     {
@@ -563,7 +695,7 @@ bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
         {
             throw SyntaxError(SyntaxError::FUNCTION_IS_PREDEFINED, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
         }
-        else if (sCaches.length() && sCaches.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
+        else if (sTables.length() && sTables.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
         {
             throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
         }
@@ -635,28 +767,51 @@ bool Define::defineFunc(const string& sExpr, bool bRedefine, bool bFallback)
         throw;
     }
 
+    if (!isLocal)
+        NumeReKernel::getInstance()->refreshFunctionTree();
+
     return true;
 }
 
-// This function removes a previously defined function
-// from the internal memory
-bool Define::undefineFunc(const string& sFunc)
+
+/////////////////////////////////////////////////
+/// \brief This function removes a previously
+/// defined function from the internal memory.
+///
+/// \param sFunc const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool FunctionDefinitionManager::undefineFunc(const string& sFunc)
 {
     if (mFunctionsMap.find(sFunc.substr(0, sFunc.find('('))) != mFunctionsMap.end())
         mFunctionsMap.erase(sFunc.substr(0, sFunc.find('(')));
+
+    if (isLocal)
+        return true;
 
     // Update the definition file, if the corresponding setting
     // is active
     if (NumeReKernel::getInstance() && NumeReKernel::getInstance()->getSettings().getbDefineAutoLoad())
         save(NumeReKernel::getInstance()->getSettings());
 
+    NumeReKernel::getInstance()->refreshFunctionTree();
     return true;
 }
 
-// This function searches for known custom definitions
-// in the passed expression and replaces them with
-// their parsed definition strings.
-bool Define::call(string& sExpr, int nRecursion)
+
+/////////////////////////////////////////////////
+/// \brief This function searches for known
+/// custom definitions in the passed expression
+/// and replaces them with their parsed
+/// definition strings.
+///
+/// \param sExpr string&
+/// \param nRecursion int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
 {
     if (!NumeReKernel::getInstance())
         return false;
@@ -800,14 +955,29 @@ bool Define::call(string& sExpr, int nRecursion)
     return true;
 }
 
-// Returns the number of defined functions
-unsigned int Define::getDefinedFunctions() const
+
+/////////////////////////////////////////////////
+/// \brief Returns the number of defined
+/// functions.
+///
+/// \return unsigned int
+///
+/////////////////////////////////////////////////
+unsigned int FunctionDefinitionManager::getDefinedFunctions() const
 {
     return mFunctionsMap.size();
 }
 
-// --> Gibt einfach nur die Definition der Funktion _i zurueck <--
-string Define::getDefine(unsigned int _i) const
+
+/////////////////////////////////////////////////
+/// \brief Returns the definition string of the
+/// ith defined custom function.
+///
+/// \param _i size_t
+/// \return string
+///
+/////////////////////////////////////////////////
+string FunctionDefinitionManager::getDefinitionString(size_t _i) const
 {
     auto iter = findItemById(_i);
 
@@ -817,7 +987,16 @@ string Define::getDefine(unsigned int _i) const
     return "";
 }
 
-string Define::getFunction(unsigned int _i) const
+
+/////////////////////////////////////////////////
+/// \brief Returns the function signature of the
+/// ith defined custom function.
+///
+/// \param _i size_t
+/// \return string
+///
+/////////////////////////////////////////////////
+string FunctionDefinitionManager::getFunctionSignature(size_t _i) const
 {
     auto iter = findItemById(_i);
 
@@ -827,7 +1006,16 @@ string Define::getFunction(unsigned int _i) const
     return "";
 }
 
-string Define::getImplementation(unsigned int _i) const
+
+/////////////////////////////////////////////////
+/// \brief Returns the implementation of the ith
+/// defined custom function.
+///
+/// \param _i size_t
+/// \return string
+///
+/////////////////////////////////////////////////
+string FunctionDefinitionManager::getImplementation(size_t _i) const
 {
     auto iter = findItemById(_i);
 
@@ -837,7 +1025,16 @@ string Define::getImplementation(unsigned int _i) const
     return "";
 }
 
-string Define::getComment(unsigned int _i) const
+
+/////////////////////////////////////////////////
+/// \brief Returns the comment of the ith defined
+/// function.
+///
+/// \param _i size_t
+/// \return string
+///
+/////////////////////////////////////////////////
+string FunctionDefinitionManager::getComment(size_t _i) const
 {
     auto iter = findItemById(_i);
 
@@ -847,18 +1044,32 @@ string Define::getComment(unsigned int _i) const
     return "";
 }
 
-// This member function resets the Define object
-// to a state before any function was defined
-bool Define::reset()
+
+/////////////////////////////////////////////////
+/// \brief This member function resets the
+/// FunctionDefinitionManager object to a state
+/// before any function was defined.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool FunctionDefinitionManager::reset()
 {
     mFunctionsMap.clear();
 
     return true;
 }
 
-// This function saves the function definitions
-// to definition file
-bool Define::save(const Settings& _option)
+
+/////////////////////////////////////////////////
+/// \brief This function saves the function
+/// definitions to the definition file.
+///
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool FunctionDefinitionManager::save(const Settings& _option)
 {
     sFileName = FileSystem::ValidFileName(sFileName, ".def");
     ofstream ofDefineFile;
@@ -896,9 +1107,17 @@ bool Define::save(const Settings& _option)
     return false;
 }
 
-// This function loads previously saved function
-// definitions to memory
-bool Define::load(const Settings& _option, bool bAutoLoad)
+
+/////////////////////////////////////////////////
+/// \brief This function loads previously saved
+/// function definitions to memory.
+///
+/// \param _option const Settings&
+/// \param bAutoLoad bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
 {
     sFileName = FileSystem::ValidFileName(sFileName, ".def");
     ifstream ifDefinedFile;
@@ -938,7 +1157,7 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
         if (!bAutoLoad && _option.getSystemPrintStatus())
         {
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
-            NumeReKernel::print(LineBreak(_lang.get("DEFINE_DONE_LOADING", toString((int)nDefinedFunctions)), _option));
+            NumeReKernel::print(LineBreak(_lang.get("DEFINE_DONE_LOADING", toString(mFunctionsMap.size())), _option));
         }
 
     }
@@ -946,7 +1165,18 @@ bool Define::load(const Settings& _option, bool bAutoLoad)
     return true;
 }
 
-void Define::setPredefinedFuncs(const string& sPredefined)
+
+/////////////////////////////////////////////////
+/// \brief This member function updates the
+/// internal list of predefined functions. If the
+/// list is whitespace-separated, it will be
+/// converted into a comma-separated list.
+///
+/// \param sPredefined const string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void FunctionDefinitionManager::setPredefinedFuncs(const string& sPredefined)
 {
     sBuilt_In = sPredefined;
 

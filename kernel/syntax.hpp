@@ -29,6 +29,16 @@
 
 using namespace std;
 
+/////////////////////////////////////////////////
+/// \brief This class contains all needed
+/// keywords to highlight their occurences
+/// correspondingly. It will pass them to the
+/// NumeReEditor instances. For the terminal,
+/// this class acts as lexer. It will also
+/// provide autocompletion lists to be used by
+/// both, the NumeReEditor instances and the
+/// terminal.
+/////////////////////////////////////////////////
 class NumeReSyntax
 {
     private:
@@ -55,6 +65,8 @@ class NumeReSyntax
         map<string, int> mAutoCompListCPP;
         map<string, int> mAutoCompListTeX;
 
+        string sPath;
+
         string constructString(const vector<string>& vVector) const;
         vector<string> splitString(string sString);
         bool matchItem(const vector<string>& vVector, const string& sString);
@@ -75,9 +87,9 @@ class NumeReSyntax
             SYNTAX_METHODS
         };
         NumeReSyntax();
-        NumeReSyntax(const string& sPath);
+        NumeReSyntax(const string& _sPath);
 
-        void loadSyntax(const string& sPath);
+        void loadSyntax(const string& _sPath = "");
         void addPlugins(const vector<string>& vPlugins);
         void setProcedureTree(const vector<string>& vTree);
         string getCommands() const

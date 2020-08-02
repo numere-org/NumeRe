@@ -27,24 +27,24 @@
 #define EIGENVECTORS 1
 #define DIAGONALIZE 2
 
-static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 static size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos);
 static Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 static vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLine);
 static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static void parser_makeReal(Matrix& _mMatrix);
 static double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines);
 static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option);
-static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
+static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
 static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option);
 static map<string,string> createMatrixFunctionsMap();
 static bool containsMatrices(const string& sExpr, Datafile& _data);
 
 
 
-static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
+static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
@@ -53,10 +53,10 @@ static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols);
 Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols);
 static Matrix parser_shuffleMatrix(unsigned int nShuffle, unsigned int nBase);
 static Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
-static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix transposeMatrix(const Matrix& _mMatrix);
 static Matrix parser_MatrixLogToIndex(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
@@ -99,7 +99,7 @@ static void parser_fillMissingMatrixElements(Matrix& _mMatrix);
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     vector<Indices> vIndices;
     vector<double> vMatrixVector;
@@ -143,9 +143,6 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, Defi
         sTargetName = sCmd.substr(0, sCmd.find('='));
         StripSpaces(sTargetName);
         size_t parens = sTargetName.find_first_of("({");
-
-        if (sTargetName.substr(0, 5) == "data(")
-            throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetName, sTargetName);
 
         if (parens == string::npos)
             throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, sTargetName, sTargetName);
@@ -207,7 +204,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, Defi
             _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false) - 1, 0, _data.getCols(sTargetName, false) - 1);
 
         // Prepare the target size
-        _data.setCacheSize(_idx.row.front()+_mResult.size(), _idx.col.front()+_mResult[0].size(), sTargetName);
+        _data.resizeTable(_idx.row.front()+_mResult.size(), _idx.col.front()+_mResult[0].size(), sTargetName);
 
         // Write the contents to the table
         for (unsigned int i = 0; i < _mResult.size(); i++)
@@ -279,7 +276,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, Defi
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string __sCmd;
     size_t pos_back = 0;
@@ -970,10 +967,8 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
         // Pre-evaluate parentheses
         if (sCmd[i] == '(')
         {
-            if (sCmd.substr(i,getMatchingParenthesis(sCmd.substr(i))).find("**") != string::npos
-                || (i > 1
-                    && !_data.isTable(sCmd.substr(sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)+1, i-sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)-1))
-                    && sCmd.substr(sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)+1, i-sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)-1) != "data"))
+            if (sCmd.substr(i, getMatchingParenthesis(sCmd.substr(i))).find("**") != string::npos
+                || (i > 1 && !_data.isTable(sCmd.substr(sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)+1, i-sCmd.find_last_of(" +-*/!^%&|#(){}?:,<>=", i-1)-1))))
             {
                 string sSubExpr = sCmd.substr(i+1, getMatchingParenthesis(sCmd.substr(i))-1);
                 size_t closing_par_pos = i+getMatchingParenthesis(sCmd.substr(i));
@@ -1046,40 +1041,8 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile
     unsigned int nLinesCount = 0;
 
     // Get the indices of the calls to the memory objects
-    // first: "data()"
-    while (__sCmd.find("data(", nPos) != string::npos)
-    {
-        nPos = __sCmd.find("data(", nPos);
-
-        // Check the delimiters
-        if (nPos && !checkDelimiter(__sCmd.substr(nPos-1,6)))
-        {
-            nPos++;
-            continue;
-        }
-
-        // Get the indices
-        vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option));
-
-        // Evaluate the indices
-        if (!evaluateIndices("data", vIndices[vIndices.size()-1], _data))
-            throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, nPos);
-
-        // Store the name of the current data object
-        vMatrixNames.push_back("data");
-
-        // Identify, which value to use for a missing value
-        if (addMissingVectorComponent("", __sCmd.substr(0,nPos), __sCmd.substr(nPos+5+getMatchingParenthesis(__sCmd.substr(nPos+4))),false) == "0")
-            vMissingValues.push_back(0);
-        else
-            vMissingValues.push_back(1);
-
-        // Replace the current call with a standardized one
-        __sCmd.replace(nPos, getMatchingParenthesis(__sCmd.substr(nPos+4))+5, "_~matrix["+toString((int)vMatrixNames.size()-1)+"]");
-    }
-
-    // now all other caches
-    for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+    // all caches
+    for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
     {
         nPos = 0;
         while (__sCmd.find(iter->first+"(", nPos) != string::npos)
@@ -1827,7 +1790,7 @@ static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, co
 ///
 /// Missing elements are filled up with zeros.
 /////////////////////////////////////////////////
-static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     return transposeMatrix(parser_matFromLines(sCmd, _parser, _data, _functions, _option));
 }
@@ -1846,7 +1809,7 @@ static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data,
 ///
 /// Missing elements are filled up logically.
 /////////////////////////////////////////////////
-static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     return transposeMatrix(parser_matFromLinesFilled(sCmd, _parser, _data, _functions, _option));
 }
@@ -1865,7 +1828,7 @@ static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& 
 ///
 /// Missing elements are filled up with zeros.
 /////////////////////////////////////////////////
-static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _matfl;
     value_type* v = 0;
@@ -1878,7 +1841,7 @@ static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data
     }
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
-    if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
+    if (_data.containsTablesOrClusters(sCmd))
     {
         getDataElements(sCmd, _parser, _data, _option);
     }
@@ -1924,7 +1887,7 @@ static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data
 ///
 /// Missing elements are filled up logically.
 /////////////////////////////////////////////////
-static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _matfl;
     value_type* v = 0;
@@ -1937,7 +1900,7 @@ static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile&
     }
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
-    if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
+    if (_data.containsTablesOrClusters(sCmd))
     {
         getDataElements(sCmd, _parser, _data, _option);
     }
@@ -2018,7 +1981,7 @@ static vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLi
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _diag;
     value_type* v = 0;
@@ -2030,7 +1993,7 @@ static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _da
     }
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
-    if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
+    if (_data.containsTablesOrClusters(sCmd))
     {
         getDataElements(sCmd, _parser, _data, _option);
     }
@@ -3179,7 +3142,7 @@ static void parser_fillMissingMatrixElements(Matrix& _mMatrix)
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
+static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
 {
     if (!_mMatrix.size() || !_mMatrix[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
@@ -3637,7 +3600,7 @@ static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _mReturn;
     Indices _idx = getIndices(sExpr, _mMatrix, _parser, _data, _option);
@@ -3831,7 +3794,7 @@ static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _opt
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Define& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
+static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
 {
     if (!_mMatrix.size() || !_mMatrix[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
@@ -3929,9 +3892,9 @@ static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Def
 
     if (!_functions.isDefined(sSolution))
         bDefinitionSuccess = _functions.defineFunc(sSolution);
-    else if (_functions.getDefine(_functions.getFunctionIndex(sSolution)) != sSolution)
+    else if (_functions.getDefinitionString(_functions.getFunctionIndex(sSolution)) != sSolution)
         bDefinitionSuccess = _functions.defineFunc(sSolution, true);
-    else if (_functions.getDefine(_functions.getFunctionIndex(sSolution)) == sSolution)
+    else if (_functions.getDefinitionString(_functions.getFunctionIndex(sSolution)) == sSolution)
         return;
 
     if (bDefinitionSuccess)
@@ -3989,7 +3952,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
 
     StripSpaces(sArgument);
 
-    if (sArgument.find("data(") != string::npos || _data.containsTablesOrClusters(sArgument))
+    if (_data.containsTablesOrClusters(sArgument))
         getDataElements(sArgument, _parser, _data, _option);
 
     // --> Kurzschreibweise!
@@ -4308,7 +4271,7 @@ static map<string,string> createMatrixFunctionsMap()
 /////////////////////////////////////////////////
 static bool containsMatrices(const string& sExpr, Datafile& _data)
 {
-    if (_data.containsTablesOrClusters(sExpr) || sExpr.find("data(") != string::npos || sExpr.find('{') != string::npos)
+    if (_data.containsTablesOrClusters(sExpr) || sExpr.find('{') != string::npos)
         return true;
 
     static map<string, string> mMatrixFunctionsMap = createMatrixFunctionsMap();

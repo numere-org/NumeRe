@@ -66,7 +66,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     sDataObject = sCommand.substr(pos, i - pos);
 
                     // Ensure that the table exists
-                    if (!instance->getData().isTable(sDataObject) && sDataObject != "data" && sDataObject != "string")
+                    if (!instance->getData().isTable(sDataObject) && sDataObject != "string")
                     {
                         sDataObject.clear();
                         pos = string::npos;
@@ -248,43 +248,6 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 		}
 	}
 
-
-	// --> Findest du "data("? <--
-	if (findDataTable(sLine))
-	{
-		// --> Ist rechts von "data(" noch ein "=" und gehoert das nicht zu einem Logik-Ausdruck? <--
-		eq_pos = sLine.find("=", sLine.find("data(") + 5);
-
-		if (eq_pos != string::npos
-				&& sLine[eq_pos + 1] != '='
-				&& sLine[eq_pos - 1] != '<'
-				&& sLine[eq_pos - 1] != '>'
-				&& sLine[eq_pos - 1] != '!'
-				&& !parser_CheckMultArgFunc(sLine.substr(0, sLine.find("data(")), sLine.substr(sLine.find(")", sLine.find("data(") + 1)))
-		   )
-		{
-			if (sLine.substr(sLine.find("data(") + 5, sLine.find(",", sLine.find("data(") + 5) - sLine.find("data(") - 5).find("#") != string::npos)
-			{
-				sCache = sLine.substr(0, eq_pos);
-				sLine = sLine.substr(eq_pos + 1);
-			}
-			else
-			{
-				// --> Ja? Dann brechen wir ebenfalls ab, da wir nicht in data() schreiben wollen <--
-				throw SyntaxError(SyntaxError::READ_ONLY_DATA, sLine, SyntaxError::invalid_position);
-			}
-		}
-
-		/* --> Diese Schleife ersetzt nacheinander alle Stellen, in denen "data(" auftritt, durch "Vektoren", die
-		 *     in einer anderen Funktion weiterverarbeitet werden koennen. Eine aehnliche Schleife findet sich
-		 *     auch fuer "cache(" etwas weiter unten. <--
-		 * --> Wenn diese Schleife abgearbeitet ist, wird natuerlich auch noch geprueft, ob auch "cache(" gefunden
-		 *     wird und ggf. die Schleife fuer den Cache gestartet. <--
-		 */
-		if (sLine.find("data(") != string::npos)
-			replaceDataEntities(sLine, "data(", _data, _parser, _option, bReplaceNANs);
-	}
-
 	return sCache;
 }
 
@@ -306,7 +269,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, Datafile& _
     // Try to find every cache and handle its contents
     if (_data.containsTables(sLine))
     {
-        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); iter++)
+        for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); iter++)
         {
             if (sLine.find((iter->first) + "(") != string::npos)
                 replaceDataEntities(sLine, iter->first + "(", _data, _parser, _option, bReplaceNANs);
@@ -774,14 +737,14 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
 
-				if (_data.containsTablesOrClusters(sArg) || sArg.find("data(") != string::npos)
+				if (_data.containsTablesOrClusters(sArg))
 					getDataElements(sArg, _parser, _data, _option);
 
 				_parser.SetExpr(sArg);
 				dRef = _parser.Eval();
 				sArg = getNextArgument(sLeft, true);
 
-				if (_data.containsTablesOrClusters(sArg) || sArg.find("data(") != string::npos)
+				if (_data.containsTablesOrClusters(sArg))
 					getDataElements(sArg, _parser, _data, _option);
 
 				_parser.SetExpr(sArg);
@@ -800,7 +763,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
 
-				if (_data.containsTablesOrClusters(sArg) || sArg.find("data(") != string::npos)
+				if (_data.containsTablesOrClusters(sArg))
 					getDataElements(sArg, _parser, _data, _option);
 
 				_parser.SetExpr(sArg);

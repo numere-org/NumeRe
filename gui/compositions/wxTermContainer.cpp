@@ -26,7 +26,7 @@
 ////@end includes
 
 #include "wxTermContainer.h"
-#include "../terminal/wxTerm.h"
+#include "../terminal/terminal.hpp"
 
 #include "../../common/debug.h"
 
@@ -297,7 +297,7 @@ bool wxTermContainer::ShowToolTips()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTermContainer::SetTerminal(wxTerm* terminal)
+void wxTermContainer::SetTerminal(NumeReTerminal* terminal)
 {
 	m_terminal = terminal;
 

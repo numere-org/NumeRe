@@ -21,7 +21,7 @@
 
 #include <wx/wx.h>
 #include <wx/propgrid/propgrid.h>
-#include "../terminal/wxterm.h"
+#include "../terminal/terminal.hpp"
 #include "../IconManager.h"
 #include <set>
 #include <string>
@@ -31,7 +31,7 @@ class PackageDialog : public wxDialog
     private:
         wxPropertyGrid* m_packageProperties;
         wxListView* m_fileList;
-        wxTerm* m_terminal;
+        NumeReTerminal* m_terminal;
         IconManager* m_icons;
 
         void OnAutoDetect(wxCommandEvent& event);
@@ -42,7 +42,7 @@ class PackageDialog : public wxDialog
         void followBranch(const std::string& sFile, std::set<std::string>& fileSet);
 
     public:
-        PackageDialog(wxWindow* parent, wxTerm* terminal, IconManager* icons);
+        PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons);
 
         void setMainFile(const wxString& mainfile);
         wxArrayString getProcedures();

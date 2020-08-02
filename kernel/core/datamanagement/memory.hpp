@@ -44,6 +44,10 @@ using namespace std;
 
 // forward declaration for using the memory manager as friend
 class MemoryManager;
+namespace NumeRe
+{
+    class FileAdapter;
+}
 
 /*
  * Header zur Memory-Klasse
@@ -56,6 +60,7 @@ class Memory : public Sorter
 
 	private:
 	    friend class MemoryManager;
+	    friend class NumeRe::FileAdapter;
 
 		long long int nLines;							// Zeilen des Caches
 		long long int nCols;							// Spalten des Caches
@@ -69,6 +74,8 @@ class Memory : public Sorter
 		long long int nLastSaved;                       // Integer, der den Zeitpunkt des letzten Speicherns speichert
 
 		bool Allocate(long long int _nNLines, long long int _nNCols, bool shrink = false);	// Methode, um dem Pointer dMemTable die finale Matrix zuzuweisen
+		void createTableHeaders();
+		bool clear();
 
 		bool isValidDisc(long long int _nLine, long long int _nCol, unsigned int nSize);
 		bool isValidDisc(VectorIndex _vLine, VectorIndex _vCol);

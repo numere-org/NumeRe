@@ -37,9 +37,9 @@
 #include "../maths/parser_functions.hpp"
 #include "../plotting/plotdata.hpp"
 #include "flowctrl.hpp"
-#include "../plugin.hpp"
+#include "plugin.hpp"
 #include "../maths/define.hpp"
-#include "../filesystem.hpp"
+#include "../io/filesystem.hpp"
 #include "../io/output.hpp"
 #include "../script.hpp"
 
@@ -55,7 +55,7 @@ class ProcedureVarFactory;
 /// evaluate complex procedures, which may be
 /// called recursively.
 /////////////////////////////////////////////////
-class Procedure : public FlowCtrl, public Plugin
+class Procedure : public FlowCtrl, public PluginManager
 {
     private:
         friend class NumeReDebugger;
@@ -75,16 +75,16 @@ class Procedure : public FlowCtrl, public Plugin
         int nthBlock;
         ProcedureVarFactory* _varFactory;
 
-        Define _localDef;
+        FunctionDefinitionManager _localDef;
 
         void init();
 
-        Returnvalue ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
+        Returnvalue ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script);
         bool setProcName(const string& sProc, bool bInstallFileName = false);
         void resetProcedure(Parser& _parser, bool bSupressAnswer);
         void extractCurrentNamespace(const string& sProc);
         bool handleVariableDefinitions(string& sProcCommandLine, const string& sCommand);
-        void readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure);
+        void readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure);
         int handleIncludeSyntax(string& sProcCommandLine, ifstream& fInclude, bool bReadingFromInclude);
         void extractProcedureInformation(const string& sCmdLine, size_t nPos, string& sProcName, string& sArgList, string& sFileName);
 
@@ -100,8 +100,8 @@ class Procedure : public FlowCtrl, public Plugin
         Procedure(const Procedure& _procedure);
         ~Procedure();
 
-        Returnvalue execute(string sProc, string sVarList, Parser& _parser, Define& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure = 0);
-        virtual int procedureInterface(string& sLine, Parser& _parser, Define& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0) override;
+        Returnvalue execute(string sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure = 0);
+        virtual int procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0) override;
         bool writeProcedure(string sProcedureLine);
         virtual int isInline(const string& sProc) override;
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option) override;

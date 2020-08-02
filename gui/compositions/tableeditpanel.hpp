@@ -22,7 +22,7 @@
 #include <wx/wx.h>
 #include <wx/panel.h>
 #include "tableviewer.hpp"
-#include "../terminal/wxterm.h"
+#include "../terminal/terminal.hpp"
 #include "../../kernel/core/ui/language.hpp"
 
 extern Language _guilang;
@@ -30,7 +30,7 @@ extern Language _guilang;
 class TableEditPanel : public wxPanel
 {
     private:
-        wxTerm* m_terminal;
+        NumeReTerminal* m_terminal;
         wxBoxSizer* vsizer;
         wxBoxSizer* hsizer;
         bool finished;
@@ -40,7 +40,7 @@ class TableEditPanel : public wxPanel
 
         TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar);
 
-        void SetTerminal(wxTerm* term) {m_terminal = term;}
+        void SetTerminal(NumeReTerminal* term) {m_terminal = term;}
 
         void OnButtonOk(wxCommandEvent& event);
         void OnButtonCancel(wxCommandEvent& event);

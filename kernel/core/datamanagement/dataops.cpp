@@ -92,7 +92,7 @@ void export_excel(Datafile& _data, Settings& _option, const string& sCache, cons
 
 			// Write the cell contents, if the data table contains valid data
 			// otherwise clear the cell
-			if (_data.isValidEntry(i, j, sCache))
+			if (_data.isValidElement(i, j, sCache))
 				_cell->SetDouble(_data.getElement(i, j, sCache));
 			else
 				_cell->EraseContents();
@@ -145,7 +145,7 @@ void load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFile
 
 	}
 	// No data available in memory?
-	if (!_data.isValid())	// Es sind noch keine Daten vorhanden?
+	if (_data.isEmpty("data"))	// Es sind noch keine Daten vorhanden?
 	{
 		_data.openFile(sFileName, _option, false, false); 			// gesammelte Daten an die Klasse uebergeben, die den Rest erledigt
 	}
@@ -216,18 +216,8 @@ void show_data(Datafile& _data, Output& _out, Settings& _option, const string& _
 	string sFileName = "";
 
 	// Do only stuff, if data is available
-	if (_data.isValid() || _data.isValidCache())		// Sind ueberhaupt Daten vorhanden?
+	if (_data.isValid())		// Sind ueberhaupt Daten vorhanden?
 	{
-        // Set the correct cache state
-		if (bCache && _data.isValidCache())
-			_data.setCacheStatus(true);
-		else if (bData && _data.isValid())
-			_data.setCacheStatus(false);
-		else
-		{
-			throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, "", SyntaxError::invalid_position);
-		}
-
 		if (_option.getUseExternalViewer() && !bSave)
         {
             NumeReKernel::showTable(_data.extractTable(sCache), sCache.substr(sCache.front() == '*' ? 1 : 0));
@@ -295,12 +285,12 @@ void show_data(Datafile& _data, Output& _out, Settings& _option, const string& _
         // Remove the possible asterisk at the front of the cache name
 		if (sCache.front() == '*')
 			sCache.erase(0, 1); // Vorangestellten Unterstrich wieder entfernen
-		if (_data.getCacheStatus() && !bSave)
-		{
-			_out.setPrefix("cache");
-			if (_out.isFile())
-				_out.generateFileName();
-		}
+
+        _out.setPrefix(sCache);
+
+        if (_out.isFile())
+            _out.generateFileName();
+
 
 		// Set the "plugin origin"
 		_out.setPluginName("Datenanzeige der Daten aus " + _data.getDataFileName(sCache)); // Anzeige-Plugin-Parameter: Nur Kosmetik
@@ -324,9 +314,7 @@ void show_data(Datafile& _data, Output& _out, Settings& _option, const string& _
             make_hline();
         }
         _out.reset();						// Ggf. bFile in der Klasse = FALSE setzen
-        if ((bCache || _data.getCacheStatus()) && bSave)
-            _data.setSaveStatus(true);
-        _data.setCacheStatus(false);
+
 
         // Clear the created memory
         for (long long int i = 0; i < nLine; i++)
@@ -455,7 +443,7 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 			}
 
 			// Handle invalid numbers
-			if (!_data.isValidEntry(i - nHeadlineCount, j, sCache))
+			if (!_data.isValidElement(i - nHeadlineCount, j, sCache))
 			{
 				sOut[i][j] = "---";			// Nullzeile? -> Da steht ja in Wirklichkeit auch kein Wert drin...
 				continue;
@@ -507,8 +495,6 @@ void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
 	Datafile _cache;
 
 	// Copy the default path and the path tokens
-	_cache.setPath(_data.getPath(), false, _data.getProgramPath());
-	_cache.setTokens(_option.getTokenPaths());
 	int nArgument = 0;
 	string sArgument = "";
 
@@ -537,80 +523,41 @@ void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
 
 			// Ensure that at least one file exists
 			if (!vFilelist.size())
-			{
 				throw SyntaxError(SyntaxError::FILE_NOT_EXIST, __sCmd, SyntaxError::invalid_position, sArgument);
-			}
 
 			// Go through all elements in the vFilelist list
 			for (unsigned int i = 0; i < vFilelist.size(); i++)
 			{
-			    // Load the data directly, if the data object is empty
-				if (!_data.isValid())
-				{
-					_data.openFile(vFilelist[0], _option, false, true);
-					continue;
-				}
-
-				// Clear the data in the cache
-				_cache.removeData(false);
-
-				// Load the data to the cache
-				_cache.openFile(vFilelist[i], _option, false, true);
-
-				// Melt the data in memory with the data in the cache
-				_data.melt(_cache);
+			    // Load the data. The melting of multiple files
+			    // is processed automatically
+                _data.openFile(vFilelist[0], _option, false, true);
 			}
 
 			// Inform the user and return
-			if (_data.isValid() && _option.getSystemPrintStatus())
+			if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
 				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option));
+
 			return;
 		}
 
-		// If data is available
-		if (_data.isValid())	// Sind ueberhaupt Daten in _data?
-		{
-		    // Load the data to cache
-			if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-			{
-				if (findParameter(sCmd, "head", '='))
-					nArgument = findParameter(sCmd, "head", '=') + 4;
-				else
-					nArgument = findParameter(sCmd, "h", '=') + 1;
-				nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-				_cache.openFile(sArgument, _option, false, true, nArgument);
-			}
-			else
-				_cache.openFile(sArgument, _option, false, true);
-
-            // Melt the data in memory with the data in the cache
-			_data.melt(_cache);
-
-			// Inform the user
-			if (_cache.isValid() && _option.getSystemPrintStatus())
-				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_APPENDDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option));
+        // Simply load the data directly -> Melting is done automatically
+        if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
+        {
+            if (findParameter(sCmd, "head", '='))
+                nArgument = findParameter(sCmd, "head", '=') + 4;
+            else
+                nArgument = findParameter(sCmd, "h", '=') + 1;
+            nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
+            _data.openFile(sArgument, _option, false, true, nArgument);
         }
-		else
-		{
-		    // Simply load the data directly -> Melting not needed
-			if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-			{
-				if (findParameter(sCmd, "head", '='))
-					nArgument = findParameter(sCmd, "head", '=') + 4;
-				else
-					nArgument = findParameter(sCmd, "h", '=') + 1;
-				nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-				_data.openFile(sArgument, _option, false, true, nArgument);
-			}
-			else
-				_data.openFile(sArgument, _option, false, true);
+        else
+            _data.openFile(sArgument, _option, false, true);
 
-            // Inform the user
-			if (_data.isValid() && _option.getSystemPrintStatus())
-				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option));
-        }
+        // Inform the user
+        if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
+            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option));
+
 	}
-	return;
 }
 
 
@@ -675,7 +622,7 @@ void remove_data(Datafile& _data, Settings& _option, bool bIgnore)
 void clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 {
     // Only if there is valid data in the cache
-	if (_data.isValidCache())
+	if (_data.isValid())
 	{
 	    // If the flag "ignore" is not set, ask the user for confirmation
 		if (!bIgnore)
@@ -694,7 +641,7 @@ void clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 				string sCache_file = _option.getExePath() + "/numere.cache";
 
 				// Clear the complete cache and remove the cache files
-				_data.clearCache();	// Wenn ja: Aufruf der Methode Datafile::clearCache(), die den Rest erledigt
+				_data.removeTablesFromMemory();	// Wenn ja: Aufruf der Methode Datafile::clearCache(), die den Rest erledigt
 				remove(sAutoSave.c_str());
 				remove(sCache_file.c_str());
 			}
@@ -709,7 +656,7 @@ void clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 			string sCache_file = _option.getExePath() + "/numere.cache";
 
 			// Clear the complete cache and remove the cache files
-			_data.clearCache();
+			_data.removeTablesFromMemory();
 			remove(sAutoSave.c_str());
 			remove(sCache_file.c_str());
 		}
@@ -741,7 +688,7 @@ void clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 /////////////////////////////////////////////////
 static bool searchAndDeleteTable(const string& sCache, Parser& _parser, Datafile& _data, const Settings& _option)
 {
-    for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+    for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
     {
         if (sCache.substr(0, sCache.find('(')) == iter->first)
         {
@@ -841,10 +788,6 @@ bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Sett
 	    // Get the next argument
 		string sCache = getNextArgument(sCmd, true);
 
-		// Ignore calls to "data()"
-		if (sCache.substr(0, 5) == "data(")
-			continue;
-
         // Try to find the current cache in the list of available caches
 		StripSpaces(sCache);
 
@@ -888,11 +831,6 @@ bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 
     // Get the target from the option or use the default one
     sTarget = evaluateTargetOptionInCommand(sCmd, "cache", _iTargetIndex, _parser, _data, _option);
-
-    // Avoid data as target for this operation
-    if (sTarget == "data")
-        throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
-
 
     // Isolate the expression
 	sToCopy = sCmd.substr(sCmd.find(' '));
@@ -943,21 +881,14 @@ bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 	if (!sTarget.length())
         return false;
 
-    // Avoid data as target for this operation
-    if (sTarget == "data")
-        throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
-
     // Isolate the expression
 	sToMove = sCmd.substr(sCmd.find(' '));
 
 	// Get the actual source data name and the corresponding indices
     sToMove = getSourceForDataOperation(sToMove, _iMoveIndex, _parser, _data, _option);
+
 	if (!sToMove.length())
         return false;
-
-    // Avoid "data" as source for moving
-    if (sToMove == "data")
-        throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
 
     // Apply the transpose flag on the indices, if necessary
 	evaluateTransposeForDataOperation(sTarget, _iMoveIndex, _iTargetIndex, _data, bTranspose);
@@ -1031,12 +962,12 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
         if (!bTranspose)
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.row.size());
-            _iTargetIndex.col = VectorIndex(_data.getTableCols(sTarget, false), _data.getTableCols(sTarget, false) + _iSourceIndex.col.size());
+            _iTargetIndex.col = VectorIndex(_data.getCols(sTarget, false), _data.getCols(sTarget, false) + _iSourceIndex.col.size());
         }
         else
         {
             _iTargetIndex.row = VectorIndex(0LL, _iSourceIndex.col.size());
-            _iTargetIndex.col = VectorIndex(_data.getTableCols(sTarget, false), _data.getTableCols(sTarget, false) + _iSourceIndex.row.size());
+            _iTargetIndex.col = VectorIndex(_data.getCols(sTarget, false), _data.getCols(sTarget, false) + _iSourceIndex.row.size());
         }
     }
     else if (_iTargetIndex.row.size())
@@ -1083,7 +1014,6 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
 static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, Datafile& _data, bool bMove, bool bTranspose)
 {
     Datafile _cache;
-    _cache.setCacheStatus(true);
 
     // First step: copy the contents to the Datafile _cache
     // If the move flag is set, then the contents are cleared at the source location
@@ -1095,7 +1025,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
             if (!i)
                 _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_iSourceIndex.col[j], sSource));
 
-            if (_data.isValidEntry(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource))
+            if (_data.isValidElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource))
             {
                 _cache.writeToTable(i, j, "cache", _data.getElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource));
 
@@ -1107,7 +1037,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 
     // Second step: Copy the contents in "_cache" to the new location in the original Datafile object
 
-    for (long long int i = 0; i < _cache.getTableLines("cache", false); i++)
+    for (long long int i = 0; i < _cache.getLines("cache", false); i++)
     {
         // Break the operation, if the indices are marking a smaller section
         if (!bTranspose)
@@ -1120,7 +1050,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
             if (i >= _iTargetIndex.col.size())
                 break;
         }
-        for (long long int j = 0; j < _cache.getTableCols("cache", false); j++)
+        for (long long int j = 0; j < _cache.getCols("cache", false); j++)
         {
             if (!bTranspose)
             {
@@ -1135,9 +1065,9 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
                     break;
 
                 // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                if (_cache.isValidEntry(i, j, "cache"))
+                if (_cache.isValidElement(i, j, "cache"))
                     _data.writeToTable(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget, _cache.getElement(i, j, "cache"));
-                else if (_data.isValidEntry(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget))
+                else if (_data.isValidElement(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget))
                     _data.deleteEntry(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget);
             }
             else
@@ -1148,15 +1078,13 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
                     break;
 
                 // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                if (_cache.isValidEntry(i, j, "cache"))
+                if (_cache.isValidElement(i, j, "cache"))
                     _data.writeToTable(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget, _cache.getElement(i, j, "cache"));
-                else if (_data.isValidEntry(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget))
+                else if (_data.isValidElement(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget))
                     _data.deleteEntry(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget);
             }
         }
     }
-
-    _data.setCacheStatus(false);
 }
 
 
@@ -1268,7 +1196,7 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool sortData(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
 	vector<int> vSortIndex;
 	DataAccessParser _accessParser(sCmd);

@@ -7,3 +7,5 @@ New	The commands "load", "append" and "imread" will now return indices of the lo
 Applied	Changed the style of the static code analyzer messages and the color of the warnings to enhance readability and visibility.
 Fixed	The static code analyzer will now calculate the results, if it is activated at file open time.
 Applied	Smoothing was changed slightly and allows now to use different filter types.
+New	NumeRe now allows only a single running instance. Double clicking files will open them in the already opened instance. Instance located in different root folders (e.g. "C:/Software/NumeRe" and "C:/Software/NumeRePortable") are not restricted, i.e. only one instance per root folder is allowed.
+Cleaned	The symbols' tree updates the function definitions and plugin definitions each time, one of them is changed, automatically.

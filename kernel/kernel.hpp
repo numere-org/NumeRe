@@ -41,7 +41,6 @@
 #include "core/procedure/flowctrl.hpp"
 #include "core/procedure/procedure.hpp"
 #include "core/debugger/debugger.hpp"
-#include "core/plugin.hpp"
 #include "core/ui/language.hpp"
 #include "core/procedure/procedurelibrary.hpp"
 #include "core/ParserLib/muParser.h"
@@ -59,7 +58,7 @@ using namespace mu;
 // Forward declarations of the terminal class and
 // the task container used for communicating between
 // the kernel and the GUI
-class wxTerm;
+class NumeReTerminal;
 struct NumeReTask;
 
 
@@ -114,7 +113,8 @@ class NumeReKernel
             NUMERE_SHOW_STRING_TABLE,
             NUMERE_DEBUG_EVENT,
             NUMERE_ANSWER_READ,
-            NUMERE_SHOW_WINDOW
+            NUMERE_SHOW_WINDOW,
+            NUMERE_REFRESH_FUNCTIONTREE
         };
 
         enum DebuggerCodes
@@ -139,7 +139,7 @@ class NumeReKernel
         Datafile _data;
         Parser _parser;
         NumeRe::StringParser _stringParser;
-        Define _functions;
+        FunctionDefinitionManager _functions;
         PlotData _pData;
         Script _script;
         Procedure _procedure;
@@ -173,7 +173,7 @@ class NumeReKernel
         // Used for controlling the programm flow, to update the internal
         // state and to communicate with the graphical layer
         static int* baseStackPosition;
-        static wxTerm* m_parent;
+        static NumeReTerminal* m_parent;
         static queue<NumeReTask> taskQueue;
         static int nLINE_LENGTH;
         static bool bWritingTable;
@@ -234,6 +234,7 @@ class NumeReKernel
         static int waitForContinue();
         static int evalDebuggerBreakPoint(const string& sCurrentCommand = "");
         static void addToLog(const string& sLogMessage);
+        void refreshFunctionTree();
 
         // Public member functions
         // Main loop function
@@ -264,7 +265,7 @@ class NumeReKernel
             return _stringParser;
         }
 
-        Define& getDefinitions()
+        FunctionDefinitionManager& getDefinitions()
         {
             return _functions;
         }
@@ -322,7 +323,7 @@ class NumeReKernel
         int getAutosaveInterval() {return _option.getAutoSaveInterval();}
         long long int getLastSavedTime() {return _data.getLastSaved();}
         void Autosave();
-        void StartUp(wxTerm* _parent, const string& sPath, const string& sPredefinedFuncs);
+        void StartUp(NumeReTerminal* _parent, const string& sPath, const string& sPredefinedFuncs);
         void CloseSession();
         void CancelCalculation()
         {

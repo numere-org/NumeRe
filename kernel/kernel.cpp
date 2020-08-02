@@ -19,7 +19,7 @@
 
 
 #include "wx/wx.h"
-#include "../gui/terminal/wxterm.h"
+#include "../gui/terminal/terminal.hpp"
 #include "core/datamanagement/dataops.hpp" // for make_stringmatrix()
 #define KERNEL_PRINT_SLEEP 2
 
@@ -33,7 +33,6 @@ extern const string sVersion;
 
 Language _lang;
 mglGraph _fontData;
-extern Plugin _plugin;
 extern value_type vAns;
 extern Integration_Vars parser_iVars;
 time_t tTimeZero = time(0);
@@ -41,7 +40,7 @@ time_t tTimeZero = time(0);
 // Initialization of the static member variables
 NumeReKernel* NumeReKernel::kernelInstance = nullptr;
 int* NumeReKernel::baseStackPosition = nullptr;
-wxTerm* NumeReKernel::m_parent = nullptr;
+NumeReTerminal* NumeReKernel::m_parent = nullptr;
 queue<NumeReTask> NumeReKernel::taskQueue;
 int NumeReKernel::nLINE_LENGTH = 80;
 bool NumeReKernel::bWritingTable = false;
@@ -92,7 +91,7 @@ bool IsWow64()
 /////////////////////////////////////////////////
 /// \brief Constructor of the kernel.
 /////////////////////////////////////////////////
-NumeReKernel::NumeReKernel() : _option(), _data(), _parser(), _stringParser(_parser, _data, _option)
+NumeReKernel::NumeReKernel() : _option(), _data(), _parser(), _stringParser(_parser, _data, _option), _functions(false)
 {
     sCommandLine.clear();
     sAnswer.clear();
@@ -166,7 +165,7 @@ void NumeReKernel::Autosave()
 /// loads possible available autosaves and
 /// definition files for functions and plugins.
 /////////////////////////////////////////////////
-void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string& sPredefinedFunctions)
+void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const string& sPredefinedFunctions)
 {
     if (_parent && m_parent == nullptr)
         m_parent = _parent;
@@ -282,14 +281,12 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
     _lang.loadStrings(_option.getUseCustomLanguageFiles());
     addToLog("> SYSTEM: Language files were loaded.");
 
-    string sAutosave = _option.getSavePath() + "/cache.tmp";
     string sCacheFile = _option.getExePath() + "/numere.cache";
 
     // Load the plugin informations
     if (fileExists(_procedure.getPluginInfoPath()))
     {
         _procedure.loadPlugins();
-        _plugin = _procedure;
         _data.setPluginCommands(_procedure.getPluginNames());
         addToLog("> SYSTEM: Plugin information was loaded.");
     }
@@ -305,20 +302,9 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
     _fontData.LoadFont(_option.getDefaultPlotFont().c_str(), (_option.getExePath() + "\\fonts").c_str());
 
     // Load the autosave file
-    if (fileExists(sAutosave) || fileExists(sCacheFile))
+    if (fileExists(sCacheFile))
     {
-        if (fileExists(sAutosave))
-        {
-            _data.openAutosave(sAutosave, _option);
-            _data.setSaveStatus(true);
-            remove(sAutosave.c_str());
-            _data.saveToCacheFile();
-        }
-        else
-        {
-            _data.loadFromCacheFile();
-        }
-
+        _data.loadFromCacheFile();
         addToLog("> SYSTEM: Automatic backup was loaded.");
     }
 
@@ -752,10 +738,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 if (findParameter(_script.getInstallInfoString(), "type", '='))
                 {
                     if (getArgAtPos(_script.getInstallInfoString(), findParameter(_script.getInstallInfoString(), "type", '=')).find("TYPE_PLUGIN") != string::npos)
-                    {
                         _procedure.declareNewPlugin(_script.getInstallInfoString());
-                        _plugin = _procedure;
-                    }
                 }
             }
 
@@ -849,7 +832,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             }
                             else
                             {
-                                _data.clearCache();
+                                _data.removeTablesFromMemory();
                             }
                         }
                         return NUMERE_QUIT;  // Keyword "quit"
@@ -895,7 +878,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // Get data elements for the current command line or determine,
             // if the target value of the current command line is a candidate
             // for a cluster
-            if (!_stringParser.isStringExpression(sLine) && (sLine.find("data(") != string::npos || _data.containsTablesOrClusters(sLine)))
+            if (!_stringParser.isStringExpression(sLine) && _data.containsTablesOrClusters(sLine))
             {
                 sCache = getDataElements(sLine, _parser, _data, _option);
 
@@ -1237,24 +1220,12 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
 {
     if (!sCmdCache.length())
     {
-        if (_data.pausedOpening())
-        {
-            _data.openFromCmdLine(_option, "", true);
-            if (_data.isValid())
-            {
-                print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option, true, 4));
-                addToLog("> SYSTEM: Data out of " + _data.getDataFileName("data") + " was successfully loaded.");
-            }
-        }
-
         if (_script.getAutoStart())
         {
             print(LineBreak(_lang.get("PARSER_STARTINGSCRIPT", _script.getScriptFileName()), _option, true, 4));
             addToLog("> SYSTEM: Starting Script " + _script.getScriptFileName());
             _script.openScript();
         }
-
-        _data.setCacheStatus(false);
 
         // --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
         if (_script.isValid() && _script.isOpen())
@@ -1284,7 +1255,6 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
             _procedure.addHelpIndex(sLine.substr(0, sLine.find("<<>>")), getArgAtPos(sLine, sLine.find("id=") + 3));
             sLine.erase(0, sLine.find("<<>>") + 4);
             _option.addToDocIndex(sLine, _option.getUseCustomLanguageFiles());
-            _plugin = _procedure;
             return false;
         }
 
@@ -1641,25 +1611,29 @@ bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCo
 
         // Remove the plugin and get the help index ID
         sPlugin = _procedure.deletePlugin(sPlugin);
+
         if (sPlugin.length())
         {
-            _plugin = _procedure;
             if (sPlugin != "<<NO_HLP_ENTRY>>")
             {
                 while (sPlugin.find(';') != string::npos)
                     sPlugin[sPlugin.find(';')] = ',';
+
                 while (sPlugin.length())
                 {
                     // Remove the reference from the help index
                     _option.removeFromDocIndex(getNextArgument(sPlugin, true), _option.getUseCustomLanguageFiles());
                 }
             }
+
             print(LineBreak(_lang.get("PARSER_PLUGINDELETED"), _option));
         }
         else
             print(LineBreak(_lang.get("PARSER_PLUGINNOTFOUND"), _option));
+
         return true;
     }
+
     return false;
 }
 
@@ -2137,7 +2111,7 @@ void NumeReKernel::saveData()
 void NumeReKernel::CloseSession()
 {
     saveData();
-    _data.clearCache();
+    _data.removeTablesFromMemory();
     _data.removeData(false);
 
     // --> Konfiguration aus den Objekten zusammenfassen und anschliessend speichern <--
@@ -2236,11 +2210,11 @@ map<string, string> NumeReKernel::getFunctionLanguageStrings()
     map<string, string> mFunctionLangStrings;
     for (size_t i = 0; i < _functions.getDefinedFunctions(); i++)
     {
-        string sDesc = _functions.getFunction(i) + "     ARG   - " + _functions.getComment(i);
+        string sDesc = _functions.getFunctionSignature(i) + "     ARG   - " + _functions.getComment(i);
         while (sDesc.find("\\\"") != string::npos)
             sDesc.erase(sDesc.find("\\\""), 1);
 
-        mFunctionLangStrings["PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(_functions.getFunction(i).substr(0, _functions.getFunction(i).rfind('('))) + "_[DEFINE]"] = sDesc;
+        mFunctionLangStrings["PARSERFUNCS_LISTFUNC_FUNC_" + toUpperCase(_functions.getFunctionSignature(i).substr(0, _functions.getFunctionSignature(i).rfind('('))) + "_[DEFINE]"] = sDesc;
     }
     return mFunctionLangStrings;
 }
@@ -2323,13 +2297,11 @@ NumeReVariables NumeReKernel::getVariableList()
     NumeReVariables vars;
 
     mu::varmap_type varmap = _parser.GetVar();
-    map<string, string> stringmap = _stringParser.getStringVars();
-    map<string, long long int> tablemap = _data.mCachesMap;
+    const map<string, string>& stringmap = _stringParser.getStringVars();
+    map<string, long long int> tablemap = _data.getTableMap();
     const map<string, NumeRe::Cluster>& clustermap = _data.getClusterMap();
     string sCurrentLine;
 
-    if (_data.isValid())
-        tablemap["data"] = -1;
     if (_data.getStringElements())
         tablemap["string"] = -2;
 
@@ -3118,7 +3090,7 @@ NumeRe::Table NumeReKernel::getTable(const string& sTableName)
     if (sSelectedTable.find("()") != string::npos)
         sSelectedTable.erase(sSelectedTable.find("()"));
 
-    if ((!_data.isTable(sSelectedTable) && sSelectedTable != "data") || !_data.getCols(sSelectedTable))
+    if (!_data.isTable(sSelectedTable) || !_data.getCols(sSelectedTable))
         return NumeRe::Table();
 
     return _data.extractTable(sSelectedTable);
@@ -3315,10 +3287,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     }
 
     // Get the table variable map
-    map<string, long long int> tableMap = getInstance()->getData().mCachesMap;
-
-    if (getInstance()->getData().isValid())
-        tableMap["data"] = -1;
+    map<string, long long int> tableMap = getInstance()->getData().getTableMap();
 
     if (getInstance()->getData().getStringElements())
         tableMap["string"] = -2;
@@ -3416,6 +3385,36 @@ void NumeReKernel::addToLog(const string& sLogMessage)
 {
     if (oLogFile.is_open())
         oLogFile << toString(time(0) - tTimeZero, true) << "> " << sLogMessage << endl;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function informs the GUI
+/// to reload the contents of the function tree
+/// as soon as possible.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::refreshFunctionTree()
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+
+        // create the task
+        NumeReTask task;
+        task.taskType = NUMERE_REFRESH_FUNCTIONTREE;
+
+        taskQueue.push(task);
+
+        m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
+    }
+
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(KERNEL_PRINT_SLEEP);
 }
 
 

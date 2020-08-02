@@ -399,10 +399,10 @@ value_type parser_Norm(const value_type* vElements, int nElements)
 value_type parser_Med(const value_type* vElements, int nElements)
 {
     Datafile _cache;
-    _cache.setCacheStatus(true);
 
     for (int i = 0; i < nElements; i++)
         _cache.writeToTable(i,0,"cache",vElements[i]);
+
     return _cache.med("cache", 0,nElements-1);
 }
 
@@ -410,10 +410,10 @@ value_type parser_Med(const value_type* vElements, int nElements)
 value_type parser_Pct(const value_type* vElements, int nElements)
 {
     Datafile _cache;
-    _cache.setCacheStatus(true);
 
     for (int i = 0; i < nElements-1; i++)
         _cache.writeToTable(i,0,"cache",vElements[i]);
+
     return _cache.pct("cache", 0, nElements-1, 0, -1, vElements[nElements-1]);
 }
 

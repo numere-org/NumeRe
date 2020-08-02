@@ -34,8 +34,6 @@ using namespace mu;
 typedef CommandReturnValues (*CommandFunc)(string&);
 
 extern mglGraph _fontData;
-/// \todo Move this global instance to the kernel or remove it completely.
-extern Plugin _plugin;
 
 string removeQuotationMarks(const string& sString);
 static CommandReturnValues cmd_data(string& sCmd) __attribute__ ((deprecated));
@@ -153,7 +151,7 @@ static string getVarList(const string& sCmd, Parser& _parser, Datafile& _data, S
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool undefineFunctions(string sFunctionList, Define& _functions, const Settings& _option)
+static bool undefineFunctions(string sFunctionList, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sSuccessFulRemoved;
 
@@ -1486,7 +1484,7 @@ static void listFunctions(const Settings& _option, const string& sType) //PRSRFU
 /// because the custom defined functions are also
 /// listed in the sidebar.
 /////////////////////////////////////////////////
-static void listDefinitions(const Define& _functions, const Settings& _option)
+static void listDefinitions(const FunctionDefinitionManager& _functions, const Settings& _option)
 {
 	NumeReKernel::toggleTableStatus();
 	make_hline();
@@ -1502,7 +1500,7 @@ static void listDefinitions(const Define& _functions, const Settings& _option)
 		for (unsigned int i = 0; i < _functions.getDefinedFunctions(); i++)
 		{
 		    // Print first the name of the function
-			NumeReKernel::printPreFmt(sectionHeadline(_functions.getFunction(i).substr(0, _functions.getFunction(i).rfind('('))));
+			NumeReKernel::printPreFmt(sectionHeadline(_functions.getFunctionSignature(i).substr(0, _functions.getFunctionSignature(i).rfind('('))));
 
 			// Print the comment, if it is available
 			if (_functions.getComment(i).length())
@@ -1511,7 +1509,7 @@ static void listDefinitions(const Define& _functions, const Settings& _option)
 			}
 
 			// Print the actual implementation of the function
-			NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunction(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
+			NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunctionSignature(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
         }
 		NumeReKernel::printPreFmt("|   -- " + toString((int)_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
 	}
@@ -1599,7 +1597,6 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 	}
 
 	// Get data table and string table sizes
-	string sDataSize = toString(_data.getLines("data", false)) + " x " + toString(_data.getCols("data"));
 	string sStringSize = toString((int)_data.getStringElements()) + " x " + toString((int)_data.getStringCols());
 
 	NumeReKernel::toggleTableStatus();
@@ -1610,7 +1607,7 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 	// Print all defined caches first
 	for (auto iter = CacheMap.begin(); iter != CacheMap.end(); ++iter)
 	{
-		string sCacheSize = toString(_data.getTableLines(iter->first, false)) + " x " + toString(_data.getTableCols(iter->first, false));
+		string sCacheSize = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
 		NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sCacheSize, (_option.getWindow(0) - 50) / 2) + strfill("[double x double]", 19));
 
 		if (_data.getSize(iter->second) >= 1024 * 1024)
@@ -1644,21 +1641,6 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 	if (mClusterMap.size())
         NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
 
-
-	// Print now the dimension of the data table
-	if (_data.isValid())
-	{
-		NumeReKernel::printPreFmt("|   data()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - 4 + _option.getWindow(0) % 2) + strfill(sDataSize, (_option.getWindow(0) - 50) / 2) + strfill("[double x double]", 19));
-		if (_data.getDataSize() >= 1024 * 1024)
-			NumeReKernel::printPreFmt(strfill(toString(_data.getDataSize() / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-		else if (_data.getDataSize() >= 1024)
-			NumeReKernel::printPreFmt(strfill(toString(_data.getDataSize() / (1024.0), 4), 9) + " KBytes\n");
-		else
-			NumeReKernel::printPreFmt(strfill(toString(_data.getDataSize()), 9) + "  Bytes\n");
-		nBytesSum += _data.getDataSize();
-
-		NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
-    }
 
 	// Print now the dimension of the string table
 	if (_data.getStringElements())
@@ -1703,27 +1685,16 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 	// Combine the number of variables and data
 	// tables first
 	NumeReKernel::printPreFmt("|   -- " + toString((int)VarMap.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
-	if (_data.isValid() || _data.isValidCache() || _data.getStringElements())
+	if (_data.isValid() || _data.getStringElements())
 	{
-		if (_data.isValid() && _data.isValidCache() && _data.getStringElements())
+		if (_data.isValid() && _data.getStringElements())
 		{
 			NumeReKernel::printPreFmt(toString(2 + CacheMap.size()));
-			nDataSetNum = CacheMap.size() + 2;
-		}
-		else if ((_data.isValid() && _data.isValidCache())
-				 || (_data.isValidCache() && _data.getStringElements()))
-		{
-			NumeReKernel::printPreFmt(toString(1 + CacheMap.size()));
 			nDataSetNum = CacheMap.size() + 1;
 		}
-		else if (_data.isValid() && _data.getStringElements())
+		else if (_data.isValid())
 		{
-			NumeReKernel::printPreFmt("2");
-			nDataSetNum = 2;
-		}
-		else if (_data.isValidCache())
-		{
-			NumeReKernel::printPreFmt(toString((int)CacheMap.size()));
+			NumeReKernel::printPreFmt(toString(1 + CacheMap.size()));
 			nDataSetNum = CacheMap.size();
 		}
 		else
@@ -1961,9 +1932,10 @@ static void listInstalledPlugins(Parser& _parser, Datafile& _data, const Setting
 	make_hline();
 	NumeReKernel::print(toSystemCodePage("NUMERE: " + toUpperCase(_lang.get("PARSERFUNCS_LISTPLUGINS_HEADLINE"))));
 	make_hline();
+	Procedure& _procedure = NumeReKernel::getInstance()->getProcedureInterpreter();
 
 	// Probably there's no plugin defined
-	if (!_plugin.getPluginCount())
+	if (!_procedure.getPluginCount())
 		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
 	else
 	{
@@ -1972,28 +1944,30 @@ static void listInstalledPlugins(Parser& _parser, Datafile& _data, const Setting
 
 		// Print all plugins (name, command and description)
 		// on the terminal
-		for (unsigned int i = 0; i < _plugin.getPluginCount(); i++)
+		for (unsigned int i = 0; i < _procedure.getPluginCount(); i++)
 		{
 			string sLine = "|   ";
-			if (_plugin.getPluginCommand(i).length() > 18)
-				sLine += _plugin.getPluginCommand(i).substr(0, 15) + "...";
+
+			if (_procedure.getPluginCommand(i).length() > 18)
+				sLine += _procedure.getPluginCommand(i).substr(0, 15) + "...";
 			else
-				sLine += _plugin.getPluginCommand(i);
+				sLine += _procedure.getPluginCommand(i);
+
 			sLine.append(23 - sLine.length(), ' ');
 
 			// Print basic information about the plugin
-			sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _plugin.getPluginName(i), _plugin.getPluginVersion(i), _plugin.getPluginAuthor(i));
+			sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _procedure.getPluginName(i), _procedure.getPluginVersion(i), _procedure.getPluginAuthor(i));
 
 			// Print the description
-			if (_plugin.getPluginDesc(i).length())
-			{
-				sLine += "$" + _plugin.getPluginDesc(i);
-			}
+			if (_procedure.getPluginDesc(i).length())
+				sLine += "$" + _procedure.getPluginDesc(i);
+
 			sLine = '"' + sLine + "\" -nq";
 			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDummy, true);
 			NumeReKernel::printPreFmt(LineBreak(sLine, _option, true, 0, 25) + "\n");
 		}
 	}
+
 	NumeReKernel::toggleTableStatus();
 	make_hline();
 	return;
@@ -2018,7 +1992,7 @@ static void listInstalledPlugins(Parser& _parser, Datafile& _data, const Setting
 /// chekbox. There's no command available to enable
 /// this command.
 /////////////////////////////////////////////////
-static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
 	if (!_option.getUseExecuteCommand())
 		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
@@ -2156,50 +2130,6 @@ static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Defin
 
 
 /////////////////////////////////////////////////
-/// \brief This static function loads a single
-/// file directly to a cache and returns the name
-/// of the target cache.
-///
-/// \param sFileName const string&
-/// \param _data Datafile&
-/// \param _option Settings&
-/// \return string
-///
-/// The cache name is either extracted from the
-/// file header or constructed from the file name.
-/////////////////////////////////////////////////
-static NumeRe::FileHeaderInfo loadToCache(const string& sFileName, Datafile& _data, Settings& _option)
-{
-    Datafile _cache;
-    _cache.setTokens(_option.getTokenPaths());
-    _cache.setPath(_option.getLoadPath(), false, _option.getExePath());
-    NumeRe::FileHeaderInfo info = _cache.openFile(sFileName, _option, false, true);
-
-    if (info.sTableName == "data")
-        info.sTableName = "loaded_data";
-
-    if (!_data.isTable(info.sTableName + "()"))
-        _data.addTable(info.sTableName + "()", _option);
-
-    long long int nFirstColumn = _data.getCols(info.sTableName, false);
-
-    for (long long int i = 0; i < _cache.getLines("data", false); i++)
-    {
-        for (long long int j = 0; j < _cache.getCols("data", false); j++)
-        {
-            if (!i)
-                _data.setHeadLineElement(j + nFirstColumn, info.sTableName, _cache.getHeadLineElement(j, "data"));
-
-            if (_cache.isValidEntry(i, j, "data"))
-                _data.writeToTable(i, j + nFirstColumn, info.sTableName, _cache.getElement(i, j, "data"));
-        }
-    }
-
-    return info;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function performs the autosave at
 /// the application termination.
 ///
@@ -2212,7 +2142,7 @@ static NumeRe::FileHeaderInfo loadToCache(const string& sFileName, Datafile& _da
 static void autoSave(Datafile& _data, Output& _out, Settings& _option)
 {
     // Only do something, if there's unsaved and valid data
-	if (_data.isValidCache() && !_data.getSaveStatus())
+	if (_data.isValid() && !_data.getSaveStatus())
 	{
 	    // Inform the user
 		if (_option.getSystemPrintStatus())
@@ -2297,7 +2227,7 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
     if (_accessParser.getIndices().col.isOpenEnd())
         _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
 
-    _cache.setCacheSize(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
+    _cache.resizeTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
 
     for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
     {
@@ -2306,7 +2236,7 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
             if (!i)
                 _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_accessParser.getIndices().col[j], _accessParser.getDataObject()));
 
-            if (_data.isValidEntry(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
+            if (_data.isValidElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
                 _cache.writeToTable(i, j, "cache", _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
         }
     }
@@ -2395,7 +2325,6 @@ static CommandReturnValues saveDataObject(string& sCmd)
 {
     // Get references to the main objects
     Datafile& _data = NumeReKernel::getInstance()->getData();
-    //Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
@@ -2425,7 +2354,6 @@ static CommandReturnValues saveDataObject(string& sCmd)
         // Update the necessary parameters
         _cache.setTokens(_option.getTokenPaths());
         _cache.setPath(_data.getPath(), false, _option.getExePath());
-        _cache.setCacheStatus(true);
 
         copyDataToTemporaryTable(sCmd, _access, _data, _cache);
 
@@ -2514,7 +2442,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "integrate").nPos;
     vector<double> vIntegrate;
@@ -2571,7 +2499,7 @@ static CommandReturnValues cmd_diff(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "diff").nPos;
     vector<double> vDiff;
@@ -2614,7 +2542,7 @@ static CommandReturnValues cmd_extrema(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "extrema").nPos;
     string sArgument;
@@ -2665,7 +2593,7 @@ static CommandReturnValues cmd_pulse(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!analyzePulse(sCmd, _parser, _data, _functions, _option))
     {
@@ -2690,7 +2618,7 @@ static CommandReturnValues cmd_eval(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "eval").nPos;
     string sArgument;
@@ -2734,7 +2662,7 @@ static CommandReturnValues cmd_zeroes(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "zeroes").nPos;
     string sArgument;
@@ -2783,7 +2711,7 @@ static CommandReturnValues cmd_sort(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nPos = findCommand(sCmd, "sort").nPos;
     string sArgument;
@@ -2970,7 +2898,7 @@ static CommandReturnValues cmd_plotting(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
 
     string sCommand = findCommand(sCmd).sString;
@@ -3030,9 +2958,9 @@ static CommandReturnValues cmd_fit(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    if (_data.isValid() || _data.isValidCache())
+    if (_data.isValid())
         fitDataSet(sCmd, _parser, _data, _functions, _option);
     else
         doc_Help("fit", _option);
@@ -3776,7 +3704,7 @@ static CommandReturnValues cmd_get(string& sCmd)
 static CommandReturnValues cmd_undefine(string& sCmd)
 {
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     size_t nPos = findCommand(sCmd).nPos;
 
     if (sCmd.length() > 7)
@@ -3914,7 +3842,6 @@ static CommandReturnValues cmd_data(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
-    //Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
     int nArgument;
@@ -4502,7 +4429,7 @@ static CommandReturnValues cmd_new(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (findParameter(sCmd, "dir", '=')
             || findParameter(sCmd, "script", '=')
@@ -4513,7 +4440,7 @@ static CommandReturnValues cmd_new(string& sCmd)
             || sCmd.find("()", findCommand(sCmd).nPos + 3) != string::npos
             || sCmd.find('$', findCommand(sCmd).nPos + 3) != string::npos)
     {
-        _data.setUserdefinedFuncs(_functions.getDefinesName());
+        _data.setUserdefinedFuncs(_functions.getNamesOfDefinedFunctions());
 
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
             sCmd = evaluateParameterValues(sCmd);
@@ -4574,7 +4501,7 @@ static CommandReturnValues cmd_taylor(string& sCmd)
     //Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (sCmd.length() > 7)
         taylor(sCmd, _parser, _option, _functions);
@@ -4640,7 +4567,7 @@ static CommandReturnValues cmd_odesolve(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (sCmd.length() > 9)
     {
@@ -4702,7 +4629,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     else if (findParameter(sCmd, "hist"))
     {
         sArgument = evaluateParameterValues(sCmd);
-        if (_data.isValidCache())
+        if (_data.isValid())
             plugin_histogram(sArgument, _data, _data, _out, _option, _pData, true, false);
         else
             //throw NO_DATA_AVAILABLE;
@@ -4723,7 +4650,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
                 sArgument = sCmd.substr(sCmd.find("save=") + 5, sCmd.find(' ', sCmd.find("save=") + 5) - sCmd.find("save=") - 5);
         }
 
-        if (_data.isValidCache())
+        if (_data.isValid())
             plugin_statistics(sArgument, _data, _out, _option, true, false);
         else
             //throw NO_DATA_AVAILABLE;
@@ -4739,7 +4666,6 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
         _data.setPrefix(sCommand);
         if (extractFirstParameterStringValue(sCmd, sArgument))
         {
-            _data.setCacheStatus(true);
             if (_data.saveFile(sCommand, sArgument))
             {
                 if (_option.getSystemPrintStatus())
@@ -4748,16 +4674,12 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
             }
             else
             {
-                _data.setCacheStatus(false);
-                //throw CANNOT_SAVE_FILE;
                 throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
                 //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
             }
-            _data.setCacheStatus(false);
         }
         else
         {
-            _data.setCacheStatus(true);
             if (_data.saveFile(sCommand, ""))
             {
                 if (_option.getSystemPrintStatus())
@@ -4766,12 +4688,9 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
             }
             else
             {
-                _data.setCacheStatus(false);
-                //throw CANNOT_SAVE_FILE;
                 throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
                 //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
             }
-            _data.setCacheStatus(false);
         }
         return COMMAND_PROCESSED;
     }
@@ -4834,7 +4753,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
               || findParameter(sCmd, "med"))
              && (findParameter(sCmd, "lines") || findParameter(sCmd, "cols")))
     {
-        if (!_data.isValidCache() || !_data.getTableCols(sCacheCmd, false))
+        if (!_data.isValid() || !_data.getCols(sCacheCmd, false))
             //throw NO_CACHED_DATA;
             throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sCacheCmd, sCacheCmd);
         string sEvery = "";
@@ -5045,13 +4964,13 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
               || findParameter(sCmd, "med"))
             )
     {
-        if (!_data.isValidCache() || !_data.getTableCols(sCacheCmd, false))
+        if (!_data.isValid() || !_data.getCols(sCacheCmd, false))
             //throw NO_CACHED_DATA;
             throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sCacheCmd, sCacheCmd);
         nPos = findCommand(sCmd, sCacheCmd).nPos;
         sArgument = extractCommandString(sCmd, findCommand(sCmd, sCacheCmd));
         sCommand = sArgument;
-        if (findParameter(sCmd, "grid") && _data.getTableCols(sCacheCmd, false) < 3)
+        if (findParameter(sCmd, "grid") && _data.getCols(sCacheCmd, false) < 3)
             //throw TOO_FEW_COLS;
             throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, sCacheCmd, sCacheCmd);
         else if (findParameter(sCmd, "grid"))
@@ -5156,7 +5075,7 @@ static CommandReturnValues cmd_clear(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_ifndefined(string& sCmd)
 {
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (sCmd.find(' ') != string::npos)
@@ -5233,7 +5152,7 @@ static CommandReturnValues cmd_copy(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (_data.containsTablesOrClusters(sCmd) || sCmd.find("data(", 5) != string::npos)
+    if (_data.containsTablesOrClusters(sCmd))
     {
         if (CopyData(sCmd, _parser, _data, _option))
         {
@@ -5396,7 +5315,7 @@ static CommandReturnValues cmd_audio(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!writeAudioFile(sCmd, _parser, _data, _functions, _option))
         throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
@@ -5563,7 +5482,7 @@ static CommandReturnValues cmd_stats(string& sCmd)
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
         plugin_statistics(sArgument, _data, _out, _option, false, true);
     }
-    else if (_data.matchTableAsParameter(sCmd).length() && _data.isValidCache())
+    else if (_data.matchTableAsParameter(sCmd).length() && _data.isValid())
     {
         // DEPRECATED: Declared at v1.1.2rc2
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
@@ -5612,7 +5531,7 @@ static CommandReturnValues cmd_stfa(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
 
@@ -5638,7 +5557,7 @@ static CommandReturnValues cmd_spline(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!calculateSplines(sCmd, _parser, _data, _functions, _option))
         doc_Help("spline", _option);
@@ -5657,7 +5576,7 @@ static CommandReturnValues cmd_spline(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_save(string& sCmd)
 {
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (findParameter(sCmd, "define"))
@@ -5688,7 +5607,7 @@ static CommandReturnValues cmd_set(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Script& _script = NumeReKernel::getInstance()->getScript();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
@@ -6308,12 +6227,7 @@ static CommandReturnValues cmd_show(string& sCmd)
         _out.setCompact(_option.getbCompact());
 
     // Determine the correct data object
-    if (findParameter(sCmd, "data") || sCmd.find(" data()") != string::npos)
-    {
-        // data as object, passed as parameter
-        show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
-    }
-    else if (_data.matchTableAsParameter(sCmd).length())
+    if (_data.matchTableAsParameter(sCmd).length())
     {
         // a cache as object, passed as parameter
         show_data(_data, _out, _option, _data.matchTableAsParameter(sCmd), _option.getPrecision(), false, true);
@@ -6390,7 +6304,7 @@ static CommandReturnValues cmd_show(string& sCmd)
                 if (_accessParser.getIndices().col.isOpenEnd())
                     _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
 
-                _cache.setCacheSize(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
+                _cache.resizeTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
                 _cache.renameTable("cache", "*" + _accessParser.getDataObject(), true);
 
                 for (unsigned int i = 0; i < _accessParser.getIndices().row.size(); i++)
@@ -6402,7 +6316,7 @@ static CommandReturnValues cmd_show(string& sCmd)
                             _cache.setHeadLineElement(j, "*" + _accessParser.getDataObject(), _data.getHeadLineElement(_accessParser.getIndices().col[j], _accessParser.getDataObject()));
                         }
 
-                        if (_data.isValidEntry(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
+                        if (_data.isValidElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
                             _cache.writeToTable(i, j, "*" + _accessParser.getDataObject(), _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
                     }
                 }
@@ -6451,7 +6365,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     {
         nWindowSize = findParameter(sCmd, "order", '=') + 5;
 
-        if (_data.containsTablesOrClusters(sCmd.substr(nWindowSize)) || sCmd.substr(nWindowSize).find("data(") != string::npos)
+        if (_data.containsTablesOrClusters(sCmd.substr(nWindowSize)))
         {
             sArgument = sCmd.substr(nWindowSize);
             getDataElements(sArgument, _parser, _data, _option);
@@ -6471,7 +6385,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     {
         size_t pos = findParameter(sCmd, "alpha", '=') + 5;
 
-        if (_data.containsTablesOrClusters(sCmd.substr(pos)) || sCmd.substr(pos).find("data(") != string::npos)
+        if (_data.containsTablesOrClusters(sCmd.substr(pos)))
         {
             sArgument = sCmd.substr(pos);
             getDataElements(sArgument, _parser, _data, _option);
@@ -6775,7 +6689,7 @@ static CommandReturnValues cmd_matop(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     performMatrixOperation(sCmd, _parser, _data, _functions, _option);
     return COMMAND_PROCESSED;
@@ -6816,7 +6730,7 @@ static CommandReturnValues cmd_random(string& sCmd)
 static CommandReturnValues cmd_redefine(string& sCmd)
 {
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (sCmd.length() > findCommand(sCmd).sString.length() + 1)
     {
@@ -6866,7 +6780,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
         {
             nArgument = findParameter(sCmd, "samples", '=') + 7;
 
-            if (_data.containsTablesOrClusters(getArgAtPos(sCmd, nArgument)) || getArgAtPos(sCmd, nArgument).find("data(") != string::npos)
+            if (_data.containsTablesOrClusters(getArgAtPos(sCmd, nArgument)))
             {
                 sArgument = getArgAtPos(sCmd, nArgument);
                 getDataElements(sArgument, _parser, _data, _option);
@@ -6881,7 +6795,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
             nArgument = intCast(_parser.Eval());
         }
         else
-            nArgument = _data.getTableLines(_access.getDataObject(), false);
+            nArgument = _data.getLines(_access.getDataObject(), false);
 
         if (!isValidIndexSet(_access.getIndices()))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getDataObject());
@@ -7243,7 +7157,7 @@ static CommandReturnValues cmd_regularize(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!regularizeDataSet(sCmd, _parser, _data, _functions, _option))
         throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, SyntaxError::invalid_position);
@@ -7264,13 +7178,13 @@ static CommandReturnValues cmd_regularize(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_define(string& sCmd)
 {
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Datafile& _data = NumeReKernel::getInstance()->getData();
 
     if (sCmd.length() > 8)
     {
-        _functions.setCacheList(_data.getTableNames());
+        _functions.setTableList(_data.getTableNames());
 
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
@@ -7419,7 +7333,7 @@ static CommandReturnValues cmd_datagrid(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument = "grid";
 
@@ -7445,7 +7359,7 @@ static CommandReturnValues cmd_list(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
 
@@ -7534,7 +7448,7 @@ static CommandReturnValues cmd_load(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Script& _script = NumeReKernel::getInstance()->getScript();
 
     string sArgument;
@@ -7581,13 +7495,13 @@ static CommandReturnValues cmd_load(string& sCmd)
                     {
                         if (!i)
                             _data.setHeadLineElement(j + nArgument, sArgument, _cache.getHeadLineElement(j, "data"));
-                        if (_cache.isValidEntry(i, j, "data"))
+                        if (_cache.isValidElement(i, j, "data"))
                         {
                             _data.writeToTable(i, j + nArgument, sArgument, _cache.getElement(i, j, "data"));
                         }
                     }
                 }
-                if (_data.isValidCache() && _data.getCols(sArgument, false))
+                if (_data.isValid() && _data.getCols(sArgument, false))
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))), _option) );
                 return COMMAND_PROCESSED;
             }
@@ -7618,7 +7532,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                         {
                             if (!i)
                                 _data.setHeadLineElement(j + nArgument, sTarget, _cache.getHeadLineElement(j, "data"));
-                            if (_cache.isValidEntry(i, j, "data"))
+                            if (_cache.isValidElement(i, j, "data"))
                             {
                                 _data.writeToTable(i, j + nArgument, sTarget, _cache.getElement(i, j, "data"));
                             }
@@ -7627,7 +7541,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     _cache.removeData(false);
                     nArgument = -1;
                 }
-                if (_data.isValidCache())
+                if (_data.isValid())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument), _option) );
                 //NumeReKernel::print(LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
                 return COMMAND_PROCESSED;
@@ -7846,9 +7760,9 @@ static CommandReturnValues cmd_load(string& sCmd)
             if (findParameter(sCmd, "tocache") && !findParameter(sCmd, "all"))
             {
                 // Single file directly to cache
-                NumeRe::FileHeaderInfo info = loadToCache(sArgument, _data, _option);
+                NumeRe::FileHeaderInfo info = _data.openFile(sArgument, _option, true, true);
 
-                if (_data.isValidCache() && _data.getCols(info.sTableName, false))
+                if (_data.isValid() && _data.getCols(info.sTableName, false))
                 {
                     NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
                     sCmd = sExpr;
@@ -7877,9 +7791,9 @@ static CommandReturnValues cmd_load(string& sCmd)
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
 
                 for (size_t i = 0; i < vFilelist.size(); i++)
-                    loadToCache(vFilelist[i], _data, _option);
+                    _data.openFile(vFilelist[i], _option, true, true);
 
-                if (_data.isValidCache())
+                if (_data.isValid())
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument));
 
                 return COMMAND_PROCESSED;
@@ -7975,7 +7889,7 @@ static CommandReturnValues cmd_execute(string& sCmd)
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     executeCommand(sCmd, _parser, _data, _functions, _option);
     return COMMAND_PROCESSED;

@@ -38,6 +38,12 @@ string fromSystemCodePage(string);
  * -> FileSystem dient als PARENT fuer Output und Datafile, da die Methode FileSystem::ValidFileName(string) in beiden Klassen benutzt wird
  */
 
+/////////////////////////////////////////////////
+/// \brief This class implements the basic input/
+/// output file system and provides
+/// functionalities to work with filenames and
+/// folder paths.
+/////////////////////////////////////////////////
 class FileSystem
 {
     private:
@@ -47,7 +53,7 @@ class FileSystem
 
 	protected:												// In allen CHILD-Klassen verfuegbar
 		string sPath;										// String-Variable fuer den Dateipfad
-		string sWhere;
+		string sExecutablePath;
 		string sTokens[7][2];
 		mutable string sValidExtensions;
 
@@ -59,17 +65,16 @@ class FileSystem
 		string ValidFileName(string _sFileName, const string sExtension = ".dat", bool checkExtension = true) const;			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
 		string ValidFolderName(string _sFileName) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
 		string ValidizeAndPrepareName(const string& _sFileName, const string& sExtension = ".dat") const;
-		int setPath(string _sPath, bool bMkDir, string _sWhere);			// setzt sPath auf _sPath
+		int setPath(string _sPath, bool bMkDir, string _sExePath);			// setzt sPath auf _sPath
 		void createRevisionsFolder();
 		string getPath() const;								// gibt sPath zurueck
 		vector<string> getFileParts(const string& sFilePath) const;
-        inline void setProgramPath(string _sWhere)
+        inline void setProgramPath(string _sExePath)
             {
-                sWhere = _sWhere;
-                return;
+                sExecutablePath = _sExePath;
             }
         inline string getProgramPath() const
-            {return sWhere;}
+            {return sExecutablePath;}
         inline void declareFileType(const string& sFileType)
             {
                 if (sValidExtensions.find(sFileType) == string::npos)

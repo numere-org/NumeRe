@@ -18,7 +18,7 @@
 
 
 
-#include "../terminal/wxterm.h"
+#include "../terminal/terminal.hpp"
 #include "../../common/datastructures.h"
 #include "../../kernel/syntax.hpp"
 #include "../dialogs/duplicatecodedialog.hpp"
@@ -58,7 +58,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 	    friend class CodeFormatter;
 
 		NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* project,
-					 wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal, const wxPoint& pos = wxDefaultPosition,
+					 wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos = wxDefaultPosition,
 					 const wxSize& size = wxDefaultSize, long style = 0,
 					 const wxString& name = wxSTCNameStr);
 		~NumeReEditor();
@@ -240,7 +240,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 				_syntax = __syntax;
 			}
 		}
-		void SetTerminal(wxTerm* _terminal)
+		void SetTerminal(NumeReTerminal* _terminal)
 		{
 			if (!m_terminal)
 			{
@@ -443,7 +443,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		wxMenuItem* m_menuRefactoring;
 
 		NumeReSyntax* _syntax;
-		wxTerm* m_terminal;
+		NumeReTerminal* m_terminal;
 
 		DuplicateCodeDialog* m_duplicateCode;
 		wxCriticalSection m_editorCS;

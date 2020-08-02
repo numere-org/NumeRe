@@ -277,7 +277,6 @@ namespace big_endian_io
 	}
 }
 
-bool containsDataObject(const string& sExpr);
 void evalRecursiveExpressions(string& sExpr);
 
 size_t qSortDouble(double* dArray, size_t nlength);

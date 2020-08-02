@@ -26,7 +26,7 @@
 using namespace std;
 
 class NumeReEditor;
-class wxTerm;
+class NumeReTerminal;
 
 /////////////////////////////////////////////////
 /// \brief This class handles all specialized search
@@ -36,7 +36,7 @@ class SearchController
 {
     private:
         NumeReEditor* m_editor;
-        wxTerm* m_terminal;
+        NumeReTerminal* m_terminal;
 
 		wxString FindProcedureDefinitionInLocalFile(const wxString& procedurename);
 		wxString FindProcedureDefinitionInOtherFile(const wxString& pathname, const wxString& procedurename);
@@ -46,7 +46,7 @@ class SearchController
 
 
     public:
-        SearchController(NumeReEditor* edit, wxTerm* terminal) : m_editor(edit), m_terminal(terminal) {}
+        SearchController(NumeReEditor* edit, NumeReTerminal* terminal) : m_editor(edit), m_terminal(terminal) {}
 
 		vector<wxString> getProceduresInFile();
 		vector<int> FindAll(const wxString& sSymbol, int nStyle, int nStartPos = 0, int nEndPos = -1, bool bSearchInComments = false);

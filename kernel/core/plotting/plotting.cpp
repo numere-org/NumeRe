@@ -25,7 +25,6 @@
 
 extern Integration_Vars parser_iVars;
 extern mglGraph _fontData;
-extern Plugin _plugin;
 
 
 // These definitions are for easier understanding of the different ranges
@@ -51,7 +50,7 @@ extern Plugin _plugin;
 /// \return void
 ///
 /////////////////////////////////////////////////
-void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData)
+void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
 {
     Plot graph(sCmd, _data, _parser, _option, _functions, _pData);
 
@@ -162,7 +161,7 @@ static void writeTiff(mglGraph* _graph, const string& sOutputName)
 /// \param _pData PlotData&
 ///
 /////////////////////////////////////////////////
-Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, Define& _functions, PlotData& _pData)
+Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
 {
     sFunc = "";                      // string mit allen Funktionen
     sLabels = "";                    // string mit den Namen aller Funktionen (Fuer die Legende)
@@ -468,7 +467,7 @@ void Plot::determinePlottingDimensions(const string& sPlotCommand)
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser, Define& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser, FunctionDefinitionManager& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     vector<short> vType;
     vector<string> vDrawVector;
@@ -3388,7 +3387,7 @@ long Plot::getNN(const mglData& _mData)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDummy;
     if (_pInfo.sPlotParams.find("??") != string::npos)
@@ -3656,7 +3655,7 @@ string Plot::expandStyleForCurveArray(const string& sCurrentStyle, bool expand)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     if (nLegends && !_pData.getSchematic())
     {
@@ -3691,7 +3690,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
         {
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
-            if (_data.containsTablesOrClusters(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
+            if (_data.containsTablesOrClusters(sSubPlotIDX))
             {
                 getDataElements(sSubPlotIDX, _parser, _data, _option);
             }
@@ -3746,7 +3745,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, D
         {
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
-            if (_data.containsTablesOrClusters(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
+            if (_data.containsTablesOrClusters(sSubPlotIDX))
             {
                 getDataElements(sSubPlotIDX, _parser, _data, _option);
             }
@@ -3940,12 +3939,12 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnima
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2])
+void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2])
 {
     const short TYPE_DATA = -1;
     const short TYPE_FUNC = 1;
 
-    if (containsDataObject(sFunc) || _data.containsTablesOrClusters(sFunc))
+    if (_data.containsTablesOrClusters(sFunc))
     {
         string sFuncTemp = sFunc;
         string sToken = "";
@@ -3955,11 +3954,8 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
             sToken = getNextArgument(sFuncTemp, true);
             StripSpaces(sToken);
 
-            if (containsDataObject(sToken) || _data.containsTablesOrClusters(sToken))
+            if (_data.containsTablesOrClusters(sToken))
             {
-                if (sToken.find("data(") != string::npos && sToken.find("data(") && checkDelimiter(sToken.substr(sToken.find("data(") - 1, 6)))
-                    throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
-
                 if (_data.containsTablesOrClusters(sToken.substr(0, sToken.find_first_of("({") + 1))
                     && !_data.isTable(sToken.substr(0, sToken.find_first_of("({")))
                     && !_data.isCluster(sToken.substr(0, sToken.find_first_of("({"))))
@@ -3982,7 +3978,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
         {
             sToken = getNextArgument(sFuncTemp, true);
 
-            if (containsDataObject(sToken) || _data.containsTablesOrClusters(sToken))
+            if (_data.containsTablesOrClusters(sToken))
             {
                 sDataPlots += ";" + sToken;
                 vType.push_back(TYPE_DATA);
@@ -4431,13 +4427,12 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
         string sTemp = sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos);
 
         // Try to find a data object in the current label
-        if ((sTemp.find("data(") != string::npos || _data.containsTables(sTemp.substr(1, sTemp.length()-2)))
+        if (_data.containsTables(sTemp.substr(1, sTemp.length()-2))
                 && (sTemp.find(',') != string::npos || sTemp.substr(sTemp.find('('), 2) == "()")
                 && sTemp.find(')') != string::npos)
         {
             // Ensure that the referenced data object contains valid data
-            if ((sTemp.find("data(") != string::npos && checkDelimiter(sDataLabels.substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos).find("data(") - 1, 6)) && !_data.isValid())
-                || (_data.containsTablesOrClusters(sTemp.substr(1, sTemp.length()-2)) && !_data.isValidCache()))
+            if (_data.containsTablesOrClusters(sTemp.substr(1, sTemp.length()-2)) && !_data.isValid())
             {
                 throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sDataLabels, SyntaxError::invalid_position);
             }
@@ -4493,7 +4488,7 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
                     if (indices.size() > 2)
                         sArg_3 = indices[2];
                 }
-                else if (sArg_1.find("data(") != string::npos || _data.containsTablesOrClusters(sArg_1))
+                else if (_data.containsTablesOrClusters(sArg_1))
                 {
                     getDataElements(sArg_1, _parser, _data, _option);
                 }

@@ -37,7 +37,7 @@ BEGIN_EVENT_TABLE(PackageDialog, wxDialog)
 END_EVENT_TABLE()
 
 // Constructor
-PackageDialog::PackageDialog(wxWindow* parent, wxTerm* terminal, IconManager* icons) : wxDialog(parent, wxID_ANY, _guilang.get("GUI_PKGDLG_HEAD"), wxDefaultPosition, wxSize(600, 570), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : wxDialog(parent, wxID_ANY, _guilang.get("GUI_PKGDLG_HEAD"), wxDefaultPosition, wxSize(600, 570), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
     m_packageProperties = nullptr;
     m_fileList = nullptr;

@@ -1141,7 +1141,7 @@ namespace NumeRe
 
             StripSpaces(sData);
 
-            if (sData.substr(0, 5) == "data(" || _data.isTable(sData) || _data.isCluster(sData))
+            if (_data.isTable(sData) || _data.isCluster(sData))
                 sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
             else
                 sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);
@@ -1174,7 +1174,7 @@ namespace NumeRe
 
             StripSpaces(sData);
 
-            if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
+            if (_data.isTable(sData))
                 sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
             else
                 sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);
@@ -1253,7 +1253,7 @@ namespace NumeRe
 
             StripSpaces(sHeadline);
 
-            if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
+            if (_data.isTable(sData))
             {
                 sData.erase(sData.find("("));
                 string sResult;
@@ -1319,7 +1319,7 @@ namespace NumeRe
             if (!isStringExpression(sExpr))
             {
                 // check for data sets in the evaluation of the `valtostr()` arguments
-                if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+                if (_data.containsTablesOrClusters(sExpr))
                     getDataElements(sExpr, _parser, _data, _option);
 
                 int nResults = 0;

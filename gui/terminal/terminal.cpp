@@ -39,7 +39,7 @@
 #include <ctype.h>
 
 #include "gterm.hpp"
-#include "wxterm.h"
+#include "terminal.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include "../globals.hpp"
@@ -57,34 +57,40 @@ void WinMessageBeep();
 #define CURSOR_BLINK_MAX_TIMEOUT	2000
 #define KERNEL_THREAD_STACK_SIZE 4194304 // Bytes
 
-BEGIN_EVENT_TABLE(wxTerm, wxWindow)
-	EVT_PAINT						(wxTerm::OnPaint)
-	EVT_CHAR						(wxTerm::OnChar)
-	EVT_LEFT_DOWN					(wxTerm::OnLeftDown)
-	EVT_MOUSE_CAPTURE_LOST          (wxTerm::OnLoseMouseCapture)
-	EVT_LEFT_UP					    (wxTerm::OnLeftUp)
-	EVT_MOTION					    (wxTerm::OnMouseMove)
-	EVT_ENTER_WINDOW                (wxTerm::OnEnter)
-	EVT_TIMER						(-1, wxTerm::OnTimer)
-	EVT_KEY_DOWN                    (wxTerm::OnKeyDown)
-	EVT_SIZE						(wxTerm::OnSize)
-	EVT_SET_FOCUS					(wxTerm::OnGainFocus)
-	EVT_KILL_FOCUS				    (wxTerm::OnLoseFocus)
-	EVT_CLOSE                       (wxTerm::OnClose)
+BEGIN_EVENT_TABLE(NumeReTerminal, wxWindow)
+	EVT_PAINT						(NumeReTerminal::OnPaint)
+	EVT_CHAR						(NumeReTerminal::OnChar)
+	EVT_LEFT_DOWN					(NumeReTerminal::OnLeftDown)
+	EVT_MOUSE_CAPTURE_LOST          (NumeReTerminal::OnLoseMouseCapture)
+	EVT_LEFT_UP					    (NumeReTerminal::OnLeftUp)
+	EVT_MOTION					    (NumeReTerminal::OnMouseMove)
+	EVT_ENTER_WINDOW                (NumeReTerminal::OnEnter)
+	EVT_TIMER						(-1, NumeReTerminal::OnTimer)
+	EVT_KEY_DOWN                    (NumeReTerminal::OnKeyDown)
+	EVT_SIZE						(NumeReTerminal::OnSize)
+	EVT_SET_FOCUS					(NumeReTerminal::OnGainFocus)
+	EVT_KILL_FOCUS				    (NumeReTerminal::OnLoseFocus)
+	EVT_CLOSE                       (NumeReTerminal::OnClose)
 END_EVENT_TABLE()
 
-// Constructor
-wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
-			   Options* _option,
-			   const wxString& sPath,
-			   const wxPoint& pos,
-			   int width, int height,
-			   const wxString& name) :
-	wxWindow(parent, id, pos, wxSize(-1, -1), wxWANTS_CHARS, name),
-	GenericTerminal(width, height)
+
+/////////////////////////////////////////////////
+/// \brief Terminal constructor.
+///
+/// \param parent wxWindow*
+/// \param id wxWindowID
+/// \param _option Options*
+/// \param sPath const wxString&
+/// \param pos const wxPoint&
+/// \param width int
+/// \param height int
+/// \param name const wxString&
+///
+/////////////////////////////////////////////////
+NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option, const wxString& sPath, const wxPoint& pos, int width, int height, const wxString& name) : wxWindow(parent, id, pos, wxSize(-1, -1), wxWANTS_CHARS, name), GenericTerminal(width, height)
 {
     // Bind the thread update event to the corresponding handler function
-	Bind(wxEVT_THREAD, &wxTerm::OnThreadUpdate, this);
+	Bind(wxEVT_THREAD, &NumeReTerminal::OnThreadUpdate, this);
 
 	m_init = 1;
 
@@ -171,8 +177,11 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id,
 	m_init = 0;
 }
 
-// Destructor
-wxTerm::~wxTerm()
+
+/////////////////////////////////////////////////
+/// \brief Terminal destructor.
+/////////////////////////////////////////////////
+NumeReTerminal::~NumeReTerminal()
 {
 	if (m_bitmap)
 	{
@@ -181,101 +190,200 @@ wxTerm::~wxTerm()
 	}
 }
 
-// Returns the standard paths as a vector
-vector<string> wxTerm::getPathSettings()
+
+/////////////////////////////////////////////////
+/// \brief Returns the standard paths as a STL
+/// vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
+vector<string> NumeReTerminal::getPathSettings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	vector<string> vPaths = _kernel.getPathSettings();
 	return vPaths;
 }
 
-// Passes a table (as a container) to the kernel
-void wxTerm::passEditedTable(NumeRe::Table _table)
+
+/////////////////////////////////////////////////
+/// \brief Passes a table (as a container) to the
+/// kernel.
+///
+/// \param _table NumeRe::Table
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::passEditedTable(NumeRe::Table _table)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	_kernel.table = _table;
 	m_bTableEditAvailable = true;
 }
 
-// This member function adds a breakpoint to the passed
-// file at the indicated line number
-void wxTerm::addBreakpoint(const string& _sFilename, size_t nLine)
+
+/////////////////////////////////////////////////
+/// \brief This member function adds a breakpoint
+/// to the passed file at the indicated line
+/// number.
+///
+/// \param _sFilename const string&
+/// \param nLine size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::addBreakpoint(const string& _sFilename, size_t nLine)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().addBreakpoint(_sFilename, nLine);
 }
 
-// This member function removes a breakpoint from the
-// passed file at the indicated line number
-void wxTerm::removeBreakpoint(const string& _sFilename, size_t nLine)
+
+/////////////////////////////////////////////////
+/// \brief This member function removes a
+/// breakpoint from the passed file at the
+/// indicated line number.
+///
+/// \param _sFilename const string&
+/// \param nLine size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::removeBreakpoint(const string& _sFilename, size_t nLine)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().removeBreakpoint(_sFilename, nLine);
 }
 
-// This member function removes all breakpoints from
-// the passed file
-void wxTerm::clearBreakpoints(const string& _sFilename)
+
+/////////////////////////////////////////////////
+/// \brief This member function removes all
+/// breakpoints from the passed file.
+///
+/// \param _sFilename const string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::clearBreakpoints(const string& _sFilename)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().clearBreakpoints(_sFilename);
 }
 
-// Gets the desired documentation article as a HTML string
-string wxTerm::getDocumentation(const string& sCommand)
+
+/////////////////////////////////////////////////
+/// \brief Gets the desired documentation article
+/// as a HTML string.
+///
+/// \param sCommand const string&
+/// \return string
+///
+/////////////////////////////////////////////////
+string NumeReTerminal::getDocumentation(const string& sCommand)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	return _kernel.getDocumentation(sCommand);
 }
 
-// Gets the contents of the documentation as a vector
-vector<string> wxTerm::getDocIndex()
+
+/////////////////////////////////////////////////
+/// \brief Gets the contents of the documentation
+/// index as a vector.
+///
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
+vector<string> NumeReTerminal::getDocIndex()
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getDocIndex();
 }
 
-// This will return the language strings for the plugins
-// used by the language class
-map<string, string> wxTerm::getPluginLanguageStrings()
+
+/////////////////////////////////////////////////
+/// \brief This will return the language strings
+/// for the plugins used by the language class
+/// for filling the symbols tree.
+///
+/// \return map<string, string>
+///
+/////////////////////////////////////////////////
+map<string, string> NumeReTerminal::getPluginLanguageStrings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	return _kernel.getPluginLanguageStrings();
 }
 
-// This will return the language strings for the custom
-// defined functions used by the language class
-map<string, string> wxTerm::getFunctionLanguageStrings()
+
+/////////////////////////////////////////////////
+/// \brief This will return the language strings
+/// for the custom defined functions used by the
+/// language class for filling the symbols tree.
+///
+/// \return map<string, string>
+///
+/////////////////////////////////////////////////
+map<string, string> NumeReTerminal::getFunctionLanguageStrings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	return _kernel.getFunctionLanguageStrings();
 }
 
-// This will return the variable list from the kernel
-NumeReVariables wxTerm::getVariableList()
+
+/////////////////////////////////////////////////
+/// \brief This will return the variable list
+/// from the kernel to be shown in the variable
+/// viewer.
+///
+/// \return NumeReVariables
+///
+/////////////////////////////////////////////////
+NumeReVariables NumeReTerminal::getVariableList()
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getVariableList();
 }
 
-// This will return a copy of the internal settings
-// object of the kernel
-Settings wxTerm::getKernelSettings()
+
+/////////////////////////////////////////////////
+/// \brief This will return a copy of the
+/// internal settings object of the kernel.
+///
+/// \return Settings
+///
+/////////////////////////////////////////////////
+Settings NumeReTerminal::getKernelSettings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	Settings _option(_kernel.getKernelSettings());
 	return _option;
 }
 
-// This will pass the new kernel settings to the kernel
-void wxTerm::setKernelSettings(const Settings& _settings)
+
+/////////////////////////////////////////////////
+/// \brief This will pass the new kernel settings
+/// to the kernel.
+///
+/// \param _settings const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::setKernelSettings(const Settings& _settings)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	_kernel.setKernelSettings(_settings);
 }
 
-// This member function will start the managed, second thread
-void wxTerm::StartKernelTask()
+
+/////////////////////////////////////////////////
+/// \brief This member function will start the
+/// managed, second thread, in which the kernel
+/// will operate.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::StartKernelTask()
 {
 	if (CreateThread(wxTHREAD_JOINABLE, KERNEL_THREAD_STACK_SIZE) != wxTHREAD_NO_ERROR)
 	{
@@ -289,9 +397,16 @@ void wxTerm::StartKernelTask()
 	}
 }
 
-// This is the main thread function
-// It is called repeatedly
-wxThread::ExitCode wxTerm::Entry()
+
+/////////////////////////////////////////////////
+/// \brief This is the main thread function and
+/// will be called repeatedly from the wxWidgets
+/// library.
+///
+/// \return wxThread::ExitCode
+///
+/////////////////////////////////////////////////
+wxThread::ExitCode NumeReTerminal::Entry()
 {
 	string sCommand = "";
 	bool bCommandAvailable = false;
@@ -376,8 +491,16 @@ wxThread::ExitCode wxTerm::Entry()
 	return (wxThread::ExitCode)0;
 }
 
-// This function forces the thread to terminate
-void wxTerm::EndKernelTask()
+
+/////////////////////////////////////////////////
+/// \brief This function forces the thread to
+/// terminate so that the application may be shut
+/// down.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::EndKernelTask()
 {
 	if (GetThread() && GetThread()->IsRunning())
 	{
@@ -386,8 +509,17 @@ void wxTerm::EndKernelTask()
 	}
 }
 
-// This function forces the thread to terminate immediately
-void wxTerm::OnClose(wxCloseEvent& event)
+
+/////////////////////////////////////////////////
+/// \brief This function forces the thread to
+/// terminate immediately. Should only occur in
+/// situations, where we face a crash.
+///
+/// \param event wxCloseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::OnClose(wxCloseEvent& event)
 {
 	if (GetThread() && GetThread()->IsRunning())
 		GetThread()->Wait();
@@ -395,12 +527,23 @@ void wxTerm::OnClose(wxCloseEvent& event)
 	Destroy();
 }
 
-// This function is the thread update event handler member function
-void wxTerm::OnThreadUpdate(wxThreadEvent& event)
+
+/////////////////////////////////////////////////
+/// \brief This function is the thread update
+/// event handler member function. Here are all
+/// returned messages from the kernel and its
+/// notifications processed.
+///
+/// \param event wxThreadEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 {
 	bool Closing = false;
 	bool changedSettings = false;
 	bool done = false;
+	bool refreshFunctionTree = false;
 	queue<NumeReTask> taskQueue;
 	string sAnswer = "";
 
@@ -508,6 +651,9 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
             case NumeReKernel::NUMERE_DEBUG_EVENT:
                 m_wxParent->evaluateDebugInfo(task.vDebugEvent);
                 break;
+            case NumeReKernel::NUMERE_REFRESH_FUNCTIONTREE:
+                refreshFunctionTree = true;
+                break;
         }
     }
 
@@ -517,6 +663,14 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 		m_wxParent->EvaluateOptions();
 	}
 
+	// Refresh now the function tree (will avoid multiple
+    // refreshes in a single event loop).
+	if (refreshFunctionTree)
+    {
+        getSyntax()->addPlugins(_kernel.getPluginCommands());
+        m_wxParent->refreshFunctionTree();
+    }
+
 	// To ensure that the user is able to read the answer
 	// scroll to the input location and process the kernel
 	// message
@@ -524,6 +678,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 	ProcessOutput(sAnswer.length(), sAnswer);
 	Refresh();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public SetFont
@@ -536,7 +691,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 bool
-wxTerm::SetFont(const wxFont& font)
+NumeReTerminal::SetFont(const wxFont& font)
 {
 	m_init = 1;
 
@@ -562,6 +717,7 @@ wxTerm::SetFont(const wxFont& font)
 	return true;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetDefColors
 ///  Gets the colors for the terminal from the internal Options object
@@ -574,7 +730,7 @@ wxTerm::SetFont(const wxFont& font)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::GetDefColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
+NumeReTerminal::GetDefColors(wxColour colors[16], NumeReTerminal::BOLDSTYLE boldStyle)
 {
     // Set the correct bold style
 	if (boldStyle == DEFAULT)
@@ -649,7 +805,7 @@ wxTerm::GetDefColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::SetCursorBlinkRate(int rate)
+NumeReTerminal::SetCursorBlinkRate(int rate)
 {
     // Ensure that the new rate is reasonable
 	if (rate < 0 || rate > CURSOR_BLINK_MAX_TIMEOUT)
@@ -681,7 +837,7 @@ wxTerm::SetCursorBlinkRate(int rate)
  * \return void
  *
  */
-void wxTerm::pipe_command(const string& sCommand)
+void NumeReTerminal::pipe_command(const string& sCommand)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 
@@ -702,7 +858,7 @@ void wxTerm::pipe_command(const string& sCommand)
  * \return void
  *
  */
-void wxTerm::pass_command(const string& command)
+void NumeReTerminal::pass_command(const string& command)
 {
     // Don't do anything if the command is emoty
 	if (!command.length())
@@ -723,24 +879,52 @@ void wxTerm::pass_command(const string& command)
 	m_bCommandAvailable = true;
 }
 
-NumeRe::Table wxTerm::getTable(const string& sTableName)
+
+/////////////////////////////////////////////////
+/// \brief This function will return the named
+/// table from the kernel to be shown in a GUI
+/// window.
+///
+/// \param sTableName const string&
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
+NumeRe::Table NumeReTerminal::getTable(const string& sTableName)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getTable(sTableName);
 }
 
-NumeRe::Container<string> wxTerm::getStringTable(const string& sStringTableName)
+
+/////////////////////////////////////////////////
+/// \brief This member function will return the
+/// named table containing strings.
+///
+/// \param sStringTableName const string&
+/// \return NumeRe::Container<string>
+///
+/////////////////////////////////////////////////
+NumeRe::Container<string> NumeReTerminal::getStringTable(const string& sStringTableName)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getStringTable(sStringTableName);
 }
 
-// Inform the kernel to stop the current calculation
-void wxTerm::CancelCalculation()
+
+/////////////////////////////////////////////////
+/// \brief Inform the kernel to stop the current
+/// calculation. Used to handle the ESC key
+/// press.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::CancelCalculation()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	_kernel.CancelCalculation();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnChar
@@ -753,7 +937,7 @@ void wxTerm::CancelCalculation()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnChar(wxKeyEvent& event)
+NumeReTerminal::OnChar(wxKeyEvent& event)
 {
 	if (!(GetMode() & PC) && event.AltDown())
 		event.Skip();
@@ -801,8 +985,17 @@ wxTerm::OnChar(wxKeyEvent& event)
 	}
 }
 
-// This private member function filters special key codes and handles them
-bool wxTerm::filterKeyCodes(int keyCode, bool ctrlDown)
+
+/////////////////////////////////////////////////
+/// \brief This private member function filters
+/// special key codes and handles them.
+///
+/// \param keyCode int
+/// \param ctrlDown bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
 {
     // Filter special keycodes
     switch (keyCode)
@@ -888,8 +1081,15 @@ bool wxTerm::filterKeyCodes(int keyCode, bool ctrlDown)
     return false;
 }
 
-// This private member function scrolls the terminal all the way down
-void wxTerm::scrollToInput()
+
+/////////////////////////////////////////////////
+/// \brief This private member function scrolls
+/// the terminal all the way down.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::scrollToInput()
 {
 	if (GenericTerminal::IsScrolledUp())
 	{
@@ -912,7 +1112,7 @@ void wxTerm::scrollToInput()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnKeyDown(wxKeyEvent& event)
+NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 {
 	if (!(GetMode() & PC) && event.AltDown())
 		event.Skip();
@@ -946,7 +1146,7 @@ wxTerm::OnKeyDown(wxKeyEvent& event)
 					{
 						wxTextDataObject data;
 						wxTheClipboard->GetData(data);
-						wxTerm::ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
+						NumeReTerminal::ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
 						Refresh();
 					}
 					wxTheClipboard->Close();
@@ -959,6 +1159,7 @@ wxTerm::OnKeyDown(wxKeyEvent& event)
 		event.Skip();
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnPaint
 ///  Redraws the terminal widget
@@ -970,7 +1171,7 @@ wxTerm::OnKeyDown(wxKeyEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnPaint(wxPaintEvent& WXUNUSED(event))
+NumeReTerminal::OnPaint(wxPaintEvent& WXUNUSED(event))
 {
 	wxPaintDC dc(this);
 
@@ -985,6 +1186,7 @@ wxTerm::OnPaint(wxPaintEvent& WXUNUSED(event))
 	m_curDC = backup;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnLeftDown
 ///  Begins selection of terminal text
@@ -996,7 +1198,7 @@ wxTerm::OnPaint(wxPaintEvent& WXUNUSED(event))
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnLeftDown(wxMouseEvent& event)
+NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 {
 	SetFocus();
 	ClearSelection();
@@ -1006,8 +1208,17 @@ wxTerm::OnLeftDown(wxMouseEvent& event)
 	this->CaptureMouse();
 }
 
-// This member function handles the "MouseCaptureLostEvent" and releases the mouse
-void wxTerm::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// "MouseCaptureLostEvent" and releases the
+/// mouse.
+///
+/// \param event wxMouseCaptureLostEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 {
 	if (this->GetCapture() == this)
 	{
@@ -1016,6 +1227,8 @@ void wxTerm::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 		Refresh();
 	}
 }
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnLeftUp
 ///  Ends text selection
@@ -1027,7 +1240,7 @@ void wxTerm::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnLeftUp(wxMouseEvent& event)
+NumeReTerminal::OnLeftUp(wxMouseEvent& event)
 {
 	m_selecting = false;
 	if (this->GetCapture() == this)
@@ -1037,6 +1250,7 @@ wxTerm::OnLeftUp(wxMouseEvent& event)
 	}
 	move_cursor_editable_area(m_selx2, m_sely2);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnMouseMove
@@ -1049,7 +1263,7 @@ wxTerm::OnLeftUp(wxMouseEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnMouseMove(wxMouseEvent& event)
+NumeReTerminal::OnMouseMove(wxMouseEvent& event)
 {
 	if (m_selecting)
 	{
@@ -1076,8 +1290,16 @@ wxTerm::OnMouseMove(wxMouseEvent& event)
 	}
 }
 
-// This member function handles the "Mouse Enter" event
-void wxTerm::OnEnter(wxMouseEvent& event)
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// "Mouse Enter" event.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::OnEnter(wxMouseEvent& event)
 {
 	if (g_findReplace != nullptr && g_findReplace->IsShown())
 	{
@@ -1088,6 +1310,7 @@ void wxTerm::OnEnter(wxMouseEvent& event)
 	event.Skip();
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public ClearSelection
 ///  De-selects all selected text
@@ -1097,7 +1320,7 @@ void wxTerm::OnEnter(wxMouseEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::ClearSelection()
+NumeReTerminal::ClearSelection()
 {
 	if (!HasSelection() || m_selecting)
 		return;
@@ -1106,6 +1329,7 @@ wxTerm::ClearSelection()
 	GetTM()->unselectAll();
     Refresh();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private MarkSelection
@@ -1117,7 +1341,7 @@ wxTerm::ClearSelection()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::MarkSelection(bool bRectangular)
+NumeReTerminal::MarkSelection(bool bRectangular)
 {
 	int x;
 	int y;
@@ -1181,6 +1405,7 @@ wxTerm::MarkSelection(bool bRectangular)
 	m_marking = false;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public HasSelection
 ///  Checks if any text is selected
@@ -1190,10 +1415,11 @@ wxTerm::MarkSelection(bool bRectangular)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 bool
-wxTerm::HasSelection()
+NumeReTerminal::HasSelection()
 {
 	return (m_selx1 != m_selx2 || m_sely1 != m_sely2);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public GetSelection
@@ -1204,12 +1430,13 @@ wxTerm::HasSelection()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 wxString
-wxTerm::GetSelection()
+NumeReTerminal::GetSelection()
 {
 	wxString sel = get_selected_text();
 
 	return sel;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual DrawText
@@ -1228,8 +1455,7 @@ wxTerm::GetSelection()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::DrawText(int fg_color, int bg_color, int flags,
-				 int x, int y, const string& sText)
+NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, const string& sText)
 {
 	int
 	t;
@@ -1296,6 +1522,7 @@ wxTerm::DrawText(int fg_color, int bg_color, int flags,
 		m_curDC->DrawText(str, x + 1, y);
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private DoDrawCursor
 ///  Does the actual work of drawing the cursor
@@ -1312,8 +1539,7 @@ wxTerm::DrawText(int fg_color, int bg_color, int flags,
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::DoDrawCursor(int fg_color, int bg_color, int flags,
-					 int x, int y, unsigned char c)
+NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c)
 {
     // Do nothing, if the terminal is scrolled up
 	if (GenericTerminal::IsScrolledUp())
@@ -1382,6 +1608,7 @@ wxTerm::DoDrawCursor(int fg_color, int bg_color, int flags,
 		m_curDC->DrawText(str, x + 1, y);
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual DrawCursor
 ///  Draws the cursor on the terminal widget.  This virtual function is called
@@ -1399,8 +1626,7 @@ wxTerm::DoDrawCursor(int fg_color, int bg_color, int flags,
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::DrawCursor(int fg_color, int bg_color, int flags,
-				   int x, int y, unsigned char c)
+NumeReTerminal::DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c)
 {
     // Set cursor-related member variables
 	m_curX = x;
@@ -1425,6 +1651,7 @@ wxTerm::DrawCursor(int fg_color, int bg_color, int flags,
 	}
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnTimer
 ///  Blinks the cursor each time it goes off
@@ -1436,7 +1663,7 @@ wxTerm::DrawCursor(int fg_color, int bg_color, int flags,
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnTimer(wxTimerEvent& WXUNUSED(event))
+NumeReTerminal::OnTimer(wxTimerEvent& WXUNUSED(event))
 {
 	wxClientDC* dc = nullptr;
 
@@ -1495,7 +1722,7 @@ wxTerm::OnTimer(wxTimerEvent& WXUNUSED(event))
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::ClearChars(int bg_color, int x, int y, int w, int h)
+NumeReTerminal::ClearChars(int bg_color, int x, int y, int w, int h)
 {
 	x *= m_charWidth;
 	y *= m_charHeight;
@@ -1511,6 +1738,7 @@ wxTerm::ClearChars(int bg_color, int x, int y, int w, int h)
 	m_curDC->DrawRectangle(x, y, w /* + 1*/, h /*+ 1*/);
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual ModeChange
 ///  Changes the drawing mode between VT100 and PC
@@ -1522,7 +1750,7 @@ wxTerm::ClearChars(int bg_color, int x, int y, int w, int h)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::ModeChange(int state)
+NumeReTerminal::ModeChange(int state)
 {
 	ClearSelection();
 
@@ -1531,6 +1759,7 @@ wxTerm::ModeChange(int state)
 
 	GenericTerminal::ModeChange(state);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual Bell
@@ -1541,7 +1770,7 @@ wxTerm::ModeChange(int state)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::Bell()
+NumeReTerminal::Bell()
 {
 #ifdef __WIN32__
 	WinMessageBeep();
@@ -1549,6 +1778,7 @@ wxTerm::Bell()
 	wxBell();
 #endif
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public UpdateSize
@@ -1558,7 +1788,7 @@ wxTerm::Bell()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::UpdateSize()
+void NumeReTerminal::UpdateSize()
 {
 	// prevent any nasty recursion
 	if (m_inUpdateSize)
@@ -1619,8 +1849,15 @@ void wxTerm::UpdateSize()
 	}
 }
 
-// This member function sets the new colors to the internal pen definitions
-void wxTerm::UpdateColors()
+
+/////////////////////////////////////////////////
+/// \brief This member function sets the new
+/// colors to the internal pen definitions.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::UpdateColors()
 {
 	GetDefColors(m_color_defs);
 
@@ -1638,6 +1875,7 @@ void wxTerm::UpdateColors()
 	m_parent->Update();
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual ResizeTerminal
 ///  <Resizes the terminal to a given number of characters high and wide
@@ -1650,7 +1888,7 @@ void wxTerm::UpdateColors()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::ResizeTerminal(int width, int height)
+NumeReTerminal::ResizeTerminal(int width, int height)
 {
 	int
 	w,
@@ -1715,7 +1953,7 @@ wxTerm::ResizeTerminal(int width, int height)
  * \return void
  *
  */
-void wxTerm::ProcessInput(int len, const string& sData)
+void NumeReTerminal::ProcessInput(int len, const string& sData)
 {
 	scrollToInput();
 
@@ -1727,6 +1965,7 @@ void wxTerm::ProcessInput(int len, const string& sData)
 	m_curDC = nullptr;
 }
 
+
 /** \brief Processes text received from the kernel
  *
  * \param len int
@@ -1734,7 +1973,7 @@ void wxTerm::ProcessInput(int len, const string& sData)
  * \return void
  *
  */
-void wxTerm::ProcessOutput(int len, const string& sData)
+void NumeReTerminal::ProcessOutput(int len, const string& sData)
 {
 	if (HasSelection())
 		ClearSelection();
@@ -1756,10 +1995,11 @@ void wxTerm::ProcessOutput(int len, const string& sData)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::OnActivate(wxActivateEvent& event)
+void NumeReTerminal::OnActivate(wxActivateEvent& event)
 {
 	m_isActive = event.GetActive();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnGainFocus
@@ -1771,11 +2011,12 @@ void wxTerm::OnActivate(wxActivateEvent& event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::OnGainFocus(wxFocusEvent& event)
+void NumeReTerminal::OnGainFocus(wxFocusEvent& event)
 {
 	this->clear_mode_flag(CURSORINVISIBLE);
 	GenericTerminal::Update();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnLoseFocus
@@ -1787,11 +2028,12 @@ void wxTerm::OnGainFocus(wxFocusEvent& event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::OnLoseFocus(wxFocusEvent& event)
+void NumeReTerminal::OnLoseFocus(wxFocusEvent& event)
 {
 	this->set_mode_flag(CURSORINVISIBLE);
 	GenericTerminal::Update();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public ScrollTerminal
@@ -1804,11 +2046,12 @@ void wxTerm::OnLoseFocus(wxFocusEvent& event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::ScrollTerminal(int numLines, bool scrollUp /* = true */)
+void NumeReTerminal::ScrollTerminal(int numLines, bool scrollUp /* = true */)
 {
 	if (GenericTerminal::Scroll(numLines, scrollUp))
 		Refresh();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnSize
@@ -1820,13 +2063,21 @@ void wxTerm::ScrollTerminal(int numLines, bool scrollUp /* = true */)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::OnSize(wxSizeEvent& event)
+void NumeReTerminal::OnSize(wxSizeEvent& event)
 {
 	UpdateSize();
 }
 
-// Fallback for the virtual definition
-void wxTerm::UpdateRemoteSize(int width, int height)
+
+/////////////////////////////////////////////////
+/// \brief Fallback for the virtual definition.
+///
+/// \param width int
+/// \param height int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::UpdateRemoteSize(int width, int height)
 {
 }
 

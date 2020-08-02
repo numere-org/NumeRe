@@ -19,6 +19,7 @@
 
 #include "stringdatastructures.hpp"
 #include "../../kernel.hpp"
+#include <boost/tokenizer.hpp>
 #define DEFAULT_NUM_ARG INT_MIN
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
@@ -774,8 +775,8 @@ static string strfnc_split(StringFuncArgs& funcArgs)
     sSep.erase(1);
     boost::char_separator<char> cSep(sSep.c_str());
     string sToSeparate = removeMaskedStrings(funcArgs.sArg1);
-    tokenizer<char_separator<char> > tok(sToSeparate, cSep);
-    for (tokenizer<char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
+    boost::tokenizer<boost::char_separator<char> > tok(sToSeparate, cSep);
+    for (boost::tokenizer<boost::char_separator<char> >::iterator iter = tok.begin(); iter != tok.end(); ++iter)
     {
         if (sSplittedString.length())
             sSplittedString += NEWSTRING;

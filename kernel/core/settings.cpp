@@ -139,12 +139,12 @@ void Settings::setEditorPath(const string& _sEditorPath)
 // --> Methode zum Speichern der getaetigten Einstellungen <--
 void Settings::save(string _sWhere, bool bMkBackUp)
 {
-    string sWhere = _sWhere + "\\" + sSettings_ini;
+    string sExecutablePath = _sWhere + "\\" + sSettings_ini;
     if (bMkBackUp)
-        sWhere += ".back";
+        sExecutablePath += ".back";
 
     // --> INI-Datei oeffnen, wobei "ios_base::out" bedeutet, dass wir in die Datei schreiben moechten <--
-	Settings_ini.open(sWhere.c_str(), ios_base::out | ios_base::trunc);
+	Settings_ini.open(sExecutablePath.c_str(), ios_base::out | ios_base::trunc);
 
 	/* --> Sollte aus irgendeinem Grund nicht in die INI-Datei geschrieben werden koennen, brechen wir ab und
 	 *     geben eine entsprechende Fehlermeldung aus <--
@@ -508,16 +508,16 @@ void Settings::load(string _sWhere)
 {
 	string s;       // Temporaerer string fuer die verwendete Funktion "getline()"
 
-    string sWhere = _sWhere + "\\" + sSettings_ini;
+    string sExecutablePath = _sWhere + "\\" + sSettings_ini;
 	// --> Oeffne die INI-Datei mit dem IOS-Flag "in" <--
-	Settings_ini.open(sWhere.c_str(),ios_base::in);
+	Settings_ini.open(sExecutablePath.c_str(),ios_base::in);
 
 	// --> Falls etwas schief laeuft, oder die Datei nicht existiert, gib eine Fehlermeldung aus und kehre zurueck <--
 	if (Settings_ini.fail())
 	{
         Settings_ini.close();
         Settings_ini.clear();
-        Settings_ini.open((sWhere+".back").c_str(),ios_base::in);
+        Settings_ini.open((sExecutablePath+".back").c_str(),ios_base::in);
         if (Settings_ini.fail())
         {
             NumeReKernel::printPreFmt(" -> NOTE: Could not find the configuration file \"" + sSettings_ini + "\".\n");

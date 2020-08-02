@@ -79,7 +79,7 @@ Indices getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const S
     }
 
     // If the argument contains tables, get their values. This leads to a recursion!
-    if (sArgument.find("data(") != string::npos || _data.containsTablesOrClusters(sArgument))
+    if (_data.containsTablesOrClusters(sArgument))
         getDataElements(sArgument, _parser, _data, _option);
 
     // update the dimension variables
@@ -354,7 +354,7 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
     }
 
     // If the cache is not really a cache
-    if (sCache.find("data") == string::npos && !isCluster && !_data.isTable(sCache))
+    if (!isCluster && !_data.isTable(sCache))
         throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
 }
 

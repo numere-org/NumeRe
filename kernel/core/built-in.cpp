@@ -121,7 +121,7 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 	string sTemp = sCmd;
 
     // Get the contents of the contained data tables
-	if (sTemp.find("data(") != string::npos || _data.containsTablesOrClusters(sTemp))
+	if (_data.containsTablesOrClusters(sTemp))
 		getDataElements(sTemp, _parser, _data, _option);
 
 	//
@@ -236,7 +236,7 @@ string evaluateParameterValues(const string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Datafile& _data = NumeReKernel::getInstance()->getData();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Define& _functions = NumeReKernel::getInstance()->getDefinitions();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
 	string sReturn = sCmd;
 	string sTemp = "";
@@ -354,7 +354,7 @@ string evaluateParameterValues(const string& sCmd)
 				return "";
 
             // Get data elements
-			if (sTemp.find("data(") != string::npos || _data.containsTablesOrClusters(sTemp))
+			if (_data.containsTablesOrClusters(sTemp))
 				getDataElements(sTemp, _parser, _data, _option);
 
             int nResult = 0;

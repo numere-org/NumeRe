@@ -1158,6 +1158,31 @@ namespace NumeRe
             double* data = readNumBlock<double>(size);
             return (void*)data;
         }
+        else if (type == "INT")
+        {
+            int* data = readNumBlock<int>(size);
+            return (void*)data;
+        }
+        else if (type == "LINT")
+        {
+            long int* data = readNumBlock<long int>(size);
+            return (void*)data;
+        }
+        else if (type == "LLINT")
+        {
+            long long int* data = readNumBlock<long long int>(size);
+            return (void*)data;
+        }
+        else if (type == "UINT")
+        {
+            size_t* data = readNumBlock<size_t>(size);
+            return (void*)data;
+        }
+        else if (type == "BYTE")
+        {
+            char* data = readNumBlock<char>(size);
+            return (void*)data;
+        }
         else if (type == "STRING")
         {
             string* data = readStringBlock(size);
@@ -1187,6 +1212,16 @@ namespace NumeRe
         {
             if (type == "DOUBLE")
                 delete[] (double*)data;
+            else if (type == "INT")
+                delete[] (int*)data;
+            else if (type == "LINT")
+                delete[] (long int*)data;
+            else if (type == "LLINT")
+                delete[] (long long int*)data;
+            else if (type == "UINT")
+                delete[] (size_t*)data;
+            else if (type == "BYTE")
+                delete[] (char*)data;
             else if (type == "STRING")
                 delete[] (string*)data;
         }

@@ -23,6 +23,7 @@
 #include <memory>
 
 using namespace std;
+extern Language _lang;
 
 /*
  * Realisierung der Memory-Klasse
@@ -70,27 +71,7 @@ Memory::Memory(long long int _nLines, long long int _nCols) : Memory()
 // --> Destruktor <--
 Memory::~Memory()
 {
-    // --> Gib alle Speicher frei, sofern sie belegt sind! (Pointer != 0) <--
-    if (dMemTable)
-    {
-        for (long long int i = 0; i < nLines; i++)
-            delete[] dMemTable[i];
-
-        delete[] dMemTable;
-        dMemTable = nullptr;
-    }
-
-    if (sHeadLine)
-    {
-        delete[] sHeadLine;
-        sHeadLine = nullptr;
-    }
-
-    if (nAppendedZeroes)
-    {
-        delete[] nAppendedZeroes;
-        nAppendedZeroes = nullptr;
-    }
+    clear();
 }
 
 // --> Generiere eine neue Matrix auf Basis der gesetzten Werte. Pruefe zuvor, ob nicht schon eine vorhanden ist <--
@@ -182,6 +163,42 @@ bool Memory::Allocate(long long int _nNLines, long long int _nNCols, bool shrink
     return true;
 }
 
+void Memory::createTableHeaders()
+{
+    for (long long int j = 0; j < nCols; j++)
+    {
+        if (!sHeadLine[j].length())
+            sHeadLine[j] = _lang.get("COMMON_COL") + "_" + toString(j+1);
+    }
+}
+
+
+bool Memory::clear()
+{
+    // --> Gib alle Speicher frei, sofern sie belegt sind! (Pointer != 0) <--
+    if (dMemTable)
+    {
+        for (long long int i = 0; i < nLines; i++)
+            delete[] dMemTable[i];
+
+        delete[] dMemTable;
+        dMemTable = nullptr;
+    }
+
+    if (sHeadLine)
+    {
+        delete[] sHeadLine;
+        sHeadLine = nullptr;
+    }
+
+    if (nAppendedZeroes)
+    {
+        delete[] nAppendedZeroes;
+        nAppendedZeroes = nullptr;
+    }
+
+    return true;
+}
 
 // --> Setzt nCols <--
 bool Memory::resizeMemory(long long int _nLines, long long int _nCols)

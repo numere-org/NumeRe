@@ -3754,22 +3754,6 @@ unsigned int countEscapeSymbols(const string& sLine)
     return nCount;
 }
 
-// This function simply evaluates, whether "data()" is in the passed string
-bool containsDataObject(const string& sExpr)
-{
-    // Go through the string
-    for (unsigned int i = 0; i < sExpr.length() - 5; i++)
-    {
-        // If we found "data(", we have to ensure that
-        // it is the actual function and not a part of
-        // a larger string
-        if (!i && sExpr.substr(i, 5) == "data(")
-            return true;
-        else if (i && sExpr.substr(i, 5) == "data(" && checkDelimiter(sExpr.substr(i - 1, 6)))
-            return true;
-    }
-    return false;
-}
 
 // This is a static helper function for the standard qsort algorithm
 static int compareDouble(const void* p1, const void* p2)

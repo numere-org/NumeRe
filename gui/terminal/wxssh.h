@@ -14,12 +14,12 @@
 #include "../../common/debug.h"
 #include "../../common/chameleonprocessevent.h"
 #include "../../common/Options.h"
-#include "wxterm.h"
+#include "terminal.hpp"
 
 #define MAX_INPUT_BUF_LEN 50
 
 
-class wxSSH : public wxTerm
+class wxSSH : public NumeReTerminal
 {
 	public:
 		wxSSH(wxWindow* parent, wxWindowID id,

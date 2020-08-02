@@ -17,8 +17,8 @@
 ******************************************************************************/
 
 
-#ifndef INCLUDE_WXTERM
-#define INCLUDE_WXTERM
+#ifndef TERMINAL_HPP
+#define TERMINAL_HPP
 
 #ifdef __GNUG__
 #pragma interface
@@ -42,7 +42,7 @@ using namespace std;
 /// \brief The terminal class for the GUI. It's a
 /// specialisation of the GenericTerminal.
 /////////////////////////////////////////////////
-class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
+class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadHelper
 {
     // Easier to use the NumeReKernel as a friend
     // to create the communication
@@ -170,13 +170,13 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 
 	public:
 	    // Constructor and destructor
-		wxTerm(wxWindow* parent, wxWindowID id,
+		NumeReTerminal(wxWindow* parent, wxWindowID id,
 			   Options* _option,
 			   const wxString& sPath,
 			   const wxPoint& pos = wxDefaultPosition,
 			   int width = 80, int height = 24,
 			   const wxString& name = "wxTerm");
-		virtual ~wxTerm();
+		virtual ~NumeReTerminal();
 
 		// Kernel communication functions
 		void pass_command(const string& command);
@@ -236,7 +236,7 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 
 		// Styling functions
         bool SetFont(const wxFont& font);
-		void GetDefColors(wxColor colors[16], wxTerm::BOLDSTYLE boldStyle = wxTerm::DEFAULT);
+		void GetDefColors(wxColor colors[16], NumeReTerminal::BOLDSTYLE boldStyle = NumeReTerminal::DEFAULT);
 		int GetCursorBlinkRate()
 		{
 			return m_curBlinkRate;
@@ -244,10 +244,8 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		void SetCursorBlinkRate(int rate);
 
 		// Text printing functions
-		virtual void DrawText(int fg_color, int bg_color, int flags,
-							  int x, int y, const string& sText);
-		virtual void DrawCursor(int fg_color, int bg_color, int flags,
-								int x, int y, unsigned char c);
+		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const string& sText);
+		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c);
 
 		virtual void ClearChars(int bg_color, int x, int y, int w, int h);
 		virtual void ProcessInput(int len, const string& sData);
@@ -280,4 +278,4 @@ class wxTerm : public wxWindow, public GenericTerminal, public wxThreadHelper
 		DECLARE_EVENT_TABLE()
 };
 
-#endif /* INCLUDE_WXTERM */
+#endif /* TERMINAL_HPP */

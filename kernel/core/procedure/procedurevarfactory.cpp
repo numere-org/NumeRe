@@ -391,7 +391,7 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
                     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarList, sTemp, true);
                 }
 
-                if (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue))
+                if (_dataRef->containsTablesOrClusters(sVarValue))
                 {
                     getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
                 }
@@ -803,7 +803,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
             {
                 sVarValue = resolveLocalVars(sVarValue, i);
 
-                if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue) && (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue)))
+                if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue) &&  _dataRef->containsTablesOrClusters(sVarValue))
                 {
                     getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
                 }
@@ -945,7 +945,7 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
             {
                 sVarValue = resolveLocalStrings(sVarValue, i);
 
-                if (sVarValue.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sVarValue))
+                if (_dataRef->containsTablesOrClusters(sVarValue))
                 {
                     getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
                 }
@@ -1138,7 +1138,7 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
                     sCurrentValue = "false";
             }
 
-            if (_dataRef->containsTablesOrClusters(sCurrentValue) || sCurrentValue.find("data(") != string::npos)
+            if (_dataRef->containsTablesOrClusters(sCurrentValue))
                 getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
 
             if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))

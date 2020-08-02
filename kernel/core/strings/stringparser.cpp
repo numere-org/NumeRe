@@ -129,14 +129,8 @@ namespace NumeRe
         if (sLine.find_first_of("({") == string::npos)
             return sLine;
 
-        // Replace calls to "data()"
-        replaceDataOccurence(sLine, "data(");
-
-        if (sLine.find_first_of("({") == string::npos)
-            return sLine;
-
         // Replace calls to any table
-        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+        for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
         {
             if (sLine.find('(') == string::npos)
                 break;
@@ -585,10 +579,6 @@ namespace NumeRe
         // Is the target a headline or is it a regular index?
         if (_idx.row.isString())
         {
-            // Write the string to the correct data table
-            if (_idx.col.isOpenEnd() && sTableName == "data")
-                _idx.col.setRange(0, _data.getCols("data")-1);
-
             // If the first element is non-zero but the second is,
             // we use the number of elements as upper boundary
             if (_idx.col.isOpenEnd())
@@ -597,8 +587,7 @@ namespace NumeRe
             for (int n = nCurrentComponent; n < (int)nStrings; n++)
             {
                 if (!strRes.vResult[n].length()
-                    || (_idx.col[n] == VectorIndex::INVALID)
-                    || (sTableName == "data" && _idx.col[n] >= _data.getCols("data")))
+                    || (_idx.col[n] == VectorIndex::INVALID))
                     break;
 
                 _data.setHeadLineElement(_idx.col[n], sTableName, removeQuotationMarks(maskControlCharacters(strRes.vResult[n])));
@@ -669,10 +658,6 @@ namespace NumeRe
         }
         else
         {
-            // Find the correct table
-            if (sTableName == "data")
-                throw SyntaxError(SyntaxError::READ_ONLY_DATA, sObject, SyntaxError::invalid_position);
-
             // Write the return values to the data table with
             // parsing them
             value_type* v = nullptr;
@@ -731,8 +716,6 @@ namespace NumeRe
 
             nCurrentComponent = nStrings;
         }
-
-        _data.setCacheStatus(false);
     }
 
 
@@ -802,7 +785,7 @@ namespace NumeRe
             sObject = getNextArgument(__sObject, true);
 
             // Examine the current target
-            if (sObject.find("data(") != string::npos || _data.containsTablesOrClusters(sObject))
+            if (_data.containsTablesOrClusters(sObject))
             {
                 // Store the strings into the data object
                 storeStringToDataObjects(strRes, sObject, nCurrentComponent, nStrings);
@@ -1537,7 +1520,6 @@ namespace NumeRe
             // Ensure that the left part contains a data or a string object,
             // otherwise it is cleared
             if (sStringObject.substr(sStringObject.find_first_not_of(' '), 7) == "string("
-                    || sStringObject.substr(sStringObject.find_first_not_of(' '), 5) == "data("
                     || _data.containsTablesOrClusters(sStringObject)
                     || sStringObject[sStringObject.find_first_not_of(' ')] == '{')
             {

@@ -41,7 +41,7 @@ class Odesolver
 {
     private:
         Datafile* _odeData;
-        Define* _odeFunctions;
+        FunctionDefinitionManager* _odeFunctions;
         Settings* _odeSettings;
         const gsl_odeiv_step_type* odeStepType;
         gsl_odeiv_step* odeStep;
@@ -58,10 +58,10 @@ class Odesolver
         static mu::varmap_type mVars;
 
         Odesolver();
-        Odesolver(Parser* _parser, Datafile* _data, Define* _functions, Settings* _option);
+        Odesolver(Parser* _parser, Datafile* _data, FunctionDefinitionManager* _functions, Settings* _option);
         ~Odesolver();
 
-        inline void setObjects(Parser* _parser, Datafile* _data, Define* _functions, Settings* _option)
+        inline void setObjects(Parser* _parser, Datafile* _data, FunctionDefinitionManager* _functions, Settings* _option)
             {
                 _odeParser = _parser;
                 _odeData = _data;

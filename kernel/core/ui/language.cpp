@@ -37,6 +37,21 @@ Language::Language() : FileSystem()
 
 
 /////////////////////////////////////////////////
+/// \brief Copy constructor of the language
+/// class.
+///
+/// \param _lang const Language&
+///
+/////////////////////////////////////////////////
+Language::Language(const Language& _lang) : FileSystem()
+{
+    mLangStrings = _lang.mLangStrings;
+    sYES = _lang.sYES;
+    sNO = _lang.sNO;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This private member function decodes a
 /// single language file into a map and returns
 /// it.

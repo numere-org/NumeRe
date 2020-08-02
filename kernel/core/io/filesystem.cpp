@@ -18,7 +18,7 @@
 
 
 #include "filesystem.hpp"
-#include "../kernel.hpp"
+#include "../../kernel.hpp"
 
 string toLowerCase(const string&);
 
@@ -29,7 +29,7 @@ string toLowerCase(const string&);
 FileSystem::FileSystem()
 {
     sPath = "";
-    sWhere = "";
+    sExecutablePath = "";
     sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.bps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.xls;.xlsx;.chm;.h;.hpp;.cxx;.cpp;.c;.m;.tif;.tiff;";
     for (int i = 0; i < 7; i++)
     {
@@ -50,7 +50,7 @@ FileSystem::FileSystem()
 FileSystem& FileSystem::assign(const FileSystem& _fSys)
 {
     sPath = _fSys.sPath;
-    sWhere = _fSys.sWhere;
+    sExecutablePath = _fSys.sExecutablePath;
     sValidExtensions = _fSys.sValidExtensions;
 
     for (int i = 0; i < 7; i++)
@@ -410,18 +410,18 @@ string FileSystem::ValidizeAndPrepareName(const string& _sFileName, const string
 ///
 /// \param _sPath string
 /// \param bMkDir bool
-/// \param _sWhere string
+/// \param _sExePath string
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
+int FileSystem::setPath(string _sPath, bool bMkDir, string _sExePath)
 {
 
-    sWhere = fromSystemCodePage(_sWhere);
-    if (sWhere[0] == '"')
-        sWhere = sWhere.substr(1);
-    if (sWhere[sWhere.length()-1] == '"')
-        sWhere = sWhere.substr(0,sWhere.length()-1);
+    sExecutablePath = fromSystemCodePage(_sExePath);
+    if (sExecutablePath[0] == '"')
+        sExecutablePath = sExecutablePath.substr(1);
+    if (sExecutablePath[sExecutablePath.length()-1] == '"')
+        sExecutablePath = sExecutablePath.substr(0,sExecutablePath.length()-1);
     sPath = fromSystemCodePage(_sPath);
 
     //cerr << sWhere << "\\" << sPath << endl;
@@ -449,15 +449,15 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
     if (sPath.find(':') == string::npos)
     {
         if (sPath.length() > 3 && sPath.substr(0,3) != "..\\" && sPath.substr(0,3) != "../" && sPath.substr(0,2) != ".\\" && sPath.substr(0,2) != "./")
-            sPath = "\"" + sWhere + "\\" + sPath + "\"";
+            sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
         else if (sPath.length() > 2 && (sPath.substr(0,2) == ".\\" || sPath.substr(0,2) == "./"))
-            sPath = "\"" + sWhere + sPath.substr(1) + "\"";
+            sPath = "\"" + sExecutablePath + sPath.substr(1) + "\"";
         else if (sPath.length() > 3 && (sPath.substr(0,3) == "..\\" || sPath.substr(0,3) == "../"))
         {
             while (sPath.length() > 3 && (sPath.substr(0,3) == "..\\" || sPath.substr(0,3) == "../"))
             {
-                if (sWhere.find('\\') != string::npos)
-                    sWhere = sWhere.substr(0,sWhere.rfind('\\'));
+                if (sExecutablePath.find('\\') != string::npos)
+                    sExecutablePath = sExecutablePath.substr(0,sExecutablePath.rfind('\\'));
                 else
                 {
                     sPath = _sPath;
@@ -465,10 +465,10 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sWhere)
                 }
                 sPath = sPath.substr(3);
             }
-            sPath = "\"" + sWhere + "\\" + sPath + "\"";
+            sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
         }
         else
-            sPath = "\"" + sWhere + "\\" + sPath + "\"";
+            sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
     }
     if (sPath[0] == '"')
         sPath = sPath.substr(1);

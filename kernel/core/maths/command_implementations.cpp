@@ -248,13 +248,13 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
         {
             j = 1;
 
-            if (!_cache.isValidEntry(i, 1, "cache"))
+            if (!_cache.isValidElement(i, 1, "cache"))
                 continue;
 
-            while (!_cache.isValidEntry(i + j, 1, "cache") && i + j < _cache.getLines("cache", false) - 1)
+            while (!_cache.isValidElement(i + j, 1, "cache") && i + j < _cache.getLines("cache", false) - 1)
                 j++;
 
-            if (!_cache.isValidEntry(i + j, 0, "cache") || !_cache.isValidEntry(i + j, 1, "cache"))
+            if (!_cache.isValidElement(i + j, 0, "cache") || !_cache.isValidElement(i + j, 1, "cache"))
                 break;
 
             if (sLowerBoundary.length() && x0 > _cache.getElement(i, 0, "cache"))
@@ -300,7 +300,7 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sParams = "";        // Parameter-string
     string sIntegrationExpression;
@@ -358,7 +358,7 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
     // If the integration function contains a data object,
     // the calculation is done way different from the usual
     // integration
-    if ((sIntegrationExpression.substr(0, 5) == "data(" || _data.isTable(sIntegrationExpression))
+    if (_data.isTable(sIntegrationExpression)
             && getMatchingParenthesis(sIntegrationExpression) != string::npos
             && sIntegrationExpression.find_first_not_of(' ', getMatchingParenthesis(sIntegrationExpression) + 1) == string::npos) // xvals
         return integrateSingleDimensionData(sIntegrationExpression, sParams);
@@ -695,7 +695,7 @@ static void refreshBoundaries(const string& sRenewBoundariesExpression, double& 
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string __sCmd = findCommand(sCmd).sString;
     string sParams = "";            // Parameter-string
@@ -1381,7 +1381,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, Define& _functions)
+vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sExpr = sCmd.substr(findCommand(sCmd).sString.length() + findCommand(sCmd).nPos);
     string sEps = "";
@@ -1413,8 +1413,7 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
     StripSpaces(sExpr);
 
     // Numerical expressions and data sets are handled differently
-    if ((sExpr.find("data(") == string::npos && !_data.containsTablesOrClusters(sExpr))
-            && (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos))
+    if (!_data.containsTablesOrClusters(sExpr) && (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos))
     {
         // This is a numerical expression
         if (sCmd.find("-set") != string::npos)
@@ -1498,7 +1497,7 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             // Evaluate the position/range expression
             if (isNotEmptyExpression(sPos))
             {
-                if (_data.containsTablesOrClusters(sPos) || sPos.find("data(") != string::npos)
+                if (_data.containsTablesOrClusters(sPos))
                     getDataElements(sPos, _parser, _data, _option);
 
                 if (sPos.find(':') != string::npos)
@@ -1570,7 +1569,7 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             }
         }
     }
-    else if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+    else if (_data.containsTablesOrClusters(sExpr))
     {
         // This is a data set
         //
@@ -1606,8 +1605,8 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             // values, which is identical to the derivative in this case
             for (long long int i = 0; i < _idx.row.size() - 1; i++)
             {
-                if (_data.isValidEntry(_idx.row[i], _idx.col.front(), sExpr)
-                        && _data.isValidEntry(_idx.row[i + 1], _idx.col.front(), sExpr))
+                if (_data.isValidElement(_idx.row[i], _idx.col.front(), sExpr)
+                        && _data.isValidElement(_idx.row[i + 1], _idx.col.front(), sExpr))
                     vResult.push_back(_data.getElement(_idx.row[i + 1], _idx.col.front(), sExpr) - _data.getElement(_idx.row[i], _idx.col.front(), sExpr));
                 else
                     vResult.push_back(NAN);
@@ -1636,10 +1635,10 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
                 // middle of the two samplex
                 for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
                 {
-                    if (_cache.isValidEntry(i, 0, "cache")
-                            && _cache.isValidEntry(i + 1, 0, "cache")
-                            && _cache.isValidEntry(i, 1, "cache")
-                            && _cache.isValidEntry(i + 1, 1, "cache"))
+                    if (_cache.isValidElement(i, 0, "cache")
+                            && _cache.isValidElement(i + 1, 0, "cache")
+                            && _cache.isValidElement(i, 1, "cache")
+                            && _cache.isValidElement(i + 1, 1, "cache"))
                         vResult.push_back((_cache.getElement(i + 1, 0, "cache") + _cache.getElement(i, 0, "cache")) / 2);
                     else
                         vResult.push_back(NAN);
@@ -1651,10 +1650,10 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
                 // by approximating it linearily
                 for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
                 {
-                    if (_cache.isValidEntry(i, 0, "cache")
-                            && _cache.isValidEntry(i + 1, 0, "cache")
-                            && _cache.isValidEntry(i, 1, "cache")
-                            && _cache.isValidEntry(i + 1, 1, "cache"))
+                    if (_cache.isValidElement(i, 0, "cache")
+                            && _cache.isValidElement(i + 1, 0, "cache")
+                            && _cache.isValidElement(i, 1, "cache")
+                            && _cache.isValidElement(i + 1, 1, "cache"))
                         vResult.push_back((_cache.getElement(i + 1, 1, "cache") - _cache.getElement(i, 1, "cache"))
                                           / (_cache.getElement(i + 1, 0, "cache") - _cache.getElement(i, 0, "cache")));
                     else
@@ -2012,7 +2011,7 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 21;
     int nOrder = 5;
@@ -2040,7 +2039,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
         sExpr = sCmd.substr(0, sCmd.find("--"));
         sParams = sCmd.substr(sCmd.find("--"));
     }
-    else if (sCmd.find("data(") == string::npos && !_data.containsTablesOrClusters(sCmd))
+    else if (!_data.containsTablesOrClusters(sCmd))
         throw SyntaxError(SyntaxError::NO_EXTREMA_OPTIONS, sCmd, SyntaxError::invalid_position);
     else
         sExpr = sCmd;
@@ -2062,10 +2061,10 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 
     // If the expression or the parameter list contains
     // data elements, get their values here
-    if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+    if (_data.containsTablesOrClusters(sExpr))
         getDataElements(sExpr, _parser, _data, _option, false);
 
-    if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
+    if (_data.containsTablesOrClusters(sParams))
         getDataElements(sParams, _parser, _data, _option, false);
 
     // Evaluate the parameters
@@ -2160,7 +2159,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
             }
         }
     }
-    else if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
+    else if (_data.containsTablesOrClusters(sCmd))
         return findExtremaInData(sCmd, sExpr, nOrder, nMode);
     else
         throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, sCmd, SyntaxError::invalid_position);
@@ -2484,7 +2483,7 @@ static bool findZeroesInData(string& sCmd, string& sExpr, int nMode)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 21;
     double dVal[2];
@@ -2512,7 +2511,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
         sExpr = sCmd.substr(0, sCmd.find("--"));
         sParams = sCmd.substr(sCmd.find("--"));
     }
-    else if (sCmd.find("data(") == string::npos && !_data.containsTablesOrClusters(sCmd))
+    else if (!_data.containsTablesOrClusters(sCmd))
         throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, sCmd, SyntaxError::invalid_position);
     else
         sExpr = sCmd;
@@ -2533,10 +2532,10 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 
     // If the expression or the parameter list contains
     // data elements, get their values here
-    if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+    if (_data.containsTablesOrClusters(sExpr))
         getDataElements(sExpr, _parser, _data, _option, false);
 
-    if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
+    if (_data.containsTablesOrClusters(sParams))
         getDataElements(sParams, _parser, _data, _option, false);
 
     // Evaluate the parameter list
@@ -2619,7 +2618,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
             }
         }
     }
-    else if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
+    else if (_data.containsTablesOrClusters(sCmd))
         return findZeroesInData(sCmd, sExpr, nMode);
     else
         throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
@@ -2948,7 +2947,7 @@ static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, co
 /// The aproximated function is defined as a new
 /// custom function.
 /////////////////////////////////////////////////
-void taylor(string& sCmd, Parser& _parser, const Settings& _option, Define& _functions)
+void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sParams = "";
     string sVarName = "";
@@ -3344,7 +3343,6 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
         }
 
         // Write headlines
-        _data.setCacheStatus(true);
         _data.setHeadLineElement(_idx.col.front(), sTargetTable, _lang.get("COMMON_FREQUENCY") + "_[Hz]");
 
         if (!bComplex)
@@ -3557,8 +3555,6 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
         _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, vWaveletData[i]);
     }
 
-    _data.setCacheStatus(true);
-
     if (!bInverseTrafo)
     {
         _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_COEFFICIENT"));
@@ -3573,7 +3569,6 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
     if (_option.getSystemPrintStatus())
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
 
-    _data.setCacheStatus(false);
     return true;
 }
 
@@ -3590,7 +3585,7 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, Define& _functions)
+bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 100;
     double dLeft = 0.0;
@@ -3627,7 +3622,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 
     // Evaluate calls in the expression
     // to any table or cluster
-    if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+    if (_data.containsTablesOrClusters(sExpr))
     {
         getDataElements(sExpr, _parser, _data, _option);
 
@@ -3637,7 +3632,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 
     // Evaluate calls in the parameters
     // to any table or cluster
-    if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
+    if (_data.containsTablesOrClusters(sParams))
     {
         getDataElements(sParams, _parser, _data, _option);
 
@@ -3795,7 +3790,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     unsigned int nSamples = 100;
     string sXVals = "";
@@ -3810,10 +3805,7 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
     vector<double> vYVals;
     vector<vector<double> > vZVals;
 
-    if (sCmd.find("data(") != string::npos && !_data.isValid())
-        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
-
-    if (_data.containsTablesOrClusters(sCmd) && !_data.isValidCache())
+    if (_data.containsTablesOrClusters(sCmd) && !_data.isValid())
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
     // Extract the z expression from the command line
@@ -3919,7 +3911,7 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
     vYVals = extractVectorForDatagrid(sCmd, sYVals, sZVals, vSamples[1 - bTranspose], _parser, _data, _option);
 
     //>> Z-Matrix
-    if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
+    if (_data.containsTablesOrClusters(sZVals))
     {
         // Get the datagrid from another table
         DataAccessParser _accessParser(sZVals);
@@ -4009,8 +4001,6 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
     if (_iTargetIndex.col.isOpenEnd())
         _iTargetIndex.col.setRange(0, _iTargetIndex.col.front() + vYVals.size() + 1);
 
-    _data.setCacheStatus(true);
-
     // Write the x axis
     for (size_t i = 0; i < vXVals.size(); i++)
         _data.writeToTable(i, _iTargetIndex.col[0], sTargetCache, vXVals[i]);
@@ -4041,8 +4031,6 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
         }
     }
 
-    _data.setCacheStatus(false);
-
     return true;
 }
 
@@ -4065,7 +4053,7 @@ static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZ
     vector<size_t> vSamples;
 
     // If the z vals are inside of a table then obtain the correct number of samples here
-    if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
+    if (_data.containsTablesOrClusters(sZVals))
     {
         // Get the indices and identify the table name
         DataAccessParser _accessParser(sZVals);
@@ -4137,7 +4125,7 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
     vector<double> vVectorVals;
 
     // Data direct from the table, not an index pair
-    if ((sVectorVals.find("data(") != string::npos || _data.containsTablesOrClusters(sVectorVals)) && sVectorVals.find(':', getMatchingParenthesis(sVectorVals.substr(sVectorVals.find('('))) + sVectorVals.find('(')) == string::npos)
+    if (_data.containsTablesOrClusters(sVectorVals) && sVectorVals.find(':', getMatchingParenthesis(sVectorVals.substr(sVectorVals.find('('))) + sVectorVals.find('(')) == string::npos)
     {
         // Get the indices
         Indices _idx = getIndices(sVectorVals, _parser, _data, _option);
@@ -4147,7 +4135,7 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
 
         if (_data.containsTablesOrClusters(sVectorVals))
         {
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+            for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
             {
                 if (sVectorVals.find(iter->first + "(") != string::npos
                         && (!sVectorVals.find(iter->first + "(")
@@ -4181,7 +4169,7 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
     else if (sVectorVals.find(':') != string::npos)
     {
         // Index pair - If the index pair contains data elements, get their values now
-        if (sVectorVals.find("data(") != string::npos || _data.containsTablesOrClusters(sVectorVals))
+        if (_data.containsTablesOrClusters(sVectorVals))
             getDataElements(sVectorVals, _parser, _data, _option);
 
         if (sVectorVals.find("{") != string::npos)
@@ -4302,7 +4290,7 @@ static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVal
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     using namespace little_endian_io;
 
@@ -4336,7 +4324,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _fun
     {
         string sSamples = getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7);
 
-        if (sSamples.find("data(") != string::npos || _data.containsTablesOrClusters(sSamples))
+        if (_data.containsTablesOrClusters(sSamples))
             getDataElements(sSamples, _parser, _data, _option);
 
         _parser.SetExpr(sSamples);
@@ -4443,7 +4431,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, Define& _fun
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     int nSamples = 100;
     string sDataset = "";
@@ -4468,7 +4456,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _
     {
         string sSamples = getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7);
 
-        if (sSamples.find("data(") != string::npos || _data.containsTablesOrClusters(sSamples))
+        if (_data.containsTablesOrClusters(sSamples))
             getDataElements(sSamples, _parser, _data, _option);
 
         _parser.SetExpr(sSamples);
@@ -4532,7 +4520,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, Define& _
 /// maximal amplitude (which is different from
 /// the FWHM) and the energy in the pulse.
 /////////////////////////////////////////////////
-bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDataset = "";
     Indices _idx;
@@ -4625,7 +4613,7 @@ bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, Define& _func
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDataset = "";
     Indices _idx, _target;
@@ -4666,9 +4654,6 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 
         _target = getIndices(sTargetCache, _parser, _data, _option);
         sTargetCache.erase(sTargetCache.find('('));
-
-        if (sTargetCache == "data")
-            throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
 
         if (!isValidIndexSet(_target))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
@@ -4779,7 +4764,7 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 /// The calculated spline polynomials are defined
 /// as new custom functions.
 /////////////////////////////////////////////////
-bool calculateSplines(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option)
+bool calculateSplines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Indices _idx;
     Datafile _cache;

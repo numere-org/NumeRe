@@ -29,12 +29,17 @@
 #include <vector>
 
 #include "../ui/error.hpp"
-#include "../filesystem.hpp"
+#include "../io/filesystem.hpp"
 #include "../settings.hpp"
 #include "../utils/tools.hpp"
 
 using namespace std;
 
+/////////////////////////////////////////////////
+/// \brief This class implements a single
+/// function definition. It is managed by the
+/// Define class.
+/////////////////////////////////////////////////
 class FunctionDefinition
 {
     public:
@@ -60,25 +65,30 @@ class FunctionDefinition
         bool replaceArgumentOccurences();
 };
 
-class Define : public FileSystem
+
+
+/////////////////////////////////////////////////
+/// \brief This class implements the function
+/// definition managing instance.
+/////////////////////////////////////////////////
+class FunctionDefinitionManager : public FileSystem
 {
     private:
         map<string, FunctionDefinition> mFunctionsMap;
-        string sFunctions[100][13];         // Funct-Name, Expression, Definition, VarX, VarY, VarZ, VarT, ...
-        unsigned int nDefinedFunctions;     // Anzahl der definierten Funktionen
         string sFileName;                   // Dateinamen fuer die Speichern-Funktion
         fstream Defines_def;                // Filestream, zum Speichern und Einlesen der definierten Funktionen
 
         string sBuilt_In;                   // String, der die Namen der Built-In-Funktionen speichert
         string sCommands;                   // String, der alle NumeRe-Kommandos speichert
-        string sCaches;
+        string sTables;
+        bool isLocal;
 
         string resolveRecursiveDefinitions(string sDefinition);
         map<string, FunctionDefinition>::const_iterator findItemById(size_t id) const;
 
     public:
-        Define();                           // Standard-Konstruktor
-        Define(Define& _defined);           // Kopierkonstruktor
+        FunctionDefinitionManager(bool _isLocal);                           // Standard-Konstruktor
+        FunctionDefinitionManager(FunctionDefinitionManager& _defined);           // Kopierkonstruktor
 
         // --> TRUE, wenn es eine Funktion mit dem angegeben Funktionsnamen gibt <--
         bool isDefined(const string& sFunc);
@@ -93,13 +103,13 @@ class Define : public FileSystem
         bool call(string& sExpr, int nRecursion = 0);
 
         // --> Gibt die Zahl der definierten Funktionen zurueck <--
-        unsigned int getDefinedFunctions() const;
+        size_t getDefinedFunctions() const;
 
         // --> Gibt die zur Definition der _i-ten Funktion verwendete Definition zurueck <--
-        string getDefine(unsigned int _i) const;
-        string getFunction(unsigned int _i) const;
-        string getImplementation(unsigned int _i) const;
-        string getComment(unsigned int _i) const;
+        string getDefinitionString(size_t _i) const;
+        string getFunctionSignature(size_t _i) const;
+        string getImplementation(size_t _i) const;
+        string getComment(size_t _i) const;
 
         bool reset();
 
@@ -109,36 +119,82 @@ class Define : public FileSystem
         // --> Laden gespeicherter Funktionsdefinitionen <--
         bool load(const Settings& _option, bool bAutoLoad = false);
 
-        inline string getDefinesName() const
+        /////////////////////////////////////////////////
+        /// \brief Returns a list of the names of the
+        /// custom defined functions.
+        ///
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        inline string getNamesOfDefinedFunctions() const
+        {
+            string sReturn = ";";
+
+            for (auto iter = mFunctionsMap.begin(); iter != mFunctionsMap.end(); ++iter)
             {
-                string sReturn = ";";
-                for (unsigned int i = 0; i < nDefinedFunctions; i++)
-                {
-                    sReturn += sFunctions[i][0] + ";";
-                }
-                return sReturn;
+                sReturn += iter->first + ";";
             }
-        inline void setCacheList(const string& sCacheList)
-            {
-                sCaches = sCacheList;
-                return;
-            }
+
+            return sReturn;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Sets the internal table list. This
+        /// list is used to avoid redefinition of an
+        /// already existing table as a function.
+        ///
+        /// \param sTableList const string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void setTableList(const string& sTableList)
+        {
+            sTables = sTableList;
+        }
+
         void setPredefinedFuncs(const string& sPredefined);
+
+        /////////////////////////////////////////////////
+        /// \brief Return a list of the internal defined
+        /// default functions.
+        ///
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         inline string getPredefinedFuncs() const
+        {
+            return sBuilt_In;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the numerical index of the
+        /// selected custom defined functions.
+        ///
+        /// \param sFuncName const string&
+        /// \return size_t
+        /// \remark This index is only valid as long as
+        /// the FunctionDefinitionManager object instance
+        /// is not modified (defining/undefining
+        /// functions).
+        ///
+        /////////////////////////////////////////////////
+        inline size_t getFunctionIndex(const string& sFuncName)
+        {
+            if (!mFunctionsMap.size())
+                return (size_t)-1;
+
+            size_t i = 0;
+
+            for (auto iter = mFunctionsMap.begin(); iter != mFunctionsMap.end(); ++iter)
             {
-                return sBuilt_In;
+                if (iter->first == sFuncName.substr(0, sFuncName.find('(')))
+                    return i;
+
+                i++;
             }
-        inline int getFunctionIndex(const string& sFuncName)
-            {
-                if (!nDefinedFunctions)
-                    return -1;
-                for (unsigned int i = 0; i < nDefinedFunctions; i++)
-                {
-                    if (sFunctions[i][0] == sFuncName.substr(0, sFuncName.find('(')))
-                        return i;
-                }
-                return -1;
-            }
+
+            return (size_t)-1;
+        }
 };
 
 #endif

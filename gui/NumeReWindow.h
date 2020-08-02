@@ -16,6 +16,7 @@
 
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
+#include <wx/snglinst.h>
 #include <vector>
 #include <utility>
 
@@ -137,16 +138,33 @@ class wxCHMHelpController;
 class DebugViewer;
 class ChameleonProjectManager;
 
+namespace DDE
+{
+    class Server;
+}
+
 
 
 
 //----------------------------------------------------------------------
 
+/////////////////////////////////////////////////
+/// \brief This class represents the application
+/// controller, which will create the main frame
+/// of the actual application. It will also
+/// include the single instance checking and the
+/// necessary DDE command interface handling.
+/////////////////////////////////////////////////
 class MyApp : public wxApp
 {
     public:
         ~MyApp();
-        virtual bool OnInit();
+        virtual bool OnInit() override;
+        virtual int OnExit() override;
+
+    private:
+        wxSingleInstanceChecker* m_singlinst;
+        DDE::Server* m_DDEServer;
         //virtual int OnRun();
         //virtual void OnUnhandledException();
 };
@@ -157,7 +175,11 @@ class MyApp : public wxApp
 extern Language _guilang;
 
 
-// Define a new frame type: this is going to be our main frame
+/////////////////////////////////////////////////
+/// \brief This class is the actual NumeRe main
+/// frame. The application's logic is implemented
+/// here.
+/////////////////////////////////////////////////
 class NumeReWindow : public wxFrame
 {
     public:
@@ -175,6 +197,8 @@ class NumeReWindow : public wxFrame
         void NewFile(FileFilterType _filetype = FILE_NONSOURCE, const wxString& defaultfilename = "");
         void ShowRevision(const wxString& revisionName, const wxString& revisionContent);
         void DefaultPage();
+        void OpenFileByType(const wxFileName& filename);
+        void OpenFilesFromList(const wxArrayString& filenameslist);
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
         void openPDF(wxFileName filename);
@@ -194,6 +218,8 @@ class NumeReWindow : public wxFrame
         string constructLaTeXHeaderKeywords(const string& sKeywordList);
         void runLaTeX();
         void compileLaTeX();
+
+        void refreshFunctionTree();
 
         Networking* GetNetworking();
 
@@ -240,9 +266,6 @@ class NumeReWindow : public wxFrame
         int CopyEditorSettings(FileFilterType _fileType);
 
         void OnMenuEvent(wxCommandEvent &event);
-        void OpenFileByType(const wxFileName& filename);
-        void OpenFilesFromList(const wxArrayString& filenameslist);
-
         void OnHelp();
         void OnAbout();
         void OnPrintPreview();
@@ -343,7 +366,6 @@ class NumeReWindow : public wxFrame
         void setViewerFocus();
 
         void prepareFunctionTree();
-
         string prepareTooltip(const string& sTooltiptext);
 
         wxPrintData* setDefaultPrinterSettings();

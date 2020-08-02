@@ -39,7 +39,7 @@ void clear_cache(Datafile& _data, Settings& _option, bool bIgnore = false);
 bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
 bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
 bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool sortData(string& sCmd, Parser& _parser, Datafile& _data, Define& _functions, const Settings& _option);
+bool sortData(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool writeToFile(string& sCmd, Datafile& _data, Settings& _option);
 bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
 bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);

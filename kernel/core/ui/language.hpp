@@ -26,7 +26,7 @@
 #include <fstream>
 
 
-#include "../filesystem.hpp"
+#include "../io/filesystem.hpp"
 
 /////////////////////////////////////////////////
 /// \brief This class handles the internal
@@ -46,6 +46,7 @@ class Language : public FileSystem
 
     public:
         Language();
+        Language(const Language& _lang);
         void loadStrings(bool bloadUserFiles = true);
         void addToLanguage(const map<string,string>& _langstrings);
         string getKey(const string& sMessage) const;

@@ -20,7 +20,7 @@
 #define DEBUGVIEWER_HPP
 
 #include "viewerframe.hpp"
-#include "../terminal/wxterm.h"
+#include "../terminal/terminal.hpp"
 #include "../../common/Options.h"
 #include "variableviewer.hpp"
 //#include <wx/treelist.h>
@@ -37,7 +37,7 @@ class DebugViewer : public ViewerFrame
         wxTextCtrl* m_lineNumber;
         wxTextCtrl* m_errorMessage;
         wxListCtrl* m_stacktrace;
-        wxTerm* m_terminal;
+        NumeReTerminal* m_terminal;
         Options* m_options;
 
         bool b_transferredControl;
@@ -57,7 +57,7 @@ class DebugViewer : public ViewerFrame
         DebugViewer(wxWindow* parent, Options* _options, const wxString& title = "NumeRe: Debugger");
 
         void updateSettings();
-        void setTerminal(wxTerm* term) {m_terminal = term;}
+        void setTerminal(NumeReTerminal* term) {m_terminal = term;}
         void setDebugInfo(const wxString& title, const vector<string>& vStack);
         void OnClose(wxCloseEvent& event);
         void OnExecutionFinished();

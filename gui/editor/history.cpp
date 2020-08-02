@@ -79,7 +79,7 @@ using namespace std;
 ///
 /////////////////////////////////////////////////
 NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, ProjectInfo* project, wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax,
-                             wxTerm* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
+                             NumeReTerminal* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
                                  NumeReEditor(mframe, options, project, parent, id, __syntax, __terminal, pos, size, style, name)
 {
 	_syntax = __syntax;

@@ -20,7 +20,7 @@
 #include "wx.h"
 #include "compositions/viewerframe.hpp"
 #include "../kernel/core/plotting/graph_helper.hpp"
-#include "terminal/wxterm.h"
+#include "terminal/terminal.hpp"
 
 #ifndef GRAPHVIEWER_HPP
 #define GRAPHVIEWER_HPP
@@ -29,7 +29,7 @@ class GraphViewer : public ViewerFrame
     private:
 
     public:
-        GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, wxTerm* terminal);
+        GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _helper, NumeReTerminal* terminal);
         ~GraphViewer()
             {
                 if (_grapherWindow)
@@ -39,7 +39,7 @@ class GraphViewer : public ViewerFrame
 
 
         wxMGL* _grapherWindow;
-        wxTerm* m_terminal;
+        NumeReTerminal* m_terminal;
 
         DECLARE_EVENT_TABLE();
 };

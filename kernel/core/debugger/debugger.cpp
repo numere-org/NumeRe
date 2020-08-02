@@ -265,7 +265,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
         return "\t1 x 1\t(...)\t";
 
     // Is the current argument value a table?
-    if (_data.isTable(sArgumentValue) || sArgumentValue.substr(0, 5) == "data(")
+    if (_data.isTable(sArgumentValue))
     {
         string sCache = sArgumentValue.substr(0, sArgumentValue.find('('));
 
@@ -881,13 +881,6 @@ vector<string> NumeReDebugger::getGlobals()
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 
-    // Is there valid data?
-    if (_data.isValid())
-    {
-        mGlobals["data()"] = toString(_data.getLines("data", false)) + " x " + toString(_data.getCols("data", false))
-                             + "\tdouble\t{" + toString(_data.min("data", "")[0], 5) + ", ...," + toString(_data.max("data", "")[0], 5) + "}";
-    }
-
     // Is there anything in the string object?
     if (_data.getStringElements())
     {
@@ -896,7 +889,7 @@ vector<string> NumeReDebugger::getGlobals()
     }
 
     // List all relevant caches
-    for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+    for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
     {
         if (iter->first.substr(0, 2) != "_~")
         {
