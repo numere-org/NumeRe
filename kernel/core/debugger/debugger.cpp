@@ -255,7 +255,7 @@ void NumeReDebugger::formatMessage()
 /////////////////////////////////////////////////
 string NumeReDebugger::decodeType(string& sArgumentValue)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 
@@ -606,13 +606,13 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         // to display them in the variable viewer panel
         if (sLocalTables[i][1] == "string")
         {
-            sTableData = toString(instance->getData().getStringElements()) + " x " + toString(instance->getData().getStringCols());
-            sTableData += "\tstring\t{\"" + replaceControlCharacters(instance->getData().minString()) + "\", ..., \"" + replaceControlCharacters(instance->getData().maxString()) + "\"}\tstring()";
+            sTableData = toString(instance->getMemoryManager().getStringElements()) + " x " + toString(instance->getMemoryManager().getStringCols());
+            sTableData += "\tstring\t{\"" + replaceControlCharacters(instance->getMemoryManager().minString()) + "\", ..., \"" + replaceControlCharacters(instance->getMemoryManager().maxString()) + "\"}\tstring()";
         }
         else
         {
-            sTableData = toString(instance->getData().getLines(sLocalTables[i][1], false)) + " x " + toString(instance->getData().getCols(sLocalTables[i][1], false));
-            sTableData += "\tdouble\t{" + toString(instance->getData().min(sLocalTables[i][1], "")[0], 5) + ", ..., " + toString(instance->getData().max(sLocalTables[i][1], "")[0], 5) + "}\t" + sLocalTables[i][1] + "()";
+            sTableData = toString(instance->getMemoryManager().getLines(sLocalTables[i][1], false)) + " x " + toString(instance->getMemoryManager().getCols(sLocalTables[i][1], false));
+            sTableData += "\tdouble\t{" + toString(instance->getMemoryManager().min(sLocalTables[i][1], "")[0], 5) + ", ..., " + toString(instance->getMemoryManager().max(sLocalTables[i][1], "")[0], 5) + "}\t" + sLocalTables[i][1] + "()";
         }
 
         mLocalTables[sLocalTables[i][0] + "()"] = sTableData;
@@ -633,8 +633,8 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
 
         // Extract the minimal and maximal values of the tables
         // to display them in the variable viewer panel
-        sTableData = toString(instance->getData().getCluster(sLocalClusters[i][1]).size()) + " x 1";
-        sTableData += "\tcluster\t" + instance->getData().getCluster(sLocalClusters[i][1]).getShortVectorRepresentation() + "\t" + sLocalClusters[i][1] + "{}";
+        sTableData = toString(instance->getMemoryManager().getCluster(sLocalClusters[i][1]).size()) + " x 1";
+        sTableData += "\tcluster\t" + instance->getMemoryManager().getCluster(sLocalClusters[i][1]).getShortVectorRepresentation() + "\t" + sLocalClusters[i][1] + "{}";
 
         mLocalClusters[sLocalClusters[i][0] + "{}"] = sTableData;
     }
@@ -877,7 +877,7 @@ vector<string> NumeReDebugger::getGlobals()
 
     map<string,string> mGlobals;
 
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
 

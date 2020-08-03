@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "../settings.hpp"
-#include "../datamanagement/datafile.hpp"
+#include "../datamanagement/cache.hpp"
 #include "../ParserLib/muParser.h"
 #include "define.hpp"
 #include "../datamanagement/dataaccess.hpp"
@@ -33,7 +33,7 @@ using namespace mu;
 #define PARSER_FUNCTIONS_HPP
 
 // Tools & Stuff
-string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option);
+string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option);
 bool isVariableInAssignedExpression(Parser&, const string_type&);
 size_t findVariableInExpression(const string& sExpr, const string& sVarName);
 void convertVectorToExpression(string&, const Settings&);
@@ -41,8 +41,8 @@ string addMissingVectorComponent(const string&, const string&, const string&, bo
 double* getPointerToVariable(const string& sVarName, Parser& _parser);
 string promptForUserInput(const string& __sCommand);
 int integralFactorial(int nNumber);
-bool evaluateIndices(const string& sCache, Indices& _idx, Datafile& _data);
-vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval = false);
+bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data);
+vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval = false);
 unsigned int getPositionOfFirstDelimiter(const string&);
 
 #endif

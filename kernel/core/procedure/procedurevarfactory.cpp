@@ -116,7 +116,7 @@ void ProcedureVarFactory::init()
 
     // Get the addresses of the kernel objects
     _parserRef = &NumeReKernel::getInstance()->getParser();
-    _dataRef = &NumeReKernel::getInstance()->getData();
+    _dataRef = &NumeReKernel::getInstance()->getMemoryManager();
     _optionRef = &NumeReKernel::getInstance()->getSettings();
     _functionRef = &NumeReKernel::getInstance()->getDefinitions();
     _outRef = &NumeReKernel::getInstance()->getOutput();

@@ -27,7 +27,7 @@
 #include "stringfunchandler.hpp"
 #include "../ParserLib/muParser.h"
 #include "../settings.hpp"
-#include "../datamanagement/datafile.hpp"
+#include "../datamanagement/cache.hpp"
 
 using namespace std;
 
@@ -47,7 +47,7 @@ namespace NumeRe
         private:
             map<string, int> m_mStringParams;
             mu::Parser& _parser;
-            Datafile& _data;
+            MemoryManager& _data;
             Settings& _option;
 
             string getDataForString(string sLine, size_t n_pos);
@@ -74,7 +74,7 @@ namespace NumeRe
                 STRING_SUCCESS = 1
             };
 
-            StringParser(mu::Parser& parser, Datafile& data, Settings& option);
+            StringParser(mu::Parser& parser, MemoryManager& data, Settings& option);
             virtual ~StringParser() {}
             StringParserRetVal evalAndFormat(string& sLine, string& sCache, bool bSilent = false);
             virtual bool isStringExpression(const string& sExpression) override;

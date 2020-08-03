@@ -1590,7 +1590,7 @@ void FlowCtrl::eval()
 
     // Copy the references to the centeral objects
     _parserRef = &NumeReKernel::getInstance()->getParser();
-    _dataRef = &NumeReKernel::getInstance()->getData();
+    _dataRef = &NumeReKernel::getInstance()->getMemoryManager();
     _outRef = &NumeReKernel::getInstance()->getOutput();
     _optionRef = &NumeReKernel::getInstance()->getSettings();
     _functionRef = &NumeReKernel::getInstance()->getDefinitions();
@@ -3260,7 +3260,7 @@ string FlowCtrl::getCurrentCommand() const
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
+int FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
 {
     return 1;
 }

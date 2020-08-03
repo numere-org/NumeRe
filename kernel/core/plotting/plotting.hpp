@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "../datamanagement/datafile.hpp"
+#include "../datamanagement/cache.hpp"
 #include "../ParserLib/muParser.h"
 #include "../settings.hpp"
 #include "../maths/define.hpp"
@@ -34,7 +34,7 @@
 using namespace std;
 using namespace mu;
 
-void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData);
+void createPlot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData);
 
 
 /////////////////////////////////////////////////
@@ -59,31 +59,31 @@ class Plot
 
     protected:
         void determinePlottingDimensions(const string& sPlotCommand);
-        size_t createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser, FunctionDefinitionManager& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
+        size_t createSubPlotSet(PlotData& _pData, MemoryManager& _data, Parser& _parser, FunctionDefinitionManager& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
         void applyPlotSizeAndQualitySettings(PlotData& _pData);
-        bool createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, vector<short>& vType, int nFunctions, double dDataRanges[3][2], const string& sOutputName);
-        void create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
+        bool createPlotOrAnimation(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, vector<short>& vType, int nFunctions, double dDataRanges[3][2], const string& sOutputName);
+        void create2dPlot(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
         bool plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglData* _mAxisVals, mglData& _mContVec, const Settings& _option);
-        void createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
+        void createStdPlot(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
         bool plotstd(PlotData& _pData, mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType);
         void create3dPlot(PlotData& _pData, const Settings& _option);
         void create3dVect(PlotData& _pData);
         void create2dVect(PlotData& _pData);
-        void create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions);
-        void create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions);
-        void createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
+        void create2dDrawing(Parser& _parser, MemoryManager& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions);
+        void create3dDrawing(Parser& _parser, MemoryManager& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions);
+        void createStd3dPlot(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
         bool plotstd3d(PlotData& _pData, mglData _mData[3], mglData _mData2[3], const short nType);
         bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines);
         long getNN(const mglData& _mData);
-        void evaluatePlotParamString(Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-        void filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose);
+        void evaluatePlotParamString(Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+        void filename(PlotData& _pData, MemoryManager& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose);
         void setStyles(PlotData& _pData);
         string expandStyleForCurveArray(const string& sCurrentStyle, bool expand);
-        void evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
+        void evaluateSubplot(PlotData& _pData, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);
         void displayMessage(PlotData& _pData, const Settings& _option, bool bAnimateVar);
-        void evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2]);
-        void createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data, const Settings& _option);
-        string constructDataLegendElement(Parser& _parser, Datafile& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName);
+        void evaluateDataPlots(PlotData& _pData, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2]);
+        void createDataLegends(PlotData& _pData, Parser& _parser, MemoryManager& _data, const Settings& _option);
+        string constructDataLegendElement(Parser& _parser, MemoryManager& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName);
         void calculateDataRanges(PlotData& _pData, const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, const VectorIndex& _vLine, size_t numberofColNodes = 2);
         size_t countValidElements(const mglData& _mData);
         void separateLegends();
@@ -115,7 +115,7 @@ class Plot
         }
 
     public:
-        Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData);
+        Plot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData);
         ~Plot();
         inline GraphHelper* createGraphHelper(const PlotData& _pData)
             {

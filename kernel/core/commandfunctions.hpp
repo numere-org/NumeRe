@@ -52,7 +52,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
 /// \return string
 ///
 /////////////////////////////////////////////////
-static string getVarList(const string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
+static string getVarList(const string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
 	mu::varmap_type mNumVars = _parser.GetVar();
 	map<string, string> mStringVars = NumeReKernel::getInstance()->getStringParser().getStringVars();
@@ -187,7 +187,7 @@ static bool undefineFunctions(string sFunctionList, FunctionDefinitionManager& _
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
+static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
 	int nType = 0;
 	string sObject = "";
@@ -625,7 +625,7 @@ static bool newObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool editObject(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
+static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
 	int nType = 0;
 	int nFileOpenFlag = 0;
@@ -1566,7 +1566,7 @@ static void listLogicalOperators(const Settings& _option)
 /// because the declared variables are also
 /// listed in the variables widget.
 /////////////////////////////////////////////////
-static void listDeclaredVariables(Parser& _parser, const Settings& _option, const Datafile& _data)
+static void listDeclaredVariables(Parser& _parser, const Settings& _option, const MemoryManager& _data)
 {
 	int nDataSetNum = 1;
 	map<string, int> VarMap;
@@ -1925,7 +1925,7 @@ static void listUnitConversions(const Settings& _option) //PRSRFUNC_LISTUNITS_*
 /// It is more or less a legacy function, because
 /// the plugins are also listed in the sidebar.
 /////////////////////////////////////////////////
-static void listInstalledPlugins(Parser& _parser, Datafile& _data, const Settings& _option)
+static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	string sDummy = "";
 	NumeReKernel::toggleTableStatus();
@@ -1992,7 +1992,7 @@ static void listInstalledPlugins(Parser& _parser, Datafile& _data, const Setting
 /// chekbox. There's no command available to enable
 /// this command.
 /////////////////////////////////////////////////
-static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
 	if (!_option.getUseExecuteCommand())
 		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
@@ -2139,7 +2139,7 @@ static bool executeCommand(string& sCmd, Parser& _parser, Datafile& _data, Funct
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void autoSave(Datafile& _data, Output& _out, Settings& _option)
+static void autoSave(MemoryManager& _data, Output& _out, Settings& _option)
 {
     // Only do something, if there's unsaved and valid data
 	if (_data.isValid() && !_data.getSaveStatus())
@@ -2214,7 +2214,7 @@ static string getPathForSetting(string& sCmd, const string& sPathParameter)
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _accessParser, Datafile& _data, Datafile& _cache)
+static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _accessParser, MemoryManager& _data, MemoryManager& _cache)
 {
     // Validize the obtained index sets
     if (!isValidIndexSet(_accessParser.getIndices()))
@@ -2254,7 +2254,7 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
 /// \return CommandReturnValues
 ///
 /////////////////////////////////////////////////
-static CommandReturnValues swapTables(string& sCmd, Datafile& _data, Settings& _option)
+static CommandReturnValues swapTables(string& sCmd, MemoryManager& _data, Settings& _option)
 {
     string sArgument;
 
@@ -2324,7 +2324,7 @@ static CommandReturnValues swapTables(string& sCmd, Datafile& _data, Settings& _
 static CommandReturnValues saveDataObject(string& sCmd)
 {
     // Get references to the main objects
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
@@ -2349,7 +2349,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
     if (_access.getDataObject().length())
     {
         // Create the new instance
-        Datafile _cache;
+        MemoryManager _cache;
 
         // Update the necessary parameters
         _cache.setTokens(_option.getTokenPaths());
@@ -2357,9 +2357,9 @@ static CommandReturnValues saveDataObject(string& sCmd)
 
         copyDataToTemporaryTable(sCmd, _access, _data, _cache);
 
-        // Update the name of the  cache table (force it)
+        // Update the name of the cache table (force it)
         if (_access.getDataObject() != "cache")
-            _cache.renameTable("cache", (_access.getDataObject() == "data" ? "copy_of_data" : _access.getDataObject()), true);
+            _cache.renameTable("cache", _access.getDataObject(), true);
 
         // If the command line contains string variables
         // get those values here
@@ -2372,7 +2372,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
         // Try to extract the file name, if it was passed
         if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(findParameter(sCmd, "file", '=')), sArgument))
         {
-            if (_cache.saveFile(_access.getDataObject() == "data" ? "copy_of_data" : _access.getDataObject(), sArgument, nPrecision))
+            if (_cache.saveFile(_access.getDataObject(), sArgument, nPrecision))
             {
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
@@ -2383,10 +2383,10 @@ static CommandReturnValues saveDataObject(string& sCmd)
                 throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
         }
         else
-            _cache.setPrefix(_access.getDataObject() == "data" ? "copy_of_data" : _access.getDataObject());
+            _cache.setPrefix(_access.getDataObject());
 
         // Auto-generate a file name during saving
-        if (_cache.saveFile(_access.getDataObject() == "data" ? "copy_of_data" : _access.getDataObject(), "", nPrecision))
+        if (_cache.saveFile(_access.getDataObject(), "", nPrecision))
         {
             if (_option.getSystemPrintStatus())
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
@@ -2439,7 +2439,7 @@ static CommandReturnValues cmd_find(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_integrate(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -2496,7 +2496,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_diff(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -2539,7 +2539,7 @@ static CommandReturnValues cmd_diff(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_extrema(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -2590,7 +2590,7 @@ static CommandReturnValues cmd_extrema(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_pulse(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -2615,7 +2615,7 @@ static CommandReturnValues cmd_pulse(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_eval(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -2659,7 +2659,7 @@ static CommandReturnValues cmd_eval(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_zeroes(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -2708,7 +2708,7 @@ static CommandReturnValues cmd_zeroes(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_sort(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -2867,7 +2867,7 @@ static CommandReturnValues cmd_dialog(string& sCmd)
     // dialog is a valid path and replace all placeholders
     if ((nControls & NumeRe::CTRL_FILEDIALOG || nControls & NumeRe::CTRL_FOLDERDIALOG) && sExpression.length() && sExpression != "\"\"")
     {
-        sExpression = kernel->getData().ValidFolderName(removeQuotationMarks(sExpression));
+        sExpression = kernel->getMemoryManager().ValidFolderName(removeQuotationMarks(sExpression));
     }
 
     // Get the window manager, create the modal window and
@@ -2895,7 +2895,7 @@ static CommandReturnValues cmd_dialog(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_plotting(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -2955,7 +2955,7 @@ static CommandReturnValues cmd_plotting(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_fit(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -2979,7 +2979,7 @@ static CommandReturnValues cmd_fit(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_fft(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -2998,7 +2998,7 @@ static CommandReturnValues cmd_fft(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_fwt(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -3017,7 +3017,7 @@ static CommandReturnValues cmd_fwt(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_get(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
@@ -3802,7 +3802,7 @@ static CommandReturnValues cmd_readline(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_read(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
@@ -3837,7 +3837,7 @@ static CommandReturnValues cmd_data(string& sCmd)
     // DEPRECATED: Declared at v1.1.2rc1
     NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
 
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Output& _out = NumeReKernel::getInstance()->getOutput();
@@ -3894,15 +3894,10 @@ static CommandReturnValues cmd_data(string& sCmd)
                     string sPath = "<loadpath>/";
                     if (sArgument.find('/') != string::npos)
                         sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-                    _data.openFile(sPath + vFilelist[0], _option, false, true, nArgument);
-                    Datafile _cache;
-                    _cache.setTokens(_option.getTokenPaths());
-                    _cache.setPath(_data.getPath(), false, _data.getProgramPath());
-                    for (unsigned int i = 1; i < vFilelist.size(); i++)
+
+                    for (unsigned int i = 0; i < vFilelist.size(); i++)
                     {
-                        _cache.removeData(false);
-                        _cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
-                        _data.melt(_cache);
+                        _data.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
                     }
                     if (_data.isValid())
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
@@ -3941,15 +3936,9 @@ static CommandReturnValues cmd_data(string& sCmd)
                     string sPath = "<loadpath>/";
                     if (sArgument.find('/') != string::npos)
                         sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-                    _data.openFile(sPath + vFilelist[0], _option, false, true, nArgument);
-                    Datafile _cache;
-                    _cache.setTokens(_option.getTokenPaths());
-                    _cache.setPath(_data.getPath(), false, _data.getProgramPath());
-                    for (unsigned int i = 1; i < vFilelist.size(); i++)
+                    for (unsigned int i = 0; i < vFilelist.size(); i++)
                     {
-                        _cache.removeData(false);
-                        _cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
-                        _data.melt(_cache);
+                        _data.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
                     }
                     if (_data.isValid())
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
@@ -3980,7 +3969,8 @@ static CommandReturnValues cmd_data(string& sCmd)
     }
     else if (findParameter(sCmd, "paste") || findParameter(sCmd, "pasteload"))
     {
-        _data.pasteLoad(_option);
+        PasteHandler _handler;
+        _data.melt(_handler.pasteLoad(_option), "data");
         if (_data.isValid())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_PASTE_SUCCESS", toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
         //NumeReKernel::print(LineBreak("|-> Die Daten wurden erfolgreich eingefügt: Der Datensatz besteht nun aus "+toString(_data.getLines("data"))+" Zeile(n) und "+toString(_data.getCols("data"))+" Spalte(n).", _option) );
@@ -4426,7 +4416,7 @@ static CommandReturnValues cmd_data(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_new(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -4465,7 +4455,7 @@ static CommandReturnValues cmd_new(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_edit(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -4522,7 +4512,7 @@ static CommandReturnValues cmd_taylor(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_quit(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -4564,7 +4554,7 @@ static CommandReturnValues cmd_firststart(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_odesolve(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -4595,7 +4585,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
 {
     // DEPRECATED: Declared at v1.1.2rc1
     NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Output& _out = NumeReKernel::getInstance()->getOutput();
@@ -5023,10 +5013,12 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
 /// \param sCmd string&
 /// \return CommandReturnValues
 ///
+/// \todo Evaluate, whether the "clear" command
+/// actual fits the current design.
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_clear(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (findParameter(sCmd, "data") || sCmd.find(" data()", findCommand(sCmd).nPos) != string::npos)
@@ -5055,12 +5047,12 @@ static CommandReturnValues cmd_clear(string& sCmd)
             if (_option.getSystemPrintStatus())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"));
         }
+
         return COMMAND_PROCESSED;
     }
     else
-    {
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
-    }
+
     return COMMAND_PROCESSED;
 }
 
@@ -5148,7 +5140,7 @@ static CommandReturnValues cmd_install(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_copy(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -5233,7 +5225,7 @@ static CommandReturnValues cmd_credits(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_append(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -5312,7 +5304,7 @@ static CommandReturnValues cmd_append(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_audio(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -5336,7 +5328,7 @@ static CommandReturnValues cmd_audio(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_imread(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -5355,7 +5347,7 @@ static CommandReturnValues cmd_imread(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_write(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     //Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -5378,7 +5370,7 @@ static CommandReturnValues cmd_write(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_workpath(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
@@ -5470,13 +5462,13 @@ static CommandReturnValues cmd_warn(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_stats(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Output& _out = NumeReKernel::getInstance()->getOutput();
 
     string sArgument = evaluateParameterValues(sCmd);
 
-    if (findParameter(sCmd, "data") && _data.isValid())
+    if (findParameter(sCmd, "data") && !_data.isEmpty("data"))
     {
         // DEPRECATED: Declared at v1.1.2rc2
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
@@ -5494,7 +5486,7 @@ static CommandReturnValues cmd_stats(string& sCmd)
 
         if (_accessParser.getDataObject().length())
         {
-            Datafile _cache;
+            MemoryManager _cache;
 
             copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
 
@@ -5528,7 +5520,7 @@ static CommandReturnValues cmd_stats(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_stfa(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -5554,7 +5546,7 @@ static CommandReturnValues cmd_stfa(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_spline(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -5604,7 +5596,7 @@ static CommandReturnValues cmd_save(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_set(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -6216,7 +6208,7 @@ static CommandReturnValues cmd_script(string& sCmd)
 static CommandReturnValues cmd_show(string& sCmd)
 {
     // Get references to the main objects
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -6291,7 +6283,7 @@ static CommandReturnValues cmd_show(string& sCmd)
             }
             else
             {
-                Datafile _cache;
+                MemoryManager _cache;
 
                 // Validize the obtained index sets
                 if (!isValidIndexSet(_accessParser.getIndices()))
@@ -6351,7 +6343,7 @@ static CommandReturnValues cmd_show(string& sCmd)
 static CommandReturnValues cmd_smooth(string& sCmd)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
@@ -6478,7 +6470,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_string(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (findParameter(sCmd, "clear"))
@@ -6514,7 +6506,7 @@ static CommandReturnValues cmd_string(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_swap(string& sCmd)
 {
-    return swapTables(sCmd, NumeReKernel::getInstance()->getData(), NumeReKernel::getInstance()->getSettings());
+    return swapTables(sCmd, NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
 }
 
 
@@ -6528,7 +6520,7 @@ static CommandReturnValues cmd_swap(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_hist(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
@@ -6536,7 +6528,7 @@ static CommandReturnValues cmd_hist(string& sCmd)
     string sArgument = evaluateParameterValues(sCmd);
     string sCommand = findCommand(sCmd).sString;
 
-    if (findParameter(sCmd, "data") && _data.isValid())
+    if (findParameter(sCmd, "data") && !_data.isEmpty("data"))
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRACATED"));
@@ -6555,7 +6547,7 @@ static CommandReturnValues cmd_hist(string& sCmd)
 
         if (_accessParser.getDataObject().length())
         {
-            Datafile _cache;
+            MemoryManager _cache;
 
             copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
 
@@ -6613,7 +6605,7 @@ static CommandReturnValues cmd_help(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_move(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -6686,7 +6678,7 @@ static CommandReturnValues cmd_hline(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_matop(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -6706,7 +6698,7 @@ static CommandReturnValues cmd_matop(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_random(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -6762,7 +6754,7 @@ static CommandReturnValues cmd_redefine(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_resample(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -6864,7 +6856,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_remove(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -6929,7 +6921,7 @@ static CommandReturnValues cmd_remove(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_rename(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
@@ -6997,7 +6989,7 @@ static CommandReturnValues cmd_rename(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_reload(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -7017,7 +7009,7 @@ static CommandReturnValues cmd_reload(string& sCmd)
             if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
 
-            if (_data.isValid())
+            if (!_data.isEmpty("data"))
             {
                 _data.removeData(false);
 
@@ -7034,13 +7026,13 @@ static CommandReturnValues cmd_reload(string& sCmd)
                 else
                     _data.openFile(sArgument, _option);
 
-                if (_data.isValid() && _option.getSystemPrintStatus())
+                if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) );
             }
             else
                 load_data(_data, _option, _parser, sArgument);
         }
-        else if (_data.isValid())
+        else if (!_data.isEmpty("data"))
         {
             if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !findParameter(sCmd, "data", '='))
                 throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, sCmd, SyntaxError::invalid_position);
@@ -7052,7 +7044,7 @@ static CommandReturnValues cmd_reload(string& sCmd)
             _data.removeData(false);
             _data.openFile(sArgument, _option, false, true);
 
-            if (_data.isValid() && _option.getSystemPrintStatus())
+            if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"));
         }
         else
@@ -7073,7 +7065,7 @@ static CommandReturnValues cmd_reload(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_retouch(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (!_data.containsTablesOrClusters(sCmd))
@@ -7154,7 +7146,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_regularize(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -7180,7 +7172,7 @@ static CommandReturnValues cmd_define(string& sCmd)
 {
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     if (sCmd.length() > 8)
     {
@@ -7231,7 +7223,7 @@ static CommandReturnValues cmd_define(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_delete(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -7330,7 +7322,7 @@ static CommandReturnValues cmd_delete(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_datagrid(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -7356,7 +7348,7 @@ static CommandReturnValues cmd_datagrid(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_list(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -7445,7 +7437,7 @@ static CommandReturnValues cmd_list(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_load(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -7481,7 +7473,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 _data.setbLoadEmptyColsInNextFile(true);
             if (findParameter(sCmd, "tocache") && !findParameter(sCmd, "all"))
             {
-                Datafile _cache;
+                MemoryManager _cache;
                 _cache.setTokens(_option.getTokenPaths());
                 _cache.setPath(_option.getLoadPath(), false, _option.getExePath());
                 _cache.openFile(sArgument, _option, false, true, nArgument);
@@ -7501,7 +7493,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                         }
                     }
                 }
-                if (_data.isValid() && _data.getCols(sArgument, false))
+                if (!_data.isEmpty(sArgument))
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))), _option) );
                 return COMMAND_PROCESSED;
             }
@@ -7516,7 +7508,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 if (sArgument.find('/') != string::npos)
                     sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
                 string sTarget = generateCacheName(sPath + vFilelist[0], _option);
-                Datafile _cache;
+                MemoryManager _cache;
                 _cache.setTokens(_option.getTokenPaths());
                 _cache.setPath(_data.getPath(), false, _data.getProgramPath());
                 for (unsigned int i = 0; i < vFilelist.size(); i++)
@@ -7541,14 +7533,14 @@ static CommandReturnValues cmd_load(string& sCmd)
                     _cache.removeData(false);
                     nArgument = -1;
                 }
-                if (_data.isValid())
+                if (!_data.isEmpty("data"))
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument), _option) );
                 //NumeReKernel::print(LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
                 return COMMAND_PROCESSED;
             }
             if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
             {
-                if (_data.isValid())
+                if (!_data.isEmpty("data"))
                 {
                     if (_option.getSystemPrintStatus())
                         _data.removeData(false);
@@ -7565,17 +7557,12 @@ static CommandReturnValues cmd_load(string& sCmd)
                     string sPath = "<loadpath>/";
                     if (sArgument.find('/') != string::npos)
                         sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-                    _data.openFile(sPath + vFilelist[0], _option, false, true, nArgument);
-                    Datafile _cache;
-                    _cache.setTokens(_option.getTokenPaths());
-                    _cache.setPath(_data.getPath(), false, _data.getProgramPath());
-                    for (unsigned int i = 1; i < vFilelist.size(); i++)
+
+                    for (unsigned int i = 0; i < vFilelist.size(); i++)
                     {
-                        _cache.removeData(false);
-                        _cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
-                        _data.melt(_cache);
+                        _data.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
                     }
-                    if (_data.isValid())
+                    if (!_data.isEmpty("data"))
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                     //NumeReKernel::print(LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
                     return COMMAND_PROCESSED;
@@ -7592,12 +7579,12 @@ static CommandReturnValues cmd_load(string& sCmd)
                 }
                 else
                     _data.openFile(sArgument, _option, false, true, nArgument);
-                if (_data.isValid() && _option.getSystemPrintStatus())
+                if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
 
             }
-            else if (!_data.isValid())
+            else if (_data.isEmpty("data"))
             {
                 if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
                 {
@@ -7609,17 +7596,12 @@ static CommandReturnValues cmd_load(string& sCmd)
                     string sPath = "<loadpath>/";
                     if (sArgument.find('/') != string::npos)
                         sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-                    _data.openFile(sPath + vFilelist[0], _option, false, true, nArgument);
-                    Datafile _cache;
-                    _cache.setTokens(_option.getTokenPaths());
-                    _cache.setPath(_data.getPath(), false, _data.getProgramPath());
-                    for (unsigned int i = 1; i < vFilelist.size(); i++)
+
+                    for (unsigned int i = 0; i < vFilelist.size(); i++)
                     {
-                        _cache.removeData(false);
-                        _cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
-                        _data.melt(_cache);
+                        _data.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
                     }
-                    if (_data.isValid())
+                    if (!_data.isEmpty("data"))
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                     //NumeReKernel::print(LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
                     return COMMAND_PROCESSED;
@@ -7635,7 +7617,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 }
                 else
                     _data.openFile(sArgument, _option, false, false, nArgument);
-                if (_data.isValid() && _option.getSystemPrintStatus())
+                if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
 
@@ -7762,7 +7744,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 // Single file directly to cache
                 NumeRe::FileHeaderInfo info = _data.openFile(sArgument, _option, true, true);
 
-                if (_data.isValid() && _data.getCols(info.sTableName, false))
+                if (!_data.isEmpty(info.sTableName))
                 {
                     NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
                     sCmd = sExpr;
@@ -7793,15 +7775,15 @@ static CommandReturnValues cmd_load(string& sCmd)
                 for (size_t i = 0; i < vFilelist.size(); i++)
                     _data.openFile(vFilelist[i], _option, true, true);
 
-                if (_data.isValid())
+                if (!_data.isEmpty(vFilelist.front()))
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument));
 
                 return COMMAND_PROCESSED;
             }
 
-            if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore") || !_data.isValid())
+            if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore") || _data.isEmpty("data"))
             {
-                if (_data.isValid())
+                if (!_data.isEmpty("data"))
                     _data.removeData();
 
                 // multiple files
@@ -7815,19 +7797,13 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (!vFilelist.size())
                         throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
 
-                    _data.openFile(vFilelist[0], _option, false, true, nArgument);
-                    Datafile _cache;
-                    _cache.setTokens(_option.getTokenPaths());
-                    _cache.setPath(_data.getPath(), false, _data.getProgramPath());
-
-                    for (size_t i = 1; i < vFilelist.size(); i++)
+                    for (size_t i = 0; i < vFilelist.size(); i++)
                     {
-                        _cache.removeData(false);
-                        _cache.openFile(vFilelist[i], _option, false, true, nArgument);
-                        _data.melt(_cache);
+                        // Melting is done automatically
+                        _data.openFile(vFilelist[i], _option, false, true, nArgument);
                     }
 
-                    if (_data.isValid())
+                    if (!_data.isEmpty("data"))
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
                     vector<double> vIndices = {1, _data.getLines("data", false), 1, _data.getCols("data", false)};
@@ -7851,7 +7827,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 else
                     _data.openFile(sArgument, _option, false, true, nArgument);
 
-                if (_data.isValid())
+                if (!_data.isEmpty("data"))
                 {
                     if (_option.getSystemPrintStatus())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
@@ -7886,7 +7862,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_execute(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -7907,15 +7883,16 @@ static CommandReturnValues cmd_execute(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_paste(string& sCmd)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     if (findParameter(sCmd, "data"))
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
-        _data.pasteLoad(_option);
-        if (_data.isValid())
+        PasteHandler _handler;
+        _data.melt(_handler.pasteLoad(_option), "data");
+        if (!_data.isEmpty("data"))
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_PASTE_SUCCESS", toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
 
         return COMMAND_PROCESSED;

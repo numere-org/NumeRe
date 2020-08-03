@@ -71,7 +71,7 @@ static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, dou
 static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFile, const string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const vector<double>& vInitialVals, size_t nSize, const string& sFitAnalysis, const string& sFuncDisplay, const string& sFittedFunction, double dChisq);
 
 // This is the fitting main routine
-bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     // Declare the FittingData object first
     FittingData fitData;
@@ -408,7 +408,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefiniti
 static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, Indices& _idx, string& sTeXExportFile, bool& bTeXExport, bool& bMaskDialog)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -771,7 +771,7 @@ static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varm
 // members in the FittingData object
 static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData& fitData)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     vector<double> vTempZ;
     string sDataTable = "";
     Indices _idx;
@@ -1160,7 +1160,7 @@ static void removeObsoleteParentheses(string& sFunction)
 static bool calculateChiMap(string sFunctionDefString, const string& sFuncDisplay, Indices& _idx, mu::varmap_type& varMap, mu::varmap_type& paramsMap, FittingData& fitData, vector<double> vInitialVals)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 

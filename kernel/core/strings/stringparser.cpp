@@ -38,7 +38,7 @@ namespace NumeRe
     /// \param option Settings&
     ///
     /////////////////////////////////////////////////
-    StringParser::StringParser(mu::Parser& parser, Datafile& data, Settings& option) : StringLogicParser(), StringFuncHandler(), _parser(parser), _data(data), _option(option)
+    StringParser::StringParser(mu::Parser& parser, MemoryManager& data, Settings& option) : StringLogicParser(), StringFuncHandler(), _parser(parser), _data(data), _option(option)
     {
         declareStringFuncs(getStringFuncHandles());
 

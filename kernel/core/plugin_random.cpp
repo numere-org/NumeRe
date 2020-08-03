@@ -26,7 +26,7 @@
 
 const string PI_RAND = "0.2.3";
 
-void plugin_random(string& sCmd, Datafile& _data, Output& _out, Settings& _option, bool bAllowOverride)
+void plugin_random(string& sCmd, MemoryManager& _data, Output& _out, Settings& _option, bool bAllowOverride)
 {
     long long int nDataPoints = 0;			// Variable zur Festlegung, wie viele Datenpunkte erzeugt werden sollen
     long long int nDataRows = 0;

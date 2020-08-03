@@ -19,6 +19,7 @@
 
 #include "datafile.hpp"
 #include "../../kernel.hpp"
+#include "../ui/error.hpp"
 
 #include <boost/tokenizer.hpp>
 
@@ -28,32 +29,28 @@ using namespace std;
 using namespace boost;
 
 size_t qSortDouble(double* dArray, size_t nlength);
+string toString(int);
+string toLowerCase(const string&);
 
+
+int findParameter(const string& sCmd, const string& sParam, const char cFollowing);
+string getArgAtPos(const string& sCmd, unsigned int nPos);
+void StripSpaces(string& sToStrip);
+string getClipboardText();
+string utf8parser(const string& sString);
+int StrToInt(const string&);
 
 /*
  * Realisierung der Datafile-Klasse
  */
 
 // --> Standard-Konstruktor <--
-Datafile::Datafile() : MemoryManager()
+PasteHandler::PasteHandler()
 {
-    bValidData = false;
 }
 
-// --> Allgemeiner Konstruktor <--
-Datafile::Datafile(long long int _nLines, long long int _nCols) : MemoryManager()
-{
-    bValidData = false;
-}
 
-// --> Destruktor <--
-Datafile::~Datafile()
-{
-    if(file_in.is_open())
-        file_in.close();
-}
-
-vector<string> Datafile::getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens)
+vector<string> PasteHandler::getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens)
 {
     vector<string> vPaste;
     string sLine;
@@ -115,97 +112,128 @@ vector<string> Datafile::getPastedDataFromCmdLine(const Settings& _option, bool&
 }
 
 // --> Lese den Inhalt eines Tabellenpastes <--
-void Datafile::pasteLoad(const Settings& _option)
+Memory* PasteHandler::pasteLoad(const Settings& _option)
 {
-    if (!bValidData)
+    vector<string> vPaste;
+    string sLine = "";
+    string sClipboard = getClipboardText();
+    boost::char_separator<char> sep(" ");
+    long long int nSkip = 0;
+    long long int nColsTemp = 0;
+    bool bKeepEmptyTokens = false;
+    bool bReadClipboard = (bool)(sClipboard.length());
+    long long int nLines = 0;
+    long long int nCols = 0;
+
+    //cerr << sClipboard << endl;
+
+    if (!sClipboard.length())
     {
-        vector<string> vPaste;
-        string sLine = "";
-        string sClipboard = getClipboardText();
-        boost::char_separator<char> sep(" ");
-        long long int nSkip = 0;
-        long long int nColsTemp = 0;
-        bool bKeepEmptyTokens = false;
-        bool bReadClipboard = (bool)(sClipboard.length());
-        long long int nLines = 0;
-        long long int nCols = 0;
-
-        //cerr << sClipboard << endl;
-
-        if (!sClipboard.length())
+        vPaste = getPastedDataFromCmdLine(_option, bKeepEmptyTokens);
+    }
+    else
+    {
+        while (true)
         {
+            if (!sClipboard.length() || sClipboard == "\n")
+                break;
+            sLine = sClipboard.substr(0, sClipboard.find('\n'));
+            if (sLine.back() == (char)13) // CR entfernen
+                sLine.pop_back();
+            //cerr << sLine << " " << (int)sLine.back() << endl;
+            if (sClipboard.find('\n') != string::npos)
+                sClipboard.erase(0, sClipboard.find('\n')+1);
+            else
+                sClipboard.clear();
+            //StripSpaces(sLine);
+            if (!isNumeric(sLine) && sLine.find(' ') != string::npos && sLine.find('\t') != string::npos)
+            {
+                for (unsigned int i = 0; i < sLine.length(); i++)
+                {
+                    if (sLine[i] == ' ')
+                        sLine[i] = '_';
+                }
+                if (!bKeepEmptyTokens)
+                    bKeepEmptyTokens = true;
+            }
+            replaceTabSign(sLine);
+            if (sLine.find_first_not_of(' ') == string::npos)
+                continue;
+            if (isNumeric(sLine) && sLine.find(',') != string::npos && sLine.find('.') == string::npos)
+                replaceDecimalSign(sLine);
+            else if (sLine.find(',') != string::npos && sLine.find(';') != string::npos)
+            {
+                for (unsigned int i = 0; i < sLine.length(); i++)
+                {
+                    if (sLine[i] == ',')
+                        sLine[i] = '.';
+                    if (sLine[i] == ';')
+                    {
+                        if (!bKeepEmptyTokens)
+                            bKeepEmptyTokens = true;
+                        sLine[i] = ' ';
+                    }
+                }
+            }
+            else
+            {
+                for (unsigned int i = 0; i < sLine.length(); i++)
+                {
+                    if (sLine[i] == ',')
+                    {
+                        if (!bKeepEmptyTokens)
+                            bKeepEmptyTokens = true;
+                        sLine[i] = ' ';
+                    }
+                }
+            }
+            vPaste.push_back(sLine);
+        }
+        if (!vPaste.size())
+        {
+            bReadClipboard = false;
+            bKeepEmptyTokens = false;
             vPaste = getPastedDataFromCmdLine(_option, bKeepEmptyTokens);
         }
-        else
+    }
+    //cerr << vPaste.size() << endl;
+    if (!vPaste.size())
+        return nullptr;
+
+    nLines = vPaste.size();
+    //cerr << nLines << endl;
+    for (unsigned int i = 0; i < vPaste.size(); i++)
+    {
+        if (!isNumeric(vPaste[i]))
         {
-            while (true)
+            nLines--;
+            nSkip++;
+            if (nLines > i+1 && vPaste[i+1].find(' ') == string::npos && vPaste[i].find(' ') != string::npos)
             {
-                if (!sClipboard.length() || sClipboard == "\n")
-                    break;
-                sLine = sClipboard.substr(0, sClipboard.find('\n'));
-                if (sLine.back() == (char)13) // CR entfernen
-                    sLine.pop_back();
-                //cerr << sLine << " " << (int)sLine.back() << endl;
-                if (sClipboard.find('\n') != string::npos)
-                    sClipboard.erase(0, sClipboard.find('\n')+1);
-                else
-                    sClipboard.clear();
-                //StripSpaces(sLine);
-                if (!isNumeric(sLine) && sLine.find(' ') != string::npos && sLine.find('\t') != string::npos)
+                for (unsigned int j = 0; j < vPaste[i].size(); j++)
                 {
-                    for (unsigned int i = 0; i < sLine.length(); i++)
-                    {
-                        if (sLine[i] == ' ')
-                            sLine[i] = '_';
-                    }
-                    if (!bKeepEmptyTokens)
-                        bKeepEmptyTokens = true;
+                    if (vPaste[i][j] == ' ')
+                        vPaste[i][j] = '_';
                 }
-                replaceTabSign(sLine);
-                if (sLine.find_first_not_of(' ') == string::npos)
-                    continue;
-                if (isNumeric(sLine) && sLine.find(',') != string::npos && sLine.find('.') == string::npos)
-                    replaceDecimalSign(sLine);
-                else if (sLine.find(',') != string::npos && sLine.find(';') != string::npos)
-                {
-                    for (unsigned int i = 0; i < sLine.length(); i++)
-                    {
-                        if (sLine[i] == ',')
-                            sLine[i] = '.';
-                        if (sLine[i] == ';')
-                        {
-                            if (!bKeepEmptyTokens)
-                                bKeepEmptyTokens = true;
-                            sLine[i] = ' ';
-                        }
-                    }
-                }
-                else
-                {
-                    for (unsigned int i = 0; i < sLine.length(); i++)
-                    {
-                        if (sLine[i] == ',')
-                        {
-                            if (!bKeepEmptyTokens)
-                                bKeepEmptyTokens = true;
-                            sLine[i] = ' ';
-                        }
-                    }
-                }
-                vPaste.push_back(sLine);
-            }
-            if (!vPaste.size())
-            {
-                bReadClipboard = false;
-                bKeepEmptyTokens = false;
-                vPaste = getPastedDataFromCmdLine(_option, bKeepEmptyTokens);
             }
         }
-        //cerr << vPaste.size() << endl;
+        else
+            break;
+    }
+    //cerr << nLines << endl;
+    if (!nLines && !bReadClipboard)
+    {
+        NumeReKernel::print(LineBreak(_lang.get("DATA_COULD_NOT_IDENTIFY_PASTED_CONTENT"), _option));
+        return nullptr;
+    }
+    else if (bReadClipboard && !nLines)
+    {
+        bKeepEmptyTokens = false;
+        vPaste = getPastedDataFromCmdLine(_option, bKeepEmptyTokens);
         if (!vPaste.size())
-            return;
-
+            return nullptr;
         nLines = vPaste.size();
+        nSkip = 0;
         //cerr << nLines << endl;
         for (unsigned int i = 0; i < vPaste.size(); i++)
         {
@@ -225,97 +253,47 @@ void Datafile::pasteLoad(const Settings& _option)
             else
                 break;
         }
-        //cerr << nLines << endl;
-        if (!nLines && !bReadClipboard)
+        if (!nLines)
         {
             NumeReKernel::print(LineBreak(_lang.get("DATA_COULD_NOT_IDENTIFY_PASTED_CONTENT"), _option));
-            return;
+            return nullptr;
         }
-        else if (bReadClipboard && !nLines)
+    }
+
+    if (bKeepEmptyTokens)
+    {
+        sep = char_separator<char>(" ","", boost::keep_empty_tokens);
+    }
+    for (unsigned int i = 0; i < vPaste.size(); i++)
+    {
+        nColsTemp = 0;
+        stripTrailingSpaces(vPaste[i]);
+        //cerr << vPaste[i] << endl;
+        tokenizer<char_separator<char> > tok(vPaste[i],sep);
+        for (auto iter = tok.begin(); iter != tok.end(); ++iter)
+            nColsTemp++;
+        if (nColsTemp > nCols)
+            nCols = nColsTemp;
+    }
+
+    Memory* _mem = new Memory(nLines, nCols);
+
+    for (unsigned int i = 0; i < vPaste.size(); i++)
+    {
+        tokenizer<char_separator<char> > tok(vPaste[i], sep);
+        long long int j = 0;
+        for (auto iter = tok.begin(); iter != tok.end(); ++iter)
         {
-            bKeepEmptyTokens = false;
-            vPaste = getPastedDataFromCmdLine(_option, bKeepEmptyTokens);
-            if (!vPaste.size())
-                return;
-            nLines = vPaste.size();
-            nSkip = 0;
-            //cerr << nLines << endl;
-            for (unsigned int i = 0; i < vPaste.size(); i++)
+            sLine = *iter;
+            if (sLine[sLine.length()-1] == '%')
+                sLine.erase(sLine.length()-1);
+            if (isNumeric(sLine) && sLine != "NAN" && sLine != "NaN" && sLine != "nan")
             {
-                if (!isNumeric(vPaste[i]))
-                {
-                    nLines--;
-                    nSkip++;
-                    if (nLines > i+1 && vPaste[i+1].find(' ') == string::npos && vPaste[i].find(' ') != string::npos)
-                    {
-                        for (unsigned int j = 0; j < vPaste[i].size(); j++)
-                        {
-                            if (vPaste[i][j] == ' ')
-                                vPaste[i][j] = '_';
-                        }
-                    }
-                }
-                else
-                    break;
-            }
-            if (!nLines)
-            {
-                NumeReKernel::print(LineBreak(_lang.get("DATA_COULD_NOT_IDENTIFY_PASTED_CONTENT"), _option));
-                return;
-            }
-        }
-
-        if (bKeepEmptyTokens)
-        {
-            sep = char_separator<char>(" ","", boost::keep_empty_tokens);
-        }
-        for (unsigned int i = 0; i < vPaste.size(); i++)
-        {
-            nColsTemp = 0;
-            stripTrailingSpaces(vPaste[i]);
-            //cerr << vPaste[i] << endl;
-            tokenizer<char_separator<char> > tok(vPaste[i],sep);
-            for (auto iter = tok.begin(); iter != tok.end(); ++iter)
-                nColsTemp++;
-            if (nColsTemp > nCols)
-                nCols = nColsTemp;
-        }
-
-        sDataFile = "Pasted Data";
-
-        Memory* _mem = new Memory(nLines, nCols);
-
-        for (unsigned int i = 0; i < vPaste.size(); i++)
-        {
-            tokenizer<char_separator<char> > tok(vPaste[i], sep);
-            long long int j = 0;
-            for (auto iter = tok.begin(); iter != tok.end(); ++iter)
-            {
-                sLine = *iter;
-                if (sLine[sLine.length()-1] == '%')
-                    sLine.erase(sLine.length()-1);
-                if (isNumeric(sLine) && sLine != "NAN" && sLine != "NaN" && sLine != "nan")
-                {
-                    if (i < nSkip && nSkip)
-                    {
-                        if (sLine.length())
-                        {
-                            if (!i)
-                                _mem->setHeadLineElement(j, sLine);
-                            else
-                                _mem->setHeadLineElement(j, _mem->getHeadLineElement(j) + "\\n" + sLine);
-                        }
-                    }
-                    else
-                    {
-                        _mem->writeData(i-nSkip, j, StrToDb(sLine));
-                    }
-                }
-                else if (i < nSkip && nSkip)
+                if (i < nSkip && nSkip)
                 {
                     if (sLine.length())
                     {
-                        if (!i || _mem->getHeadLineElement(j) == _lang.get("COMMON_COL") + "_" + toString(j+1))
+                        if (!i)
                             _mem->setHeadLineElement(j, sLine);
                         else
                             _mem->setHeadLineElement(j, _mem->getHeadLineElement(j) + "\\n" + sLine);
@@ -323,25 +301,35 @@ void Datafile::pasteLoad(const Settings& _option)
                 }
                 else
                 {
-                    _mem->writeData(i-nSkip, j, NAN);
+                    _mem->writeData(i-nSkip, j, StrToDb(sLine));
                 }
-                j++;
-                if (j == nCols)
-                    break;
             }
+            else if (i < nSkip && nSkip)
+            {
+                if (sLine.length())
+                {
+                    if (!i || _mem->getHeadLineElement(j) == _lang.get("COMMON_COL") + "_" + toString(j+1))
+                        _mem->setHeadLineElement(j, sLine);
+                    else
+                        _mem->setHeadLineElement(j, _mem->getHeadLineElement(j) + "\\n" + sLine);
+                }
+            }
+            else
+            {
+                _mem->writeData(i-nSkip, j, NAN);
+            }
+            j++;
+            if (j == nCols)
+                break;
         }
     }
-    else
-    {
-        Datafile _tempData;
-        _tempData.pasteLoad(_option);
-        melt(_tempData);
-    }
 
-    bValidData = true;
+    return _mem;
 }
 
-bool Datafile::isNumeric(const string& _sString)
+
+
+bool PasteHandler::isNumeric(const string& _sString)
 {
     if (!_sString.length())
         return false;
@@ -377,11 +365,6 @@ bool Datafile::isNumeric(const string& _sString)
     return true;
 }
 
-// --> Spannend: Macht aus den Daten zweier Datafile-Objekte eine Tabelle, die im operierenden Objekt gespeichert wird <--
-void Datafile::melt(Datafile& _cache)
-{
-    MemoryManager::melt(_cache.getTable("data"), "data");
-}
 
 
 

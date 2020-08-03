@@ -29,8 +29,8 @@
 Integration_Vars parser_iVars;
 static double localizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
-static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
-static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
+static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option);
+static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
 
@@ -167,7 +167,7 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
     vector<double> vResult;
 
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     // Extract the integration interval
@@ -229,7 +229,7 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
     }
     else
     {
-        Datafile _cache;
+        MemoryManager _cache;
 
         // Copy the data
         for (size_t i = 0; i < _idx.row.size(); i++)
@@ -300,7 +300,7 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sParams = "";        // Parameter-string
     string sIntegrationExpression;
@@ -695,7 +695,7 @@ static void refreshBoundaries(const string& sRenewBoundariesExpression, double& 
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string __sCmd = findCommand(sCmd).sString;
     string sParams = "";            // Parameter-string
@@ -1381,7 +1381,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, FunctionDefinitionManager& _functions)
+vector<double> differentiate(const string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sExpr = sCmd.substr(findCommand(sCmd).sString.length() + findCommand(sCmd).nPos);
     string sEps = "";
@@ -1618,7 +1618,7 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             // explicitly
             //
             // Copy the data first and sort afterwards
-            Datafile _cache;
+            MemoryManager _cache;
 
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
@@ -1738,7 +1738,7 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
     value_type* v = _parser.Eval(nResults);
     vector<double> vResults;
     int nResults_x = 0;
-    Datafile _cache;
+    MemoryManager _cache;
 
     // Store the results in the second column of a table
     for (int i = 0; i < nResults; i++)
@@ -2011,7 +2011,7 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 21;
     int nOrder = 5;
@@ -2290,7 +2290,7 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
     _parser.SetExpr(sExpr);
     int nResults;
     value_type* v = _parser.Eval(nResults);
-    Datafile _cache;
+    MemoryManager _cache;
 
     vector<double> vResults;
     int nResults_x = 0;
@@ -2483,7 +2483,7 @@ static bool findZeroesInData(string& sCmd, string& sExpr, int nMode)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 21;
     double dVal[2];
@@ -3216,7 +3216,7 @@ static bool detectPhaseOverflow(std::complex<double> cmplx[3])
 /// amplitude layout and whether an inverse
 /// transform shall be calculated.
 /////////////////////////////////////////////////
-bool fastFourierTransform(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     mglDataC _fftData;
     Indices _idx;
@@ -3399,7 +3399,7 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
 /// whether an inverse transform shall be
 /// calculated.
 /////////////////////////////////////////////////
-bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     vector<double> vWaveletData;
     vector<double> vAxisData;
@@ -3585,7 +3585,7 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 100;
     double dLeft = 0.0;
@@ -3790,7 +3790,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     unsigned int nSamples = 100;
     string sXVals = "";
@@ -4048,7 +4048,7 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
 /// \return vector<size_t>
 ///
 /////////////////////////////////////////////////
-static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
+static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     vector<size_t> vSamples;
 
@@ -4120,7 +4120,7 @@ static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZ
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
+static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     vector<double> vVectorVals;
 
@@ -4290,7 +4290,7 @@ static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVal
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool writeAudioFile(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     using namespace little_endian_io;
 
@@ -4431,7 +4431,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefi
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     int nSamples = 100;
     string sDataset = "";
@@ -4469,7 +4469,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionD
     _idx = getIndices(sCmd, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
-    Datafile _cache;
+    MemoryManager _cache;
     getData(sDataset, _idx, _data, _cache);
 
     _cache.sortElements("cache -sort cols=1[2]");
@@ -4520,7 +4520,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionD
 /// maximal amplitude (which is different from
 /// the FWHM) and the energy in the pulse.
 /////////////////////////////////////////////////
-bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool analyzePulse(string& _sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDataset = "";
     Indices _idx;
@@ -4545,7 +4545,7 @@ bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, FunctionDefin
     _idx = getIndices(sCmd, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
-    Datafile _cache;
+    MemoryManager _cache;
     getData(sDataset, _idx, _data, _cache);
 
     long long int nLines = _cache.getLines("cache", false);
@@ -4613,7 +4613,7 @@ bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, FunctionDefin
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDataset = "";
     Indices _idx, _target;
@@ -4677,7 +4677,7 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
     _idx = getIndices(sCmd, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
-    Datafile _cache;
+    MemoryManager _cache;
     getData(sDataset, _idx, _data, _cache);
 
     sDataset = _cache.getHeadLineElement(1, "cache");
@@ -4764,10 +4764,10 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 /// The calculated spline polynomials are defined
 /// as new custom functions.
 /////////////////////////////////////////////////
-bool calculateSplines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Indices _idx;
-    Datafile _cache;
+    MemoryManager _cache;
     tk::spline _spline;
     vector<double> xVect, yVect;
     string sTableName = sCmd.substr(sCmd.find(' '));

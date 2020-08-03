@@ -80,7 +80,7 @@ CommandReturnValues commandHandler(string& sCmd)
         return cmd_data(sCmd);
 
     // Get a reference to the datafile object
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Try to find any other table in the command
     // string
@@ -115,7 +115,7 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 		return false;
 
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
 	string sTemp = sCmd;
@@ -234,7 +234,7 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 string evaluateParameterValues(const string& sCmd)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 

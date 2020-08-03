@@ -66,7 +66,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     sDataObject = sCommand.substr(pos, i - pos);
 
                     // Ensure that the table exists
-                    if (!instance->getData().isTable(sDataObject) && sDataObject != "string")
+                    if (!instance->getMemoryManager().isTable(sDataObject) && sDataObject != "string")
                     {
                         sDataObject.clear();
                         pos = string::npos;
@@ -74,7 +74,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     }
 
                     // Calculate the indices
-                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getMemoryManager(), instance->getSettings());
                     break;
                 }
                 else if (sCommand[i] == '{')
@@ -83,7 +83,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     sDataObject = sCommand.substr(pos, i - pos);
 
                     // Ensure that the cluster exists
-                    if (!instance->getData().isCluster(sDataObject))
+                    if (!instance->getMemoryManager().isCluster(sDataObject))
                     {
                         sDataObject.clear();
                         pos = string::npos;
@@ -93,7 +93,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     // Calculate the indices and switch the access
                     // to a cluster access
                     bIsCluster = true;
-                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getMemoryManager(), instance->getSettings());
                     break;
                 }
                 else
@@ -145,21 +145,20 @@ bool DataAccessParser::isCluster()
 
 
 
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs);
-static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option);
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs);
+static string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
-static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option, bool isCluster);
+static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, const Settings& _option, bool isCluster);
 static string createMafDataAccessString(const string& sAccessString, Parser& _parser);
 static string createEveryDefinition(const string& sLine, Parser& _parser);
 static string createMafVectorName(string sAccessString);
-static vector<double> MafDataAccess(Datafile& _data, const string& sMafname, const string& sCache, const string& sMafAccess);
+static vector<double> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess);
 static string getMafFromAccessString(const string& sAccessString);
 static string getMafAccessString(const string& sLine, const string& sEntity);
-static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, Datafile& _data);
+static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data);
 static string getLastToken(const string& sLine);
-static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option);
-static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const Indices& _idx, int nDim);
-static bool findDataTable(const string& sLine);
+static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option);
+static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim);
 
 
 /////////////////////////////////////////////////
@@ -179,7 +178,7 @@ static bool findDataTable(const string& sLine);
 /// public and replaces all calls to a single
 /// data entity.
 /////////////////////////////////////////////////
-string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs)
+string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs)
 {
 	string sCache = "";             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
 	string sLine_Temp = "";         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
@@ -264,7 +263,7 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs)
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs)
 {
     // Try to find every cache and handle its contents
     if (_data.containsTables(sLine))
@@ -306,7 +305,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, Datafile& _
 /// to any data entity included in the current call
 /// to the specified data entity.
 /////////////////////////////////////////////////
-void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
+void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
 {
 	Indices _idx;
 	string sEntityOccurence = "";
@@ -513,7 +512,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 /// \return string
 ///
 /////////////////////////////////////////////////
-static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option)
+static string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	mu::CachedDataAccess _access;
 	Indices _idx;
@@ -602,7 +601,7 @@ static void replaceEntityStringOccurence(string& sLine, const string& sEntityOcc
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option, bool isCluster)
+static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, const Settings& _option, bool isCluster)
 {
 	sLine = " " + sLine + " ";
 
@@ -790,7 +789,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, Datafile& _data)
+static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data)
 {
 	size_t nPos = 0;
 	// Replace the access string with its corresponding vector name
@@ -912,7 +911,7 @@ static string getMafAccessString(const string& sLine, const string& sEntity)
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-static vector<double> MafDataAccess(Datafile& _data, const string& sMafname, const string& sCache, const string& sMafAccess)
+static vector<double> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess)
 {
 	if (sMafname == "std")
 		return _data.std(sCache, sMafAccess);
@@ -962,7 +961,7 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 	sExpr.erase(getMatchingParenthesis(sExpr)+1);
 
 	// Resolve possible remaining calls to data tables or clusters
-	getDataElements(sExpr, _parser, NumeReKernel::getInstance()->getData(), NumeReKernel::getInstance()->getSettings());
+	getDataElements(sExpr, _parser, NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
 
 	return "every=" + sExpr + " ";
 }
@@ -1036,7 +1035,7 @@ static string getLastToken(const string& sLine)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Datafile& _cache, int nDesiredCols, bool bSort)
+bool getData(const string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols, bool bSort)
 {
 	// write the data
 	// the first case uses vector indices
@@ -1096,7 +1095,7 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option)
+NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	string sDatatable = "data";                             // Int fuer die Position des aktuellen find-Treffers eines Daten-Objekts
 	int nColumns = 0;
@@ -1134,7 +1133,7 @@ NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser,
 /// \return int
 ///
 /////////////////////////////////////////////////
-static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option)
+static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option)
 {
     int nDim = 0;
 
@@ -1232,7 +1231,7 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const Indices& _idx, int nDim)
+static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim)
 {
     MemoryManager _cache;
     // Copy the contents of the data into the local cache object
@@ -1264,32 +1263,6 @@ static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, c
 
 	// Return the extracted table object
 	return _cache.extractTable(sDatatable);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This is a static helper function to
-/// identify, whether "data(" is used in the
-/// current expression.
-///
-/// \param sLine const string&
-/// \return bool
-///
-/////////////////////////////////////////////////
-static bool findDataTable(const string& sLine)
-{
-    size_t nQuotes = 0;
-
-    for (size_t i = 0; i < sLine.length(); i++)
-    {
-        if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
-            nQuotes++;
-
-        if (!(nQuotes % 2) && sLine.substr(i, 5) == "data(" && (!i || isDelimiter(sLine[i-1])))
-            return true;
-    }
-
-    return false;
 }
 
 
@@ -1364,7 +1337,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
             StripSpaces(sCluster);
 
             // Get a reference to the datafile object
-            Datafile& _data = NumeReKernel::getInstance()->getData();
+            MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
             // Declare the extracted cluster, if it is not
             // known to the clustermanager
@@ -1399,7 +1372,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 double getDataFromObject(const string& sObject, long long int i, long long int j, bool isCluster)
 {
     // Get a reference to the datafile object
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Fallback to ensure that valid indices are read
     if (i < 0 || j < 0)

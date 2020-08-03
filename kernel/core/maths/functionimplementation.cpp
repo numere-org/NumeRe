@@ -398,7 +398,7 @@ value_type parser_Norm(const value_type* vElements, int nElements)
 // --> Diese Funktion berechnet den Median mehrerer Werte <--
 value_type parser_Med(const value_type* vElements, int nElements)
 {
-    Datafile _cache;
+    MemoryManager _cache;
 
     for (int i = 0; i < nElements; i++)
         _cache.writeToTable(i,0,"cache",vElements[i]);
@@ -409,7 +409,7 @@ value_type parser_Med(const value_type* vElements, int nElements)
 // --> Diese Funktion berechnet das x-te Perzentil mehrerer Werte <--
 value_type parser_Pct(const value_type* vElements, int nElements)
 {
-    Datafile _cache;
+    MemoryManager _cache;
 
     for (int i = 0; i < nElements-1; i++)
         _cache.writeToTable(i,0,"cache",vElements[i]);

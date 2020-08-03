@@ -83,8 +83,8 @@ class Memory : public Sorter
 		bool retoqueRegion(RetoqueRegion& _region);
 
 		void reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
-		virtual int compare(int i, int j, int col);
-        virtual bool isValue(int line, int col);
+		virtual int compare(int i, int j, int col) override;
+        virtual bool isValue(int line, int col) override;
 		bool evaluateIndices(long long int& i1, long long int& i2, long long int& j1, long long int& j2);
 		void countAppendedZeroes();
 		void smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines);

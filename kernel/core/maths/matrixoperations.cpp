@@ -27,23 +27,23 @@
 #define EIGENVECTORS 1
 #define DIAGONALIZE 2
 
-static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 static size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos);
 static Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 static vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLine);
 static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static void parser_makeReal(Matrix& _mMatrix);
 static double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines);
 static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option);
 static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
-static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option);
+static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static map<string,string> createMatrixFunctionsMap();
-static bool containsMatrices(const string& sExpr, Datafile& _data);
+static bool containsMatrices(const string& sExpr, MemoryManager& _data);
 
 
 
-static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position);
@@ -53,10 +53,10 @@ static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols);
 Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols);
 static Matrix parser_shuffleMatrix(unsigned int nShuffle, unsigned int nBase);
 static Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_matFromCols(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_matFromLines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix transposeMatrix(const Matrix& _mMatrix);
 static Matrix parser_MatrixLogToIndex(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
@@ -99,7 +99,7 @@ static void parser_fillMissingMatrixElements(Matrix& _mMatrix);
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     vector<Indices> vIndices;
     vector<double> vMatrixVector;
@@ -276,7 +276,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, Func
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string __sCmd;
     size_t pos_back = 0;
@@ -1790,7 +1790,7 @@ static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, co
 ///
 /// Missing elements are filled up with zeros.
 /////////////////////////////////////////////////
-static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix parser_matFromCols(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     return transposeMatrix(parser_matFromLines(sCmd, _parser, _data, _functions, _option));
 }
@@ -1809,7 +1809,7 @@ static Matrix parser_matFromCols(string& sCmd, Parser& _parser, Datafile& _data,
 ///
 /// Missing elements are filled up logically.
 /////////////////////////////////////////////////
-static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     return transposeMatrix(parser_matFromLinesFilled(sCmd, _parser, _data, _functions, _option));
 }
@@ -1828,7 +1828,7 @@ static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, Datafile& 
 ///
 /// Missing elements are filled up with zeros.
 /////////////////////////////////////////////////
-static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix parser_matFromLines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _matfl;
     value_type* v = 0;
@@ -1887,7 +1887,7 @@ static Matrix parser_matFromLines(string& sCmd, Parser& _parser, Datafile& _data
 ///
 /// Missing elements are filled up logically.
 /////////////////////////////////////////////////
-static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _matfl;
     value_type* v = 0;
@@ -1981,7 +1981,7 @@ static vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLi
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _diag;
     value_type* v = 0;
@@ -2667,7 +2667,7 @@ static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
 
     Matrix _mReturn = createZeroesMatrix(1,1);
-    Datafile _cache;
+    MemoryManager _cache;
 
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -2700,7 +2700,7 @@ static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
 
     Matrix _mReturn = createZeroesMatrix(1,1);
-    Datafile _cache;
+    MemoryManager _cache;
 
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
@@ -3600,7 +3600,7 @@ static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _mReturn;
     Indices _idx = getIndices(sExpr, _mMatrix, _parser, _data, _option);
@@ -3919,7 +3919,7 @@ static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Fun
 /// \return Indices
 ///
 /////////////////////////////////////////////////
-Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, const Settings& _option)
+Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     Indices _idx;
     string sI[2] = {"<<NONE>>", "<<NONE>>"};
@@ -4162,7 +4162,7 @@ static void parser_declareMatrixReturnValuesForIndices(const string& _sCmd, cons
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, Parser&_parser, Datafile& _data)
+static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, Parser&_parser, MemoryManager& _data)
 {
     for (unsigned int j = 0; j < vIndices.size(); j++)
     {
@@ -4197,7 +4197,7 @@ static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector
 /// \return Indices
 ///
 /////////////////////////////////////////////////
-static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, Datafile& _data, const Settings& _option)
+static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     string _sCmd = sCmd;
 
@@ -4269,7 +4269,7 @@ static map<string,string> createMatrixFunctionsMap()
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool containsMatrices(const string& sExpr, Datafile& _data)
+static bool containsMatrices(const string& sExpr, MemoryManager& _data)
 {
     if (_data.containsTablesOrClusters(sExpr) || sExpr.find('{') != string::npos)
         return true;

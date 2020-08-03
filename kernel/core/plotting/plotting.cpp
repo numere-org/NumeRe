@@ -50,7 +50,7 @@ extern mglGraph _fontData;
 /// \return void
 ///
 /////////////////////////////////////////////////
-void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
+void createPlot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
 {
     Plot graph(sCmd, _data, _parser, _option, _functions, _pData);
 
@@ -161,7 +161,7 @@ static void writeTiff(mglGraph* _graph, const string& sOutputName)
 /// \param _pData PlotData&
 ///
 /////////////////////////////////////////////////
-Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
+Plot::Plot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
 {
     sFunc = "";                      // string mit allen Funktionen
     sLabels = "";                    // string mit den Namen aller Funktionen (Fuer die Legende)
@@ -467,7 +467,7 @@ void Plot::determinePlottingDimensions(const string& sPlotCommand)
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser, FunctionDefinitionManager& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+size_t Plot::createSubPlotSet(PlotData& _pData, MemoryManager& _data, Parser& _parser, FunctionDefinitionManager& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     vector<short> vType;
     vector<string> vDrawVector;
@@ -921,7 +921,7 @@ void Plot::applyPlotSizeAndQualitySettings(PlotData& _pData)
 /// GraphViewer, which will finalize the
 /// rendering step.
 /////////////////////////////////////////////////
-bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, vector<short>& vType, int nFunctions, double dDataRanges[3][2], const string& sOutputName)
+bool Plot::createPlotOrAnimation(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, vector<short>& vType, int nFunctions, double dDataRanges[3][2], const string& sOutputName)
 {
     mglData _mBackground;
     value_type* vResults = nullptr;
@@ -1127,7 +1127,7 @@ bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _par
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::create2dPlot(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -1441,7 +1441,7 @@ bool Plot::plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglDat
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::createStdPlot(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -2309,7 +2309,7 @@ void Plot::create2dVect(PlotData& _pData)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
+void Plot::create2dDrawing(Parser& _parser, MemoryManager& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
 {
     string sStyle;
     string sTextString;
@@ -2575,7 +2575,7 @@ void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
+void Plot::create3dDrawing(Parser& _parser, MemoryManager& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
 {
     string sStyle;
     string sTextString;
@@ -2948,7 +2948,7 @@ void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::createStd3dPlot(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -3387,7 +3387,7 @@ long Plot::getNN(const mglData& _mData)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+void Plot::evaluatePlotParamString(Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDummy;
     if (_pInfo.sPlotParams.find("??") != string::npos)
@@ -3476,7 +3476,7 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, FunctionDef
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose)
+void Plot::filename(PlotData& _pData, MemoryManager& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose)
 {
     // --> Ggf. waehlen eines Default-Dateinamens <--
     if (!_pData.getFileName().length() && !nPlotCompose)
@@ -3655,7 +3655,7 @@ string Plot::expandStyleForCurveArray(const string& sCurrentStyle, bool expand)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     if (nLegends && !_pData.getSchematic())
     {
@@ -3939,7 +3939,7 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnima
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2])
+void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2])
 {
     const short TYPE_DATA = -1;
     const short TYPE_FUNC = 1;
@@ -4415,7 +4415,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data, const Settings& _option)
+void Plot::createDataLegends(PlotData& _pData, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     // --> Ersetzen von "data()" bzw. "cache()" durch die Spaltentitel <--
     size_t n_dpos = 0;
@@ -4679,7 +4679,7 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 /// \return string
 ///
 /////////////////////////////////////////////////
-string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName)
+string Plot::constructDataLegendElement(Parser& _parser, MemoryManager& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName)
 {
     value_type* v = nullptr;
     int nResults = 0;

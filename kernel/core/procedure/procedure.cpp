@@ -125,7 +125,7 @@ void Procedure::init()
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
+Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByteCode, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script)
 {
     string sCache = "";
     Indices _idx;
@@ -578,7 +578,7 @@ bool Procedure::setProcName(const string& sProc, bool bInstallFileName)
 /// \return Returnvalue
 ///
 /////////////////////////////////////////////////
-Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure)
+Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure)
 {
     // Measure the current stack size and ensure
     // that the current call won't exceed the
@@ -1247,7 +1247,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure, int nth_command)
+int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure, int nth_command)
 {
     // Create a new procedure object on the heap
     std::unique_ptr<Procedure> _procedure(new Procedure(*this));
@@ -2293,7 +2293,7 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
                 if (nProcedures > 1)
                 {
                     // Save the return value in a cluster
-                    string sTempCluster = NumeReKernel::getInstance()->getData().createTemporaryCluster();
+                    string sTempCluster = NumeReKernel::getInstance()->getMemoryManager().createTemporaryCluster();
                     vProcCommandLines.push_back(sTempCluster + " = " + sCommandLine + ";");
                     vProcCommandLines.push_back(sTempCluster);
                 }
@@ -2306,7 +2306,7 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
                 if (nProcedures > 1)
                 {
                     // Save the return value in a cluster
-                    string sTempCluster = NumeReKernel::getInstance()->getData().createTemporaryCluster();
+                    string sTempCluster = NumeReKernel::getInstance()->getMemoryManager().createTemporaryCluster();
                     vProcCommandLines.push_back(sTempCluster + " = " + sCommandLine + ";");
                     vProcCommandLines.push_back(sTempCluster);
                 }
@@ -2616,7 +2616,7 @@ bool Procedure::handleVariableDefinitions(string& sProcCommandLine, const string
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure)
+void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure)
 {
     string sProcCommandLine;
     bool bSkipNextLine = false;

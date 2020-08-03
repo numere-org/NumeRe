@@ -26,7 +26,7 @@
 #include "core/ui/error.hpp"
 #include "core/settings.hpp"
 #include "core/io/output.hpp"
-#include "core/datamanagement/datafile.hpp"
+#include "core/datamanagement/cache.hpp"
 #include "core/datamanagement/container.hpp"
 #include "core/plugins.hpp"
 #include "core/version.h"
@@ -136,7 +136,7 @@ class NumeReKernel
         FileSystem _fSys;
         Settings _option;
         Output _out;
-        Datafile _data;
+        MemoryManager _memoryManager;
         Parser _parser;
         NumeRe::StringParser _stringParser;
         FunctionDefinitionManager _functions;
@@ -245,14 +245,14 @@ class NumeReKernel
             return _fSys;
         }
 
-        Datafile& getData()
+        MemoryManager& getMemoryManager()
         {
-            return _data;
+            return _memoryManager;
         }
 
         NumeRe::Cluster& getAns()
         {
-            return _data.getCluster("ans");
+            return _memoryManager.getCluster("ans");
         }
 
         Parser& getParser()
@@ -321,7 +321,7 @@ class NumeReKernel
         NumeReVariables getVariableList();
         bool SettingsModified();
         int getAutosaveInterval() {return _option.getAutoSaveInterval();}
-        long long int getLastSavedTime() {return _data.getLastSaved();}
+        long long int getLastSavedTime() {return _memoryManager.getLastSaved();}
         void Autosave();
         void StartUp(NumeReTerminal* _parent, const string& sPath, const string& sPredefinedFuncs);
         void CloseSession();

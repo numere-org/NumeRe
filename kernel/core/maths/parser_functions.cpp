@@ -575,7 +575,7 @@ int integralFactorial(int nNumber)
 /// If this option is not found, the function
 /// will create a default target cache.
 /////////////////////////////////////////////////
-string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option)
+string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	string sTargetTable;
 
@@ -634,7 +634,7 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool evaluateIndices(const string& sCache, Indices& _idx, Datafile& _data)
+bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data)
 {
 	// Check the initial indices
 	if (!isValidIndexSet(_idx))
@@ -715,7 +715,7 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval)
+vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval)
 {
 	vector<double> vInterval;
 	string sInterval[2] = {"", ""};

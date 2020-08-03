@@ -29,10 +29,10 @@
 #include "../maths/parser_functions.hpp"
 
 
-static string getSourceForDataOperation(const string& sExpression, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option);
-static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const Datafile& _data, bool bTranspose);
-static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, Datafile& _data, bool bMove, bool bTranspose);
-static string getFilenameFromCommandString(string& sCmd, string& sParams, const string& sDefExt, Parser& _parser, Datafile& _data, Settings& _option);
+static string getSourceForDataOperation(const string& sExpression, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option);
+static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const MemoryManager& _data, bool bTranspose);
+static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, MemoryManager& _data, bool bMove, bool bTranspose);
+static string getFilenameFromCommandString(string& sCmd, string& sParams, const string& sDefExt, Parser& _parser, MemoryManager& _data, Settings& _option);
 
 extern Language _lang;
 
@@ -48,7 +48,7 @@ extern Language _lang;
 /// \return void
 ///
 /////////////////////////////////////////////////
-void export_excel(Datafile& _data, Settings& _option, const string& sCache, const string& sFileName)
+void export_excel(MemoryManager& _data, Settings& _option, const string& sCache, const string& sFileName)
 {
 	using namespace YExcel;
 
@@ -121,7 +121,7 @@ void export_excel(Datafile& _data, Settings& _option, const string& sCache, cons
 /// \return void
 ///
 /////////////////////////////////////////////////
-void load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFileName)
+void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string sFileName)
 {
     // check, if the filename is available
 	if (!sFileName.length())
@@ -210,7 +210,7 @@ void load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFile
 /// \return void
 ///
 /////////////////////////////////////////////////
-void show_data(Datafile& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision, bool bData, bool bCache, bool bSave, bool bDefaultName)
+void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision, bool bData, bool bCache, bool bSave, bool bDefaultName)
 {
 	string sCache = _sCache;
 	string sFileName = "";
@@ -357,7 +357,7 @@ void show_data(Datafile& _data, Output& _out, Settings& _option, const string& _
 /// \return string**
 ///
 /////////////////////////////////////////////////
-string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
+string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
 {
 	nHeadlineCount = 1;
 
@@ -489,10 +489,10 @@ string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, con
 /// \return void
 ///
 /////////////////////////////////////////////////
-void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
+void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
 {
 	string sCmd = __sCmd;
-	Datafile _cache;
+	MemoryManager _cache;
 
 	// Copy the default path and the path tokens
 	int nArgument = 0;
@@ -570,10 +570,10 @@ void append_data(const string& __sCmd, Datafile& _data, Settings& _option)
 /// \return
 ///
 /////////////////////////////////////////////////
-void remove_data(Datafile& _data, Settings& _option, bool bIgnore)
+void remove_data(MemoryManager& _data, Settings& _option, bool bIgnore)
 {
     // Only if data is available
-	if (_data.isValid())
+	if (!_data.isEmpty("data"))
 	{
 	    // If the flag "ignore" is not set, ask the user for confirmation
 		if (!bIgnore)
@@ -619,7 +619,7 @@ void remove_data(Datafile& _data, Settings& _option, bool bIgnore)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
+void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 {
     // Only if there is valid data in the cache
 	if (_data.isValid())
@@ -686,7 +686,7 @@ void clear_cache(Datafile& _data, Settings& _option, bool bIgnore)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool searchAndDeleteTable(const string& sCache, Parser& _parser, Datafile& _data, const Settings& _option)
+static bool searchAndDeleteTable(const string& sCache, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
     {
@@ -733,7 +733,7 @@ static bool searchAndDeleteTable(const string& sCache, Parser& _parser, Datafile
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Datafile& _data, const Settings& _option)
+static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); ++iter)
     {
@@ -775,7 +775,7 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Data
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool deleteCacheEntry(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	bool bSuccess = false;
 
@@ -816,7 +816,7 @@ bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Sett
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool CopyData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	string sToCopy = "";
 	string sTarget = "";
@@ -861,7 +861,7 @@ bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool moveData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	string sToMove = "";
 	string sTarget = "";
@@ -912,7 +912,7 @@ bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
 /// \return string
 ///
 /////////////////////////////////////////////////
-static string getSourceForDataOperation(const string& sExpression, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option)
+static string getSourceForDataOperation(const string& sExpression, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     string sSourceForFileOperation = "";
 
@@ -952,7 +952,7 @@ static string getSourceForDataOperation(const string& sExpression, Indices& _idx
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const Datafile& _data, bool bTranspose)
+static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const MemoryManager& _data, bool bTranspose)
 {
     if (!isValidIndexSet(_iTargetIndex))
     {
@@ -1011,9 +1011,9 @@ static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _i
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, Datafile& _data, bool bMove, bool bTranspose)
+static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, MemoryManager& _data, bool bMove, bool bTranspose)
 {
-    Datafile _cache;
+    MemoryManager _cache;
 
     // First step: copy the contents to the Datafile _cache
     // If the move flag is set, then the contents are cleared at the source location
@@ -1100,7 +1100,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& _data)
+static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, MemoryManager& _data)
 {
     vector<int> vSortIndex;
 
@@ -1149,7 +1149,7 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, Datafile& 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Parser& _parser, Datafile& _data)
+static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Parser& _parser, MemoryManager& _data)
 {
     vector<int> vSortIndex;
     NumeRe::Cluster& cluster = _data.getCluster(sCluster);
@@ -1196,7 +1196,7 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool sortData(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
 	vector<int> vSortIndex;
 	DataAccessParser _accessParser(sCmd);
@@ -1263,7 +1263,7 @@ bool sortData(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinition
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool writeToFile(string& sCmd, Datafile& _data, Settings& _option)
+bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 {
 	fstream fFile;
 	string sFileName = "";
@@ -1449,7 +1449,7 @@ bool writeToFile(string& sCmd, Datafile& _data, Settings& _option)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
+bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
 	string sFileName = "";
 	string sInput = "";
@@ -1558,7 +1558,7 @@ bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _opt
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option)
+bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
 	string sFileName = "";
 	string sInput = "";
@@ -1691,7 +1691,7 @@ bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option
 /// \return string
 ///
 /////////////////////////////////////////////////
-static string getFilenameFromCommandString(string& sCmd, string& sParams, const string& sDefExt, Parser& _parser, Datafile& _data, Settings& _option)
+static string getFilenameFromCommandString(string& sCmd, string& sParams, const string& sDefExt, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
     string sFileName;
     string sExt = sDefExt;

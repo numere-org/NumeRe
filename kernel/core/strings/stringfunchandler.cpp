@@ -218,7 +218,7 @@ namespace NumeRe
     size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, n_vect& nArg)
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
-        Datafile& _data = NumeReKernel::getInstance()->getData();
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
         string sFuncArgument = __sFuncArgument;
         value_type* v = 0;
@@ -288,7 +288,7 @@ namespace NumeRe
     size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, s_vect& sArg, bool& bLogicalOnly)
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
-        Datafile& _data = NumeReKernel::getInstance()->getData();
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
         string sFuncArgument = __sFuncArgument;
 
@@ -897,7 +897,7 @@ namespace NumeRe
     string StringFuncHandler::applySpecialStringFuncs(string sLine)
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
-        Datafile& _data = NumeReKernel::getInstance()->getData();
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
         size_t nStartPosition = 0;
         size_t nEndPosition;

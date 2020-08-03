@@ -22,12 +22,12 @@
 
 using namespace std;
 
-static void handleArgumentForIndices(Indices& _idx, Parser& _parser, Datafile& _data, string& sArgument, const string& sCmd);
+static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, string& sArgument, const string& sCmd);
 static void extractIndexList(string& sArgument, vector<string>& vLines, vector<string>& vCols);
 static void handleIndexVectors(Parser& _parser, Indices& _idx, vector<string>& vLines, vector<string>& vCols);
 static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& vLines, vector<string>& vCols, const string& sCmd);
-static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCmd);
-static void expandStringIndexVectors(Indices& _idx, Datafile& _data);
+static void expandIndexVectors(Indices& _idx, MemoryManager& _data, const string& sCmd);
+static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data);
 static bool isCandidateForVectors(vector<string>& vLines, vector<string>& vCols);
 static bool isCandidateForCasuals(vector<string>& vLines, vector<string>& vCols);
 /*
@@ -37,7 +37,7 @@ static bool isCandidateForCasuals(vector<string>& vLines, vector<string>& vCols)
  * --> Index = -3, falls der Index eine Stringreferenz ist <--
  * --> Gibt alle angegeben Indices-1 zurueck <--
  */
-Indices getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+Indices getIndices(const string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     Indices _idx;
 
@@ -102,7 +102,7 @@ Indices getIndices(const string& sCmd, Parser& _parser, Datafile& _data, const S
  *   LOCAL FUNCTIONS FOR parser_getIndices()
  */
 
-static void handleArgumentForIndices(Indices& _idx, Parser& _parser, Datafile& _data, string& sArgument, const string& sCmd)
+static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, string& sArgument, const string& sCmd)
 {
     vector<string> vLines {"<<NONE>>", "<<NONE>>"};
     vector<string> vCols {"<<NONE>>", "<<NONE>>"};
@@ -327,7 +327,7 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<string>& 
 }
 
 // This function will expand casual indices into vectors
-static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCmd)
+static void expandIndexVectors(Indices& _idx, MemoryManager& _data, const string& sCmd)
 {
     // Get the cache name from the command string
     // should now only contain the name of the table
@@ -360,7 +360,7 @@ static void expandIndexVectors(Indices& _idx, Datafile& _data, const string& sCm
 
 // This static function expands the indices into vectors, if the
 // the current object is the string object
-static void expandStringIndexVectors(Indices& _idx, Datafile& _data)
+static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data)
 {
     if (_idx.row.isOpenEnd())
     {

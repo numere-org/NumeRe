@@ -27,7 +27,7 @@
 
 #include "../ui/error.hpp"
 #include "../ParserLib/muParser.h"
-#include "../datamanagement/datafile.hpp"
+#include "../datamanagement/cache.hpp"
 #include "../maths/define.hpp"
 #include "../settings.hpp"
 #include "../io/output.hpp"
@@ -58,7 +58,7 @@ class FlowCtrl
         bool bLoopSupressAnswer;
 
         Parser* _parserRef;
-        Datafile* _dataRef;
+        MemoryManager* _dataRef;
         Output* _outRef;
         Settings* _optionRef;
         FunctionDefinitionManager* _functionRef;
@@ -139,7 +139,7 @@ class FlowCtrl
 
 
         virtual int procedureCmdInterface(string& sLine);
-        virtual int procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command);
+        virtual int procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command);
         virtual int isInline(const string& sProc);
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
         virtual int getErrorInformationForDebugger();

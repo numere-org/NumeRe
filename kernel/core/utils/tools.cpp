@@ -2441,7 +2441,7 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
 
 static bool containsStringClusters(const string& sLine)
 {
-    const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getData().getClusterMap();
+    const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getMemoryManager().getClusterMap();
 
     for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
     {

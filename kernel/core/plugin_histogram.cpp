@@ -28,7 +28,7 @@
 const string PI_HIST = "1.0.1";
 extern mglGraph _fontData;
 
-void plugin_histogram (string& sCmd, Datafile& _data, Datafile& _target, Output& _out, Settings& _option, PlotData& _pData, bool bUseCache, bool bUseData)
+void plugin_histogram (string& sCmd, MemoryManager& _data, MemoryManager& _target, Output& _out, Settings& _option, PlotData& _pData, bool bUseCache, bool bUseData)
 {
 	if (_option.getbDebug())
 		cerr << "|-> DEBUG: sCmd = " << sCmd << endl;

@@ -776,6 +776,10 @@ Memory* MemoryManager::getTable(const string& sTable)
 /////////////////////////////////////////////////
 void MemoryManager::melt(Memory* _mem, const string& sTable)
 {
+    // Ensure that the table exists
+    if (!_mem)
+        return;
+
     // Is a corresponding table known?
     if (mCachesMap.find(sTable) == mCachesMap.end())
     {
@@ -871,7 +875,7 @@ bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool MemoryManager::isTable(const string& sTable)
+bool MemoryManager::isTable(const string& sTable) const
 {
     if (mCachesMap.find(sTable.substr(0, sTable.find('('))) != mCachesMap.end())
         return true;

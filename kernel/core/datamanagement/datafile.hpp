@@ -20,37 +20,23 @@
 #include <string>
 #include <vector>
 
-#include "../ui/error.hpp"
+
 #include "../settings.hpp"
-#include "cache.hpp"
+#include "memory.hpp"
 
 
 #ifndef DATAFILE_HPP
 #define DATAFILE_HPP
 
-string toString(int);
-string toLowerCase(const string&);
-
 using namespace std;
 
-int findParameter(const string& sCmd, const string& sParam, const char cFollowing);
-string getArgAtPos(const string& sCmd, unsigned int nPos);
-void StripSpaces(string& sToStrip);
-string getClipboardText();
-string utf8parser(const string& sString);
-int StrToInt(const string&);
 /*
  * Header zur Datafile-Klasse
  */
 
-class Datafile : public MemoryManager	//	Diese Klasse ist ein CHILD von FileSystem und von Cache
+class PasteHandler	//	Diese Klasse ist ein CHILD von FileSystem und von Cache
 {
 	private:
-		ifstream file_in;								// ifstream, der zum Einlesen eines Datenfiles verwendet wird
-		ofstream file_out;                              // ofstream, der zum Schreiben des Datenfiles verwendet wird
-		bool bValidData;								// TRUE, wenn die Instanz der Klasse auch Daten enthaelt
-
-
 		// Only needed for pasting data
 		void replaceDecimalSign(string& _sToReplace)
         {
@@ -116,17 +102,10 @@ class Datafile : public MemoryManager	//	Diese Klasse ist ein CHILD von FileSyst
         vector<string> getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens);
 
  	public:
-		Datafile();										// Standard-Konstruktor
-		Datafile(long long int _nLines, long long int _nCols);	// Allgemeiner Konstruktor (generiert zugleich die Matrix dDatafile und die Arrays
-                                                                // 		auf Basis der uebergeben Werte)
-		~Datafile();									// Destruktor (wendet delete[] auf die Matrix und alle Arrays an, sofern es noetig ist)
+		PasteHandler();										// Standard-Konstruktor
 
 		// Deprecated since v1.1.2rc1
-        void pasteLoad(const Settings& _option);
-// MEMORYMANAGER
-		// MEMORYMANAGER
-        void melt (Datafile& _cache);					// Methode, um die Daten einer anderen Instanz dieser Klasse den Daten dieser Klasse
-
+        Memory* pasteLoad(const Settings& _option);
 };
 
 #endif

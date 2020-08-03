@@ -91,7 +91,7 @@ bool IsWow64()
 /////////////////////////////////////////////////
 /// \brief Constructor of the kernel.
 /////////////////////////////////////////////////
-NumeReKernel::NumeReKernel() : _option(), _data(), _parser(), _stringParser(_parser, _data, _option), _functions(false)
+NumeReKernel::NumeReKernel() : _option(), _memoryManager(), _parser(), _stringParser(_parser, _memoryManager, _option), _functions(false)
 {
     sCommandLine.clear();
     sAnswer.clear();
@@ -146,8 +146,8 @@ void NumeReKernel::setKernelSettings(const Settings& _settings)
 /////////////////////////////////////////////////
 void NumeReKernel::Autosave()
 {
-    if (!_data.getSaveStatus())
-        _data.saveToCacheFile();
+    if (!_memoryManager.getSaveStatus())
+        _memoryManager.saveToCacheFile();
     return;
 }
 
@@ -178,7 +178,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
 
     // Set the functions provided by the syntax object in the parent class
     _functions.setPredefinedFuncs(sPredefinedFunctions);
-    _data.setPredefinedFuncs(_functions.getPredefinedFuncs());
+    _memoryManager.setPredefinedFuncs(_functions.getPredefinedFuncs());
     _script.setPredefinedFuncs(sPredefinedFunctions);
     _procedure.setPredefinedFuncs(sPredefinedFunctions);
 
@@ -216,7 +216,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
 
     // Set the path tokens for all relevant objects
     _fSys.setTokens(_option.getTokenPaths());
-    _data.setTokens(_option.getTokenPaths());
+    _memoryManager.setTokens(_option.getTokenPaths());
     _out.setTokens(_option.getTokenPaths());
     _pData.setTokens(_option.getTokenPaths());
     _script.setTokens(_option.getTokenPaths());
@@ -232,12 +232,12 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     _out.setPath(_option.getSavePath(), true, sPath);
     _out.createRevisionsFolder();
 
-    _data.setPath(_option.getLoadPath(), true, sPath);
-    _data.createRevisionsFolder();
-    _data.newCluster("ans").setDouble(0, NAN);
+    _memoryManager.setPath(_option.getLoadPath(), true, sPath);
+    _memoryManager.createRevisionsFolder();
+    _memoryManager.newCluster("ans").setDouble(0, NAN);
 
-    _data.setSavePath(_option.getSavePath());
-    _data.setbLoadEmptyCols(_option.getbLoadEmptyCols());
+    _memoryManager.setSavePath(_option.getSavePath());
+    _memoryManager.setbLoadEmptyCols(_option.getbLoadEmptyCols());
 
     _pData.setPath(_option.getPlotOutputPath(), true, sPath);
     _pData.createRevisionsFolder();
@@ -287,7 +287,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     if (fileExists(_procedure.getPluginInfoPath()))
     {
         _procedure.loadPlugins();
-        _data.setPluginCommands(_procedure.getPluginNames());
+        _memoryManager.setPluginCommands(_procedure.getPluginNames());
         addToLog("> SYSTEM: Plugin information was loaded.");
     }
 
@@ -304,7 +304,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     // Load the autosave file
     if (fileExists(sCacheFile))
     {
-        _data.loadFromCacheFile();
+        _memoryManager.loadFromCacheFile();
         addToLog("> SYSTEM: Automatic backup was loaded.");
     }
 
@@ -316,9 +316,9 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     _parser.DefineVar(parser_iVars.sName[3], &parser_iVars.vValue[3][0]);
 
     // Declare the table dimension variables
-    _parser.DefineVar("nlines", &_data.tableLinesCount);
-    _parser.DefineVar("ncols", &_data.tableColumnsCount);
-    _parser.DefineVar("nlen", &_data.dClusterElementsCount);
+    _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);
+    _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
+    _parser.DefineVar("nlen", &_memoryManager.dClusterElementsCount);
 
     // --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
     _parser.SetVarFactory(parser_AddVariable, &(_parser.m_lDataStorage));
@@ -808,7 +808,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             if (_script.wasLastCommand())
                             {
                                 print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-                                _data.setPluginCommands(_procedure.getPluginNames());
+                                _memoryManager.setPluginCommands(_procedure.getPluginNames());
                             }
                             sCommandLine.clear();
                             bCancelSignal = false;
@@ -818,7 +818,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             continue;
                     case NUMERE_QUIT:
                         // --> Sind ungesicherte Daten im Cache? Dann moechte der Nutzer diese vielleicht speichern <--
-                        if (!_data.getSaveStatus()) // MAIN_UNSAVED_CACHE
+                        if (!_memoryManager.getSaveStatus()) // MAIN_UNSAVED_CACHE
                         {
                             string c = "";
                             print(LineBreak(_lang.get("MAIN_UNSAVED_CACHE"), _option));
@@ -826,13 +826,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             NumeReKernel::getline(c);
                             if (c == _lang.YES())
                             {
-                                _data.saveToCacheFile(); // MAIN_CACHE_SAVED
+                                _memoryManager.saveToCacheFile(); // MAIN_CACHE_SAVED
                                 print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
                                 Sleep(500);
                             }
                             else
                             {
-                                _data.removeTablesFromMemory();
+                                _memoryManager.removeTablesFromMemory();
                             }
                         }
                         return NUMERE_QUIT;  // Keyword "quit"
@@ -878,9 +878,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // Get data elements for the current command line or determine,
             // if the target value of the current command line is a candidate
             // for a cluster
-            if (!_stringParser.isStringExpression(sLine) && _data.containsTablesOrClusters(sLine))
+            if (!_stringParser.isStringExpression(sLine) && _memoryManager.containsTablesOrClusters(sLine))
             {
-                sCache = getDataElements(sLine, _parser, _data, _option);
+                sCache = getDataElements(sLine, _parser, _memoryManager, _option);
 
                 if (sCache.length() && sCache.find('#') == string::npos)
                     bWriteToCache = true;
@@ -911,7 +911,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             if (bWriteToCache)
             {
                 // Get the indices from the corresponding function
-                _idx = getIndices(sCache, _parser, _data, _option);
+                _idx = getIndices(sCache, _parser, _memoryManager, _option);
 
                 if (sCache[sCache.find_first_of("({")] == '{')
                 {
@@ -944,11 +944,11 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 // Is it a cluster?
                 if (bWriteToCluster)
                 {
-                    NumeRe::Cluster& cluster = _data.getCluster(sCache);
+                    NumeRe::Cluster& cluster = _memoryManager.getCluster(sCache);
                     cluster.assignResults(_idx, nNum, v);
                 }
                 else
-                    _data.writeToTable(_idx, sCache, v, nNum);
+                    _memoryManager.writeToTable(_idx, sCache, v, nNum);
             }
         }
         // This section starts the error handling
@@ -1178,7 +1178,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         if (_script.wasLastCommand())
         {
             print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-            _data.setPluginCommands(_procedure.getPluginNames());
+            _memoryManager.setPluginCommands(_procedure.getPluginNames());
             if (!sCmdCache.length())
             {
                 bCancelSignal = false;
@@ -1194,7 +1194,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     if (_script.wasLastCommand())
     {
         print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-        _data.setPluginCommands(_procedure.getPluginNames());
+        _memoryManager.setPluginCommands(_procedure.getPluginNames());
         return NUMERE_DONE_KEYWORD;
     }
 
@@ -1727,7 +1727,7 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
             if (!isInQuotes(sLine, nPos, true))
             {
                 // Execute the current procedure
-                Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script);
+                Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _memoryManager, _option, _out, _pData, _script);
                 if (!_procedure.getReturnType())
                     sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
                 else
@@ -1794,7 +1794,7 @@ bool NumeReKernel::executePlugins(string& sLine)
             _option.setSystemPrintStatus(false);
 
             // Call the relevant procedure
-            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script);
+            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _memoryManager, _option, _out, _pData, _script);
 
             // Handle the return values
             if (_rTemp.isString() && sLine.find("<<RETURNVAL>>") != string::npos)
@@ -1880,7 +1880,7 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
                 if (_script.wasLastCommand())
                 {
                     print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-                    _data.setPluginCommands(_procedure.getPluginNames());
+                    _memoryManager.setPluginCommands(_procedure.getPluginNames());
                 }
 
                 bCancelSignal = false;
@@ -1950,7 +1950,7 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
                 if (_script.wasLastCommand())
                 {
                     print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-                    _data.setPluginCommands(_procedure.getPluginNames());
+                    _memoryManager.setPluginCommands(_procedure.getPluginNames());
                 }
                 sCommandLine.clear();
                 bCancelSignal = false;
@@ -1961,7 +1961,7 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
                 return false;
         }
 
-        if (sCache.length() && _data.containsTablesOrClusters(sCache) && !bWriteToCache)
+        if (sCache.length() && _memoryManager.containsTablesOrClusters(sCache) && !bWriteToCache)
             bWriteToCache = true;
     }
 
@@ -2088,9 +2088,9 @@ void NumeReKernel::updateLineLenght(int nLength)
 /////////////////////////////////////////////////
 void NumeReKernel::saveData()
 {
-    if (!_data.getSaveStatus())
+    if (!_memoryManager.getSaveStatus())
     {
-        _data.saveToCacheFile();
+        _memoryManager.saveToCacheFile();
         print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
         Sleep(500);
     }
@@ -2111,12 +2111,12 @@ void NumeReKernel::saveData()
 void NumeReKernel::CloseSession()
 {
     saveData();
-    _data.removeTablesFromMemory();
-    _data.removeData(false);
+    _memoryManager.removeTablesFromMemory();
+    _memoryManager.removeData(false);
 
     // --> Konfiguration aus den Objekten zusammenfassen und anschliessend speichern <--
     _option.setSavePath(_out.getPath());
-    _option.setLoadPath(_data.getPath());
+    _option.setLoadPath(_memoryManager.getPath());
     _option.setPlotOutputPath(_pData.getPath());
     _option.setScriptPath(_script.getPath());
 
@@ -2298,11 +2298,11 @@ NumeReVariables NumeReKernel::getVariableList()
 
     mu::varmap_type varmap = _parser.GetVar();
     const map<string, string>& stringmap = _stringParser.getStringVars();
-    map<string, long long int> tablemap = _data.getTableMap();
-    const map<string, NumeRe::Cluster>& clustermap = _data.getClusterMap();
+    map<string, long long int> tablemap = _memoryManager.getTableMap();
+    const map<string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     string sCurrentLine;
 
-    if (_data.getStringElements())
+    if (_memoryManager.getStringElements())
         tablemap["string"] = -2;
 
     // Gather all (global) numerical variables
@@ -2337,13 +2337,13 @@ NumeReVariables NumeReKernel::getVariableList()
 
         if (iter->first == "string")
         {
-            sCurrentLine = iter->first + "()\t" + toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
-            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_data.minString()) + "\", ..., \"" + replaceControlCharacters(_data.maxString()) + "\"}\tstring()";
+            sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getStringElements()) + " x " + toString(_memoryManager.getStringCols());
+            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_memoryManager.minString()) + "\", ..., \"" + replaceControlCharacters(_memoryManager.maxString()) + "\"}\tstring()";
         }
         else
         {
-            sCurrentLine = iter->first + "()\t" + toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
-            sCurrentLine += "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ..., " + toString(_data.max(iter->first, "")[0], 5) + "}\t" + iter->first + "()";
+            sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x " + toString(_memoryManager.getCols(iter->first, false));
+            sCurrentLine += "\tdouble\t{" + toString(_memoryManager.min(iter->first, "")[0], 5) + ", ..., " + toString(_memoryManager.max(iter->first, "")[0], 5) + "}\t" + iter->first + "()";
         }
 
         vars.vVariables.push_back(sCurrentLine);
@@ -3090,10 +3090,10 @@ NumeRe::Table NumeReKernel::getTable(const string& sTableName)
     if (sSelectedTable.find("()") != string::npos)
         sSelectedTable.erase(sSelectedTable.find("()"));
 
-    if (!_data.isTable(sSelectedTable) || !_data.getCols(sSelectedTable))
+    if (!_memoryManager.isTable(sSelectedTable) || !_memoryManager.getCols(sSelectedTable))
         return NumeRe::Table();
 
-    return _data.extractTable(sSelectedTable);
+    return _memoryManager.extractTable(sSelectedTable);
 }
 
 
@@ -3110,22 +3110,22 @@ NumeRe::Container<string> NumeReKernel::getStringTable(const string& sStringTabl
     if (sStringTableName == "string()")
     {
         // Create the container for the string table
-        NumeRe::Container<string> stringTable(_data.getStringElements(), _data.getStringCols());
+        NumeRe::Container<string> stringTable(_memoryManager.getStringElements(), _memoryManager.getStringCols());
 
-        for (size_t j = 0; j < _data.getStringCols(); j++)
+        for (size_t j = 0; j < _memoryManager.getStringCols(); j++)
         {
-            for (size_t i = 0; i < _data.getStringElements(j); i++)
+            for (size_t i = 0; i < _memoryManager.getStringElements(j); i++)
             {
-                stringTable.set(i, j, "\"" + _data.readString(i, j) + "\"");
+                stringTable.set(i, j, "\"" + _memoryManager.readString(i, j) + "\"");
             }
         }
 
         return stringTable;
     }
-    else if (_data.isCluster(sStringTableName))
+    else if (_memoryManager.isCluster(sStringTableName))
     {
         // Create the container for the selected cluster
-        NumeRe::Cluster& clust = _data.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
+        NumeRe::Cluster& clust = _memoryManager.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
         NumeRe::Container<string> stringTable(clust.size(), 1);
 
         for (size_t i = 0; i < clust.size(); i++)
@@ -3287,9 +3287,9 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     }
 
     // Get the table variable map
-    map<string, long long int> tableMap = getInstance()->getData().getTableMap();
+    map<string, long long int> tableMap = getInstance()->getMemoryManager().getTableMap();
 
-    if (getInstance()->getData().getStringElements())
+    if (getInstance()->getMemoryManager().getStringElements())
         tableMap["string"] = -2;
 
     nLocalTableMapSize = tableMap.size();
@@ -3309,7 +3309,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
         }
     }
 
-    const map<string, NumeRe::Cluster>& clusterMap = getInstance()->getData().getClusterMap();
+    const map<string, NumeRe::Cluster>& clusterMap = getInstance()->getMemoryManager().getClusterMap();
 
     nLocalClusterMapSize = clusterMap.size();
 

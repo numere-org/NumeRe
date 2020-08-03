@@ -21,7 +21,7 @@
 #define DATAOPS_HPP
 
 #include <string>
-#include "datafile.hpp"
+#include "cache.hpp"
 #include "../settings.hpp"
 #include "../ParserLib/muParser.h"
 #include "../io/output.hpp"
@@ -30,19 +30,19 @@
 using namespace std;
 using namespace mu;
 
-string** make_stringmatrix(Datafile& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave = true);
-void load_data(Datafile& _data, Settings& _option, Parser& _parser, string sFileName = "");
-void show_data(Datafile& _data, Output& _out, Settings& _option, const string& sCache, size_t nPrecision, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
-void remove_data(Datafile& _data, Settings& _option, bool bIgnore = false);
-void append_data(const string& sCmd, Datafile& _data, Settings& _option);
-void clear_cache(Datafile& _data, Settings& _option, bool bIgnore = false);
-bool deleteCacheEntry(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool CopyData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool moveData(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool sortData(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool writeToFile(string& sCmd, Datafile& _data, Settings& _option);
-bool readFromFile(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
-bool readImage(string& sCmd, Parser& _parser, Datafile& _data, Settings& _option);
+string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave = true);
+void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string sFileName = "");
+void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& sCache, size_t nPrecision, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
+void remove_data(MemoryManager& _data, Settings& _option, bool bIgnore = false);
+void append_data(const string& sCmd, MemoryManager& _data, Settings& _option);
+void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore = false);
+bool deleteCacheEntry(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
+bool CopyData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
+bool moveData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
+bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option);
+bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option);
+bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option);
 
 
 #endif // DATAOPS_HPP
