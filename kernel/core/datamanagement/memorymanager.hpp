@@ -31,8 +31,8 @@
 #include "fileadapter.hpp"
 
 
-#ifndef CACHE_HPP
-#define CACHE_HPP
+#ifndef MEMORYMANAGER_HPP
+#define MEMORYMANAGER_HPP
 
 using namespace std;
 
@@ -65,6 +65,11 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
         virtual bool saveLayer(string _sFileName, const string& _sTable, unsigned short nPrecision) override
 		{
 			return vMemory[mCachesMap.at(_sTable)]->save(ValidFileName(_sFileName, ".ndat"), _sTable, nPrecision);
+		}
+
+		inline bool exists(const string& sTable) const
+		{
+		    return mCachesMap.find(sTable) != mCachesMap.end();
 		}
 
 	public:
@@ -108,7 +113,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
         bool isEmpty(const string& sTable) const
         {
-            if (mCachesMap.find(sTable) != mCachesMap.end())
+            if (exists(sTable))
                 return !vMemory[mCachesMap.at(sTable)]->getCols();
 
             return true;
@@ -116,7 +121,10 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 		bool isValidElement(long long int _nLine, long long int _nCol, const string& _sTable) const
 		{
-			return vMemory[mCachesMap.at(_sTable)]->isValidElement(_nLine, _nCol);
+		    if (exists(_sTable))
+                return vMemory[mCachesMap.at(_sTable)]->isValidElement(_nLine, _nCol);
+
+            return false;
 		}
 
 
@@ -209,8 +217,8 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			if (!isTable(sCache))
 				throw SyntaxError(SyntaxError::CACHE_DOESNT_EXIST, "", SyntaxError::invalid_position, sCache);
 
-			if (sCache == "cache" && !bForceRenaming)
-				throw SyntaxError(SyntaxError::CACHE_CANNOT_BE_RENAMED, "", SyntaxError::invalid_position, "cache");
+			if (sCache == "table" && !bForceRenaming)
+				throw SyntaxError(SyntaxError::CACHE_CANNOT_BE_RENAMED, "", SyntaxError::invalid_position, "table");
 
 			mCachesMap[sNewName] = mCachesMap[sCache];
 			mCachesMap.erase(sCache);
@@ -277,14 +285,20 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
 		// DIMENSION ACCESS METHODS
-		inline long long int getLines(const string& _sCache, bool _bFull = false) const
+		inline long long int getLines(const string& sTable, bool _bFull = false) const
 		{
-			return vMemory[mCachesMap.at(_sCache)]->getLines(_bFull);
+		    if (exists(sTable))
+                return vMemory[mCachesMap.at(sTable)]->getLines(_bFull);
+
+            return 0;
 		}
 
-		inline long long int getCols(const string& _sCache, bool _bFull = false) const
+		inline long long int getCols(const string& sTable, bool _bFull = false) const
 		{
-			return vMemory[mCachesMap.at(_sCache)]->getCols(_bFull);
+		    if (exists(sTable))
+                return vMemory[mCachesMap.at(sTable)]->getCols(_bFull);
+
+            return 0;
 		}
 
 		inline int getSize(long long int _nLayer) const
@@ -300,12 +314,18 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
         // READ ACCESS METHODS
         double getElement(long long int _nLine, long long int _nCol, const string& _sTable) const
 		{
-			return vMemory[mCachesMap.at(_sTable)]->readMem(_nLine, _nCol);
+		    if (exists(_sTable))
+                return vMemory[mCachesMap.at(_sTable)]->readMem(_nLine, _nCol);
+
+            return NAN;
 		}
 
 		vector<double> getElement(const VectorIndex& _vLine, const VectorIndex& _vCol, const string& _sTable) const
 		{
-			return vMemory[mCachesMap.at(_sTable)]->readMem(_vLine, _vCol);
+		    if (exists(_sTable))
+                return vMemory[mCachesMap.at(_sTable)]->readMem(_vLine, _vCol);
+
+            return vector<double>();
 		}
 
 		void copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const string& _sTable) const
@@ -315,17 +335,26 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 		int getHeadlineCount(const string& _sTable) const
 		{
-		    return vMemory[mCachesMap.at(_sTable)]->getHeadlineCount();
+		    if (exists(_sTable))
+                return vMemory[mCachesMap.at(_sTable)]->getHeadlineCount();
+
+            return 0;
 		}
 
 		string getHeadLineElement(long long int _i, const string& _sTable) const
 		{
-			return vMemory[mCachesMap.at(_sTable)]->getHeadLineElement(_i);
+			if (exists(_sTable))
+                return vMemory[mCachesMap.at(_sTable)]->getHeadLineElement(_i);
+
+            return "";
 		}
 
 		vector<string> getHeadLineElement(const VectorIndex& _vCol, const string& _sTable) const
 		{
-			return vMemory[mCachesMap.at(_sTable)]->getHeadLineElement(_vCol);
+		    if (exists(_sTable))
+                return vMemory[mCachesMap.at(_sTable)]->getHeadLineElement(_vCol);
+
+            return vector<string>();
 		}
 
 		string getTopHeadLineElement(long long int _i, const string& _sTable) const

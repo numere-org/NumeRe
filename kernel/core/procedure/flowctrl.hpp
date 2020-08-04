@@ -27,7 +27,7 @@
 
 #include "../ui/error.hpp"
 #include "../ParserLib/muParser.h"
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../maths/define.hpp"
 #include "../settings.hpp"
 #include "../io/output.hpp"

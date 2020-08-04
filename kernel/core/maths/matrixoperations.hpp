@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "../ParserLib/muParser.h"
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "define.hpp"
 #include "../settings.hpp"
 

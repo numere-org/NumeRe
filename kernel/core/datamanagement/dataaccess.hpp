@@ -22,7 +22,7 @@
 
 #include <string>
 #include "../ParserLib/muParser.h"
-#include "cache.hpp"
+#include "memorymanager.hpp"
 #include "table.hpp"
 #include "../settings.hpp"
 #include "../structures.hpp"

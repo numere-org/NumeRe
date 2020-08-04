@@ -23,30 +23,40 @@
 #include <queue>
 
 // --> LOKALE HEADER <--
-#include "core/ui/error.hpp"
-#include "core/settings.hpp"
-#include "core/io/output.hpp"
-#include "core/datamanagement/cache.hpp"
-#include "core/datamanagement/container.hpp"
-#include "core/plugins.hpp"
-#include "core/version.h"
-#include "core/maths/functionimplementation.hpp"
-#include "core/utils/tools.hpp"
+#include "windowmanager.hpp"
+
 #include "core/built-in.hpp"
-#include "core/maths/parser_functions.hpp"
-#include "core/maths/define.hpp"
-#include "core/plotting/plotdata.hpp"
-#include "core/plotting/graph_helper.hpp"
+#include "core/plugins.hpp"
 #include "core/script.hpp"
-#include "core/procedure/flowctrl.hpp"
-#include "core/procedure/procedure.hpp"
+#include "core/settings.hpp"
+#include "core/version.h"
+
+#include "core/datamanagement/container.hpp"
+#include "core/datamanagement/memorymanager.hpp"
+
 #include "core/debugger/debugger.hpp"
-#include "core/ui/language.hpp"
-#include "core/procedure/procedurelibrary.hpp"
+
+#include "core/io/output.hpp"
+
+#include "core/maths/define.hpp"
+#include "core/maths/functionimplementation.hpp"
+#include "core/maths/parser_functions.hpp"
+
 #include "core/ParserLib/muParser.h"
+
+#include "core/plotting/graph_helper.hpp"
+#include "core/plotting/plotdata.hpp"
+
+#include "core/procedure/procedure.hpp"
+#include "core/procedure/procedurelibrary.hpp"
+
 #include "core/strings/stringparser.hpp"
 
-#include "windowmanager.hpp"
+#include "core/ui/error.hpp"
+#include "core/ui/language.hpp"
+
+#include "core/utils/tools.hpp"
+
 
 #ifndef KERNEL_HPP
 #define KERNEL_HPP

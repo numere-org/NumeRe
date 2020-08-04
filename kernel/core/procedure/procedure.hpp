@@ -30,7 +30,7 @@
 
 #include "../ui/error.hpp"
 #include "../ParserLib/muParser.h"
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../settings.hpp"
 #include "../utils/tools.hpp"
 #include "../built-in.hpp"

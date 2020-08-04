@@ -21,7 +21,7 @@
 
 #include "../utils/tools.hpp"
 #include "../ui/error.hpp"
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../maths/functionimplementation.hpp"
 #include "../maths/define.hpp"
 #include "../settings.hpp"

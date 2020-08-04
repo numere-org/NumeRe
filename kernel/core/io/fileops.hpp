@@ -22,7 +22,7 @@
 
 #include <string>
 #include <vector>
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../settings.hpp"
 #include "../ParserLib/muParser.h"
 

@@ -20,7 +20,7 @@
 #define COMMAND_IMPLEMENTATIONS_HPP
 
 #include "../datamanagement/datafile.hpp"
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../ParserLib/muParser.h"
 #include "../settings.hpp"
 #include "define.hpp"

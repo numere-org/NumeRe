@@ -2667,17 +2667,17 @@ static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
 
     Matrix _mReturn = createZeroesMatrix(1,1);
-    MemoryManager _cache;
+    Memory _mem;
 
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
         for (size_t j = 0; j < _mMatrix[0].size(); j++)
         {
-            _cache.writeToTable(j + i*_mMatrix.size(), 0, "cache", _mMatrix[i][j]);
+            _mem.writeData(j + i*_mMatrix.size(), 0, _mMatrix[i][j]);
         }
     }
 
-    _mReturn[0][0] = _cache.med("cache", 0, _mMatrix.size()*_mMatrix[0].size()-1);
+    _mReturn[0][0] = _mem.med(VectorIndex(0, _mMatrix.size()*_mMatrix[0].size()-1), VectorIndex(0));
     return _mReturn;
 }
 
@@ -2700,17 +2700,17 @@ static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
 
     Matrix _mReturn = createZeroesMatrix(1,1);
-    MemoryManager _cache;
+    Memory _mem;
 
     for (size_t i = 0; i < _mMatrix.size(); i++)
     {
         for (size_t j = 0; j < _mMatrix[0].size(); j++)
         {
-            _cache.writeToTable(j + i*_mMatrix.size(), 0, "cache", _mMatrix[i][j]);
+            _mem.writeData(j + i*_mMatrix.size(), 0, _mMatrix[i][j]);
         }
     }
 
-    _mReturn[0][0] = _cache.pct("cache", 0, (long long int)(_mMatrix.size()*_mMatrix[0].size())-1, 0, -1, dPercentage);
+    _mReturn[0][0] = _mem.pct(VectorIndex(0, (long long int)(_mMatrix.size()*_mMatrix[0].size())-1), VectorIndex(0), dPercentage);
     return _mReturn;
 }
 

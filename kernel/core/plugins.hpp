@@ -27,7 +27,7 @@
 #include <boost/math/distributions/students_t.hpp>
 
 #include "ui/error.hpp"
-#include "datamanagement/cache.hpp"
+#include "datamanagement/memorymanager.hpp"
 #include "io/output.hpp"
 #include "settings.hpp"
 #include "utils/tools.hpp"

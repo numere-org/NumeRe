@@ -32,7 +32,7 @@ void plugin_random(string& sCmd, MemoryManager& _data, Output& _out, Settings& _
     long long int nDataRows = 0;
     long long int nFilledCols = 0;
     if (_data.isValid() && !bAllowOverride)       // Frage die Zahl der (irgendwie) vollgeschriebenen Spalten ab
-        nFilledCols = _data.getCols("cache", false);
+        nFilledCols = _data.getCols("table", false);
     double dDistributionWidth = 1.0; // Die Breite der Verteilung
     double dDistributionMean = 0.0;	// Der Mittelwert der Verteilung
     unsigned int nFreedoms = 1;
@@ -204,7 +204,7 @@ void plugin_random(string& sCmd, MemoryManager& _data, Output& _out, Settings& _
     student_t_distribution<double> studentTDistribution(nFreedoms);                         // 5
     if (nDataPoints * nDataRows > 1e6)
         NumeReKernel::printPreFmt(toSystemCodePage("|-> "+_lang.get("RANDOM_RESERVING_MEM")+" ... "));
-    if (!_data.resizeTable(nDataPoints, nDataRows+nFilledCols, "cache"))
+    if (!_data.resizeTable(nDataPoints, nDataRows+nFilledCols, "table"))
         return;
     if (nDataPoints * nDataRows > 1e6)
         NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
@@ -228,7 +228,7 @@ void plugin_random(string& sCmd, MemoryManager& _data, Output& _out, Settings& _
                 dRandomNumber = binomialDistribution(randomGenerator);
             else if (nDistribution == 5)
                 dRandomNumber = studentTDistribution(randomGenerator);
-            _data.writeToTable(i, j+nFilledCols, "cache", dRandomNumber);
+            _data.writeToTable(i, j+nFilledCols, "table", dRandomNumber);
 
             if ((!i && !j) || dSeedBase == 0.0)
             {

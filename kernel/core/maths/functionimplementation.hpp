@@ -40,7 +40,7 @@
 #include <gsl/gsl_sf.h>
 #include <boost/math/distributions/students_t.hpp>
 
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../utils/tools.hpp"
 #include "../version.h"
 

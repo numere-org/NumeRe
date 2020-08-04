@@ -2227,17 +2227,17 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
     if (_accessParser.getIndices().col.isOpenEnd())
         _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
 
-    _cache.resizeTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
+    _cache.resizeTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "table");
 
     for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
     {
         for (size_t j = 0; j < _accessParser.getIndices().col.size(); j++)
         {
             if (!i)
-                _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_accessParser.getIndices().col[j], _accessParser.getDataObject()));
+                _cache.setHeadLineElement(j, "table", _data.getHeadLineElement(_accessParser.getIndices().col[j], _accessParser.getDataObject()));
 
             if (_data.isValidElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
-                _cache.writeToTable(i, j, "cache", _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
+                _cache.writeToTable(i, j, "table", _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
         }
     }
 }
@@ -2358,8 +2358,8 @@ static CommandReturnValues saveDataObject(string& sCmd)
         copyDataToTemporaryTable(sCmd, _access, _data, _cache);
 
         // Update the name of the cache table (force it)
-        if (_access.getDataObject() != "cache")
-            _cache.renameTable("cache", _access.getDataObject(), true);
+        if (_access.getDataObject() != "table")
+            _cache.renameTable("table", _access.getDataObject(), true);
 
         // If the command line contains string variables
         // get those values here
@@ -3897,7 +3897,7 @@ static CommandReturnValues cmd_data(string& sCmd)
 
                     for (unsigned int i = 0; i < vFilelist.size(); i++)
                     {
-                        _data.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
+                        _data.openFile(sPath + vFilelist[i], false, nArgument);
                     }
                     if (_data.isValid())
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
@@ -3911,11 +3911,11 @@ static CommandReturnValues cmd_data(string& sCmd)
                     else
                         nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 }
                 else
                 {
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 }
                 if (_data.isValid() && _option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
@@ -3938,7 +3938,7 @@ static CommandReturnValues cmd_data(string& sCmd)
                         sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
                     for (unsigned int i = 0; i < vFilelist.size(); i++)
                     {
-                        _data.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
+                        _data.openFile(sPath + vFilelist[i], false, nArgument);
                     }
                     if (_data.isValid())
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
@@ -3952,10 +3952,10 @@ static CommandReturnValues cmd_data(string& sCmd)
                     else
                         nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 }
                 else
-                    _data.openFile(sArgument, _option, false, false, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 if (_data.isValid() && _option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
@@ -3999,10 +3999,10 @@ static CommandReturnValues cmd_data(string& sCmd)
                     else
                         nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 }
                 else
-                    _data.openFile(sArgument, _option);
+                    _data.openFile(sArgument);
                 if (_data.isValid() && _option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich aktualisiert.", _option) );
@@ -4016,7 +4016,7 @@ static CommandReturnValues cmd_data(string& sCmd)
                 _data.setbLoadEmptyColsInNextFile(true);
             sArgument = _data.getDataFileName("data");
             _data.removeData(false);
-            _data.openFile(sArgument, _option, false, true);
+            _data.openFile(sArgument);
             if (_data.isValid() && _option.getSystemPrintStatus())
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"), _option) );
             //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich aktualisiert.", _option) );
@@ -6296,8 +6296,8 @@ static CommandReturnValues cmd_show(string& sCmd)
                 if (_accessParser.getIndices().col.isOpenEnd())
                     _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
 
-                _cache.resizeTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "cache");
-                _cache.renameTable("cache", "*" + _accessParser.getDataObject(), true);
+                _cache.resizeTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "table");
+                _cache.renameTable("table", "*" + _accessParser.getDataObject(), true);
 
                 for (unsigned int i = 0; i < _accessParser.getIndices().row.size(); i++)
                 {
@@ -6869,7 +6869,7 @@ static CommandReturnValues cmd_remove(string& sCmd)
         {
             for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
             {
-                if (sCmd.find(iter->first + "()") != string::npos && iter->first != "cache")
+                if (sCmd.find(iter->first + "()") != string::npos && iter->first != "table")
                 {
                     string sObj = iter->first;
                     if (_data.deleteTable(iter->first))
@@ -7021,10 +7021,10 @@ static CommandReturnValues cmd_reload(string& sCmd)
                         nArgument = findParameter(sCmd, "h", '=') + 1;
 
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 }
                 else
-                    _data.openFile(sArgument, _option);
+                    _data.openFile(sArgument);
 
                 if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) );
@@ -7042,7 +7042,7 @@ static CommandReturnValues cmd_reload(string& sCmd)
 
             sArgument = _data.getDataFileName("data");
             _data.removeData(false);
-            _data.openFile(sArgument, _option, false, true);
+            _data.openFile(sArgument);
 
             if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"));
@@ -7476,7 +7476,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 MemoryManager _cache;
                 _cache.setTokens(_option.getTokenPaths());
                 _cache.setPath(_option.getLoadPath(), false, _option.getExePath());
-                _cache.openFile(sArgument, _option, false, true, nArgument);
+                _cache.openFile(sArgument, false, nArgument);
                 sArgument = generateCacheName(sArgument, _option);
                 if (!_data.isTable(sArgument + "()"))
                     _data.addTable(sArgument + "()", _option);
@@ -7513,7 +7513,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 _cache.setPath(_data.getPath(), false, _data.getProgramPath());
                 for (unsigned int i = 0; i < vFilelist.size(); i++)
                 {
-                    _cache.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
+                    _cache.openFile(sPath + vFilelist[i], false, nArgument);
                     sTarget = generateCacheName(sPath + vFilelist[i], _option);
                     if (!_data.isTable(sTarget + "()"))
                         _data.addTable(sTarget + "()", _option);
@@ -7560,7 +7560,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                     for (unsigned int i = 0; i < vFilelist.size(); i++)
                     {
-                        _data.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
+                        _data.openFile(sPath + vFilelist[i], false, nArgument);
                     }
                     if (!_data.isEmpty("data"))
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
@@ -7575,10 +7575,10 @@ static CommandReturnValues cmd_load(string& sCmd)
                     else
                         nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 }
                 else
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
@@ -7599,7 +7599,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                     for (unsigned int i = 0; i < vFilelist.size(); i++)
                     {
-                        _data.openFile(sPath + vFilelist[i], _option, false, true, nArgument);
+                        _data.openFile(sPath + vFilelist[i], false, nArgument);
                     }
                     if (!_data.isEmpty("data"))
                         NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
@@ -7613,10 +7613,10 @@ static CommandReturnValues cmd_load(string& sCmd)
                     else
                         nArgument = findParameter(sCmd, "h", '=') + 1;
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 }
                 else
-                    _data.openFile(sArgument, _option, false, false, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
@@ -7742,7 +7742,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             if (findParameter(sCmd, "tocache") && !findParameter(sCmd, "all"))
             {
                 // Single file directly to cache
-                NumeRe::FileHeaderInfo info = _data.openFile(sArgument, _option, true, true);
+                NumeRe::FileHeaderInfo info = _data.openFile(sArgument, true);
 
                 if (!_data.isEmpty(info.sTableName))
                 {
@@ -7773,7 +7773,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
 
                 for (size_t i = 0; i < vFilelist.size(); i++)
-                    _data.openFile(vFilelist[i], _option, true, true);
+                    _data.openFile(vFilelist[i], true);
 
                 if (!_data.isEmpty(vFilelist.front()))
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument));
@@ -7800,7 +7800,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     for (size_t i = 0; i < vFilelist.size(); i++)
                     {
                         // Melting is done automatically
-                        _data.openFile(vFilelist[i], _option, false, true, nArgument);
+                        _data.openFile(vFilelist[i], false, nArgument);
                     }
 
                     if (!_data.isEmpty("data"))
@@ -7822,10 +7822,10 @@ static CommandReturnValues cmd_load(string& sCmd)
                         nArgument = findParameter(sCmd, "h", '=') + 1;
 
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
                 }
                 else
-                    _data.openFile(sArgument, _option, false, true, nArgument);
+                    _data.openFile(sArgument, false, nArgument);
 
                 if (!_data.isEmpty("data"))
                 {

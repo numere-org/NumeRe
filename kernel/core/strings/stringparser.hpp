@@ -27,7 +27,7 @@
 #include "stringfunchandler.hpp"
 #include "../ParserLib/muParser.h"
 #include "../settings.hpp"
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 
 using namespace std;
 

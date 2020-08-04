@@ -21,7 +21,7 @@
 #define DATAOPS_HPP
 
 #include <string>
-#include "cache.hpp"
+#include "memorymanager.hpp"
 #include "../settings.hpp"
 #include "../ParserLib/muParser.h"
 #include "../io/output.hpp"

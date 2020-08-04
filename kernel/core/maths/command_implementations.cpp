@@ -234,47 +234,47 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
         // Copy the data
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
         }
 
         // Sort the data
-        _cache.sortElements("cache -sort c=1[2]");
+        _cache.sortElements("sort -table c=1[2]");
         double dResult = 0.0;
         long long int j = 1;
 
         // Calculate the integral by jumping over NaNs
-        for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++) //nan-suche
+        for (long long int i = 0; i < _cache.getLines("table", false) - 1; i++) //nan-suche
         {
             j = 1;
 
-            if (!_cache.isValidElement(i, 1, "cache"))
+            if (!_cache.isValidElement(i, 1, "table"))
                 continue;
 
-            while (!_cache.isValidElement(i + j, 1, "cache") && i + j < _cache.getLines("cache", false) - 1)
+            while (!_cache.isValidElement(i + j, 1, "table") && i + j < _cache.getLines("table", false) - 1)
                 j++;
 
-            if (!_cache.isValidElement(i + j, 0, "cache") || !_cache.isValidElement(i + j, 1, "cache"))
+            if (!_cache.isValidElement(i + j, 0, "table") || !_cache.isValidElement(i + j, 1, "table"))
                 break;
 
-            if (sLowerBoundary.length() && x0 > _cache.getElement(i, 0, "cache"))
+            if (sLowerBoundary.length() && x0 > _cache.getElement(i, 0, "table"))
                 continue;
 
-            if (sLowerBoundary.length() && x1 < _cache.getElement(i + j, 0, "cache"))
+            if (sLowerBoundary.length() && x1 < _cache.getElement(i + j, 0, "table"))
                 break;
 
             // Calculate either the integral, its samples or the corresponding x values
             if (!bReturnFunctionPoints && !bCalcXvals)
-                dResult += (_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache"));
+                dResult += (_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / 2.0 * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table"));
             else if (bReturnFunctionPoints && !bCalcXvals)
             {
                 if (vResult.size())
-                    vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")) + vResult.back());
+                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / 2.0 * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")) + vResult.back());
                 else
-                    vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")));
+                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / 2.0 * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")));
             }
             else
-                vResult.push_back(_cache.getElement(i + j, 0, "cache"));
+                vResult.push_back(_cache.getElement(i + j, 0, "table"));
         }
 
         // If the integral was calculated, then there is a
@@ -1622,24 +1622,24 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, MemoryManager&
 
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sExpr));
-                _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sExpr));
+                _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sExpr));
+                _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sExpr));
             }
 
-            _cache.sortElements("cache -sort c=1[2]");
+            _cache.sortElements("sort -table c=1[2]");
 
             // Shall the x values be calculated?
             if (findParameter(sCmd, "xvals"))
             {
                 // The x values are approximated to be in the
                 // middle of the two samplex
-                for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
+                for (long long int i = 0; i < _cache.getLines("table", false) - 1; i++)
                 {
-                    if (_cache.isValidElement(i, 0, "cache")
-                            && _cache.isValidElement(i + 1, 0, "cache")
-                            && _cache.isValidElement(i, 1, "cache")
-                            && _cache.isValidElement(i + 1, 1, "cache"))
-                        vResult.push_back((_cache.getElement(i + 1, 0, "cache") + _cache.getElement(i, 0, "cache")) / 2);
+                    if (_cache.isValidElement(i, 0, "table")
+                            && _cache.isValidElement(i + 1, 0, "table")
+                            && _cache.isValidElement(i, 1, "table")
+                            && _cache.isValidElement(i + 1, 1, "table"))
+                        vResult.push_back((_cache.getElement(i + 1, 0, "table") + _cache.getElement(i, 0, "table")) / 2);
                     else
                         vResult.push_back(NAN);
                 }
@@ -1648,14 +1648,14 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, MemoryManager&
             {
                 // We calculate the derivative of the data
                 // by approximating it linearily
-                for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
+                for (long long int i = 0; i < _cache.getLines("table", false) - 1; i++)
                 {
-                    if (_cache.isValidElement(i, 0, "cache")
-                            && _cache.isValidElement(i + 1, 0, "cache")
-                            && _cache.isValidElement(i, 1, "cache")
-                            && _cache.isValidElement(i + 1, 1, "cache"))
-                        vResult.push_back((_cache.getElement(i + 1, 1, "cache") - _cache.getElement(i, 1, "cache"))
-                                          / (_cache.getElement(i + 1, 0, "cache") - _cache.getElement(i, 0, "cache")));
+                    if (_cache.isValidElement(i, 0, "table")
+                            && _cache.isValidElement(i + 1, 0, "table")
+                            && _cache.isValidElement(i, 1, "table")
+                            && _cache.isValidElement(i + 1, 1, "table"))
+                        vResult.push_back((_cache.getElement(i + 1, 1, "table") - _cache.getElement(i, 1, "table"))
+                                          / (_cache.getElement(i + 1, 0, "table") - _cache.getElement(i, 0, "table")));
                     else
                         vResult.push_back(NAN);
                 }
@@ -1742,7 +1742,7 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
 
     // Store the results in the second column of a table
     for (int i = 0; i < nResults; i++)
-        _cache.writeToTable(i, 1, "cache", v[i]);
+        _cache.writeToTable(i, 1, "table", v[i]);
 
     _parser.SetExpr(sInterval);
     v = _parser.Eval(nResults_x);
@@ -1753,15 +1753,15 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
         for (int i = 0; i < nResults; i++)
         {
             if (i >= nResults_x)
-                _cache.writeToTable(i, 0, "cache", 0.0);
+                _cache.writeToTable(i, 0, "table", 0.0);
             else
-                _cache.writeToTable(i, 0, "cache", v[i]);
+                _cache.writeToTable(i, 0, "table", v[i]);
         }
     }
     else
         return false;
 
-    sCmd = "cache -sort cols=1[2]";
+    sCmd = "sort -table cols=1[2]";
     _cache.sortElements(sCmd);
 
     double dMedian = 0.0, dExtremum = 0.0;
@@ -1781,15 +1781,15 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
 
     // Find the first median and use it as starting point
     // for identifying the next extremum
-    for (int i = 0; i + nanShift < _cache.getLines("cache", true); i++)
+    for (int i = 0; i + nanShift < _cache.getLines("table", true); i++)
     {
         if (i == nOrder)
             break;
 
-        while (isnan(_cache.getElement(i + nanShift, 1, "cache")) && i + nanShift < _cache.getLines("cache", true) - 1)
+        while (isnan(_cache.getElement(i + nanShift, 1, "table")) && i + nanShift < _cache.getLines("table", true) - 1)
             nanShift++;
 
-        data[i] = _cache.getElement(i + nanShift, 1, "cache");
+        data[i] = _cache.getElement(i + nanShift, 1, "table");
     }
 
     // Sort the data and find the median
@@ -1798,17 +1798,17 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
 
     // Go through the data points using sliding median to find the local
     // extrema in the data set
-    for (int i = nOrder; i + nanShift < _cache.getLines("cache", false) - nOrder; i++)
+    for (int i = nOrder; i + nanShift < _cache.getLines("table", false) - nOrder; i++)
     {
         int currNanShift = 0;
         dMedian = 0.0;
 
         for (int j = i; j < i + nOrder; j++)
         {
-            while (isnan(_cache.getElement(j + nanShift + currNanShift, 1, "cache")) && j + nanShift + currNanShift < _cache.getLines("cache", true) - 1)
+            while (isnan(_cache.getElement(j + nanShift + currNanShift, 1, "table")) && j + nanShift + currNanShift < _cache.getLines("table", true) - 1)
                 currNanShift++;
 
-            data[j - i] = _cache.getElement(j + nanShift + currNanShift, 1, "cache");
+            data[j - i] = _cache.getElement(j + nanShift + currNanShift, 1, "table");
         }
 
         gsl_sort(data, 1, nOrder);
@@ -1830,21 +1830,21 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
                 if (!nMode || nMode == nDir)
                 {
                     int nExtremum = i + nanShift;
-                    double dExtremum = _cache.getElement(i + nanShift, 1, "cache");
+                    double dExtremum = _cache.getElement(i + nanShift, 1, "table");
 
                     for (long long int k = i + nanShift; k >= 0; k--)
                     {
                         if (k == i - nOrder)
                             break;
 
-                        if (nDir*_cache.getElement(k, 1, "cache") > nDir*dExtremum)
+                        if (nDir*_cache.getElement(k, 1, "table") > nDir*dExtremum)
                         {
                             nExtremum = k;
-                            dExtremum = _cache.getElement(k, 1, "cache");
+                            dExtremum = _cache.getElement(k, 1, "table");
                         }
                     }
 
-                    vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
+                    vResults.push_back(_cache.getElement(nExtremum, 0, "table"));
                     i = nExtremum + nOrder;
                 }
 
@@ -2296,7 +2296,7 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
     int nResults_x = 0;
 
     for (int i = 0; i < nResults; i++)
-        _cache.writeToTable(i, 1, "cache", v[i]);
+        _cache.writeToTable(i, 1, "table", v[i]);
 
     _parser.SetExpr(sInterval);
     v = _parser.Eval(nResults_x);
@@ -2306,54 +2306,54 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
         for (int i = 0; i < nResults; i++)
         {
             if (i >= nResults_x)
-                _cache.writeToTable(i, 0, "cache", 0.0);
+                _cache.writeToTable(i, 0, "table", 0.0);
             else
-                _cache.writeToTable(i, 0, "cache", v[i]);
+                _cache.writeToTable(i, 0, "table", v[i]);
         }
     }
     else
         return false;
 
-    sCmd = "cache -sort cols=1[2]";
+    sCmd = "sort -table cols=1[2]";
     _cache.sortElements(sCmd);
 
-    for (long long int i = 1; i < _cache.getLines("cache", false); i++)
+    for (long long int i = 1; i < _cache.getLines("table", false); i++)
     {
-        if (isnan(_cache.getElement(i - 1, 1, "cache")))
+        if (isnan(_cache.getElement(i - 1, 1, "table")))
             continue;
 
-        if (!nMode && _cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") <= 0.0)
+        if (!nMode && _cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") <= 0.0)
         {
-            if (_cache.getElement(i, 1, "cache") == 0.0)
+            if (_cache.getElement(i, 1, "table") == 0.0)
             {
-                vResults.push_back(_cache.getElement(i, 0, "cache"));
+                vResults.push_back(_cache.getElement(i, 0, "table"));
                 i++;
             }
-            else if (_cache.getElement(i - 1, 1, "cache") == 0.0)
-                vResults.push_back(_cache.getElement(i - 1, 0, "cache"));
-            else if (_cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") < 0.0)
-                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "cache"), _cache.getElement(i - 1, 1, "cache"), _cache.getElement(i, 0, "cache"), _cache.getElement(i, 1, "cache")));
+            else if (_cache.getElement(i - 1, 1, "table") == 0.0)
+                vResults.push_back(_cache.getElement(i - 1, 0, "table"));
+            else if (_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") < 0.0)
+                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table"), _cache.getElement(i - 1, 1, "table"), _cache.getElement(i, 0, "table"), _cache.getElement(i, 1, "table")));
         }
-        else if (nMode && _cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") <= 0.0)
+        else if (nMode && _cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") <= 0.0)
         {
-            if (_cache.getElement(i, 1, "cache") == 0.0 && _cache.getElement(i - 1, 1, "cache") == 0.0)
+            if (_cache.getElement(i, 1, "table") == 0.0 && _cache.getElement(i - 1, 1, "table") == 0.0)
             {
-                for (long long int j = i + 1; j < _cache.getLines("cache", false); j++)
+                for (long long int j = i + 1; j < _cache.getLines("table", false); j++)
                 {
-                    if (nMode * _cache.getElement(j, 1, "cache") > 0.0)
+                    if (nMode * _cache.getElement(j, 1, "table") > 0.0)
                     {
                         for (long long int k = i - 1; k <= j; k++)
-                            vResults.push_back(_cache.getElement(k, 0, "cache"));
+                            vResults.push_back(_cache.getElement(k, 0, "table"));
 
                         break;
                     }
-                    else if (nMode * _cache.getElement(j, 1, "cache") < 0.0)
+                    else if (nMode * _cache.getElement(j, 1, "table") < 0.0)
                         break;
 
-                    if (j + 1 == _cache.getLines("cache", false) && i > 1 && nMode * _cache.getElement(i - 2, 1, "cache") < 0.0)
+                    if (j + 1 == _cache.getLines("table", false) && i > 1 && nMode * _cache.getElement(i - 2, 1, "table") < 0.0)
                     {
                         for (long long int k = i - 1; k <= j; k++)
-                            vResults.push_back(_cache.getElement(k, 0, "cache"));
+                            vResults.push_back(_cache.getElement(k, 0, "table"));
 
                         break;
                     }
@@ -2361,12 +2361,12 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
 
                 continue;
             }
-            else if (_cache.getElement(i, 1, "cache") == 0.0 && nMode * _cache.getElement(i - 1, 1, "cache") < 0.0)
-                vResults.push_back(_cache.getElement(i, 0, "cache"));
-            else if (_cache.getElement(i - 1, 1, "cache") == 0.0 && nMode * _cache.getElement(i, 1, "cache") > 0.0)
-                vResults.push_back(_cache.getElement(i - 1, 0, "cache"));
-            else if (_cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") < 0.0 && nMode * _cache.getElement(i - 1, 1, "cache") < 0.0)
-                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "cache"), _cache.getElement(i - 1, 1, "cache"), _cache.getElement(i, 0, "cache"), _cache.getElement(i, 1, "cache")));
+            else if (_cache.getElement(i, 1, "table") == 0.0 && nMode * _cache.getElement(i - 1, 1, "table") < 0.0)
+                vResults.push_back(_cache.getElement(i, 0, "table"));
+            else if (_cache.getElement(i - 1, 1, "table") == 0.0 && nMode * _cache.getElement(i, 1, "table") > 0.0)
+                vResults.push_back(_cache.getElement(i - 1, 0, "table"));
+            else if (_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") < 0.0 && nMode * _cache.getElement(i - 1, 1, "table") < 0.0)
+                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table"), _cache.getElement(i - 1, 1, "table"), _cache.getElement(i, 0, "table"), _cache.getElement(i, 1, "table")));
         }
     }
 
@@ -4472,19 +4472,19 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, Func
     MemoryManager _cache;
     getData(sDataset, _idx, _data, _cache);
 
-    _cache.sortElements("cache -sort cols=1[2]");
+    _cache.sortElements("sort -table cols=1[2]");
 
-    sColHeaders[0] = _cache.getHeadLineElement(0, "cache") + "\\n(regularized)";
-    sColHeaders[1] = _cache.getHeadLineElement(1, "cache") + "\\n(regularized)";
+    sColHeaders[0] = _cache.getHeadLineElement(0, "table") + "\\n(regularized)";
+    sColHeaders[1] = _cache.getHeadLineElement(1, "table") + "\\n(regularized)";
 
-    long long int nLines = _cache.getLines("cache", false);
+    long long int nLines = _cache.getLines("table", false);
 
-    dXmin = _cache.min("cache", 0, nLines - 1, 0);
-    dXmax = _cache.max("cache", 0, nLines - 1, 0);
+    dXmin = _cache.min("table", 0, nLines - 1, 0);
+    dXmax = _cache.max("table", 0, nLines - 1, 0);
 
     // Create splines
     tk::spline _spline;
-    _spline.set_points(_cache.getElement(VectorIndex(0, nLines-1), VectorIndex(0), "cache"), _cache.getElement(VectorIndex(0, nLines-1), VectorIndex(1), "cache"), false);
+    _spline.set_points(_cache.getElement(VectorIndex(0, nLines-1), VectorIndex(0), "table"), _cache.getElement(VectorIndex(0, nLines-1), VectorIndex(1), "table"), false);
 
     if (!findParameter(sCmd, "samples", '='))
         nSamples = nLines;
@@ -4548,15 +4548,15 @@ bool analyzePulse(string& _sCmd, Parser& _parser, MemoryManager& _data, Function
     MemoryManager _cache;
     getData(sDataset, _idx, _data, _cache);
 
-    long long int nLines = _cache.getLines("cache", false);
+    long long int nLines = _cache.getLines("table", false);
 
-    dXmin = _cache.min("cache", 0, nLines - 1, 0);
-    dXmax = _cache.max("cache", 0, nLines - 1, 0);
+    dXmin = _cache.min("table", 0, nLines - 1, 0);
+    dXmax = _cache.max("table", 0, nLines - 1, 0);
 
     _v.Create(nLines);
 
     for (long long int i = 0; i < nLines; i++)
-        _v.a[i] = _cache.getElement(i, 1, "cache");
+        _v.a[i] = _cache.getElement(i, 1, "table");
 
     dSampleSize = (dXmax - dXmin) / ((double)_v.GetNx() - 1.0);
     mglData _pulse(_v.Pulse('x'));
@@ -4680,18 +4680,18 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
     MemoryManager _cache;
     getData(sDataset, _idx, _data, _cache);
 
-    sDataset = _cache.getHeadLineElement(1, "cache");
+    sDataset = _cache.getHeadLineElement(1, "table");
 
-    long long int nLines = _cache.getLines("cache", false);
+    long long int nLines = _cache.getLines("table", false);
 
-    dXmin = _cache.min("cache", 0, nLines - 1, 0);
-    dXmax = _cache.max("cache", 0, nLines - 1, 0);
+    dXmin = _cache.min("table", 0, nLines - 1, 0);
+    dXmax = _cache.max("table", 0, nLines - 1, 0);
 
     _real.Create(nLines);
     _imag.Create(nLines);
 
     for (long long int i = 0; i < nLines; i++)
-        _real.a[i] = _cache.getElement(i, 1, "cache");
+        _real.a[i] = _cache.getElement(i, 1, "table");
 
     if (!nSamples || nSamples > _real.GetNx())
         nSamples = _real.GetNx() / 32;
@@ -4777,15 +4777,15 @@ bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, Funct
     sTableName.erase(sTableName.find('('));
     getData(sTableName, _idx, _data, _cache);
 
-    long long int nLines = _cache.getLines("cache", true) - _cache.getAppendedZeroes(0, "cache");
+    long long int nLines = _cache.getLines("table", true) - _cache.getAppendedZeroes(0, "table");
 
     if (nLines < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, sTableName);
 
     for (long long int i = 0; i < nLines; i++)
     {
-        xVect.push_back(_cache.getElement(i, 0, "cache"));
-        yVect.push_back(_cache.getElement(i, 1, "cache"));
+        xVect.push_back(_cache.getElement(i, 0, "table"));
+        yVect.push_back(_cache.getElement(i, 1, "table"));
     }
 
     // Set the points for the spline to calculate

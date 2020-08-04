@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../ParserLib/muParser.h"
 #include "../settings.hpp"
 #include "../maths/define.hpp"

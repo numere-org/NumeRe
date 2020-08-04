@@ -9,3 +9,6 @@ Fixed	The static code analyzer will now calculate the results, if it is activate
 Applied	Smoothing was changed slightly and allows now to use different filter types.
 New	NumeRe now allows only a single running instance. Double clicking files will open them in the already opened instance. Instance located in different root folders (e.g. "C:/Software/NumeRe" and "C:/Software/NumeRePortable") are not restricted, i.e. only one instance per root folder is allowed.
 Cleaned	The symbols' tree updates the function definitions and plugin definitions each time, one of them is changed, automatically.
+Removed	The obsolete Datafile class was removed and its functionality is now integrated in the MemoryManager class.
+Cleaned	The "data()" table is now a usual table with regular write permissions.
+Updated	The default table is now called "table()". This will get active once the memory is cleared. You may however rename "cache()" to "table()" as well using "rename cache(), table()".

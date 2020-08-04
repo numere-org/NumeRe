@@ -28,7 +28,7 @@
 
 #include "../ParserLib/muParser.h"
 #include "../utils/tools.hpp"
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "define.hpp"
 #include "parser_functions.hpp"
 #include "../settings.hpp"

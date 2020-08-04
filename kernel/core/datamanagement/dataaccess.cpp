@@ -1052,13 +1052,13 @@ bool getData(const string& sTableName, Indices& _idx, const MemoryManager& _data
     {
         for (long long int i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
-            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col.last(), sTableName));
+            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
+            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col.last(), sTableName));
 
             if (!i)
             {
-                _cache.setHeadLineElement(0, "cache", _data.getHeadLineElement(_idx.col.front(), sTableName));
-                _cache.setHeadLineElement(1, "cache", _data.getHeadLineElement(_idx.col.last(), sTableName));
+                _cache.setHeadLineElement(0, "table", _data.getHeadLineElement(_idx.col.front(), sTableName));
+                _cache.setHeadLineElement(1, "table", _data.getHeadLineElement(_idx.col.last(), sTableName));
             }
         }
     }
@@ -1068,17 +1068,17 @@ bool getData(const string& sTableName, Indices& _idx, const MemoryManager& _data
         {
             for (long long int j = 0; j < _idx.col.size(); j++)
             {
-                _cache.writeToTable(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], sTableName));
+                _cache.writeToTable(i, j, "table", _data.getElement(_idx.row[i], _idx.col[j], sTableName));
 
                 if (!i)
-                    _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], sTableName));
+                    _cache.setHeadLineElement(j, "table", _data.getHeadLineElement(_idx.col[j], sTableName));
             }
         }
     }
 
 	// sort, if sorting is activated
 	if (bSort)
-		_cache.sortElements("cache -sort c=1[2:]");
+		_cache.sortElements("sort -table c=1[2:]");
 
 	return true;
 }
@@ -1240,26 +1240,26 @@ static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatab
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
         }
     }
     else if (nDim == 3)
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
-            _cache.writeToTable(i, 2, "cache", _data.getElement(_idx.row[i], _idx.col[2], sDatatable));
+            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            _cache.writeToTable(i, 2, "table", _data.getElement(_idx.row[i], _idx.col[2], sDatatable));
         }
     }
 
 	// Sort the elements
-	_cache.sortElements("cache -sort c=1[2:]");
+	_cache.sortElements("sort -table c=1[2:]");
 
 	// Rename the table
-	if (sDatatable != "cache")
-        _cache.renameTable("cache", sDatatable, true);
+	if (sDatatable != "table")
+        _cache.renameTable("table", sDatatable, true);
 
 	// Return the extracted table object
 	return _cache.extractTable(sDatatable);

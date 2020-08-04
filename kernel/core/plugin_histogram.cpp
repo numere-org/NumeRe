@@ -44,7 +44,7 @@ void plugin_histogram (string& sCmd, MemoryManager& _data, MemoryManager& _targe
 			sDatatable = _data.matchTableAsParameter(sCmd);
 		if (!_data.getCols(sDatatable) || !_data.getLines(sDatatable))
 			throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
-		string sTargettable = "cache";
+		string sTargettable = "table";
 		string sBinLabel = "Bins";
 		string sCountLabel = "Counts";
 		string sAxisLabels[3] = {"x", "y", "z"};
@@ -881,7 +881,7 @@ void plugin_histogram (string& sCmd, MemoryManager& _data, MemoryManager& _targe
 			// --> Setze die ueblichen Ausgabe-Info-Parameter <--
 			if (!bWriteToCache || findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '='))
 			{
-				_out.setPluginName(_lang.get("HIS_OUT_PLGNINFO", PI_HIST, toString(nDataRow + 1), toString(nDataRowFinal), _data.getDataFileName(sDatatable)));
+				_out.setPluginName(_lang.get("HIST_OUT_PLGNINFO", PI_HIST, toString(nDataRow + 1), toString(nDataRowFinal), _data.getDataFileName(sDatatable)));
 				//_out.setPluginName("Histogramm (v " + PI_HIST + ") unter Verwendung der Datenreihe(n) " + toString(nDataRow+1) + "-" + toString(nDataRowFinal) + " aus " + _data.getDataFileName(sDatatable));
 				if (bGrid)
 					_out.setCommentLine(_lang.get("HIST_OUT_COMMENTLINE", toString(dMinZ, 5), toString(dMaxZ, 5), toString(dIntervallLength, 5)));

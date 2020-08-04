@@ -21,7 +21,7 @@
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sort.h>
 
-#include "cache.hpp"
+#include "memorymanager.hpp"
 #include "../utils/tools.hpp"
 #include "../version.h"
 #include "../maths/resampler.h"
@@ -47,7 +47,7 @@ MemoryManager::MemoryManager() : NumeRe::FileAdapter(), StringMemory(), NumeRe::
 	sUserdefinedFuncs = "";
 	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;imread;implot;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;pulse;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;stfa;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
 	sPluginCommands = "";
-	mCachesMap["cache"] = 0;
+	mCachesMap["table"] = 0;
 	vMemory.push_back(new Memory());
 
 	tableColumnsCount = 0.0;
@@ -93,7 +93,7 @@ void MemoryManager::removeTablesFromMemory()
 		vMemory.clear();
 		bSaveMutex = false;
 		mCachesMap.clear();
-		mCachesMap["cache"] = 0;
+		mCachesMap["table"] = 0;
 		vMemory.push_back(new Memory());
 	}
 }
@@ -305,7 +305,7 @@ bool MemoryManager::saveToCacheFile()
 
     NumeRe::CacheFile cacheFile(sCache_file);
 
-    cacheFile.setNumberOfTables(mCachesMap.size());
+    cacheFile.setNumberOfTables(mCachesMap.size() - isTable("data"));
     cacheFile.writeCacheHeader();
 
     long long int nLines;
@@ -313,6 +313,9 @@ bool MemoryManager::saveToCacheFile()
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
+        if (iter->first == "data")
+            continue;
+
         nLines = vMemory[iter->second]->getLines(false);
         nCols = vMemory[iter->second]->getCols(false);
 
@@ -378,6 +381,7 @@ bool MemoryManager::loadFromNewCacheFile()
             delete vMemory[i];
 
         vMemory.clear();
+        mCachesMap.clear();
 
         for (size_t i = 0; i < nCaches; i++)
         {
@@ -468,6 +472,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
                 delete vMemory[i];
 
             vMemory.clear();
+            mCachesMap.clear();
 
             for (size_t i = 0; i < cachemapssize; i++)
             {
@@ -812,6 +817,7 @@ void MemoryManager::melt(Memory* _mem, const string& sTable)
         }
 
         sDataFile = "Merged Data";
+        _existingMem->setSaveStatus(false);
 
         // Delete the passed instance (it is not
         // needed any more).
@@ -1000,7 +1006,7 @@ bool MemoryManager::addTable(const string& sCache, const Settings& _option)
 /////////////////////////////////////////////////
 bool MemoryManager::deleteTable(const string& sCache)
 {
-    if (sCache == "cache")
+    if (sCache == "table")
         return false;
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)

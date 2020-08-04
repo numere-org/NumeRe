@@ -147,8 +147,8 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 	// No data available in memory?
 	if (_data.isEmpty("data"))	// Es sind noch keine Daten vorhanden?
 	{
-		_data.openFile(sFileName, _option, false, false); 			// gesammelte Daten an die Klasse uebergeben, die den Rest erledigt
-	}
+		_data.openFile(sFileName);
+    }
 	else	// Sind sie doch? Dann muessen wir uns was ueberlegen...
 	{
 	    // append the data?
@@ -182,7 +182,7 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 				_data.removeData();			// Speicher freigeben...
 
 				// Open the file and copy its contents
-				_data.openFile(sFileName, _option, false, false);
+				_data.openFile(sFileName);
             }
 			else							// Kannst du dich vielleicht mal entscheiden?
 			{
@@ -530,7 +530,7 @@ void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
 			{
 			    // Load the data. The melting of multiple files
 			    // is processed automatically
-                _data.openFile(vFilelist[0], _option, false, true);
+                _data.openFile(vFilelist[i]);
 			}
 
 			// Inform the user and return
@@ -548,10 +548,10 @@ void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
             else
                 nArgument = findParameter(sCmd, "h", '=') + 1;
             nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-            _data.openFile(sArgument, _option, false, true, nArgument);
+            _data.openFile(sArgument, false, nArgument);
         }
         else
-            _data.openFile(sArgument, _option, false, true);
+            _data.openFile(sArgument);
 
         // Inform the user
         if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
@@ -830,7 +830,7 @@ bool CopyData(string& sCmd, Parser& _parser, MemoryManager& _data, const Setting
 		bTranspose = true;
 
     // Get the target from the option or use the default one
-    sTarget = evaluateTargetOptionInCommand(sCmd, "cache", _iTargetIndex, _parser, _data, _option);
+    sTarget = evaluateTargetOptionInCommand(sCmd, "table", _iTargetIndex, _parser, _data, _option);
 
     // Isolate the expression
 	sToCopy = sCmd.substr(sCmd.find(' '));
@@ -1023,11 +1023,11 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
         for (unsigned int j = 0; j < _iSourceIndex.col.size(); j++)
         {
             if (!i)
-                _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_iSourceIndex.col[j], sSource));
+                _cache.setHeadLineElement(j, "table", _data.getHeadLineElement(_iSourceIndex.col[j], sSource));
 
             if (_data.isValidElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource))
             {
-                _cache.writeToTable(i, j, "cache", _data.getElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource));
+                _cache.writeToTable(i, j, "table", _data.getElement(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource));
 
                 if (bMove)
                     _data.deleteEntry(_iSourceIndex.row[i], _iSourceIndex.col[j], sSource);
@@ -1037,7 +1037,7 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 
     // Second step: Copy the contents in "_cache" to the new location in the original Datafile object
 
-    for (long long int i = 0; i < _cache.getLines("cache", false); i++)
+    for (long long int i = 0; i < _cache.getLines("table", false); i++)
     {
         // Break the operation, if the indices are marking a smaller section
         if (!bTranspose)
@@ -1050,14 +1050,14 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
             if (i >= _iTargetIndex.col.size())
                 break;
         }
-        for (long long int j = 0; j < _cache.getCols("cache", false); j++)
+        for (long long int j = 0; j < _cache.getCols("table", false); j++)
         {
             if (!bTranspose)
             {
                 // Write the headlines
                 if (!_iTargetIndex.row[i] && _data.getHeadLineElement(_iTargetIndex.col[j], sTarget).substr(0, 6) == "Spalte")
                 {
-                    _data.setHeadLineElement(_iTargetIndex.col[j], sTarget, _cache.getHeadLineElement(j, "cache"));
+                    _data.setHeadLineElement(_iTargetIndex.col[j], sTarget, _cache.getHeadLineElement(j, "table"));
                 }
 
                 // Break the operation, if the indices are marking a smaller section
@@ -1065,8 +1065,8 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
                     break;
 
                 // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                if (_cache.isValidElement(i, j, "cache"))
-                    _data.writeToTable(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget, _cache.getElement(i, j, "cache"));
+                if (_cache.isValidElement(i, j, "table"))
+                    _data.writeToTable(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget, _cache.getElement(i, j, "table"));
                 else if (_data.isValidElement(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget))
                     _data.deleteEntry(_iTargetIndex.row[i], _iTargetIndex.col[j], sTarget);
             }
@@ -1078,8 +1078,8 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
                     break;
 
                 // Write the data. Invalid data is deleted explicitly, because it might already contain old data
-                if (_cache.isValidElement(i, j, "cache"))
-                    _data.writeToTable(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget, _cache.getElement(i, j, "cache"));
+                if (_cache.isValidElement(i, j, "table"))
+                    _data.writeToTable(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget, _cache.getElement(i, j, "table"));
                 else if (_data.isValidElement(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget))
                     _data.deleteEntry(_iTargetIndex.col[j], _iTargetIndex.row[i], sTarget);
             }

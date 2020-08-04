@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "../settings.hpp"
-#include "../datamanagement/cache.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../ParserLib/muParser.h"
 #include "define.hpp"
 #include "../datamanagement/dataaccess.hpp"

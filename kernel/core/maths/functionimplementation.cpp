@@ -398,23 +398,23 @@ value_type parser_Norm(const value_type* vElements, int nElements)
 // --> Diese Funktion berechnet den Median mehrerer Werte <--
 value_type parser_Med(const value_type* vElements, int nElements)
 {
-    MemoryManager _cache;
+    Memory _mem;
 
     for (int i = 0; i < nElements; i++)
-        _cache.writeToTable(i,0,"cache",vElements[i]);
+        _mem.writeData(i, 0, vElements[i]);
 
-    return _cache.med("cache", 0,nElements-1);
+    return _mem.med(VectorIndex(0, nElements-1), VectorIndex(0));
 }
 
 // --> Diese Funktion berechnet das x-te Perzentil mehrerer Werte <--
 value_type parser_Pct(const value_type* vElements, int nElements)
 {
-    MemoryManager _cache;
+    Memory _mem;
 
     for (int i = 0; i < nElements-1; i++)
-        _cache.writeToTable(i,0,"cache",vElements[i]);
+        _mem.writeData(i, 0, vElements[i]);
 
-    return _cache.pct("cache", 0, nElements-1, 0, -1, vElements[nElements-1]);
+    return _mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[nElements-1]);
 }
 
 // --> Analogie zur Excel-Funktion VERGLEICH() <--
