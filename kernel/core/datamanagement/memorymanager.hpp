@@ -270,9 +270,9 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[mCachesMap.at(_sCache)]->smooth(_vLine, _vCol, _settings, (Memory::AppDir)Direction);
 		}
 
-		inline bool retoque(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction = ALL)
+		inline bool retouch(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction = ALL)
 		{
-			return vMemory[mCachesMap.at(_sCache)]->retoque(_vLine, _vCol, (Memory::AppDir)Direction);
+			return vMemory[mCachesMap.at(_sCache)]->retouch(_vLine, _vCol, (Memory::AppDir)Direction);
 		}
 
 		inline bool resample(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, unsigned int nSamples = 0, AppDir Direction = ALL)

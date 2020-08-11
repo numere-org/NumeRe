@@ -16,36 +16,31 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <memory>
+#include <gsl/gsl_statistics.h>
+#include <gsl/gsl_sort.h>
 
 #include "memory.hpp"
 #include "../../kernel.hpp"
 #include "../io/file.hpp"
-#include <memory>
+#include "../ui/error.hpp"
+#include "../settings.hpp"
+#include "../utils/tools.hpp"
+#include "../version.h"
+#include "../maths/resampler.h"
+
+#define MAX_TABLE_SIZE 1e8
 
 using namespace std;
 extern Language _lang;
 
-/*
- * Realisierung der Memory-Klasse
- */
-
-void prepareRegion(RetoqueRegion& _region, unsigned int nSize, double _dMedian = NAN)
-{
-    _region.vDataArray.resize(nSize);
-    _region.vValidationArray.resize(nSize);
-    for (unsigned int i = 0; i < nSize; i++)
-    {
-        _region.vDataArray[i].resize(nSize, NAN);
-        _region.vValidationArray[i].resize(nSize, false);
-    }
-    _region.dMedian = _dMedian;
-    return;
-}
-
-
 size_t qSortDouble(double* dArray, size_t nlength);
 
-// --> Standard-Konstruktor <--
+
+
+/////////////////////////////////////////////////
+/// \brief Default constructor.
+/////////////////////////////////////////////////
 Memory::Memory()
 {
     nLines = 128;
@@ -60,7 +55,15 @@ Memory::Memory()
     nLastSaved = time(0);
 }
 
-// --> Allgemeiner Konstruktor <--
+
+/////////////////////////////////////////////////
+/// \brief Specialized constructor to allocate a
+/// defined table size.
+///
+/// \param _nLines long long int
+/// \param _nCols long long int
+///
+/////////////////////////////////////////////////
 Memory::Memory(long long int _nLines, long long int _nCols) : Memory()
 {
     nLines = _nLines;
@@ -68,34 +71,52 @@ Memory::Memory(long long int _nLines, long long int _nCols) : Memory()
     Allocate(_nLines, _nCols);
 }
 
-// --> Destruktor <--
+
+/////////////////////////////////////////////////
+/// \brief Memory class destructor, which will
+/// free the allocated memory.
+/////////////////////////////////////////////////
 Memory::~Memory()
 {
     clear();
 }
 
-// --> Generiere eine neue Matrix auf Basis der gesetzten Werte. Pruefe zuvor, ob nicht schon eine vorhanden ist <--
+
+/////////////////////////////////////////////////
+/// \brief This member function is the Memory
+/// class allocator. It will handle all memory
+/// allocations.
+///
+/// \param _nNLines long long int
+/// \param _nNCols long long int
+/// \param shrink bool
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::Allocate(long long int _nNLines, long long int _nNCols, bool shrink)
 {
-    if (_nNCols * _nNLines > 1e8)
-    {
-        //throw TOO_LARGE_CACHE;
+    if (_nNCols * _nNLines > MAX_TABLE_SIZE)
         throw SyntaxError(SyntaxError::TOO_LARGE_CACHE, "", SyntaxError::invalid_position);
-    }
     else if (!dMemTable && !nAppendedZeroes && !sHeadLine)
     {
+        // There was no allocation up to know,
+        // therefore we can simply allocate the
+        // requested size
         sHeadLine = new string[_nNCols];
         nAppendedZeroes = new long long int[_nNCols];
+
         for (long long int j = 0; j < _nNCols; j++)
         {
-            sHeadLine[j] = "Spalte_" + toString(j + 1);
+            sHeadLine[j] = _lang.get("COMMON_COL") + "_" + toString(j + 1);
             nAppendedZeroes[j] = _nNLines;
         }
 
         dMemTable = new double*[_nNLines];
+
         for (long long int i = 0; i < _nNLines; i++)
         {
             dMemTable[i] = new double[_nNCols];
+
             for (long long int j = 0; j < _nNCols; j++)
             {
                 dMemTable[i][j] = NAN;
@@ -107,12 +128,19 @@ bool Memory::Allocate(long long int _nNLines, long long int _nNCols, bool shrink
     }
     else if (nLines && nCols && dMemTable && nAppendedZeroes)
     {
+        // An allocation already happened. We have to consider
+        // a possible re-allocation.
+        //
         // Do nothing if the cache is already equal or larger in size
         if (nLines >= _nNLines && nCols >= _nNCols && !shrink)
             return true;
 
+        // Create a new allocation for the headlines
+        // and the appended zeroes
         string* sNewHeadLine = new string[_nNCols];
         long long int* nNewAppendedZeroes = new long long int[_nNCols];
+
+        // Copy their contents
         for (long long int j = 0; j < _nNCols; j++)
         {
             if (j < nCols)
@@ -122,15 +150,19 @@ bool Memory::Allocate(long long int _nNLines, long long int _nNCols, bool shrink
             }
             else
             {
-                sNewHeadLine[j] = "Spalte_" + toString(j + 1);
+                sNewHeadLine[j] = _lang.get("COMMON_COL") + "_" + toString(j + 1);
                 nNewAppendedZeroes[j] = _nNLines;
             }
         }
 
+        // Create a new allocation for the table
+        // itself and copy its contents on-the-fly
         double** dNewCache = new double*[_nNLines];
+
         for (long long int i = 0; i < _nNLines; i++)
         {
             dNewCache[i] = new double[_nNCols];
+
             for (long long int j = 0; j < _nNCols; j++)
             {
                 if (i < nLines && j < nCols)
@@ -140,14 +172,18 @@ bool Memory::Allocate(long long int _nNLines, long long int _nNCols, bool shrink
             }
         }
 
+        // Free the previously used memory
         for (long long int i = 0; i < nLines; i++)
         {
             delete[] dMemTable[i];
         }
+
         delete[] dMemTable;
         delete[] nAppendedZeroes;
         delete[] sHeadLine;
 
+        // Assign the new dimensions and the
+        // newly allocated memory blocks
         nCols = _nNCols;
         nLines = _nNLines;
 
@@ -160,9 +196,18 @@ bool Memory::Allocate(long long int _nNLines, long long int _nNCols, bool shrink
         NumeReKernel::print("FEHLER: Kann nicht in den Memory schreiben!");
         return false;
     }
+
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// column headlines, if they are empty.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void Memory::createTableHeaders()
 {
     for (long long int j = 0; j < nCols; j++)
@@ -173,6 +218,13 @@ void Memory::createTableHeaders()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function frees the
+/// internally used memory block completely.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::clear()
 {
     // --> Gib alle Speicher frei, sofern sie belegt sind! (Pointer != 0) <--
@@ -200,22 +252,50 @@ bool Memory::clear()
     return true;
 }
 
-// --> Setzt nCols <--
+
+/////////////////////////////////////////////////
+/// \brief This member function will handle all
+/// memory grow operations by doubling the base
+/// size, which shall be incremented, as long as
+/// it is smaller than the requested size.
+///
+/// \param _nLines long long int
+/// \param _nCols long long int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::resizeMemory(long long int _nLines, long long int _nCols)
 {
     long long int _nNCols = nCols;
     long long int _nNLines = nLines;
 
+    // Double base size as often as needed
     while (_nLines > _nNLines)
         _nNLines *= 2;
+
+    // Double base size as often as needed
     while (_nCols > _nNCols)
         _nNCols *= 2;
+
+    // Re-allocate
     if (!Allocate(_nNLines, _nNCols))
         return false;
+
     return true;
 }
 
-// --> gibt nCols zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief This member function will return the
+/// number of columns, which are currently
+/// available in this table.
+///
+/// \param _bFull bool true, if the reserved
+/// number of columns is requested, false if only
+/// the non-empty ones are requested
+/// \return long long int
+///
+/////////////////////////////////////////////////
 long long int Memory::getCols(bool _bFull) const
 {
     if (!_bFull && dMemTable && (bValidData || nWrittenHeadlines))
@@ -223,6 +303,7 @@ long long int Memory::getCols(bool _bFull) const
         if (nAppendedZeroes && bValidData)
         {
             long long int nReturn = nCols;
+
             /* --> Von oben runterzaehlen, damit nur die leeren Spalten rechts von den Daten
              *     ignoriert werden! <--
              */
@@ -230,10 +311,12 @@ long long int Memory::getCols(bool _bFull) const
             {
                 if (nAppendedZeroes[i] == nLines)
                     nReturn--;
+
                 // --> Findest du eine Spalte die nicht leer ist, dann breche die Schleife ab! <--
                 if (nAppendedZeroes[i] != nLines)
                     break;
             }
+
             return std::max(nReturn, nWrittenHeadlines);
         }
         else
@@ -245,7 +328,18 @@ long long int Memory::getCols(bool _bFull) const
         return nCols;
 }
 
-// --> gibt nLines zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief This member function will return the
+/// number of lines, which are currently
+/// available in this table.
+///
+/// \param _bFull bool true, if the reserved
+/// number of lines is requested, false if only
+/// the non-empty ones are requested
+/// \return long long int
+///
+/////////////////////////////////////////////////
 long long int Memory::getLines(bool _bFull) const
 {
     if (!_bFull && dMemTable && bValidData)
@@ -253,6 +347,7 @@ long long int Memory::getLines(bool _bFull) const
         if (nAppendedZeroes)
         {
             long long int nReturn = 0;
+
             /* --> Suche die Spalte, in der am wenigsten Nullen angehaengt sind, und gib deren
              *     Laenge zurueck <--
              */
@@ -261,6 +356,7 @@ long long int Memory::getLines(bool _bFull) const
                 if (nLines - nAppendedZeroes[i] > nReturn)
                     nReturn = nLines - nAppendedZeroes[i];
             }
+
             return nReturn;
         }
         else
@@ -272,7 +368,16 @@ long long int Memory::getLines(bool _bFull) const
         return nLines;
 }
 
-// --> gibt das Element der _nLine-ten Zeile und der _nCol-ten Spalte zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// element stored at the selected position.
+///
+/// \param _nLine long long int
+/// \param _nCol long long int
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::readMem(long long int _nLine, long long int _nCol) const
 {
     if (_nLine < nLines && _nCol < nCols && dMemTable && _nLine >= 0 && _nCol >= 0)
@@ -281,6 +386,16 @@ double Memory::readMem(long long int _nLine, long long int _nCol) const
         return NAN;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// elements stored at the selected positions.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return vector<double>
+///
+/////////////////////////////////////////////////
 vector<double> Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     vector<double> vReturn;
@@ -291,27 +406,42 @@ vector<double> Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vC
     {
         long long int nCurLines = getLines(false);
         long long int nCurCols = getCols(false);
+
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
             for (unsigned int j = 0; j < _vCol.size(); j++)
             {
-                if (_vLine[i] < 0
-                        || _vLine[i] >= nCurLines
-                        || _vCol[j] < 0
-                        || _vCol[j] >= nCurCols
-                        || _vLine[i] >= nLines - nAppendedZeroes[_vCol[j]])
+                if (_vLine[i] < 0 || _vLine[i] >= nCurLines
+                    || _vCol[j] < 0 || _vCol[j] >= nCurCols
+                    || _vLine[i] >= nLines - nAppendedZeroes[_vCol[j]])
                     vReturn.push_back(NAN);
                 else
                     vReturn.push_back(dMemTable[_vLine[i]][_vCol[j]]);
             }
         }
     }
+
     return vReturn;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function will copy the
+/// selected elements into the passed vector
+/// instance. This member function avoids copies
+/// of the vector instance by directly writing to
+/// the target instance.
+///
+/// \param vTarget vector<double>*
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Memory::copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     vTarget->clear();
+
     if ((_vLine.size() > 1 && _vCol.size() > 1) || !dMemTable)
         vTarget->resize(1, NAN);
     else
@@ -319,16 +449,14 @@ void Memory::copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine
         vTarget->resize(_vLine.size()*_vCol.size(), NAN);
         long long int nCurLines = getLines(false);
         long long int nCurCols = getCols(false);
+
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
             for (unsigned int j = 0; j < _vCol.size(); j++)
             {
-                //cerr << _vLine[i] << endl;
-                if (_vLine[i] >= nCurLines
-                        || _vCol[j] >= nCurCols
-                        || _vCol[j] < 0
-                        || _vLine[i] < 0
-                        || _vLine[i] >= nLines - nAppendedZeroes[_vCol[j]])
+                if (_vLine[i] >= nCurLines || _vLine[i] < 0
+                    || _vCol[j] >= nCurCols || _vCol[j] < 0
+                    || _vLine[i] >= nLines - nAppendedZeroes[_vCol[j]])
                     (*vTarget)[j + i * _vCol.size()] = NAN;
                 else
                     (*vTarget)[j + i * _vCol.size()] = dMemTable[_vLine[i]][_vCol[j]];
@@ -337,7 +465,17 @@ void Memory::copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine
     }
 }
 
-// --> gibt zurueck, ob das Element der _nLine-ten Zeile und _nCol-ten Spalte ueberhaupt gueltig ist <--
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if the element at the
+/// selected positions is valid. Only checks
+/// internally, if the value is not a NaN value.
+///
+/// \param _nLine long long int
+/// \param _nCol long long int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::isValidElement(long long int _nLine, long long int _nCol) const
 {
     if (_nLine < nLines && _nLine >= 0 && _nCol < nCols && _nCol >= 0 && dMemTable)
@@ -346,7 +484,14 @@ bool Memory::isValidElement(long long int _nLine, long long int _nCol) const
         return false;
 }
 
-// --> gibt den Wert von bValidData zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if at least a single
+/// valid value is available in this table.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::isValid() const
 {
     if (!dMemTable)
@@ -354,50 +499,93 @@ bool Memory::isValid() const
 
     if (getCols(false))
         return true;
+
     return false;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function shrinks the table
+/// memory to the smallest possible dimensions
+/// reachable in powers of two.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::shrink()
 {
     if (!bValidData)
-    {
         return true;
-    }
+
     const long long int nCurLines = getLines(false);
     const long long int nCurCols = getCols(false);
     long long int nShrinkedLines = 1;
     long long int nShrinkedCols = 1;
 
+    // Find the smallest power of two large enough
+    // to fit the contents
     while (nShrinkedLines < nCurLines)
         nShrinkedLines *= 2;
 
+    // Find the smallest power of two large enough
+    // to fit the contents
     while (nShrinkedCols < nCurCols)
         nShrinkedCols *= 2;
 
-    if (nShrinkedCols * nShrinkedLines < 100 * nLines * nCols)
+    // Re-allocate, if the new size is reasonable
+    // smaller
+    if (nShrinkedCols * nShrinkedLines * 100 < nLines * nCols)
     {
         if (!Allocate(nShrinkedLines, nShrinkedCols, true))
             return false;
     }
+
     return true;
 }
 
-// --> gibt den Wert von bIsSaved zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief Returns, whether the contents of the
+/// current table are already saved into either
+/// a usual file or into the cache file.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::getSaveStatus() const
 {
     return bIsSaved;
 }
 
-// --> gibt das _i-te Element der gespeicherten Kopfzeile zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief Returns the table column headline for
+/// the selected column. Will return a default
+/// headline, if the column is empty or does not
+/// exist.
+///
+/// \param _i long long int
+/// \return string
+///
+/////////////////////////////////////////////////
 string Memory::getHeadLineElement(long long int _i) const
 {
     if (_i >= getCols(false))
-        return "Spalte " + toString((int)_i + 1) + " (leer)";
+        return _lang.get("COMMON_COL") + " " + toString((int)_i + 1) + " (leer)";
     else
         return sHeadLine[_i];
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns the table column headlines for
+/// the selected columns. Will return default
+/// headlines for empty or non-existing columns.
+///
+/// \param _vCol const VectorIndex&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
 vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
 {
     vector<string> vHeadLines;
@@ -407,8 +595,9 @@ vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
     {
         if (_vCol[i] < 0)
             continue;
+
         if (_vCol[i] >= nCurCols || _vCol[i] < 0)
-            vHeadLines.push_back("Spalte " + toString((int)_vCol[i] + 1) + " (leer)");
+            vHeadLines.push_back(_lang.get("COMMON_COL") + " " + toString((int)_vCol[i] + 1) + " (leer)");
         else
             vHeadLines.push_back(sHeadLine[_vCol[i]]);
     }
@@ -416,21 +605,36 @@ vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
     return vHeadLines;
 }
 
-// --> schreibt _sHead in das _i-te Element der Kopfzeile <--
+
+/////////////////////////////////////////////////
+/// \brief Writes a new table column headline to
+/// the selected column.
+///
+/// \param _i long long int
+/// \param _sHead string
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::setHeadLineElement(long long int _i, string _sHead)
 {
     if (_i < nCols && dMemTable)
     {
         sHeadLine[_i] = _sHead;
-        if (_i >= nWrittenHeadlines && _sHead != "Spalte_" + toString(_i + 1) && _sHead != "Spalte " + toString(_i + 1) + " (leer)")
+
+        if (_i >= nWrittenHeadlines
+            && _sHead != _lang.get("COMMON_COL") + "_" + toString(_i + 1)
+            && _sHead != _lang.get("COMMON_COL") + " " + toString(_i + 1) + " (leer)")
             nWrittenHeadlines = _i+1;
     }
     else
     {
         if (!resizeMemory(nLines, _i + 1))
             return false;
+
         sHeadLine[_i] = _sHead;
-        if (_sHead != "Spalte_" + toString(_i + 1) && _sHead != "Spalte " + toString(_i + 1) + " (leer)")
+
+        if (_sHead != _lang.get("COMMON_COL") + "_" + toString(_i + 1)
+            && _sHead != _lang.get("COMMON_COL") + " " + toString(_i + 1) + " (leer)")
             nWrittenHeadlines = _i+1;
     }
 
@@ -439,10 +643,19 @@ bool Memory::setHeadLineElement(long long int _i, string _sHead)
         nLastSaved = time(0);
         bIsSaved = false;
     }
+
     return true;
 }
 
-// --> gibt die Zahl der in der _i-ten Spalte angehaengten Nullzeilen zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief Returns the number of empty cells at
+/// the end of the selected columns.
+///
+/// \param _i long long int
+/// \return long long int
+///
+/////////////////////////////////////////////////
 long long int Memory::getAppendedZeroes(long long int _i) const
 {
     if (nAppendedZeroes && _i < nCols)
@@ -451,10 +664,19 @@ long long int Memory::getAppendedZeroes(long long int _i) const
         return nLines;
 }
 
-// This function counts the number of all headline lines
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// number of lines needed for the table column
+/// headline of the selected column.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int Memory::getHeadlineCount() const
 {
     int nHeadlineCount = 1;
+
     // Get the dimensions of the complete headline (i.e. including possible linebreaks)
     for (long long int j = 0; j < getCols(); j++)
     {
@@ -480,9 +702,22 @@ int Memory::getHeadlineCount() const
 }
 
 
-// --> Schreibt einen Wert an beliebiger Stelle in den Memory <--
+/////////////////////////////////////////////////
+/// \brief This member function writes the passed
+/// value to the selected position. The table is
+/// automatically enlarged, if necessary.
+///
+/// \param _nLine long long int
+/// \param _nCol long long int
+/// \param _dData double
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
 {
+    if (!dMemTable && isnan(_dData))
+        return true;
+
     if (dMemTable && (_nLine < nLines) && (_nCol < nCols))
     {
         if (isnan(_dData))
@@ -508,41 +743,18 @@ bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
             dMemTable[_nLine][_nCol] = _dData;
 
             if (nLines - nAppendedZeroes[_nCol] <= _nLine)
-            {
                 nAppendedZeroes[_nCol] = nLines - _nLine - 1;
-            }
 
             bValidData = true;
         }
     }
-    else if (!dMemTable && isnan(_dData))
-        return true;
     else
     {
-        /* --> Ist der Memory zu klein? Verdoppele die fehlenden Dimensionen so lange,
-         *     bis die fehlende Dimension groesser als das zu schreibende Matrixelement
-         *     ist. <--
-         */
-        long long int _nNLines = nLines;
-        long long int _nNCols = nCols;
-
-        while (_nLine + 1 >= _nNLines)
-        {
-            _nNLines = 2 * _nNLines;
-        }
-
-        while (_nCol + 1 >= _nNCols)
-        {
-            _nNCols = 2 * _nNCols;
-        }
-
-        if (!Allocate(_nNLines, _nNCols))
-            return false;
+        // Resize the memory table first
+        resizeMemory(_nLine+1, _nCol+1);
 
         if (isnan(_dData))
-        {
             dMemTable[_nLine][_nCol] = NAN;
-        }
         else
         {
             dMemTable[_nLine][_nCol] = _dData;
@@ -550,9 +762,6 @@ bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
             if (nLines - nAppendedZeroes[_nCol] <= _nLine)
                 nAppendedZeroes[_nCol] = nLines - _nLine - 1;
         }
-
-        nLines = _nNLines;
-        nCols = _nNCols;
 
         if (!isnan(_dData) && !bValidData)
             bValidData = true;
@@ -564,15 +773,29 @@ bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
         nLastSaved = time(0);
         bIsSaved = false;
     }
+
     return true;
 }
 
-// --> Schreibt einen Wert an beliebiger Stelle in den Memory <--
+
+/////////////////////////////////////////////////
+/// \brief This member function writes a whole
+/// array of data to the selected table range.
+/// The table is automatically enlarged, if
+/// necessary.
+///
+/// \param _idx Indices&
+/// \param _dData double*
+/// \param _nNum unsigned int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
 {
     int nDirection = LINES;
+
     if (_nNum == 1)
-        return writeSingletonData(_idx, _dData);
+        return writeSingletonData(_idx, _dData[0]);
 
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0, _idx.row.front() + _nNum - 1);
@@ -606,7 +829,19 @@ bool Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
     return true;
 }
 
-bool Memory::writeSingletonData(Indices& _idx, double* _dData)
+
+/////////////////////////////////////////////////
+/// \brief This member function writes multiple
+/// copies of a single value to a range in the
+/// table. The table is automatically enlarged,
+/// if necessary.
+///
+/// \param _idx Indices&
+/// \param _dData double
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Memory::writeSingletonData(Indices& _idx, double _dData)
 {
     if (_idx.row.isOpenEnd())
         _idx.row.setRange(0, ::max(_idx.row.front(), getLines(false)) - 1);
@@ -619,7 +854,7 @@ bool Memory::writeSingletonData(Indices& _idx, double* _dData)
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
             if (!isnan(_idx.row[i]) && !isnan(_idx.col[j]))
-                writeData(_idx.row[i], _idx.col[j], _dData[0]);
+                writeData(_idx.row[i], _idx.col[j], _dData);
         }
     }
 
@@ -627,91 +862,148 @@ bool Memory::writeSingletonData(Indices& _idx, double* _dData)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function changes the saved
+/// state to the passed value.
+///
+/// \param _bIsSaved bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void Memory::setSaveStatus(bool _bIsSaved)
 {
     bIsSaved = _bIsSaved;
+
     if (bIsSaved)
         nLastSaved = time(0);
-    return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the time-
+/// point, where the table was saved last time.
+///
+/// \return long long int
+///
+/////////////////////////////////////////////////
 long long int Memory::getLastSaved() const
 {
     return nLastSaved;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function is the interface
+/// function for the Sorter class. It will pre-
+/// evaluate the passed parameters and redirect
+/// the control to the corresponding sorting
+/// function.
+///
+/// \param i1 long long int
+/// \param i2 long long int
+/// \param j1 long long int
+/// \param j2 long long int
+/// \param sSortingExpression const string&
+/// \return vector<int>
+///
+/////////////////////////////////////////////////
 vector<int> Memory::sortElements(long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
 {
     if (!dMemTable)
         return vector<int>();
+
     bool bError = false;
     bool bReturnIndex = false;
     int nSign = 1;
 
     vector<int> vIndex;
 
+    // Determine the sorting direction
     if (findParameter(sSortingExpression, "desc"))
         nSign = -1;
 
     if (!Memory::getCols(false))
         return vIndex;
+
     if (i2 == -1)
         i2 = i1;
+
     if (j2 == -1)
         j2 = j1;
 
-
+    // Prepare the sorting index
     for (int i = i1; i <= i2; i++)
         vIndex.push_back(i);
 
+    // Evaluate, whether an index shall be returned
+    // (instead of actual reordering the columns)
     if (findParameter(sSortingExpression, "index"))
         bReturnIndex = true;
 
+    // Is a column group selected or do we actually
+    // sort everything?
     if (!findParameter(sSortingExpression, "cols", '=') && !findParameter(sSortingExpression, "c", '='))
     {
+        // Sort everything independently
         for (int i = j1; i <= j2; i++)
         {
+            // Sort the current column
             if (!qSort(&vIndex[0], i2 - i1 + 1, i, 0, i2 - i1, nSign))
-            {
                 throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
-            }
+
+            // Abort after the first column, if
+            // an index shall be returned
             if (bReturnIndex)
                 break;
+
+            // Actually reorder the column
             reorderColumn(vIndex, i1, i2, i);
 
+            // Reset the sorting index
             for (int j = i1; j <= i2; j++)
                 vIndex[j] = j;
         }
     }
     else
     {
+        // Sort groups of columns (including
+        // hierarchical sorting)
         string sCols = "";
-        if (findParameter(sSortingExpression, "cols", '='))
-        {
-            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "cols", '=') + 4);
-        }
-        else
-        {
-            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "c", '=') + 1);
-        }
 
+        // Find the column group definition
+        if (findParameter(sSortingExpression, "cols", '='))
+            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "cols", '=') + 4);
+        else
+            sCols = getArgAtPos(sSortingExpression, findParameter(sSortingExpression, "c", '=') + 1);
+
+        // As long as the column group definition
+        // has a length
         while (sCols.length())
         {
+            // Get a new column keys instance
             ColumnKeys* keys = evaluateKeyList(sCols, j2 - j1 + 1);
+
+            // Ensure that we obtained an actual
+            // instance
             if (!keys)
                 throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE,  sSortingExpression, SyntaxError::invalid_position);
 
             if (keys->nKey[1] == -1)
                 keys->nKey[1] = keys->nKey[0] + 1;
 
+            // Go through the group definition
             for (int j = keys->nKey[0]; j < keys->nKey[1]; j++)
             {
+                // Sort the current key list level
+                // independently
                 if (!qSort(&vIndex[0], i2 - i1 + 1, j + j1, 0, i2 - i1, nSign))
                 {
                     delete keys;
                     throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
                 }
-                // Subkey list
+
+                // Subkey list: sort the subordinate group
+                // depending on the higher-level key group
                 if (keys->subkeys && keys->subkeys->subkeys)
                 {
                     if (!sortSubList(&vIndex[0], i2 - i1 + 1, keys, i1, i2, j1, nSign, getCols(false)))
@@ -720,44 +1012,51 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
                         throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
                     }
                 }
+
+                // Break, if the index shall be returned
                 if (bReturnIndex)
                     break;
+
+                // Actually reorder the current column
                 reorderColumn(vIndex, i1, i2, j + j1);
+
+                // Obtain the subkey list
                 ColumnKeys* subKeyList = keys->subkeys;
 
+                // As long as a subkey list is available
                 while (subKeyList)
                 {
                     if (subKeyList->nKey[1] == -1)
                         subKeyList->nKey[1] = subKeyList->nKey[0] + 1;
+
+                    // Reorder the subordinate key list
                     for (int j = subKeyList->nKey[0]; j < subKeyList->nKey[1]; j++)
-                    {
                         reorderColumn(vIndex, i1, i2, j + j1);
-                    }
+
+                    // Find the next subordinate list
                     subKeyList = subKeyList->subkeys;
                 }
 
+                // Reset the sorting index for the next column
                 for (int j = i1; j <= i2; j++)
                     vIndex[j] = j;
             }
 
+            // Free the occupied memory
             delete keys;
+
             if (bReturnIndex)
                 break;
         }
     }
 
-    for (int i = 0; i < getCols(false); i++)
-    {
-        for (int j = nLines - 1; j >= 0; j--)
-        {
-            if (!isnan(dMemTable[j][i]))
-            {
-                nAppendedZeroes[i] = nLines - j - 1;
-                break;
-            }
-        }
-    }
+    // Count the appended zeroes: the sorting
+    // process might have moved some NaNs to
+    // the end of columns
+    countAppendedZeroes();
 
+    // Increment each index value, if the index
+    // vector shall be returned
     if (bReturnIndex)
     {
         for (int i = 0; i <= i2 - i1; i++)
@@ -772,24 +1071,51 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
 
     if (bError || !bReturnIndex)
         return vector<int>();
+
     return vIndex;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function simply reorders
+/// the contents of the selected column using the
+/// passed index vector.
+///
+/// \param vIndex const vector<int>&
+/// \param i1 long long int
+/// \param i2 long long int
+/// \param j1 long long int
+/// \return void
+///
+/////////////////////////////////////////////////
 void Memory::reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1)
 {
     double* dSortVector = new double[i2 - i1 + 1];
+
+    // Copy the sorted values to a buffer
     for (int i = 0; i <= i2 - i1; i++)
-    {
         dSortVector[i] = dMemTable[vIndex[i]][j1];
-    }
+
+    // Copy the contents back to the table
     for (int i = 0; i <= i2 - i1; i++)
-    {
         dMemTable[i + i1][j1] = dSortVector[i];
-    }
+
     delete[] dSortVector;
 }
 
-// Implementation for the "Sorter" object
+
+/////////////////////////////////////////////////
+/// \brief Override for the virtual Sorter class
+/// member function. Returns 0, if both elements
+/// are equal, -1 if element i is smaller than
+/// element j and 1 otherwise.
+///
+/// \param i int
+/// \param j int
+/// \param col int
+/// \return int
+///
+/////////////////////////////////////////////////
 int Memory::compare(int i, int j, int col)
 {
     if (dMemTable[i][col] == dMemTable[j][col])
@@ -800,20 +1126,45 @@ int Memory::compare(int i, int j, int col)
     return 1;
 }
 
-// Implementation for the "Sorter" object
+
+/////////////////////////////////////////////////
+/// \brief Override for the virtual Sorter class
+/// member function. Returns true, if the
+/// selected element is a valid value.
+///
+/// \param line int
+/// \param col int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::isValue(int line, int col)
 {
     return !isnan(dMemTable[line][col]);
 }
 
-// Create a copy-efficient table object
-// from the data contents
+
+/////////////////////////////////////////////////
+/// \brief Create a copy-efficient table object
+/// from the data contents.
+///
+/// \param _sTable const string&
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 NumeRe::Table Memory::extractTable(const string& _sTable)
 {
     return NumeRe::Table(dMemTable, sHeadLine, getLines(false), getCols(false), _sTable);
 }
 
-// Import data from a copy-efficient table object
+
+/////////////////////////////////////////////////
+/// \brief Import data from a copy-efficient
+/// table object.
+///
+/// \param _table NumeRe::Table
+/// \return void
+///
+/////////////////////////////////////////////////
 void Memory::importTable(NumeRe::Table _table)
 {
     deleteBulk(VectorIndex(0, -2), VectorIndex(0, -2));
@@ -838,10 +1189,19 @@ void Memory::importTable(NumeRe::Table _table)
     }
 }
 
-// This member function is used for saving the
-// contents of this memory page into a file. The
-// type of the file is selected by the name of the
-// file
+
+/////////////////////////////////////////////////
+/// \brief This member function is used for
+/// saving the contents of this memory page into
+/// a file. The type of the file is selected by
+/// the name of the file.
+///
+/// \param _sFileName string
+/// \param sTableName const string&
+/// \param nPrecision unsigned short
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision)
 {
     // Get an instance of the desired file type
@@ -889,18 +1249,31 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function deletes a single
+/// entry from the memory table.
+///
+/// \param _nLine long long int
+/// \param _nCol long long int
+/// \return void
+///
+/////////////////////////////////////////////////
 void Memory::deleteEntry(long long int _nLine, long long int _nCol)
 {
     if (dMemTable)
     {
         if (!isnan(dMemTable[_nLine][_nCol]))
         {
+            // Set the element to NaN
             dMemTable[_nLine][_nCol] = NAN;
+
             if (bIsSaved)
             {
                 nLastSaved = time(0);
                 bIsSaved = false;
             }
+
+            // Count the appended zeroes
             for (long long int i = nLines - 1; i >= 0; i--)
             {
                 if (!isnan(dMemTable[i][_nCol]))
@@ -908,24 +1281,39 @@ void Memory::deleteEntry(long long int _nLine, long long int _nCol)
                     nAppendedZeroes[_nCol] = nLines - i - 1;
                     break;
                 }
+
                 if (!i && isnan(dMemTable[i][_nCol]))
                 {
                     nAppendedZeroes[_nCol] = nLines;
+
+                    // If the first element of this column was currently
+                    // removed, reset its headline
                     if (!_nLine)
                     {
-                        sHeadLine[_nCol] = "Spalte_" + toString((int)_nCol + 1);
+                        sHeadLine[_nCol] = _lang.get("COMMON_COL") + "_" + toString((int)_nCol + 1);
+
                         if (nWrittenHeadlines > _nCol)
                             nWrittenHeadlines = _nCol;
                     }
                 }
             }
+
             if (!getLines(false) && !getCols(false))
                 bValidData = false;
         }
     }
-    return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function deletes a whole
+/// range of entries from the memory table.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     bool bHasFirstLine = false;
@@ -933,10 +1321,14 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!Memory::getCols(false))
         return;
 
+    // Delete the selected entries and detect,
+    // whether any index value corresponds to
+    // a first element in any column.
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         if (!_vLine[i])
             bHasFirstLine = true;
+
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
             if (_vCol[j] >= nCols || _vCol[j] < 0 || _vLine[i] >= nLines || _vLine[i] < 0)
@@ -945,35 +1337,47 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
             dMemTable[_vLine[i]][_vCol[j]] = NAN;
         }
     }
+
     if (bIsSaved)
     {
         bIsSaved = false;
         nLastSaved = time(0);
     }
 
+    // Count the appended zeroes
     for (long long int j = nCols - 1; j >= 0; j--)
     {
         int currentcol = -1;
+
+        // Detect, whether the current colum was in
+        // the list of selected column indices
         for (size_t i = 0; i < _vCol.size(); i++)
         {
             if (_vCol[i] == j)
-            {
                 currentcol = (int)i;
-            }
         }
+
         for (long long int i = nLines - 1; i >= 0; i--)
         {
+            // Find the last valid value
             if (!isnan(dMemTable[i][j]))
             {
                 nAppendedZeroes[j] = nLines - i - 1;
                 break;
             }
+
             if (!i && isnan(dMemTable[i][j]))
             {
                 nAppendedZeroes[j] = nLines;
+
+                // If the current column was in the
+                // list of selected column indices and the
+                // first element of any column was part
+                // of the range, reset the whole column
                 if (currentcol >= 0 && bHasFirstLine)
                 {
-                    sHeadLine[j] = "Spalte_" + toString((int)j + 1);
+                    sHeadLine[j] = _lang.get("COMMON_COL") + "_" + toString((int)j + 1);
+
                     if (nWrittenHeadlines > j)
                         nWrittenHeadlines = j;
                 }
@@ -983,47 +1387,18 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
 
     if (!getLines(false) && !getCols(false))
         bValidData = false;
-    return;
 }
 
 
-bool Memory::evaluateIndices(long long int& i1, long long int& i2, long long int& j1, long long int& j2)
-{
-    if (i2 == -1)
-        i2 = i1;
-    else if (i2 == -2)
-        i2 = getLines(false) - 1;
-    if (j2 == -1)
-        j2 = j1;
-    else if (j2 == -2)
-        j2 = getCols(false) - 1;
-
-    if (i1 > i2)
-    {
-        long long int nTemp = i1;
-        i1 = i2;
-        i2 = nTemp;
-    }
-    if (j1 > j2)
-    {
-        long long int nTemp = j1;
-        j1 = j2;
-        j2 = nTemp;
-    }
-
-    if (i1 >= getLines(false) || j1 >= getCols(false))
-        return false;
-    if (i2 >= getLines(false))
-        i2 = getLines(false) - 1;
-    if (j2 >= getCols(false))
-        j2 = getCols(false) - 1;
-    return true;
-}
-
-// This member function counts the number of
-// appended zeroes, i.e. the number of invalid
-// values, which are appended at the end of the
-// columns
+/////////////////////////////////////////////////
+/// \brief This member function counts the number
+/// of appended zeroes, i.e. the number of
+/// invalid values, which are appended at the end
+/// of the columns.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void Memory::countAppendedZeroes()
 {
     for (long long int i = 0; i < nCols; i++)
@@ -1041,7 +1416,15 @@ void Memory::countAppendedZeroes()
 }
 
 
-
+/////////////////////////////////////////////////
+/// \brief Implementation for the STD multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1067,6 +1450,16 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return sqrt(dStd / ((_vLine.size() * _vCol.size()) - 1 - nInvalid));
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the AVG multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1091,6 +1484,16 @@ double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return dAvg / (_vLine.size() * _vCol.size() - nInvalid);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the MAX multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1114,6 +1517,16 @@ double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return dMax;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the MIN multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1137,6 +1550,16 @@ double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return dMin;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the PRD multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1157,6 +1580,16 @@ double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return dPrd;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the SUM multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1177,6 +1610,16 @@ double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return dSum;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the NUM multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1196,6 +1639,16 @@ double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return (_vLine.size() * _vCol.size()) - nInvalid;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the AND multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1221,6 +1674,16 @@ double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return 1.0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the OR multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1239,6 +1702,16 @@ double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return 0.0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the XOR multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1265,6 +1738,16 @@ double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return 0.0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the CNT multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1285,6 +1768,16 @@ double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return (_vLine.size() * _vCol.size()) - nInvalid;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the NORM multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1305,6 +1798,16 @@ double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return sqrt(dNorm);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the CMP multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int _nType)
 {
     if (!bValidData)
@@ -1420,6 +1923,16 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
         return nKeep + 1;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the MED multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
@@ -1479,6 +1992,16 @@ double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
     return dMed;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Implementation for the PCT multi
+/// argument function.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return double
+///
+/////////////////////////////////////////////////
 double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct)
 {
     if (!bValidData)
@@ -1540,8 +2063,7 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 }
 
 
-
-bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
+bool Memory::retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
 {
     bool bUseAppendedZeroes = false;
 
@@ -1553,9 +2075,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
 
     // Evaluate the indices
     if (_vLine.isOpenEnd())
-    {
         bUseAppendedZeroes = true;
-    }
 
     _vLine.setRange(0, nLines-1);
     _vCol.setRange(0, nCols-1);
@@ -1583,12 +2103,12 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
     {
         if (bUseAppendedZeroes)
         {
-            if (!retoque(_vLine, VectorIndex(_vCol[0]), COLS) || !retoque(_vLine, VectorIndex(_vCol[1]), COLS))
+            if (!retouch(_vLine, VectorIndex(_vCol[0]), COLS) || !retouch(_vLine, VectorIndex(_vCol[1]), COLS))
                 return false;
         }
         else
         {
-            if (!retoque(_vLine, _vCol.subidx(0, 2), COLS))
+            if (!retouch(_vLine, _vCol.subidx(0, 2), COLS))
                 return false;
         }
 
@@ -1600,593 +2120,18 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
         _vLine.linearize();
         _vCol.linearize();
 
-        for (long long int i = _vLine.front(); i <= _vLine.last(); i++)
-        {
-            for (long long int j = _vCol.front(); j <= _vCol.last(); j++)
-            {
-                if (isnan(dMemTable[i][j]))
-                {
-                    if (i > _vLine.front() && i < _vLine.last() && j > _vCol.front() && j < _vCol.last() && isValidDisc(i - 1, j - 1, 2))
-                    {
-                        retoqueRegion(i - 1, i + 1, j - 1, j + 1, 1, ALL);
-
-                        if (bIsSaved)
-                        {
-                            bIsSaved = false;
-                            nLastSaved = time(0);
-                        }
-                    }
-                }
-            }
-        }
-
-        for (long long int i = _vLine.front(); i <= _vLine.last(); i++)
-        {
-            for (long long int j = _vCol.front(); j <= _vCol.last(); j++)
-            {
-                if (isnan(dMemTable[i][j]))
-                {
-                    if (i > _vLine.front() && i < _vLine.last() && j > _vCol.front() && j < _vCol.last() && isValidDisc(i - 1, j - 1, 2))
-                    {
-                        retoqueRegion(i - 1, i + 1, j - 1, j + 1, 1, ALL);
-                    }
-                    else if (i == _vLine.front() || i == _vLine.last() || j == _vCol.front() || j == _vCol.last())
-                    {
-                        unsigned int nOrder = 1;
-                        long long int __i = i;
-                        long long int __j = j;
-
-                        if (i == _vLine.front())
-                        {
-                            if (j == _vCol.front())
-                            {
-                                while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last()
-                                        && num(VectorIndex(i + nOrder + 1, i + nOrder + 2), VectorIndex(j, j + nOrder + 1)) != cnt(VectorIndex(i + nOrder + 1, i + nOrder + 2), VectorIndex(j, j + nOrder + 1))
-                                        && num(VectorIndex(i, i + nOrder + 2), VectorIndex(j + nOrder + 1, j + nOrder + 2)) != cnt(VectorIndex(i, i + nOrder + 2), VectorIndex(j + nOrder + 1, j + nOrder + 2)))
-                                {
-                                    nOrder++;
-                                }
-
-                                if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last())
-                                {
-                                    RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                    for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                        {
-                                            if (_i == __i + nOrder || _j == __j + nOrder)
-                                            {
-                                                _region.vDataArray[(_i == __i + nOrder ? 0 : _i - __i + 1)][(_j == __j + nOrder ? 0 : _j - __j + 1)] = dMemTable[_i][_j];
-                                                _region.vValidationArray[(_i == __i + nOrder ? 0 : _i - __i + 1)][(_j == __j + nOrder ? 0 : _j - __j + 1)] = true;
-                                            }
-
-                                            if (!isnan(dMemTable[_i][_j]))
-                                            {
-                                                _region.vDataArray[_i - __i + 1][_j - __j + 1] = dMemTable[_i][_j];
-                                                _region.vValidationArray[_i - __i + 1][_j - __j + 1] = true;
-                                            }
-                                            else
-                                            {
-                                                _region.vDataArray[_i - __i + 1][_j - __j + 1] = NAN;
-                                                _region.vValidationArray[_i - __i + 1][_j - __j + 1] = false;
-                                            }
-                                        }
-                                    }
-
-                                    retoqueRegion(_region);
-
-                                    for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                        {
-                                            if (isnan(dMemTable[_i][_j]) && _region.vValidationArray[_i - __i + 1][_j - __j + 1])
-                                                dMemTable[_i][_j] = _region.vDataArray[_i - __i + 1][_j - __j + 1];
-                                        }
-                                    }
-                                }
-                                else
-                                    continue;
-                            }
-                            else if (j == _vCol.last())
-                            {
-                                __j--;
-
-                                while (__i + nOrder + 1 <= _vLine.last() && __j >= _vCol.front() && __j + nOrder + 1 < _vCol.last()
-                                        && num(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 1)) != cnt(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 1))
-                                        && num(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j, __j + 1)) != cnt(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j, __j + 1)))
-                                {
-                                    nOrder++;
-
-                                    if (__j > _vCol.front())
-                                        __j--;
-                                }
-
-                                if (__i + nOrder + 1 <= _vLine.last() && __j >= _vCol.front() && __j + nOrder + 1 < _vCol.last())
-                                {
-                                    RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                    for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                        {
-                                            if (!isnan(dMemTable[_i][_j]))
-                                            {
-                                                _region.vDataArray[_i - __i + 1][_j - __j] = dMemTable[_i][_j];
-                                                _region.vValidationArray[_i - __i + 1][_j - __j] = true;
-                                            }
-                                            else
-                                            {
-                                                _region.vDataArray[_i - __i + 1][_j - __j] = NAN;
-                                                _region.vValidationArray[_i - __i + 1][_j - __j] = false;
-                                            }
-
-                                            if (_i == __i + nOrder || _j == __j)
-                                            {
-                                                _region.vDataArray[(_i == __i + nOrder ? 0 : _i - __i + 1)][(_j == __j ? nOrder + 1 : _j - __j)] = dMemTable[_i][_j];
-                                                _region.vValidationArray[(_i == __i + nOrder ? 0 : _i - __i + 1)][(_j == __j ? nOrder + 1 : _j - __j)] = true;
-                                            }
-                                        }
-                                    }
-
-                                    retoqueRegion(_region);
-
-                                    for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                        {
-                                            if (isnan(dMemTable[_i][_j]) && _region.vValidationArray[_i - __i + 1][_j - __j])
-                                                dMemTable[_i][_j] = _region.vDataArray[_i - __i + 1][_j - __j];
-                                        }
-                                    }
-                                }
-                                else
-                                    continue;
-                            }
-                            else
-                            {
-                                while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last() && __j >= _vCol.front()
-                                        && num(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2)) != cnt(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2))
-                                        && num(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
-                                {
-                                    if (__j > _vCol.front())
-                                        nOrder += 2;
-                                    else
-                                        nOrder++;
-
-                                    if (__j > _vCol.front())
-                                        __j--;
-                                }
-
-                                if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last() && __j >= _vCol.front())
-                                {
-                                    RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                    for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                        {
-                                            if (!isnan(dMemTable[_i][_j]))
-                                            {
-                                                _region.vDataArray[_i - __i + 1][_j - __j] = dMemTable[_i][_j];
-                                                _region.vValidationArray[_i - __i + 1][_j - __j] = true;
-                                            }
-                                            else
-                                            {
-                                                _region.vDataArray[_i - __i + 1][_j - __j] = NAN;
-                                                _region.vValidationArray[_i - __i + 1][_j - __j] = false;
-                                            }
-
-                                            if (_i == __i + nOrder)
-                                            {
-                                                _region.vDataArray[0][_j - __j] = dMemTable[_i][_j];
-                                                _region.vValidationArray[0][_j - __j] = true;
-                                                continue;
-                                            }
-                                        }
-                                    }
-
-                                    retoqueRegion(_region);
-
-                                    for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                        {
-                                            if (isnan(dMemTable[_i][_j]) && _region.vValidationArray[_i - __i + 1][_j - __j])
-                                                dMemTable[_i][_j] = _region.vDataArray[_i - __i + 1][_j - __j];
-                                        }
-                                    }
-                                }
-                                else
-                                    continue;
-                            }
-                        }
-                        else if (i == _vLine.last())
-                        {
-                            __i--;
-
-                            if (j == _vCol.last())
-                            {
-                                __j--;
-
-                                while (__i >= _vLine.front() && __j >= _vCol.front()
-                                        && num(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1)) != cnt(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1))
-                                        && num(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)) != cnt(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)))
-                                {
-                                    if (__j > _vCol.front())
-                                        __j--;
-
-                                    if (__i > _vLine.front())
-                                        __i--;
-
-                                    nOrder++;
-                                }
-
-                                if (__i >= _vLine.front() && __j >= _vCol.front())
-                                {
-                                    RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                    for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                        {
-                                            if (!isnan(dMemTable[_i][_j]))
-                                            {
-                                                _region.vDataArray[_i - __i][_j - __j] = dMemTable[_i][_j];
-                                                _region.vValidationArray[_i - __i][_j - __j] = true;
-                                            }
-                                            else
-                                            {
-                                                _region.vDataArray[_i - __i][_j - __j] = NAN;
-                                                _region.vValidationArray[_i - __i][_j - __j] = false;
-                                            }
-
-                                            if (_i == __i || _j == __j)
-                                            {
-                                                _region.vDataArray[(_i == __i ? nOrder + 1 : _i - __i)][(_j == __j ? nOrder + 1 : _j - __j)] = dMemTable[_i][_j];
-                                                _region.vValidationArray[(_i == __i ? nOrder + 1 : _i - __i)][(_j == __j ? nOrder + 1 : _j - __j)] = true;
-                                            }
-                                        }
-                                    }
-
-                                    retoqueRegion(_region);
-
-                                    for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                        {
-                                            if (isnan(dMemTable[_i][_j]) && _region.vValidationArray[_i - __i][_j - __j])
-                                                dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j];
-                                        }
-                                    }
-                                }
-                                else
-                                    continue;
-                            }
-                            else if (j == _vCol.front())
-                            {
-                                while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last()
-                                        && num(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2)) != cnt(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2))
-                                        && num(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
-                                {
-                                    if (__i > _vLine.front())
-                                        __i--;
-
-                                    nOrder++;
-                                }
-
-                                if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last())
-                                {
-                                    RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                    for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                        {
-                                            if (!isnan(dMemTable[_i][_j]))
-                                            {
-                                                _region.vDataArray[_i - __i][_j - __j + 1] = dMemTable[_i][_j];
-                                                _region.vValidationArray[_i - __i][_j - __j + 1] = true;
-                                            }
-                                            else
-                                            {
-                                                _region.vDataArray[_i - __i][_j - __j + 1] = NAN;
-                                                _region.vValidationArray[_i - __i][_j - __j + 1] = false;
-                                            }
-
-                                            if (_i == __i || _j == __j + nOrder)
-                                            {
-                                                _region.vDataArray[(_i == __i ? nOrder + 1 : _i - __i)][(_j == __j + nOrder ? 0 : _j - __j + 1)] = dMemTable[_i][_j];
-                                                _region.vValidationArray[(_i == __i ? nOrder + 1 : _i - __i)][(_j == __j + nOrder ? 0 : _j - __j + 1)] = true;
-                                            }
-                                        }
-                                    }
-
-                                    retoqueRegion(_region);
-
-                                    for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                        {
-                                            if (isnan(dMemTable[_i][_j]) && _region.vValidationArray[_i - __i][_j - __j + 1])
-                                                dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j + 1];
-                                        }
-                                    }
-                                }
-                                else
-                                    continue;
-                            }
-                            else
-                            {
-                                while (__i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last()
-                                        && num(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2))
-                                        && num(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
-                                {
-                                    nOrder++;
-
-                                    if (__j > _vCol.front())
-                                        __j--;
-
-                                    if (__i > _vLine.front())
-                                        __i--;
-                                }
-
-                                if (__i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last())
-                                {
-                                    RetoqueRegion _region;
-                                    prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder)));
-
-                                    for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                        {
-                                            if (!isnan(dMemTable[_i][_j]))
-                                            {
-                                                _region.vDataArray[_i - __i][_j - __j] = dMemTable[_i][_j];
-                                                _region.vValidationArray[_i - __i][_j - __j] = true;
-                                            }
-                                            else
-                                            {
-                                                _region.vDataArray[_i - __i][_j - __j] = NAN;
-                                                _region.vValidationArray[_i - __i][_j - __j] = false;
-                                            }
-
-                                            if (_i == __i)
-                                            {
-                                                _region.vDataArray[nOrder + 1][_j - __j] = dMemTable[_i][_j];
-                                                _region.vValidationArray[nOrder + 1][_j - __j] = true;
-                                            }
-                                        }
-                                    }
-
-                                    retoqueRegion(_region);
-
-                                    for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                    {
-                                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                        {
-                                            if (isnan(dMemTable[_i][_j]) && _region.vValidationArray[_i - __i][_j - __j])
-                                                dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j];
-                                        }
-                                    }
-                                }
-                                else
-                                    continue;
-                            }
-                        }
-                        else if (j == _vCol.front())
-                        {
-                            while (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last()
-                                    && num(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2))
-                                    && num(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)) != cnt(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
-                            {
-                                if (__i > _vLine.front())
-                                    nOrder += 2;
-                                else
-                                    nOrder++;
-
-                                if (__i > _vLine.front())
-                                    __i--;
-                            }
-
-                            if (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last())
-                            {
-                                RetoqueRegion _region;
-                                prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                    {
-                                        if (!isnan(dMemTable[_i][_j]))
-                                        {
-                                            _region.vDataArray[_i - __i][_j - __j + 1] = dMemTable[_i][_j];
-                                            _region.vValidationArray[_i - __i][_j - __j + 1] = true;
-                                        }
-                                        else
-                                        {
-                                            _region.vDataArray[_i - __i][_j - __j + 1] = NAN;
-                                            _region.vValidationArray[_i - __i][_j - __j + 1] = false;
-                                        }
-
-                                        if (_j == __j + nOrder)
-                                        {
-                                            _region.vDataArray[_i - __i][0] = dMemTable[_i][_j];
-                                            _region.vValidationArray[_i - __i][0] = true;
-                                        }
-                                    }
-                                }
-
-                                retoqueRegion(_region);
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                    {
-                                        if (isnan(dMemTable[_i][_j]) && _region.vValidationArray[_i - __i][_j - __j + 1])
-                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j + 1];
-                                    }
-                                }
-                            }
-                            else
-                                continue;
-                        }
-                        else
-                        {
-                            __j--;
-
-                            while (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j >= _vCol.front()
-                                    && num(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1)) != cnt(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1))
-                                    && num(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)) != cnt(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)))
-                            {
-                                nOrder++;
-
-                                if (__j > _vCol.front())
-                                    __j--;
-
-                                if (__i > _vLine.front())
-                                    __i--;
-                            }
-
-                            if (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j - nOrder - 1 >= _vCol.front())
-                            {
-                                RetoqueRegion _region;
-                                prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        if (!isnan(dMemTable[_i][_j]))
-                                        {
-                                            _region.vDataArray[_i - __i][_j - __j] = dMemTable[_i][_j];
-                                            _region.vValidationArray[_i - __i][_j - __j] = true;
-                                        }
-                                        else
-                                        {
-                                            _region.vDataArray[_i - __i][_j - __j] = NAN;
-                                            _region.vValidationArray[_i - __i][_j - __j] = false;
-                                        }
-
-                                        if (_j == __j)
-                                        {
-                                            _region.vDataArray[_i - __i][nOrder + 1] = dMemTable[_i][_j];
-                                            _region.vValidationArray[_i - __i][nOrder + 1] = true;
-                                        }
-                                    }
-                                }
-
-                                retoqueRegion(_region);
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        if (isnan(dMemTable[_i][_j]) && _region.vValidationArray[_i - __i][_j - __j])
-                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j];
-                                    }
-                                }
-                            }
-                            else
-                                continue;
-                        }
-                    }
-                    else
-                    {
-                        unsigned int nOrder = 1;
-                        long long int __i = i - 1;
-                        long long int __j = j - 1;
-
-                        while (!isValidDisc(__i, __j, nOrder + 1))
-                        {
-                            for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                            {
-                                if (isnan(dMemTable[_i][__j]))
-                                {
-                                    __j--;
-                                    break;
-                                }
-
-                                if (isnan(dMemTable[_i][__j + nOrder + 1]))
-                                {
-                                    nOrder++;
-                                    break;
-                                }
-                            }
-
-                            if (__i < _vLine.front() || __i + nOrder + 1 > _vLine.last() || __j < _vCol.front() || __j + nOrder + 1 > _vCol.last())
-                                break;
-
-                            for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                            {
-                                if (isnan(dMemTable[__i][_j]))
-                                {
-                                    __i--;
-                                    break;
-                                }
-
-                                if (isnan(dMemTable[__i + nOrder + 1][_j]))
-                                {
-                                    nOrder++;
-                                    break;
-                                }
-                            }
-
-                            if (__i < _vLine.front() || __i + nOrder + 1 > _vLine.last() || __j < _vCol.front() || __j + nOrder + 1 > _vCol.last())
-                                break;
-                        }
-
-                        if (__i < _vLine.front() || __i + nOrder + 1 > _vLine.last() || __j < _vCol.front() || __j + nOrder + 1 > _vCol.last())
-                            continue;
-
-                        RetoqueRegion _region;
-                        prepareRegion(_region, nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                        for (long long int k = __i; k <= __i + nOrder + 1; k++)
-                        {
-                            for (long long int l = __j; l <= __j + nOrder + 1; l++)
-                            {
-                                if (!isnan(dMemTable[k][l]))
-                                {
-                                    _region.vDataArray[k - __i][l - __j] = dMemTable[k][l];
-                                    _region.vValidationArray[k - __i][l - __j] = true;
-                                }
-                                else
-                                {
-                                    _region.vDataArray[k - __i][l - __j] = NAN;
-                                    _region.vValidationArray[k - __i][l - __j] = false;
-                                }
-                            }
-                        }
-
-                        retoqueRegion(_region);
-
-                        for (long long int k = __i; k <= __i + nOrder + 1; k++)
-                        {
-                            for (long long int l = __j; l <= __j + nOrder + 1; l++)
-                            {
-                                if (isnan(dMemTable[k][l]) && _region.vValidationArray[k - __i][l - __j])
-                                    dMemTable[k][l] = _region.vDataArray[k - __i][l - __j];
-                            }
-                        }
-
-                    }
-
-                    if (bIsSaved)
-                    {
-                        bIsSaved = false;
-                        nLastSaved = time(0);
-                    }
-                }
-            }
-        }
+        return retouch2D(_vLine, _vCol);
     }
-    else if (Direction == LINES)
+    else
+        return retouch1D(_vLine, _vCol, Direction);
+}
+
+
+bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction)
+{
+    bool markModified = false;
+
+    if (Direction == LINES)
     {
         for (size_t i = 0; i < _vLine.size(); i++)
         {
@@ -2202,15 +2147,11 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             {
                                 for (size_t __j = j; __j < _j; __j++)
                                 {
-                                    dMemTable[_vLine[i]][_vCol[__j]] = (dMemTable[_vLine[i]][_vCol[_j]] - dMemTable[_vLine[i]][_vCol[j-1]]) / (double)(_j - j) * (double)(__j - j + 1) + dMemTable[_vLine[i]][_vCol[j-1]];
+                                    dMemTable[_vLine[i]][_vCol[__j]] =
+                                        (dMemTable[_vLine[i]][_vCol[_j]] - dMemTable[_vLine[i]][_vCol[j-1]]) / (double)(_j - j) * (double)(__j - j + 1) + dMemTable[_vLine[i]][_vCol[j-1]];
                                 }
 
-                                if (bIsSaved)
-                                {
-                                    bIsSaved = false;
-                                    nLastSaved = time(0);
-                                }
-
+                                markModified = true;
                                 break;
                             }
                             else if (!j && _j+1 < _vCol.size())
@@ -2220,12 +2161,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                     dMemTable[_vLine[i]][_vCol[__j]] = dMemTable[_vLine[i]][_vCol[_j]];
                                 }
 
-                                if (bIsSaved)
-                                {
-                                    bIsSaved = false;
-                                    nLastSaved = time(0);
-                                }
-
+                                markModified = true;
                                 break;
                             }
                         }
@@ -2237,13 +2173,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 dMemTable[_vLine[i]][_vCol[__j]] = dMemTable[_vLine[i]][_vCol[j - 1]];
                             }
 
-                            if (bIsSaved)
-                            {
-                                bIsSaved = false;
-                                nLastSaved = time(0);
-                            }
-
-                            break;
+                            markModified = true;
                         }
                     }
                 }
@@ -2266,15 +2196,11 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                             {
                                 for (size_t __i = i; __i < _i; __i++)
                                 {
-                                    dMemTable[_vLine[__i]][_vCol[j]] = (dMemTable[_vLine[_i]][_vCol[j]] - dMemTable[_vLine[i-1]][_vCol[j]]) / (double)(_i - i) * (double)(__i - i + 1) + dMemTable[_vLine[i-1]][_vCol[j]];
+                                    dMemTable[_vLine[__i]][_vCol[j]] =
+                                        (dMemTable[_vLine[_i]][_vCol[j]] - dMemTable[_vLine[i-1]][_vCol[j]]) / (double)(_i - i) * (double)(__i - i + 1) + dMemTable[_vLine[i-1]][_vCol[j]];
                                 }
 
-                                if (bIsSaved)
-                                {
-                                    bIsSaved = false;
-                                    nLastSaved = time(0);
-                                }
-
+                                markModified = true;
                                 break;
                             }
                             else if (!i && _i+1 < _vLine.size())
@@ -2284,12 +2210,7 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                     dMemTable[_vLine[__i]][_vCol[j]] = dMemTable[_vLine[_i]][_vCol[j]];
                                 }
 
-                                if (bIsSaved)
-                                {
-                                    bIsSaved = false;
-                                    nLastSaved = time(0);
-                                }
-
+                                markModified = true;
                                 break;
                             }
                         }
@@ -2301,18 +2222,489 @@ bool Memory::retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
                                 dMemTable[_vLine[__i]][_vCol[j]] = dMemTable[_vLine[i-1]][_vCol[j]];
                             }
 
-                            if (bIsSaved)
-                            {
-                                bIsSaved = false;
-                                nLastSaved = time(0);
-                            }
+                            markModified = true;
                         }
                     }
                 }
             }
         }
     }
+
+    if (markModified && bIsSaved)
+    {
+        bIsSaved = false;
+        nLastSaved = time(0);
+    }
+
     return true;
+}
+
+
+bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
+{
+    bool bMarkModified = false;
+
+    for (long long int i = _vLine.front(); i <= _vLine.last(); i++)
+    {
+        for (long long int j = _vCol.front(); j <= _vCol.last(); j++)
+        {
+            if (isnan(dMemTable[i][j]))
+            {
+                if (i > _vLine.front() && i < _vLine.last() && j > _vCol.front() && j < _vCol.last() && isValidDisc(i - 1, j - 1, 2))
+                    retoqueRegion(i - 1, i + 1, j - 1, j + 1, 1, ALL); // Single NaN
+                else if (i == _vLine.front() || i == _vLine.last() || j == _vCol.front() || j == _vCol.last())
+                {
+                    // NaN at the boundary
+                    unsigned int nOrder = 1;
+                    long long int __i = i;
+                    long long int __j = j;
+
+                    if (i == _vLine.front())
+                    {
+                        if (j == _vCol.front())
+                        {
+                            while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last()
+                                    && !onlyValidValues(VectorIndex(i + nOrder + 1, i + nOrder + 2), VectorIndex(j, j + nOrder + 1))
+                                    && !onlyValidValues(VectorIndex(i, i + nOrder + 2), VectorIndex(j + nOrder + 1, j + nOrder + 2)))
+                            {
+                                nOrder++;
+                            }
+
+                            if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last())
+                            {
+                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
+
+                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
+                                    {
+                                        if (_i == __i + nOrder || _j == __j + nOrder)
+                                            _region.vDataArray[(_i == __i + nOrder ? 0 : _i - __i + 1)][(_j == __j + nOrder ? 0 : _j - __j + 1)] = dMemTable[_i][_j];
+
+                                        _region.vDataArray[_i - __i + 1][_j - __j + 1] = dMemTable[_i][_j];
+                                    }
+                                }
+
+                                _region.retouch();
+
+                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
+                                    {
+                                        if (isnan(dMemTable[_i][_j]))
+                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i + 1][_j - __j + 1];
+                                    }
+                                }
+                            }
+                            else
+                                continue;
+                        }
+                        else if (j == _vCol.last())
+                        {
+                            __j--;
+
+                            while (__i + nOrder + 1 <= _vLine.last() && __j >= _vCol.front() && __j + nOrder + 1 < _vCol.last()
+                                    && !onlyValidValues(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 1))
+                                    && !onlyValidValues(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j, __j + 1)))
+                            {
+                                nOrder++;
+
+                                if (__j > _vCol.front())
+                                    __j--;
+                            }
+
+                            if (__i + nOrder + 1 <= _vLine.last() && __j >= _vCol.front() && __j + nOrder + 1 < _vCol.last())
+                            {
+                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
+
+                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                    {
+                                        _region.vDataArray[_i - __i + 1][_j - __j] = dMemTable[_i][_j];
+
+                                        if (_i == __i + nOrder || _j == __j)
+                                            _region.vDataArray[(_i == __i + nOrder ? 0 : _i - __i + 1)][(_j == __j ? nOrder + 1 : _j - __j)] = dMemTable[_i][_j];
+                                    }
+                                }
+
+                                _region.retouch();
+
+                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                    {
+                                        if (isnan(dMemTable[_i][_j]))
+                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i + 1][_j - __j];
+                                    }
+                                }
+                            }
+                            else
+                                continue;
+                        }
+                        else
+                        {
+                            while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last() && __j >= _vCol.front()
+                                    && onlyValidValues(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2))
+                                    && onlyValidValues(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
+                            {
+                                if (__j > _vCol.front())
+                                    nOrder += 2;
+                                else
+                                    nOrder++;
+
+                                if (__j > _vCol.front())
+                                    __j--;
+                            }
+
+                            if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last() && __j >= _vCol.front())
+                            {
+                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
+
+                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                    {
+                                        _region.vDataArray[_i - __i + 1][_j - __j] = dMemTable[_i][_j];
+
+                                        if (_i == __i + nOrder)
+                                        {
+                                            _region.vDataArray[0][_j - __j] = dMemTable[_i][_j];
+                                            continue;
+                                        }
+                                    }
+                                }
+
+                                _region.retouch();
+
+                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                    {
+                                        if (isnan(dMemTable[_i][_j]))
+                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i + 1][_j - __j];
+                                    }
+                                }
+                            }
+                            else
+                                continue;
+                        }
+                    }
+                    else if (i == _vLine.last())
+                    {
+                        __i--;
+
+                        if (j == _vCol.last())
+                        {
+                            __j--;
+
+                            while (__i >= _vLine.front() && __j >= _vCol.front()
+                                    && !onlyValidValues(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1))
+                                    && !onlyValidValues(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)))
+                            {
+                                if (__j > _vCol.front())
+                                    __j--;
+
+                                if (__i > _vLine.front())
+                                    __i--;
+
+                                nOrder++;
+                            }
+
+                            if (__i >= _vLine.front() && __j >= _vCol.front())
+                            {
+                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
+
+                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                    {
+                                        _region.vDataArray[_i - __i][_j - __j] = dMemTable[_i][_j];
+
+                                        if (_i == __i || _j == __j)
+                                            _region.vDataArray[(_i == __i ? nOrder + 1 : _i - __i)][(_j == __j ? nOrder + 1 : _j - __j)] = dMemTable[_i][_j];
+                                    }
+                                }
+
+                                _region.retouch();
+
+                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                    {
+                                        if (isnan(dMemTable[_i][_j]))
+                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j];
+                                    }
+                                }
+                            }
+                            else
+                                continue;
+                        }
+                        else if (j == _vCol.front())
+                        {
+                            while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last()
+                                    && !onlyValidValues(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2))
+                                    && !onlyValidValues(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
+                            {
+                                if (__i > _vLine.front())
+                                    __i--;
+
+                                nOrder++;
+                            }
+
+                            if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last())
+                            {
+                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
+
+                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
+                                    {
+                                        _region.vDataArray[_i - __i][_j - __j + 1] = dMemTable[_i][_j];
+
+                                        if (_i == __i || _j == __j + nOrder)
+                                            _region.vDataArray[(_i == __i ? nOrder + 1 : _i - __i)][(_j == __j + nOrder ? 0 : _j - __j + 1)] = dMemTable[_i][_j];
+                                    }
+                                }
+
+                                _region.retouch();
+
+                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
+                                    {
+                                        if (isnan(dMemTable[_i][_j]))
+                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j + 1];
+                                    }
+                                }
+                            }
+                            else
+                                continue;
+                        }
+                        else
+                        {
+                            while (__i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last()
+                                    && !onlyValidValues(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2))
+                                    && !onlyValidValues(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
+                            {
+                                nOrder++;
+
+                                if (__j > _vCol.front())
+                                    __j--;
+
+                                if (__i > _vLine.front())
+                                    __i--;
+                            }
+
+                            if (__i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last())
+                            {
+                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder)));
+
+                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                    {
+                                        _region.vDataArray[_i - __i][_j - __j] = dMemTable[_i][_j];
+
+                                        if (_i == __i)
+                                            _region.vDataArray[nOrder + 1][_j - __j] = dMemTable[_i][_j];
+                                    }
+                                }
+
+                                _region.retouch();
+
+                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                                {
+                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                    {
+                                        if (isnan(dMemTable[_i][_j]))
+                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j];
+                                    }
+                                }
+                            }
+                            else
+                                continue;
+                        }
+                    }
+                    else if (j == _vCol.front())
+                    {
+                        while (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last()
+                                && !onlyValidValues(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2))
+                                && !onlyValidValues(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
+                        {
+                            if (__i > _vLine.front())
+                                nOrder += 2;
+                            else
+                                nOrder++;
+
+                            if (__i > _vLine.front())
+                                __i--;
+                        }
+
+                        if (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last())
+                        {
+                            RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
+
+                            for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                            {
+                                for (long long int _j = __j; _j <= __j + nOrder; _j++)
+                                {
+                                    _region.vDataArray[_i - __i][_j - __j + 1] = dMemTable[_i][_j];
+
+                                    if (_j == __j + nOrder)
+                                        _region.vDataArray[_i - __i][0] = dMemTable[_i][_j];
+                                }
+                            }
+
+                            _region.retouch();
+
+                            for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                            {
+                                for (long long int _j = __j; _j <= __j + nOrder; _j++)
+                                {
+                                    if (isnan(dMemTable[_i][_j]))
+                                        dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j + 1];
+                                }
+                            }
+                        }
+                        else
+                            continue;
+                    }
+                    else
+                    {
+                        __j--;
+
+                        while (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j >= _vCol.front()
+                                && !onlyValidValues(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1))
+                                && !onlyValidValues(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)))
+                        {
+                            nOrder++;
+
+                            if (__j > _vCol.front())
+                                __j--;
+
+                            if (__i > _vLine.front())
+                                __i--;
+                        }
+
+                        if (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j - nOrder - 1 >= _vCol.front())
+                        {
+                            RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
+
+                            for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                            {
+                                for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                {
+                                    _region.vDataArray[_i - __i][_j - __j] = dMemTable[_i][_j];
+
+                                    if (_j == __j)
+                                        _region.vDataArray[_i - __i][nOrder + 1] = dMemTable[_i][_j];
+                                }
+                            }
+
+                            _region.retouch();
+
+                            for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                            {
+                                for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                                {
+                                    if (isnan(dMemTable[_i][_j]))
+                                        dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j];
+                                }
+                            }
+                        }
+                        else
+                            continue;
+                    }
+                }
+                else
+                {
+                    // Multiple NaNs next to each other
+                    unsigned int nOrder = 1;
+                    long long int __i = i - 1;
+                    long long int __j = j - 1;
+
+                    while (!isValidDisc(__i, __j, nOrder + 1))
+                    {
+                        for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
+                        {
+                            if (isnan(dMemTable[_i][__j]))
+                            {
+                                __j--;
+                                break;
+                            }
+
+                            if (isnan(dMemTable[_i][__j + nOrder + 1]))
+                            {
+                                nOrder++;
+                                break;
+                            }
+                        }
+
+                        if (__i < _vLine.front() || __i + nOrder + 1 > _vLine.last() || __j < _vCol.front() || __j + nOrder + 1 > _vCol.last())
+                            break;
+
+                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
+                        {
+                            if (isnan(dMemTable[__i][_j]))
+                            {
+                                __i--;
+                                break;
+                            }
+
+                            if (isnan(dMemTable[__i + nOrder + 1][_j]))
+                            {
+                                nOrder++;
+                                break;
+                            }
+                        }
+
+                        if (__i < _vLine.front() || __i + nOrder + 1 > _vLine.last() || __j < _vCol.front() || __j + nOrder + 1 > _vCol.last())
+                            break;
+                    }
+
+                    if (__i < _vLine.front() || __i + nOrder + 1 > _vLine.last() || __j < _vCol.front() || __j + nOrder + 1 > _vCol.last())
+                        continue;
+
+                    RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
+
+                    for (long long int k = __i; k <= __i + nOrder + 1; k++)
+                    {
+                        for (long long int l = __j; l <= __j + nOrder + 1; l++)
+                            _region.vDataArray[k - __i][l - __j] = dMemTable[k][l];
+                    }
+
+                    _region.retouch();
+
+                    for (long long int k = __i; k <= __i + nOrder + 1; k++)
+                    {
+                        for (long long int l = __j; l <= __j + nOrder + 1; l++)
+                        {
+                            if (isnan(dMemTable[k][l]))
+                                dMemTable[k][l] = _region.vDataArray[k - __i][l - __j];
+                        }
+                    }
+
+                }
+
+                bMarkModified = true;
+            }
+        }
+    }
+
+    if (bMarkModified && bIsSaved)
+    {
+        bIsSaved = false;
+        nLastSaved = time(0);
+    }
+
+    return true;
+}
+
+
+bool Memory::onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol)
+{
+    return num(_vLine, _vCol) == cnt(_vLine, _vCol);
 }
 
 bool Memory::retoqueRegion(long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nOrder, AppDir Direction)
@@ -2500,64 +2892,21 @@ bool Memory::retoqueRegion(long long int i1, long long int i2, long long int j1,
     return true;
 }
 
-bool Memory::retoqueRegion(RetoqueRegion& _region)
-{
-    int nOrder = _region.vDataArray.size() - 2;
-    for (unsigned int i = 0; i < _region.vDataArray.size(); i++)
-    {
-        for (unsigned int j = 0; j < _region.vDataArray.size(); j++)
-        {
-            if (!_region.vValidationArray[i][j])
-            {
-                double dAverage = _region.vDataArray[0][j]
-                                  + (_region.vDataArray[nOrder + 1][j] - _region.vDataArray[0][j]) / (double)(nOrder + 1) * (double)i
-                                  + _region.vDataArray[i][0]
-                                  + (_region.vDataArray[i][nOrder + 1] - _region.vDataArray[i][0]) / (double)(nOrder + 1) * (double)j;
-                dAverage *= 2.0;
-                if (i >= j)
-                {
-                    dAverage += _region.vDataArray[0][(i - j)]
-                                + (_region.vDataArray[nOrder + 1 - (i - j)][nOrder + 1] - _region.vDataArray[0][(i - j)]) / (double)(nOrder - (i - j) + 1) * (double)i;
-                }
-                else
-                {
-                    dAverage += _region.vDataArray[0][(j - i)]
-                                + (_region.vDataArray[nOrder + 1][nOrder + 1 - (j - i)] - _region.vDataArray[(j - i)][0]) / (double)(nOrder - (j - i) + 1) * (double)i;
-                }
-                if (i + j <= (unsigned)nOrder + 1)
-                {
-                    dAverage += _region.vDataArray[i + j][0]
-                                + (_region.vDataArray[0][i + j] - _region.vDataArray[i + j][0]) / (double)(i + j) * (double)j;
-                }
-                else
-                {
-                    dAverage += _region.vDataArray[nOrder + 1][(i + j - nOrder - 1)]
-                                + (_region.vDataArray[(i + j - nOrder - 1)][nOrder + 1] - _region.vDataArray[nOrder + 1][(i + j - nOrder - 1)]) / (double)(2 * nOrder + 2 - (i + j)) * (double)(j - (i + j - nOrder - 1));
-                }
-                dAverage /= 6.0;
 
-                if (isnan(_region.dMedian))
-                    _region.vDataArray[i][j] = dAverage;
-                else
-                {
-                    _region.vDataArray[i][j] =
-                                    0.5 * (1.0 - 0.5 * hypot(i - (nOrder) / 2.0, j - (nOrder) / 2.0) / (M_SQRT2 * (nOrder / 2.0)))
-                                    * _region.dMedian
-                                    + 0.5 * (1.0 + 0.5 * hypot(i - (nOrder) / 2.0, j - (nOrder) / 2.0) / (M_SQRT2 * (nOrder / 2.0))) * dAverage;
-                }
-                if (!isnan(dAverage) && !isinf(dAverage) && !isnan(_region.vDataArray[i][j]) && !isinf(_region.vDataArray[i][j]))
-                    _region.vValidationArray[i][j] = true;
-                else
-                    _region.vValidationArray[i][j] = false;
-            }
-        }
-    }
-    return true;
-}
 
-// This member function evaluates the values at the frame of the square described
-// by the diagonal (_nLine, _nCol) -> (_nLine+nSize, _nCol+nSize) and ensures that none
-// of the values is NaN
+/////////////////////////////////////////////////
+/// \brief This member function evaluates the
+/// values at the frame of the square described
+/// by the diagonal (_nLine, _nCol) ->
+/// (_nLine+nSize, _nCol+nSize) and ensures that
+/// none of the values is NaN.
+///
+/// \param _nLine long long int
+/// \param _nCol long long int
+/// \param nSize unsigned int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::isValidDisc(long long int _nLine, long long int _nCol, unsigned int nSize)
 {
     // validate the input
@@ -2577,34 +2926,6 @@ bool Memory::isValidDisc(long long int _nLine, long long int _nCol, unsigned int
     for (long long int j = _nCol; j <= _nCol + nSize; j++)
     {
         if (isnan(dMemTable[_nLine][j]) || isnan(dMemTable[_nLine + nSize][j]))
-            return false;
-    }
-
-    return true;
-}
-
-// This member function evaluates the values at the frame of the square described
-// by the diagonal (_nLine, _nCol) -> (_nLine+nSize, _nCol+nSize) and ensures that none
-// of the values is NaN
-bool Memory::isValidDisc(VectorIndex _vLine, VectorIndex _vCol)
-{
-    // validate the input
-    if (_vLine.max() >= Memory::getLines(false)
-            || _vCol.max() >= Memory::getCols(false)
-            || !bValidData)
-        return false;
-
-    // Validate along the columns
-    for (size_t i = 0; i < _vLine.size(); i++)
-    {
-        if (isnan(readMem(_vLine[i], _vCol.front())) || isnan(readMem(_vLine[i], _vCol.last())))
-            return false;
-    }
-
-    // validate along the rows
-    for (size_t j = 0; j < _vCol.size(); j++)
-    {
-        if (isnan(readMem(_vLine.front(), _vCol[j])) || isnan(readMem(_vLine.last(), _vCol[j])))
             return false;
     }
 
@@ -2778,7 +3099,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
     if (Direction == ALL || Direction == GRID)
     {
         // Retouch everything
-        Memory::retoque(_vLine, _vCol, ALL);
+        Memory::retouch(_vLine, _vCol, ALL);
 
         Memory::smooth(_vLine, VectorIndex(_vCol.front()), _settings, COLS);
         Memory::smooth(_vLine, VectorIndex(_vCol.last()), _settings, COLS);
@@ -2868,7 +3189,18 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 }
 
 
-// This member function resamples the data described by the passed coordinates using the new samples nSamples
+/////////////////////////////////////////////////
+/// \brief This member function resamples the
+/// data described by the passed coordinates
+/// using the new samples nSamples.
+///
+/// \param _vLine VectorIndex
+/// \param _vCol VectorIndex
+/// \param nSamples unsigned int
+/// \param Direction AppDir
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSamples, AppDir Direction)
 {
     bool bUseAppendedZeroes = false;

@@ -16,26 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-
-#include <iostream>
-#include <fstream>
 #include <string>
-#include <ctime>
-#include <cmath>
 #include <vector>
-#include <gsl/gsl_statistics.h>
-#include <gsl/gsl_sort.h>
 
-#include "../ui/error.hpp"
-#include "../settings.hpp"
-//#include "../structures.hpp"
-#include "../utils/tools.hpp"
-#include "../version.h"
-#include "../maths/resampler.h"
-#include "../maths/filtering.hpp"
 #include "table.hpp"
 #include "sorter.hpp"
-
+#include "../maths/filtering.hpp"
 
 #ifndef MEMORY_HPP
 #define MEMORY_HPP
@@ -49,10 +35,13 @@ namespace NumeRe
     class FileAdapter;
 }
 
-/*
- * Header zur Memory-Klasse
- */
 
+/////////////////////////////////////////////////
+/// \brief This class represents a single table
+/// in memory, or a - so to say - single memory
+/// page to be handled by the MemoryManager class
+/// instance.
+/////////////////////////////////////////////////
 class Memory : public Sorter
 {
     public:
@@ -62,48 +51,43 @@ class Memory : public Sorter
 	    friend class MemoryManager;
 	    friend class NumeRe::FileAdapter;
 
-		long long int nLines;							// Zeilen des Caches
-		long long int nCols;							// Spalten des Caches
+		long long int nLines;
+		long long int nCols;
 		long long int nWrittenHeadlines;
-		long long int* nAppendedZeroes;			    	// Pointer auf ein Array von ints, die fuer jede Spalte die Zahl der angehaengten Nullen beinhaelt
-		double** dMemTable;								// Pointer auf Pointer auf die Datenfile-double-Matrix
-		bool bValidData;								// TRUE, wenn die Instanz der Klasse auch Daten enthaelt
-		string* sHeadLine;								// Pointer auf ein string-Array fuer die Tabellenkoepfe
-		bool bIsSaved;                                  // Boolean: TRUE fuer gespeicherte Daten
+		long long int* nAppendedZeroes;
+		double** dMemTable;
+		bool bValidData;
+		string* sHeadLine;
+		bool bIsSaved;
 		bool bSaveMutex;
-		long long int nLastSaved;                       // Integer, der den Zeitpunkt des letzten Speicherns speichert
+		long long int nLastSaved;
 
-		bool Allocate(long long int _nNLines, long long int _nNCols, bool shrink = false);	// Methode, um dem Pointer dMemTable die finale Matrix zuzuweisen
+		bool Allocate(long long int _nNLines, long long int _nNCols, bool shrink = false);
 		void createTableHeaders();
 		bool clear();
-
 		bool isValidDisc(long long int _nLine, long long int _nCol, unsigned int nSize);
-		bool isValidDisc(VectorIndex _vLine, VectorIndex _vCol);
 		bool retoqueRegion(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, unsigned int nOrder = 1, AppDir Direction = ALL);
-		bool retoqueRegion(RetoqueRegion& _region);
-
+		bool retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction);
+		bool retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol);
+		bool onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol);
 		void reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 		virtual int compare(int i, int j, int col) override;
         virtual bool isValue(int line, int col) override;
-		bool evaluateIndices(long long int& i1, long long int& i2, long long int& j1, long long int& j2);
 		void countAppendedZeroes();
 		void smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines);
 		void smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter);
 
     public:
-		Memory();										// Standard-Konstruktor
-		Memory(long long int _nLines, long long int _nCols);	    				// Allgemeiner Konstruktor (generiert zugleich die Matrix dMemTable und die Arrays
-														// 		auf Basis der uebergeben Werte)
-		~Memory();										// Destruktor (wendet delete[] auf die Matrix und alle Arrays an, sofern es noetig ist)
+		Memory();
+		Memory(long long int _nLines, long long int _nCols);
+		~Memory();
 
-		bool resizeMemory(long long int _nLines, long long int _nCols);	        // setzt nCols auf _nCols, nLines auf _nLines und ruft AllocateCache(int,int) auf
-		bool isValid() const;							                        // gibt den Wert von bValidData zurueck
-		bool isValidElement(long long int _nLine, long long int _nCol) const;	// gibt zurueck, ob an diesem Speicherpunkt ueberhaupt etwas existiert
-
+		bool resizeMemory(long long int _nLines, long long int _nCols);
+		bool isValid() const;
+		bool isValidElement(long long int _nLine, long long int _nCol) const;
 		bool shrink();
-
-		long long int getLines(bool _bFull = false) const;                 // gibt nLines zurueck
-		long long int getCols(bool _bFull = false) const;			             // gibt nCols zurueck
+		long long int getLines(bool _bFull = false) const;
+		long long int getCols(bool _bFull = false) const;
         inline int getSize() const
             {
                 if (bValidData)
@@ -112,31 +96,28 @@ class Memory : public Sorter
                     return 0;
             }
 
-		double readMem(long long int _nLine, long long int _nCol) const;	// Methode, um auf ein Element von dMemTable zuzugreifen
+        // READ ACCESS METHODS
+		double readMem(long long int _nLine, long long int _nCol) const;
 		vector<double> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		void copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		long long int getAppendedZeroes(long long int _i) const;			    // gibt die Zahl der angehaengten Nullen der _i-ten Spalte zurueck
+		string getHeadLineElement(long long int _i) const;
+		vector<string> getHeadLineElement(const VectorIndex& _vCol) const;
+		long long int getAppendedZeroes(long long int _i) const;
 		int getHeadlineCount() const;
 
-		bool writeSingletonData(Indices& _idx, double* _dData);	// Methode, um ein Element zu schreiben
-		bool writeData(long long int _Line, long long int _nCol, double _dData);	// Methode, um ein Element zu schreiben
-		bool writeData(Indices& _idx, double* _dData, unsigned int _nNum);	// Methode, um ein Element zu schreiben
-
-		string getHeadLineElement(long long int _i) const;		            // gibt das _i-te Element der Kopfzeile zurueck
-		vector<string> getHeadLineElement(const VectorIndex& _vCol) const;
-
-		bool setHeadLineElement(long long int _i, string _sHead);	        // setzt das _i-te Element der Kopfzeile auf _sHead
+		// WRITE ACCESS METHODS
+		bool writeSingletonData(Indices& _idx, double _dData);
+		bool writeData(long long int _Line, long long int _nCol, double _dData);
+		bool writeData(Indices& _idx, double* _dData, unsigned int _nNum);
+		bool setHeadLineElement(long long int _i, string _sHead);
 
 		bool save(string _sFileName, const string& sTableName, unsigned short nPrecision);
-        bool getSaveStatus() const;                     // gibt bIsSaved zurueck
-        void setSaveStatus(bool _bIsSaved);             // setzt bIsSaved
-        long long int getLastSaved() const;             // gibt nLastSaved zurueck
-
+        bool getSaveStatus() const;
+        void setSaveStatus(bool _bIsSaved);
+        long long int getLastSaved() const;
         vector<int> sortElements(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
-
         void deleteEntry(long long int _nLine, long long int _nCol);
         void deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol);
-
         NumeRe::Table extractTable(const string& _sTable = "");
         void importTable(NumeRe::Table _table);
 
@@ -158,7 +139,7 @@ class Memory : public Sorter
         double pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5);
 
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
-        bool retoque(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);
+        bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);
         bool resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSamples = 0, AppDir Direction = ALL);
 
 };

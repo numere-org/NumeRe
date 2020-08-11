@@ -7090,7 +7090,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
 
         if (findParameter(sCmd, "grid"))
         {
-            if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::GRID))
+            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::GRID))
             {
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
@@ -7100,7 +7100,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         }
         else if (!findParameter(sCmd, "lines") && !findParameter(sCmd, "cols"))
         {
-            if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::ALL))
+            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::ALL))
             {
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
@@ -7110,7 +7110,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         }
         else if (findParameter(sCmd, "lines"))
         {
-            if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::LINES))
+            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::LINES))
             {
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_LINES")), _option) );
@@ -7120,7 +7120,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         }
         else if (findParameter(sCmd, "cols"))
         {
-            if (_data.retoque(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::COLS))
+            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::COLS))
             {
                 if (_option.getSystemPrintStatus())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );

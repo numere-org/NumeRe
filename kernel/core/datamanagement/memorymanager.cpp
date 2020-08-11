@@ -705,7 +705,7 @@ vector<double> MemoryManager::resolveMAF(const string& sTableName, string sDir, 
     {
         for (size_t i = 0; i < _idx.size(); i++)
         {
-            if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset > getCols(sTableName, false))
+            if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= getCols(sTableName, false))
                 continue;
 
             vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false), _idx[i]+nGridOffset, -1));
@@ -715,10 +715,10 @@ vector<double> MemoryManager::resolveMAF(const string& sTableName, string sDir, 
     {
         for (size_t i = 0; i < _idx.size(); i++)
         {
-            if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset > getLines(sTableName, false))
+            if (_idx[i] < 0 || _idx[i] >= getLines(sTableName, false))
                 continue;
 
-            vResults.push_back((this->*MAF)(sTableName, _idx[i]+nGridOffset, -1, 0, getCols(sTableName, false)));
+            vResults.push_back((this->*MAF)(sTableName, _idx[i], -1, nGridOffset, getCols(sTableName, false)));
         }
     }
     else

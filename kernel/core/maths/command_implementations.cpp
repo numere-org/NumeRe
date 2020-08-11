@@ -16,6 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <gsl/gsl_statistics.h>
+#include <gsl/gsl_sort.h>
+
 #include "command_implementations.hpp"
 #include "parser_functions.hpp"
 #include "matrixoperations.hpp"
