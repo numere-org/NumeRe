@@ -1321,6 +1321,9 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!Memory::getCols(false))
         return;
 
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
     // Delete the selected entries and detect,
     // whether any index value corresponds to
     // a first element in any column.
@@ -1433,6 +1436,9 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
     double dStd = 0.0;
     unsigned int nInvalid = 0;
 
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
@@ -1467,6 +1473,9 @@ double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol)
     double dAvg = 0.0;
     unsigned int nInvalid = 0;
 
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
@@ -1499,6 +1508,9 @@ double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!bValidData)
         return NAN;
     double dMax = NAN;
+
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1533,6 +1545,9 @@ double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
         return NAN;
     double dMin = NAN;
 
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
@@ -1566,6 +1581,9 @@ double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
         return NAN;
     double dPrd = 1.0;
 
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
@@ -1595,6 +1613,9 @@ double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!bValidData)
         return NAN;
     double dSum = 0.0;
+
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1626,6 +1647,9 @@ double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol)
         return 0;
     int nInvalid = 0;
 
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
@@ -1653,6 +1677,9 @@ double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
         return 0.0;
+
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
 
 
     double dRetVal = NAN;
@@ -1689,6 +1716,9 @@ double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!bValidData)
         return 0.0;
 
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
@@ -1716,6 +1746,9 @@ double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
         return 0.0;
+
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
 
     bool isTrue = false;
     for (unsigned int i = 0; i < _vLine.size(); i++)
@@ -1754,6 +1787,9 @@ double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol)
         return 0;
     int nInvalid = 0;
 
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
@@ -1784,6 +1820,9 @@ double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
         return NAN;
     double dNorm = 0.0;
 
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
@@ -1812,6 +1851,9 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 {
     if (!bValidData)
         return NAN;
+
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
 
     enum
     {
@@ -1938,26 +1980,12 @@ double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!bValidData)
         return NAN;
 
-    double dMed = 0.0;
-    unsigned int nInvalid = 0;
-    unsigned int nCount = 0;
-    double* dData = 0;
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
-    {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
-        {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
-                nInvalid++;
-            else if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
-                nInvalid++;
-        }
-    }
+    vector<double> vData;
 
-    if (nInvalid >= _vLine.size()*_vCol.size())
-        return NAN;
-
-    dData = new double[(_vLine.size()*_vCol.size()) - nInvalid];
+    vData.reserve(_vLine.size()*_vCol.size());
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1966,30 +1994,19 @@ double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false) || isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
 
-            dData[nCount] = dMemTable[_vLine[i]][_vCol[j]];
-            nCount++;
-
-            if (nCount == (_vLine.size()*_vCol.size()) - nInvalid)
-                break;
+            vData.push_back(dMemTable[_vLine[i]][_vCol[j]]);
         }
-
-        if (nCount == (_vLine.size()*_vCol.size()) - nInvalid)
-            break;
     }
 
-    nCount = qSortDouble(dData, nCount);
+    if (!vData.size())
+        return NAN;
+
+    size_t nCount = qSortDouble(&vData[0], vData.size());
 
     if (!nCount)
-    {
-        delete[] dData;
         return NAN;
-    }
 
-    dMed = gsl_stats_median_from_sorted_data(dData, 1, nCount);
-
-    delete[] dData;
-
-    return dMed;
+    return gsl_stats_median_from_sorted_data(&vData[0], 1, nCount);
 }
 
 
@@ -2006,9 +2023,13 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 {
     if (!bValidData)
         return NAN;
-    unsigned int nInvalid = 0;
-    unsigned int nCount = 0;
-    double* dData = 0;
+
+    _vLine.setOpenEndIndex(nLines-1);
+    _vCol.setOpenEndIndex(nCols-1);
+
+    vector<double> vData;
+
+    vData.reserve(_vLine.size()*_vCol.size());
 
     if (dPct >= 1 || dPct <= 0)
         return NAN;
@@ -2017,52 +2038,37 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
-                nInvalid++;
-            else if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
-                nInvalid++;
-        }
-    }
-
-    if (nInvalid >= _vLine.size()*_vCol.size())
-        return NAN;
-
-    dData = new double[(_vLine.size()*_vCol.size()) - nInvalid];
-
-    for (unsigned int i = 0; i < _vLine.size(); i++)
-    {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
-        {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false) || isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
 
-            dData[nCount] = dMemTable[_vLine[i]][_vCol[j]];
-            nCount++;
-
-            if (nCount == (_vLine.size()*_vCol.size()) - nInvalid)
-                break;
+            vData.push_back(dMemTable[_vLine[i]][_vCol[j]]);
         }
-
-        if (nCount == (_vLine.size()*_vCol.size()) - nInvalid)
-            break;
     }
 
-    nCount = qSortDouble(dData, nCount);
+    if (!vData.size())
+        return NAN;
+
+
+    size_t nCount = qSortDouble(&vData[0], vData.size());
 
     if (!nCount)
-    {
-        delete[] dData;
         return NAN;
-    }
 
-    dPct = gsl_stats_quantile_from_sorted_data(dData, 1, nCount, dPct);
-
-    delete[] dData;
-
-    return dPct;
+    return gsl_stats_quantile_from_sorted_data(&vData[0], 1, nCount, dPct);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method is the retouching main
+/// method. It will redirect the control into the
+/// specialized member functions.
+///
+/// \param _vLine VectorIndex
+/// \param _vCol VectorIndex
+/// \param Direction AppDir
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
 {
     bool bUseAppendedZeroes = false;
@@ -2099,6 +2105,7 @@ bool Memory::retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
         _vLine.setRange(0, nMax);
     }
 
+    // Pre-evaluate the axis values in the GRID case
     if (Direction == GRID)
     {
         if (bUseAppendedZeroes)
@@ -2115,6 +2122,8 @@ bool Memory::retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
         _vCol = _vCol.subidx(2);
     }
 
+    // Redirect the control to the specialized member
+    // functions
     if (Direction == ALL || Direction == GRID)
     {
         _vLine.linearize();
@@ -2127,6 +2136,16 @@ bool Memory::retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function retouches single
+/// dimension data (along columns or rows).
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \param Direction AppDir
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction)
 {
     bool markModified = false;
@@ -2240,6 +2259,16 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function retouches two
+/// dimensional data (using a specialized filter
+/// class instance).
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     bool bMarkModified = false;
@@ -2250,441 +2279,29 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
         {
             if (isnan(dMemTable[i][j]))
             {
-                if (i > _vLine.front() && i < _vLine.last() && j > _vCol.front() && j < _vCol.last() && isValidDisc(i - 1, j - 1, 2))
-                    retoqueRegion(i - 1, i + 1, j - 1, j + 1, 1, ALL); // Single NaN
-                else if (i == _vLine.front() || i == _vLine.last() || j == _vCol.front() || j == _vCol.last())
+                RetouchBoundary _boundary = findValidBoundary(_vLine, _vCol, i, j);
+                NumeRe::RetouchRegion _region(_boundary.rows-1, _boundary.cols-1, med(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce())));
+
+                long long int l,r,t,b;
+
+                // Find the correct boundary to be used instead of the
+                // one outside of the range (if one of the indices is on
+                // any of the four boundaries
+
+                l = _boundary.cf() < _vCol.front() ? _boundary.ce() : _boundary.cf();
+                r = _boundary.ce() > _vCol.last() ? _boundary.cf() : _boundary.ce();
+                t = _boundary.rf() < _vLine.front() ? _boundary.re() : _boundary.rf();
+                b = _boundary.re() > _vLine.last() ? _boundary.rf() : _boundary.re();
+
+                _region.setBoundaries(readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(l)),
+                                      readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(r)),
+                                      readMem(VectorIndex(t), VectorIndex(_boundary.cf(), _boundary.ce())),
+                                      readMem(VectorIndex(b), VectorIndex(_boundary.cf(), _boundary.ce())));
+
+                for (long long int _n = _boundary.rf()+1; _n < _boundary.re(); _n++)
                 {
-                    // NaN at the boundary
-                    unsigned int nOrder = 1;
-                    long long int __i = i;
-                    long long int __j = j;
-
-                    if (i == _vLine.front())
-                    {
-                        if (j == _vCol.front())
-                        {
-                            while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last()
-                                    && !onlyValidValues(VectorIndex(i + nOrder + 1, i + nOrder + 2), VectorIndex(j, j + nOrder + 1))
-                                    && !onlyValidValues(VectorIndex(i, i + nOrder + 2), VectorIndex(j + nOrder + 1, j + nOrder + 2)))
-                            {
-                                nOrder++;
-                            }
-
-                            if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last())
-                            {
-                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                    {
-                                        if (_i == __i + nOrder || _j == __j + nOrder)
-                                            _region.vDataArray[(_i == __i + nOrder ? 0 : _i - __i + 1)][(_j == __j + nOrder ? 0 : _j - __j + 1)] = dMemTable[_i][_j];
-
-                                        _region.vDataArray[_i - __i + 1][_j - __j + 1] = dMemTable[_i][_j];
-                                    }
-                                }
-
-                                _region.retouch();
-
-                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                    {
-                                        if (isnan(dMemTable[_i][_j]))
-                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i + 1][_j - __j + 1];
-                                    }
-                                }
-                            }
-                            else
-                                continue;
-                        }
-                        else if (j == _vCol.last())
-                        {
-                            __j--;
-
-                            while (__i + nOrder + 1 <= _vLine.last() && __j >= _vCol.front() && __j + nOrder + 1 < _vCol.last()
-                                    && !onlyValidValues(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 1))
-                                    && !onlyValidValues(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j, __j + 1)))
-                            {
-                                nOrder++;
-
-                                if (__j > _vCol.front())
-                                    __j--;
-                            }
-
-                            if (__i + nOrder + 1 <= _vLine.last() && __j >= _vCol.front() && __j + nOrder + 1 < _vCol.last())
-                            {
-                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        _region.vDataArray[_i - __i + 1][_j - __j] = dMemTable[_i][_j];
-
-                                        if (_i == __i + nOrder || _j == __j)
-                                            _region.vDataArray[(_i == __i + nOrder ? 0 : _i - __i + 1)][(_j == __j ? nOrder + 1 : _j - __j)] = dMemTable[_i][_j];
-                                    }
-                                }
-
-                                _region.retouch();
-
-                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        if (isnan(dMemTable[_i][_j]))
-                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i + 1][_j - __j];
-                                    }
-                                }
-                            }
-                            else
-                                continue;
-                        }
-                        else
-                        {
-                            while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last() && __j >= _vCol.front()
-                                    && onlyValidValues(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2))
-                                    && onlyValidValues(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
-                            {
-                                if (__j > _vCol.front())
-                                    nOrder += 2;
-                                else
-                                    nOrder++;
-
-                                if (__j > _vCol.front())
-                                    __j--;
-                            }
-
-                            if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last() && __j >= _vCol.front())
-                            {
-                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        _region.vDataArray[_i - __i + 1][_j - __j] = dMemTable[_i][_j];
-
-                                        if (_i == __i + nOrder)
-                                        {
-                                            _region.vDataArray[0][_j - __j] = dMemTable[_i][_j];
-                                            continue;
-                                        }
-                                    }
-                                }
-
-                                _region.retouch();
-
-                                for (long long int _i = __i; _i <= __i + nOrder; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        if (isnan(dMemTable[_i][_j]))
-                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i + 1][_j - __j];
-                                    }
-                                }
-                            }
-                            else
-                                continue;
-                        }
-                    }
-                    else if (i == _vLine.last())
-                    {
-                        __i--;
-
-                        if (j == _vCol.last())
-                        {
-                            __j--;
-
-                            while (__i >= _vLine.front() && __j >= _vCol.front()
-                                    && !onlyValidValues(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1))
-                                    && !onlyValidValues(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)))
-                            {
-                                if (__j > _vCol.front())
-                                    __j--;
-
-                                if (__i > _vLine.front())
-                                    __i--;
-
-                                nOrder++;
-                            }
-
-                            if (__i >= _vLine.front() && __j >= _vCol.front())
-                            {
-                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        _region.vDataArray[_i - __i][_j - __j] = dMemTable[_i][_j];
-
-                                        if (_i == __i || _j == __j)
-                                            _region.vDataArray[(_i == __i ? nOrder + 1 : _i - __i)][(_j == __j ? nOrder + 1 : _j - __j)] = dMemTable[_i][_j];
-                                    }
-                                }
-
-                                _region.retouch();
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        if (isnan(dMemTable[_i][_j]))
-                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j];
-                                    }
-                                }
-                            }
-                            else
-                                continue;
-                        }
-                        else if (j == _vCol.front())
-                        {
-                            while (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last()
-                                    && !onlyValidValues(VectorIndex(__i + nOrder + 1, __i + nOrder + 2), VectorIndex(__j, __j + nOrder + 2))
-                                    && !onlyValidValues(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
-                            {
-                                if (__i > _vLine.front())
-                                    __i--;
-
-                                nOrder++;
-                            }
-
-                            if (__i + nOrder + 1 <= _vLine.last() && __j + nOrder + 1 <= _vCol.last())
-                            {
-                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                    {
-                                        _region.vDataArray[_i - __i][_j - __j + 1] = dMemTable[_i][_j];
-
-                                        if (_i == __i || _j == __j + nOrder)
-                                            _region.vDataArray[(_i == __i ? nOrder + 1 : _i - __i)][(_j == __j + nOrder ? 0 : _j - __j + 1)] = dMemTable[_i][_j];
-                                    }
-                                }
-
-                                _region.retouch();
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                    {
-                                        if (isnan(dMemTable[_i][_j]))
-                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j + 1];
-                                    }
-                                }
-                            }
-                            else
-                                continue;
-                        }
-                        else
-                        {
-                            while (__i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last()
-                                    && !onlyValidValues(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2))
-                                    && !onlyValidValues(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
-                            {
-                                nOrder++;
-
-                                if (__j > _vCol.front())
-                                    __j--;
-
-                                if (__i > _vLine.front())
-                                    __i--;
-                            }
-
-                            if (__i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last())
-                            {
-                                RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder)));
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        _region.vDataArray[_i - __i][_j - __j] = dMemTable[_i][_j];
-
-                                        if (_i == __i)
-                                            _region.vDataArray[nOrder + 1][_j - __j] = dMemTable[_i][_j];
-                                    }
-                                }
-
-                                _region.retouch();
-
-                                for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                                {
-                                    for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                    {
-                                        if (isnan(dMemTable[_i][_j]))
-                                            dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j];
-                                    }
-                                }
-                            }
-                            else
-                                continue;
-                        }
-                    }
-                    else if (j == _vCol.front())
-                    {
-                        while (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last()
-                                && !onlyValidValues(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 2))
-                                && !onlyValidValues(VectorIndex(__i, __i + nOrder + 2), VectorIndex(__j + nOrder + 1, __j + nOrder + 2)))
-                        {
-                            if (__i > _vLine.front())
-                                nOrder += 2;
-                            else
-                                nOrder++;
-
-                            if (__i > _vLine.front())
-                                __i--;
-                        }
-
-                        if (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j + nOrder + 1 <= _vCol.last())
-                        {
-                            RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                            for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                            {
-                                for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                {
-                                    _region.vDataArray[_i - __i][_j - __j + 1] = dMemTable[_i][_j];
-
-                                    if (_j == __j + nOrder)
-                                        _region.vDataArray[_i - __i][0] = dMemTable[_i][_j];
-                                }
-                            }
-
-                            _region.retouch();
-
-                            for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                            {
-                                for (long long int _j = __j; _j <= __j + nOrder; _j++)
-                                {
-                                    if (isnan(dMemTable[_i][_j]))
-                                        dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j + 1];
-                                }
-                            }
-                        }
-                        else
-                            continue;
-                    }
-                    else
-                    {
-                        __j--;
-
-                        while (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j >= _vCol.front()
-                                && !onlyValidValues(VectorIndex(__i, __i + 1), VectorIndex(__j, __j + nOrder + 1))
-                                && !onlyValidValues(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + 1)))
-                        {
-                            nOrder++;
-
-                            if (__j > _vCol.front())
-                                __j--;
-
-                            if (__i > _vLine.front())
-                                __i--;
-                        }
-
-                        if (__i + nOrder + 1 <= _vLine.last() && __i >= _vLine.front() && __j - nOrder - 1 >= _vCol.front())
-                        {
-                            RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                            for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                            {
-                                for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                {
-                                    _region.vDataArray[_i - __i][_j - __j] = dMemTable[_i][_j];
-
-                                    if (_j == __j)
-                                        _region.vDataArray[_i - __i][nOrder + 1] = dMemTable[_i][_j];
-                                }
-                            }
-
-                            _region.retouch();
-
-                            for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                            {
-                                for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                                {
-                                    if (isnan(dMemTable[_i][_j]))
-                                        dMemTable[_i][_j] = _region.vDataArray[_i - __i][_j - __j];
-                                }
-                            }
-                        }
-                        else
-                            continue;
-                    }
-                }
-                else
-                {
-                    // Multiple NaNs next to each other
-                    unsigned int nOrder = 1;
-                    long long int __i = i - 1;
-                    long long int __j = j - 1;
-
-                    while (!isValidDisc(__i, __j, nOrder + 1))
-                    {
-                        for (long long int _i = __i; _i <= __i + nOrder + 1; _i++)
-                        {
-                            if (isnan(dMemTable[_i][__j]))
-                            {
-                                __j--;
-                                break;
-                            }
-
-                            if (isnan(dMemTable[_i][__j + nOrder + 1]))
-                            {
-                                nOrder++;
-                                break;
-                            }
-                        }
-
-                        if (__i < _vLine.front() || __i + nOrder + 1 > _vLine.last() || __j < _vCol.front() || __j + nOrder + 1 > _vCol.last())
-                            break;
-
-                        for (long long int _j = __j; _j <= __j + nOrder + 1; _j++)
-                        {
-                            if (isnan(dMemTable[__i][_j]))
-                            {
-                                __i--;
-                                break;
-                            }
-
-                            if (isnan(dMemTable[__i + nOrder + 1][_j]))
-                            {
-                                nOrder++;
-                                break;
-                            }
-                        }
-
-                        if (__i < _vLine.front() || __i + nOrder + 1 > _vLine.last() || __j < _vCol.front() || __j + nOrder + 1 > _vCol.last())
-                            break;
-                    }
-
-                    if (__i < _vLine.front() || __i + nOrder + 1 > _vLine.last() || __j < _vCol.front() || __j + nOrder + 1 > _vCol.last())
-                        continue;
-
-                    RetouchRegion _region(nOrder + 2, med(VectorIndex(__i, __i + nOrder + 1), VectorIndex(__j, __j + nOrder + 1)));
-
-                    for (long long int k = __i; k <= __i + nOrder + 1; k++)
-                    {
-                        for (long long int l = __j; l <= __j + nOrder + 1; l++)
-                            _region.vDataArray[k - __i][l - __j] = dMemTable[k][l];
-                    }
-
-                    _region.retouch();
-
-                    for (long long int k = __i; k <= __i + nOrder + 1; k++)
-                    {
-                        for (long long int l = __j; l <= __j + nOrder + 1; l++)
-                        {
-                            if (isnan(dMemTable[k][l]))
-                                dMemTable[k][l] = _region.vDataArray[k - __i][l - __j];
-                        }
-                    }
-
+                    for (long long int _m = _boundary.cf()+1; _m < _boundary.ce(); _m++)
+                        dMemTable[_n][_m] = _region.retouch(_n - _boundary.rf() - 1, _m - _boundary.cf() - 1, dMemTable[_n][_m], med(VectorIndex(_n-1, _n+1), VectorIndex(_m-1, _m+1)));
                 }
 
                 bMarkModified = true;
@@ -2702,234 +2319,73 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This method is a wrapper for
+/// detecting, whether a row or column does only
+/// contain valid values (no NaNs).
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Memory::onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     return num(_vLine, _vCol) == cnt(_vLine, _vCol);
 }
 
-bool Memory::retoqueRegion(long long int i1, long long int i2, long long int j1, long long int j2, unsigned int nOrder, AppDir Direction)
-{
-    bool bUseAppendedZeroes = false;
-    if (!bValidData)
-        return false;
-    if (nOrder < 1)
-        return false;
-    if (i1 == -1 && i2 == -1 && j1 == -1 && j2 == -1)
-        return false;
-    if (i2 == -1)
-        i2 = i1;
-    else if (i2 == -2)
-    {
-        i2 = getLines(true) - 1;
-        bUseAppendedZeroes = true;
-    }
-    if (j2 == -1)
-        j2 = j1;
-    else if (j2 == -2)
-        j2 = getCols(false) - 1;
-
-    if (i1 > i2)
-    {
-        long long int nTemp = i1;
-        i1 = i2;
-        i2 = nTemp;
-    }
-    if (j1 > j2)
-    {
-        long long int nTemp = j1;
-        j1 = j2;
-        j2 = nTemp;
-    }
-    if (i1 >= getLines(false) || j1 >= getCols(false))
-        return NAN;
-    if (i2 >= getLines(false))
-        i2 = getLines(false) - 1;
-    if (j2 >= getCols(false))
-        j2 = getCols(false) - 1;
-
-    if (bUseAppendedZeroes)
-    {
-        long long int nMax = 0;
-        for (long long int j = j1; j <= j2; j++)
-        {
-            if (nMax < nLines - nAppendedZeroes[j] - 1)
-                nMax = nLines - nAppendedZeroes[j] - 1;
-        }
-        if (i2 > nMax)
-            i2 = nMax;
-    }
-
-    if ((Direction == ALL || Direction == GRID) && nOrder > 1)
-    {
-        if (bUseAppendedZeroes)
-        {
-            Memory::smooth(VectorIndex(i1, -2), VectorIndex(j1), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), COLS);
-            Memory::smooth(VectorIndex(i1, -2), VectorIndex(j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), COLS);
-            Memory::smooth(VectorIndex(i1), VectorIndex(j1, j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), LINES);
-            Memory::smooth(VectorIndex(i2), VectorIndex(j1, j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), LINES);
-        }
-        else
-        {
-            Memory::smooth(VectorIndex(i1, i2), VectorIndex(j1), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), COLS);
-            Memory::smooth(VectorIndex(i1, i2), VectorIndex(j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), COLS);
-            Memory::smooth(VectorIndex(i1), VectorIndex(j1, j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), LINES);
-            Memory::smooth(VectorIndex(i2), VectorIndex(j1, j2), NumeRe::FilterSettings(NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR, nOrder), LINES);
-        }
-    }
-
-    //cerr << i1 << " " << i2 << " " << j1 << " " << j2 << " " << nOrder << endl;
-    if (Direction == LINES)
-    {
-        for (long long int i = i1; i <= i2; i++)
-        {
-            for (long long int j = j1 + 1; j <= j2 - nOrder; j++)
-            {
-                for (unsigned int n = 0; n < nOrder; n++)
-                {
-                    if (!isnan(dMemTable[i][j - 1]) && !isnan(dMemTable[i][j + nOrder]) && !isnan(dMemTable[i][j + n]))
-                        dMemTable[i][j + n] = 0.5 * dMemTable[i][j + n] + 0.5 * (dMemTable[i][j - 1] + (dMemTable[i][j + nOrder] - dMemTable[i][j - 1]) / (double)(nOrder + 1) * (double)(n + 1));
-                }
-            }
-        }
-    }
-    else if (Direction == COLS)
-    {
-        for (long long int j = j1; j <= j2; j++)
-        {
-            for (long long int i = i1 + 1; i <= i2 - nOrder; i++)
-            {
-                for (unsigned int n = 0; n < nOrder; n++)
-                {
-                    if (!isnan(dMemTable[i - 1][j]) && !isnan(dMemTable[i + nOrder][j]) && !isnan(dMemTable[i + n][j]))
-                        dMemTable[i + n][j] = 0.5 * dMemTable[i + n][j] + 0.5 * (dMemTable[i - 1][j] + (dMemTable[i + nOrder][j] - dMemTable[i - 1][j]) / (double)(nOrder + 1) * (double)(n + 1));
-                }
-            }
-        }
-    }
-    else if ((Direction == ALL || Direction == GRID) && i2 - i1 > 1 && j2 - j1 > 1)
-    {
-        for (long long int j = j1; j <= j2 - nOrder - 1; j++)
-        {
-            for (long long int i = i1; i <= i2 - nOrder - 1; i++)
-            {
-                for (unsigned int nj = 1; nj <= nOrder; nj++)
-                {
-                    for (unsigned int ni = 1; ni <= nOrder; ni++) // nOrder-nj+1: Dreieckig glaetten => weniger Glaettungen je Punkt
-                    {
-                        if (nOrder == 1)
-                        {
-                            if (!isnan(dMemTable[i + ni][j + nOrder + 1])
-                                    && !isnan(dMemTable[i + ni][j])
-                                    && !isnan(dMemTable[i + nOrder + 1][j + nj])
-                                    && !isnan(dMemTable[i][j + nj]))
-                            {
-                                dMemTable[i + ni][j + nj] = 0.5 * med(VectorIndex(i1, i2 + 1), VectorIndex(j1, j2 + 1)) + 0.25 * (
-                                        dMemTable[i][j + nj] + (dMemTable[i + nOrder + 1][j + nj] - dMemTable[i][j + nj]) / (double)(nOrder + 1) * (double)ni
-                                        + dMemTable[i + ni][j] + (dMemTable[i + ni][j + nOrder + 1] - dMemTable[i + ni][j]) / (double)(nOrder + 1) * (double)nj);
-                            }
-                        }
-                        else
-                        {
-                            if (isValidDisc(i, j, nOrder + 1))
-                            {
-                                double dAverage = dMemTable[i][j + nj]
-                                                  + (dMemTable[i + nOrder + 1][j + nj] - dMemTable[i][j + nj]) / (double)(nOrder + 1) * (double)ni
-                                                  + dMemTable[i + ni][j]
-                                                  + (dMemTable[i + ni][j + nOrder + 1] - dMemTable[i + ni][j]) / (double)(nOrder + 1) * (double)nj;
-                                dAverage *= 2;
-                                if (ni >= nj)
-                                {
-                                    dAverage += dMemTable[i][j + (ni - nj)]
-                                                + (dMemTable[i + nOrder + 1 - (ni - nj)][j + nOrder + 1] - dMemTable[i][j + (ni - nj)]) / (double)(nOrder - (ni - nj) + 1) * (double)ni;
-                                }
-                                else
-                                {
-                                    dAverage += dMemTable[i][j + (nj - ni)]
-                                                + (dMemTable[i + nOrder + 1][j + nOrder + 1 - (nj - ni)] - dMemTable[i + (nj - ni)][j]) / (double)(nOrder - (nj - ni) + 1) * (double)ni;
-                                }
-                                if (ni + nj <= nOrder + 1)
-                                {
-                                    dAverage += dMemTable[i + ni + nj][j]
-                                                + (dMemTable[i][j + ni + nj] - dMemTable[i + ni + nj][j]) / (double)(ni + nj) * (double)(nj);
-                                }
-                                else
-                                {
-                                    dAverage += dMemTable[i + nOrder + 1][j + (ni + nj - nOrder - 1)]
-                                                + (dMemTable[i + (ni + nj - nOrder - 1)][j + nOrder + 1] - dMemTable[i + nOrder + 1][j + (ni + nj - nOrder - 1)]) / (double)(2 * nOrder + 2 - (ni + nj)) * (double)(nj - (ni + nj - nOrder - 1));
-                                }
-                                dAverage /= 6.0;
-                                if (!isnan(dMemTable[i + ni][j + nj]))
-                                {
-                                    if (nOrder % 2)
-                                    {
-                                        dMemTable[i + ni][j + nj] =
-                                                        0.5 * (1.0 - 0.5 * hypot(ni - (nOrder + 1) / 2, nj - (nOrder + 1) / 2) / hypot(1 - (nOrder + 1) / 2, 1 - (nOrder + 1) / 2))
-                                                        * dMemTable[i + ni][j + nj]
-                                                        + 0.5 * (1.0 + 0.5 * hypot(ni - (nOrder + 1) / 2, nj - (nOrder + 1) / 2) / hypot(1 - (nOrder + 1) / 2, 1 - (nOrder + 1) / 2)) * dAverage;
-                                    }
-                                    else
-                                    {
-                                        dMemTable[i + ni][j + nj] =
-                                                        0.5 * (1.0 - 0.5 * hypot(ni - (nOrder) / 2, nj - (nOrder) / 2) / hypot(nOrder / 2, nOrder / 2))
-                                                        * dMemTable[i + ni][j + nj]
-                                                        + 0.5 * (1.0 + 0.5 * hypot(ni - (nOrder) / 2, nj - (nOrder) / 2) / hypot(nOrder / 2, nOrder / 2)) * dAverage;
-                                    }
-                                }
-                                else
-                                {
-                                    dMemTable[i + ni][j + nj] = dAverage;
-
-                                }
-                            }
-                        }
-                    }
-                }
-                i += nOrder / 2;
-            }
-            j += nOrder / 2;
-        }
-    }
-    return true;
-}
-
-
 
 /////////////////////////////////////////////////
-/// \brief This member function evaluates the
-/// values at the frame of the square described
-/// by the diagonal (_nLine, _nCol) ->
-/// (_nLine+nSize, _nCol+nSize) and ensures that
-/// none of the values is NaN.
+/// \brief This member function finds the
+/// smallest possible boundary around a set of
+/// invalid values to be used as boundary values
+/// for retouching the values.
 ///
-/// \param _nLine long long int
-/// \param _nCol long long int
-/// \param nSize unsigned int
-/// \return bool
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \param i long long int
+/// \param j long long int
+/// \return RetouchBoundary
 ///
 /////////////////////////////////////////////////
-bool Memory::isValidDisc(long long int _nLine, long long int _nCol, unsigned int nSize)
+RetouchBoundary Memory::findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j)
 {
-    // validate the input
-    if (_nLine >= Memory::getLines(false) - nSize
-            || _nCol >= Memory::getCols(false) - nSize
-            || !bValidData)
-        return false;
+    RetouchBoundary _boundary(i-1, j-1, 2, 2);
 
-    // Validate along the columns
-    for (long long int i = _nLine; i <= _nLine + nSize; i++)
+    bool reEvaluateBoundaries = true;
+
+    while (reEvaluateBoundaries)
     {
-        if (isnan(dMemTable[i][_nCol]) || isnan(dMemTable[i][_nCol + nSize]))
-            return false;
+        reEvaluateBoundaries = false;
+
+        if (!onlyValidValues(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf())) && _boundary.cf() > _vCol.front())
+        {
+            _boundary.m--;
+            _boundary.cols++;
+            reEvaluateBoundaries = true;
+        }
+
+        if (!onlyValidValues(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.ce())) && _boundary.ce() < _vCol.last())
+        {
+            _boundary.cols++;
+            reEvaluateBoundaries = true;
+        }
+
+        if (!onlyValidValues(VectorIndex(_boundary.rf()), VectorIndex(_boundary.cf(), _boundary.ce())) && _boundary.rf() > _vLine.front())
+        {
+            _boundary.n--;
+            _boundary.rows++;
+            reEvaluateBoundaries = true;
+        }
+
+        if (!onlyValidValues(VectorIndex(_boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce())) && _boundary.re() < _vLine.last())
+        {
+            _boundary.rows++;
+            reEvaluateBoundaries = true;
+        }
     }
 
-    // validate along the rows
-    for (long long int j = _nCol; j <= _nCol + nSize; j++)
-    {
-        if (isnan(dMemTable[_nLine][j]) || isnan(dMemTable[_nLine + nSize][j]))
-            return false;
-    }
-
-    return true;
+    return _boundary;
 }
 
 

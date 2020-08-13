@@ -38,7 +38,7 @@ long long int intCast(double);
 class VectorIndex
 {
     private:
-        vector<long long int> vStorage;
+        mutable vector<long long int> vStorage;
         bool expand;
 
         /////////////////////////////////////////////////
@@ -104,13 +104,13 @@ class VectorIndex
         /////////////////////////////////////////////////
         /// \brief Copy constructor.
         ///
-        /// \param vindex const VectorIndex&
+        /// \param vIndex const VectorIndex&
         ///
         /////////////////////////////////////////////////
-        VectorIndex(const VectorIndex& vindex)
+        VectorIndex(const VectorIndex& vIndex)
         {
-            vStorage = vindex.vStorage;
-            expand = vindex.expand;
+            vStorage = vIndex.vStorage;
+            expand = vIndex.expand;
         }
 
         /////////////////////////////////////////////////
@@ -325,7 +325,7 @@ class VectorIndex
         {
             if (!isValid())
                 return 0;
-            else if (vStorage.size() == 2 && vStorage.back() == INVALID)
+            else if (vStorage.size() == 2 && ((vStorage.back() == INVALID) xor (vStorage.front() == INVALID)))
                 return 1;
             else
                 return vStorage.size();
@@ -588,7 +588,7 @@ class VectorIndex
         /////////////////////////////////////////////////
         inline bool isValid() const
         {
-            return vStorage.front() != INVALID;
+            return vStorage.front() != INVALID || vStorage.back() != INVALID;
         }
 
         /////////////////////////////////////////////////
@@ -731,6 +731,21 @@ class VectorIndex
             }
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function can be used to
+        /// replace the open end state with a defined
+        /// index value although the VectorIndex instance
+        /// was passed as const ref.
+        ///
+        /// \param nLast long longint
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void setOpenEndIndex(long long int nLast) const
+        {
+            if (vStorage.back() == OPEN_END)
+                vStorage.back() = nLast;
+        }
 };
 
 
@@ -902,79 +917,6 @@ struct Returnvalue
     bool isNumeric() const
     {
         return vNumVal.size() && !vStringVal.size();
-    }
-};
-
-// Structure for the retouch functionality
-struct RetouchRegion
-{
-    vector<vector<double> > vDataArray;
-    double dMedian;
-
-    RetouchRegion(size_t nSize, double _dMedian = NAN)
-    {
-        vDataArray.resize(nSize);
-
-        for (unsigned int i = 0; i < nSize; i++)
-        {
-            vDataArray[i].resize(nSize, NAN);
-        }
-
-        dMedian = _dMedian;
-    }
-
-    void retouch()
-    {
-        int nOrder = vDataArray.size() - 2;
-
-        for (unsigned int i = 0; i < vDataArray.size(); i++)
-        {
-            for (unsigned int j = 0; j < vDataArray.size(); j++)
-            {
-                if (isnan(vDataArray[i][j]))
-                {
-                    double dAverage = vDataArray[0][j]
-                                      + (vDataArray[nOrder + 1][j] - vDataArray[0][j]) / (double)(nOrder + 1) * (double)i
-                                      + vDataArray[i][0]
-                                      + (vDataArray[i][nOrder + 1] - vDataArray[i][0]) / (double)(nOrder + 1) * (double)j;
-
-                    dAverage *= 2.0;
-
-                    if (i >= j)
-                    {
-                        dAverage += vDataArray[0][(i - j)]
-                                    + (vDataArray[nOrder + 1 - (i - j)][nOrder + 1] - vDataArray[0][(i - j)]) / (double)(nOrder - (i - j) + 1) * (double)i;
-                    }
-                    else
-                    {
-                        dAverage += vDataArray[0][(j - i)]
-                                    + (vDataArray[nOrder + 1][nOrder + 1 - (j - i)] - vDataArray[(j - i)][0]) / (double)(nOrder - (j - i) + 1) * (double)i;
-                    }
-                    if (i + j <= (unsigned)nOrder + 1)
-                    {
-                        dAverage += vDataArray[i + j][0]
-                                    + (vDataArray[0][i + j] - vDataArray[i + j][0]) / (double)(i + j) * (double)j;
-                    }
-                    else
-                    {
-                        dAverage += vDataArray[nOrder + 1][(i + j - nOrder - 1)]
-                                    + (vDataArray[(i + j - nOrder - 1)][nOrder + 1] - vDataArray[nOrder + 1][(i + j - nOrder - 1)]) / (double)(2 * nOrder + 2 - (i + j)) * (double)(j - (i + j - nOrder - 1));
-                    }
-
-                    dAverage /= 6.0;
-
-                    if (isnan(dMedian))
-                        vDataArray[i][j] = dAverage;
-                    else
-                    {
-                        vDataArray[i][j] =
-                                        0.5 * (1.0 - 0.5 * hypot(i - (nOrder) / 2.0, j - (nOrder) / 2.0) / (M_SQRT2 * (nOrder / 2.0)))
-                                        * dMedian
-                                        + 0.5 * (1.0 + 0.5 * hypot(i - (nOrder) / 2.0, j - (nOrder) / 2.0) / (M_SQRT2 * (nOrder / 2.0))) * dAverage;
-                    }
-                }
-            }
-        }
     }
 };
 
