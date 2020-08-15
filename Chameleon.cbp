@@ -287,8 +287,6 @@
 		<Unit filename="common/tree_util.h" />
 		<Unit filename="common/vcsmanager.cpp" />
 		<Unit filename="common/vcsmanager.hpp" />
-		<Unit filename="common/verinfo.cpp" />
-		<Unit filename="common/verinfo.h" />
 		<Unit filename="gui/ChameleonProjectManager.cpp" />
 		<Unit filename="gui/ChameleonProjectManager.h" />
 		<Unit filename="gui/DirTraverser.cpp" />

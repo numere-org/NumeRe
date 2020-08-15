@@ -34,8 +34,6 @@
 using namespace std;
 extern Language _lang;
 
-size_t qSortDouble(double* dArray, size_t nlength);
-
 
 
 /////////////////////////////////////////////////
@@ -1159,7 +1157,9 @@ NumeRe::Table Memory::extractTable(const string& _sTable)
 
 /////////////////////////////////////////////////
 /// \brief Import data from a copy-efficient
-/// table object.
+/// table object. Completely replaces the
+/// contents, which were in the internal storage
+/// before.
 ///
 /// \param _table NumeRe::Table
 /// \return void
@@ -1432,9 +1432,9 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
         return NAN;
+
     double dAvg = avg(_vLine, _vCol);
     double dStd = 0.0;
-    unsigned int nInvalid = 0;
 
     _vLine.setOpenEndIndex(nLines-1);
     _vCol.setOpenEndIndex(nCols-1);
@@ -1444,16 +1444,15 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
-                nInvalid++;
+                continue;
             else if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
-                nInvalid++;
+                continue;
             else
                 dStd += (dAvg - dMemTable[_vLine[i]][_vCol[j]]) * (dAvg - dMemTable[_vLine[i]][_vCol[j]]);
         }
     }
-    if (nInvalid >= _vLine.size()*_vCol.size() - 1)
-        return NAN;
-    return sqrt(dStd / ((_vLine.size() * _vCol.size()) - 1 - nInvalid));
+
+    return sqrt(dStd / (num(_vLine, _vCol) - 1));
 }
 
 
@@ -1470,27 +1469,11 @@ double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
         return NAN;
-    double dAvg = 0.0;
-    unsigned int nInvalid = 0;
 
     _vLine.setOpenEndIndex(nLines-1);
     _vCol.setOpenEndIndex(nCols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
-    {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
-        {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
-                nInvalid++;
-            else if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
-                nInvalid++;
-            else
-                dAvg += dMemTable[_vLine[i]][_vCol[j]];
-        }
-    }
-    if (nInvalid >= _vLine.size()*_vCol.size())
-        return NAN;
-    return dAvg / (_vLine.size() * _vCol.size() - nInvalid);
+    return sum(_vLine, _vCol) / num(_vLine, _vCol);
 }
 
 
@@ -1507,6 +1490,7 @@ double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
         return NAN;
+
     double dMax = NAN;
 
     _vLine.setOpenEndIndex(nLines-1);
@@ -1518,14 +1502,18 @@ double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
                 continue;
+
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
+
             if (isnan(dMax))
                 dMax = dMemTable[_vLine[i]][_vCol[j]];
+
             if (dMax < dMemTable[_vLine[i]][_vCol[j]])
                 dMax = dMemTable[_vLine[i]][_vCol[j]];
         }
     }
+
     return dMax;
 }
 
@@ -1543,6 +1531,7 @@ double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
         return NAN;
+
     double dMin = NAN;
 
     _vLine.setOpenEndIndex(nLines-1);
@@ -1554,14 +1543,18 @@ double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
                 continue;
+
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
+
             if (isnan(dMin))
                 dMin = dMemTable[_vLine[i]][_vCol[j]];
+
             if (dMin > dMemTable[_vLine[i]][_vCol[j]])
                 dMin = dMemTable[_vLine[i]][_vCol[j]];
         }
     }
+
     return dMin;
 }
 
@@ -1579,6 +1572,7 @@ double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
         return NAN;
+
     double dPrd = 1.0;
 
     _vLine.setOpenEndIndex(nLines-1);
@@ -1590,11 +1584,14 @@ double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
                 continue;
+
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
+
             dPrd *= dMemTable[_vLine[i]][_vCol[j]];
         }
     }
+
     return dPrd;
 }
 
@@ -1612,6 +1609,7 @@ double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
         return NAN;
+
     double dSum = 0.0;
 
     _vLine.setOpenEndIndex(nLines-1);
@@ -1623,11 +1621,14 @@ double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
                 continue;
+
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
+
             dSum += dMemTable[_vLine[i]][_vCol[j]];
         }
     }
+
     return dSum;
 }
 
@@ -1660,6 +1661,7 @@ double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol)
                 nInvalid++;
         }
     }
+
     return (_vLine.size() * _vCol.size()) - nInvalid;
 }
 
@@ -1681,16 +1683,18 @@ double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     _vLine.setOpenEndIndex(nLines-1);
     _vCol.setOpenEndIndex(nCols-1);
 
-
     double dRetVal = NAN;
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
                 continue;
+
             if (isnan(dRetVal))
                 dRetVal = 1.0;
+
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]) || dMemTable[_vLine[i]][_vCol[j]] == 0)
                 return 0.0;
         }
@@ -1698,6 +1702,7 @@ double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 
     if (isnan(dRetVal))
         return 0.0;
+
     return 1.0;
 }
 
@@ -1725,10 +1730,12 @@ double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
                 continue;
+
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]) || dMemTable[_vLine[i]][_vCol[j]] != 0)
                 return 1.0;
         }
     }
+
     return 0.0;
 }
 
@@ -1751,12 +1758,14 @@ double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     _vCol.setOpenEndIndex(nCols-1);
 
     bool isTrue = false;
+
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
                 continue;
+
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]) || dMemTable[_vLine[i]][_vCol[j]] != 0)
             {
                 if (!isTrue)
@@ -1766,8 +1775,10 @@ double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
             }
         }
     }
+
     if (isTrue)
         return 1.0;
+
     return 0.0;
 }
 
@@ -1801,6 +1812,7 @@ double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol)
                 nInvalid++;
         }
     }
+
     return (_vLine.size() * _vCol.size()) - nInvalid;
 }
 
@@ -1818,6 +1830,7 @@ double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
     if (!bValidData)
         return NAN;
+
     double dNorm = 0.0;
 
     _vLine.setOpenEndIndex(nLines-1);
@@ -1829,11 +1842,14 @@ double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
         {
             if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
                 continue;
+
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
+
             dNorm += dMemTable[_vLine[i]][_vCol[j]] * dMemTable[_vLine[i]][_vCol[j]];
         }
     }
+
     return sqrt(dNorm);
 }
 
@@ -2279,7 +2295,7 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
         {
             if (isnan(dMemTable[i][j]))
             {
-                RetouchBoundary _boundary = findValidBoundary(_vLine, _vCol, i, j);
+                Boundary _boundary = findValidBoundary(_vLine, _vCol, i, j);
                 NumeRe::RetouchRegion _region(_boundary.rows-1, _boundary.cols-1, med(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce())));
 
                 long long int l,r,t,b;
@@ -2287,7 +2303,6 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
                 // Find the correct boundary to be used instead of the
                 // one outside of the range (if one of the indices is on
                 // any of the four boundaries
-
                 l = _boundary.cf() < _vCol.front() ? _boundary.ce() : _boundary.cf();
                 r = _boundary.ce() > _vCol.last() ? _boundary.cf() : _boundary.ce();
                 t = _boundary.rf() < _vLine.front() ? _boundary.re() : _boundary.rf();
@@ -2348,9 +2363,9 @@ bool Memory::onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol
 /// \return RetouchBoundary
 ///
 /////////////////////////////////////////////////
-RetouchBoundary Memory::findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j)
+Boundary Memory::findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j)
 {
-    RetouchBoundary _boundary(i-1, j-1, 2, 2);
+    Boundary _boundary(i-1, j-1, 2, 2);
 
     bool reEvaluateBoundaries = true;
 

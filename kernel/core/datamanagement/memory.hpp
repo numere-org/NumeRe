@@ -35,35 +35,6 @@ namespace NumeRe
     class FileAdapter;
 }
 
-struct RetouchBoundary
-{
-    long long int n;
-    long long int m;
-    size_t rows;
-    size_t cols;
-
-    RetouchBoundary(long long int i, long long int j, size_t _row, size_t _col) : n(i), m(j), rows(_row), cols(_col) {}
-
-    long long int rf()
-    {
-        return n;
-    }
-
-    long long int re()
-    {
-        return n+rows;
-    }
-
-    long long int cf()
-    {
-        return m;
-    }
-
-    long long int ce()
-    {
-        return m+cols;
-    }
-};
 
 /////////////////////////////////////////////////
 /// \brief This class represents a single table
@@ -94,7 +65,7 @@ class Memory : public Sorter
 		bool Allocate(long long int _nNLines, long long int _nNCols, bool shrink = false);
 		void createTableHeaders();
 		bool clear();
-		RetouchBoundary findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j);
+		Boundary findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j);
 		bool retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction);
 		bool retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol);
 		bool onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol);

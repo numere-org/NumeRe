@@ -822,14 +822,22 @@ struct Indices
     string sCompiledAccessEquation;
 };
 
-// Structure for the findCommand function
+
+/////////////////////////////////////////////////
+/// \brief Structure for the findCommand
+/// function.
+/////////////////////////////////////////////////
 struct Match
 {
     string sString;
     unsigned int nPos;
 };
 
-// Structure for the horizontal and vertical lines in plots
+
+/////////////////////////////////////////////////
+/// \brief Structure for the horizontal and
+/// vertical lines in plots.
+/////////////////////////////////////////////////
 struct Line
 {
     string sDesc;
@@ -839,7 +847,10 @@ struct Line
     Line() : sDesc(""), sStyle("k;2"), dPos(0.0) {}
 };
 
-// Structure for the axes in plots
+
+/////////////////////////////////////////////////
+/// \brief Structure for the axes in plots.
+/////////////////////////////////////////////////
 struct Axis
 {
     string sLabel;
@@ -848,7 +859,11 @@ struct Axis
     double dMax;
 };
 
-// Structure for using time axes
+
+/////////////////////////////////////////////////
+/// \brief Structure for describing time axes in
+/// plots.
+/////////////////////////////////////////////////
 struct TimeAxis
 {
     string sTimeFormat;
@@ -896,7 +911,12 @@ struct TimeAxis
     }
 };
 
-// Structure as wrapper for the return value of procedures (which may be numerical or string values or a mixture of both)
+
+/////////////////////////////////////////////////
+/// \brief Structure as wrapper for the return
+/// value of procedures (which may be numerical
+/// or string values or a mixture of both).
+/////////////////////////////////////////////////
 struct Returnvalue
 {
     vector<double> vNumVal;
@@ -920,15 +940,23 @@ struct Returnvalue
     }
 };
 
-// Structure for the four standard variables
-struct Integration_Vars
+
+/////////////////////////////////////////////////
+/// \brief Structure for the four standard
+/// variables.
+/////////////////////////////////////////////////
+struct DefaultVariables
 {
     string sName[4] = {"x", "y", "z", "t"};
     double vValue[4][4];
 };
 
-// Structure for the sorting functionality: used for the recursive definition of
-// the index columns for sorting
+
+/////////////////////////////////////////////////
+/// \brief Structure for the sorting
+/// functionality: used for the recursive
+/// definition of the index columns for sorting.
+/////////////////////////////////////////////////
 struct ColumnKeys
 {
     int nKey[2];
@@ -943,6 +971,41 @@ struct ColumnKeys
             if (subkeys)
                 delete subkeys;
         }
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This structure contains the
+/// information of a two-dimensional boundary.
+/////////////////////////////////////////////////
+struct Boundary
+{
+    long long int n;
+    long long int m;
+    size_t rows;
+    size_t cols;
+
+    Boundary(long long int i, long long int j, size_t _row, size_t _col) : n(i), m(j), rows(_row), cols(_col) {}
+
+    long long int rf()
+    {
+        return n;
+    }
+
+    long long int re()
+    {
+        return n+rows;
+    }
+
+    long long int cf()
+    {
+        return m;
+    }
+
+    long long int ce()
+    {
+        return m+cols;
+    }
 };
 
 #endif

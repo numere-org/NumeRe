@@ -19,7 +19,7 @@
 #include "odesolver.hpp"
 #include "../../kernel.hpp"
 
-extern Integration_Vars parser_iVars;
+extern DefaultVariables _defVars;
 
 Parser* Odesolver::_odeParser = 0;
 int Odesolver::nDimensions = 0;
@@ -74,7 +74,7 @@ int Odesolver::odeFunction(double x, const double y[], double dydx[], void* para
     value_type* v = 0;
 
     // Variablen zuweisen
-    parser_iVars.vValue[0][0] = x;
+    _defVars.vValue[0][0] = x;
 
     for (int i = 0; i < nDimensions; i++)
     {
@@ -301,7 +301,7 @@ bool Odesolver::solve(const string& sCmd)
     h2 = dRelTolerance;
     //cerr << 7 << endl;
 
-    parser_iVars.vValue[0][0] = t0;
+    _defVars.vValue[0][0] = t0;
     t = t0;
 
     // Dimension des ODE-Systems bestimmen: odesolve dy1 = y2*x, dy2 = sin(y1)

@@ -34,7 +34,7 @@ extern const string sVersion;
 Language _lang;
 mglGraph _fontData;
 extern value_type vAns;
-extern Integration_Vars parser_iVars;
+extern DefaultVariables _defVars;
 time_t tTimeZero = time(0);
 
 // Initialization of the static member variables
@@ -310,10 +310,10 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
 
     // Declare the default variables
     _parser.DefineVar("ans", &vAns);        // Deklariere die spezielle Variable "ans", die stets, das letzte Ergebnis speichert und die vier Standardvariablen
-    _parser.DefineVar(parser_iVars.sName[0], &parser_iVars.vValue[0][0]);
-    _parser.DefineVar(parser_iVars.sName[1], &parser_iVars.vValue[1][0]);
-    _parser.DefineVar(parser_iVars.sName[2], &parser_iVars.vValue[2][0]);
-    _parser.DefineVar(parser_iVars.sName[3], &parser_iVars.vValue[3][0]);
+    _parser.DefineVar(_defVars.sName[0], &_defVars.vValue[0][0]);
+    _parser.DefineVar(_defVars.sName[1], &_defVars.vValue[1][0]);
+    _parser.DefineVar(_defVars.sName[2], &_defVars.vValue[2][0]);
+    _parser.DefineVar(_defVars.sName[3], &_defVars.vValue[3][0]);
 
     // Declare the table dimension variables
     _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);

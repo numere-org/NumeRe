@@ -29,7 +29,7 @@
 #define TRAPEZOIDAL 1
 #define SIMPSON 2
 
-Integration_Vars parser_iVars;
+DefaultVariables _defVars;
 static double localizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option);
@@ -322,11 +322,11 @@ vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _pars
     unsigned int nMethod = TRAPEZOIDAL;    // 1 = trapezoidal, 2 = simpson
 
     sPrecision = "1e-3";
-    parser_iVars.vValue[0][3] = 1e-3;
-    double& x = parser_iVars.vValue[0][0];
-    double& x0 = parser_iVars.vValue[0][1];
-    double& x1 = parser_iVars.vValue[0][2];
-    double& dx = parser_iVars.vValue[0][3];
+    _defVars.vValue[0][3] = 1e-3;
+    double& x = _defVars.vValue[0][0];
+    double& x0 = _defVars.vValue[0][1];
+    double& x1 = _defVars.vValue[0][2];
+    double& dx = _defVars.vValue[0][3];
 
     // It's not possible to calculate the integral of a string expression
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
@@ -425,7 +425,7 @@ vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _pars
                 {
                     _parser.SetExpr(sLowerBoundary);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[0]))
                         sLowerBoundary = "";
                     else
                     {
@@ -443,7 +443,7 @@ vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _pars
                 {
                     _parser.SetExpr(sUpperBoundary);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[0]))
                         sUpperBoundary = "";
                     else
                     {
@@ -518,7 +518,7 @@ vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _pars
     // upon the integration variable
     _parser.SetExpr(sIntegrationExpression);
 
-    if (!isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
+    if (!isVariableInAssignedExpression(_parser, _defVars.sName[0]))
         bNoIntVar = true;       // Nein? Dann setzen wir den Bool auf TRUE und sparen uns viel Rechnung
 
     _parser.Eval(nResults);
@@ -633,7 +633,7 @@ vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _pars
 
         // Apply the analytical solution
         while (sTemp.length())
-            sIntegrationExpression += getNextArgument(sTemp, true) + "*" + parser_iVars.sName[0] + ",";
+            sIntegrationExpression += getNextArgument(sTemp, true) + "*" + _defVars.sName[0] + ",";
 
         sIntegrationExpression.erase(sIntegrationExpression.length() - 1, 1);
 
@@ -719,17 +719,17 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
     unsigned int nMethod = TRAPEZOIDAL;       // trapezoidal = 1, simpson = 2
 
     sPrecision = "1e-3";
-    parser_iVars.vValue[0][3] = 1e-3;
-    parser_iVars.vValue[1][3] = 1e-3;
+    _defVars.vValue[0][3] = 1e-3;
+    _defVars.vValue[1][3] = 1e-3;
 
-    double& x = parser_iVars.vValue[0][0];
-    double& x0 = parser_iVars.vValue[0][1];
-    double& x1 = parser_iVars.vValue[0][2];
-    double& dx = parser_iVars.vValue[0][3];
-    double& y = parser_iVars.vValue[1][0];
-    double& y0 = parser_iVars.vValue[1][1];
-    double& y1 = parser_iVars.vValue[1][2];
-    double& dy = parser_iVars.vValue[1][3];
+    double& x = _defVars.vValue[0][0];
+    double& x0 = _defVars.vValue[0][1];
+    double& x1 = _defVars.vValue[0][2];
+    double& dx = _defVars.vValue[0][3];
+    double& y = _defVars.vValue[1][0];
+    double& y0 = _defVars.vValue[1][1];
+    double& y1 = _defVars.vValue[1][2];
+    double& dy = _defVars.vValue[1][3];
 
     // Strings may not be integrated
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
@@ -817,7 +817,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
                 {
                     _parser.SetExpr(sBoundariesX[0]);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]) || isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[0]) || isVariableInAssignedExpression(_parser, _defVars.sName[1]))
                         sBoundariesX[0] = "";
                     else
                     {
@@ -835,7 +835,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
                 {
                     _parser.SetExpr(sBoundariesX[1]);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]) || isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[0]) || isVariableInAssignedExpression(_parser, _defVars.sName[1]))
                         sBoundariesX[1] = "";
                     else
                     {
@@ -874,7 +874,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
                 {
                     _parser.SetExpr(sBoundariesY[0]);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[1]))
                     {
                         sBoundariesY[0] = "";
                     }
@@ -894,7 +894,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
                 {
                     _parser.SetExpr(sBoundariesY[1]);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[1]))
                         sBoundariesY[1] = "";
                     else
                     {
@@ -965,10 +965,10 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
     // integration variables
     _parser.SetExpr(sIntegrationExpression);
 
-    if (!isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
+    if (!isVariableInAssignedExpression(_parser, _defVars.sName[0]))
         bIntVar[0] = false;
 
-    if (!isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+    if (!isVariableInAssignedExpression(_parser, _defVars.sName[1]))
         bIntVar[1] = false;
 
     // Prepare the memory for integration
@@ -1008,7 +1008,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
         nSign *= -1;
     }
 
-    if (findVariableInExpression(sBoundariesY[0] + " + " + sBoundariesY[1], parser_iVars.sName[0]) != string::npos)
+    if (findVariableInExpression(sBoundariesY[0] + " + " + sBoundariesY[1], _defVars.sName[0]) != string::npos)
     {
         bRenewBoundaries = true;    // Ja? Setzen wir den bool entsprechend
         sRenewBoundariesExpression = getNextArgument(sBoundariesY[0], false) + "," + getNextArgument(sBoundariesY[1], false);
@@ -1045,11 +1045,11 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
         // faster in this case
         if ((bIntVar[1] && !bIntVar[0]) && !bRenewBoundaries)
         {
-            NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE2_SWAPVARS", parser_iVars.sName[0], parser_iVars.sName[1]) + " ... ");
+            NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE2_SWAPVARS", _defVars.sName[0], _defVars.sName[1]) + " ... ");
             size_t pos;
 
-            while ((pos = findVariableInExpression(sIntegrationExpression, parser_iVars.sName[1])) != string::npos)
-                sIntegrationExpression.replace(pos, parser_iVars.sName[1].length(), parser_iVars.sName[0]);
+            while ((pos = findVariableInExpression(sIntegrationExpression, _defVars.sName[1])) != string::npos)
+                sIntegrationExpression.replace(pos, _defVars.sName[1].length(), _defVars.sName[0]);
 
             // --> Strings tauschen <--
             string sTemp = sBoundariesX[0];
@@ -1255,7 +1255,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
         string sInt_Fct_2 = "";
 
         while (sTemp.length())
-            sInt_Fct_2 += getNextArgument(sTemp, true) + "*" + parser_iVars.sName[0] + "*" + parser_iVars.sName[1] + ",";
+            sInt_Fct_2 += getNextArgument(sTemp, true) + "*" + _defVars.sName[0] + "*" + _defVars.sName[1] + ",";
 
         sInt_Fct_2.erase(sInt_Fct_2.length() - 1, 1);
 
@@ -3984,11 +3984,11 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryM
 
         for (unsigned int x = 0; x < vXVals.size(); x++)
         {
-            parser_iVars.vValue[0][0] = vXVals[x];
+            _defVars.vValue[0][0] = vXVals[x];
 
             for (unsigned int y = 0; y < vYVals.size(); y++)
             {
-                parser_iVars.vValue[1][0] = vYVals[y];
+                _defVars.vValue[1][0] = vYVals[y];
                 vVector.push_back(_parser.Eval());
             }
 
