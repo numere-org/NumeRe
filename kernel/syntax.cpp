@@ -432,7 +432,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
                 // Commands for NPRC in NSCR (highlighted differently)
                 colors.replace(i, nLen, nLen, '0'+SYNTAX_COMMAND); // Changed for debug viewer
             }
-            else if (i+nLen < sCommandLine.length()
+            else if (i+nLen <= sCommandLine.length()
                 && sCommandLine.find('.', i) < i+nLen)
             {
                 // Methods on string variables or on data sets

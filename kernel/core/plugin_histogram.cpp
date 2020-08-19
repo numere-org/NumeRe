@@ -232,12 +232,24 @@ void plugin_histogram (string& sCmd, MemoryManager& _data, MemoryManager& _targe
 					dMaxZ = StrToDb(sTemp.substr(sTemp.find(':') + 1));
 			}
 		}
-		if (findParameter(sCmd, "tocache"))
+		if (findParameter(sCmd, "tocache") || findParameter(sCmd, "totable"))
 			bWriteToCache = true;
 		if (findParameter(sCmd, "tocache", '='))
 		{
 			bWriteToCache = true;
 			sTargettable = getArgAtPos(sCmd, findParameter(sCmd, "tocache", '=') + 7);
+			if (sTargettable.find('(') == string::npos)
+				sTargettable += "()";
+			if (!_target.isTable(sTargettable))
+			{
+				_target.addTable(sTargettable, _option);
+			}
+			sTargettable.erase(sTargettable.find('('));
+		}
+		if (findParameter(sCmd, "totable", '='))
+		{
+			bWriteToCache = true;
+			sTargettable = getArgAtPos(sCmd, findParameter(sCmd, "totable", '=') + 7);
 			if (sTargettable.find('(') == string::npos)
 				sTargettable += "()";
 			if (!_target.isTable(sTargettable))

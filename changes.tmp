@@ -12,3 +12,6 @@ Cleaned	The symbols' tree updates the function definitions and plugin definition
 Removed	The obsolete Datafile class was removed and its functionality is now integrated in the MemoryManager class.
 Cleaned	The "data()" table is now a usual table with regular write permissions.
 Updated	The default table is now called "table()". This will get active once the memory is cleared. You may however rename "cache()" to "table()" as well using "rename cache(), table()".
+Added	The method "TABLE().name" will return the name of the table as string. This is an abbreviation for "to_string(TABLE())", which could be used together with "findcolumn()".
+Cleaned	The command sequence "clear TABLE()" will now only clear the contents of the selected TABLE().
+Cleaned	The command sequence "clear -memory" will remove all tables from memory and also clear the contents of the string table.

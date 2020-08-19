@@ -579,7 +579,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
 
             string sDescription = getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5);
 
-            doc_ReplaceTokensForHTML(sDescription, _option);
+            doc_ReplaceTokensForHTML(sDescription, generateFile, _option);
 
             if (generateFile)
                 sHTML += "<p>" + sDescription + "</p>\n<div style=\"margin-left:40px;\">\n<code><span style=\"color:#00008B;\">\n";
@@ -602,7 +602,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                     continue;
                 }
 
-                doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+                doc_ReplaceTokensForHTML(vDocArticle[j], generateFile, _option);
 
                 if (!bVerb)
                 {
@@ -628,7 +628,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
         {
             if (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != string::npos)
             {
-                doc_ReplaceTokensForHTML(vDocArticle[i], _option);
+                doc_ReplaceTokensForHTML(vDocArticle[i], generateFile, _option);
                 doc_ReplaceExprContentForHTML(vDocArticle[i], _option);
 
                 while (vDocArticle[i].find("</exprblock>", vDocArticle[i].find("<exprblock>")) != string::npos)
@@ -679,7 +679,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                         break;
                     }
 
-                    doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+                    doc_ReplaceTokensForHTML(vDocArticle[j], generateFile, _option);
                     doc_ReplaceExprContentForHTML(vDocArticle[j], _option);
 
                     while (vDocArticle[j].find("\\t") != string::npos)
@@ -693,7 +693,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
         {
             if (vDocArticle[i].find("</codeblock>", vDocArticle[i].find("<codeblock>")) != string::npos)
             {
-                doc_ReplaceTokensForHTML(vDocArticle[i], _option);
+                doc_ReplaceTokensForHTML(vDocArticle[i], generateFile, _option);
 
                 while (vDocArticle[i].find("</codeblock>", vDocArticle[i].find("<codeblock>")) != string::npos)
                 {
@@ -743,7 +743,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                         break;
                     }
 
-                    doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+                    doc_ReplaceTokensForHTML(vDocArticle[j], generateFile, _option);
 
                     while (vDocArticle[j].find("\\t") != string::npos)
                         vDocArticle[j].replace(vDocArticle[j].find("\\t"), 2, "&nbsp;&nbsp;&nbsp;&nbsp;");
@@ -775,7 +775,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                 }
                 else
                 {
-                    doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+                    doc_ReplaceTokensForHTML(vDocArticle[j], generateFile, _option);
 
                     if (generateFile)
                     {
@@ -827,14 +827,14 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                 }
                 else
                 {
-                    doc_ReplaceTokensForHTML(vDocArticle[j], _option);
+                    doc_ReplaceTokensForHTML(vDocArticle[j], generateFile, _option);
                     sHTML += vDocArticle[j] + "\n";
                 }
             }
         }
         else // Normaler Paragraph
         {
-            doc_ReplaceTokensForHTML(vDocArticle[i], _option);
+            doc_ReplaceTokensForHTML(vDocArticle[i], generateFile, _option);
             sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
         }
     }
@@ -937,7 +937,7 @@ void doc_ReplaceTokens(string& sDocParagraph, Settings& _option)
 }
 
 // Definierte Tokens durch ggf. passende HTML-Tokens ersetzen
-void doc_ReplaceTokensForHTML(string& sDocParagraph, Settings& _option)
+void doc_ReplaceTokensForHTML(string& sDocParagraph, bool generateFile, Settings& _option)
 {
     FileSystem _fSys;
     _fSys.setTokens(_option.getTokenPaths());
@@ -997,18 +997,18 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, Settings& _option)
             sDocParagraph.replace(k, sDocParagraph.find("/>", k+5)+2-k, sImg);
             k += sImg.length();
         }
-        if (sDocParagraph.substr(k,10) == "&PLOTPATH&")
-            sDocParagraph.replace(k,10,"&lt;plotpath&gt;");
-        if (sDocParagraph.substr(k,10) == "&LOADPATH&")
-            sDocParagraph.replace(k,10,"&lt;loadpath&gt;");
-        if (sDocParagraph.substr(k,10) == "&SAVEPATH&")
-            sDocParagraph.replace(k,10,"&lt;savepath&gt;");
-        if (sDocParagraph.substr(k,10) == "&PROCPATH&")
-            sDocParagraph.replace(k,10,"&lt;procpath&gt;");
-        if (sDocParagraph.substr(k,12) == "&SCRIPTPATH&")
-            sDocParagraph.replace(k,12,"&lt;scriptpath&gt;");
-        if (sDocParagraph.substr(k,9) == "&EXEPATH&")
-            sDocParagraph.replace(k,9,"&lt;&gt;");
+        if (sDocParagraph.substr(k, 10) == "&PLOTPATH&")
+            sDocParagraph.replace(k, 10, generateFile ? "&lt;plotpath&gt;" : replacePathSeparator(_option.getPlotOutputPath()));
+        if (sDocParagraph.substr(k, 10) == "&LOADPATH&")
+            sDocParagraph.replace(k, 10, generateFile ? "&lt;loadpath&gt;" : replacePathSeparator(_option.getLoadPath()));
+        if (sDocParagraph.substr(k, 10) == "&SAVEPATH&")
+            sDocParagraph.replace(k, 10, generateFile ? "&lt;savepath&gt;" : replacePathSeparator(_option.getSavePath()));
+        if (sDocParagraph.substr(k, 10) == "&PROCPATH&")
+            sDocParagraph.replace(k, 10, generateFile ? "&lt;procpath&gt;" : replacePathSeparator(_option.getProcsPath()));
+        if (sDocParagraph.substr(k, 12) == "&SCRIPTPATH&")
+            sDocParagraph.replace(k, 12, generateFile ? "&lt;scriptpath&gt;" : replacePathSeparator(_option.getScriptPath()));
+        if (sDocParagraph.substr(k, 9) == "&EXEPATH&")
+            sDocParagraph.replace(k, 9, generateFile ? "&lt;&gt;" : replacePathSeparator(_option.getExePath()));
     }
     return;
 }

@@ -363,7 +363,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 		sEntityOccurence = sLine.substr(sLine.find(sEntity, nPos));
 		nPos = sLine.find(sEntity, nPos);
 
-		if (nPos && !isDelimiter(sLine[nPos-1]))
+		if (nPos && (!isDelimiter(sLine[nPos-1]) || isInQuotes(sLine, nPos)))
 		{
 			nPos++;
 			continue;
@@ -795,12 +795,17 @@ static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser&
 	// Replace the access string with its corresponding vector name
 	string sMafVectorName = createMafVectorName(sMafAccess);
 
-	// Set the vector variable with its value for the parser
-	_parser.SetVectorVar(sMafVectorName, MafDataAccess(_data, getMafFromAccessString(sMafAccess), sMafAccess.substr(0, sMafAccess.find('(')), createMafDataAccessString(sMafAccess, _parser)));
+	// Only store the value, if it is not a string literal (i.e. the name)
+	if (sMafVectorName.front() != '"')
+    {
+        // Set the vector variable with its value for the parser
+        _parser.SetVectorVar(sMafVectorName, MafDataAccess(_data, getMafFromAccessString(sMafAccess), sMafAccess.substr(0, sMafAccess.find('(')), createMafDataAccessString(sMafAccess, _parser)));
 
-	// Create a cached access and store it
-	mu::CachedDataAccess _access = {sMafAccess, sMafVectorName, sMafAccess.substr(0, sMafAccess.find('('))};
-	_parser.CacheCurrentAccess(_access);
+        // Create a cached access and store it
+        mu::CachedDataAccess _access = {sMafAccess, sMafVectorName, sMafAccess.substr(0, sMafAccess.find('('))};
+        _parser.CacheCurrentAccess(_access);
+
+    }
 
 	// Replace every occurence
 	while ((nPos = sLine.find(sMafAccess, nPos)) != string::npos)
@@ -978,9 +983,12 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 /////////////////////////////////////////////////
 static string createMafVectorName(string sAccessString)
 {
-	sAccessString.replace(sAccessString.find("()"), 2, "[");
-	sAccessString = replaceToVectorname(sAccessString);
-	return sAccessString + "]";
+    if (sAccessString.find(".name") != string::npos)
+        return "\"" + sAccessString.substr(0, sAccessString.find("().")+2) + "\"";
+
+    sAccessString.replace(sAccessString.find("()"), 2, "[");
+    sAccessString = replaceToVectorname(sAccessString);
+    return sAccessString + "]";
 }
 
 

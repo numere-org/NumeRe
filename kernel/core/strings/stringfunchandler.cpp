@@ -1426,10 +1426,11 @@ namespace NumeRe
     /// \param sLine const string&
     /// \param nStartPos size_t
     /// \param nEndPosition size_t&
+    /// \param searchForMethods bool
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::findNextFunction(const string& sFunc, const string& sLine, size_t nStartPos, size_t& nEndPosition)
+    size_t StringFuncHandler::findNextFunction(const string& sFunc, const string& sLine, size_t nStartPos, size_t& nEndPosition, bool searchForMethods)
     {
         // Search for occurences of the passed function
         while ((nStartPos = sLine.find(sFunc, nStartPos)) != string::npos)
@@ -1448,6 +1449,23 @@ namespace NumeRe
             // Update the end position and return the
             // starting position
             nEndPosition += nStartPos + sFunc.length() - 1;
+
+            // Catch method calls
+            if (searchForMethods && nEndPosition+1 < sLine.length() && sLine[nEndPosition+1] == '.')
+            {
+                for (size_t i = nEndPosition+1; i < sLine.length(); i++)
+                {
+                    if (sLine[i] == '(' || sLine[i] == '{')
+                        i += getMatchingParenthesis(sLine.substr(i));
+
+                    if (isDelimiter(sLine[i]) || i+1 == sLine.length())
+                    {
+                        nEndPosition = i;
+                        break;
+                    }
+                }
+            }
+
             return nStartPos;
         }
 

@@ -31,6 +31,7 @@ FileSystem::FileSystem()
     sPath = "";
     sExecutablePath = "";
     sValidExtensions = ";.dat;.txt;.tmp;.def;.nscr;.png;.gif;.eps;.bps;.svg;.tex;.labx;.csv;.cache;.ndat;.nprc;.nlng;.log;.plugins;.hlpidx;.nhlp;.jdx;.dx;.jcm;.ibw;.ndb;.ods;.jpg;.bmp;.tga;.bps;.prc;.obj;.xyz;.stl;.json;.off;.pdf;.wav;.wave;.xls;.xlsx;.chm;.h;.hpp;.cxx;.cpp;.c;.m;.tif;.tiff;";
+
     for (int i = 0; i < 7; i++)
     {
         sTokens[i][0] = "";
@@ -82,6 +83,7 @@ string FileSystem::cleanPath(string sFilePath) const
     }
 
     sFilePath.erase(0, sFilePath.find_first_not_of(" \t"));
+
     if (sFilePath.find_last_not_of(" \t") != string::npos)
         sFilePath.erase(sFilePath.find_last_not_of(" \t")+1);
 
@@ -95,9 +97,11 @@ string FileSystem::cleanPath(string sFilePath) const
                     sFilePath = sTokens[i][1] + "/" + sFilePath.substr(sTokens[i][0].length());
                 else
                     sFilePath = sTokens[i][1] + sFilePath.substr(sTokens[i][0].length());
+
                 break;
             }
         }
+
         if (sFilePath.substr(0,6) == "<this>")
         {
             if (sFilePath[6] != '/')
@@ -381,6 +385,7 @@ string FileSystem::ValidFolderName(string _sFileName) const
     // Append a trailing path separator, if it is missing
     if (_sFileName.back() != '/')
         _sFileName += "/";
+
     return _sFileName;
 }
 
@@ -418,24 +423,24 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sExePath)
 {
 
     sExecutablePath = fromSystemCodePage(_sExePath);
+
     if (sExecutablePath[0] == '"')
         sExecutablePath = sExecutablePath.substr(1);
+
     if (sExecutablePath[sExecutablePath.length()-1] == '"')
         sExecutablePath = sExecutablePath.substr(0,sExecutablePath.length()-1);
-    sPath = fromSystemCodePage(_sPath);
 
-    //cerr << sWhere << "\\" << sPath << endl;
+    sPath = fromSystemCodePage(_sPath);
 
     if (sPath.find('<') != string::npos)
     {
         for (unsigned int i = 0; i < 6; i++)
         {
             if (sPath.find(sTokens[i][0]) != string::npos)
-            {
                 sPath.replace(sPath.find(sTokens[i][0]), sTokens[i][0].length(), sTokens[i][1]);
-            }
         }
     }
+
     if (sPath.find('~') != string::npos)
     {
         for (unsigned int i = 0; i < sPath.length(); i++)
@@ -444,8 +449,10 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sExePath)
                 sPath[i] = '/';
         }
     }
+
     while (sPath.find('\\') != string::npos)
         sPath[sPath.find('\\')] = '/';
+
     if (sPath.find(':') == string::npos)
     {
         if (sPath.length() > 3 && sPath.substr(0,3) != "..\\" && sPath.substr(0,3) != "../" && sPath.substr(0,2) != ".\\" && sPath.substr(0,2) != "./")
@@ -463,15 +470,19 @@ int FileSystem::setPath(string _sPath, bool bMkDir, string _sExePath)
                     sPath = _sPath;
                     break;
                 }
+
                 sPath = sPath.substr(3);
             }
+
             sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
         }
         else
             sPath = "\"" + sExecutablePath + "\\" + sPath + "\"";
     }
+
     if (sPath[0] == '"')
         sPath = sPath.substr(1);
+
     if (sPath[sPath.length()-1] == '"')
         sPath = sPath.substr(0, sPath.length()-1);
 
@@ -592,6 +603,7 @@ void FileSystem::setTokens(string _sTokens)
         sTokens[i][0] = _sTokens.substr(0,_sTokens.find('='));
         sTokens[i][1] = _sTokens.substr(_sTokens.find('=')+1, _sTokens.find(';')-1-_sTokens.find('='));
         _sTokens = _sTokens.substr(_sTokens.find(';')+1);
+
         if (!_sTokens.length())
             break;
     }

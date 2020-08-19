@@ -333,6 +333,7 @@ string evaluateParameterValues(const string& sCmd)
 			sReturn.replace(nPos, nLength, sTemp);
 		}
 		else if ((nPos > 8 && sReturn.substr(nPos - 8, 8) == "tocache=")
+            || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "totable=")
 			|| (nPos > 5 && sReturn.substr(nPos - 5, 5) == "type=")
             || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "icon=")
             || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "buttons="))

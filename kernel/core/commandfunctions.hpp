@@ -5008,6 +5008,94 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
+/// "delete" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_delete(string& sCmd)
+{
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    string sArgument;
+    int nArgument;
+
+    if (_data.containsTablesOrClusters(sCmd))
+    {
+        if (!findParameter(sCmd, "ignore") && !findParameter(sCmd, "i"))
+        {
+            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"), _option));
+
+            do
+            {
+                NumeReKernel::printPreFmt("|\n|<- ");
+                NumeReKernel::getline(sArgument);
+                StripSpaces(sArgument);
+            }
+            while (!sArgument.length());
+
+            if (sArgument.substr(0, 1) != _lang.YES())
+            {
+                NumeReKernel::print(_lang.get("COMMON_CANCEL") );
+                return COMMAND_PROCESSED;
+            }
+        }
+
+        if (deleteCacheEntry(sCmd, _parser, _data, _option))
+        {
+            if (_option.getSystemPrintStatus())
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_SUCCESS"));
+        }
+        else
+            throw SyntaxError(SyntaxError::CANNOT_DELETE_ELEMENTS, sCmd, SyntaxError::invalid_position);
+
+    }
+    else if (sCmd.find("string()") != string::npos || sCmd.find("string(:)") != string::npos)
+    {
+        if (_data.removeStringElements(0))
+        {
+            if (_option.getSystemPrintStatus())
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", "1"));
+        }
+        else
+        {
+            if (_option.getSystemPrintStatus())
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", "1"));
+        }
+
+        return COMMAND_PROCESSED;
+    }
+    else if (sCmd.find(" string(", findCommand(sCmd).nPos) != string::npos)
+    {
+        _parser.SetExpr(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos) + 8, getMatchingParenthesis(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos) + 7)) - 1));
+        nArgument = (int)_parser.Eval() - 1;
+
+        if (_data.removeStringElements(nArgument))
+        {
+            if (_option.getSystemPrintStatus())
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", toString(nArgument + 1)));
+        }
+        else
+        {
+            if (_option.getSystemPrintStatus())
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", toString(nArgument + 1)));
+        }
+
+        return COMMAND_PROCESSED;
+
+    }
+    else
+        doc_Help("delete", _option);
+
+    return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
 /// "clear" command.
 ///
 /// \param sCmd string&
@@ -5021,21 +5109,43 @@ static CommandReturnValues cmd_clear(string& sCmd)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (findParameter(sCmd, "data") || sCmd.find(" data()", findCommand(sCmd).nPos) != string::npos)
+    Match _mMatch = findCommand(sCmd);
+
+    if (findParameter(sCmd, "data") || sCmd.find(" data()", _mMatch.nPos) != string::npos)
     {
         if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
             remove_data(_data, _option, true);
         else
             remove_data(_data, _option);
     }
-    else if (_data.matchTableAsParameter(sCmd).length() || _data.containsTablesOrClusters(sCmd.substr(findCommand(sCmd).nPos)))
+    else if (_data.matchTableAsParameter(sCmd).length()
+             || _data.containsTables(sCmd.substr(_mMatch.nPos+_mMatch.sString.length())))
     {
+        string sCommand = "delete ";
+
+        if (_data.matchTableAsParameter(sCmd).length())
+            sCommand += _data.matchTableAsParameter(sCmd) + "()";
+        else
+            sCommand += sCmd.substr(_mMatch.nPos+_mMatch.sString.length());
+
+        if (findParameter(sCmd, "ignore") || findParameter(sCmd, "i"))
+            sCommand += " -ignore";
+
+
+        return cmd_delete(sCommand);
+    }
+    else if (findParameter(sCmd, "memory"))
+    {
+        // Clear all tables
         if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
             clear_cache(_data, _option, true);
         else
             clear_cache(_data, _option);
+
+        // Clear also the string table
+        _data.clearStringElements();
     }
-    else if (findParameter(sCmd, "string") || sCmd.find(" string()", findCommand(sCmd).nPos) != string::npos)
+    else if (findParameter(sCmd, "string") || sCmd.find(" string()", _mMatch.nPos+_mMatch.sString.length()) != string::npos)
     {
         if (_data.clearStringElements())
         {
@@ -5496,7 +5606,7 @@ static CommandReturnValues cmd_stats(string& sCmd)
             if (findParameter(sCmd, "export", '='))
                 addArgumentQuotes(sCmd, "export");
 
-            sArgument = "stats -cache " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+            sArgument = "stats -table " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
             sArgument = evaluateParameterValues(sArgument);
             plugin_statistics(sArgument, _cache, _out, _option, true, false);
 
@@ -6558,9 +6668,9 @@ static CommandReturnValues cmd_hist(string& sCmd)
                 addArgumentQuotes(sCmd, "export");
 
             if (sCommand == "hist2d")
-                sArgument = "hist2d -cache c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+                sArgument = "hist2d -table c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
             else
-                sArgument = "hist -cache c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+                sArgument = "hist -table c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
 
             sArgument = evaluateParameterValues(sArgument);
             plugin_histogram(sArgument, _cache, _data, _out, _option, _pData, true, false);
@@ -6863,13 +6973,15 @@ static CommandReturnValues cmd_remove(string& sCmd)
     string sArgument;
     int nArgument;
 
-    if (_data.containsTablesOrClusters(sCmd))
+    if (_data.containsTables(sCmd))
     {
-        while (_data.containsTablesOrClusters(sCmd))
+        while (_data.containsTables(sCmd))
         {
             for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
             {
-                if (sCmd.find(iter->first + "()") != string::npos && iter->first != "table")
+                size_t nPos = sCmd.find(iter->first + "()");
+
+                if (nPos != string::npos && (!nPos || isDelimiter(sCmd[nPos-1])) && iter->first != "table")
                 {
                     string sObj = iter->first;
                     if (_data.deleteTable(iter->first))
@@ -7215,105 +7327,6 @@ static CommandReturnValues cmd_define(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
-/// "delete" command.
-///
-/// \param sCmd string&
-/// \return CommandReturnValues
-///
-/////////////////////////////////////////////////
-static CommandReturnValues cmd_delete(string& sCmd)
-{
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
-    string sArgument;
-    int nArgument;
-
-    if (_data.containsTablesOrClusters(sCmd))
-    {
-        if (findParameter(sCmd, "ignore") || findParameter(sCmd, "i"))
-        {
-            if (deleteCacheEntry(sCmd, _parser, _data, _option))
-            {
-                if (_option.getSystemPrintStatus())
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_SUCCESS"));
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_DELETE_ELEMENTS, sCmd, SyntaxError::invalid_position);
-        }
-        else
-        {
-            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"), _option));
-
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-                StripSpaces(sArgument);
-            }
-            while (!sArgument.length());
-
-            if (sArgument.substr(0, 1) == _lang.YES())
-            {
-                if (deleteCacheEntry(sCmd, _parser, _data, _option))
-                {
-                    if (_option.getSystemPrintStatus())
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_SUCCESS"));
-                }
-                else
-                    throw SyntaxError(SyntaxError::CANNOT_DELETE_ELEMENTS, sCmd, SyntaxError::invalid_position);
-            }
-            else
-            {
-                NumeReKernel::print(_lang.get("COMMON_CANCEL") );
-                return COMMAND_PROCESSED;
-            }
-        }
-    }
-    else if (sCmd.find("string()") != string::npos || sCmd.find("string(:)") != string::npos)
-    {
-        if (_data.removeStringElements(0))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", "1"));
-        }
-        else
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", "1"));
-        }
-
-        return COMMAND_PROCESSED;
-    }
-    else if (sCmd.find(" string(", findCommand(sCmd).nPos) != string::npos)
-    {
-        _parser.SetExpr(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos) + 8, getMatchingParenthesis(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos) + 7)) - 1));
-        nArgument = (int)_parser.Eval() - 1;
-
-        if (_data.removeStringElements(nArgument))
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", toString(nArgument + 1)));
-        }
-        else
-        {
-            if (_option.getSystemPrintStatus())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", toString(nArgument + 1)));
-        }
-
-        return COMMAND_PROCESSED;
-
-    }
-    else
-        doc_Help("delete", _option);
-
-    return COMMAND_PROCESSED;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
 /// "datagrid" command.
 ///
 /// \param sCmd string&
@@ -7471,7 +7484,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 nArgument = 0;
             if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
-            if (findParameter(sCmd, "tocache") && !findParameter(sCmd, "all"))
+            if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && !findParameter(sCmd, "all"))
             {
                 MemoryManager _cache;
                 _cache.setTokens(_option.getTokenPaths());
@@ -7497,7 +7510,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))), _option) );
                 return COMMAND_PROCESSED;
             }
-            else if (findParameter(sCmd, "tocache") && findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+            else if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
             {
                 if (sArgument.find('/') == string::npos)
                     sArgument = "<loadpath>/" + sArgument;
@@ -7685,6 +7698,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     || findParameter(sCmd, "complete")
                     || findParameter(sCmd, "ignore")
                     || findParameter(sCmd, "tocache")
+                    || findParameter(sCmd, "totable")
                     || findParameter(sCmd, "i")
                     || findParameter(sCmd, "head")
                     || findParameter(sCmd, "h")
@@ -7739,7 +7753,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
                 _data.setbLoadEmptyColsInNextFile(true);
 
-            if (findParameter(sCmd, "tocache") && !findParameter(sCmd, "all"))
+            if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && !findParameter(sCmd, "all"))
             {
                 // Single file directly to cache
                 NumeRe::FileHeaderInfo info = _data.openFile(sArgument, true);
@@ -7761,7 +7775,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 return COMMAND_PROCESSED;
             }
-            else if (findParameter(sCmd, "tocache") && findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+            else if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
             {
                 // multiple files directly to cache
                 if (sArgument.find('/') == string::npos)

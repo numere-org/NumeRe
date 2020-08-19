@@ -209,8 +209,8 @@ namespace NumeRe
                 {
                     for (size_t j = 0; j < m_windowSize.second; j++)
                     {
-                        if (sqrt(pow2(i/(max(1u, m_windowSize.first)-1)-mean_row) + pow2(j/(max(1u, m_windowSize.second)-1)-mean_col)) <= 0.5)
-                            m_filterKernel[i][j] = fabs(sqrt(pow2(i/(max(1u, m_windowSize.first)-1)-mean_row) + pow2(j/(max(1u, m_windowSize.second)-1)-mean_col)) - 0.5);
+                        if (sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) <= 0.5)
+                            m_filterKernel[i][j] = fabs(sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) - 0.5);
                     }
                 }
             }

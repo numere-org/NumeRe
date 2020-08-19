@@ -244,7 +244,7 @@ namespace NumeRe
         size_t nEndPosition;
 
         // Find the next occurence
-        while ((nStartPosition = findNextFunction(sOccurence, sLine, nStartPosition, nEndPosition)) != string::npos)
+        while ((nStartPosition = findNextFunction(sOccurence, sLine, nStartPosition, nEndPosition, true)) != string::npos)
         {
             size_t nStartPos = nStartPosition;
             size_t nEndPos = nEndPosition;

@@ -583,29 +583,21 @@ void remove_data(MemoryManager& _data, Settings& _option, bool bIgnore)
 			NumeReKernel::printPreFmt("|\n|<- ");
 			NumeReKernel::getline(c);
 
-			if (c == _lang.YES())
-			{
-				_data.removeData();		// Wenn ja: Aufruf der Methode Datafile::removeData(), die den Rest erledigt
-				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_SUCCESS"), _option));
-			}
-			else					// Wieder mal anders ueberlegt, hm?
+			if (c != _lang.YES())
 			{
 				NumeReKernel::print(_lang.get("COMMON_CANCEL"));
+				return;
 			}
 		}
-		else
-		{
-		    // simply remove the data and inform the user, if the output is allowed
-			_data.removeData();
-			if (_option.getSystemPrintStatus())
-                NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_SUCCESS"), _option));
-		}
+
+        // simply remove the data and inform the user, if the output is allowed
+        _data.removeData();
+
+        if (_option.getSystemPrintStatus())
+            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_SUCCESS"), _option));
 	}
 	else if (_option.getSystemPrintStatus())
-	{
 		NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_NO_DATA"), _option));
-	}
-	return;
 }
 
 
@@ -628,48 +620,36 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 		if (!bIgnore)
 		{
 			string c = "";
+
 			if (!_data.getSaveStatus())
 				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_CONFIRM_NOTSAFED"), _option));
 			else
 				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_CONFIRM"), _option));
+
 			NumeReKernel::printPreFmt("|\n|<- ");
 			NumeReKernel::getline(c);
 
-			if (c == _lang.YES())
-			{
-				string sAutoSave = _option.getSavePath() + "/cache.tmp";
-				string sCache_file = _option.getExePath() + "/numere.cache";
-
-				// Clear the complete cache and remove the cache files
-				_data.removeTablesFromMemory();	// Wenn ja: Aufruf der Methode Datafile::clearCache(), die den Rest erledigt
-				remove(sAutoSave.c_str());
-				remove(sCache_file.c_str());
-			}
-			else					// Wieder mal anders ueberlegt, hm?
+			if (c != _lang.YES())
 			{
 				NumeReKernel::print(_lang.get("COMMON_CANCEL"));
+				return;
 			}
 		}
-		else
-		{
-			string sAutoSave = _option.getSavePath() + "/cache.tmp";
-			string sCache_file = _option.getExePath() + "/numere.cache";
 
-			// Clear the complete cache and remove the cache files
-			_data.removeTablesFromMemory();
-			remove(sAutoSave.c_str());
-			remove(sCache_file.c_str());
-		}
+        string sAutoSave = _option.getSavePath() + "/cache.tmp";
+        string sCache_file = _option.getExePath() + "/numere.cache";
+
+        // Clear the complete cache and remove the cache files
+        _data.removeTablesFromMemory();
+        remove(sAutoSave.c_str());
+        remove(sCache_file.c_str());
 
 		// Inform the user, if printing is allowed
 		if (_option.getSystemPrintStatus())
 			NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_SUCCESS"), _option));
 	}
 	else if (_option.getSystemPrintStatus())
-	{
 		NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_EMPTY"), _option));
-	}
-	return;
 }
 
 

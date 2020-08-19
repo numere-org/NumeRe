@@ -22,6 +22,11 @@
 #ifndef SORTER_HPP
 #define SORTER_HPP
 
+/////////////////////////////////////////////////
+/// \brief Abstract parent class to implement
+/// the sorting functionality (using Quicksort)
+/// on a more generic level.
+/////////////////////////////////////////////////
 class Sorter
 {
     private:
