@@ -835,7 +835,10 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
         else // Normaler Paragraph
         {
             doc_ReplaceTokensForHTML(vDocArticle[i], generateFile, _option);
-            sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
+            sHTML += "<p>" + vDocArticle[i] + "</p>";
+
+            if (generateFile)
+                sHTML += "\n";
         }
     }
 

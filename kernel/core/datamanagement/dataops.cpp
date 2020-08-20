@@ -492,7 +492,6 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
 void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
 {
 	string sCmd = __sCmd;
-	MemoryManager _cache;
 
 	// Copy the default path and the path tokens
 	int nArgument = 0;

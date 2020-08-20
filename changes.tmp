@@ -15,3 +15,4 @@ Updated	The default table is now called "table()". This will get active once the
 Added	The method "TABLE().name" will return the name of the table as string. This is an abbreviation for "to_string(TABLE())", which could be used together with "findcolumn()".
 Cleaned	The command sequence "clear TABLE()" will now only clear the contents of the selected TABLE().
 Cleaned	The command sequence "clear -memory" will remove all tables from memory and also clear the contents of the string table.
+Cleaned	The command "reload" will in the future be used like "load FILE". The old syntax is now deprecated and the new is already available.

@@ -5390,13 +5390,8 @@ static CommandReturnValues cmd_append(string& sCmd)
         append_data(sCmd, _data, _option);
 
         sCmd = sExpr;
-        vector<double> vIndices;
-        vIndices.push_back(1);
-        vIndices.push_back(_data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"));
-        vIndices.push_back(j1);
-        vIndices.push_back(_data.getCols("data"));
 
-        _parser.SetVectorVar("_~append[~_~]", vIndices);
+        _parser.SetVectorVar("_~append[~_~]", {1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")});
         return COMMAND_HAS_RETURNVALUE;
     }
 
@@ -7093,82 +7088,6 @@ static CommandReturnValues cmd_rename(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
-/// "reload" command.
-///
-/// \param sCmd string&
-/// \return CommandReturnValues
-///
-/////////////////////////////////////////////////
-static CommandReturnValues cmd_reload(string& sCmd)
-{
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
-    string sArgument;
-    int nArgument;
-
-    if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '='))
-    {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        if (findParameter(sCmd, "data", '='))
-            addArgumentQuotes(sCmd, "data");
-
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
-                _data.setbLoadEmptyColsInNextFile(true);
-
-            if (!_data.isEmpty("data"))
-            {
-                _data.removeData(false);
-
-                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-                {
-                    if (findParameter(sCmd, "head", '='))
-                        nArgument = findParameter(sCmd, "head", '=') + 4;
-                    else
-                        nArgument = findParameter(sCmd, "h", '=') + 1;
-
-                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, false, nArgument);
-                }
-                else
-                    _data.openFile(sArgument);
-
-                if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) );
-            }
-            else
-                load_data(_data, _option, _parser, sArgument);
-        }
-        else if (!_data.isEmpty("data"))
-        {
-            if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !findParameter(sCmd, "data", '='))
-                throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, sCmd, SyntaxError::invalid_position);
-
-            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
-                _data.setbLoadEmptyColsInNextFile(true);
-
-            sArgument = _data.getDataFileName("data");
-            _data.removeData(false);
-            _data.openFile(sArgument);
-
-            if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"));
-        }
-        else
-            load_data(_data, _option, _parser);
-    }
-
-    return COMMAND_PROCESSED;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
 /// "retouch" command.
 ///
 /// \param sCmd string&
@@ -7730,13 +7649,8 @@ static CommandReturnValues cmd_load(string& sCmd)
             append_data(sCmd, _data, _option);
 
             sCmd = sExpr;
-            vector<double> vIndices;
-            vIndices.push_back(1);
-            vIndices.push_back(_data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"));
-            vIndices.push_back(j1);
-            vIndices.push_back(_data.getCols("data"));
 
-            _parser.SetVectorVar("_~load[~_~]", vIndices);
+            _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")});
 
             return COMMAND_HAS_RETURNVALUE;
         }
@@ -7756,19 +7670,14 @@ static CommandReturnValues cmd_load(string& sCmd)
             if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && !findParameter(sCmd, "all"))
             {
                 // Single file directly to cache
-                NumeRe::FileHeaderInfo info = _data.openFile(sArgument, true);
+                NumeRe::FileHeaderInfo info = _data.openFile(sArgument, true, nArgument);
 
                 if (!_data.isEmpty(info.sTableName))
                 {
                     NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
                     sCmd = sExpr;
-                    vector<double> vIndices;
-                    vIndices.push_back(1);
-                    vIndices.push_back(info.nRows);
-                    vIndices.push_back(_data.getCols(info.sTableName)-info.nCols+1);
-                    vIndices.push_back(_data.getCols(info.sTableName));
 
-                    _parser.SetVectorVar("_~load[~_~]", vIndices);
+                    _parser.SetVectorVar("_~load[~_~]", {1, info.nRows, _data.getCols(info.sTableName)-info.nCols+1, _data.getCols(info.sTableName)});
 
                     return COMMAND_HAS_RETURNVALUE;
                 }
@@ -7787,10 +7696,13 @@ static CommandReturnValues cmd_load(string& sCmd)
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
 
                 for (size_t i = 0; i < vFilelist.size(); i++)
-                    _data.openFile(vFilelist[i], true);
+                    _data.openFile(vFilelist[i], true, nArgument);
 
                 if (!_data.isEmpty(vFilelist.front()))
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument));
+
+                // Returning of indices not possible due to multiple
+                // table targets
 
                 return COMMAND_PROCESSED;
             }
@@ -7820,8 +7732,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (!_data.isEmpty("data"))
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
-                    vector<double> vIndices = {1, _data.getLines("data", false), 1, _data.getCols("data", false)};
-                    _parser.SetVectorVar("_~load[~_~]", vIndices);
+                    _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", false), 1, _data.getCols("data", false)});
                     sCmd = sExpr;
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -7846,8 +7757,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (_option.getSystemPrintStatus())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
-                    vector<double> vIndices = {1, _data.getLines("data", false), 1, _data.getCols("data", false)};
-                    _parser.SetVectorVar("_~load[~_~]", vIndices);
+                    _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", false), 1, _data.getCols("data", false)});
                     sCmd = sExpr;
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -7863,6 +7773,97 @@ static CommandReturnValues cmd_load(string& sCmd)
         doc_Help("load", _option);
 
     return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// "reload" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_reload(string& sCmd)
+{
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    string sArgument;
+    int nArgument;
+
+    if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '='))
+    {
+        // DEPRECATED: Declared at v1.1.2rc1
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
+
+        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
+
+        if (findParameter(sCmd, "data", '='))
+            addArgumentQuotes(sCmd, "data");
+
+        if (extractFirstParameterStringValue(sCmd, sArgument))
+        {
+            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
+                _data.setbLoadEmptyColsInNextFile(true);
+
+            if (!_data.isEmpty("data"))
+            {
+                _data.removeData(false);
+
+                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
+                {
+                    if (findParameter(sCmd, "head", '='))
+                        nArgument = findParameter(sCmd, "head", '=') + 4;
+                    else
+                        nArgument = findParameter(sCmd, "h", '=') + 1;
+
+                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
+                    _data.openFile(sArgument, false, nArgument);
+                }
+                else
+                    _data.openFile(sArgument);
+
+                if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
+                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) );
+            }
+            else
+                load_data(_data, _option, _parser, sArgument);
+        }
+        else if (!_data.isEmpty("data"))
+        {
+            if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !findParameter(sCmd, "data", '='))
+                throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, sCmd, SyntaxError::invalid_position);
+
+            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
+                _data.setbLoadEmptyColsInNextFile(true);
+
+            sArgument = _data.getDataFileName("data");
+            _data.removeData(false);
+            _data.openFile(sArgument);
+
+            if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"));
+        }
+        else
+            load_data(_data, _option, _parser);
+
+        return COMMAND_PROCESSED;
+    }
+    else if (sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+6) != string::npos)
+    {
+        // Seems not to contain any valid file name
+        if (sCmd[sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+6)] == '-')
+            sCmd = "load " + _data.getDataFileName("data") + " " + sCmd.substr(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+6)) + " -i";
+        else
+            sCmd = sCmd.substr(findCommand(sCmd).nPos+2) + " -i";
+    }
+    else
+        sCmd = "load " + _data.getDataFileName("data") + " -i";
+
+    return cmd_load(sCmd);
 }
 
 
@@ -8083,7 +8084,6 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["redef"] = cmd_redefine;
     mCommandFuncMap["redefine"] = cmd_redefine;
     mCommandFuncMap["regularize"] = cmd_regularize;
-    mCommandFuncMap["reload"] = cmd_reload;
     mCommandFuncMap["remove"] = cmd_remove;
     mCommandFuncMap["rename"] = cmd_rename;
     mCommandFuncMap["resample"] = cmd_resample;
@@ -8146,6 +8146,7 @@ static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["pulse"] = cmd_pulse;
     mCommandFuncMap["read"] = cmd_read;
     mCommandFuncMap["readline"] = cmd_readline;
+    mCommandFuncMap["reload"] = cmd_reload;
     mCommandFuncMap["sort"] = cmd_sort;
     mCommandFuncMap["zeroes"] = cmd_zeroes;
 
