@@ -1436,8 +1436,8 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
     double dAvg = avg(_vLine, _vCol);
     double dStd = 0.0;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1470,8 +1470,8 @@ double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!bValidData)
         return NAN;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     return sum(_vLine, _vCol) / num(_vLine, _vCol);
 }
@@ -1493,8 +1493,8 @@ double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
 
     double dMax = NAN;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1534,8 +1534,8 @@ double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
 
     double dMin = NAN;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1575,8 +1575,8 @@ double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
 
     double dPrd = 1.0;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1612,8 +1612,8 @@ double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
 
     double dSum = 0.0;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1648,8 +1648,8 @@ double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol)
         return 0;
     int nInvalid = 0;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1680,8 +1680,8 @@ double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!bValidData)
         return 0.0;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     double dRetVal = NAN;
 
@@ -1721,8 +1721,8 @@ double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!bValidData)
         return 0.0;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1754,8 +1754,8 @@ double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!bValidData)
         return 0.0;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     bool isTrue = false;
 
@@ -1798,8 +1798,8 @@ double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol)
         return 0;
     int nInvalid = 0;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1833,8 +1833,8 @@ double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
 
     double dNorm = 0.0;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
@@ -1868,8 +1868,8 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
     if (!bValidData)
         return NAN;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     enum
     {
@@ -1996,8 +1996,8 @@ double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
     if (!bValidData)
         return NAN;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     vector<double> vData;
 
@@ -2040,8 +2040,8 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
     if (!bValidData)
         return NAN;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
 
     vector<double> vData;
 
@@ -2071,6 +2071,214 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
         return NAN;
 
     return gsl_stats_quantile_from_sorted_data(&vData[0], 1, nCount, dPct);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the SIZE multi
+/// argument function.
+///
+/// \param _vIndex const VectorIndex&
+/// \param dir int Bitcomposition of AppDir values
+/// \return vector<double>
+///
+/////////////////////////////////////////////////
+vector<double> Memory::size(const VectorIndex& _vIndex, int dir)
+{
+    if (!bValidData)
+        return vector<double>(1, NAN);
+
+    _vIndex.setOpenEndIndex(dir & LINES ? getLines(false)-1 : getCols(false)-1);
+    long long int nGridOffset = 2*((dir & GRID) != 0);
+
+    // Handle simple things first
+    if (dir == ALL)
+        return vector<double>({getLines(false), getCols(false)});
+    else if (dir == GRID)
+        return vector<double>({getLines(false), getCols(false)-2});
+    else if (dir & LINES)
+    {
+        // Compute the sizes of the table rows
+        vector<double> vSizes;
+
+        for (size_t i = 0; i < _vIndex.size(); i++)
+        {
+            if (_vIndex[i] < 0 || _vIndex[i] >= getLines(false))
+                continue;
+
+            for (long long int j = nCols-1; j >= 0; j--)
+            {
+                if (!isnan(dMemTable[_vIndex[i]][j]))
+                {
+                    vSizes.push_back(j+1 - nGridOffset);
+                    break;
+                }
+            }
+        }
+
+        if (!vSizes.size())
+            vSizes.push_back(NAN);
+
+        return vSizes;
+    }
+    else if (dir & COLS)
+    {
+        // Compute the sizes of the table columns
+        vector<double> vSizes;
+
+        for (size_t j = 0; j < _vIndex.size(); j++)
+        {
+            if (_vIndex[j] < nGridOffset || _vIndex[j] >= getCols(false))
+                continue;
+
+            vSizes.push_back(nLines-getAppendedZeroes(_vIndex[j]));
+        }
+
+        if (!vSizes.size())
+            vSizes.push_back(NAN);
+
+        return vSizes;
+    }
+
+    return vector<double>(1, NAN);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the MINPOS multi
+/// argument function.
+///
+/// \param _vIndex const VectorIndex&
+/// \param dir int
+/// \return vector<double>
+///
+/////////////////////////////////////////////////
+vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir)
+{
+    if (!bValidData)
+        return vector<double>(1, NAN);
+
+    _vIndex.setOpenEndIndex(dir & LINES ? getLines(false)-1 : getCols(false)-1);
+    long long int nGridOffset = 2*((dir & GRID) != 0);
+
+    // A special case for the columns. We will compute the
+    // results for ALL and GRID using the results for LINES
+    if (dir & COLS)
+    {
+        vector<double> vPos;
+
+        for (size_t j = 0; j < _vIndex.size(); j++)
+        {
+            if (_vIndex[j] < nGridOffset || _vIndex[j] >= getCols(false))
+                continue;
+
+            vPos.push_back(cmp(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j]), min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j])), 0));
+        }
+
+        if (!vPos.size())
+            vPos.push_back(NAN);
+
+        return vPos;
+    }
+
+    vector<double> vPos;
+    double dMin = NAN;
+    size_t pos = 0;
+
+    // Compute the results for LINES and find as
+    // well the global minimal value, which will be used
+    // for GRID and ALL
+    for (size_t i = 0; i < _vIndex.size(); i++)
+    {
+        if (_vIndex[i] < 0 || _vIndex[i] >= getLines(false))
+            continue;
+
+        vPos.push_back(cmp(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END), min(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END)), 0));
+
+        if (isnan(dMin) || dMin > dMemTable[_vIndex[i]][intCast(vPos.back())-1])
+        {
+            dMin = dMemTable[_vIndex[i]][intCast(vPos.back())-1];
+            pos = i;
+        }
+    }
+
+    if (!vPos.size())
+        return vector<double>(1, NAN);
+
+    // Use the global minimal value for ALL and GRID
+    if (dir == ALL || dir == GRID)
+        return vector<double>({_vIndex[pos]+1, vPos[pos]});
+
+    return vPos;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the MAXPOS multi
+/// argument function.
+///
+/// \param _vIndex const VectorIndex&
+/// \param dir int
+/// \return vector<double>
+///
+/////////////////////////////////////////////////
+vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir)
+{
+    if (!bValidData)
+        return vector<double>(1, NAN);
+
+    _vIndex.setOpenEndIndex(dir & LINES ? getLines(false)-1 : getCols(false)-1);
+    long long int nGridOffset = 2*((dir & GRID) != 0);
+
+    // A special case for the columns. We will compute the
+    // results for ALL and GRID using the results for LINES
+    if (dir & COLS)
+    {
+        vector<double> vPos;
+
+        for (size_t j = 0; j < _vIndex.size(); j++)
+        {
+            if (_vIndex[j] < nGridOffset || _vIndex[j] >= getCols(false))
+                continue;
+
+            vPos.push_back(cmp(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j]), max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j])), 0));
+        }
+
+        if (!vPos.size())
+            vPos.push_back(NAN);
+
+        return vPos;
+    }
+
+    vector<double> vPos;
+    double dMax = NAN;
+    size_t pos;
+
+    // Compute the results for LINES and find as
+    // well the global maximal value, which will be used
+    // for GRID and ALL
+    for (size_t i = 0; i < _vIndex.size(); i++)
+    {
+        if (_vIndex[i] < 0 || _vIndex[i] >= getLines(false))
+            continue;
+
+        vPos.push_back(cmp(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END), max(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END)), 0));
+
+        if (isnan(dMax) || dMax < dMemTable[_vIndex[i]][intCast(vPos.back())-1])
+        {
+            dMax = dMemTable[_vIndex[i]][intCast(vPos.back())-1];
+            pos = i;
+        }
+    }
+
+    if (!vPos.size())
+        return vector<double>(1, NAN);
+
+    // Use the global maximal value for ALL and GRID
+    if (dir == ALL || dir == GRID)
+        return vector<double>({_vIndex[pos]+1, vPos[pos]});
+
+    return vPos;
 }
 
 

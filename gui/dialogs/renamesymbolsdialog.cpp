@@ -25,7 +25,7 @@ extern Language _guilang;
 std::string toString(int);
 
 // Constructor
-RenameSymbolsDialog::RenameSymbolsDialog(wxWindow* parent, const vector<wxString>& vChangeLog, wxWindowID id, const wxString& title, const wxString& defaultval) : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, wxCAPTION | wxRESIZE_BORDER | wxSTAY_ON_TOP)
+RenameSymbolsDialog::RenameSymbolsDialog(wxWindow* parent, const std::vector<wxString>& vChangeLog, wxWindowID id, const wxString& title, const wxString& defaultval) : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, wxCAPTION | wxRESIZE_BORDER | wxSTAY_ON_TOP)
 {
     m_replaceInComments = nullptr;
     m_replaceInWholeFile = nullptr;

@@ -26,8 +26,6 @@
 #ifndef MEMORY_HPP
 #define MEMORY_HPP
 
-using namespace std;
-
 // forward declaration for using the memory manager as friend
 class MemoryManager;
 namespace NumeRe
@@ -45,7 +43,13 @@ namespace NumeRe
 class Memory : public Sorter
 {
     public:
-        enum AppDir {LINES, COLS, GRID, ALL};
+        enum AppDir
+        {
+            ALL = 0x0,
+            LINES = 0x1,
+            COLS = 0x2,
+            GRID = 0x4
+        };
 
 	private:
 	    friend class MemoryManager;
@@ -57,7 +61,7 @@ class Memory : public Sorter
 		long long int* nAppendedZeroes;
 		double** dMemTable;
 		bool bValidData;
-		string* sHeadLine;
+		std::string* sHeadLine;
 		bool bIsSaved;
 		bool bSaveMutex;
 		long long int nLastSaved;
@@ -69,7 +73,7 @@ class Memory : public Sorter
 		bool retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction);
 		bool retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol);
 		bool onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol);
-		void reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
+		void reorderColumn(const std::vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 		virtual int compare(int i, int j, int col) override;
         virtual bool isValue(int line, int col) override;
 		void countAppendedZeroes();
@@ -97,10 +101,10 @@ class Memory : public Sorter
 
         // READ ACCESS METHODS
 		double readMem(long long int _nLine, long long int _nCol) const;
-		vector<double> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		void copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		string getHeadLineElement(long long int _i) const;
-		vector<string> getHeadLineElement(const VectorIndex& _vCol) const;
+		std::vector<double> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		void copyElementsInto(std::vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		std::string getHeadLineElement(long long int _i) const;
+		std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol) const;
 		long long int getAppendedZeroes(long long int _i) const;
 		int getHeadlineCount() const;
 
@@ -108,16 +112,16 @@ class Memory : public Sorter
 		bool writeSingletonData(Indices& _idx, double _dData);
 		bool writeData(long long int _Line, long long int _nCol, double _dData);
 		bool writeData(Indices& _idx, double* _dData, unsigned int _nNum);
-		bool setHeadLineElement(long long int _i, string _sHead);
+		bool setHeadLineElement(long long int _i, std::string _sHead);
 
-		bool save(string _sFileName, const string& sTableName, unsigned short nPrecision);
+		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision);
         bool getSaveStatus() const;
         void setSaveStatus(bool _bIsSaved);
         long long int getLastSaved() const;
-        vector<int> sortElements(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
+        std::vector<int> sortElements(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const std::string& sSortingExpression = "");
         void deleteEntry(long long int _nLine, long long int _nCol);
         void deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        NumeRe::Table extractTable(const string& _sTable = "");
+        NumeRe::Table extractTable(const std::string& _sTable = "");
         void importTable(NumeRe::Table _table);
 
         // MAFIMPLEMENTATIONS
@@ -136,6 +140,9 @@ class Memory : public Sorter
         double cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0);
         double med(const VectorIndex& _vLine, const VectorIndex& _vCol);
         double pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5);
+        std::vector<double> size(const VectorIndex& _vIndex, int dir);
+        std::vector<double> minpos(const VectorIndex& _vIndex, int dir);
+        std::vector<double> maxpos(const VectorIndex& _vIndex, int dir);
 
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);

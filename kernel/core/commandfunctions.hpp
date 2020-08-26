@@ -7738,6 +7738,8 @@ static CommandReturnValues cmd_load(string& sCmd)
                     return COMMAND_HAS_RETURNVALUE;
                 }
 
+                NumeRe::FileHeaderInfo info;
+
                 // Provide headline
                 if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
                 {
@@ -7747,15 +7749,15 @@ static CommandReturnValues cmd_load(string& sCmd)
                         nArgument = findParameter(sCmd, "h", '=') + 1;
 
                     nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, false, nArgument);
+                    info = _data.openFile(sArgument, false, nArgument);
                 }
                 else
-                    _data.openFile(sArgument, false, nArgument);
+                    info = _data.openFile(sArgument, false, nArgument);
 
                 if (!_data.isEmpty("data"))
                 {
                     if (_option.getSystemPrintStatus())
-                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
+                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
 
                     _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", false), 1, _data.getCols("data", false)});
                     sCmd = sExpr;
@@ -7852,18 +7854,35 @@ static CommandReturnValues cmd_reload(string& sCmd)
 
         return COMMAND_PROCESSED;
     }
-    else if (sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+6) != string::npos)
-    {
-        // Seems not to contain any valid file name
-        if (sCmd[sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+6)] == '-')
-            sCmd = "load " + _data.getDataFileName("data") + " " + sCmd.substr(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos+6)) + " -i";
-        else
-            sCmd = sCmd.substr(findCommand(sCmd).nPos+2) + " -i";
-    }
-    else
-        sCmd = "load " + _data.getDataFileName("data") + " -i";
 
-    return cmd_load(sCmd);
+    auto _filenames = getAllSemiColonSeparatedTokens(_data.getDataFileName("data"));
+    Match _mMatch = findCommand(sCmd, "reload");
+
+    if (!_filenames.size())
+        return COMMAND_PROCESSED;
+
+    _data.removeData();
+
+    for (size_t i = 0; i < _filenames.size(); i++)
+    {
+        if (sCmd.find_first_not_of(' ', _mMatch.nPos+6) != string::npos)
+        {
+            // Seems not to contain any valid file name
+            if (sCmd[sCmd.find_first_not_of(' ', _mMatch.nPos+6)] == '-')
+                sArgument = "load " + _filenames[i] + " " + sCmd.substr(sCmd.find_first_not_of(' ', _mMatch.nPos+6)) + " -app";
+            else
+                sArgument = sCmd.substr(_mMatch.nPos+2) + " -app";
+        }
+        else
+            sArgument = "load " + _filenames[i] + " -app";
+
+        cmd_load(sArgument);
+    }
+
+    _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", false), 1, _data.getCols("data", false)});
+    sCmd.replace(_mMatch.nPos, string::npos, "_~load[~_~]");
+
+    return COMMAND_HAS_RETURNVALUE;
 }
 
 

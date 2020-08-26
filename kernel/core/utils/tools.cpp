@@ -2398,6 +2398,11 @@ string getNextIndex(string& sArgList, bool bCut)
     return getNextCommandLineToken(sArgList, bCut, ':');
 }
 
+string getNextSemiColonSeparatedToken(string& sArgList, bool bCut)
+{
+    return getNextCommandLineToken(sArgList, bCut, ';');
+}
+
 /////////////////////////////////////////////////
 /// \brief Splits up the complete argument list and returns them as an EndlessVector
 ///
@@ -2428,6 +2433,23 @@ EndlessVector<string> getAllIndices(string sArgList)
 
     while (sArgList.length())
         vIndices.push_back(getNextIndex(sArgList, true));
+
+    return vIndices;
+}
+
+/////////////////////////////////////////////////
+/// \brief Splits up the complete index list and returns them as an EndlessVector
+///
+/// \param sArgList string
+/// \return EndlessVector<string>
+///
+/////////////////////////////////////////////////
+EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList)
+{
+    EndlessVector<string> vIndices;
+
+    while (sArgList.length())
+        vIndices.push_back(getNextSemiColonSeparatedToken(sArgList, true));
 
     return vIndices;
 }

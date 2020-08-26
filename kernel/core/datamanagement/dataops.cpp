@@ -534,10 +534,12 @@ void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
 
 			// Inform the user and return
 			if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
-				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option));
+				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))), _option));
 
 			return;
 		}
+
+		NumeRe::FileHeaderInfo info;
 
         // Simply load the data directly -> Melting is done automatically
         if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
@@ -547,14 +549,14 @@ void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
             else
                 nArgument = findParameter(sCmd, "h", '=') + 1;
             nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-            _data.openFile(sArgument, false, nArgument);
+            info = _data.openFile(sArgument, false, nArgument);
         }
         else
-            _data.openFile(sArgument);
+            info = _data.openFile(sArgument);
 
         // Inform the user
         if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
-            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option));
+            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)), _option));
 
 	}
 }

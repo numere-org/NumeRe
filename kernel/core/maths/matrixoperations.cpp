@@ -82,6 +82,7 @@ static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2
 static Matrix parser_Normalize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
+static Matrix parser_MatrixRepMat(const Matrix& _mMatrix, size_t n, size_t m, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const string& sCmd, const string& sExpr, size_t position);
 static std::vector<double> parser_getUniqueList(std::list<double>& _list);
 static void parser_fillMissingMatrixElements(Matrix& _mMatrix);
@@ -890,6 +891,28 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
                 throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+7, "resize()");
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixResize(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), (size_t)v[0], (size_t)v[1], sCmd, sSubExpr, i+6));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+
+        // Repeat the passed matrix to fit to the specified dimensions
+        if (sCmd.substr(i,7) == "repmat("
+            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
+        {
+            int nRes;
+            value_type* v;
+            string sExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
+            string sSubExpr = getNextArgument(sExpr, true);
+            if (!sExpr.length())
+                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+7, "repmat()");
+            _parser.SetExpr(sExpr);
+            v = _parser.Eval(nRes);
+            if (nRes < 2)
+                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+7, "repmat()");
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixRepMat(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), (size_t)v[0], (size_t)v[1], sCmd, sSubExpr, i+6));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
@@ -3001,6 +3024,49 @@ static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t 
 
 
 /////////////////////////////////////////////////
+/// \brief This static function repeats the
+/// passed matrix n and m times.
+///
+/// \param _mMatrix const Matrix&
+/// \param n size_t
+/// \param m size_t
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix parser_MatrixRepMat(const Matrix& _mMatrix, size_t n, size_t m, const string& sCmd, const string& sExpr, size_t position)
+{
+    if (n == 0)
+        n++;
+
+    if (m == 0)
+        m++;
+
+    if ((n * _mMatrix.size()) / _mMatrix.size() != n || (m * _mMatrix[0].size()) / _mMatrix[0].size() != m)
+        throw SyntaxError(SyntaxError::TOO_LARGE_CACHE, sCmd, position);
+
+    Matrix _mReturn = createZeroesMatrix(n * _mMatrix.size(), m * _mMatrix[0].size());
+
+    for (size_t i = 0; i < _mMatrix.size(); i++)
+    {
+        for (size_t j = 0; j < _mMatrix[0].size(); j++)
+        {
+            for (size_t _n = 0; _n < n; _n++)
+            {
+                for (size_t _m = 0; _m < m; _m++)
+                {
+                    _mReturn[i+_n*_mMatrix.size()][j+_m*_mMatrix[0].size()] = _mMatrix[i][j];
+                }
+            }
+        }
+    }
+
+    return _mReturn;
+}
+
+/////////////////////////////////////////////////
 /// \brief This static function implements the
 /// \c unique(MAT,nDim) function.
 ///
@@ -3079,6 +3145,21 @@ static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const str
 
 
 /////////////////////////////////////////////////
+/// \brief Static helper function for
+/// std::list::remove_if() called in
+/// parser_getUniqueList()
+///
+/// \param value const double&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool is_nan(const double& value)
+{
+    return isnan(value);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This is a static helper function for
 /// the implementation of the \c unique()
 /// function.
@@ -3089,6 +3170,11 @@ static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const str
 /////////////////////////////////////////////////
 static std::vector<double> parser_getUniqueList(std::list<double>& _list)
 {
+    _list.remove_if(is_nan);
+
+    if (_list.empty())
+        return std::vector<double>(1, NAN);
+
     _list.sort();
     _list.unique();
     std::vector<double> vReturn(_list.begin(), _list.end());

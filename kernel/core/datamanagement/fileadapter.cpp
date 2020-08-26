@@ -183,16 +183,16 @@ namespace NumeRe
         FileHeaderInfo info;
 
         // Ensure that the file name is valid
-        sDataFile = ValidFileName(_sFile);
+        std::string sFile = ValidFileName(_sFile);
 
         // If the file seems not to exist and the user did
         // not provide the extension, try to detect it using
         // wildcard
-        if (!fileExists(sDataFile) && (_sFile.find('.') == string::npos || _sFile.find('.') < _sFile.rfind('/')))
-            sDataFile = ValidFileName(_sFile+".*");
+        if (!fileExists(sFile) && (_sFile.find('.') == string::npos || _sFile.find('.') < _sFile.rfind('/')))
+            sFile = ValidFileName(_sFile+".*");
 
         // Get an instance of the desired file type
-        GenericFile<double>* file = getFileByType(sDataFile);
+        GenericFile<double>* file = getFileByType(sFile);
 
         // Ensure that the instance is valid
         if (!file)
@@ -210,7 +210,7 @@ namespace NumeRe
 
             // Read the file
             if (!file->read())
-                throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sDataFile, SyntaxError::invalid_position, sDataFile);
+                throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFile, SyntaxError::invalid_position, sFile);
         }
         catch (...)
         {
@@ -259,6 +259,14 @@ namespace NumeRe
             delete file;
             delete _mem;
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, _sFile, SyntaxError::invalid_position, _sFile);
+        }
+
+        if (!loadToCache)
+        {
+            if (sDataFile.length())
+                sDataFile += ";" + sFile;
+            else
+                sDataFile = sFile;
         }
 
         // Return the file information header for

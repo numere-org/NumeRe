@@ -20,6 +20,8 @@
 
 #include "language.hpp"
 
+using namespace std;
+
 void StripSpaces(string&);
 string toString(int);
 bool fileExists(const string&);

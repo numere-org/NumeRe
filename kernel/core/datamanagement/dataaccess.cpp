@@ -21,6 +21,9 @@
 #include "../../kernel.hpp"
 #include <vector>
 
+using namespace std;
+using namespace mu;
+
 
 /////////////////////////////////////////////////
 /// \brief DataAccessParser constructor. This
@@ -858,14 +861,19 @@ static string createMafDataAccessString(const string& sAccessString, Parser& _pa
 static string getMafFromAccessString(const string& sAccessString)
 {
 	// Store these values statically
-	static const int sMafListLength = 13;
-	static string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor"};
+	static const int sMafListLength = 16;
+	static string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos"};
+	size_t pos = 0;
 
 	for (int i = 0; i < sMafListLength; i++)
 	{
-		if (sAccessString.find("." + sMafList[i]) != string::npos)
+	    pos = sAccessString.find("." + sMafList[i]);
+
+		if (pos != string::npos
+            && (pos + sMafList[i].length() + 1 >= sAccessString.length() || sAccessString[pos+sMafList[i].length()+1] == '.' || isDelimiter(sAccessString[pos+sMafList[i].length()+1])))
 			return sMafList[i];
 	}
+
 	return "";
 }
 
@@ -944,6 +952,12 @@ static vector<double> MafDataAccess(MemoryManager& _data, const string& sMafname
 		return _data.or_func(sCache, sMafAccess);
 	if (sMafname == "xor")
 		return _data.xor_func(sCache, sMafAccess);
+	if (sMafname == "size")
+		return _data.size(sCache, sMafAccess);
+	if (sMafname == "maxpos")
+		return _data.maxpos(sCache, sMafAccess);
+	if (sMafname == "minpos")
+		return _data.minpos(sCache, sMafAccess);
 
 	// return a vector with one NAN
 	return vector<double>(1, NAN);

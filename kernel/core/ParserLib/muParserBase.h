@@ -50,9 +50,9 @@ namespace mu
 
 	struct CachedDataAccess
 	{
-		string sAccessEquation; // Passed to parser_getIndices -> returns the indices for the current access
-		string sVectorName; // target of the created vector -> use SetVectorVar
-		string sCacheName; // needed for reading the data -> create a vector var
+		std::string sAccessEquation; // Passed to parser_getIndices -> returns the indices for the current access
+		std::string sVectorName; // target of the created vector -> use SetVectorVar
+		std::string sCacheName; // needed for reading the data -> create a vector var
 	};
 
 	//--------------------------------------------------------------------------------------------------
@@ -105,8 +105,8 @@ namespace mu
 
 			void replaceLocalVars(std::string& sLine);
 			bool checkDelimiter(const std::string& sLine);
-			void evaluateVectorExpansion(string& sSubExpr, vector<double>& vResults);
-			void expandVector(double dFirst, double dLast, double dIncrement, vector<double>& vResults);
+			void evaluateVectorExpansion(std::string& sSubExpr, std::vector<double>& vResults);
+			void expandVector(double dFirst, double dLast, double dIncrement, std::vector<double>& vResults);
 			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults);
 
 		public:
@@ -131,10 +131,10 @@ namespace mu
 			void DisableAccessCaching();
 			bool CanCacheAccess();
 			CachedDataAccess GetCachedAccess(size_t nthAccess);
-			void CacheCurrentEquation(const string& sEquation);
-			string GetCachedEquation();
-			void CacheCurrentTarget(const string& sEquation);
-			string GetCachedTarget();
+			void CacheCurrentEquation(const std::string& sEquation);
+			std::string GetCachedEquation();
+			void CacheCurrentTarget(const std::string& sEquation);
+			std::string GetCachedTarget();
 			int IsValidByteCode(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
 			void DeclareAsInvalid(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
 			void DeclareAsDelayed(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
@@ -142,7 +142,7 @@ namespace mu
 			bool IsLockedPause() const;
 			void LockPause(bool _bLock = true);
 			void PauseLoopMode(bool _bPause = true);
-			bool IsAlreadyParsed(string sNewEquation);
+			bool IsAlreadyParsed(std::string sNewEquation);
 
 			static void EnableDebugDump(bool bDumpCmd, bool bDumpStack);
 

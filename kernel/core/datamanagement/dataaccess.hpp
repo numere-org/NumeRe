@@ -27,23 +27,20 @@
 #include "../settings.hpp"
 #include "../structures.hpp"
 
-using namespace std;
-using namespace mu;
-
-bool parser_CheckMultArgFunc(const string&, const string&);
+bool parser_CheckMultArgFunc(const std::string&, const std::string&);
 void parser_CheckIndices(long long int&, long long int&);
 void parser_CheckIndices(int&, int&);
 
-string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs = true);
-void replaceDataEntities(string&, const string&, MemoryManager&, Parser&, const Settings&, bool);
-bool getData(const string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols = 2, bool bSort = true);
-NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool isNotEmptyExpression(const string&);
-bool isClusterCandidate(string& sLine, string& sCluster, bool doCut = true);
-double getDataFromObject(const string& sObject, long long int i, long long int j, bool isCluster);
-Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
+std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs = true);
+void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, const Settings&, bool);
+bool getData(const std::string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols = 2, bool bSort = true);
+NumeRe::Table parser_extractData(const std::string& sDataExpression, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
+bool isNotEmptyExpression(const std::string&);
+bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut = true);
+double getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
+Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 
-Indices getIndices(const string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
+Indices getIndices(const std::string& sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
 
 inline bool isValidIndexSet(const Indices& _idx)
 {
@@ -56,13 +53,13 @@ inline bool isValidIndexSet(const Indices& _idx)
 class DataAccessParser
 {
     private:
-        string sDataObject;
+        std::string sDataObject;
         Indices idx;
         bool bIsCluster;
 
     public:
-        DataAccessParser(const string& sCommand);
-        string& getDataObject();
+        DataAccessParser(const std::string& sCommand);
+        std::string& getDataObject();
         Indices& getIndices();
         bool isCluster();
 };

@@ -76,7 +76,7 @@ BEGIN_EVENT_TABLE( AboutChameleonDialog, wxDialog )
 END_EVENT_TABLE()
 
 extern Language _guilang;
-extern const string sVersion;
+extern const std::string sVersion;
 
 /*!
  * AboutChameleonDialog constructors

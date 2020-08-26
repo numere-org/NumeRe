@@ -16,9 +16,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <windows.h>
 
 #include "filesystem.hpp"
 #include "../../kernel.hpp"
+
+using namespace std;
 
 string toLowerCase(const string&);
 

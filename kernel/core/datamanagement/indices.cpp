@@ -21,6 +21,7 @@
 #include <vector>
 
 using namespace std;
+using namespace mu;
 
 static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, string& sArgument, const string& sCmd);
 static void extractIndexList(string& sArgument, vector<string>& vLines, vector<string>& vCols);

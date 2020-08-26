@@ -124,7 +124,8 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	*/
 	wxClientDC
 	dc(this);
-
+    wxFont monospacedFont(8, wxMODERN, wxNORMAL, wxNORMAL, false, "Consolas");//10
+	SetFont(monospacedFont);
 	// Initialize the relevant fonts
 	m_normalFont = GetFont();
 	m_underlinedFont = GetFont();
@@ -144,8 +145,6 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Height made no sense
 	dc.GetTextExtent("My", &w, &m_charHeight);
 
-	wxFont monospacedFont(8, wxMODERN, wxNORMAL, wxNORMAL, false, "Consolas");//10
-	SetFont(monospacedFont);
 	SetClientSize(m_charsInLine * 8, m_linesDisplayed * 16);
 	// 10pt Courier New is 8 pixels wide and 16 pixels high... set up
 	// a default client size to match

@@ -708,7 +708,7 @@ vector<double> MemoryManager::resolveMAF(const string& sTableName, string sDir, 
             if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= getCols(sTableName, false))
                 continue;
 
-            vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false), _idx[i]+nGridOffset, -1));
+            vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false)-1, _idx[i]+nGridOffset, -1));
         }
     }
     else if (sDir.find("lines") != string::npos)
@@ -718,11 +718,11 @@ vector<double> MemoryManager::resolveMAF(const string& sTableName, string sDir, 
             if (_idx[i] < 0 || _idx[i] >= getLines(sTableName, false))
                 continue;
 
-            vResults.push_back((this->*MAF)(sTableName, _idx[i], -1, nGridOffset, getCols(sTableName, false)));
+            vResults.push_back((this->*MAF)(sTableName, _idx[i], -1, nGridOffset, getCols(sTableName, false)-1));
         }
     }
     else
-        vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false), nGridOffset, getCols(sTableName, false)));
+        vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false)-1, nGridOffset, getCols(sTableName, false)-1));
 
     if (!vResults.size())
         vResults.push_back(NAN);
@@ -816,7 +816,6 @@ void MemoryManager::melt(Memory* _mem, const string& sTable)
             }
         }
 
-        sDataFile = "Merged Data";
         _existingMem->setSaveStatus(false);
 
         // Delete the passed instance (it is not

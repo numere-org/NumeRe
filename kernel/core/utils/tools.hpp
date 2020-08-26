@@ -214,8 +214,10 @@ double intPower(double dNumber, int nExponent);
 
 string getNextArgument(string& sArgList, bool bCut = true);
 string getNextIndex(string& sArgList, bool bCut = true);
+string getNextSemiColonSeparatedToken(string& sArgList, bool bCut = true);
 EndlessVector<string> getAllArguments(string sArgList);
 EndlessVector<string> getAllIndices(string sArgList);
+EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList);
 /** \brief Transforms Windows-style filepaths to Unix-Style
  *
  * \param __sPath const string&
