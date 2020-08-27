@@ -74,6 +74,8 @@ static Matrix parser_MatrixNum(const Matrix& _mMatrix, const string& sCmd, const
 static Matrix parser_MatrixNorm(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixMin(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+static Matrix parser_MatrixMinPos(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
+static Matrix parser_MatrixMaxPos(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const string& sCmd, const string& sExpr, size_t position);
 static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType, const string& sCmd, const string& sExpr, size_t position);
@@ -764,6 +766,32 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
             __sCmd += sCmd.substr(pos_back, i-pos_back);
             vReturnedMatrices.push_back(parser_MatrixMax(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+
+        // Apply "min()" for matrices
+        if (sCmd.substr(i,7) == "minpos("
+            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
+        {
+            string sSubExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixMinPos(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+6));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
+            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            i = pos_back-1;
+        }
+
+        // Apply "max()" for matrices
+        if (sCmd.substr(i,7) == "maxpos("
+            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
+            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
+        {
+            string sSubExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
+            __sCmd += sCmd.substr(pos_back, i-pos_back);
+            vReturnedMatrices.push_back(parser_MatrixMaxPos(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+6));
+            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
@@ -2670,6 +2698,46 @@ static Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const
         }
     }
     return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c minpos() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix parser_MatrixMinPos(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
+    return parser_MatrixCmp(_mMatrix, parser_MatrixMin(_mMatrix, sCmd, sExpr, position)[0][0], 0, sCmd, sExpr, position);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function applies the
+/// \c maxpos() function on the matrix elements.
+///
+/// \param _mMatrix const Matrix&
+/// \param sCmd const string&
+/// \param sExpr const string&
+/// \param position size_t
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix parser_MatrixMaxPos(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
+{
+    if (!_mMatrix.size() || !_mMatrix[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
+
+    return parser_MatrixCmp(_mMatrix, parser_MatrixMax(_mMatrix, sCmd, sExpr, position)[0][0], 0, sCmd, sExpr, position);
 }
 
 

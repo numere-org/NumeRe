@@ -96,6 +96,8 @@ value_type parser_Sum(const value_type*, int);
 value_type parser_Avg(const value_type*, int);
 value_type parser_Min(const value_type*, int);
 value_type parser_Max(const value_type*, int);
+value_type parser_MinPos(const value_type*, int);
+value_type parser_MaxPos(const value_type*, int);
 value_type parser_Num(const value_type*, int);
 value_type parser_Cnt(const value_type*, int);
 value_type parser_Std(const value_type*, int);

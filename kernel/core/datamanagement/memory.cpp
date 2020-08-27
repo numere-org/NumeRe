@@ -2158,7 +2158,7 @@ vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir)
     if (!bValidData)
         return vector<double>(1, NAN);
 
-    _vIndex.setOpenEndIndex(dir & LINES ? getLines(false)-1 : getCols(false)-1);
+    _vIndex.setOpenEndIndex(dir & COLS ? getCols(false)-1 : getLines(false)-1);
     long long int nGridOffset = 2*((dir & GRID) != 0);
 
     // A special case for the columns. We will compute the
@@ -2227,7 +2227,7 @@ vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir)
     if (!bValidData)
         return vector<double>(1, NAN);
 
-    _vIndex.setOpenEndIndex(dir & LINES ? getLines(false)-1 : getCols(false)-1);
+    _vIndex.setOpenEndIndex(dir & COLS ? getCols(false)-1 : getLines(false)-1);
     long long int nGridOffset = 2*((dir & GRID) != 0);
 
     // A special case for the columns. We will compute the

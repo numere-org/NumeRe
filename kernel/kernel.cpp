@@ -344,51 +344,50 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
 void NumeReKernel::defineOperators()
 {
     // --> Syntax fuer die Umrechnungsfunktionen definieren und die zugehoerigen Funktionen deklarieren <--
-    _parser.DefinePostfixOprt(_nrT("'G"), parser_Giga);
-    _parser.DefinePostfixOprt(_nrT("'M"), parser_Mega);
-    _parser.DefinePostfixOprt(_nrT("'k"), parser_Kilo);
-    _parser.DefinePostfixOprt(_nrT("'m"), parser_Milli);
-    _parser.DefinePostfixOprt(_nrT("'mu"), parser_Micro);
-    //_parser.DefinePostfixOprt(_nrT("µ"), parser_Micro);
-    _parser.DefinePostfixOprt(_nrT("'n"), parser_Nano);
+    _parser.DefinePostfixOprt("'G", parser_Giga);
+    _parser.DefinePostfixOprt("'M", parser_Mega);
+    _parser.DefinePostfixOprt("'k", parser_Kilo);
+    _parser.DefinePostfixOprt("'m", parser_Milli);
+    _parser.DefinePostfixOprt("'mu", parser_Micro);
+    _parser.DefinePostfixOprt("'n", parser_Nano);
 
     // --> Einheitenumrechnungen: Werden aufgerufen durch WERT'EINHEIT <--
-    _parser.DefinePostfixOprt(_nrT("'eV"), parser_ElectronVolt);
-    _parser.DefinePostfixOprt(_nrT("'fm"), parser_Fermi);
-    _parser.DefinePostfixOprt(_nrT("'A"), parser_Angstroem);
-    _parser.DefinePostfixOprt(_nrT("'b"), parser_Barn);
-    _parser.DefinePostfixOprt(_nrT("'Torr"), parser_Torr);
-    _parser.DefinePostfixOprt(_nrT("'AU"), parser_AstroUnit);
-    _parser.DefinePostfixOprt(_nrT("'ly"), parser_Lightyear);
-    _parser.DefinePostfixOprt(_nrT("'pc"), parser_Parsec);
-    _parser.DefinePostfixOprt(_nrT("'mile"), parser_Mile);
-    _parser.DefinePostfixOprt(_nrT("'yd"), parser_Yard);
-    _parser.DefinePostfixOprt(_nrT("'ft"), parser_Foot);
-    _parser.DefinePostfixOprt(_nrT("'in"), parser_Inch);
-    _parser.DefinePostfixOprt(_nrT("'cal"), parser_Calorie);
-    _parser.DefinePostfixOprt(_nrT("'psi"), parser_PSI);
-    _parser.DefinePostfixOprt(_nrT("'kn"), parser_Knoten);
-    _parser.DefinePostfixOprt(_nrT("'l"), parser_liter);
-    _parser.DefinePostfixOprt(_nrT("'kmh"), parser_kmh);
-    _parser.DefinePostfixOprt(_nrT("'mph"), parser_mph);
-    _parser.DefinePostfixOprt(_nrT("'TC"), parser_Celsius);
-    _parser.DefinePostfixOprt(_nrT("'TF"), parser_Fahrenheit);
-    _parser.DefinePostfixOprt(_nrT("'Ci"), parser_Curie);
-    _parser.DefinePostfixOprt(_nrT("'Gs"), parser_Gauss);
-    _parser.DefinePostfixOprt(_nrT("'Ps"), parser_Poise);
-    _parser.DefinePostfixOprt(_nrT("'mol"), parser_mol);
+    _parser.DefinePostfixOprt("'eV", parser_ElectronVolt);
+    _parser.DefinePostfixOprt("'fm", parser_Fermi);
+    _parser.DefinePostfixOprt("'A", parser_Angstroem);
+    _parser.DefinePostfixOprt("'b", parser_Barn);
+    _parser.DefinePostfixOprt("'Torr", parser_Torr);
+    _parser.DefinePostfixOprt("'AU", parser_AstroUnit);
+    _parser.DefinePostfixOprt("'ly", parser_Lightyear);
+    _parser.DefinePostfixOprt("'pc", parser_Parsec);
+    _parser.DefinePostfixOprt("'mile", parser_Mile);
+    _parser.DefinePostfixOprt("'yd", parser_Yard);
+    _parser.DefinePostfixOprt("'ft", parser_Foot);
+    _parser.DefinePostfixOprt("'in", parser_Inch);
+    _parser.DefinePostfixOprt("'cal", parser_Calorie);
+    _parser.DefinePostfixOprt("'psi", parser_PSI);
+    _parser.DefinePostfixOprt("'kn", parser_Knoten);
+    _parser.DefinePostfixOprt("'l", parser_liter);
+    _parser.DefinePostfixOprt("'kmh", parser_kmh);
+    _parser.DefinePostfixOprt("'mph", parser_mph);
+    _parser.DefinePostfixOprt("'TC", parser_Celsius);
+    _parser.DefinePostfixOprt("'TF", parser_Fahrenheit);
+    _parser.DefinePostfixOprt("'Ci", parser_Curie);
+    _parser.DefinePostfixOprt("'Gs", parser_Gauss);
+    _parser.DefinePostfixOprt("'Ps", parser_Poise);
+    _parser.DefinePostfixOprt("'mol", parser_mol);
     _parser.DefinePostfixOprt("!", parser_Faculty);
     _parser.DefinePostfixOprt("!!", parser_doubleFaculty);
 
     // --> Logisches NICHT <--
-    _parser.DefineInfixOprt(_nrT("!"), parser_Not);
-    _parser.DefineInfixOprt(_nrT("+"), parser_Ignore);
+    _parser.DefineInfixOprt("!", parser_Not);
+    _parser.DefineInfixOprt("+", parser_Ignore);
 
     // --> Operatoren <--
-    _parser.DefineOprt(_nrT("%"), parser_Mod, prMUL_DIV, oaLEFT, true);
-    _parser.DefineOprt(_nrT("|||"), parser_XOR, prLOGIC, oaLEFT, true);
-    _parser.DefineOprt(_nrT("|"), parser_BinOR, prLOGIC, oaLEFT, true);
-    _parser.DefineOprt(_nrT("&"), parser_BinAND, prLOGIC, oaLEFT, true);
+    _parser.DefineOprt("%", parser_Mod, prMUL_DIV, oaLEFT, true);
+    _parser.DefineOprt("|||", parser_XOR, prLOGIC, oaLEFT, true);
+    _parser.DefineOprt("|", parser_BinOR, prLOGIC, oaLEFT, true);
+    _parser.DefineOprt("&", parser_BinAND, prLOGIC, oaLEFT, true);
 }
 
 
@@ -402,52 +401,52 @@ void NumeReKernel::defineOperators()
 void NumeReKernel::defineConst()
 {
     // --> Eigene Konstanten <--
-    _parser.DefineConst(_nrT("_g"), 9.80665);
-    _parser.DefineConst(_nrT("_c"), 299792458);
-    _parser.DefineConst(_nrT("_elek_feldkonst"), 8.854187817e-12);
-    _parser.DefineConst(_nrT("_n_avogadro"), 6.02214129e23);
-    _parser.DefineConst(_nrT("_k_boltz"), 1.3806488e-23);
-    _parser.DefineConst(_nrT("_elem_ladung"), 1.602176565e-19);
-    _parser.DefineConst(_nrT("_h"), 6.62606957e-34);
-    _parser.DefineConst(_nrT("_hbar"), 1.054571726e-34);
-    _parser.DefineConst(_nrT("_m_elektron"), 9.10938291e-31);
-    _parser.DefineConst(_nrT("_m_proton"), 1.672621777e-27);
-    _parser.DefineConst(_nrT("_m_neutron"), 1.674927351e-27);
-    _parser.DefineConst(_nrT("_m_muon"), 1.883531475e-28);
-    _parser.DefineConst(_nrT("_m_tau"), 3.16747e-27);
-    _parser.DefineConst(_nrT("_magn_feldkonst"), 1.25663706144e-6);
-    _parser.DefineConst(_nrT("_m_erde"), 5.9726e24);
-    _parser.DefineConst(_nrT("_m_sonne"), 1.9885e30);
-    _parser.DefineConst(_nrT("_r_erde"), 6.378137e6);
-    _parser.DefineConst(_nrT("_r_sonne"), 6.9551e8);
-    _parser.DefineConst(_nrT("true"), 1);
-    _parser.DefineConst(_nrT("_theta_weinberg"), 0.49097621387892);
-    _parser.DefineConst(_nrT("false"), 0);
-    _parser.DefineConst(_nrT("_2pi"), 6.283185307179586476925286766559);
-    _parser.DefineConst(_nrT("_R"), 8.3144622);
-    _parser.DefineConst(_nrT("_alpha_fs"), 7.2973525698E-3);
-    _parser.DefineConst(_nrT("_mu_bohr"), 9.27400968E-24);
-    _parser.DefineConst(_nrT("_mu_kern"), 5.05078353E-27);
-    _parser.DefineConst(_nrT("_mu_e"), -9.284764620e-24);
-    _parser.DefineConst(_nrT("_mu_n"), -9.662365e-27);
-    _parser.DefineConst(_nrT("_mu_p"), 1.4106067873e8);
-    _parser.DefineConst(_nrT("_m_amu"), 1.660538921E-27);
-    _parser.DefineConst(_nrT("_r_bohr"), 5.2917721092E-11);
-    _parser.DefineConst(_nrT("_G"), 6.67384E-11);
-    _parser.DefineConst(_nrT("_coul_norm"), 8987551787.99791145324707);
-    _parser.DefineConst(_nrT("_stefan_boltzmann"), 5.670367e-8);
-    _parser.DefineConst(_nrT("_wien"), 2.8977729e-3);
-    _parser.DefineConst(_nrT("_rydberg"), 1.0973731568508e7);
-    _parser.DefineConst(_nrT("_hartree"), 4.35974465e-18);
-    _parser.DefineConst(_nrT("_lande_e"), -2.00231930436182);
-    _parser.DefineConst(_nrT("_gamma_e"), 1.760859644e11);
-    _parser.DefineConst(_nrT("_gamma_n"), 1.83247172e8);
-    _parser.DefineConst(_nrT("_gamma_p"), 2.6752219e8);
-    _parser.DefineConst(_nrT("_feigenbaum_delta"), 4.66920160910299067185);
-    _parser.DefineConst(_nrT("_feigenbaum_alpha"), 2.50290787509589282228);
-    _parser.DefineConst(_nrT("nan"), NAN);
-    _parser.DefineConst(_nrT("inf"), INFINITY);
-    _parser.DefineConst(_nrT("void"), NAN);
+    _parser.DefineConst("_g", 9.80665);
+    _parser.DefineConst("_c", 299792458);
+    _parser.DefineConst("_elek_feldkonst", 8.854187817e-12);
+    _parser.DefineConst("_n_avogadro", 6.02214129e23);
+    _parser.DefineConst("_k_boltz", 1.3806488e-23);
+    _parser.DefineConst("_elem_ladung", 1.602176565e-19);
+    _parser.DefineConst("_h", 6.62606957e-34);
+    _parser.DefineConst("_hbar", 1.054571726e-34);
+    _parser.DefineConst("_m_elektron", 9.10938291e-31);
+    _parser.DefineConst("_m_proton", 1.672621777e-27);
+    _parser.DefineConst("_m_neutron", 1.674927351e-27);
+    _parser.DefineConst("_m_muon", 1.883531475e-28);
+    _parser.DefineConst("_m_tau", 3.16747e-27);
+    _parser.DefineConst("_magn_feldkonst", 1.25663706144e-6);
+    _parser.DefineConst("_m_erde", 5.9726e24);
+    _parser.DefineConst("_m_sonne", 1.9885e30);
+    _parser.DefineConst("_r_erde", 6.378137e6);
+    _parser.DefineConst("_r_sonne", 6.9551e8);
+    _parser.DefineConst("true", 1);
+    _parser.DefineConst("_theta_weinberg", 0.49097621387892);
+    _parser.DefineConst("false", 0);
+    _parser.DefineConst("_2pi", 6.283185307179586476925286766559);
+    _parser.DefineConst("_R", 8.3144622);
+    _parser.DefineConst("_alpha_fs", 7.2973525698E-3);
+    _parser.DefineConst("_mu_bohr", 9.27400968E-24);
+    _parser.DefineConst("_mu_kern", 5.05078353E-27);
+    _parser.DefineConst("_mu_e", -9.284764620e-24);
+    _parser.DefineConst("_mu_n", -9.662365e-27);
+    _parser.DefineConst("_mu_p", 1.4106067873e8);
+    _parser.DefineConst("_m_amu", 1.660538921E-27);
+    _parser.DefineConst("_r_bohr", 5.2917721092E-11);
+    _parser.DefineConst("_G", 6.67384E-11);
+    _parser.DefineConst("_coul_norm", 8987551787.99791145324707);
+    _parser.DefineConst("_stefan_boltzmann", 5.670367e-8);
+    _parser.DefineConst("_wien", 2.8977729e-3);
+    _parser.DefineConst("_rydberg", 1.0973731568508e7);
+    _parser.DefineConst("_hartree", 4.35974465e-18);
+    _parser.DefineConst("_lande_e", -2.00231930436182);
+    _parser.DefineConst("_gamma_e", 1.760859644e11);
+    _parser.DefineConst("_gamma_n", 1.83247172e8);
+    _parser.DefineConst("_gamma_p", 2.6752219e8);
+    _parser.DefineConst("_feigenbaum_delta", 4.66920160910299067185);
+    _parser.DefineConst("_feigenbaum_alpha", 2.50290787509589282228);
+    _parser.DefineConst("nan", NAN);
+    _parser.DefineConst("inf", INFINITY);
+    _parser.DefineConst("void", NAN);
 }
 
 
@@ -504,6 +503,8 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("and", parser_and, true);                                 // and(x,y,z,...)
     _parser.DefineFun("or", parser_or, true);                                   // or(x,y,z,...)
     _parser.DefineFun("xor", parser_xor, true);                                 // xor(x,y,z,...)
+    _parser.DefineFun("minpos", parser_MinPos, true);                           // minpos(x,y,z,...)
+    _parser.DefineFun("maxpos", parser_MaxPos, true);                           // maxpos(x,y,z,...)
     _parser.DefineFun("polynomial", parser_polynomial, true);                   // polynomial(x,a0,a1,a2,a3,...)
     _parser.DefineFun("rand", parser_Random, false);                            // rand(left,right)
     _parser.DefineFun("gauss", parser_gRandom, false);                          // gauss(mean,std)

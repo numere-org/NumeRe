@@ -20,3 +20,4 @@ Added	The method "TABLE().size" will return the tables size in rows and columns.
 Added	The methods "TABLE().minpos" and "TABLE().maxpos" will return the positions of the minmal or maximal values in the table using rows and columns.
 Added	The matrix function "repmat()" will repeat the passed table (n x m) times and return it as a new table.
 Cleaned	During loading are now filenames now stored and will be used for "reload". The filenames are accessible via "data(#,#)".
+Added	Added the multi-argument functions "minpos()" and "maxpos()" as usual function representations for their corresponding methods.

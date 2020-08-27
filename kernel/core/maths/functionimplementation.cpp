@@ -1066,6 +1066,44 @@ value_type parser_Max(const value_type* vElements, int nElements)
 
 
 /////////////////////////////////////////////////
+/// \brief This function returns the index of the
+/// (first) minimal value in the array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_MinPos(const value_type* vElements, int nElements)
+{
+    vector<value_type> vData(vElements, vElements+nElements);
+    vData.push_back(parser_Min(vElements, nElements));
+    vData.push_back(0);
+
+    return parser_compare(&vData[0], vData.size());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the index of the
+/// (first) maximal value in the array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_MaxPos(const value_type* vElements, int nElements)
+{
+    vector<value_type> vData(vElements, vElements+nElements);
+    vData.push_back(parser_Max(vElements, nElements));
+    vData.push_back(0);
+
+    return parser_compare(&vData[0], vData.size());
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function rounds the passed value
 /// to the selected number of decimals.
 ///
