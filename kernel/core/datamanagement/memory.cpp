@@ -2086,7 +2086,7 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 vector<double> Memory::size(const VectorIndex& _vIndex, int dir)
 {
     if (!bValidData)
-        return vector<double>(1, NAN);
+        return vector<double>(2, 0.0);
 
     _vIndex.setOpenEndIndex(dir & LINES ? getLines(false)-1 : getCols(false)-1);
     long long int nGridOffset = 2*((dir & GRID) != 0);
@@ -2140,7 +2140,7 @@ vector<double> Memory::size(const VectorIndex& _vIndex, int dir)
         return vSizes;
     }
 
-    return vector<double>(1, NAN);
+    return vector<double>(2, 0.0);
 }
 
 

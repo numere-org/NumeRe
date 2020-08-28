@@ -21,3 +21,5 @@ Added	The methods "TABLE().minpos" and "TABLE().maxpos" will return the position
 Added	The matrix function "repmat()" will repeat the passed table (n x m) times and return it as a new table.
 Cleaned	During loading are now filenames now stored and will be used for "reload". The filenames are accessible via "data(#,#)".
 Added	Added the multi-argument functions "minpos()" and "maxpos()" as usual function representations for their corresponding methods.
+Cleaned	Resolved an glitch in "export", where the default extension was "ndat" and not "dat".
+Cleaned	Added the LaTeX "nonstopmode" to all LaTeX usages.

@@ -2353,7 +2353,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
 
         // Update the necessary parameters
         _cache.setTokens(_option.getTokenPaths());
-        _cache.setPath(_data.getPath(), false, _option.getExePath());
+        _cache.setPath(_option.getSavePath(), false, _option.getExePath());
 
         copyDataToTemporaryTable(sCmd, _access, _data, _cache);
 
@@ -2372,6 +2372,8 @@ static CommandReturnValues saveDataObject(string& sCmd)
         // Try to extract the file name, if it was passed
         if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(findParameter(sCmd, "file", '=')), sArgument))
         {
+            sArgument = _cache.ValidFileName(sArgument);
+
             if (_cache.saveFile(_access.getDataObject(), sArgument, nPrecision))
             {
                 if (_option.getSystemPrintStatus())
