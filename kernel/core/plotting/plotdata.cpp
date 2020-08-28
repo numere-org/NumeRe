@@ -25,7 +25,7 @@ extern mglGraph _fontData;
 
 static value_type* evaluateNumerical(int& nResults, string sExpression)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
     if (_data.containsTablesOrClusters(sExpression))

@@ -25,7 +25,7 @@
 #include <wx/menu.h>
 #include <wx/dynarray.h>
 #include "editor.h"
-#include "../terminal/wxterm.h"
+#include "../terminal/terminal.hpp"
 #include "../../common/datastructures.h"
 //#include "../../compiler/compilerevent.h"
 #include "../../kernel/syntax.hpp"
@@ -39,7 +39,7 @@ class NumeReHistory : public NumeReEditor
 {
 public:
 	NumeReHistory(NumeReWindow* mframe, Options* options, ProjectInfo* project,
-					wxWindow *parent, wxWindowID id, NumeReSyntax* __syntax, wxTerm* __terminal, const wxPoint& pos = wxDefaultPosition,
+					wxWindow *parent, wxWindowID id, NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos = wxDefaultPosition,
 					const wxSize& size = wxDefaultSize, long style = 0,
 					const wxString& name = wxSTCNameStr);
 	~NumeReHistory();
@@ -62,7 +62,7 @@ private:
     void applyFoldPoints();
 
 	NumeReSyntax* _syntax;
-	wxTerm* m_terminal;
+	NumeReTerminal* m_terminal;
 	NumeReWindow* m_mainframe;
 	int m_clickedLine;
 

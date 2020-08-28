@@ -26,7 +26,7 @@
 /////////////////////////////////////////////////
 /// \brief Default constructor
 /////////////////////////////////////////////////
-Script::Script() : FileSystem()
+Script::Script() : FileSystem(), _localDef(true)
 {
     sScriptFileName = "";
     sIncludeFileName = "";

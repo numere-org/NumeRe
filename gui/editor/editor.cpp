@@ -147,7 +147,7 @@ using namespace std;
 ///
 /////////////////////////////////////////////////
 NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* project, wxWindow* parent, wxWindowID id,
-                           NumeReSyntax* __syntax, wxTerm* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
+                           NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
                                wxStyledTextCtrl(parent, id, pos, size, style, name)
 {
     defaultPage = false;

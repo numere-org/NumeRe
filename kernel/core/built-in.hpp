@@ -27,7 +27,7 @@
 #include <vector>
 
 #include "ui/error.hpp"
-#include "datamanagement/datafile.hpp"
+#include "datamanagement/memorymanager.hpp"
 #include "settings.hpp"
 #include "io/output.hpp"
 #include "plugins.hpp"

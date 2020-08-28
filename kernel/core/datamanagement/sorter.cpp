@@ -21,8 +21,22 @@
 
 using namespace std;
 
-// This public member function is the interface to the quicksort algorithm,
-// which is implemented as a private member function
+
+/////////////////////////////////////////////////
+/// \brief This public member function is the
+/// interface to the quicksort algorithm, which
+/// itself is implemented as a private member
+/// function of this class.
+///
+/// \param nIndex int*
+/// \param nElements int
+/// \param nColumn int
+/// \param nLeft long longint
+/// \param nRight long longint
+/// \param nSign int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Sorter::qSort(int* nIndex, int nElements, int nColumn, long long int nLeft, long long int nRight, int nSign)
 {
     // Ensure that all necessary paramters are available and valid
@@ -61,8 +75,21 @@ bool Sorter::qSort(int* nIndex, int nElements, int nColumn, long long int nLeft,
 	return qSortImplementation(nIndex, nElements, nColumn, nLeft, nRight, nSign);
 }
 
-// This private member function is the actual implementation of the quicksort
-// algorithm
+
+/////////////////////////////////////////////////
+/// \brief This private member function is the
+/// actual implementation of the quicksort
+/// algorithm.
+///
+/// \param nIndex int*
+/// \param nElements int
+/// \param nColumn int
+/// \param nLeft long longint
+/// \param nRight long longint
+/// \param nSign int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Sorter::qSortImplementation(int* nIndex, int nElements, int nColumn, long long int nLeft, long long int nRight, int nSign)
 {
     // Ensure that all parameters are available and valid
@@ -151,9 +178,25 @@ bool Sorter::qSortImplementation(int* nIndex, int nElements, int nColumn, long l
 	return true;
 }
 
-// This public member function handles the hierarchical sorting process of many
-// columns together. The ColumnKeys object contains the necessary information
-// needed for the hierarchical sorting
+
+/////////////////////////////////////////////////
+/// \brief This public member function handles
+/// the hierarchical sorting process of many
+/// columns together. The ColumnKeys object
+/// contains the necessary information needed for
+/// the hierarchical sorting.
+///
+/// \param nIndex int*
+/// \param nElements int
+/// \param KeyList ColumnKeys*
+/// \param i1 long longint
+/// \param i2 long longint
+/// \param j1 long longint
+/// \param nSign int
+/// \param nColumns long longint
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool Sorter::sortSubList(int* nIndex, int nElements, ColumnKeys* KeyList, long long int i1, long long int i2, long long int j1, int nSign, long long int nColumns)
 {
     // Get the subkey list
@@ -198,8 +241,18 @@ bool Sorter::sortSubList(int* nIndex, int nElements, ColumnKeys* KeyList, long l
 	return true;
 }
 
-// This public member function creates a ColumnKeys object from a string
-// containing the hierarchical sorting order for the current sorting process.
+
+/////////////////////////////////////////////////
+/// \brief This public member function creates a
+/// ColumnKeys object from a string containing
+/// the hierarchical sorting order for the
+/// current sorting process.
+///
+/// \param sKeyList string&
+/// \param nColumnCount long longint
+/// \return ColumnKeys*
+///
+/////////////////////////////////////////////////
 ColumnKeys* Sorter::evaluateKeyList(string& sKeyList, long long int nColumnCount)
 {
     // Create a new ColumnKeys object. The calling function is responsible

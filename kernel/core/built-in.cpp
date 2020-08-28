@@ -80,7 +80,7 @@ CommandReturnValues commandHandler(string& sCmd)
         return cmd_data(sCmd);
 
     // Get a reference to the datafile object
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Try to find any other table in the command
     // string
@@ -115,13 +115,13 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 		return false;
 
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
 	string sTemp = sCmd;
 
     // Get the contents of the contained data tables
-	if (sTemp.find("data(") != string::npos || _data.containsTablesOrClusters(sTemp))
+	if (_data.containsTablesOrClusters(sTemp))
 		getDataElements(sTemp, _parser, _data, _option);
 
 	//
@@ -234,7 +234,7 @@ bool extractFirstParameterStringValue(const string& sCmd, string& sArgument)
 string evaluateParameterValues(const string& sCmd)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
@@ -333,6 +333,7 @@ string evaluateParameterValues(const string& sCmd)
 			sReturn.replace(nPos, nLength, sTemp);
 		}
 		else if ((nPos > 8 && sReturn.substr(nPos - 8, 8) == "tocache=")
+            || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "totable=")
 			|| (nPos > 5 && sReturn.substr(nPos - 5, 5) == "type=")
             || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "icon=")
             || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "buttons="))
@@ -354,7 +355,7 @@ string evaluateParameterValues(const string& sCmd)
 				return "";
 
             // Get data elements
-			if (sTemp.find("data(") != string::npos || _data.containsTablesOrClusters(sTemp))
+			if (_data.containsTablesOrClusters(sTemp))
 				getDataElements(sTemp, _parser, _data, _option);
 
             int nResult = 0;

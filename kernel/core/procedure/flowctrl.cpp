@@ -486,7 +486,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
         // If the while condition has changed during the evaluation
         // re-use the original condition to ensure that the result of
         // the condition is true
-        if (sWhile_Condition != sWhile_Condition_Back || _dataRef->containsTablesOrClusters(sWhile_Condition_Back) || sWhile_Condition_Back.find("data(") != string::npos)
+        if (sWhile_Condition != sWhile_Condition_Back || _dataRef->containsTablesOrClusters(sWhile_Condition_Back))
         {
             sWhile_Condition = sWhile_Condition_Back;
             //v = evalHeader(nNum, sWhile_Condition, false, nth_Cmd);
@@ -933,19 +933,15 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
     }
 
     // Catch and evaluate all data and cache calls
-    if ((sHeadExpression.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sHeadExpression)) && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+    if (_dataRef->containsTablesOrClusters(sHeadExpression) && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode();
 
-        // Handle calls to "data()"
-        if (sHeadExpression.find("data(") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find("data(")))
-            replaceDataEntities(sHeadExpression, "data(", *_dataRef, *_parserRef, *_optionRef, true);
-
         // Handle calls to an arbitrary "CACHE()"
         if (_dataRef->containsTablesOrClusters(sHeadExpression))
         {
-            for (auto iter = _dataRef->mCachesMap.begin(); iter != _dataRef->mCachesMap.end(); ++iter)
+            for (auto iter = _dataRef->getTableMap().begin(); iter != _dataRef->getTableMap().end(); ++iter)
             {
                 if (sHeadExpression.find(iter->first + "(") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first + "(")))
                 {
@@ -1594,7 +1590,7 @@ void FlowCtrl::eval()
 
     // Copy the references to the centeral objects
     _parserRef = &NumeReKernel::getInstance()->getParser();
-    _dataRef = &NumeReKernel::getInstance()->getData();
+    _dataRef = &NumeReKernel::getInstance()->getMemoryManager();
     _outRef = &NumeReKernel::getInstance()->getOutput();
     _optionRef = &NumeReKernel::getInstance()->getSettings();
     _functionRef = &NumeReKernel::getInstance()->getDefinitions();
@@ -2418,7 +2414,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     {
         // --> Datafile/Cache! <--
         if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-            && (sLine.find("data(") != string::npos || _dataRef->containsTablesOrClusters(sLine)))
+            && _dataRef->containsTablesOrClusters(sLine))
         {
             if (!nCurrentCalcType)
                 nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
@@ -3264,7 +3260,7 @@ string FlowCtrl::getCurrentCommand() const
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, Datafile& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
+int FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
 {
     return 1;
 }

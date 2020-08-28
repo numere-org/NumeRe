@@ -16,6 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <gsl/gsl_statistics.h>
+#include <gsl/gsl_sort.h>
+
 #include "command_implementations.hpp"
 #include "parser_functions.hpp"
 #include "matrixoperations.hpp"
@@ -26,11 +29,11 @@
 #define TRAPEZOIDAL 1
 #define SIMPSON 2
 
-Integration_Vars parser_iVars;
+DefaultVariables _defVars;
 static double localizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
-static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
-static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, Datafile& _data, const Settings& _option);
+static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option);
+static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
 
@@ -167,7 +170,7 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
     vector<double> vResult;
 
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     // Extract the integration interval
@@ -229,52 +232,52 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
     }
     else
     {
-        Datafile _cache;
+        MemoryManager _cache;
 
         // Copy the data
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
         }
 
         // Sort the data
-        _cache.sortElements("cache -sort c=1[2]");
+        _cache.sortElements("sort -table c=1[2]");
         double dResult = 0.0;
         long long int j = 1;
 
         // Calculate the integral by jumping over NaNs
-        for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++) //nan-suche
+        for (long long int i = 0; i < _cache.getLines("table", false) - 1; i++) //nan-suche
         {
             j = 1;
 
-            if (!_cache.isValidEntry(i, 1, "cache"))
+            if (!_cache.isValidElement(i, 1, "table"))
                 continue;
 
-            while (!_cache.isValidEntry(i + j, 1, "cache") && i + j < _cache.getLines("cache", false) - 1)
+            while (!_cache.isValidElement(i + j, 1, "table") && i + j < _cache.getLines("table", false) - 1)
                 j++;
 
-            if (!_cache.isValidEntry(i + j, 0, "cache") || !_cache.isValidEntry(i + j, 1, "cache"))
+            if (!_cache.isValidElement(i + j, 0, "table") || !_cache.isValidElement(i + j, 1, "table"))
                 break;
 
-            if (sLowerBoundary.length() && x0 > _cache.getElement(i, 0, "cache"))
+            if (sLowerBoundary.length() && x0 > _cache.getElement(i, 0, "table"))
                 continue;
 
-            if (sLowerBoundary.length() && x1 < _cache.getElement(i + j, 0, "cache"))
+            if (sLowerBoundary.length() && x1 < _cache.getElement(i + j, 0, "table"))
                 break;
 
             // Calculate either the integral, its samples or the corresponding x values
             if (!bReturnFunctionPoints && !bCalcXvals)
-                dResult += (_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache"));
+                dResult += (_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / 2.0 * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table"));
             else if (bReturnFunctionPoints && !bCalcXvals)
             {
                 if (vResult.size())
-                    vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")) + vResult.back());
+                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / 2.0 * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")) + vResult.back());
                 else
-                    vResult.push_back((_cache.getElement(i, 1, "cache") + _cache.getElement(i + j, 1, "cache")) / 2.0 * (_cache.getElement(i + j, 0, "cache") - _cache.getElement(i, 0, "cache")));
+                    vResult.push_back((_cache.getElement(i, 1, "table") + _cache.getElement(i + j, 1, "table")) / 2.0 * (_cache.getElement(i + j, 0, "table") - _cache.getElement(i, 0, "table")));
             }
             else
-                vResult.push_back(_cache.getElement(i + j, 0, "cache"));
+                vResult.push_back(_cache.getElement(i + j, 0, "table"));
         }
 
         // If the integral was calculated, then there is a
@@ -300,7 +303,7 @@ static vector<double> integrateSingleDimensionData(string& sIntegrationExpressio
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sParams = "";        // Parameter-string
     string sIntegrationExpression;
@@ -319,11 +322,11 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
     unsigned int nMethod = TRAPEZOIDAL;    // 1 = trapezoidal, 2 = simpson
 
     sPrecision = "1e-3";
-    parser_iVars.vValue[0][3] = 1e-3;
-    double& x = parser_iVars.vValue[0][0];
-    double& x0 = parser_iVars.vValue[0][1];
-    double& x1 = parser_iVars.vValue[0][2];
-    double& dx = parser_iVars.vValue[0][3];
+    _defVars.vValue[0][3] = 1e-3;
+    double& x = _defVars.vValue[0][0];
+    double& x0 = _defVars.vValue[0][1];
+    double& x1 = _defVars.vValue[0][2];
+    double& dx = _defVars.vValue[0][3];
 
     // It's not possible to calculate the integral of a string expression
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
@@ -358,7 +361,7 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
     // If the integration function contains a data object,
     // the calculation is done way different from the usual
     // integration
-    if ((sIntegrationExpression.substr(0, 5) == "data(" || _data.isTable(sIntegrationExpression))
+    if (_data.isTable(sIntegrationExpression)
             && getMatchingParenthesis(sIntegrationExpression) != string::npos
             && sIntegrationExpression.find_first_not_of(' ', getMatchingParenthesis(sIntegrationExpression) + 1) == string::npos) // xvals
         return integrateSingleDimensionData(sIntegrationExpression, sParams);
@@ -422,7 +425,7 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
                 {
                     _parser.SetExpr(sLowerBoundary);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[0]))
                         sLowerBoundary = "";
                     else
                     {
@@ -440,7 +443,7 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
                 {
                     _parser.SetExpr(sUpperBoundary);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[0]))
                         sUpperBoundary = "";
                     else
                     {
@@ -515,7 +518,7 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
     // upon the integration variable
     _parser.SetExpr(sIntegrationExpression);
 
-    if (!isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
+    if (!isVariableInAssignedExpression(_parser, _defVars.sName[0]))
         bNoIntVar = true;       // Nein? Dann setzen wir den Bool auf TRUE und sparen uns viel Rechnung
 
     _parser.Eval(nResults);
@@ -630,7 +633,7 @@ vector<double> integrate(const string& sCmd, Datafile& _data, Parser& _parser, c
 
         // Apply the analytical solution
         while (sTemp.length())
-            sIntegrationExpression += getNextArgument(sTemp, true) + "*" + parser_iVars.sName[0] + ",";
+            sIntegrationExpression += getNextArgument(sTemp, true) + "*" + _defVars.sName[0] + ",";
 
         sIntegrationExpression.erase(sIntegrationExpression.length() - 1, 1);
 
@@ -695,7 +698,7 @@ static void refreshBoundaries(const string& sRenewBoundariesExpression, double& 
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string __sCmd = findCommand(sCmd).sString;
     string sParams = "";            // Parameter-string
@@ -716,17 +719,17 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
     unsigned int nMethod = TRAPEZOIDAL;       // trapezoidal = 1, simpson = 2
 
     sPrecision = "1e-3";
-    parser_iVars.vValue[0][3] = 1e-3;
-    parser_iVars.vValue[1][3] = 1e-3;
+    _defVars.vValue[0][3] = 1e-3;
+    _defVars.vValue[1][3] = 1e-3;
 
-    double& x = parser_iVars.vValue[0][0];
-    double& x0 = parser_iVars.vValue[0][1];
-    double& x1 = parser_iVars.vValue[0][2];
-    double& dx = parser_iVars.vValue[0][3];
-    double& y = parser_iVars.vValue[1][0];
-    double& y0 = parser_iVars.vValue[1][1];
-    double& y1 = parser_iVars.vValue[1][2];
-    double& dy = parser_iVars.vValue[1][3];
+    double& x = _defVars.vValue[0][0];
+    double& x0 = _defVars.vValue[0][1];
+    double& x1 = _defVars.vValue[0][2];
+    double& dx = _defVars.vValue[0][3];
+    double& y = _defVars.vValue[1][0];
+    double& y0 = _defVars.vValue[1][1];
+    double& y1 = _defVars.vValue[1][2];
+    double& dy = _defVars.vValue[1][3];
 
     // Strings may not be integrated
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
@@ -814,7 +817,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
                 {
                     _parser.SetExpr(sBoundariesX[0]);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]) || isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[0]) || isVariableInAssignedExpression(_parser, _defVars.sName[1]))
                         sBoundariesX[0] = "";
                     else
                     {
@@ -832,7 +835,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
                 {
                     _parser.SetExpr(sBoundariesX[1]);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[0]) || isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[0]) || isVariableInAssignedExpression(_parser, _defVars.sName[1]))
                         sBoundariesX[1] = "";
                     else
                     {
@@ -871,7 +874,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
                 {
                     _parser.SetExpr(sBoundariesY[0]);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[1]))
                     {
                         sBoundariesY[0] = "";
                     }
@@ -891,7 +894,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
                 {
                     _parser.SetExpr(sBoundariesY[1]);
 
-                    if (isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+                    if (isVariableInAssignedExpression(_parser, _defVars.sName[1]))
                         sBoundariesY[1] = "";
                     else
                     {
@@ -962,10 +965,10 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
     // integration variables
     _parser.SetExpr(sIntegrationExpression);
 
-    if (!isVariableInAssignedExpression(_parser, parser_iVars.sName[0]))
+    if (!isVariableInAssignedExpression(_parser, _defVars.sName[0]))
         bIntVar[0] = false;
 
-    if (!isVariableInAssignedExpression(_parser, parser_iVars.sName[1]))
+    if (!isVariableInAssignedExpression(_parser, _defVars.sName[1]))
         bIntVar[1] = false;
 
     // Prepare the memory for integration
@@ -1005,7 +1008,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
         nSign *= -1;
     }
 
-    if (findVariableInExpression(sBoundariesY[0] + " + " + sBoundariesY[1], parser_iVars.sName[0]) != string::npos)
+    if (findVariableInExpression(sBoundariesY[0] + " + " + sBoundariesY[1], _defVars.sName[0]) != string::npos)
     {
         bRenewBoundaries = true;    // Ja? Setzen wir den bool entsprechend
         sRenewBoundariesExpression = getNextArgument(sBoundariesY[0], false) + "," + getNextArgument(sBoundariesY[1], false);
@@ -1042,11 +1045,11 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
         // faster in this case
         if ((bIntVar[1] && !bIntVar[0]) && !bRenewBoundaries)
         {
-            NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE2_SWAPVARS", parser_iVars.sName[0], parser_iVars.sName[1]) + " ... ");
+            NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE2_SWAPVARS", _defVars.sName[0], _defVars.sName[1]) + " ... ");
             size_t pos;
 
-            while ((pos = findVariableInExpression(sIntegrationExpression, parser_iVars.sName[1])) != string::npos)
-                sIntegrationExpression.replace(pos, parser_iVars.sName[1].length(), parser_iVars.sName[0]);
+            while ((pos = findVariableInExpression(sIntegrationExpression, _defVars.sName[1])) != string::npos)
+                sIntegrationExpression.replace(pos, _defVars.sName[1].length(), _defVars.sName[0]);
 
             // --> Strings tauschen <--
             string sTemp = sBoundariesX[0];
@@ -1252,7 +1255,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
         string sInt_Fct_2 = "";
 
         while (sTemp.length())
-            sInt_Fct_2 += getNextArgument(sTemp, true) + "*" + parser_iVars.sName[0] + "*" + parser_iVars.sName[1] + ",";
+            sInt_Fct_2 += getNextArgument(sTemp, true) + "*" + _defVars.sName[0] + "*" + _defVars.sName[1] + ",";
 
         sInt_Fct_2.erase(sInt_Fct_2.length() - 1, 1);
 
@@ -1381,7 +1384,7 @@ vector<double> integrate2d(const string& sCmd, Datafile& _data, Parser& _parser,
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, FunctionDefinitionManager& _functions)
+vector<double> differentiate(const string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     string sExpr = sCmd.substr(findCommand(sCmd).sString.length() + findCommand(sCmd).nPos);
     string sEps = "";
@@ -1413,8 +1416,7 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
     StripSpaces(sExpr);
 
     // Numerical expressions and data sets are handled differently
-    if ((sExpr.find("data(") == string::npos && !_data.containsTablesOrClusters(sExpr))
-            && (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos))
+    if (!_data.containsTablesOrClusters(sExpr) && (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos))
     {
         // This is a numerical expression
         if (sCmd.find("-set") != string::npos)
@@ -1498,7 +1500,7 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             // Evaluate the position/range expression
             if (isNotEmptyExpression(sPos))
             {
-                if (_data.containsTablesOrClusters(sPos) || sPos.find("data(") != string::npos)
+                if (_data.containsTablesOrClusters(sPos))
                     getDataElements(sPos, _parser, _data, _option);
 
                 if (sPos.find(':') != string::npos)
@@ -1570,7 +1572,7 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             }
         }
     }
-    else if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+    else if (_data.containsTablesOrClusters(sExpr))
     {
         // This is a data set
         //
@@ -1606,8 +1608,8 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             // values, which is identical to the derivative in this case
             for (long long int i = 0; i < _idx.row.size() - 1; i++)
             {
-                if (_data.isValidEntry(_idx.row[i], _idx.col.front(), sExpr)
-                        && _data.isValidEntry(_idx.row[i + 1], _idx.col.front(), sExpr))
+                if (_data.isValidElement(_idx.row[i], _idx.col.front(), sExpr)
+                        && _data.isValidElement(_idx.row[i + 1], _idx.col.front(), sExpr))
                     vResult.push_back(_data.getElement(_idx.row[i + 1], _idx.col.front(), sExpr) - _data.getElement(_idx.row[i], _idx.col.front(), sExpr));
                 else
                     vResult.push_back(NAN);
@@ -1619,28 +1621,28 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             // explicitly
             //
             // Copy the data first and sort afterwards
-            Datafile _cache;
+            MemoryManager _cache;
 
             for (size_t i = 0; i < _idx.row.size(); i++)
             {
-                _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sExpr));
-                _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sExpr));
+                _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sExpr));
+                _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sExpr));
             }
 
-            _cache.sortElements("cache -sort c=1[2]");
+            _cache.sortElements("sort -table c=1[2]");
 
             // Shall the x values be calculated?
             if (findParameter(sCmd, "xvals"))
             {
                 // The x values are approximated to be in the
                 // middle of the two samplex
-                for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
+                for (long long int i = 0; i < _cache.getLines("table", false) - 1; i++)
                 {
-                    if (_cache.isValidEntry(i, 0, "cache")
-                            && _cache.isValidEntry(i + 1, 0, "cache")
-                            && _cache.isValidEntry(i, 1, "cache")
-                            && _cache.isValidEntry(i + 1, 1, "cache"))
-                        vResult.push_back((_cache.getElement(i + 1, 0, "cache") + _cache.getElement(i, 0, "cache")) / 2);
+                    if (_cache.isValidElement(i, 0, "table")
+                            && _cache.isValidElement(i + 1, 0, "table")
+                            && _cache.isValidElement(i, 1, "table")
+                            && _cache.isValidElement(i + 1, 1, "table"))
+                        vResult.push_back((_cache.getElement(i + 1, 0, "table") + _cache.getElement(i, 0, "table")) / 2);
                     else
                         vResult.push_back(NAN);
                 }
@@ -1649,14 +1651,14 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _dat
             {
                 // We calculate the derivative of the data
                 // by approximating it linearily
-                for (long long int i = 0; i < _cache.getLines("cache", false) - 1; i++)
+                for (long long int i = 0; i < _cache.getLines("table", false) - 1; i++)
                 {
-                    if (_cache.isValidEntry(i, 0, "cache")
-                            && _cache.isValidEntry(i + 1, 0, "cache")
-                            && _cache.isValidEntry(i, 1, "cache")
-                            && _cache.isValidEntry(i + 1, 1, "cache"))
-                        vResult.push_back((_cache.getElement(i + 1, 1, "cache") - _cache.getElement(i, 1, "cache"))
-                                          / (_cache.getElement(i + 1, 0, "cache") - _cache.getElement(i, 0, "cache")));
+                    if (_cache.isValidElement(i, 0, "table")
+                            && _cache.isValidElement(i + 1, 0, "table")
+                            && _cache.isValidElement(i, 1, "table")
+                            && _cache.isValidElement(i + 1, 1, "table"))
+                        vResult.push_back((_cache.getElement(i + 1, 1, "table") - _cache.getElement(i, 1, "table"))
+                                          / (_cache.getElement(i + 1, 0, "table") - _cache.getElement(i, 0, "table")));
                     else
                         vResult.push_back(NAN);
                 }
@@ -1739,11 +1741,11 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
     value_type* v = _parser.Eval(nResults);
     vector<double> vResults;
     int nResults_x = 0;
-    Datafile _cache;
+    MemoryManager _cache;
 
     // Store the results in the second column of a table
     for (int i = 0; i < nResults; i++)
-        _cache.writeToTable(i, 1, "cache", v[i]);
+        _cache.writeToTable(i, 1, "table", v[i]);
 
     _parser.SetExpr(sInterval);
     v = _parser.Eval(nResults_x);
@@ -1754,15 +1756,15 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
         for (int i = 0; i < nResults; i++)
         {
             if (i >= nResults_x)
-                _cache.writeToTable(i, 0, "cache", 0.0);
+                _cache.writeToTable(i, 0, "table", 0.0);
             else
-                _cache.writeToTable(i, 0, "cache", v[i]);
+                _cache.writeToTable(i, 0, "table", v[i]);
         }
     }
     else
         return false;
 
-    sCmd = "cache -sort cols=1[2]";
+    sCmd = "sort -table cols=1[2]";
     _cache.sortElements(sCmd);
 
     double dMedian = 0.0, dExtremum = 0.0;
@@ -1782,15 +1784,15 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
 
     // Find the first median and use it as starting point
     // for identifying the next extremum
-    for (int i = 0; i + nanShift < _cache.getLines("cache", true); i++)
+    for (int i = 0; i + nanShift < _cache.getLines("table", true); i++)
     {
         if (i == nOrder)
             break;
 
-        while (isnan(_cache.getElement(i + nanShift, 1, "cache")) && i + nanShift < _cache.getLines("cache", true) - 1)
+        while (isnan(_cache.getElement(i + nanShift, 1, "table")) && i + nanShift < _cache.getLines("table", true) - 1)
             nanShift++;
 
-        data[i] = _cache.getElement(i + nanShift, 1, "cache");
+        data[i] = _cache.getElement(i + nanShift, 1, "table");
     }
 
     // Sort the data and find the median
@@ -1799,17 +1801,17 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
 
     // Go through the data points using sliding median to find the local
     // extrema in the data set
-    for (int i = nOrder; i + nanShift < _cache.getLines("cache", false) - nOrder; i++)
+    for (int i = nOrder; i + nanShift < _cache.getLines("table", false) - nOrder; i++)
     {
         int currNanShift = 0;
         dMedian = 0.0;
 
         for (int j = i; j < i + nOrder; j++)
         {
-            while (isnan(_cache.getElement(j + nanShift + currNanShift, 1, "cache")) && j + nanShift + currNanShift < _cache.getLines("cache", true) - 1)
+            while (isnan(_cache.getElement(j + nanShift + currNanShift, 1, "table")) && j + nanShift + currNanShift < _cache.getLines("table", true) - 1)
                 currNanShift++;
 
-            data[j - i] = _cache.getElement(j + nanShift + currNanShift, 1, "cache");
+            data[j - i] = _cache.getElement(j + nanShift + currNanShift, 1, "table");
         }
 
         gsl_sort(data, 1, nOrder);
@@ -1831,21 +1833,21 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
                 if (!nMode || nMode == nDir)
                 {
                     int nExtremum = i + nanShift;
-                    double dExtremum = _cache.getElement(i + nanShift, 1, "cache");
+                    double dExtremum = _cache.getElement(i + nanShift, 1, "table");
 
                     for (long long int k = i + nanShift; k >= 0; k--)
                     {
                         if (k == i - nOrder)
                             break;
 
-                        if (nDir*_cache.getElement(k, 1, "cache") > nDir*dExtremum)
+                        if (nDir*_cache.getElement(k, 1, "table") > nDir*dExtremum)
                         {
                             nExtremum = k;
-                            dExtremum = _cache.getElement(k, 1, "cache");
+                            dExtremum = _cache.getElement(k, 1, "table");
                         }
                     }
 
-                    vResults.push_back(_cache.getElement(nExtremum, 0, "cache"));
+                    vResults.push_back(_cache.getElement(nExtremum, 0, "table"));
                     i = nExtremum + nOrder;
                 }
 
@@ -2012,7 +2014,7 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 21;
     int nOrder = 5;
@@ -2040,7 +2042,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
         sExpr = sCmd.substr(0, sCmd.find("--"));
         sParams = sCmd.substr(sCmd.find("--"));
     }
-    else if (sCmd.find("data(") == string::npos && !_data.containsTablesOrClusters(sCmd))
+    else if (!_data.containsTablesOrClusters(sCmd))
         throw SyntaxError(SyntaxError::NO_EXTREMA_OPTIONS, sCmd, SyntaxError::invalid_position);
     else
         sExpr = sCmd;
@@ -2062,10 +2064,10 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
 
     // If the expression or the parameter list contains
     // data elements, get their values here
-    if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+    if (_data.containsTablesOrClusters(sExpr))
         getDataElements(sExpr, _parser, _data, _option, false);
 
-    if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
+    if (_data.containsTablesOrClusters(sParams))
         getDataElements(sParams, _parser, _data, _option, false);
 
     // Evaluate the parameters
@@ -2160,7 +2162,7 @@ bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings&
             }
         }
     }
-    else if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
+    else if (_data.containsTablesOrClusters(sCmd))
         return findExtremaInData(sCmd, sExpr, nOrder, nMode);
     else
         throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, sCmd, SyntaxError::invalid_position);
@@ -2291,13 +2293,13 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
     _parser.SetExpr(sExpr);
     int nResults;
     value_type* v = _parser.Eval(nResults);
-    Datafile _cache;
+    MemoryManager _cache;
 
     vector<double> vResults;
     int nResults_x = 0;
 
     for (int i = 0; i < nResults; i++)
-        _cache.writeToTable(i, 1, "cache", v[i]);
+        _cache.writeToTable(i, 1, "table", v[i]);
 
     _parser.SetExpr(sInterval);
     v = _parser.Eval(nResults_x);
@@ -2307,54 +2309,54 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
         for (int i = 0; i < nResults; i++)
         {
             if (i >= nResults_x)
-                _cache.writeToTable(i, 0, "cache", 0.0);
+                _cache.writeToTable(i, 0, "table", 0.0);
             else
-                _cache.writeToTable(i, 0, "cache", v[i]);
+                _cache.writeToTable(i, 0, "table", v[i]);
         }
     }
     else
         return false;
 
-    sCmd = "cache -sort cols=1[2]";
+    sCmd = "sort -table cols=1[2]";
     _cache.sortElements(sCmd);
 
-    for (long long int i = 1; i < _cache.getLines("cache", false); i++)
+    for (long long int i = 1; i < _cache.getLines("table", false); i++)
     {
-        if (isnan(_cache.getElement(i - 1, 1, "cache")))
+        if (isnan(_cache.getElement(i - 1, 1, "table")))
             continue;
 
-        if (!nMode && _cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") <= 0.0)
+        if (!nMode && _cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") <= 0.0)
         {
-            if (_cache.getElement(i, 1, "cache") == 0.0)
+            if (_cache.getElement(i, 1, "table") == 0.0)
             {
-                vResults.push_back(_cache.getElement(i, 0, "cache"));
+                vResults.push_back(_cache.getElement(i, 0, "table"));
                 i++;
             }
-            else if (_cache.getElement(i - 1, 1, "cache") == 0.0)
-                vResults.push_back(_cache.getElement(i - 1, 0, "cache"));
-            else if (_cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") < 0.0)
-                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "cache"), _cache.getElement(i - 1, 1, "cache"), _cache.getElement(i, 0, "cache"), _cache.getElement(i, 1, "cache")));
+            else if (_cache.getElement(i - 1, 1, "table") == 0.0)
+                vResults.push_back(_cache.getElement(i - 1, 0, "table"));
+            else if (_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") < 0.0)
+                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table"), _cache.getElement(i - 1, 1, "table"), _cache.getElement(i, 0, "table"), _cache.getElement(i, 1, "table")));
         }
-        else if (nMode && _cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") <= 0.0)
+        else if (nMode && _cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") <= 0.0)
         {
-            if (_cache.getElement(i, 1, "cache") == 0.0 && _cache.getElement(i - 1, 1, "cache") == 0.0)
+            if (_cache.getElement(i, 1, "table") == 0.0 && _cache.getElement(i - 1, 1, "table") == 0.0)
             {
-                for (long long int j = i + 1; j < _cache.getLines("cache", false); j++)
+                for (long long int j = i + 1; j < _cache.getLines("table", false); j++)
                 {
-                    if (nMode * _cache.getElement(j, 1, "cache") > 0.0)
+                    if (nMode * _cache.getElement(j, 1, "table") > 0.0)
                     {
                         for (long long int k = i - 1; k <= j; k++)
-                            vResults.push_back(_cache.getElement(k, 0, "cache"));
+                            vResults.push_back(_cache.getElement(k, 0, "table"));
 
                         break;
                     }
-                    else if (nMode * _cache.getElement(j, 1, "cache") < 0.0)
+                    else if (nMode * _cache.getElement(j, 1, "table") < 0.0)
                         break;
 
-                    if (j + 1 == _cache.getLines("cache", false) && i > 1 && nMode * _cache.getElement(i - 2, 1, "cache") < 0.0)
+                    if (j + 1 == _cache.getLines("table", false) && i > 1 && nMode * _cache.getElement(i - 2, 1, "table") < 0.0)
                     {
                         for (long long int k = i - 1; k <= j; k++)
-                            vResults.push_back(_cache.getElement(k, 0, "cache"));
+                            vResults.push_back(_cache.getElement(k, 0, "table"));
 
                         break;
                     }
@@ -2362,12 +2364,12 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
 
                 continue;
             }
-            else if (_cache.getElement(i, 1, "cache") == 0.0 && nMode * _cache.getElement(i - 1, 1, "cache") < 0.0)
-                vResults.push_back(_cache.getElement(i, 0, "cache"));
-            else if (_cache.getElement(i - 1, 1, "cache") == 0.0 && nMode * _cache.getElement(i, 1, "cache") > 0.0)
-                vResults.push_back(_cache.getElement(i - 1, 0, "cache"));
-            else if (_cache.getElement(i, 1, "cache")*_cache.getElement(i - 1, 1, "cache") < 0.0 && nMode * _cache.getElement(i - 1, 1, "cache") < 0.0)
-                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "cache"), _cache.getElement(i - 1, 1, "cache"), _cache.getElement(i, 0, "cache"), _cache.getElement(i, 1, "cache")));
+            else if (_cache.getElement(i, 1, "table") == 0.0 && nMode * _cache.getElement(i - 1, 1, "table") < 0.0)
+                vResults.push_back(_cache.getElement(i, 0, "table"));
+            else if (_cache.getElement(i - 1, 1, "table") == 0.0 && nMode * _cache.getElement(i, 1, "table") > 0.0)
+                vResults.push_back(_cache.getElement(i - 1, 0, "table"));
+            else if (_cache.getElement(i, 1, "table")*_cache.getElement(i - 1, 1, "table") < 0.0 && nMode * _cache.getElement(i - 1, 1, "table") < 0.0)
+                vResults.push_back(Linearize(_cache.getElement(i - 1, 0, "table"), _cache.getElement(i - 1, 1, "table"), _cache.getElement(i, 0, "table"), _cache.getElement(i, 1, "table")));
         }
     }
 
@@ -2484,7 +2486,7 @@ static bool findZeroesInData(string& sCmd, string& sExpr, int nMode)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 21;
     double dVal[2];
@@ -2512,7 +2514,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
         sExpr = sCmd.substr(0, sCmd.find("--"));
         sParams = sCmd.substr(sCmd.find("--"));
     }
-    else if (sCmd.find("data(") == string::npos && !_data.containsTablesOrClusters(sCmd))
+    else if (!_data.containsTablesOrClusters(sCmd))
         throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, sCmd, SyntaxError::invalid_position);
     else
         sExpr = sCmd;
@@ -2533,10 +2535,10 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 
     // If the expression or the parameter list contains
     // data elements, get their values here
-    if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+    if (_data.containsTablesOrClusters(sExpr))
         getDataElements(sExpr, _parser, _data, _option, false);
 
-    if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
+    if (_data.containsTablesOrClusters(sParams))
         getDataElements(sParams, _parser, _data, _option, false);
 
     // Evaluate the parameter list
@@ -2619,7 +2621,7 @@ bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
             }
         }
     }
-    else if (sCmd.find("data(") != string::npos || _data.containsTablesOrClusters(sCmd))
+    else if (_data.containsTablesOrClusters(sCmd))
         return findZeroesInData(sCmd, sExpr, nMode);
     else
         throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
@@ -3217,7 +3219,7 @@ static bool detectPhaseOverflow(std::complex<double> cmplx[3])
 /// amplitude layout and whether an inverse
 /// transform shall be calculated.
 /////////////////////////////////////////////////
-bool fastFourierTransform(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     mglDataC _fftData;
     Indices _idx;
@@ -3344,7 +3346,6 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
         }
 
         // Write headlines
-        _data.setCacheStatus(true);
         _data.setHeadLineElement(_idx.col.front(), sTargetTable, _lang.get("COMMON_FREQUENCY") + "_[Hz]");
 
         if (!bComplex)
@@ -3401,7 +3402,7 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
 /// whether an inverse transform shall be
 /// calculated.
 /////////////////////////////////////////////////
-bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     vector<double> vWaveletData;
     vector<double> vAxisData;
@@ -3557,8 +3558,6 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
         _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, vWaveletData[i]);
     }
 
-    _data.setCacheStatus(true);
-
     if (!bInverseTrafo)
     {
         _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_COEFFICIENT"));
@@ -3573,7 +3572,6 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
     if (_option.getSystemPrintStatus())
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
 
-    _data.setCacheStatus(false);
     return true;
 }
 
@@ -3590,7 +3588,7 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
 {
     unsigned int nSamples = 100;
     double dLeft = 0.0;
@@ -3627,7 +3625,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 
     // Evaluate calls in the expression
     // to any table or cluster
-    if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+    if (_data.containsTablesOrClusters(sExpr))
     {
         getDataElements(sExpr, _parser, _data, _option);
 
@@ -3637,7 +3635,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 
     // Evaluate calls in the parameters
     // to any table or cluster
-    if (sParams.find("data(") != string::npos || _data.containsTablesOrClusters(sParams))
+    if (_data.containsTablesOrClusters(sParams))
     {
         getDataElements(sParams, _parser, _data, _option);
 
@@ -3795,7 +3793,7 @@ bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& 
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     unsigned int nSamples = 100;
     string sXVals = "";
@@ -3810,10 +3808,7 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
     vector<double> vYVals;
     vector<vector<double> > vZVals;
 
-    if (sCmd.find("data(") != string::npos && !_data.isValid())
-        throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
-
-    if (_data.containsTablesOrClusters(sCmd) && !_data.isValidCache())
+    if (_data.containsTablesOrClusters(sCmd) && !_data.isValid())
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
     // Extract the z expression from the command line
@@ -3919,7 +3914,7 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
     vYVals = extractVectorForDatagrid(sCmd, sYVals, sZVals, vSamples[1 - bTranspose], _parser, _data, _option);
 
     //>> Z-Matrix
-    if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
+    if (_data.containsTablesOrClusters(sZVals))
     {
         // Get the datagrid from another table
         DataAccessParser _accessParser(sZVals);
@@ -3989,11 +3984,11 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
 
         for (unsigned int x = 0; x < vXVals.size(); x++)
         {
-            parser_iVars.vValue[0][0] = vXVals[x];
+            _defVars.vValue[0][0] = vXVals[x];
 
             for (unsigned int y = 0; y < vYVals.size(); y++)
             {
-                parser_iVars.vValue[1][0] = vYVals[y];
+                _defVars.vValue[1][0] = vYVals[y];
                 vVector.push_back(_parser.Eval());
             }
 
@@ -4008,8 +4003,6 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
 
     if (_iTargetIndex.col.isOpenEnd())
         _iTargetIndex.col.setRange(0, _iTargetIndex.col.front() + vYVals.size() + 1);
-
-    _data.setCacheStatus(true);
 
     // Write the x axis
     for (size_t i = 0; i < vXVals.size(); i++)
@@ -4041,8 +4034,6 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
         }
     }
 
-    _data.setCacheStatus(false);
-
     return true;
 }
 
@@ -4060,12 +4051,12 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafil
 /// \return vector<size_t>
 ///
 /////////////////////////////////////////////////
-static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
+static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     vector<size_t> vSamples;
 
     // If the z vals are inside of a table then obtain the correct number of samples here
-    if (sZVals.find("data(") != string::npos || _data.containsTablesOrClusters(sZVals))
+    if (_data.containsTablesOrClusters(sZVals))
     {
         // Get the indices and identify the table name
         DataAccessParser _accessParser(sZVals);
@@ -4132,12 +4123,12 @@ static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZ
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, Datafile& _data, const Settings& _option)
+static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     vector<double> vVectorVals;
 
     // Data direct from the table, not an index pair
-    if ((sVectorVals.find("data(") != string::npos || _data.containsTablesOrClusters(sVectorVals)) && sVectorVals.find(':', getMatchingParenthesis(sVectorVals.substr(sVectorVals.find('('))) + sVectorVals.find('(')) == string::npos)
+    if (_data.containsTablesOrClusters(sVectorVals) && sVectorVals.find(':', getMatchingParenthesis(sVectorVals.substr(sVectorVals.find('('))) + sVectorVals.find('(')) == string::npos)
     {
         // Get the indices
         Indices _idx = getIndices(sVectorVals, _parser, _data, _option);
@@ -4147,7 +4138,7 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
 
         if (_data.containsTablesOrClusters(sVectorVals))
         {
-            for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); ++iter)
+            for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
             {
                 if (sVectorVals.find(iter->first + "(") != string::npos
                         && (!sVectorVals.find(iter->first + "(")
@@ -4181,7 +4172,7 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
     else if (sVectorVals.find(':') != string::npos)
     {
         // Index pair - If the index pair contains data elements, get their values now
-        if (sVectorVals.find("data(") != string::npos || _data.containsTablesOrClusters(sVectorVals))
+        if (_data.containsTablesOrClusters(sVectorVals))
             getDataElements(sVectorVals, _parser, _data, _option);
 
         if (sVectorVals.find("{") != string::npos)
@@ -4302,7 +4293,7 @@ static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVal
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool writeAudioFile(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     using namespace little_endian_io;
 
@@ -4336,7 +4327,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefi
     {
         string sSamples = getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7);
 
-        if (sSamples.find("data(") != string::npos || _data.containsTablesOrClusters(sSamples))
+        if (_data.containsTablesOrClusters(sSamples))
             getDataElements(sSamples, _parser, _data, _option);
 
         _parser.SetExpr(sSamples);
@@ -4443,7 +4434,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefi
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     int nSamples = 100;
     string sDataset = "";
@@ -4468,7 +4459,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionD
     {
         string sSamples = getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7);
 
-        if (sSamples.find("data(") != string::npos || _data.containsTablesOrClusters(sSamples))
+        if (_data.containsTablesOrClusters(sSamples))
             getDataElements(sSamples, _parser, _data, _option);
 
         _parser.SetExpr(sSamples);
@@ -4481,22 +4472,22 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionD
     _idx = getIndices(sCmd, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
-    Datafile _cache;
+    MemoryManager _cache;
     getData(sDataset, _idx, _data, _cache);
 
-    _cache.sortElements("cache -sort cols=1[2]");
+    _cache.sortElements("sort -table cols=1[2]");
 
-    sColHeaders[0] = _cache.getHeadLineElement(0, "cache") + "\\n(regularized)";
-    sColHeaders[1] = _cache.getHeadLineElement(1, "cache") + "\\n(regularized)";
+    sColHeaders[0] = _cache.getHeadLineElement(0, "table") + "\\n(regularized)";
+    sColHeaders[1] = _cache.getHeadLineElement(1, "table") + "\\n(regularized)";
 
-    long long int nLines = _cache.getLines("cache", false);
+    long long int nLines = _cache.getLines("table", false);
 
-    dXmin = _cache.min("cache", 0, nLines - 1, 0);
-    dXmax = _cache.max("cache", 0, nLines - 1, 0);
+    dXmin = _cache.min("table", 0, nLines - 1, 0);
+    dXmax = _cache.max("table", 0, nLines - 1, 0);
 
     // Create splines
     tk::spline _spline;
-    _spline.set_points(_cache.getElement(VectorIndex(0, nLines-1), VectorIndex(0), "cache"), _cache.getElement(VectorIndex(0, nLines-1), VectorIndex(1), "cache"), false);
+    _spline.set_points(_cache.getElement(VectorIndex(0, nLines-1), VectorIndex(0), "table"), _cache.getElement(VectorIndex(0, nLines-1), VectorIndex(1), "table"), false);
 
     if (!findParameter(sCmd, "samples", '='))
         nSamples = nLines;
@@ -4532,7 +4523,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionD
 /// maximal amplitude (which is different from
 /// the FWHM) and the energy in the pulse.
 /////////////////////////////////////////////////
-bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool analyzePulse(string& _sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDataset = "";
     Indices _idx;
@@ -4557,18 +4548,18 @@ bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, FunctionDefin
     _idx = getIndices(sCmd, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
-    Datafile _cache;
+    MemoryManager _cache;
     getData(sDataset, _idx, _data, _cache);
 
-    long long int nLines = _cache.getLines("cache", false);
+    long long int nLines = _cache.getLines("table", false);
 
-    dXmin = _cache.min("cache", 0, nLines - 1, 0);
-    dXmax = _cache.max("cache", 0, nLines - 1, 0);
+    dXmin = _cache.min("table", 0, nLines - 1, 0);
+    dXmax = _cache.max("table", 0, nLines - 1, 0);
 
     _v.Create(nLines);
 
     for (long long int i = 0; i < nLines; i++)
-        _v.a[i] = _cache.getElement(i, 1, "cache");
+        _v.a[i] = _cache.getElement(i, 1, "table");
 
     dSampleSize = (dXmax - dXmin) / ((double)_v.GetNx() - 1.0);
     mglData _pulse(_v.Pulse('x'));
@@ -4625,7 +4616,7 @@ bool analyzePulse(string& _sCmd, Parser& _parser, Datafile& _data, FunctionDefin
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDataset = "";
     Indices _idx, _target;
@@ -4667,9 +4658,6 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
         _target = getIndices(sTargetCache, _parser, _data, _option);
         sTargetCache.erase(sTargetCache.find('('));
 
-        if (sTargetCache == "data")
-            throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
-
         if (!isValidIndexSet(_target))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
     }
@@ -4692,21 +4680,21 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
     _idx = getIndices(sCmd, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
-    Datafile _cache;
+    MemoryManager _cache;
     getData(sDataset, _idx, _data, _cache);
 
-    sDataset = _cache.getHeadLineElement(1, "cache");
+    sDataset = _cache.getHeadLineElement(1, "table");
 
-    long long int nLines = _cache.getLines("cache", false);
+    long long int nLines = _cache.getLines("table", false);
 
-    dXmin = _cache.min("cache", 0, nLines - 1, 0);
-    dXmax = _cache.max("cache", 0, nLines - 1, 0);
+    dXmin = _cache.min("table", 0, nLines - 1, 0);
+    dXmax = _cache.max("table", 0, nLines - 1, 0);
 
     _real.Create(nLines);
     _imag.Create(nLines);
 
     for (long long int i = 0; i < nLines; i++)
-        _real.a[i] = _cache.getElement(i, 1, "cache");
+        _real.a[i] = _cache.getElement(i, 1, "table");
 
     if (!nSamples || nSamples > _real.GetNx())
         nSamples = _real.GetNx() / 32;
@@ -4779,10 +4767,10 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 /// The calculated spline polynomials are defined
 /// as new custom functions.
 /////////////////////////////////////////////////
-bool calculateSplines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Indices _idx;
-    Datafile _cache;
+    MemoryManager _cache;
     tk::spline _spline;
     vector<double> xVect, yVect;
     string sTableName = sCmd.substr(sCmd.find(' '));
@@ -4792,15 +4780,15 @@ bool calculateSplines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDe
     sTableName.erase(sTableName.find('('));
     getData(sTableName, _idx, _data, _cache);
 
-    long long int nLines = _cache.getLines("cache", true) - _cache.getAppendedZeroes(0, "cache");
+    long long int nLines = _cache.getLines("table", true) - _cache.getAppendedZeroes(0, "table");
 
     if (nLines < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, sTableName);
 
     for (long long int i = 0; i < nLines; i++)
     {
-        xVect.push_back(_cache.getElement(i, 0, "cache"));
-        yVect.push_back(_cache.getElement(i, 1, "cache"));
+        xVect.push_back(_cache.getElement(i, 0, "table"));
+        yVect.push_back(_cache.getElement(i, 1, "table"));
     }
 
     // Set the points for the spline to calculate

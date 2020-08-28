@@ -11,14 +11,14 @@
 #endif
 
 
-BEGIN_EVENT_TABLE(wxSSH, wxTerm)
+BEGIN_EVENT_TABLE(wxSSH, NumeReTerminal)
 	EVT_PROCESS_STDOUT(wxSSH::OnPlinkOut)
 	EVT_PROCESS_STDERR(wxSSH::OnPlinkErr)
 	EVT_PROCESS_ENDED(wxSSH::OnPlinkTerm)
 END_EVENT_TABLE()
 
 wxSSH::wxSSH(wxWindow* parent, wxWindowID id, Networking* network, Options* _option, const wxString& sPath, const wxPoint& pos, int width, int height, const wxString& name)
-	: wxTerm(parent, id, _option, sPath, pos, width, height, name)
+	: NumeReTerminal(parent, id, _option, sPath, pos, width, height, name)
 {
 	m_connected = false;
 	m_networking = network;

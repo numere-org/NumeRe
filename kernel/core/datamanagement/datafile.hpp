@@ -18,69 +18,26 @@
 
 
 #include <string>
-#include <boost/tokenizer.hpp>
 #include <vector>
-#include <gsl/gsl_statistics.h>
-#include <gsl/gsl_sort.h>
 
-#include "../ui/error.hpp"
+
 #include "../settings.hpp"
-#include "cache.hpp"
-#include "../IgorLib/ReadWave.h"
-#include "../utils/zip++.hpp"
-#include "../utils/BasicExcel.hpp"
-#include "../utils/tinyxml2.h"
-#include "../io/file.hpp"
-
-#include "sorter.hpp"
+#include "memory.hpp"
 
 
 #ifndef DATAFILE_HPP
 #define DATAFILE_HPP
 
-string toString(int);
-string toLowerCase(const string&);
-
 using namespace std;
-using namespace boost;
 
-int findParameter(const string& sCmd, const string& sParam, const char cFollowing);
-string getArgAtPos(const string& sCmd, unsigned int nPos);
-void StripSpaces(string& sToStrip);
-string getClipboardText();
-string utf8parser(const string& sString);
-int StrToInt(const string&);
 /*
  * Header zur Datafile-Klasse
  */
 
-class Datafile : public MemoryManager, private Sorter		//	Diese Klasse ist ein CHILD von FileSystem und von Cache
+class PasteHandler	//	Diese Klasse ist ein CHILD von FileSystem und von Cache
 {
 	private:
-		long long int nLines;							// Zeilen des Datenfiles
-		long long int nCols;							// Spalten des Datenfiles
-		long long int* nAppendedZeroes;					// Pointer auf ein Array von ints, die fuer jede Spalte die Zahl der angehaengten Nullen beinhaelt
-		double** dDatafile;								// Pointer auf Pointer auf die Datenfile-double-Matrix
-		ifstream file_in;								// ifstream, der zum Einlesen eines Datenfiles verwendet wird
-		ofstream file_out;                              // ofstream, der zum Schreiben des Datenfiles verwendet wird
-		bool bValidData;								// TRUE, wenn die Instanz der Klasse auch Daten enthaelt
-		bool bUseCache;									// TRUE, wenn die Elemente des Caches verwendet werden sollen
-		bool bLoadEmptyCols;
-		bool bLoadEmptyColsInNextFile;
-		string sDataFile;								// string, in dem der Name des eingelesenen Files gespeichert wird
-		string sOutputFile;                             // string, der den letzten Output speichert
-		string* sHeadLine; 								// Pointer auf ein string-Array fuer die Tabellenkoepfe
-		string sSavePath;
-		string sPrefix;
-		bool bPauseOpening;
-
-		string getDate();
-
-		void Allocate();								// Methode, um dem Pointer dDatafile die finale Matrix zuzuweisen
-		void createTableHeaders();
-		void setLines(long long int _nLines);			// Methode, um nLines zu setzen
-		void setCols(long long int _nCols);				// Methode, um nCols zu setzen
-
+		// Only needed for pasting data
 		void replaceDecimalSign(string& _sToReplace)
         {
             if (_sToReplace.find(',') == string::npos)
@@ -96,7 +53,8 @@ class Datafile : public MemoryManager, private Sorter		//	Diese Klasse ist ein C
             }
         }
 
-        void replaceTabSign(string& _sToReplace, bool bAddPlaceholders = false)
+        // Only needed for pasting data
+		void replaceTabSign(string& _sToReplace, bool bAddPlaceholders = false)
         {
             if (_sToReplace.find('\t') == string::npos)
                 return;
@@ -122,7 +80,8 @@ class Datafile : public MemoryManager, private Sorter		//	Diese Klasse ist ein C
             }
         }
 
-        void stripTrailingSpaces(string& _sToStrip)
+        // Only needed for pasting data
+		void stripTrailingSpaces(string& _sToStrip)
         {
             if (_sToStrip.find(' ') == string::npos && _sToStrip.find('\t') == string::npos)
                 return;
@@ -136,285 +95,17 @@ class Datafile : public MemoryManager, private Sorter		//	Diese Klasse ist ein C
             return;
         }
 
-        bool isNumeric(const string& _sString);
-        virtual int compare(int i, int j, int col);
-        virtual bool isValue(int line, int col);
-        void countAppendedZeroes(long long int nCol = -1);
-        void condenseDataSet();
+        // Only needed for pasting data
+		bool isNumeric(const string& _sString);
+
+        // DEPRECATED since v1.1.2rc1
         vector<string> getPastedDataFromCmdLine(const Settings& _option, bool& bKeepEmptyTokens);
-        void reorderColumn(const vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 
-        VectorIndex parseEvery(string& sDir, const string& sTableName);
-        vector<double> resolveMAF(const string& sTableName, string sDir, double (Datafile::*MAF)(const string&, long long int, long long int, long long int, long long int));
+ 	public:
+		PasteHandler();										// Standard-Konstruktor
 
-	public:
-		Datafile();										// Standard-Konstruktor
-		Datafile(long long int _nLines, long long int _nCols);	// Allgemeiner Konstruktor (generiert zugleich die Matrix dDatafile und die Arrays
-                                                                // 		auf Basis der uebergeben Werte)
-		~Datafile();									// Destruktor (wendet delete[] auf die Matrix und alle Arrays an, sofern es noetig ist)
-
-		// Variables for the parser
-		double tableLinesCount;
-		double tableColumnsCount;
-
-		long long int getLines(const string& sCache, bool _bFull = false) const;	// gibt nLines zurueck
-		long long int getCols(const string& sCache, bool _bFull = false) const;					// gibt nCols zurueck
-		bool isValid() const;							// gibt den Wert von bValidData zurueck
-		double getElement(long long int _nLine, long long int _nCol, const string& sCache) const;	// Methode, um auf ein Element von dDatafile zuzugreifen
-		vector<double> getElement(const VectorIndex& _vLine, const VectorIndex& _vCol, const string& sCache) const;
-		void copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const string& sCache) const;
-		NumeRe::FileHeaderInfo openFile(string _sFile, Settings& _option, bool bAutoSave = false, bool bIgnore = false, int _nHeadline = 0);	                // zentrale Methode: Oeffnet ein Datenfile, liest die Daten und interpretiert sie als double.
-                                                        //		Ist auch in der Lage, Tabellenkoepfe aus Kommentarzeilen zu extrahieren.
-        void pasteLoad(const Settings& _option);
-		void openAutosave(string _sFile, Settings& _option);
-		void removeData(bool bAutoSave = false);		// Loescht den Inhalt von dDatafile, allen Arrays und setzt das Objekt auf den Urzustand zurueck
-		string getDataFileName(const string& sCache) const;					// gibt den Wert von sDataFile zurueck
-		string getDataFileNameShort() const;
-		string getHeadLineElement(long long int _i, const string& sCache) const;		// gibt das _i-te Element der Kopfzeile zurueck
-
-		string getTopHeadLineElement(long long int _i, const string& sCache) const
-        {
-            return getHeadLineElement(_i, sCache).substr(0, getHeadLineElement(_i, sCache).find("\\n"));
-        }
-
-        vector<string> getHeadLineElement(const VectorIndex& _vCol, const string& sCache) const;		// gibt das _i-te Element der Kopfzeile zurueck
-		bool setHeadLineElement(long long int _i, const string& sCache, string _sHead);	// setzt das _i-te Element der Kopfzeile auf _sHead
-		long long int getAppendedZeroes(long long int _i, const string& sCache) const;			// gibt die Zahl der angehaengten Nullen der _i-ten Spalte zurueck
-		int getHeadlineCount(const string& sCache) const;
-		void melt (Datafile& _cache);					// Methode, um die Daten einer anderen Instanz dieser Klasse den Daten dieser Klasse
-														//		(als weitere Spalten) hinzu zu fuegen
-		bool isValidEntry(long long int _nLine, long long int _nCol, const string& sCache) const;	// gibt zurueck, ob der Datenpunkt ueberhaupt gueltig ist
-		void setCacheStatus(bool _bCache);				// Setzt bUseCache
-		bool getCacheStatus() const;					// gibt bUseCache zurueck
-		bool isValidCache() const;						// gibt bValidData von Cache zurueck
-		void clearCache();								// loest die Methode Cache::removeCachedData() auf
-		bool setCacheSize(long long int _nLines, long long int _nCols, const string& sCache);		// Setzt die Anfangsgroesse des Caches
-		vector<int> sortElements(const string& sLine);
-		vector<int> sortElements(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const string& sSortingExpression = "");
-		bool updateDimensionVariables(const string& sTableName);
-		bool containsTablesOrClusters(const string& sCmdLine);
-
-        int getDataSize() const
-        {
-            if (bValidData)
-                return nLines * nCols * sizeof(double);
-            else
-                return 0;
-        }
-
-        NumeRe::Table extractTable(const string& _sTable);
-        bool saveFile(const string& sCache, string _sFileName, unsigned short nPrecision = 7);
-
-        string getOutputFileName() const
-        {
-            return sOutputFile;
-        }
-
-        void setSavePath(const string& _sPath)
-        {
-            sSavePath = _sPath;
-            return;
-        }
-
-        void setPrefix(const string& _sPrefix)
-        {
-            sPrefix = _sPrefix;
-            return;
-        }
-
-        void setbLoadEmptyCols(bool _bLoadEmptyCols)
-        {
-            bLoadEmptyCols = _bLoadEmptyCols;
-            return;
-        }
-
-        void generateFileName();
-
-        void setbLoadEmptyColsInNextFile(bool _bLoadEmptyCols)
-        {
-            bLoadEmptyColsInNextFile = _bLoadEmptyCols;
-            return;
-        }
-
-        void openFromCmdLine(Settings& _option, string sFile = "", bool bOpen = false);
-
-        bool pausedOpening() const
-        {
-            return bPauseOpening;
-        }
-
-        vector<double> std(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::std);
-        }
-
-        vector<double> avg(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::avg);
-        }
-
-        vector<double> max(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::max);
-        }
-
-        vector<double> min(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::min);
-        }
-
-        vector<double> prd(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::prd);
-        }
-
-        vector<double> sum(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::sum);
-        }
-
-        vector<double> num(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::num);
-        }
-
-        vector<double> and_func(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::and_func);
-        }
-
-        vector<double> or_func(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::or_func);
-        }
-
-        vector<double> xor_func(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::xor_func);
-        }
-
-        vector<double> cnt(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::cnt);
-        }
-
-        vector<double> norm(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::norm);
-        }
-
-        vector<double> med(const string& sCache, string sDir)
-        {
-            return resolveMAF(sCache, sDir, Datafile::med);
-        }
-
-        vector<double> cmp(const string& sCache, string sDir, double dRef = 0.0, int nType = 0)
-        {
-            vector<double> vResults;
-
-            long long int nGridOffset = sDir.find("grid") != string::npos ? 2 : 0;
-
-            VectorIndex _idx = parseEvery(sDir, sCache);
-
-            if (sDir.find("cols") != string::npos)
-            {
-                for (size_t i = 0; i < _idx.size(); i++)
-                {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset > getCols(sCache, false))
-                        continue;
-
-                    vResults.push_back(cmp(sCache, 0, getLines(sCache, false), _idx[i]+nGridOffset, -1, dRef, nType));
-                }
-            }
-            else if (sDir.find("lines") != string::npos)
-            {
-                for (size_t i = 0; i < _idx.size(); i++)
-                {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset > getLines(sCache, false))
-                        continue;
-
-                    vResults.push_back(cmp(sCache, _idx[i]+nGridOffset, -1, 0, getCols(sCache, false), dRef, nType));
-                }
-            }
-            else
-                vResults.push_back(cmp(sCache, 0, getLines(sCache, false), nGridOffset, getCols(sCache, false), dRef, nType));
-
-            if (!vResults.size())
-                vResults.push_back(NAN);
-
-            return vResults;
-        }
-
-        vector<double> pct(const string& sCache, string sDir, double dPct = 0.5)
-        {
-            vector<double> vResults;
-
-            long long int nGridOffset = sDir.find("grid") != string::npos ? 2 : 0;
-
-            VectorIndex _idx = parseEvery(sDir, sCache);
-
-            if (sDir.find("cols") != string::npos)
-            {
-                for (size_t i = 0; i < _idx.size(); i++)
-                {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset > getCols(sCache, false))
-                        continue;
-
-                    vResults.push_back(pct(sCache, 0, getLines(sCache, false), _idx[i]+nGridOffset, -1, dPct));
-                }
-            }
-            else if (sDir.find("lines") != string::npos)
-            {
-                for (size_t i = 0; i < _idx.size(); i++)
-                {
-                    if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset > getLines(sCache, false))
-                        continue;
-
-                    vResults.push_back(pct(sCache, _idx[i]+nGridOffset, -1, 0, getCols(sCache, false), dPct));
-                }
-            }
-            else
-                vResults.push_back(pct(sCache, 0, getLines(sCache, false), nGridOffset, getCols(sCache, false), dPct));
-
-            if (!vResults.size())
-                vResults.push_back(NAN);
-
-            return vResults;
-        }
-
-        double std(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double avg(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double max(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double min(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double prd(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double sum(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double num(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double and_func(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double or_func(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double xor_func(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double cnt(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double norm(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double cmp(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dRef = 0.0, int nType = 0);
-        double med(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1);
-        double pct(const string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dPct = 0.5);
-
-        double std(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double avg(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double max(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double min(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double prd(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double sum(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double num(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double and_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double or_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double xor_func(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double cnt(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double norm(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double cmp(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0);
-        double med(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double pct(const string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5);
-
-
+		// Deprecated since v1.1.2rc1
+        Memory* pasteLoad(const Settings& _option);
 };
 
 #endif

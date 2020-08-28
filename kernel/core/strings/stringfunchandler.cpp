@@ -218,7 +218,7 @@ namespace NumeRe
     size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, n_vect& nArg)
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
-        Datafile& _data = NumeReKernel::getInstance()->getData();
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
         string sFuncArgument = __sFuncArgument;
         value_type* v = 0;
@@ -288,7 +288,7 @@ namespace NumeRe
     size_t StringFuncHandler::argumentParser(const string& __sFuncArgument, s_vect& sArg, bool& bLogicalOnly)
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
-        Datafile& _data = NumeReKernel::getInstance()->getData();
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
         string sFuncArgument = __sFuncArgument;
 
@@ -897,7 +897,7 @@ namespace NumeRe
     string StringFuncHandler::applySpecialStringFuncs(string sLine)
     {
         Parser& _parser = NumeReKernel::getInstance()->getParser();
-        Datafile& _data = NumeReKernel::getInstance()->getData();
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
         Settings& _option = NumeReKernel::getInstance()->getSettings();
         size_t nStartPosition = 0;
         size_t nEndPosition;
@@ -1141,7 +1141,7 @@ namespace NumeRe
 
             StripSpaces(sData);
 
-            if (sData.substr(0, 5) == "data(" || _data.isTable(sData) || _data.isCluster(sData))
+            if (_data.isTable(sData) || _data.isCluster(sData))
                 sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
             else
                 sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);
@@ -1174,7 +1174,7 @@ namespace NumeRe
 
             StripSpaces(sData);
 
-            if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
+            if (_data.isTable(sData))
                 sLine = sLine.substr(0, nStartPosition) + "true" + sLine.substr(nEndPosition + 1);
             else
                 sLine = sLine.substr(0, nStartPosition) + "false" + sLine.substr(nEndPosition + 1);
@@ -1253,7 +1253,7 @@ namespace NumeRe
 
             StripSpaces(sHeadline);
 
-            if (sData.substr(0, 5) == "data(" || _data.isTable(sData))
+            if (_data.isTable(sData))
             {
                 sData.erase(sData.find("("));
                 string sResult;
@@ -1319,7 +1319,7 @@ namespace NumeRe
             if (!isStringExpression(sExpr))
             {
                 // check for data sets in the evaluation of the `valtostr()` arguments
-                if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+                if (_data.containsTablesOrClusters(sExpr))
                     getDataElements(sExpr, _parser, _data, _option);
 
                 int nResults = 0;
@@ -1426,10 +1426,11 @@ namespace NumeRe
     /// \param sLine const string&
     /// \param nStartPos size_t
     /// \param nEndPosition size_t&
+    /// \param searchForMethods bool
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t StringFuncHandler::findNextFunction(const string& sFunc, const string& sLine, size_t nStartPos, size_t& nEndPosition)
+    size_t StringFuncHandler::findNextFunction(const string& sFunc, const string& sLine, size_t nStartPos, size_t& nEndPosition, bool searchForMethods)
     {
         // Search for occurences of the passed function
         while ((nStartPos = sLine.find(sFunc, nStartPos)) != string::npos)
@@ -1448,6 +1449,23 @@ namespace NumeRe
             // Update the end position and return the
             // starting position
             nEndPosition += nStartPos + sFunc.length() - 1;
+
+            // Catch method calls
+            if (searchForMethods && nEndPosition+1 < sLine.length() && sLine[nEndPosition+1] == '.')
+            {
+                for (size_t i = nEndPosition+1; i < sLine.length(); i++)
+                {
+                    if (sLine[i] == '(' || sLine[i] == '{')
+                        i += getMatchingParenthesis(sLine.substr(i));
+
+                    if (isDelimiter(sLine[i]) || i+1 == sLine.length())
+                    {
+                        nEndPosition = i;
+                        break;
+                    }
+                }
+            }
+
             return nStartPos;
         }
 

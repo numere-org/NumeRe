@@ -39,7 +39,7 @@
 #include <ctype.h>
 
 #include "gterm.hpp"
-#include "wxterm.h"
+#include "terminal.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include "../globals.hpp"
@@ -57,20 +57,20 @@ void WinMessageBeep();
 #define CURSOR_BLINK_MAX_TIMEOUT	2000
 #define KERNEL_THREAD_STACK_SIZE 4194304 // Bytes
 
-BEGIN_EVENT_TABLE(wxTerm, wxWindow)
-	EVT_PAINT						(wxTerm::OnPaint)
-	EVT_CHAR						(wxTerm::OnChar)
-	EVT_LEFT_DOWN					(wxTerm::OnLeftDown)
-	EVT_MOUSE_CAPTURE_LOST          (wxTerm::OnLoseMouseCapture)
-	EVT_LEFT_UP					    (wxTerm::OnLeftUp)
-	EVT_MOTION					    (wxTerm::OnMouseMove)
-	EVT_ENTER_WINDOW                (wxTerm::OnEnter)
-	EVT_TIMER						(-1, wxTerm::OnTimer)
-	EVT_KEY_DOWN                    (wxTerm::OnKeyDown)
-	EVT_SIZE						(wxTerm::OnSize)
-	EVT_SET_FOCUS					(wxTerm::OnGainFocus)
-	EVT_KILL_FOCUS				    (wxTerm::OnLoseFocus)
-	EVT_CLOSE                       (wxTerm::OnClose)
+BEGIN_EVENT_TABLE(NumeReTerminal, wxWindow)
+	EVT_PAINT						(NumeReTerminal::OnPaint)
+	EVT_CHAR						(NumeReTerminal::OnChar)
+	EVT_LEFT_DOWN					(NumeReTerminal::OnLeftDown)
+	EVT_MOUSE_CAPTURE_LOST          (NumeReTerminal::OnLoseMouseCapture)
+	EVT_LEFT_UP					    (NumeReTerminal::OnLeftUp)
+	EVT_MOTION					    (NumeReTerminal::OnMouseMove)
+	EVT_ENTER_WINDOW                (NumeReTerminal::OnEnter)
+	EVT_TIMER						(-1, NumeReTerminal::OnTimer)
+	EVT_KEY_DOWN                    (NumeReTerminal::OnKeyDown)
+	EVT_SIZE						(NumeReTerminal::OnSize)
+	EVT_SET_FOCUS					(NumeReTerminal::OnGainFocus)
+	EVT_KILL_FOCUS				    (NumeReTerminal::OnLoseFocus)
+	EVT_CLOSE                       (NumeReTerminal::OnClose)
 END_EVENT_TABLE()
 
 
@@ -87,10 +87,10 @@ END_EVENT_TABLE()
 /// \param name const wxString&
 ///
 /////////////////////////////////////////////////
-wxTerm::wxTerm(wxWindow* parent, wxWindowID id, Options* _option, const wxString& sPath, const wxPoint& pos, int width, int height, const wxString& name) : wxWindow(parent, id, pos, wxSize(-1, -1), wxWANTS_CHARS, name), GenericTerminal(width, height)
+NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option, const wxString& sPath, const wxPoint& pos, int width, int height, const wxString& name) : wxWindow(parent, id, pos, wxSize(-1, -1), wxWANTS_CHARS, name), GenericTerminal(width, height)
 {
     // Bind the thread update event to the corresponding handler function
-	Bind(wxEVT_THREAD, &wxTerm::OnThreadUpdate, this);
+	Bind(wxEVT_THREAD, &NumeReTerminal::OnThreadUpdate, this);
 
 	m_init = 1;
 
@@ -124,7 +124,8 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id, Options* _option, const wxString
 	*/
 	wxClientDC
 	dc(this);
-
+    wxFont monospacedFont(8, wxMODERN, wxNORMAL, wxNORMAL, false, "Consolas");//10
+	SetFont(monospacedFont);
 	// Initialize the relevant fonts
 	m_normalFont = GetFont();
 	m_underlinedFont = GetFont();
@@ -144,8 +145,6 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id, Options* _option, const wxString
 	dc.GetTextExtent("M", &m_charWidth, &h); // EKHL: Changed because Height made no sense
 	dc.GetTextExtent("My", &w, &m_charHeight);
 
-	wxFont monospacedFont(8, wxMODERN, wxNORMAL, wxNORMAL, false, "Consolas");//10
-	SetFont(monospacedFont);
 	SetClientSize(m_charsInLine * 8, m_linesDisplayed * 16);
 	// 10pt Courier New is 8 pixels wide and 16 pixels high... set up
 	// a default client size to match
@@ -181,7 +180,7 @@ wxTerm::wxTerm(wxWindow* parent, wxWindowID id, Options* _option, const wxString
 /////////////////////////////////////////////////
 /// \brief Terminal destructor.
 /////////////////////////////////////////////////
-wxTerm::~wxTerm()
+NumeReTerminal::~NumeReTerminal()
 {
 	if (m_bitmap)
 	{
@@ -198,7 +197,7 @@ wxTerm::~wxTerm()
 /// \return vector<string>
 ///
 /////////////////////////////////////////////////
-vector<string> wxTerm::getPathSettings()
+vector<string> NumeReTerminal::getPathSettings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	vector<string> vPaths = _kernel.getPathSettings();
@@ -214,7 +213,7 @@ vector<string> wxTerm::getPathSettings()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::passEditedTable(NumeRe::Table _table)
+void NumeReTerminal::passEditedTable(NumeRe::Table _table)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	_kernel.table = _table;
@@ -232,7 +231,7 @@ void wxTerm::passEditedTable(NumeRe::Table _table)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::addBreakpoint(const string& _sFilename, size_t nLine)
+void NumeReTerminal::addBreakpoint(const string& _sFilename, size_t nLine)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().addBreakpoint(_sFilename, nLine);
@@ -249,7 +248,7 @@ void wxTerm::addBreakpoint(const string& _sFilename, size_t nLine)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::removeBreakpoint(const string& _sFilename, size_t nLine)
+void NumeReTerminal::removeBreakpoint(const string& _sFilename, size_t nLine)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().removeBreakpoint(_sFilename, nLine);
@@ -264,7 +263,7 @@ void wxTerm::removeBreakpoint(const string& _sFilename, size_t nLine)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::clearBreakpoints(const string& _sFilename)
+void NumeReTerminal::clearBreakpoints(const string& _sFilename)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     _kernel.getDebugger().getBreakpointManager().clearBreakpoints(_sFilename);
@@ -279,7 +278,7 @@ void wxTerm::clearBreakpoints(const string& _sFilename)
 /// \return string
 ///
 /////////////////////////////////////////////////
-string wxTerm::getDocumentation(const string& sCommand)
+string NumeReTerminal::getDocumentation(const string& sCommand)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	return _kernel.getDocumentation(sCommand);
@@ -293,7 +292,7 @@ string wxTerm::getDocumentation(const string& sCommand)
 /// \return vector<string>
 ///
 /////////////////////////////////////////////////
-vector<string> wxTerm::getDocIndex()
+vector<string> NumeReTerminal::getDocIndex()
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getDocIndex();
@@ -308,7 +307,7 @@ vector<string> wxTerm::getDocIndex()
 /// \return map<string, string>
 ///
 /////////////////////////////////////////////////
-map<string, string> wxTerm::getPluginLanguageStrings()
+map<string, string> NumeReTerminal::getPluginLanguageStrings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	return _kernel.getPluginLanguageStrings();
@@ -323,7 +322,7 @@ map<string, string> wxTerm::getPluginLanguageStrings()
 /// \return map<string, string>
 ///
 /////////////////////////////////////////////////
-map<string, string> wxTerm::getFunctionLanguageStrings()
+map<string, string> NumeReTerminal::getFunctionLanguageStrings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	return _kernel.getFunctionLanguageStrings();
@@ -338,7 +337,7 @@ map<string, string> wxTerm::getFunctionLanguageStrings()
 /// \return NumeReVariables
 ///
 /////////////////////////////////////////////////
-NumeReVariables wxTerm::getVariableList()
+NumeReVariables NumeReTerminal::getVariableList()
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getVariableList();
@@ -352,7 +351,7 @@ NumeReVariables wxTerm::getVariableList()
 /// \return Settings
 ///
 /////////////////////////////////////////////////
-Settings wxTerm::getKernelSettings()
+Settings NumeReTerminal::getKernelSettings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	Settings _option(_kernel.getKernelSettings());
@@ -368,7 +367,7 @@ Settings wxTerm::getKernelSettings()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::setKernelSettings(const Settings& _settings)
+void NumeReTerminal::setKernelSettings(const Settings& _settings)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	_kernel.setKernelSettings(_settings);
@@ -383,7 +382,7 @@ void wxTerm::setKernelSettings(const Settings& _settings)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::StartKernelTask()
+void NumeReTerminal::StartKernelTask()
 {
 	if (CreateThread(wxTHREAD_JOINABLE, KERNEL_THREAD_STACK_SIZE) != wxTHREAD_NO_ERROR)
 	{
@@ -406,7 +405,7 @@ void wxTerm::StartKernelTask()
 /// \return wxThread::ExitCode
 ///
 /////////////////////////////////////////////////
-wxThread::ExitCode wxTerm::Entry()
+wxThread::ExitCode NumeReTerminal::Entry()
 {
 	string sCommand = "";
 	bool bCommandAvailable = false;
@@ -500,7 +499,7 @@ wxThread::ExitCode wxTerm::Entry()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::EndKernelTask()
+void NumeReTerminal::EndKernelTask()
 {
 	if (GetThread() && GetThread()->IsRunning())
 	{
@@ -519,7 +518,7 @@ void wxTerm::EndKernelTask()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::OnClose(wxCloseEvent& event)
+void NumeReTerminal::OnClose(wxCloseEvent& event)
 {
 	if (GetThread() && GetThread()->IsRunning())
 		GetThread()->Wait();
@@ -538,11 +537,12 @@ void wxTerm::OnClose(wxCloseEvent& event)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::OnThreadUpdate(wxThreadEvent& event)
+void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 {
 	bool Closing = false;
 	bool changedSettings = false;
 	bool done = false;
+	bool refreshFunctionTree = false;
 	queue<NumeReTask> taskQueue;
 	string sAnswer = "";
 
@@ -651,8 +651,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
                 m_wxParent->evaluateDebugInfo(task.vDebugEvent);
                 break;
             case NumeReKernel::NUMERE_REFRESH_FUNCTIONTREE:
-                getSyntax()->addPlugins(_kernel.getPluginCommands());
-                m_wxParent->refreshFunctionTree();
+                refreshFunctionTree = true;
                 break;
         }
     }
@@ -662,6 +661,14 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 	{
 		m_wxParent->EvaluateOptions();
 	}
+
+	// Refresh now the function tree (will avoid multiple
+    // refreshes in a single event loop).
+	if (refreshFunctionTree)
+    {
+        getSyntax()->addPlugins(_kernel.getPluginCommands());
+        m_wxParent->refreshFunctionTree();
+    }
 
 	// To ensure that the user is able to read the answer
 	// scroll to the input location and process the kernel
@@ -683,7 +690,7 @@ void wxTerm::OnThreadUpdate(wxThreadEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 bool
-wxTerm::SetFont(const wxFont& font)
+NumeReTerminal::SetFont(const wxFont& font)
 {
 	m_init = 1;
 
@@ -722,7 +729,7 @@ wxTerm::SetFont(const wxFont& font)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::GetDefColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
+NumeReTerminal::GetDefColors(wxColour colors[16], NumeReTerminal::BOLDSTYLE boldStyle)
 {
     // Set the correct bold style
 	if (boldStyle == DEFAULT)
@@ -797,7 +804,7 @@ wxTerm::GetDefColors(wxColour colors[16], wxTerm::BOLDSTYLE boldStyle)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::SetCursorBlinkRate(int rate)
+NumeReTerminal::SetCursorBlinkRate(int rate)
 {
     // Ensure that the new rate is reasonable
 	if (rate < 0 || rate > CURSOR_BLINK_MAX_TIMEOUT)
@@ -829,7 +836,7 @@ wxTerm::SetCursorBlinkRate(int rate)
  * \return void
  *
  */
-void wxTerm::pipe_command(const string& sCommand)
+void NumeReTerminal::pipe_command(const string& sCommand)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 
@@ -850,7 +857,7 @@ void wxTerm::pipe_command(const string& sCommand)
  * \return void
  *
  */
-void wxTerm::pass_command(const string& command)
+void NumeReTerminal::pass_command(const string& command)
 {
     // Don't do anything if the command is emoty
 	if (!command.length())
@@ -881,7 +888,7 @@ void wxTerm::pass_command(const string& command)
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table wxTerm::getTable(const string& sTableName)
+NumeRe::Table NumeReTerminal::getTable(const string& sTableName)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getTable(sTableName);
@@ -896,7 +903,7 @@ NumeRe::Table wxTerm::getTable(const string& sTableName)
 /// \return NumeRe::Container<string>
 ///
 /////////////////////////////////////////////////
-NumeRe::Container<string> wxTerm::getStringTable(const string& sStringTableName)
+NumeRe::Container<string> NumeReTerminal::getStringTable(const string& sStringTableName)
 {
     wxCriticalSectionLocker lock(m_kernelCS);
     return _kernel.getStringTable(sStringTableName);
@@ -911,7 +918,7 @@ NumeRe::Container<string> wxTerm::getStringTable(const string& sStringTableName)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::CancelCalculation()
+void NumeReTerminal::CancelCalculation()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	_kernel.CancelCalculation();
@@ -929,7 +936,7 @@ void wxTerm::CancelCalculation()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnChar(wxKeyEvent& event)
+NumeReTerminal::OnChar(wxKeyEvent& event)
 {
 	if (!(GetMode() & PC) && event.AltDown())
 		event.Skip();
@@ -987,7 +994,7 @@ wxTerm::OnChar(wxKeyEvent& event)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool wxTerm::filterKeyCodes(int keyCode, bool ctrlDown)
+bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
 {
     // Filter special keycodes
     switch (keyCode)
@@ -1081,7 +1088,7 @@ bool wxTerm::filterKeyCodes(int keyCode, bool ctrlDown)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::scrollToInput()
+void NumeReTerminal::scrollToInput()
 {
 	if (GenericTerminal::IsScrolledUp())
 	{
@@ -1104,7 +1111,7 @@ void wxTerm::scrollToInput()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnKeyDown(wxKeyEvent& event)
+NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 {
 	if (!(GetMode() & PC) && event.AltDown())
 		event.Skip();
@@ -1138,7 +1145,7 @@ wxTerm::OnKeyDown(wxKeyEvent& event)
 					{
 						wxTextDataObject data;
 						wxTheClipboard->GetData(data);
-						wxTerm::ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
+						NumeReTerminal::ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
 						Refresh();
 					}
 					wxTheClipboard->Close();
@@ -1163,7 +1170,7 @@ wxTerm::OnKeyDown(wxKeyEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnPaint(wxPaintEvent& WXUNUSED(event))
+NumeReTerminal::OnPaint(wxPaintEvent& WXUNUSED(event))
 {
 	wxPaintDC dc(this);
 
@@ -1190,7 +1197,7 @@ wxTerm::OnPaint(wxPaintEvent& WXUNUSED(event))
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnLeftDown(wxMouseEvent& event)
+NumeReTerminal::OnLeftDown(wxMouseEvent& event)
 {
 	SetFocus();
 	ClearSelection();
@@ -1210,7 +1217,7 @@ wxTerm::OnLeftDown(wxMouseEvent& event)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
+void NumeReTerminal::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 {
 	if (this->GetCapture() == this)
 	{
@@ -1232,7 +1239,7 @@ void wxTerm::OnLoseMouseCapture(wxMouseCaptureLostEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnLeftUp(wxMouseEvent& event)
+NumeReTerminal::OnLeftUp(wxMouseEvent& event)
 {
 	m_selecting = false;
 	if (this->GetCapture() == this)
@@ -1255,7 +1262,7 @@ wxTerm::OnLeftUp(wxMouseEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnMouseMove(wxMouseEvent& event)
+NumeReTerminal::OnMouseMove(wxMouseEvent& event)
 {
 	if (m_selecting)
 	{
@@ -1291,7 +1298,7 @@ wxTerm::OnMouseMove(wxMouseEvent& event)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::OnEnter(wxMouseEvent& event)
+void NumeReTerminal::OnEnter(wxMouseEvent& event)
 {
 	if (g_findReplace != nullptr && g_findReplace->IsShown())
 	{
@@ -1312,7 +1319,7 @@ void wxTerm::OnEnter(wxMouseEvent& event)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::ClearSelection()
+NumeReTerminal::ClearSelection()
 {
 	if (!HasSelection() || m_selecting)
 		return;
@@ -1333,7 +1340,7 @@ wxTerm::ClearSelection()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::MarkSelection(bool bRectangular)
+NumeReTerminal::MarkSelection(bool bRectangular)
 {
 	int x;
 	int y;
@@ -1407,7 +1414,7 @@ wxTerm::MarkSelection(bool bRectangular)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 bool
-wxTerm::HasSelection()
+NumeReTerminal::HasSelection()
 {
 	return (m_selx1 != m_selx2 || m_sely1 != m_sely2);
 }
@@ -1422,7 +1429,7 @@ wxTerm::HasSelection()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 wxString
-wxTerm::GetSelection()
+NumeReTerminal::GetSelection()
 {
 	wxString sel = get_selected_text();
 
@@ -1447,7 +1454,7 @@ wxTerm::GetSelection()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::DrawText(int fg_color, int bg_color, int flags, int x, int y, const string& sText)
+NumeReTerminal::DrawText(int fg_color, int bg_color, int flags, int x, int y, const string& sText)
 {
 	int
 	t;
@@ -1531,7 +1538,7 @@ wxTerm::DrawText(int fg_color, int bg_color, int flags, int x, int y, const stri
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c)
+NumeReTerminal::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c)
 {
     // Do nothing, if the terminal is scrolled up
 	if (GenericTerminal::IsScrolledUp())
@@ -1618,7 +1625,7 @@ wxTerm::DoDrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsign
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c)
+NumeReTerminal::DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c)
 {
     // Set cursor-related member variables
 	m_curX = x;
@@ -1655,7 +1662,7 @@ wxTerm::DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::OnTimer(wxTimerEvent& WXUNUSED(event))
+NumeReTerminal::OnTimer(wxTimerEvent& WXUNUSED(event))
 {
 	wxClientDC* dc = nullptr;
 
@@ -1714,7 +1721,7 @@ wxTerm::OnTimer(wxTimerEvent& WXUNUSED(event))
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::ClearChars(int bg_color, int x, int y, int w, int h)
+NumeReTerminal::ClearChars(int bg_color, int x, int y, int w, int h)
 {
 	x *= m_charWidth;
 	y *= m_charHeight;
@@ -1742,7 +1749,7 @@ wxTerm::ClearChars(int bg_color, int x, int y, int w, int h)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::ModeChange(int state)
+NumeReTerminal::ModeChange(int state)
 {
 	ClearSelection();
 
@@ -1762,7 +1769,7 @@ wxTerm::ModeChange(int state)
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::Bell()
+NumeReTerminal::Bell()
 {
 #ifdef __WIN32__
 	WinMessageBeep();
@@ -1780,7 +1787,7 @@ wxTerm::Bell()
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::UpdateSize()
+void NumeReTerminal::UpdateSize()
 {
 	// prevent any nasty recursion
 	if (m_inUpdateSize)
@@ -1849,7 +1856,7 @@ void wxTerm::UpdateSize()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::UpdateColors()
+void NumeReTerminal::UpdateColors()
 {
 	GetDefColors(m_color_defs);
 
@@ -1880,7 +1887,7 @@ void wxTerm::UpdateColors()
 ///  @author Derry Bryson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 void
-wxTerm::ResizeTerminal(int width, int height)
+NumeReTerminal::ResizeTerminal(int width, int height)
 {
 	int
 	w,
@@ -1945,7 +1952,7 @@ wxTerm::ResizeTerminal(int width, int height)
  * \return void
  *
  */
-void wxTerm::ProcessInput(int len, const string& sData)
+void NumeReTerminal::ProcessInput(int len, const string& sData)
 {
 	scrollToInput();
 
@@ -1965,7 +1972,7 @@ void wxTerm::ProcessInput(int len, const string& sData)
  * \return void
  *
  */
-void wxTerm::ProcessOutput(int len, const string& sData)
+void NumeReTerminal::ProcessOutput(int len, const string& sData)
 {
 	if (HasSelection())
 		ClearSelection();
@@ -1987,7 +1994,7 @@ void wxTerm::ProcessOutput(int len, const string& sData)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::OnActivate(wxActivateEvent& event)
+void NumeReTerminal::OnActivate(wxActivateEvent& event)
 {
 	m_isActive = event.GetActive();
 }
@@ -2003,7 +2010,7 @@ void wxTerm::OnActivate(wxActivateEvent& event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::OnGainFocus(wxFocusEvent& event)
+void NumeReTerminal::OnGainFocus(wxFocusEvent& event)
 {
 	this->clear_mode_flag(CURSORINVISIBLE);
 	GenericTerminal::Update();
@@ -2020,7 +2027,7 @@ void wxTerm::OnGainFocus(wxFocusEvent& event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::OnLoseFocus(wxFocusEvent& event)
+void NumeReTerminal::OnLoseFocus(wxFocusEvent& event)
 {
 	this->set_mode_flag(CURSORINVISIBLE);
 	GenericTerminal::Update();
@@ -2038,7 +2045,7 @@ void wxTerm::OnLoseFocus(wxFocusEvent& event)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::ScrollTerminal(int numLines, bool scrollUp /* = true */)
+void NumeReTerminal::ScrollTerminal(int numLines, bool scrollUp /* = true */)
 {
 	if (GenericTerminal::Scroll(numLines, scrollUp))
 		Refresh();
@@ -2055,7 +2062,7 @@ void wxTerm::ScrollTerminal(int numLines, bool scrollUp /* = true */)
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void wxTerm::OnSize(wxSizeEvent& event)
+void NumeReTerminal::OnSize(wxSizeEvent& event)
 {
 	UpdateSize();
 }
@@ -2069,7 +2076,7 @@ void wxTerm::OnSize(wxSizeEvent& event)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void wxTerm::UpdateRemoteSize(int width, int height)
+void NumeReTerminal::UpdateRemoteSize(int width, int height)
 {
 }
 

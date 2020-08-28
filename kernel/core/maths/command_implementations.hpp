@@ -20,6 +20,7 @@
 #define COMMAND_IMPLEMENTATIONS_HPP
 
 #include "../datamanagement/datafile.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../ParserLib/muParser.h"
 #include "../settings.hpp"
 #include "define.hpp"
@@ -30,22 +31,22 @@
 using namespace std;
 using namespace mu;
 
-vector<double> integrate(const string&, Datafile&, Parser&, const Settings&, FunctionDefinitionManager&);
-vector<double> integrate2d(const string&, Datafile&, Parser&, const Settings&, FunctionDefinitionManager&);
-vector<double> differentiate(const string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option, FunctionDefinitionManager& _functions);
-bool findExtrema(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
-bool findZeroes(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
+vector<double> integrate(const string&, MemoryManager&, Parser&, const Settings&, FunctionDefinitionManager&);
+vector<double> integrate2d(const string&, MemoryManager&, Parser&, const Settings&, FunctionDefinitionManager&);
+vector<double> differentiate(const string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option, FunctionDefinitionManager& _functions);
+bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
+bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
 void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
-bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool fastFourierTransform(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool fastWaveletTransform(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option);
-bool evalPoints(string& sCmd, Datafile& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
-bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool writeAudioFile(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool regularizeDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool analyzePulse(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool calculateSplines(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
+bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
+bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
+bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool writeAudioFile(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool analyzePulse(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 
 #endif // COMMAND_IMPLEMENTATIONS_HPP
 

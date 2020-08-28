@@ -71,7 +71,7 @@ static string getFitAnalysis(Fitcontroller& _fControl, FittingData& fitData, dou
 static void createTeXExport(Fitcontroller& _fControl, const string& sTeXExportFile, const string& sCmd, mu::varmap_type& paramsMap, FittingData& fitData, const vector<double>& vInitialVals, size_t nSize, const string& sFitAnalysis, const string& sFuncDisplay, const string& sFittedFunction, double dChisq);
 
 // This is the fitting main routine
-bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     // Declare the FittingData object first
     FittingData fitData;
@@ -117,7 +117,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefiniti
         fitData.bUseErrors = true;
 
     // Ensure that data is available
-    if (sCmd.find("data(") == string::npos && !_data.containsTablesOrClusters(sCmd))
+    if (!_data.containsTablesOrClusters(sCmd))
         throw SyntaxError(SyntaxError::NO_DATA_FOR_FIT, sCmd, SyntaxError::invalid_position);
 
     // Evaluate all passed parameters in this file static
@@ -273,7 +273,6 @@ bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefiniti
     if (oFitLog.fail())
     {
         oFitLog.close();
-        _data.setCacheStatus(false);
         NumeReKernel::printPreFmt("\n");
         throw SyntaxError(SyntaxError::CANNOT_OPEN_FITLOG, sCmd, SyntaxError::invalid_position);
     }
@@ -409,7 +408,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefiniti
 static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, Indices& _idx, string& sTeXExportFile, bool& bTeXExport, bool& bMaskDialog)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -424,9 +423,6 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
         if (fitData.sChiMap.length())
         {
-            if (fitData.sChiMap.substr(0, fitData.sChiMap.find('(')) == "data")
-                throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, SyntaxError::invalid_position);
-
             _idx = getIndices(fitData.sChiMap, _parser, _data, _option);
 
             if (!isValidIndexSet(_idx))
@@ -654,7 +650,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         if (!_functions.call(fitData.sParams))
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd,fitData. sParams, fitData.sParams);
 
-        if (fitData.sParams.find("data(") != string::npos || _data.containsTablesOrClusters(fitData.sParams))
+        if (_data.containsTablesOrClusters(fitData.sParams))
         {
             getDataElements(fitData.sParams, _parser, _data, _option);
         }
@@ -670,7 +666,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, fitData.sFitFunction, fitData.sFitFunction);
 
     // Get values from a references data object
-    if (fitData.sFitFunction.find("data(") != string::npos || _data.containsTablesOrClusters(fitData.sFitFunction))
+    if (_data.containsTablesOrClusters(fitData.sFitFunction))
     {
         getDataElements(fitData.sFitFunction, _parser, _data, _option);
     }
@@ -775,7 +771,7 @@ static mu::varmap_type getFittingParameters(FittingData& fitData, const mu::varm
 // members in the FittingData object
 static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData& fitData)
 {
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     vector<double> vTempZ;
     string sDataTable = "";
     Indices _idx;
@@ -918,7 +914,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             }
             else
             {
-                if (_data.isValidEntry(_idx.row[i], _idx.col.front(), sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col.last(), sDataTable))
+                if (_data.isValidElement(_idx.row[i], _idx.col.front(), sDataTable) && _data.isValidElement(_idx.row[i], _idx.col.last(), sDataTable))
                 {
                     if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col.front(), sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col.front(), sDataTable) > fitData.dMax))
                         continue;
@@ -945,7 +941,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         {
             if (nColumns == 2)
             {
-                if (_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable))
+                if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
                 {
                     if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
                         continue;
@@ -955,18 +951,18 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
                     if (nErrorCols == 1)
                     {
-                        if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable))
+                        if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
                             fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
                     else
                     {
-                        if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable)))
+                        if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable)))
                             fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)) * fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable))));
-                        else if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable))
+                        else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable))
                             fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
-                        else if (_data.isValidEntry(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable))
+                        else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable))
                             fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable)));
                         else
                             fitData.vy_w.push_back(0.0);
@@ -975,7 +971,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             }
             else
             {
-                if (_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable))
+                if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
                 {
                     if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
                         continue;
@@ -983,11 +979,11 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
                     fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
 
-                    if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable)))
+                    if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable)))
                         fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)) * fabs(_data.getElement(i, _idx.col[3], sDataTable))));
-                    else if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable))
+                    else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable))
                         fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
-                    else if (_data.isValidEntry(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable))
+                    else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable))
                         fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable)));
                     else
                         fitData.vy_w.push_back(0.0);
@@ -999,12 +995,12 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (!_data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable) || _data.getElement(_idx.row[i], _idx.col[1], sDataTable) < fitData.dMinY || _data.getElement(_idx.row[i], _idx.col[1], sDataTable) > fitData.dMaxY)
+            if (!_data.isValidElement(_idx.row[i], _idx.col[1], sDataTable) || _data.getElement(_idx.row[i], _idx.col[1], sDataTable) < fitData.dMinY || _data.getElement(_idx.row[i], _idx.col[1], sDataTable) > fitData.dMaxY)
                 continue;
             else
                 fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
 
-            if (!_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax)
+            if (!_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax)
                 continue;
             else
                 fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
@@ -1014,7 +1010,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                 if (nColumns > 3 && k == _idx.row.size() + 2)
                     break;
 
-                if (!_data.isValidEntry(_idx.row[k-2], _idx.col[1], sDataTable)
+                if (!_data.isValidElement(_idx.row[k-2], _idx.col[1], sDataTable)
                         || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable) < fitData.dMinY
                         || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable) > fitData.dMaxY)
                     continue;
@@ -1024,7 +1020,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
                     if (fitData.bUseErrors)
                     {
-                        if (_data.isValidEntry(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable))
+                        if (_data.isValidElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable))
                             fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable)));
                         else
                             fitData.vy_w.push_back(0.0);
@@ -1046,7 +1042,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     {
         for (unsigned int i = 0; i < _idx.row.size(); i++)
         {
-            if (_data.isValidEntry(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidEntry(_idx.row[i], _idx.col[1], sDataTable))
+            if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
             {
                 if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
                     continue;
@@ -1054,7 +1050,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                 fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
                 fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
 
-                if (_data.isValidEntry(_idx.row[i], _idx.col[2], sDataTable))
+                if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
                     fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
                 else
                     fitData.vy_w.push_back(0.0);
@@ -1164,7 +1160,7 @@ static void removeObsoleteParentheses(string& sFunction)
 static bool calculateChiMap(string sFunctionDefString, const string& sFuncDisplay, Indices& _idx, mu::varmap_type& varMap, mu::varmap_type& paramsMap, FittingData& fitData, vector<double> vInitialVals)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -1182,14 +1178,14 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
                 ++iter;
             }
 
-            if (!_data.isValidEntry(_idx.row[i], _idx.col[0], fitData.sChiMap))
+            if (!_data.isValidElement(_idx.row[i], _idx.col[0], fitData.sChiMap))
                 continue;
 
             *(varMap.at(fitData.sChiMap_Vars[0])) = _data.getElement(_idx.row[i], _idx.col[0], fitData.sChiMap);
 
             if (!fitData.b1DChiMap)
             {
-                if (!_data.isValidEntry(_idx.row[j], _idx.col[1], fitData.sChiMap))
+                if (!_data.isValidElement(_idx.row[j], _idx.col[1], fitData.sChiMap))
                     continue;
 
                 *(varMap.at(fitData.sChiMap_Vars[1])) = _data.getElement(_idx.row[j], _idx.col[1], fitData.sChiMap);

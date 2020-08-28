@@ -21,6 +21,9 @@
 #include "../../kernel.hpp"
 #include <vector>
 
+using namespace std;
+using namespace mu;
+
 
 /////////////////////////////////////////////////
 /// \brief DataAccessParser constructor. This
@@ -66,7 +69,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     sDataObject = sCommand.substr(pos, i - pos);
 
                     // Ensure that the table exists
-                    if (!instance->getData().isTable(sDataObject) && sDataObject != "data" && sDataObject != "string")
+                    if (!instance->getMemoryManager().isTable(sDataObject) && sDataObject != "string")
                     {
                         sDataObject.clear();
                         pos = string::npos;
@@ -74,7 +77,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     }
 
                     // Calculate the indices
-                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getMemoryManager(), instance->getSettings());
                     break;
                 }
                 else if (sCommand[i] == '{')
@@ -83,7 +86,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     sDataObject = sCommand.substr(pos, i - pos);
 
                     // Ensure that the cluster exists
-                    if (!instance->getData().isCluster(sDataObject))
+                    if (!instance->getMemoryManager().isCluster(sDataObject))
                     {
                         sDataObject.clear();
                         pos = string::npos;
@@ -93,7 +96,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     // Calculate the indices and switch the access
                     // to a cluster access
                     bIsCluster = true;
-                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getData(), instance->getSettings());
+                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getMemoryManager(), instance->getSettings());
                     break;
                 }
                 else
@@ -145,21 +148,20 @@ bool DataAccessParser::isCluster()
 
 
 
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs);
-static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option);
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs);
+static string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
-static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option, bool isCluster);
+static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, const Settings& _option, bool isCluster);
 static string createMafDataAccessString(const string& sAccessString, Parser& _parser);
 static string createEveryDefinition(const string& sLine, Parser& _parser);
 static string createMafVectorName(string sAccessString);
-static vector<double> MafDataAccess(Datafile& _data, const string& sMafname, const string& sCache, const string& sMafAccess);
+static vector<double> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess);
 static string getMafFromAccessString(const string& sAccessString);
 static string getMafAccessString(const string& sLine, const string& sEntity);
-static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, Datafile& _data);
+static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data);
 static string getLastToken(const string& sLine);
-static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option);
-static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const Indices& _idx, int nDim);
-static bool findDataTable(const string& sLine);
+static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option);
+static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim);
 
 
 /////////////////////////////////////////////////
@@ -179,7 +181,7 @@ static bool findDataTable(const string& sLine);
 /// public and replaces all calls to a single
 /// data entity.
 /////////////////////////////////////////////////
-string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs)
+string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs)
 {
 	string sCache = "";             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
 	string sLine_Temp = "";         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
@@ -248,43 +250,6 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 		}
 	}
 
-
-	// --> Findest du "data("? <--
-	if (findDataTable(sLine))
-	{
-		// --> Ist rechts von "data(" noch ein "=" und gehoert das nicht zu einem Logik-Ausdruck? <--
-		eq_pos = sLine.find("=", sLine.find("data(") + 5);
-
-		if (eq_pos != string::npos
-				&& sLine[eq_pos + 1] != '='
-				&& sLine[eq_pos - 1] != '<'
-				&& sLine[eq_pos - 1] != '>'
-				&& sLine[eq_pos - 1] != '!'
-				&& !parser_CheckMultArgFunc(sLine.substr(0, sLine.find("data(")), sLine.substr(sLine.find(")", sLine.find("data(") + 1)))
-		   )
-		{
-			if (sLine.substr(sLine.find("data(") + 5, sLine.find(",", sLine.find("data(") + 5) - sLine.find("data(") - 5).find("#") != string::npos)
-			{
-				sCache = sLine.substr(0, eq_pos);
-				sLine = sLine.substr(eq_pos + 1);
-			}
-			else
-			{
-				// --> Ja? Dann brechen wir ebenfalls ab, da wir nicht in data() schreiben wollen <--
-				throw SyntaxError(SyntaxError::READ_ONLY_DATA, sLine, SyntaxError::invalid_position);
-			}
-		}
-
-		/* --> Diese Schleife ersetzt nacheinander alle Stellen, in denen "data(" auftritt, durch "Vektoren", die
-		 *     in einer anderen Funktion weiterverarbeitet werden koennen. Eine aehnliche Schleife findet sich
-		 *     auch fuer "cache(" etwas weiter unten. <--
-		 * --> Wenn diese Schleife abgearbeitet ist, wird natuerlich auch noch geprueft, ob auch "cache(" gefunden
-		 *     wird und ggf. die Schleife fuer den Cache gestartet. <--
-		 */
-		if (sLine.find("data(") != string::npos)
-			replaceDataEntities(sLine, "data(", _data, _parser, _option, bReplaceNANs);
-	}
-
 	return sCache;
 }
 
@@ -301,12 +266,12 @@ string getDataElements(string& sLine, Parser& _parser, Datafile& _data, const Se
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option, bool bReplaceNANs)
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs)
 {
     // Try to find every cache and handle its contents
     if (_data.containsTables(sLine))
     {
-        for (auto iter = _data.mCachesMap.begin(); iter != _data.mCachesMap.end(); iter++)
+        for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); iter++)
         {
             if (sLine.find((iter->first) + "(") != string::npos)
                 replaceDataEntities(sLine, iter->first + "(", _data, _parser, _option, bReplaceNANs);
@@ -343,7 +308,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, Datafile& _
 /// to any data entity included in the current call
 /// to the specified data entity.
 /////////////////////////////////////////////////
-void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
+void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
 {
 	Indices _idx;
 	string sEntityOccurence = "";
@@ -401,7 +366,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 		sEntityOccurence = sLine.substr(sLine.find(sEntity, nPos));
 		nPos = sLine.find(sEntity, nPos);
 
-		if (nPos && !isDelimiter(sLine[nPos-1]))
+		if (nPos && (!isDelimiter(sLine[nPos-1]) || isInQuotes(sLine, nPos)))
 		{
 			nPos++;
 			continue;
@@ -550,7 +515,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, Datafile& _data, 
 /// \return string
 ///
 /////////////////////////////////////////////////
-static string handleCachedDataAccess(string& sLine, Parser& _parser, Datafile& _data, const Settings& _option)
+static string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	mu::CachedDataAccess _access;
 	Indices _idx;
@@ -639,7 +604,7 @@ static void replaceEntityStringOccurence(string& sLine, const string& sEntityOcc
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, Datafile& _data, Parser& _parser, const Settings& _option, bool isCluster)
+static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, const Settings& _option, bool isCluster)
 {
 	sLine = " " + sLine + " ";
 
@@ -774,14 +739,14 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
 
-				if (_data.containsTablesOrClusters(sArg) || sArg.find("data(") != string::npos)
+				if (_data.containsTablesOrClusters(sArg))
 					getDataElements(sArg, _parser, _data, _option);
 
 				_parser.SetExpr(sArg);
 				dRef = _parser.Eval();
 				sArg = getNextArgument(sLeft, true);
 
-				if (_data.containsTablesOrClusters(sArg) || sArg.find("data(") != string::npos)
+				if (_data.containsTablesOrClusters(sArg))
 					getDataElements(sArg, _parser, _data, _option);
 
 				_parser.SetExpr(sArg);
@@ -800,7 +765,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 				sArg = getNextArgument(sLeft, true);
 				sArg = getNextArgument(sLeft, true);
 
-				if (_data.containsTablesOrClusters(sArg) || sArg.find("data(") != string::npos)
+				if (_data.containsTablesOrClusters(sArg))
 					getDataElements(sArg, _parser, _data, _option);
 
 				_parser.SetExpr(sArg);
@@ -827,18 +792,23 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, Datafile& _data)
+static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data)
 {
 	size_t nPos = 0;
 	// Replace the access string with its corresponding vector name
 	string sMafVectorName = createMafVectorName(sMafAccess);
 
-	// Set the vector variable with its value for the parser
-	_parser.SetVectorVar(sMafVectorName, MafDataAccess(_data, getMafFromAccessString(sMafAccess), sMafAccess.substr(0, sMafAccess.find('(')), createMafDataAccessString(sMafAccess, _parser)));
+	// Only store the value, if it is not a string literal (i.e. the name)
+	if (sMafVectorName.front() != '"')
+    {
+        // Set the vector variable with its value for the parser
+        _parser.SetVectorVar(sMafVectorName, MafDataAccess(_data, getMafFromAccessString(sMafAccess), sMafAccess.substr(0, sMafAccess.find('(')), createMafDataAccessString(sMafAccess, _parser)));
 
-	// Create a cached access and store it
-	mu::CachedDataAccess _access = {sMafAccess, sMafVectorName, sMafAccess.substr(0, sMafAccess.find('('))};
-	_parser.CacheCurrentAccess(_access);
+        // Create a cached access and store it
+        mu::CachedDataAccess _access = {sMafAccess, sMafVectorName, sMafAccess.substr(0, sMafAccess.find('('))};
+        _parser.CacheCurrentAccess(_access);
+
+    }
 
 	// Replace every occurence
 	while ((nPos = sLine.find(sMafAccess, nPos)) != string::npos)
@@ -891,14 +861,19 @@ static string createMafDataAccessString(const string& sAccessString, Parser& _pa
 static string getMafFromAccessString(const string& sAccessString)
 {
 	// Store these values statically
-	static const int sMafListLength = 13;
-	static string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor"};
+	static const int sMafListLength = 16;
+	static string sMafList[sMafListLength] = {"std", "avg", "prd", "sum", "min", "max", "norm", "num", "cnt", "med", "and", "or", "xor", "size", "maxpos", "minpos"};
+	size_t pos = 0;
 
 	for (int i = 0; i < sMafListLength; i++)
 	{
-		if (sAccessString.find("." + sMafList[i]) != string::npos)
+	    pos = sAccessString.find("." + sMafList[i]);
+
+		if (pos != string::npos
+            && (pos + sMafList[i].length() + 1 >= sAccessString.length() || sAccessString[pos+sMafList[i].length()+1] == '.' || isDelimiter(sAccessString[pos+sMafList[i].length()+1])))
 			return sMafList[i];
 	}
+
 	return "";
 }
 
@@ -949,7 +924,7 @@ static string getMafAccessString(const string& sLine, const string& sEntity)
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-static vector<double> MafDataAccess(Datafile& _data, const string& sMafname, const string& sCache, const string& sMafAccess)
+static vector<double> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess)
 {
 	if (sMafname == "std")
 		return _data.std(sCache, sMafAccess);
@@ -977,6 +952,12 @@ static vector<double> MafDataAccess(Datafile& _data, const string& sMafname, con
 		return _data.or_func(sCache, sMafAccess);
 	if (sMafname == "xor")
 		return _data.xor_func(sCache, sMafAccess);
+	if (sMafname == "size")
+		return _data.size(sCache, sMafAccess);
+	if (sMafname == "maxpos")
+		return _data.maxpos(sCache, sMafAccess);
+	if (sMafname == "minpos")
+		return _data.minpos(sCache, sMafAccess);
 
 	// return a vector with one NAN
 	return vector<double>(1, NAN);
@@ -999,7 +980,7 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 	sExpr.erase(getMatchingParenthesis(sExpr)+1);
 
 	// Resolve possible remaining calls to data tables or clusters
-	getDataElements(sExpr, _parser, NumeReKernel::getInstance()->getData(), NumeReKernel::getInstance()->getSettings());
+	getDataElements(sExpr, _parser, NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
 
 	return "every=" + sExpr + " ";
 }
@@ -1016,9 +997,12 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 /////////////////////////////////////////////////
 static string createMafVectorName(string sAccessString)
 {
-	sAccessString.replace(sAccessString.find("()"), 2, "[");
-	sAccessString = replaceToVectorname(sAccessString);
-	return sAccessString + "]";
+    if (sAccessString.find(".name") != string::npos)
+        return "\"" + sAccessString.substr(0, sAccessString.find("().")+2) + "\"";
+
+    sAccessString.replace(sAccessString.find("()"), 2, "[");
+    sAccessString = replaceToVectorname(sAccessString);
+    return sAccessString + "]";
 }
 
 
@@ -1073,7 +1057,7 @@ static string getLastToken(const string& sLine)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Datafile& _cache, int nDesiredCols, bool bSort)
+bool getData(const string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols, bool bSort)
 {
 	// write the data
 	// the first case uses vector indices
@@ -1090,13 +1074,13 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
     {
         for (long long int i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
-            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col.last(), sTableName));
+            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
+            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col.last(), sTableName));
 
             if (!i)
             {
-                _cache.setHeadLineElement(0, "cache", _data.getHeadLineElement(_idx.col.front(), sTableName));
-                _cache.setHeadLineElement(1, "cache", _data.getHeadLineElement(_idx.col.last(), sTableName));
+                _cache.setHeadLineElement(0, "table", _data.getHeadLineElement(_idx.col.front(), sTableName));
+                _cache.setHeadLineElement(1, "table", _data.getHeadLineElement(_idx.col.last(), sTableName));
             }
         }
     }
@@ -1106,17 +1090,17 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
         {
             for (long long int j = 0; j < _idx.col.size(); j++)
             {
-                _cache.writeToTable(i, j, "cache", _data.getElement(_idx.row[i], _idx.col[j], sTableName));
+                _cache.writeToTable(i, j, "table", _data.getElement(_idx.row[i], _idx.col[j], sTableName));
 
                 if (!i)
-                    _cache.setHeadLineElement(j, "cache", _data.getHeadLineElement(_idx.col[j], sTableName));
+                    _cache.setHeadLineElement(j, "table", _data.getHeadLineElement(_idx.col[j], sTableName));
             }
         }
     }
 
 	// sort, if sorting is activated
 	if (bSort)
-		_cache.sortElements("cache -sort c=1[2:]");
+		_cache.sortElements("sort -table c=1[2:]");
 
 	return true;
 }
@@ -1133,7 +1117,7 @@ bool getData(const string& sTableName, Indices& _idx, const Datafile& _data, Dat
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, Datafile& _data, const Settings& _option)
+NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	string sDatatable = "data";                             // Int fuer die Position des aktuellen find-Treffers eines Daten-Objekts
 	int nColumns = 0;
@@ -1171,7 +1155,7 @@ NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser,
 /// \return int
 ///
 /////////////////////////////////////////////////
-static int evalColumnIndicesAndGetDimension(Datafile& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option)
+static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option)
 {
     int nDim = 0;
 
@@ -1269,7 +1253,7 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, const Indices& _idx, int nDim)
+static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim)
 {
     MemoryManager _cache;
     // Copy the contents of the data into the local cache object
@@ -1278,55 +1262,29 @@ static NumeRe::Table copyAndExtract(Datafile& _data, const string& sDatatable, c
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
         }
     }
     else if (nDim == 3)
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _cache.writeToTable(i, 0, "cache", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "cache", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
-            _cache.writeToTable(i, 2, "cache", _data.getElement(_idx.row[i], _idx.col[2], sDatatable));
+            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
+            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
+            _cache.writeToTable(i, 2, "table", _data.getElement(_idx.row[i], _idx.col[2], sDatatable));
         }
     }
 
 	// Sort the elements
-	_cache.sortElements("cache -sort c=1[2:]");
+	_cache.sortElements("sort -table c=1[2:]");
 
 	// Rename the table
-	if (sDatatable != "cache")
-        _cache.renameTable("cache", sDatatable, true);
+	if (sDatatable != "table")
+        _cache.renameTable("table", sDatatable, true);
 
 	// Return the extracted table object
 	return _cache.extractTable(sDatatable);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This is a static helper function to
-/// identify, whether "data(" is used in the
-/// current expression.
-///
-/// \param sLine const string&
-/// \return bool
-///
-/////////////////////////////////////////////////
-static bool findDataTable(const string& sLine)
-{
-    size_t nQuotes = 0;
-
-    for (size_t i = 0; i < sLine.length(); i++)
-    {
-        if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
-            nQuotes++;
-
-        if (!(nQuotes % 2) && sLine.substr(i, 5) == "data(" && (!i || isDelimiter(sLine[i-1])))
-            return true;
-    }
-
-    return false;
 }
 
 
@@ -1401,7 +1359,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
             StripSpaces(sCluster);
 
             // Get a reference to the datafile object
-            Datafile& _data = NumeReKernel::getInstance()->getData();
+            MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
             // Declare the extracted cluster, if it is not
             // known to the clustermanager
@@ -1436,7 +1394,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 double getDataFromObject(const string& sObject, long long int i, long long int j, bool isCluster)
 {
     // Get a reference to the datafile object
-    Datafile& _data = NumeReKernel::getInstance()->getData();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Fallback to ensure that valid indices are read
     if (i < 0 || j < 0)

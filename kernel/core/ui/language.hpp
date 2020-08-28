@@ -37,20 +37,20 @@
 class Language : public FileSystem
 {
     private:
-        map<string,string> mLangStrings;
-        string sYES;
-        string sNO;
+        std::map<std::string,std::string> mLangStrings;
+        std::string sYES;
+        std::string sNO;
 
-        map<string,string> getLangFileContent(const string& sFile);
-        void loadAndInsert(const string& sLanguageFileName);
+        std::map<std::string,std::string> getLangFileContent(const std::string& sFile);
+        void loadAndInsert(const std::string& sLanguageFileName);
 
     public:
         Language();
         Language(const Language& _lang);
         void loadStrings(bool bloadUserFiles = true);
-        void addToLanguage(const map<string,string>& _langstrings);
-        string getKey(const string& sMessage) const;
-        string get(const string& sMessage, const vector<string>& vTokens) const; //_lang.get("GREETING",vTokens);
+        void addToLanguage(const std::map<std::string,std::string>& _langstrings);
+        std::string getKey(const std::string& sMessage) const;
+        std::string get(const std::string& sMessage, const std::vector<std::string>& vTokens) const; //_lang.get("GREETING",vTokens);
 
         /////////////////////////////////////////////////
         /// \brief Convenience wrapper for a defined
@@ -60,9 +60,9 @@ class Language : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        string get(const string& sMessage) const
+        std::string get(const std::string& sMessage) const
         {
-            vector<string> vTokens;
+            std::vector<std::string> vTokens;
             return get(sMessage, vTokens);
         }
 
@@ -75,9 +75,9 @@ class Language : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        string get(const string& sMessage, const string& sTok1) const
+        std::string get(const std::string& sMessage, const std::string& sTok1) const
         {
-            vector<string> vTokens;
+            std::vector<std::string> vTokens;
             vTokens.push_back(sTok1);
             return get(sMessage, vTokens);
         }
@@ -92,9 +92,9 @@ class Language : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        string get(const string& sMessage, const string& sTok1, const string& sTok2) const
+        std::string get(const std::string& sMessage, const std::string& sTok1, const std::string& sTok2) const
         {
-            vector<string> vTokens;
+            std::vector<std::string> vTokens;
             vTokens.push_back(sTok1);
             vTokens.push_back(sTok2);
             return get(sMessage, vTokens);
@@ -111,9 +111,9 @@ class Language : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3) const
+        std::string get(const std::string& sMessage, const std::string& sTok1, const std::string& sTok2, const std::string& sTok3) const
         {
-            vector<string> vTokens;
+            std::vector<std::string> vTokens;
             vTokens.push_back(sTok1);
             vTokens.push_back(sTok2);
             vTokens.push_back(sTok3);
@@ -132,9 +132,9 @@ class Language : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3, const string& sTok4) const
+        std::string get(const std::string& sMessage, const std::string& sTok1, const std::string& sTok2, const std::string& sTok3, const std::string& sTok4) const
         {
-            vector<string> vTokens;
+            std::vector<std::string> vTokens;
             vTokens.push_back(sTok1);
             vTokens.push_back(sTok2);
             vTokens.push_back(sTok3);
@@ -155,9 +155,9 @@ class Language : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3, const string& sTok4, const string& sTok5) const
+        std::string get(const std::string& sMessage, const std::string& sTok1, const std::string& sTok2, const std::string& sTok3, const std::string& sTok4, const std::string& sTok5) const
         {
-            vector<string> vTokens;
+            std::vector<std::string> vTokens;
             vTokens.push_back(sTok1);
             vTokens.push_back(sTok2);
             vTokens.push_back(sTok3);
@@ -180,9 +180,9 @@ class Language : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        string get(const string& sMessage, const string& sTok1, const string& sTok2, const string& sTok3, const string& sTok4, const string& sTok5, const string& sTok6) const
+        std::string get(const std::string& sMessage, const std::string& sTok1, const std::string& sTok2, const std::string& sTok3, const std::string& sTok4, const std::string& sTok5, const std::string& sTok6) const
         {
-            vector<string> vTokens;
+            std::vector<std::string> vTokens;
             vTokens.push_back(sTok1);
             vTokens.push_back(sTok2);
             vTokens.push_back(sTok3);
@@ -191,13 +191,14 @@ class Language : public FileSystem
             vTokens.push_back(sTok6);
             return get(sMessage, vTokens);
         }
-        vector<string> getList(const string& sMessageScheme) const;
 
-        inline string YES() const
+        std::vector<std::string> getList(const std::string& sMessageScheme) const;
+
+        inline std::string YES() const
         {
             return sYES;
         }
-        inline string NO() const
+        inline std::string NO() const
         {
             return sNO;
         }

@@ -24,7 +24,7 @@
 
 extern Language _lang;
 
-bool removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool removeFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     if (sCmd.length() < 7)
         return false;
@@ -109,7 +109,7 @@ bool removeFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& 
     return true;
 }
 
-bool moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool moveFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     if (sCmd.length() < 5)
         return false;
@@ -284,7 +284,7 @@ bool moveFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _o
     return bSuccess;
 }
 
-bool copyFile(string& sCmd, Parser& _parser, Datafile& _data, const Settings& _option)
+bool copyFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     if (sCmd.length() < 5)
         return false;

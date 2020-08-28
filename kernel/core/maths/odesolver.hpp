@@ -28,7 +28,7 @@
 
 #include "../ParserLib/muParser.h"
 #include "../utils/tools.hpp"
-#include "../datamanagement/datafile.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "define.hpp"
 #include "parser_functions.hpp"
 #include "../settings.hpp"
@@ -40,7 +40,7 @@ using namespace mu;
 class Odesolver
 {
     private:
-        Datafile* _odeData;
+        MemoryManager* _odeData;
         FunctionDefinitionManager* _odeFunctions;
         Settings* _odeSettings;
         const gsl_odeiv_step_type* odeStepType;
@@ -58,10 +58,10 @@ class Odesolver
         static mu::varmap_type mVars;
 
         Odesolver();
-        Odesolver(Parser* _parser, Datafile* _data, FunctionDefinitionManager* _functions, Settings* _option);
+        Odesolver(Parser* _parser, MemoryManager* _data, FunctionDefinitionManager* _functions, Settings* _option);
         ~Odesolver();
 
-        inline void setObjects(Parser* _parser, Datafile* _data, FunctionDefinitionManager* _functions, Settings* _option)
+        inline void setObjects(Parser* _parser, MemoryManager* _data, FunctionDefinitionManager* _functions, Settings* _option)
             {
                 _odeParser = _parser;
                 _odeData = _data;

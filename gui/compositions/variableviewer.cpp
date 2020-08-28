@@ -130,7 +130,7 @@ bool VariableViewer::checkSpecialVals(const std::string& sVar)
 {
     if (sVar.substr(0, sVar.find('\t')) == "data()")
         return true;
-    else if (sVar.substr(0, sVar.find('\t')) == "cache()")
+    else if (sVar.substr(0, sVar.find('\t')) == "table()")
         return true;
     else if (sVar.substr(0, sVar.find('\t')) == "string()")
         return true;
@@ -501,7 +501,7 @@ void VariableViewer::OnRightClick(wxTreeEvent& event)
     // Get the name of the table and determine, whether
     // the table may be modified
     wxString itemLabel = GetItemText(event.GetItem());
-    bool bMayBeModified = itemLabel != "data()" && itemLabel != "string()" && itemLabel != "cache()";
+    bool bMayBeModified = itemLabel != "string()" && itemLabel != "table()";
 
     // Create the menu
     wxMenu popUpmenu;

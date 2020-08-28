@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "../ParserLib/muParser.h"
-#include "../datamanagement/datafile.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "define.hpp"
 #include "../settings.hpp"
 
@@ -33,10 +33,10 @@ using namespace mu;
 // Erster Index: No. of Line; zweiter Index: No. of Col (push_back verwendet dazu stets zeilen!)
 typedef vector<vector<double> > Matrix;
 
-bool performMatrixOperation(string& sCmd, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols);
 Matrix transposeMatrix(const Matrix& _mMatrix);
-Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, Datafile& _data, const Settings& _option);
+Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, const Settings& _option);
 
 void showMatrix(const vector<vector<double> >&);
 

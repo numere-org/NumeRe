@@ -28,7 +28,7 @@
 
 const string PI_MED = "0.2.2";
 
-void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _option, bool bUseCache, bool bUseData)
+void plugin_statistics (string& sCmd, MemoryManager& _data, Output& _out, Settings& _option, bool bUseCache, bool bUseData)
 {
     if (_option.getbDebug())
         cerr << "|-> DEBUG: sCmd = " << sCmd << endl;
@@ -43,42 +43,8 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
     double dUnsure; 		// Variable fuer die Unsicherheit
     string sSavePath = "";  // Variable fuer den Speicherpfad
 
-    if(_data.isValid() || _data.isValidCache())	// Sind eigentlich Daten verfuegbar?
+    if(_data.isValid())	// Sind eigentlich Daten verfuegbar?
     {
-        if (!bUseCache && !bUseData)
-        {
-            if (!_data.isValid() && _data.isValidCache())
-            {
-                NumeReKernel::print(LineBreak(_lang.get("HIST_ONLY_CACHE"), _option));
-                _data.setCacheStatus(true);
-            }
-            else if (_data.isValid() && _data.isValidCache())
-            {
-                char c = 0;
-                NumeReKernel::print(LineBreak(_lang.get("HIST_ASK_DATASET"), _option));
-                NumeReKernel::printPreFmt("|\n|<- ");
-
-                cin >> c;
-
-                if (c == '0')
-                {
-                    NumeReKernel::print(_lang.get("COMMON_CANCEL") + ".");
-                    cin.ignore(1);
-                    return;
-                }
-                else if (c == 'c')
-                    _data.setCacheStatus(true);
-                NumeReKernel::print(LineBreak(_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option));
-            }
-            else
-            {
-                NumeReKernel::print(LineBreak(_lang.get("HIST_CONFIRM_DATASET", _data.getDataFileName("data")), _option));
-            }
-        }
-        else if (bUseCache)
-            _data.setCacheStatus(true);
-
-
         if (findParameter(sCmd, "save", '=') || findParameter(sCmd, "export", '='))
         {
             int nPos = 0;
@@ -157,7 +123,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 
             for (int i = 0; i < nLine; i++)
             {
-                if (!_data.isValidEntry(i,j, sDatatable))
+                if (!_data.isValidElement(i,j, sDatatable))
                 {
                     sOut[i + nHeadlines][j] = "---";
                     continue;
@@ -171,7 +137,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
             // --> Wie viele Werte sind nun innerhalb der Abweichung? <--
             for(int i = 0; i < nLine; i++)
             {
-                if (!_data.isValidEntry(i,j,sDatatable))
+                if (!_data.isValidElement(i,j,sDatatable))
                     continue;						// Angehaengte Nullzeilen brauchen hier auch nicht mitgezaehlt werden!
                 if (abs(_data.getElement(i,j,sDatatable)-dAverage) < dError)
                     nCount++;		// Counter erhoehen
@@ -188,7 +154,7 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 
             for (int i = 0; i < nLine-1; i++)
             {
-                if (!_data.isValidEntry(i,j,sDatatable))
+                if (!_data.isValidElement(i,j,sDatatable))
                     continue;
                 dSkew += (_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage);
                 dKurt += (_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage)*(_data.getElement(i,j,sDatatable)-dAverage);
@@ -303,7 +269,6 @@ void plugin_statistics (string& sCmd, Datafile& _data, Output& _out, Settings& _
 
     // --> Output-Instanz wieder zuruecksetzen <--
     _out.reset();
-    _data.setCacheStatus(false);
 
     return;
 }

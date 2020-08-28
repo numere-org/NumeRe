@@ -457,6 +457,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             || sSyntaxElement == "extrema"
             || sSyntaxElement == "integrate"
             || sSyntaxElement == "load"
+            || sSyntaxElement == "reload"
             || sSyntaxElement == "append"
             || sSyntaxElement == "imread"
             || sSyntaxElement == "eval"

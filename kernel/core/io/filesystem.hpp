@@ -18,20 +18,15 @@
 
 
 #include <string>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <windows.h>
 #include <vector>
 
 //#include "error.hpp"
 
 #ifndef FILESYSTEM_HPP
 #define FILESYSTEM_HPP
-using namespace std;
 
-string toSystemCodePage(string);
-string fromSystemCodePage(string);
+std::string toSystemCodePage(std::string);
+std::string fromSystemCodePage(std::string);
 
 /*
  * Headerdatei zur FileSystem Klasse
@@ -47,48 +42,48 @@ string fromSystemCodePage(string);
 class FileSystem
 {
     private:
-        string cleanPath(string sFilePath) const;
-        void resolveWildCards(string& _sFileName, bool isFile) const;
-        int createFolders(const string& _sPath) const;
+        std::string cleanPath(std::string sFilePath) const;
+        void resolveWildCards(std::string& _sFileName, bool isFile) const;
+        int createFolders(const std::string& _sPath) const;
 
 	protected:												// In allen CHILD-Klassen verfuegbar
-		string sPath;										// String-Variable fuer den Dateipfad
-		string sExecutablePath;
-		string sTokens[7][2];
-		mutable string sValidExtensions;
+		std::string sPath;										// String-Variable fuer den Dateipfad
+		std::string sExecutablePath;
+		std::string sTokens[7][2];
+		mutable std::string sValidExtensions;
 
 	public:
         FileSystem();
 
         FileSystem& assign(const FileSystem& _fSys);
 
-		string ValidFileName(string _sFileName, const string sExtension = ".dat", bool checkExtension = true) const;			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
-		string ValidFolderName(string _sFileName) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
-		string ValidizeAndPrepareName(const string& _sFileName, const string& sExtension = ".dat") const;
-		int setPath(string _sPath, bool bMkDir, string _sExePath);			// setzt sPath auf _sPath
+		std::string ValidFileName(std::string _sFileName, const std::string sExtension = ".dat", bool checkExtension = true) const;			// gibt einen gueltigen Dateinamen auf Basis von _sFileName zurueck
+		std::string ValidFolderName(std::string _sFileName) const;			// gibt einen gueltigen Ordnernamen auf Basis von _sFileName zurueck
+		std::string ValidizeAndPrepareName(const std::string& _sFileName, const std::string& sExtension = ".dat") const;
+		int setPath(std::string _sPath, bool bMkDir, std::string _sExePath);			// setzt sPath auf _sPath
 		void createRevisionsFolder();
-		string getPath() const;								// gibt sPath zurueck
-		vector<string> getFileParts(const string& sFilePath) const;
-        inline void setProgramPath(string _sExePath)
+		std::string getPath() const;								// gibt sPath zurueck
+		std::vector<std::string> getFileParts(const std::string& sFilePath) const;
+        inline void setProgramPath(std::string _sExePath)
             {
                 sExecutablePath = _sExePath;
             }
-        inline string getProgramPath() const
+        inline std::string getProgramPath() const
             {return sExecutablePath;}
-        inline void declareFileType(const string& sFileType)
+        inline void declareFileType(const std::string& sFileType)
             {
-                if (sValidExtensions.find(sFileType) == string::npos)
+                if (sValidExtensions.find(sFileType) == std::string::npos)
                 {
                     if (sFileType[0] == '.')
                         sValidExtensions += sFileType + ";";
                     else
                         sValidExtensions += "." + sFileType + ";";
                 }
-                return;
             }
-        void setTokens(string _sTokens);
-        bool isFile(const string& _sPath) const;
+        void setTokens(std::string _sTokens);
+        bool isFile(const std::string& _sPath) const;
         void initializeFromKernel();
 };
 
 #endif
+

@@ -505,12 +505,13 @@ bool FunctionDefinition::replaceArgumentOccurences()
 /// FunctionDefinitionManager class. Prepares the
 /// list of protected command strings.
 /////////////////////////////////////////////////
-FunctionDefinitionManager::FunctionDefinitionManager() : FileSystem()
+FunctionDefinitionManager::FunctionDefinitionManager(bool _isLocal) : FileSystem()
 {
     sBuilt_In.clear();
     sCommands = ",for,if,while,endfor,endwhile,endif,else,elseif,continue,break,explicit,procedure,endprocedure,throw,return,switch,case,endswitch,default,";
     sFileName = "<>/functions.def";
     sTables = "";
+    isLocal = _isLocal;
 }
 
 
@@ -522,12 +523,13 @@ FunctionDefinitionManager::FunctionDefinitionManager() : FileSystem()
 /// \param _defined FunctionDefinitionManager&
 ///
 /////////////////////////////////////////////////
-FunctionDefinitionManager::FunctionDefinitionManager(FunctionDefinitionManager& _defined) : FunctionDefinitionManager()
+FunctionDefinitionManager::FunctionDefinitionManager(FunctionDefinitionManager& _defined) : FunctionDefinitionManager(true)
 {
     sFileName = _defined.sFileName;
     sTables = _defined.sTables;
 
     mFunctionsMap = _defined.mFunctionsMap;
+    isLocal = _defined.isLocal;
 }
 
 
@@ -765,7 +767,9 @@ bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, 
         throw;
     }
 
-    NumeReKernel::getInstance()->refreshFunctionTree();
+    if (!isLocal)
+        NumeReKernel::getInstance()->refreshFunctionTree();
+
     return true;
 }
 
@@ -782,6 +786,9 @@ bool FunctionDefinitionManager::undefineFunc(const string& sFunc)
 {
     if (mFunctionsMap.find(sFunc.substr(0, sFunc.find('('))) != mFunctionsMap.end())
         mFunctionsMap.erase(sFunc.substr(0, sFunc.find('(')));
+
+    if (isLocal)
+        return true;
 
     // Update the definition file, if the corresponding setting
     // is active

@@ -26,7 +26,6 @@
 
 
 #include "AboutChameleonDialog.h"
-#include "../../common/verinfo.h"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/version.h"
 
@@ -77,7 +76,7 @@ BEGIN_EVENT_TABLE( AboutChameleonDialog, wxDialog )
 END_EVENT_TABLE()
 
 extern Language _guilang;
-extern const string sVersion;
+extern const std::string sVersion;
 
 /*!
  * AboutChameleonDialog constructors
@@ -115,20 +114,7 @@ bool AboutChameleonDialog::Create( wxWindow* parent, wxWindowID id, const wxStri
     Centre();
 ////@end AboutChameleonDialog creation
 
-
-	HINSTANCE hInstance = wxGetInstance();
-	CFileVersionInfo fvi;
-	fvi.Open(hInstance);
-
-	int major = fvi.GetFileVersionMajor();
-	int minor = fvi.GetFileVersionMinor();
-	int revision = fvi.GetFileVersionQFE();
-	int  build = fvi.GetFileVersionBuild();
-
-	wxString versionString = wxString::Format("Version %d.%d.%d.%d", major, minor, build, revision);
-
-
-	m_lblVersion->SetLabel("v"+sVersion); //(versionString);
+	m_lblVersion->SetLabel("v"+sVersion);
 	m_sizerProgram->Layout();
     return TRUE;
 }

@@ -21,7 +21,7 @@
 
 #include "../utils/tools.hpp"
 #include "../ui/error.hpp"
-#include "../datamanagement/datafile.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../maths/functionimplementation.hpp"
 #include "../maths/define.hpp"
 #include "../settings.hpp"
@@ -47,7 +47,7 @@ class ProcedureVarFactory
 {
     private:
         Parser* _parserRef;
-        Datafile* _dataRef;
+        MemoryManager* _dataRef;
         Settings* _optionRef;
         FunctionDefinitionManager* _functionRef;
         Output* _outRef;

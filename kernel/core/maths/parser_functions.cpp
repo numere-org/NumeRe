@@ -575,7 +575,7 @@ int integralFactorial(int nNumber)
 /// If this option is not found, the function
 /// will create a default target cache.
 /////////////////////////////////////////////////
-string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, Datafile& _data, const Settings& _option)
+string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	string sTargetTable;
 
@@ -584,10 +584,6 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 	{
 		// Extract the table name
 		sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "target", '=') + 6);
-
-		// data is read-only. Therefore it cannot be used as target
-		if (sTargetTable.substr(0, sTargetTable.find('(')) == "data")
-			throw SyntaxError(SyntaxError::READ_ONLY_DATA, sCmd, sTargetTable);
 
 		// Create the target table, if it doesn't exist
 		if (!_data.isTable(sTargetTable.substr(0, sTargetTable.find('(')) + "()"))
@@ -638,7 +634,7 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool evaluateIndices(const string& sCache, Indices& _idx, Datafile& _data)
+bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data)
 {
 	// Check the initial indices
 	if (!isValidIndexSet(_idx))
@@ -719,7 +715,7 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval)
+vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval)
 {
 	vector<double> vInterval;
 	string sInterval[2] = {"", ""};
@@ -729,7 +725,7 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, Datafile& _
 		throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, SyntaxError::invalid_position);
 
 	// If the expression contains data elements, get their contents here
-	if (sExpr.find("data(") != string::npos || _data.containsTablesOrClusters(sExpr))
+	if (_data.containsTablesOrClusters(sExpr))
 		getDataElements(sExpr, _parser, _data, _option);
 
 	// Get the interval for x

@@ -36,7 +36,7 @@ extern const string sVersion;
 void doc_Help(const string&, Settings&);
 string doc_HelpAsHTML(const string&, bool, Settings& _option);
 void doc_ReplaceTokens(string& sDocParagraph, Settings& _option);
-void doc_ReplaceTokensForHTML(string& sDocParagraph, Settings& _option);
+void doc_ReplaceTokensForHTML(string& sDocParagraph, bool generateFile, Settings& _option);
 void doc_ReplaceExprContentForHTML(string& sExpr, Settings& _option);
 vector<vector<string> > doc_readTokenTable(const string& sTable, Settings& _option);
 void doc_SearchFct(const string& sToLookFor, Settings& _option);

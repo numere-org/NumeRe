@@ -28,7 +28,7 @@
  */
 
 ////@begin forward declarations
-class wxTerm;
+class NumeReTerminal;
 ////@end forward declarations
 class wxSizer;
 
@@ -62,7 +62,7 @@ public:
     /// Creates the controls and sizers
     void CreateControls();
 
-	void SetTerminal(wxTerm* terminal);
+	void SetTerminal(NumeReTerminal* terminal);
 
 ////@begin wxTermContainer event handler declarations
     /// wxEVT_SCROLL_LINEUP event handler for ID_SCROLLBAR
@@ -100,7 +100,7 @@ public:
 private:
 
 ////@begin wxTermContainer member variables
-    wxTerm* m_terminal;
+    NumeReTerminal* m_terminal;
     wxScrollBar* m_scrollbar;
 ////@end wxTermContainer member variables
 

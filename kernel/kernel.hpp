@@ -23,30 +23,40 @@
 #include <queue>
 
 // --> LOKALE HEADER <--
-#include "core/ui/error.hpp"
-#include "core/settings.hpp"
-#include "core/io/output.hpp"
-#include "core/datamanagement/datafile.hpp"
-#include "core/datamanagement/container.hpp"
-#include "core/plugins.hpp"
-#include "core/version.h"
-#include "core/maths/functionimplementation.hpp"
-#include "core/utils/tools.hpp"
+#include "windowmanager.hpp"
+
 #include "core/built-in.hpp"
-#include "core/maths/parser_functions.hpp"
-#include "core/maths/define.hpp"
-#include "core/plotting/plotdata.hpp"
-#include "core/plotting/graph_helper.hpp"
+#include "core/plugins.hpp"
 #include "core/script.hpp"
-#include "core/procedure/flowctrl.hpp"
-#include "core/procedure/procedure.hpp"
+#include "core/settings.hpp"
+#include "core/version.h"
+
+#include "core/datamanagement/container.hpp"
+#include "core/datamanagement/memorymanager.hpp"
+
 #include "core/debugger/debugger.hpp"
-#include "core/ui/language.hpp"
-#include "core/procedure/procedurelibrary.hpp"
+
+#include "core/io/output.hpp"
+
+#include "core/maths/define.hpp"
+#include "core/maths/functionimplementation.hpp"
+#include "core/maths/parser_functions.hpp"
+
 #include "core/ParserLib/muParser.h"
+
+#include "core/plotting/graph_helper.hpp"
+#include "core/plotting/plotdata.hpp"
+
+#include "core/procedure/procedure.hpp"
+#include "core/procedure/procedurelibrary.hpp"
+
 #include "core/strings/stringparser.hpp"
 
-#include "windowmanager.hpp"
+#include "core/ui/error.hpp"
+#include "core/ui/language.hpp"
+
+#include "core/utils/tools.hpp"
+
 
 #ifndef KERNEL_HPP
 #define KERNEL_HPP
@@ -58,7 +68,7 @@ using namespace mu;
 // Forward declarations of the terminal class and
 // the task container used for communicating between
 // the kernel and the GUI
-class wxTerm;
+class NumeReTerminal;
 struct NumeReTask;
 
 
@@ -136,7 +146,7 @@ class NumeReKernel
         FileSystem _fSys;
         Settings _option;
         Output _out;
-        Datafile _data;
+        MemoryManager _memoryManager;
         Parser _parser;
         NumeRe::StringParser _stringParser;
         FunctionDefinitionManager _functions;
@@ -173,7 +183,7 @@ class NumeReKernel
         // Used for controlling the programm flow, to update the internal
         // state and to communicate with the graphical layer
         static int* baseStackPosition;
-        static wxTerm* m_parent;
+        static NumeReTerminal* m_parent;
         static queue<NumeReTask> taskQueue;
         static int nLINE_LENGTH;
         static bool bWritingTable;
@@ -245,14 +255,14 @@ class NumeReKernel
             return _fSys;
         }
 
-        Datafile& getData()
+        MemoryManager& getMemoryManager()
         {
-            return _data;
+            return _memoryManager;
         }
 
         NumeRe::Cluster& getAns()
         {
-            return _data.getCluster("ans");
+            return _memoryManager.getCluster("ans");
         }
 
         Parser& getParser()
@@ -321,9 +331,9 @@ class NumeReKernel
         NumeReVariables getVariableList();
         bool SettingsModified();
         int getAutosaveInterval() {return _option.getAutoSaveInterval();}
-        long long int getLastSavedTime() {return _data.getLastSaved();}
+        long long int getLastSavedTime() {return _memoryManager.getLastSaved();}
         void Autosave();
-        void StartUp(wxTerm* _parent, const string& sPath, const string& sPredefinedFuncs);
+        void StartUp(NumeReTerminal* _parent, const string& sPath, const string& sPredefinedFuncs);
         void CloseSession();
         void CancelCalculation()
         {

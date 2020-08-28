@@ -18,7 +18,7 @@
 
 #include "searchcontroller.hpp"
 #include "editor.h"
-#include "../terminal/wxterm.h"
+#include "../terminal/terminal.hpp"
 
 /////////////////////////////////////////////////
 /// \brief Creates a list of procedures in the current file

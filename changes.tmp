@@ -9,3 +9,17 @@ Fixed	The static code analyzer will now calculate the results, if it is activate
 Applied	Smoothing was changed slightly and allows now to use different filter types.
 New	NumeRe now allows only a single running instance. Double clicking files will open them in the already opened instance. Instance located in different root folders (e.g. "C:/Software/NumeRe" and "C:/Software/NumeRePortable") are not restricted, i.e. only one instance per root folder is allowed.
 Cleaned	The symbols' tree updates the function definitions and plugin definitions each time, one of them is changed, automatically.
+Removed	The obsolete Datafile class was removed and its functionality is now integrated in the MemoryManager class.
+Cleaned	The "data()" table is now a usual table with regular write permissions.
+Updated	The default table is now called "table()". This will get active once the memory is cleared. You may however rename "cache()" to "table()" as well using "rename cache(), table()".
+Added	The method "TABLE().name" will return the name of the table as string. This is an abbreviation for "to_string(TABLE())", which could be used together with "findcolumn()".
+Cleaned	The command sequence "clear TABLE()" will now only clear the contents of the selected TABLE().
+Cleaned	The command sequence "clear -memory" will remove all tables from memory and also clear the contents of the string table.
+Cleaned	The command "reload" will in the future be used like "load FILE". The old syntax is now deprecated and the new is already available.
+Added	The method "TABLE().size" will return the tables size in rows and columns.
+Added	The methods "TABLE().minpos" and "TABLE().maxpos" will return the positions of the minmal or maximal values in the table using rows and columns.
+Added	The matrix function "repmat()" will repeat the passed table (n x m) times and return it as a new table.
+Cleaned	During loading are now filenames now stored and will be used for "reload". The filenames are accessible via "data(#,#)".
+Added	Added the multi-argument functions "minpos()" and "maxpos()" as usual function representations for their corresponding methods.
+Cleaned	Resolved an glitch in "export", where the default extension was "ndat" and not "dat".
+Cleaned	Added the LaTeX "nonstopmode" to all LaTeX usages.

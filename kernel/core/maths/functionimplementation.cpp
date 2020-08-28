@@ -33,6 +33,13 @@ volatile sig_atomic_t exitsignal = 0;
  */
 
 // --> Umrechnungsfunktionen: diese werden aufgerufen, wenn eine spezielle Syntax verwendet wird <--
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1M.
+///
+/// \param a_fVal value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Mega(value_type a_fVal)
 {
     if (isinf(a_fVal) || isnan(a_fVal))
@@ -40,6 +47,14 @@ value_type parser_Mega(value_type a_fVal)
     return a_fVal * 1e6;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1m.
+///
+/// \param a_fVal value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Milli(value_type a_fVal)
 {
     if (isinf(a_fVal) || isnan(a_fVal))
@@ -47,6 +62,14 @@ value_type parser_Milli(value_type a_fVal)
     return a_fVal * 1e-3;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1G.
+///
+/// \param a_fVal value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Giga(value_type a_fVal)
 {
     if (isinf(a_fVal) || isnan(a_fVal))
@@ -54,6 +77,14 @@ value_type parser_Giga(value_type a_fVal)
     return a_fVal * 1e9;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1k.
+///
+/// \param a_fVal value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Kilo(value_type a_fVal)
 {
     if (isinf(a_fVal) || isnan(a_fVal))
@@ -61,6 +92,14 @@ value_type parser_Kilo(value_type a_fVal)
     return a_fVal * 1e3;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1mu.
+///
+/// \param a_fVal value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Micro(value_type a_fVal)
 {
     if (isinf(a_fVal) || isnan(a_fVal))
@@ -68,6 +107,14 @@ value_type parser_Micro(value_type a_fVal)
     return a_fVal * 1e-6;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1n.
+///
+/// \param a_fVal value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Nano(value_type a_fVal)
 {
     if (isinf(a_fVal) || isnan(a_fVal))
@@ -75,6 +122,15 @@ value_type parser_Nano(value_type a_fVal)
     return a_fVal * 1e-9;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Function representing the logical NOT
+/// operator.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Not(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -82,12 +138,29 @@ value_type parser_Not(value_type v)
     return v==0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Identity function. Used for ignoring
+/// functions and parameters in special cases.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Ignore(value_type v)
 {
     return v;
 }
 
+
 // --> Einheitenumrechnung: eV, fm, A, b, Torr, AU, etc... <--
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1eV.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_ElectronVolt(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -95,6 +168,14 @@ value_type parser_ElectronVolt(value_type v)
     return v * 1.60217657e-19;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1fm.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Fermi(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -102,6 +183,14 @@ value_type parser_Fermi(value_type v)
     return v * 1e-15;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1A.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Angstroem(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -109,6 +198,14 @@ value_type parser_Angstroem(value_type v)
     return v * 1e-10;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1bn.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Barn(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -116,6 +213,14 @@ value_type parser_Barn(value_type v)
     return v * 1e-28;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1Torr/1mmhg.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Torr(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -123,6 +228,14 @@ value_type parser_Torr(value_type v)
     return v * 101325/(double)760;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1AU.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_AstroUnit(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -130,6 +243,14 @@ value_type parser_AstroUnit(value_type v)
     return v * 149597870700;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1ly.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Lightyear(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -137,6 +258,14 @@ value_type parser_Lightyear(value_type v)
     return v * 9460730472580800;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1pc.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Parsec(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -144,6 +273,14 @@ value_type parser_Parsec(value_type v)
     return v * 30856775777948584.2;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1mi.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Mile(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -151,6 +288,14 @@ value_type parser_Mile(value_type v)
     return v * 1609.344;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1yd.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Yard(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -158,6 +303,14 @@ value_type parser_Yard(value_type v)
     return v * 0.9144;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1ft.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Foot(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -165,6 +318,14 @@ value_type parser_Foot(value_type v)
     return v * 0.3048;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1in.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Inch(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -172,6 +333,14 @@ value_type parser_Inch(value_type v)
     return v * 0.0254;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1cal.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Calorie(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -179,6 +348,14 @@ value_type parser_Calorie(value_type v)
     return v * 4.1868;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1psi.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_PSI(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -186,6 +363,14 @@ value_type parser_PSI(value_type v)
     return v * 6894.75729;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1kn.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Knoten(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -193,6 +378,13 @@ value_type parser_Knoten(value_type v)
     return v * 463.0 / 900.0;
 }
 
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1l.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_liter(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -200,6 +392,14 @@ value_type parser_liter(value_type v)
     return v * 1e-3;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1kmh.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_kmh(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -207,6 +407,14 @@ value_type parser_kmh(value_type v)
     return v / 3.6;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1mph.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_mph(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -214,6 +422,13 @@ value_type parser_mph(value_type v)
     return v * 1.609334 / 3.6;
 }
 
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1°C.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Celsius(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -221,6 +436,14 @@ value_type parser_Celsius(value_type v)
     return v + 273.15;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1°F.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Fahrenheit(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -228,6 +451,14 @@ value_type parser_Fahrenheit(value_type v)
     return (v + 459.67) * 5.0 / 9.0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1C.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Curie(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -235,6 +466,14 @@ value_type parser_Curie(value_type v)
     return v * 3.7e10;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1Gs.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Gauss(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -242,12 +481,29 @@ value_type parser_Gauss(value_type v)
     return v * 1e-4;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1Ps.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Poise(value_type v)
 {
     if (isinf(v) || isnan(v))
         return NAN;
     return v * 1e-1;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Conversion function for 1mol.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_mol(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -256,10 +512,14 @@ value_type parser_mol(value_type v)
 }
 
 
-/* --> Funktion zur Berechnung der Fakultaet einer natuerlichen Zahl. Wir wandeln hier alle
- *     value_type (double) explizit in (unsigned) integer um, da die Fakultaet nur fuer
- *     natuerliche Zahlen definiert ist. <--
- */
+/////////////////////////////////////////////////
+/// \brief Function representing the faculty of
+/// any natural number.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Faculty(value_type v)
 {
     if (isnan(v) || isinf(v))
@@ -281,7 +541,15 @@ value_type parser_Faculty(value_type v)
     return vResult;
 }
 
-// --> Berechnet die Doppel-Fakultaet einer natuerlichen Zahl <--
+
+/////////////////////////////////////////////////
+/// \brief Function representing the double
+/// faculty of any natural number.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_doubleFaculty(value_type v)
 {
     if (isnan(v) || isinf(v))
@@ -297,10 +565,15 @@ value_type parser_doubleFaculty(value_type v)
 }
 
 
-/* --> Funktion zur Berechnung eines Binomialkoeffizienten aus den Werten v1 und v2. Auch
- *     hier werden die value_types in integer umgewandelt, da auch der Binomialkoeffizient
- *     nur fuer natuerliche Zahlen definiert ist <--
- */
+/////////////////////////////////////////////////
+/// \brief Function representing the binomial
+/// coefficient.
+///
+/// \param v1 value_type
+/// \param v2 value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Binom(value_type v1, value_type v2)
 {
     if (isnan(v1) || isnan(v2) || isinf(v1) || isinf(v2))
@@ -329,95 +602,167 @@ value_type parser_Binom(value_type v1, value_type v2)
     }
 }
 
-// --> Diese Funktion gibt einfach nur die Anzahl an Elementen in sich zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the number of
+/// valid elements in its array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Num(const value_type* vElements, int nElements)
 {
     int nReturn = nElements;
+
     for (int i = 0; i < nElements; i++)
     {
         if (isnan(vElements[i]) || isinf(vElements[i]))
             nReturn--;
     }
+
     return nReturn;
 }
 
-// --> Diese Funktion gibt einfach nur die Anzahl an Elementen in sich zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief This functioon simply returns the
+/// number of elements in its array (even the
+/// invalid ones).
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Cnt(const value_type* vElements, int nElements)
 {
     return nElements;
 }
 
-// --> Diese Funktion berechnet die Standardabweichung von n Argumenten <---
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the standard
+/// deviation of the elements in the passed
+/// array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Std(const value_type* vElements, int nElements)
 {
     value_type vStd = 0.0;
-    value_type vMean = 0.0;
+    value_type vMean = parser_Avg(vElements, nElements);
 
     for (int i = 0; i < nElements; i++)
     {
-        if (isnan(vElements[i]) || isinf(vElements[i]))
-            return NAN;
-        vMean += vElements[i];
+        if (!isnan(vElements[i]))
+            vStd += (vElements[i] - vMean) * (vElements[i] - vMean);
     }
-    vMean = vMean / (value_type)nElements;
 
-    for (int i = 0; i < nElements; i++)
-    {
-        vStd += (vElements[i] - vMean) * (vElements[i] - vMean);
-    }
-    vStd = sqrt(vStd / (value_type)(nElements-1));
+    vStd = sqrt(vStd / (value_type)(parser_Num(vElements, nElements)-1));
     return vStd;
 }
 
-// --> Diese Funktion berechnet das Produkt der gegebenen Werte <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the product
+/// of all elements in the passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_product(const value_type* vElements, int nElements)
 {
     value_type vProd = 1.0;
+
     for (int i = 0; i < nElements; i++)
     {
-        if (isinf(vElements[i]) || isnan(vElements[i]))
-            return NAN;
-        vProd *= vElements[i];
+        if (!isnan(vElements[i]))
+            vProd *= vElements[i];
     }
+
     return vProd;
 }
 
-// --> Diese Funktion berechnet die Norm der gegebenen Werte <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the vector
+/// norm of the elements in the passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Norm(const value_type* vElements, int nElements)
 {
     value_type vResult = 0.0;
+
     for (int i = 0; i < nElements; i++)
     {
-        if (isinf(vElements[i]) || isnan(vElements[i]))
-            return NAN;
-        vResult += vElements[i] * vElements[i];
+        if (!isnan(vElements[i]))
+            vResult += vElements[i] * vElements[i];
     }
+
     return sqrt(vResult);
 }
 
-// --> Diese Funktion berechnet den Median mehrerer Werte <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the median of
+/// the elements in the passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Med(const value_type* vElements, int nElements)
 {
-    Datafile _cache;
-    _cache.setCacheStatus(true);
+    Memory _mem;
 
     for (int i = 0; i < nElements; i++)
-        _cache.writeToTable(i,0,"cache",vElements[i]);
-    return _cache.med("cache", 0,nElements-1);
+        _mem.writeData(i, 0, vElements[i]);
+
+    return _mem.med(VectorIndex(0, nElements-1), VectorIndex(0));
 }
 
-// --> Diese Funktion berechnet das x-te Perzentil mehrerer Werte <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the selected
+/// percentile of the passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Pct(const value_type* vElements, int nElements)
 {
-    Datafile _cache;
-    _cache.setCacheStatus(true);
+    Memory _mem;
 
     for (int i = 0; i < nElements-1; i++)
-        _cache.writeToTable(i,0,"cache",vElements[i]);
-    return _cache.pct("cache", 0, nElements-1, 0, -1, vElements[nElements-1]);
+        _mem.writeData(i, 0, vElements[i]);
+
+    return _mem.pct(VectorIndex(0, nElements-2), VectorIndex(0), vElements[nElements-1]);
 }
 
-// --> Analogie zur Excel-Funktion VERGLEICH() <--
+
+/////////////////////////////////////////////////
+/// \brief This function searches for elements of
+/// a specified type in the passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_compare(const value_type* vElements, int nElements)
 {
     enum
@@ -513,7 +858,17 @@ value_type parser_compare(const value_type* vElements, int nElements)
     return nKeep+1;
 }
 
-// --> Ver-undet seine Inputargumente <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the logical
+/// AND operation between all elements in the
+/// passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_and(const value_type* vElements, int nElements)
 {
     for (int i = 0; i < nElements; i++)
@@ -525,7 +880,17 @@ value_type parser_and(const value_type* vElements, int nElements)
     return 1.0;
 }
 
-// --> Verodert seine Inputargumente <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the logical
+/// OR operation between all elements in the
+/// passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_or(const value_type* vElements, int nElements)
 {
     for (int i = 0; i < nElements; i++)
@@ -537,7 +902,17 @@ value_type parser_or(const value_type* vElements, int nElements)
     return 0.0;
 }
 
-// --> Ver-xodert seine Inputargumente <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the logical
+/// XOR operation between all elements in the
+/// passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_xor(const value_type* vElements, int nElements)
 {
     bool isTrue = false;
@@ -556,7 +931,16 @@ value_type parser_xor(const value_type* vElements, int nElements)
     return 0.0;
 }
 
-// polynomial(x,1,2,3,4)
+
+/////////////////////////////////////////////////
+/// \brief This function implements an abstract
+/// polynomial of an arbitrary order.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_polynomial(const value_type* vElements, int nElements)
 {
     if (!nElements)
@@ -573,76 +957,166 @@ value_type parser_polynomial(const value_type* vElements, int nElements)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function summarizes all elements
+/// in the passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Sum(const value_type* vElements, int nElements)
 {
     value_type fRes = 0;
+
     for (int i = 0; i < nElements; ++i)
     {
         if (!isnan(vElements[i]))
             fRes += vElements[i];
     }
+
     return fRes;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the average
+/// of all elements in passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Avg(const value_type* vElements, int nElements)
 {
-    value_type fRes = 0;
-    int nNaNs = 0;
-    for (int i = 0; i < nElements; ++i)
-    {
-        if (!isnan(vElements[i]))
-            fRes += vElements[i];
-        else
-            nNaNs++;
-    }
-    return fRes/(value_type)(nElements-nNaNs);
+    return parser_Sum(vElements, nElements) / parser_Num(vElements, nElements);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the minimal
+/// value of all elements in the passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Min(const value_type* vElements, int nElements)
 {
     value_type fRes = vElements[0];
+
     for (int i = 0; i < nElements; ++i)
     {
         if (!isnan(fRes))
             break;
+
         if (!isnan(vElements[i]))
             fRes = vElements[i];
     }
+
     if (isnan(fRes))
         return fRes;
+
     for (int i = 0; i < nElements; ++i)
     {
         if (!isnan(vElements[i]))
             fRes = std::min(fRes, vElements[i]);
     }
+
     return fRes;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the maximal
+/// value of all elements in the passed array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Max(const value_type* vElements, int nElements)
 {
     value_type fRes = vElements[0];
+
     for (int i = 0; i < nElements; ++i)
     {
         if (!isnan(fRes))
             break;
+
         if (!isnan(vElements[i]))
             fRes = vElements[i];
     }
+
     if (isnan(fRes))
         return fRes;
+
     for (int i = 0; i < nElements; ++i)
     {
         if (!isnan(vElements[i]))
             fRes = std::max(fRes, vElements[i]);
     }
+
     return fRes;
 }
 
-// --> Diese Funktion rundet einen Wert auf eine angegebene Zahl an Nachkommastellen <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the index of the
+/// (first) minimal value in the array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_MinPos(const value_type* vElements, int nElements)
+{
+    vector<value_type> vData(vElements, vElements+nElements);
+    vData.push_back(parser_Min(vElements, nElements));
+    vData.push_back(0);
+
+    return parser_compare(&vData[0], vData.size());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the index of the
+/// (first) maximal value in the array.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_MaxPos(const value_type* vElements, int nElements)
+{
+    vector<value_type> vData(vElements, vElements+nElements);
+    vData.push_back(parser_Max(vElements, nElements));
+    vData.push_back(0);
+
+    return parser_compare(&vData[0], vData.size());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function rounds the passed value
+/// to the selected number of decimals.
+///
+/// \param vToRound value_type
+/// \param vDecimals value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_round(value_type vToRound, value_type vDecimals)
 {
     if (isinf(vToRound) || isinf(vDecimals) || isnan(vToRound) || isnan(vDecimals))
         return NAN;
+
     double dDecimals = std::pow(10, -abs(intCast(vDecimals)));
     vToRound = vToRound / dDecimals;
     vToRound = std::round(vToRound);
@@ -650,23 +1124,52 @@ value_type parser_round(value_type vToRound, value_type vDecimals)
     return vToRound;
 }
 
-// --> Diese Funktion rechnet einen Gradwert in einen Radianwert um <--
+
+/////////////////////////////////////////////////
+/// \brief This function converts degree to
+/// radian.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_toRadian(value_type v)
 {
     if (isinf(v) || isnan(v))
         return NAN;
+
     return v / 180.0 * M_PI;
 }
 
-// --> Diese Funktion rechnet einen Radianwert in einen Gradwert um <--
+
+/////////////////////////////////////////////////
+/// \brief This function converts radian to
+/// degree.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_toDegree(value_type v)
 {
     if (isinf(v) || isnan(v))
         return NAN;
+
     return v / M_PI * 180.0;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert des Realteils der Kugelflaechenfunktionen bis zur Ordnung l = 5 <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the real part
+/// of the selected spherical harmonics.
+///
+/// \param vl value_type
+/// \param vm value_type
+/// \param theta value_type
+/// \param phi value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_SphericalHarmonics(value_type vl, value_type vm, value_type theta, value_type phi)
 {
     if (isinf(vl) || isnan(vl)
@@ -674,20 +1177,30 @@ value_type parser_SphericalHarmonics(value_type vl, value_type vm, value_type th
         || isinf(theta) || isnan(theta)
         || isinf(phi) || isnan(phi))
         return NAN;
+
     int l = intCast(fabs(vl));
     int m = intCast(vm);
+
     if (abs(m) > l)
-    {
         return NAN;
-    }
     else
-    {
         return sqrt((double)(2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))*parser_AssociatedLegendrePolynomial(l,m,cos(theta))*cos(m*phi);
-    }
+
     return 0.0;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert des Imaginaerteils der Kugelflaechenfunktionen bis zur Ordnung l = 5 <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the imaginary
+/// part of the selected spherical harmonics.
+///
+/// \param vl value_type
+/// \param vm value_type
+/// \param theta value_type
+/// \param phi value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_imSphericalHarmonics(value_type vl, value_type vm, value_type theta, value_type phi)
 {
     if (isinf(vl) || isnan(vl)
@@ -695,20 +1208,30 @@ value_type parser_imSphericalHarmonics(value_type vl, value_type vm, value_type 
         || isinf(theta) || isnan(theta)
         || isinf(phi) || isnan(phi))
         return NAN;
+
     int l = intCast(fabs(vl));
     int m = intCast(vm);
+
     if (abs(m) > l)
-    {
         return NAN;
-    }
     else
-    {
         return sqrt((double)(2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))*parser_AssociatedLegendrePolynomial(l,m,cos(theta))*sin(m*phi);
-    }
+
     return 0.0;
 }
 
-// --> Zernikepolynome <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the selected
+/// Zernike polynomials.
+///
+/// \param vn value_type
+/// \param vm value_type
+/// \param rho value_type
+/// \param phi value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Zernike(value_type vn, value_type vm, value_type rho, value_type phi)
 {
     if (isinf(vn) || isnan(vn)
@@ -716,29 +1239,41 @@ value_type parser_Zernike(value_type vn, value_type vm, value_type rho, value_ty
         || isinf(rho) || isnan(rho)
         || isinf(phi) || isnan(phi))
         return NAN;
+
     int n = intCast(vn);
     int m = intCast(vm);
+
     if (n < abs(m))
         return NAN;
+
     if (m < 0)
-    {
         return parser_ZernikeRadial(n, -m, rho) * sin(-m*phi);
-    }
     else
-    {
         return parser_ZernikeRadial(n, m, rho) * cos(m*phi);
-    }
 }
 
-// --> Radialteil der Zernikepolynome <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the radial
+/// part of the Zernike polynomials.
+///
+/// \param n int
+/// \param m int
+/// \param rho value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_ZernikeRadial(int n, int m, value_type rho)
 {
     value_type vReturn = 0;
     value_type vNorm = 0;
+
     if (fabs(rho) > 1.0)
         return NAN;
+
     if ((n-m) % 2)
         return 0.0;
+
     for (int k = 0; k <= (n-m)/2; k++)
     {
         if (k % 2)
@@ -752,10 +1287,19 @@ value_type parser_ZernikeRadial(int n, int m, value_type rho)
             vNorm += parser_Faculty(n-k)/(parser_Faculty(k)*parser_Faculty((n+m)/2.0-k)*parser_Faculty((n-m)/2.0-k));
         }
     }
+
     return vReturn/vNorm;
 }
 
-// --> Diese Funktion berechneten den sinc(x) <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the cardinal
+/// sine of x.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_SinusCardinalis(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -766,7 +1310,16 @@ value_type parser_SinusCardinalis(value_type v)
         return sin(v)/v;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert der sphaerischen Besselfunktionen bis zur Ordnung n = 5 <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the spherical
+/// bessel function.
+///
+/// \param vn value_type
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_SphericalBessel(value_type vn, value_type v)
 {
     if (isinf(vn) || isinf(v) || isnan(vn) || isnan(v))
@@ -805,7 +1358,16 @@ value_type parser_SphericalBessel(value_type vn, value_type v)
     return 0.0;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert der sphaerischen Neumannfunktionen bis zur Ordnung n = 5 <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the spherical
+/// von Neumann function.
+///
+/// \param vn value_type
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_SphericalNeumann(value_type vn, value_type v)
 {
     if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
@@ -842,7 +1404,16 @@ value_type parser_SphericalNeumann(value_type vn, value_type v)
     return 0.0;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert der Legendre-Polynome bis zur Ordnung n = infty <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the Legendre
+/// polynomials of the selected order.
+///
+/// \param vn value_type
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_LegendrePolynomial(value_type vn, value_type v)
 {
     if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
@@ -858,7 +1429,18 @@ value_type parser_LegendrePolynomial(value_type vn, value_type v)
     return dResult;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert der Assoziierten Legendre-Polynome bis zur Ordnung n = 6 <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the
+/// associated Legendre polynomials of the
+/// selected order.
+///
+/// \param vl value_type
+/// \param vm value_type
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_AssociatedLegendrePolynomial(value_type vl, value_type vm, value_type v)
 {
     if (isinf(vl) || isnan(vl) || isinf(vm) || isnan(vm) || isinf(v) || isnan(v))
@@ -881,7 +1463,16 @@ value_type parser_AssociatedLegendrePolynomial(value_type vl, value_type vm, val
     return 0.0;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert der Laguerre-Polynome bis zur Ordnung n = infty <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the Laguerre
+/// polynomials of the selected order.
+///
+/// \param vn value_type
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_LaguerrePolynomial(value_type vn, value_type v)
 {
     if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
@@ -896,7 +1487,18 @@ value_type parser_LaguerrePolynomial(value_type vn, value_type v)
     return dResult;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert der Assoziierten Laguerre-Polynome bis zur Ordnung n = infty <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the
+/// associated Laguerre polynomials of the
+/// selected order.
+///
+/// \param vn value_type
+/// \param vk value_type
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_AssociatedLaguerrePolynomial(value_type vn, value_type vk, value_type v)
 {
     if (isinf(vn) || isnan(vn) || isinf(vk) || isnan(vk) || isinf(v) || isnan(v))
@@ -914,7 +1516,16 @@ value_type parser_AssociatedLaguerrePolynomial(value_type vn, value_type vk, val
     return dResult;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert der Hermite-Polynome bis zur Ordnung n = infty <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the Hermite
+/// polynomials of the selected order.
+///
+/// \param vn value_type
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_HermitePolynomial(value_type vn, value_type v)
 {
     if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
@@ -933,7 +1544,17 @@ value_type parser_HermitePolynomial(value_type vn, value_type v)
     return 0.0;
 }
 
-// --> Diese Funktion berechnet den numerischen Wert der Kernbindungsenergie nach Bethe-Weizsaecker <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the nucleic
+/// core binding energy according the Bethe
+/// Weizsäcker formula.
+///
+/// \param vN value_type
+/// \param vZ value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_BetheWeizsaecker(value_type vN, value_type vZ)
 {
     if (isinf(vN) || isnan(vN) || isinf(vZ) || isnan(vZ))
@@ -968,7 +1589,15 @@ value_type parser_BetheWeizsaecker(value_type vN, value_type vZ)
         return 0.0;
 }
 
-// --> Heaviside-(Theta-)Funktion <--
+
+/////////////////////////////////////////////////
+/// \brief This function represents the Heaviside
+/// (theta) function.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Heaviside(value_type v)
 {
     if (isinf(v) || isnan(v))
@@ -979,7 +1608,17 @@ value_type parser_Heaviside(value_type v)
         return 1.0;
 }
 
-// --> Azimuthwinkel phi <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the angle of
+/// a vector and the x axis in the x-y plane (the
+/// azimuthal angle phi).
+///
+/// \param x value_type
+/// \param y value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_phi(value_type x, value_type y)
 {
     if (isinf(x) || isnan(x) || isinf(y) || isnan(y))
@@ -990,6 +1629,17 @@ value_type parser_phi(value_type x, value_type y)
 }
 
 // --> Polarwinkel theta <--
+/////////////////////////////////////////////////
+/// \brief This function calculates the angle of
+/// a vector and the z axis in any z-r plane (the
+/// polar angle theta).
+///
+/// \param x value_type
+/// \param y value_type
+/// \param z value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_theta(value_type x, value_type y, value_type z)
 {
     if (isinf(x) || isnan(x) || isinf(y) || isnan(y) || isinf(z) || isnan(z))
@@ -999,51 +1649,89 @@ value_type parser_theta(value_type x, value_type y, value_type z)
     return acos(z/sqrt(x*x+y*y+z*z));
 }
 
-// --> Generiert eine Zufallszahl zwischen vRandMin und vRandMax <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns a uniformly
+/// distributed random number between both
+/// boundaries.
+///
+/// \param vRandMin value_type
+/// \param vRandMax value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Random(value_type vRandMin, value_type vRandMax)
 {
     if (isinf(vRandMin) || isnan(vRandMin) || isinf(vRandMax) || isnan(vRandMax))
         return NAN;
+
     const int nRandSet = 1000;
     static double dRandBuffer[nRandSet];
     static int nRandPointer = -1;
     nRandPointer++;
+
     if (!nRandPointer || nRandPointer == nRandSet)
     {
         if (!nRandPointer || dRandBuffer[0] == 0.0)
             dRandBuffer[0] = 1;
+
         nRandPointer = 0;
         default_random_engine randGen((dRandBuffer[0]*(double)time(0)));
         uniform_real_distribution<double> randDist(0,1);
+
         for (int i = 0; i < nRandSet; i++)
             dRandBuffer[i] = randDist(randGen);
     }
+
     return dRandBuffer[nRandPointer]*(vRandMax-vRandMin)+vRandMin;//randDist(randGen);
 }
 
-// --> Generiert eine Zufallszahl zwischen vRandMin und vRandMax <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns a gaussian
+/// distributed random number using the passed
+/// values as mean and standard deviation.
+///
+/// \param vRandAvg value_type
+/// \param vRandstd value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_gRandom(value_type vRandAvg, value_type vRandstd)
 {
     if (isinf(vRandAvg) || isnan(vRandAvg) || isinf(vRandstd) || isnan(vRandstd))
         return NAN;
+
     const int nRandSet = 1000;
     static double dRandBuffer[nRandSet];
     static int nRandPointer = -1;
     nRandPointer++;
+
     if (!nRandPointer || nRandPointer == nRandSet)
     {
         if (!nRandPointer || dRandBuffer[0] == 0.0)
             dRandBuffer[0] = 1;
+
         nRandPointer = 0;
         default_random_engine randGen((dRandBuffer[0]*(double)time(0)));
         normal_distribution<double> randDist(0,1);
+
         for (int i = 0; i < nRandSet; i++)
             dRandBuffer[i] = randDist(randGen);
     }
+
     return dRandBuffer[nRandPointer]*fabs(vRandstd)+vRandAvg;//randDist(randGen);
 }
 
-// --> Berechnet die Gauss'sche Fehlerfunktion von x <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the gaussian
+/// error function.
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_erf(value_type x)
 {
     if (isinf(x) || isnan(x))
@@ -1051,7 +1739,15 @@ value_type parser_erf(value_type x)
     return erf(x);
 }
 
-// --> Berechnet die komplementaere Gauss'sche Fehlerfunktion von x <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the
+/// complementary gaussian error function.
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_erfc(value_type x)
 {
     if (isinf(x) || isnan(x))
@@ -1059,7 +1755,15 @@ value_type parser_erfc(value_type x)
     return erfc(x);
 }
 
-// --> Berechnet den Wert der Gammafunktion an der Stelle x <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the
+/// riemannian Gamma function.
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_gamma(value_type x)
 {
     if (isinf(x) || isnan(x))
@@ -1067,19 +1771,44 @@ value_type parser_gamma(value_type x)
     return tgamma(x);
 }
 
-// --> Airy-Funktion Ai(x) <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the Airy
+/// function Ai(x).
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_AiryA(value_type x)
 {
     return gsl_sf_airy_Ai(x, GSL_PREC_DOUBLE);
 }
 
-// --> Airy-Funktion Bi(x) <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the Airy
+/// function Bi(x).
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_AiryB(value_type x)
 {
     return gsl_sf_airy_Bi(x, GSL_PREC_DOUBLE);
 }
 
-// --> Bessel J_n(x) <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the regulary
+/// bessel function.
+///
+/// \param n value_type
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_RegularCylBessel(value_type n, value_type x)
 {
     if (n >= 0.0)
@@ -1088,7 +1817,16 @@ value_type parser_RegularCylBessel(value_type n, value_type x)
         return NAN;
 }
 
-// --> Bessel Y_n(x) <--
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the
+/// irregulary bessel (von Neumann) function.
+///
+/// \param n value_type
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_IrregularCylBessel(value_type n, value_type x)
 {
     if (x != 0.0 && n >= 0.0)
@@ -1097,177 +1835,341 @@ value_type parser_IrregularCylBessel(value_type n, value_type x)
         return -INFINITY;
 }
 
-// --> Elliptic integral F(phi,k) <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// elliptic intergal F(phi,k).
+///
+/// \param phi value_type
+/// \param k value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_EllipticF(value_type phi, value_type k)
 {
     if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi))
         return NAN;
+
     if (k < 0 || k >= 1)
         return NAN;
+
     if (phi < 0 || phi > M_PI_2) /// FIXME
     {
         int nSign = 1;
         int nMultiple = floor(fabs(phi/M_PI_2));
+
         if (phi < 0)
             nSign = -1;
+
         if (!(nMultiple%2)) // even
             return nSign*(nMultiple*gsl_sf_ellint_Kcomp(k,0) + gsl_sf_ellint_F(fabs(phi)-nMultiple*M_PI_2, k, 0));
         else // odd
             return nSign*((nMultiple+1)*gsl_sf_ellint_Kcomp(k,0) - gsl_sf_ellint_F(M_PI_2-(fabs(phi)-nMultiple*M_PI_2), k, 0));
     }
+
     return gsl_sf_ellint_F(phi, k, 0);
 }
 
-// --> Elliptic integral E(phi,k) <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// elliptic intergal E(phi,k).
+///
+/// \param phi value_type
+/// \param k value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_EllipticE(value_type phi, value_type k)
 {
     if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi))
         return NAN;
+
     if (k < 0 || k >= 1)
         return NAN;
+
     if (phi < 0 || phi > M_PI_2) /// FIXME
     {
         int nSign = 1;
         int nMultiple = floor(fabs(phi/M_PI_2));
+
         if (phi < 0)
             nSign = -1;
+
         if (!(nMultiple%2)) // even
             return nSign*(nMultiple*gsl_sf_ellint_Ecomp(k,0) + gsl_sf_ellint_E(fabs(phi)-nMultiple*M_PI_2, k, 0));
         else // odd
             return nSign*((nMultiple+1)*gsl_sf_ellint_Ecomp(k,0) - gsl_sf_ellint_E(M_PI_2-(fabs(phi)-nMultiple*M_PI_2), k, 0));
     }
+
     return gsl_sf_ellint_E(phi, k, 0);
 }
 
-// --> Elliptic integral Pi(phi, n, k) <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// elliptic intergal Pi(phi,n,k).
+///
+/// \param phi value_type
+/// \param n value_type
+/// \param k value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_EllipticP(value_type phi, value_type n, value_type k)
 {
     if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi) || isnan(n) || isinf(n))
         return NAN;
+
     if (k < 0 || k >= 1)
         return NAN;
+
     if (phi < 0 || phi > M_PI_2) /// FIXME
     {
         int nSign = 1;
         int nMultiple = floor(fabs(phi/M_PI_2));
+
         if (phi < 0)
             nSign = -1;
+
         if (!(nMultiple%2)) // even
             return nSign*(nMultiple*gsl_sf_ellint_P(M_PI_2,k,n,0) + gsl_sf_ellint_P(fabs(phi)-nMultiple*M_PI_2, k, n, 0));
         else // odd
             return nSign*((nMultiple+1)*gsl_sf_ellint_P(M_PI_2,k,n,0) - gsl_sf_ellint_P(M_PI_2-(fabs(phi)-nMultiple*M_PI_2), k, n, 0));
     }
+
     return gsl_sf_ellint_P(phi, k, n, 0);
 }
 
-// --> Elliptic integral D(phi, n, k) <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// elliptic intergal D(phi,n,k).
+///
+/// \param phi value_type
+/// \param n value_type
+/// \param k value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_EllipticD(value_type phi, value_type n, value_type k)
 {
     if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi) || isnan(n) || isinf(n))
         return NAN;
+
     if (k < 0 || k >= 1)
         return NAN;
+
     if (phi < 0 || phi > M_PI_2) /// FIXME
     {
         int nSign = 1;
         int nMultiple = floor(fabs(phi/M_PI_2));
+
         if (phi < 0)
             nSign = -1;
+
         if (!(nMultiple%2)) // even
             return nSign*(nMultiple*gsl_sf_ellint_D(M_PI_2,k,n,0) + gsl_sf_ellint_D(fabs(phi)-nMultiple*M_PI_2, k, n, 0));
         else // odd
             return nSign*((nMultiple+1)*gsl_sf_ellint_D(M_PI_2,k,n,0) - gsl_sf_ellint_D(M_PI_2-(fabs(phi)-nMultiple*M_PI_2), k, n, 0));
     }
+
     return gsl_sf_ellint_D(phi, k, n, 0);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// Beta function.
+///
+/// \param a value_type
+/// \param b value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_beta(value_type a, value_type b)
 {
     if (isnan(a) || isnan(b) || isinf(a) || isinf(b))
         return NAN;
+
     if ((intCast(a) == (int)a && a < 0) || (intCast(b) == (int)b && b < 0))
         return NAN;
+
     return gsl_sf_beta(a, b);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// Zeta function.
+///
+/// \param n value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_zeta(value_type n)
 {
     if (isnan(n) || isinf(n))
         return NAN;
+
     if (n == 1)
         return NAN;
+
     if (intCast(n) == (int)n)
         return gsl_sf_zeta_int(intCast(n));
     else
         return gsl_sf_zeta(n);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// Clausen function.
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_clausen(value_type x)
 {
     if (isnan(x) || isinf(x))
         return NAN;
+
     return gsl_sf_clausen(x);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// Digamma function.
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_digamma(value_type x)
 {
     if (isnan(x) || isinf(x))
         return NAN;
+
     if (x == 0)
         return NAN;
+
     if ((int)x == intCast(x) && x > 0)
         return gsl_sf_psi_int(intCast(x));
     else
         return gsl_sf_psi(x);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value if the
+/// Polygamma function.
+///
+/// \param n value_type
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_polygamma(value_type n, value_type x)
 {
     if (isnan(n) || isnan(x) || isinf(n) || isinf(x) || x <= 0 || n < 0)
         return NAN;
+
     return gsl_sf_psi_n(intCast(n), x);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This function returns the value of the
+/// Dilogarithm Li2(x).
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_dilogarithm(value_type x)
 {
     if (isnan(x) || isinf(x))
         return NAN;
+
     return gsl_sf_dilog(x);
 }
 
-// --> floor-Funktion <--
+
+/////////////////////////////////////////////////
+/// \brief This is the floor function.
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_floor(value_type x)
 {
     return floor(x);
 }
 
-// --> roof-Funktion <--
+
+/////////////////////////////////////////////////
+/// \brief This is the roof (ceil) function.
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_roof(value_type x)
 {
     return ceil(x);
 }
 
-// --> Rechteckfunktion <--
+
+/////////////////////////////////////////////////
+/// \brief This is the rect function.
+///
+/// \param x value_type
+/// \param x0 value_type
+/// \param x1 value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_rect(value_type x, value_type x0, value_type x1)
 {
     return (x > x1 || x < x0) ? 0 : 1;
 }
 
-// --> Intervallfunction <--
+
+/////////////////////////////////////////////////
+/// \brief This function describes an interval
+/// with borders of a selected type (including,
+/// excluding, ignore).
+///
+/// \param x value_type
+/// \param x0 value_type
+/// \param x1 value_type
+/// \param lborder value_type
+/// \param rborder value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_ivl(value_type x, value_type x0, value_type x1, value_type lborder, value_type rborder)
 {
     if (lborder < 0)
         lborder = 0;
+
     if (lborder > 2)
         lborder = 2;
+
     if (rborder < 0)
         rborder = 0;
+
     if (rborder > 2)
         rborder = 2;
+
     if (x < x0 && lborder)
         return 0;
     else if (x < x0)
         return 1;
+
     if (x == x0 && lborder != 2)
         return 1;
     else if (x == x0 && lborder == 2)
@@ -1277,6 +2179,7 @@ value_type parser_ivl(value_type x, value_type x0, value_type x1, value_type lbo
         return 0;
     else if (x > x1)
         return 1;
+
     if (x == x1 && rborder != 2)
         return 1;
     else if (x == x1 && rborder == 2)
@@ -1285,94 +2188,210 @@ value_type parser_ivl(value_type x, value_type x0, value_type x1, value_type lbo
     return 1;
 }
 
-// --> Student-Faktor <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the Student
+/// factor s_t for the selected degrees of
+/// freedom and a confidence interval.
+///
+/// \param vFreedoms value_type
+/// \param vAlpha value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_studentFactor(value_type vFreedoms, value_type vAlpha)
 {
     if (vAlpha >= 1.0 || vAlpha <= 0.0 || vFreedoms < 2.0)
         return NAN;
+
     boost::math::students_t dist(intCast(vFreedoms)-1);
     return boost::math::quantile(boost::math::complement(dist, (1.0-vAlpha)/2.0));
 }
 
-// --> Greatest commom divisor <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the greatest
+/// common divisor of both argments.
+///
+/// \param n value_type
+/// \param k value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_gcd(value_type n, value_type k)
 {
     return boost::math::gcd(intCast(n), intCast(k));
 }
 
-// --> Least common multiple <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the least common
+/// multiple of both arguments.
+///
+/// \param n value_type
+/// \param k value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_lcm(value_type n, value_type k)
 {
     return boost::math::lcm(intCast(n), intCast(k));
 }
 
 
-// --> Modulo-Operator <--
+/////////////////////////////////////////////////
+/// \brief This function represents the Modulo
+/// operator.
+///
+/// \param v1 value_type
+/// \param v2 value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_Mod(value_type v1, value_type v2)
 {
     if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
         return NAN;
+
     return intCast(v1) % intCast(v2);
 }
 
-// --> XOR-Operator <--
+
+/////////////////////////////////////////////////
+/// \brief This function represent the XOR
+/// operator.
+///
+/// \param v1 value_type
+/// \param v2 value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_XOR(value_type v1, value_type v2)
 {
     if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
         return NAN;
-    return (v1 && !v2) || (!v1 && v2);
+
+    return intCast(v1) xor intCast(v2);
 }
 
-// --> binary OR-Operator <--
+
+/////////////////////////////////////////////////
+/// \brief This function represents the binary
+/// OR operator.
+///
+/// \param v1 value_type
+/// \param v2 value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_BinOR(value_type v1, value_type v2)
 {
     if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
         return NAN;
+
     return intCast(v1) | intCast(v2);
 }
 
-// --> binary AND-Operator <--
+
+/////////////////////////////////////////////////
+/// \brief This function represents the binary
+/// AND operator.
+///
+/// \param v1 value_type
+/// \param v2 value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_BinAND(value_type v1, value_type v2)
 {
     if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
         return NAN;
+
     return intCast(v1) & intCast(v2);
 }
 
-// --> value_type-Repraesentation der is_string()-Funktion <--
+
+/////////////////////////////////////////////////
+/// \brief This function is a numerical version
+/// of the string is_string() function. Used as a
+/// fallback.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_is_string(value_type v)
 {
     if (isnan(v) || isinf(v))
         return NAN;
+
     return 0.0;
 }
 
-// --> Gibt die Zeit zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the current UNIX
+/// time.
+///
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_time()
 {
     return time(0);
 }
 
-// --> Returns the processor clocks <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the current CPU
+/// clock count.
+///
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_clock()
 {
     return (double)clock();
 }
 
-// --> Sleeps for the passed amount of milliseconds and returns this number <--
+
+/////////////////////////////////////////////////
+/// \brief Sleeps for the passed amount of
+/// milliseconds and returns this number.
+///
+/// \param milliseconds value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_sleep(value_type milliseconds)
 {
     Sleep(intCast(milliseconds));
     return intCast(milliseconds);
 }
 
-// --> NumeRe-Version als natuerliche Zahl <--
+
+/////////////////////////////////////////////////
+/// \brief Returns the version number of NumeRe
+/// as a natural number.
+///
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_numereversion()
 {
     return 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD;
 }
 
-// --> Wandelt Zeitangaben in Sekunden in ein Datum um <--
+
+/////////////////////////////////////////////////
+/// \brief This function converts UNIX time
+/// values into a selected part of a time stamp.
+///
+/// \param vTime value_type
+/// \param vType value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_date(value_type vTime, value_type vType)
 {
     time_t tTime = (time_t)rint(vTime);
@@ -1400,37 +2419,79 @@ value_type parser_date(value_type vTime, value_type vType)
         default:
             return ((1900+ltm->tm_year)*10000.0+(1+ltm->tm_mon)*100.0+(ltm->tm_mday))*1000000.0+(ltm->tm_hour)*10000.0+(ltm->tm_min)*100.0+ltm->tm_sec;
     }
+
     return 0;
 }
 
-// --> Gibt true zurueck, wenn der Wert == NAN, false sonst <--
+
+/////////////////////////////////////////////////
+/// \brief Returns, whether the selected value is
+/// NaN.
+///
+/// \param v value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_isnan(value_type v)
 {
     return v != v;
 }
 
-// --> Beschraenkt einen Ausdruck auf ein Intervall <--
+
+/////////////////////////////////////////////////
+/// \brief This function numerically defines a
+/// valid value range (the value is set to NaN,
+/// if outside of this range).
+///
+/// \param v value_type
+/// \param vLeft value_type
+/// \param vRight value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_interval(value_type v, value_type vLeft, value_type vRight)
 {
     if (vRight <= vLeft)
         return NAN;
+
     if (v <= vRight && v >= vLeft)
         return v;
     else
         return NAN;
 }
 
-// --> Co-Tan(x) <--
+
+/////////////////////////////////////////////////
+/// \brief This function returns the cotangent of
+/// the passed value.
+///
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
 value_type parser_cot(value_type x)
 {
     if (isnan(x) || isinf(x))
         return NAN;
+
     if (!sin(x))
         return INFINITY;
+
     return cos(x) / sin(x);
 }
 
-// --> Var-Factory: Hier werden die physikalischen Adressen der Variablen generiert <--
+
+/////////////////////////////////////////////////
+/// \brief This function represents the numerical
+/// variable factory. New memory is allocated in
+/// this function and stored in an internal list
+/// managed by the parser.
+///
+/// \param a_szName const char_type*
+/// \param a_pUserData void*
+/// \return value_type*
+///
+/////////////////////////////////////////////////
 value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
 {
     // Cast the passed void pointer to a the data storage list

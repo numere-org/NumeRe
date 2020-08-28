@@ -81,12 +81,13 @@ class FunctionDefinitionManager : public FileSystem
         string sBuilt_In;                   // String, der die Namen der Built-In-Funktionen speichert
         string sCommands;                   // String, der alle NumeRe-Kommandos speichert
         string sTables;
+        bool isLocal;
 
         string resolveRecursiveDefinitions(string sDefinition);
         map<string, FunctionDefinition>::const_iterator findItemById(size_t id) const;
 
     public:
-        FunctionDefinitionManager();                           // Standard-Konstruktor
+        FunctionDefinitionManager(bool _isLocal);                           // Standard-Konstruktor
         FunctionDefinitionManager(FunctionDefinitionManager& _defined);           // Kopierkonstruktor
 
         // --> TRUE, wenn es eine Funktion mit dem angegeben Funktionsnamen gibt <--

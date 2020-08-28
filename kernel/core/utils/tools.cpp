@@ -2398,6 +2398,11 @@ string getNextIndex(string& sArgList, bool bCut)
     return getNextCommandLineToken(sArgList, bCut, ':');
 }
 
+string getNextSemiColonSeparatedToken(string& sArgList, bool bCut)
+{
+    return getNextCommandLineToken(sArgList, bCut, ';');
+}
+
 /////////////////////////////////////////////////
 /// \brief Splits up the complete argument list and returns them as an EndlessVector
 ///
@@ -2432,6 +2437,23 @@ EndlessVector<string> getAllIndices(string sArgList)
     return vIndices;
 }
 
+/////////////////////////////////////////////////
+/// \brief Splits up the complete index list and returns them as an EndlessVector
+///
+/// \param sArgList string
+/// \return EndlessVector<string>
+///
+/////////////////////////////////////////////////
+EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList)
+{
+    EndlessVector<string> vIndices;
+
+    while (sArgList.length())
+        vIndices.push_back(getNextSemiColonSeparatedToken(sArgList, true));
+
+    return vIndices;
+}
+
 // Wrapper for the static member function of the kernel
 void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType)
 {
@@ -2441,7 +2463,7 @@ void make_progressBar(int nStep, int nFirstStep, int nFinalStep, const string& s
 
 static bool containsStringClusters(const string& sLine)
 {
-    const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getData().getClusterMap();
+    const map<string,NumeRe::Cluster>& mClusterMap = NumeReKernel::getInstance()->getMemoryManager().getClusterMap();
 
     for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
     {
@@ -3754,22 +3776,6 @@ unsigned int countEscapeSymbols(const string& sLine)
     return nCount;
 }
 
-// This function simply evaluates, whether "data()" is in the passed string
-bool containsDataObject(const string& sExpr)
-{
-    // Go through the string
-    for (unsigned int i = 0; i < sExpr.length() - 5; i++)
-    {
-        // If we found "data(", we have to ensure that
-        // it is the actual function and not a part of
-        // a larger string
-        if (!i && sExpr.substr(i, 5) == "data(")
-            return true;
-        else if (i && sExpr.substr(i, 5) == "data(" && checkDelimiter(sExpr.substr(i - 1, 6)))
-            return true;
-    }
-    return false;
-}
 
 // This is a static helper function for the standard qsort algorithm
 static int compareDouble(const void* p1, const void* p2)

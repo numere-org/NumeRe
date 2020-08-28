@@ -23,7 +23,7 @@
 #include "../../kernel.hpp"
 
 
-extern Integration_Vars parser_iVars;
+extern DefaultVariables _defVars;
 extern mglGraph _fontData;
 
 
@@ -50,7 +50,7 @@ extern mglGraph _fontData;
 /// \return void
 ///
 /////////////////////////////////////////////////
-void createPlot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
+void createPlot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
 {
     Plot graph(sCmd, _data, _parser, _option, _functions, _pData);
 
@@ -161,7 +161,7 @@ static void writeTiff(mglGraph* _graph, const string& sOutputName)
 /// \param _pData PlotData&
 ///
 /////////////////////////////////////////////////
-Plot::Plot(string& sCmd, Datafile& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
+Plot::Plot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _option, FunctionDefinitionManager& _functions, PlotData& _pData)
 {
     sFunc = "";                      // string mit allen Funktionen
     sLabels = "";                    // string mit den Namen aller Funktionen (Fuer die Legende)
@@ -467,7 +467,7 @@ void Plot::determinePlottingDimensions(const string& sPlotCommand)
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser, FunctionDefinitionManager& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+size_t Plot::createSubPlotSet(PlotData& _pData, MemoryManager& _data, Parser& _parser, FunctionDefinitionManager& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     vector<short> vType;
     vector<string> vDrawVector;
@@ -797,15 +797,15 @@ size_t Plot::createSubPlotSet(PlotData& _pData, Datafile& _data, Parser& _parser
 
         // Set the plot calculation variables (x, y and z) to their starting
         // points
-        parser_iVars.vValue[XCOORD][0] = _pInfo.dRanges[XCOORD][0];  // Plotvariable: x
-        parser_iVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];  // Plotvariable: y
-        parser_iVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];  // Plotvariable: z
+        _defVars.vValue[XCOORD][0] = _pInfo.dRanges[XCOORD][0];  // Plotvariable: x
+        _defVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];  // Plotvariable: y
+        _defVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];  // Plotvariable: z
 
         // For the "plot3d" style or the animated plot we need the time coordinate.
         // Set it to their corresponding starting value
         if (_pInfo.sCommand == "plot3d" || _pData.getAnimateSamples())
         {
-            parser_iVars.vValue[TCOORD][0] = _pData.gettBoundary();  // Plotparameter: t
+            _defVars.vValue[TCOORD][0] = _pData.gettBoundary();  // Plotparameter: t
         }
 
         // Prepare the plotting memory for the functions depending
@@ -921,7 +921,7 @@ void Plot::applyPlotSizeAndQualitySettings(PlotData& _pData)
 /// GraphViewer, which will finalize the
 /// rendering step.
 /////////////////////////////////////////////////
-bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, vector<short>& vType, int nFunctions, double dDataRanges[3][2], const string& sOutputName)
+bool Plot::createPlotOrAnimation(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, int& nStyle, size_t nPlotCompose, size_t nPlotComposeSize, size_t& nLegends, bool bNewSubPlot, bool bAnimateVar, vector<string>& vDrawVector, vector<short>& vType, int nFunctions, double dDataRanges[3][2], const string& sOutputName)
 {
     mglData _mBackground;
     value_type* vResults = nullptr;
@@ -973,16 +973,16 @@ bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _par
             // and increment the time variable one step further
             if (t_animate)
             {
-                parser_iVars.vValue[XCOORD][0] = _pInfo.dRanges[XCOORD][0];
-                parser_iVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
-                parser_iVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];
-                parser_iVars.vValue[TCOORD][0] += (_pData.gettBoundary(1) - _pData.gettBoundary()) / (double)_pData.getAnimateSamples();
+                _defVars.vValue[XCOORD][0] = _pInfo.dRanges[XCOORD][0];
+                _defVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
+                _defVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];
+                _defVars.vValue[TCOORD][0] += (_pData.gettBoundary(1) - _pData.gettBoundary()) / (double)_pData.getAnimateSamples();
                 sLabels = sLabelsCache[0];
                 sDataLabels = sLabelsCache[1];
             }
         }
 
-        double dt_max = parser_iVars.vValue[TCOORD][0];
+        double dt_max = _defVars.vValue[TCOORD][0];
 
         // Apply the title line to the graph
         if (_pData.getTitle().length())
@@ -1127,7 +1127,7 @@ bool Plot::createPlotOrAnimation(PlotData& _pData, Datafile& _data, Parser& _par
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create2dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::create2dPlot(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -1441,7 +1441,7 @@ bool Plot::plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglDat
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::createStdPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::createStdPlot(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -2309,7 +2309,7 @@ void Plot::create2dVect(PlotData& _pData)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
+void Plot::create2dDrawing(Parser& _parser, MemoryManager& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
 {
     string sStyle;
     string sTextString;
@@ -2575,7 +2575,7 @@ void Plot::create2dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
+void Plot::create3dDrawing(Parser& _parser, MemoryManager& _data, const Settings& _option, vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
 {
     string sStyle;
     string sTextString;
@@ -2948,7 +2948,7 @@ void Plot::create3dDrawing(Parser& _parser, Datafile& _data, const Settings& _op
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::createStd3dPlot(PlotData& _pData, Datafile& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
+void Plot::createStd3dPlot(PlotData& _pData, MemoryManager& _data, Parser& _parser, const Settings& _option, vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize)
 {
     string sDummy = "";
     string sConvLegends = "";
@@ -3387,7 +3387,7 @@ long Plot::getNN(const mglData& _mData)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+void Plot::evaluatePlotParamString(Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string sDummy;
     if (_pInfo.sPlotParams.find("??") != string::npos)
@@ -3476,7 +3476,7 @@ void Plot::evaluatePlotParamString(Parser& _parser, Datafile& _data, FunctionDef
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::filename(PlotData& _pData, Datafile& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose)
+void Plot::filename(PlotData& _pData, MemoryManager& _data, Parser& _parser, Settings& _option, size_t nPlotComposeSize, size_t nPlotCompose)
 {
     // --> Ggf. waehlen eines Default-Dateinamens <--
     if (!_pData.getFileName().length() && !nPlotCompose)
@@ -3655,7 +3655,7 @@ string Plot::expandStyleForCurveArray(const string& sCurrentStyle, bool expand)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
+void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, size_t& nLegends, string& sCmd, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap)
 {
     if (nLegends && !_pData.getSchematic())
     {
@@ -3690,7 +3690,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, F
         {
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
-            if (_data.containsTablesOrClusters(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
+            if (_data.containsTablesOrClusters(sSubPlotIDX))
             {
                 getDataElements(sSubPlotIDX, _parser, _data, _option);
             }
@@ -3745,7 +3745,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, Datafile& _data, F
         {
             if (!_functions.call(sSubPlotIDX))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sSubPlotIDX, SyntaxError::invalid_position);
-            if (_data.containsTablesOrClusters(sSubPlotIDX) || sSubPlotIDX.find("data(") != string::npos)
+            if (_data.containsTablesOrClusters(sSubPlotIDX))
             {
                 getDataElements(sSubPlotIDX, _parser, _data, _option);
             }
@@ -3939,12 +3939,12 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnima
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data, FunctionDefinitionManager& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2])
+void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, vector<short>& vType, string& sDataPlots, string& sAxisBinds, string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2])
 {
     const short TYPE_DATA = -1;
     const short TYPE_FUNC = 1;
 
-    if (containsDataObject(sFunc) || _data.containsTablesOrClusters(sFunc))
+    if (_data.containsTablesOrClusters(sFunc))
     {
         string sFuncTemp = sFunc;
         string sToken = "";
@@ -3954,11 +3954,8 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
             sToken = getNextArgument(sFuncTemp, true);
             StripSpaces(sToken);
 
-            if (containsDataObject(sToken) || _data.containsTablesOrClusters(sToken))
+            if (_data.containsTablesOrClusters(sToken))
             {
-                if (sToken.find("data(") != string::npos && sToken.find("data(") && checkDelimiter(sToken.substr(sToken.find("data(") - 1, 6)))
-                    throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
-
                 if (_data.containsTablesOrClusters(sToken.substr(0, sToken.find_first_of("({") + 1))
                     && !_data.isTable(sToken.substr(0, sToken.find_first_of("({")))
                     && !_data.isCluster(sToken.substr(0, sToken.find_first_of("({"))))
@@ -3981,7 +3978,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
         {
             sToken = getNextArgument(sFuncTemp, true);
 
-            if (containsDataObject(sToken) || _data.containsTablesOrClusters(sToken))
+            if (_data.containsTablesOrClusters(sToken))
             {
                 sDataPlots += ";" + sToken;
                 vType.push_back(TYPE_DATA);
@@ -4418,7 +4415,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, Datafile& _data,
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data, const Settings& _option)
+void Plot::createDataLegends(PlotData& _pData, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     // --> Ersetzen von "data()" bzw. "cache()" durch die Spaltentitel <--
     size_t n_dpos = 0;
@@ -4430,13 +4427,12 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
         string sTemp = sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos);
 
         // Try to find a data object in the current label
-        if ((sTemp.find("data(") != string::npos || _data.containsTables(sTemp.substr(1, sTemp.length()-2)))
+        if (_data.containsTables(sTemp.substr(1, sTemp.length()-2))
                 && (sTemp.find(',') != string::npos || sTemp.substr(sTemp.find('('), 2) == "()")
                 && sTemp.find(')') != string::npos)
         {
             // Ensure that the referenced data object contains valid data
-            if ((sTemp.find("data(") != string::npos && checkDelimiter(sDataLabels.substr(sDataLabels.substr(n_dpos, sDataLabels.find(';', n_dpos) - n_dpos).find("data(") - 1, 6)) && !_data.isValid())
-                || (_data.containsTablesOrClusters(sTemp.substr(1, sTemp.length()-2)) && !_data.isValidCache()))
+            if (_data.containsTablesOrClusters(sTemp.substr(1, sTemp.length()-2)) && !_data.isValid())
             {
                 throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sDataLabels, SyntaxError::invalid_position);
             }
@@ -4492,7 +4488,7 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
                     if (indices.size() > 2)
                         sArg_3 = indices[2];
                 }
-                else if (sArg_1.find("data(") != string::npos || _data.containsTablesOrClusters(sArg_1))
+                else if (_data.containsTablesOrClusters(sArg_1))
                 {
                     getDataElements(sArg_1, _parser, _data, _option);
                 }
@@ -4683,7 +4679,7 @@ void Plot::createDataLegends(PlotData& _pData, Parser& _parser, Datafile& _data,
 /// \return string
 ///
 /////////////////////////////////////////////////
-string Plot::constructDataLegendElement(Parser& _parser, Datafile& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName)
+string Plot::constructDataLegendElement(Parser& _parser, MemoryManager& _data, const PlotData& _pData, const string& sColumnIndices, const string& sTableName)
 {
     value_type* v = nullptr;
     int nResults = 0;
@@ -5342,11 +5338,11 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
             if (x != 0)
             {
                 if (_pData.getxLogscale())
-                    parser_iVars.vValue[XCOORD][0] = pow(10.0, log10(_pInfo.dRanges[XCOORD][0]) + (log10(_pInfo.dRanges[XCOORD][1]) - log10(_pInfo.dRanges[XCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)x);
+                    _defVars.vValue[XCOORD][0] = pow(10.0, log10(_pInfo.dRanges[XCOORD][0]) + (log10(_pInfo.dRanges[XCOORD][1]) - log10(_pInfo.dRanges[XCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)x);
                 else
-                    parser_iVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                    _defVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
             }
-            _mAxisVals[0].a[x] = parser_iVars.vValue[XCOORD][0];
+            _mAxisVals[0].a[x] = _defVars.vValue[XCOORD][0];
             vResults = _parser.Eval(nFunctions);
             for (int i = 0; i < nFunctions; i++)
             {
@@ -5365,35 +5361,35 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
             if (x != 0)
             {
                 if (_pData.getxLogscale())
-                    parser_iVars.vValue[XCOORD][0] = pow(10.0, log10(_pInfo.dRanges[XCOORD][0]) + (log10(_pInfo.dRanges[XCOORD][1]) - log10(_pInfo.dRanges[XCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)x);
+                    _defVars.vValue[XCOORD][0] = pow(10.0, log10(_pInfo.dRanges[XCOORD][0]) + (log10(_pInfo.dRanges[XCOORD][1]) - log10(_pInfo.dRanges[XCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)x);
                 else
-                    parser_iVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                    _defVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
             }
-            parser_iVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
-            _mAxisVals[0].a[x] = parser_iVars.vValue[XCOORD][0];
+            _defVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
+            _mAxisVals[0].a[x] = _defVars.vValue[XCOORD][0];
             for (int y = 0; y < _pInfo.nSamples; y++)
             {
                 if (y != 0)
                 {
                     if (_pData.getyLogscale())
-                        parser_iVars.vValue[YCOORD][0] = pow(10.0, log10(_pInfo.dRanges[YCOORD][0]) + (log10(_pInfo.dRanges[YCOORD][1]) - log10(_pInfo.dRanges[YCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)y);
+                        _defVars.vValue[YCOORD][0] = pow(10.0, log10(_pInfo.dRanges[YCOORD][0]) + (log10(_pInfo.dRanges[YCOORD][1]) - log10(_pInfo.dRanges[YCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)y);
                     else
-                        parser_iVars.vValue[YCOORD][0] += (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                        _defVars.vValue[YCOORD][0] += (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (double)(_pInfo.nSamples - 1);
                 }
-                parser_iVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];
+                _defVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];
                 if (!x)
-                    _mAxisVals[1].a[y] = parser_iVars.vValue[YCOORD][0];
+                    _mAxisVals[1].a[y] = _defVars.vValue[YCOORD][0];
                 for (int z = 0; z < _pInfo.nSamples; z++)
                 {
                     if (z != 0)
                     {
                         if (_pData.getyLogscale())
-                            parser_iVars.vValue[ZCOORD][0] = pow(10.0, log10(_pInfo.dRanges[ZCOORD][0]) + (log10(_pInfo.dRanges[ZCOORD][1]) - log10(_pInfo.dRanges[ZCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)y);
+                            _defVars.vValue[ZCOORD][0] = pow(10.0, log10(_pInfo.dRanges[ZCOORD][0]) + (log10(_pInfo.dRanges[ZCOORD][1]) - log10(_pInfo.dRanges[ZCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)y);
                         else
-                            parser_iVars.vValue[ZCOORD][0] += (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                            _defVars.vValue[ZCOORD][0] += (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / (double)(_pInfo.nSamples - 1);
                     }
                     if (!x && !y)
-                        _mAxisVals[2].a[z] = parser_iVars.vValue[ZCOORD][0];
+                        _mAxisVals[2].a[z] = _defVars.vValue[ZCOORD][0];
                     double dResult = _parser.Eval();
                     //vResults = &_parser.Eval();
 
@@ -5411,16 +5407,16 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
         // --> Parametrische Kurven berechnen <--
         for (int k = 0; k < _pData.getLayers(); k++)
         {
-            parser_iVars.vValue[XCOORD][0] = 0.0;
-            parser_iVars.vValue[YCOORD][0] = 0.0;
-            parser_iVars.vValue[ZCOORD][0] = 0.0;
-            parser_iVars.vValue[TCOORD][0] = _pData.gettBoundary();
+            _defVars.vValue[XCOORD][0] = 0.0;
+            _defVars.vValue[YCOORD][0] = 0.0;
+            _defVars.vValue[ZCOORD][0] = 0.0;
+            _defVars.vValue[TCOORD][0] = _pData.gettBoundary();
             vResults = _parser.Eval(nFunctions);
-            parser_iVars.vValue[XCOORD][0] = vResults[3 * k];
+            _defVars.vValue[XCOORD][0] = vResults[3 * k];
             if (3 * k + 1 < nFunctions)
-                parser_iVars.vValue[YCOORD][0] = vResults[3 * k + 1];
+                _defVars.vValue[YCOORD][0] = vResults[3 * k + 1];
             if (3 * k + 2 < nFunctions)
-                parser_iVars.vValue[ZCOORD][0] = vResults[3 + k + 2];
+                _defVars.vValue[ZCOORD][0] = vResults[3 + k + 2];
             int nRenderSamples = _pInfo.nSamples;
             for (int t = 0; t < nRenderSamples; t++)
             {
@@ -5446,13 +5442,13 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
                             dSamples = (double)(_pInfo.nSamples - 1);
                         }
                         nRenderSamples = (int)dSamples + 1;
-                        parser_iVars.vValue[TCOORD][0] += (dt_max - _pData.gettBoundary()) / dSamples;
+                        _defVars.vValue[TCOORD][0] += (dt_max - _pData.gettBoundary()) / dSamples;
                     }
                     else
-                        parser_iVars.vValue[TCOORD][0] += (_pData.gettBoundary(1) - _pData.gettBoundary()) / (double)(_pInfo.nSamples - 1);
-                    parser_iVars.vValue[XCOORD][0] = _pData.getData(t - 1, 0, k);
-                    parser_iVars.vValue[YCOORD][0] = _pData.getData(t - 1, 1, k);
-                    parser_iVars.vValue[ZCOORD][0] = _pData.getData(t - 1, 2, k);
+                        _defVars.vValue[TCOORD][0] += (_pData.gettBoundary(1) - _pData.gettBoundary()) / (double)(_pInfo.nSamples - 1);
+                    _defVars.vValue[XCOORD][0] = _pData.getData(t - 1, 0, k);
+                    _defVars.vValue[YCOORD][0] = _pData.getData(t - 1, 1, k);
+                    _defVars.vValue[ZCOORD][0] = _pData.getData(t - 1, 2, k);
                 }
                 // --> Wir werten alle Koordinatenfunktionen zugleich aus und verteilen sie auf die einzelnen Parameterkurven <--
                 vResults = _parser.Eval(nFunctions);
@@ -5477,7 +5473,7 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
                     _pData.setData(t, i, NAN, k);
             }
         }
-        parser_iVars.vValue[TCOORD][0] = dt_max;
+        _defVars.vValue[TCOORD][0] = dt_max;
     }
     else if (sFunc != "<<empty>>" && _pInfo.b3DVect)
     {
@@ -5486,21 +5482,21 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
         {
             if (x != 0)
             {
-                parser_iVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                _defVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
             }
-            parser_iVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
+            _defVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
             for (int y = 0; y < _pInfo.nSamples; y++)
             {
                 if (y != 0)
                 {
-                    parser_iVars.vValue[YCOORD][0] += (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                    _defVars.vValue[YCOORD][0] += (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (double)(_pInfo.nSamples - 1);
                 }
-                parser_iVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];
+                _defVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];
                 for (int z = 0; z < _pInfo.nSamples; z++)
                 {
                     if (z != 0)
                     {
-                        parser_iVars.vValue[ZCOORD][0] += (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                        _defVars.vValue[ZCOORD][0] += (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / (double)(_pInfo.nSamples - 1);
                     }
                     vResults = _parser.Eval(nFunctions);
 
@@ -5529,14 +5525,14 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
         {
             if (x != 0)
             {
-                parser_iVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                _defVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
             }
-            parser_iVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
+            _defVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
             for (int y = 0; y < _pInfo.nSamples; y++)
             {
                 if (y != 0)
                 {
-                    parser_iVars.vValue[YCOORD][0] += (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                    _defVars.vValue[YCOORD][0] += (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (double)(_pInfo.nSamples - 1);
                 }
                 vResults = _parser.Eval(nFunctions);
 
@@ -5566,23 +5562,23 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
             if (x != 0)
             {
                 if (_pData.getxLogscale())
-                    parser_iVars.vValue[XCOORD][0] = pow(10.0, log10(_pInfo.dRanges[XCOORD][0]) + (log10(_pInfo.dRanges[XCOORD][1]) - log10(_pInfo.dRanges[XCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)x);
+                    _defVars.vValue[XCOORD][0] = pow(10.0, log10(_pInfo.dRanges[XCOORD][0]) + (log10(_pInfo.dRanges[XCOORD][1]) - log10(_pInfo.dRanges[XCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)x);
                 else
-                    parser_iVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                    _defVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
             }
-            parser_iVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
-            _mAxisVals[0].a[x] = parser_iVars.vValue[XCOORD][0];
+            _defVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
+            _mAxisVals[0].a[x] = _defVars.vValue[XCOORD][0];
             for (int y = 0; y < _pInfo.nSamples; y++)
             {
                 if (y != 0)
                 {
                     if (_pData.getyLogscale())
-                        parser_iVars.vValue[YCOORD][0] = pow(10.0, log10(_pInfo.dRanges[YCOORD][0]) + (log10(_pInfo.dRanges[YCOORD][1]) - log10(_pInfo.dRanges[YCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)y);
+                        _defVars.vValue[YCOORD][0] = pow(10.0, log10(_pInfo.dRanges[YCOORD][0]) + (log10(_pInfo.dRanges[YCOORD][1]) - log10(_pInfo.dRanges[YCOORD][0])) / (double)(_pInfo.nSamples - 1) * (double)y);
                     else
-                        parser_iVars.vValue[YCOORD][0] += (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (double)(_pInfo.nSamples - 1);
+                        _defVars.vValue[YCOORD][0] += (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (double)(_pInfo.nSamples - 1);
                 }
                 if (!x)
-                    _mAxisVals[1].a[y] = parser_iVars.vValue[YCOORD][0];
+                    _mAxisVals[1].a[y] = _defVars.vValue[YCOORD][0];
                 vResults = _parser.Eval(nFunctions);
                 for (int i = 0; i < nFunctions; i++)
                 {

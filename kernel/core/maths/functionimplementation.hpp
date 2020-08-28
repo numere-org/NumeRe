@@ -40,7 +40,7 @@
 #include <gsl/gsl_sf.h>
 #include <boost/math/distributions/students_t.hpp>
 
-#include "../datamanagement/datafile.hpp"
+#include "../datamanagement/memorymanager.hpp"
 #include "../utils/tools.hpp"
 #include "../version.h"
 
@@ -92,6 +92,12 @@ value_type parser_mol(value_type);
 value_type parser_Faculty(value_type);
 value_type parser_doubleFaculty(value_type);
 value_type parser_Binom(value_type, value_type);
+value_type parser_Sum(const value_type*, int);
+value_type parser_Avg(const value_type*, int);
+value_type parser_Min(const value_type*, int);
+value_type parser_Max(const value_type*, int);
+value_type parser_MinPos(const value_type*, int);
+value_type parser_MaxPos(const value_type*, int);
 value_type parser_Num(const value_type*, int);
 value_type parser_Cnt(const value_type*, int);
 value_type parser_Std(const value_type*, int);

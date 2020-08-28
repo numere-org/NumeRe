@@ -180,7 +180,7 @@ string utf8parser(const string& sString);
 void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue = false);
 vector<string> getDBFileContent(const string& sFilename, Settings& _option);
 vector<vector<string> > getDataBase(const string& sDatabaseFileName, Settings& _option);
-string generateCacheName(const string& sFilename, Settings& _option);
+string generateCacheName(const string& sFilename, Settings& _option) __attribute__ ((deprecated));
 string getFileInfo(const string& sFilename);
 string decodeNameSpace(string sCommandLine, const string& sThisNameSpace);
 
@@ -214,8 +214,10 @@ double intPower(double dNumber, int nExponent);
 
 string getNextArgument(string& sArgList, bool bCut = true);
 string getNextIndex(string& sArgList, bool bCut = true);
+string getNextSemiColonSeparatedToken(string& sArgList, bool bCut = true);
 EndlessVector<string> getAllArguments(string sArgList);
 EndlessVector<string> getAllIndices(string sArgList);
+EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList);
 /** \brief Transforms Windows-style filepaths to Unix-Style
  *
  * \param __sPath const string&
@@ -277,7 +279,6 @@ namespace big_endian_io
 	}
 }
 
-bool containsDataObject(const string& sExpr);
 void evalRecursiveExpressions(string& sExpr);
 
 size_t qSortDouble(double* dArray, size_t nlength);

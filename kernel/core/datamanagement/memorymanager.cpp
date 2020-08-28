@@ -16,8 +16,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <ctime>
+#include <cmath>
+#include <gsl/gsl_statistics.h>
+#include <gsl/gsl_sort.h>
 
-#include "cache.hpp"
+#include "memorymanager.hpp"
+#include "../utils/tools.hpp"
+#include "../version.h"
+#include "../maths/resampler.h"
 #include "../../kernel.hpp"
 using namespace std;
 
@@ -26,50 +33,79 @@ using namespace std;
  * Realisierung der Cache-Klasse
  */
 
-// --> Standard-Konstruktor <--
-MemoryManager::MemoryManager() : FileSystem(), StringMemory(), NumeRe::ClusterManager()
+
+/////////////////////////////////////////////////
+/// \brief Default MemoryManager constructor.
+/// Creates the default table and initializes the
+/// list of predefined commands.
+/////////////////////////////////////////////////
+MemoryManager::MemoryManager() : NumeRe::FileAdapter(), StringMemory(), NumeRe::ClusterManager()
 {
 	bSaveMutex = false;
 	sCache_file = "<>/numere.cache";
-	sPredefinedFuncs = ",abs(),acos(),acosh(),Ai(),arccos(),arcosh(),arcsin(),arsinh(),arctan(),artanh(),asin(),asinh(),ascii(),atan(),atanh(),avg(),bessel(),betheweizsaecker(),Bi(),binom(),cache(),char(),cmp(),cnt(),cos(),cosh(),cross(),data(),date(),dblfacul(),degree(),det(),diag(),diagonalize(),eigenvals(),eigenvects(),erf(),erfc(),exp(),faculty(),findfile(),findparam(),floor(),gamma(),gcd(),getfilelist(),getmatchingparens(),getopt(),heaviside(),hermite(),identity(),invert(),is_data(),is_nan(),is_string(),laguerre(),laguerre_a(),lcm(),legendre(),legendre_a(),ln(),log(),log10(),log2(),matfc(),matfcf(),matfl(),matflf(),max(),med(),min(),neumann(),norm(),num(),one(),pct(),phi(),prd(),radian(),rand(),range(),rect(),rint(),roof(),round(),sbessel(),sign(),sin(),sinc(),sinh(),sneumann(),solve(),split(),sqrt(),std(),strfnd(),strrfnd(),strlen(),student_t(),substr(),sum(),tan(),tanh(),theta(),time(),to_char(),to_cmd(),to_string(),to_value(),trace(),transpose(),valtostr(),Y(),zero()";
+	sPredefinedFuncs = "";
 	sUserdefinedFuncs = "";
-	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;pulse;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;stfa;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
+	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;imread;implot;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;pulse;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;stfa;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
 	sPluginCommands = "";
-	mCachesMap["cache"] = 0;
+	mCachesMap["table"] = 0;
 	vMemory.push_back(new Memory());
+
+	tableColumnsCount = 0.0;
+	tableLinesCount = 0.0;
 }
 
-// --> Destruktor <--
+
+/////////////////////////////////////////////////
+/// \brief MemoryManager destructor. Clears all
+/// created tables.
+/////////////////////////////////////////////////
 MemoryManager::~MemoryManager()
 {
     if (cache_file.is_open())
         cache_file.close();
+
     for (size_t i = 0; i < vMemory.size(); i++)
         delete vMemory[i];
 }
 
 
-// --> loescht den Inhalt des Datenfile-Objekts, ohne selbiges zu zerstoeren <--
-void MemoryManager::removeDataInMemory()
+/////////////////////////////////////////////////
+/// \brief Removes all tables in memory and re-
+/// initializes the MemoryManager with the
+/// default table.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void MemoryManager::removeTablesFromMemory()
 {
 	if (isValid())	// Sind ueberhaupt Daten vorhanden?
 	{
         if (bSaveMutex)
             return;
+
         bSaveMutex = true;
+
 		// --> Speicher, wo denn noetig freigeben <--
 		for (size_t i = 0; i < vMemory.size(); i++)
             delete vMemory[i];
+
 		vMemory.clear();
 		bSaveMutex = false;
 		mCachesMap.clear();
-		mCachesMap["cache"] = 0;
+		mCachesMap["table"] = 0;
 		vMemory.push_back(new Memory());
 	}
-	return;
 }
 
-// --> gibt den Wert von bValidData zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief Evaluates, whether there's at least a
+/// single non-empty table.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MemoryManager::isValid() const
 {
     if (!vMemory.size())
@@ -80,22 +116,42 @@ bool MemoryManager::isValid() const
         if (vMemory[i]->getCols(false))
             return true;
     }
+
 	return false;
 }
 
-// --> gibt den Wert von bIsSaved zurueck <--
+
+/////////////////////////////////////////////////
+/// \brief Returns, whether there's at least a
+/// single table in memory, which has not been
+/// saved yet.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MemoryManager::getSaveStatus() const
 {
     if (!vMemory.size())
         return true;
+
     for (size_t i = 0; i < vMemory.size(); i++)
     {
         if (!vMemory[i]->getSaveStatus())
             return false;
     }
+
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Changes the save status of all tables
+/// in memory.
+///
+/// \param _bIsSaved bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void MemoryManager::setSaveStatus(bool _bIsSaved)
 {
     for (size_t i = 0; i < vMemory.size(); i++)
@@ -104,21 +160,46 @@ void MemoryManager::setSaveStatus(bool _bIsSaved)
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns the earliest time-point, when
+/// a table was saved. This value is used to
+/// determine the elapsed time for the autosave
+/// interval.
+///
+/// \return long long int
+///
+/////////////////////////////////////////////////
 long long int MemoryManager::getLastSaved() const
 {
     long long int nLastSaved = 0;
+
     if (!vMemory.size())
         return 0;
+
     nLastSaved = vMemory[0]->getLastSaved();
+
     for (size_t i = 1; i < vMemory.size(); i++)
     {
         if (vMemory[i]->getLastSaved() < nLastSaved)
             nLastSaved = vMemory[i]->getLastSaved();
     }
+
     return nLastSaved;
 }
 
-vector<int> MemoryManager::sortElements(const string& sLine) // cache -sort[[=desc]] cols=1[2:3]4[5:9]10:
+
+/////////////////////////////////////////////////
+/// \brief This member function wraps the sorting
+/// functionality and evaluates the passed
+/// parameter string before delegating to the
+/// actual implementation.
+///
+/// \param sLine const string&
+/// \return vector<int>
+///
+/////////////////////////////////////////////////
+vector<int> MemoryManager::sortElements(const string& sLine)
 {
     if (!isValid())
         return vector<int>();
@@ -130,6 +211,7 @@ vector<int> MemoryManager::sortElements(const string& sLine) // cache -sort[[=de
     {
         sCache = findCommand(sLine).sString;
     }
+
     if (findParameter(sLine, "sort", '='))
     {
         if (getArgAtPos(sLine, findParameter(sLine, "sort", '=')+4) == "desc")
@@ -143,6 +225,7 @@ vector<int> MemoryManager::sortElements(const string& sLine) // cache -sort[[=de
             {
                 if (getArgAtPos(sLine, findParameter(sLine, iter->first, '=')+5) == "desc")
                     sSortingExpression += " desc";
+
                 sCache = iter->first;
                 break;
             }
@@ -158,26 +241,59 @@ vector<int> MemoryManager::sortElements(const string& sLine) // cache -sort[[=de
         sSortingExpression += " cols=" + getArgAtPos(sLine, findParameter(sLine, "cols", '=')+4);
     else if (findParameter(sLine, "c", '='))
         sSortingExpression += " cols=" + getArgAtPos(sLine, findParameter(sLine, "c", '=')+1);
+
     if (findParameter(sLine, "index"))
         sSortingExpression += " index";
 
-    return vMemory[mCachesMap.at(sCache)]->sortElements(0, getTableLines(sCache, false)-1, 0, getTableCols(sCache, false)-1, sSortingExpression);
+    return vMemory[mCachesMap.at(sCache)]->sortElements(0, getLines(sCache, false)-1, 0, getCols(sCache, false)-1, sSortingExpression);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function informs the
+/// selected table to sort its contents according
+/// the passed parameter set.
+///
+/// \param sCache const string&
+/// \param i1 long long int
+/// \param i2 long long int
+/// \param j1 long long int
+/// \param j2 long long int
+/// \param sSortingExpression const string&
+/// \return vector<int>
+///
+/////////////////////////////////////////////////
 vector<int> MemoryManager::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
 {
     return vMemory[mCachesMap.at(sCache)]->sortElements(i1, i2, j1, j2, sSortingExpression);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function updates the name
+/// of the cache file.
+///
+/// \param _sFileName string
+/// \return void
+///
+/////////////////////////////////////////////////
 void MemoryManager::setCacheFileName(string _sFileName)
 {
     if (_sFileName.length())
     {
-        sCache_file = FileSystem::ValidFileName(_sFileName, ".cache");
+        sCache_file = ValidFileName(_sFileName, ".cache");
     }
-    return;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function saves the
+/// contents of this class to the cache file so
+/// that they may be restored after a restart.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MemoryManager::saveToCacheFile()
 {
     if (bSaveMutex)
@@ -185,11 +301,11 @@ bool MemoryManager::saveToCacheFile()
 
     bSaveMutex = true;
 
-    sCache_file = FileSystem::ValidFileName(sCache_file, ".cache");
+    sCache_file = ValidFileName(sCache_file, ".cache");
 
     NumeRe::CacheFile cacheFile(sCache_file);
 
-    cacheFile.setNumberOfTables(mCachesMap.size());
+    cacheFile.setNumberOfTables(mCachesMap.size() - isTable("data"));
     cacheFile.writeCacheHeader();
 
     long long int nLines;
@@ -197,6 +313,9 @@ bool MemoryManager::saveToCacheFile()
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
+        if (iter->first == "data")
+            continue;
+
         nLines = vMemory[iter->second]->getLines(false);
         nCols = vMemory[iter->second]->getCols(false);
 
@@ -215,13 +334,23 @@ bool MemoryManager::saveToCacheFile()
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function wraps the loading
+/// of the tables from the cache file. It will
+/// automatically detect the type of the cache
+/// file.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MemoryManager::loadFromCacheFile()
 {
     if (bSaveMutex)
         return false;
 
     bSaveMutex = true;
-    sCache_file = FileSystem::ValidFileName(sCache_file, ".cache");
+    sCache_file = ValidFileName(sCache_file, ".cache");
 
     if (!loadFromNewCacheFile())
         return loadFromLegacyCacheFile();
@@ -229,6 +358,16 @@ bool MemoryManager::loadFromCacheFile()
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function tries to load the
+/// contents of the cache file in the new cache
+/// file format. If it does not succeed, false is
+/// returned.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MemoryManager::loadFromNewCacheFile()
 {
     NumeRe::CacheFile cacheFile(sCache_file);
@@ -242,6 +381,7 @@ bool MemoryManager::loadFromNewCacheFile()
             delete vMemory[i];
 
         vMemory.clear();
+        mCachesMap.clear();
 
         for (size_t i = 0; i < nCaches; i++)
         {
@@ -271,6 +411,15 @@ bool MemoryManager::loadFromNewCacheFile()
     return false;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function loads the
+/// contents of the cache file assuming the
+/// legacy format.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MemoryManager::loadFromLegacyCacheFile()
 {
     char*** cHeadLine = 0;
@@ -323,6 +472,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
                 delete vMemory[i];
 
             vMemory.clear();
+            mCachesMap.clear();
 
             for (size_t i = 0; i < cachemapssize; i++)
             {
@@ -454,18 +604,299 @@ bool MemoryManager::loadFromLegacyCacheFile()
     return true;
 }
 
-bool MemoryManager::isTable(const string& sCache)
+
+/////////////////////////////////////////////////
+/// \brief This member function extracts and
+/// parses the \c every expression part of a MAF
+/// call.
+///
+/// \param sDir string&
+/// \param sTableName const string&
+/// \return VectorIndex
+///
+/////////////////////////////////////////////////
+VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName)
 {
-    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+    if (sDir.find("every=") != string::npos && (sDir.find("cols") != string::npos || sDir.find("lines") != string::npos))
     {
-        if (iter->first == sCache.substr(0,sCache.find('(')))
-            return true;
+        string sEvery = getArgAtPos(sDir, sDir.find("every=")+6);
+        StripSpaces(sEvery);
+        Parser& _parser = NumeReKernel::getInstance()->getParser();
+        _parser.DisableAccessCaching();
+        sDir.erase(sDir.find("every="));
+
+        if (sEvery.front() == '(' && sEvery.back() == ')')
+            sEvery = sEvery.substr(1, sEvery.length()-2);
+
+        if (sEvery.front() == '{' && sEvery.back() == '}')
+        {
+            // Definition contains a vector expression
+            _parser.SetExpr(sEvery);
+            int nResults;
+            value_type* v = _parser.Eval(nResults);
+
+            return VectorIndex(v, nResults, 0);
+        }
+        else
+        {
+            // Usual expression
+            _parser.SetExpr(sEvery);
+            int nResults;
+            value_type* v = _parser.Eval(nResults);
+
+            if (nResults == 1)
+            {
+                // Single result: usual every=a,a representation
+                vector<long long int> idx;
+
+                for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[0]))
+                {
+                    idx.push_back(i);
+                }
+
+                return VectorIndex(idx);
+            }
+            else if (nResults == 2)
+            {
+                // Two results: usual every=a,b representation
+                vector<long long int> idx;
+
+                for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[1]))
+                {
+                    idx.push_back(i);
+                }
+
+                return VectorIndex(idx);
+            }
+            else //arbitrary results: use it as if it was a vector
+                return VectorIndex(v, nResults, 0);
+        }
     }
+
+    return VectorIndex(0, (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false))-1);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is the abstract
+/// implementation of a MAF function call. Most
+/// of the MAFs use this abstraction (except
+/// \c cmp and \c pct).
+///
+/// \param sTableName string& const
+/// \param sDir string
+/// \param MAF (double*)
+/// \return vector<double>
+///
+/////////////////////////////////////////////////
+vector<double> MemoryManager::resolveMAF(const string& sTableName, string sDir, double (MemoryManager::*MAF)(const string&, long long int, long long int, long long int, long long int))
+{
+    vector<double> vResults;
+
+    // Find the "grid" parameter and use it as an offset
+    long long int nGridOffset = sDir.find("grid") != string::npos ? 2 : 0;
+
+    // Get the vector index corresponding to a possible
+    // every definition
+    VectorIndex _idx = parseEvery(sDir, sTableName);
+
+    // Resolve the actual call to the MAF
+    if (sDir.find("cols") != string::npos)
+    {
+        for (size_t i = 0; i < _idx.size(); i++)
+        {
+            if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= getCols(sTableName, false))
+                continue;
+
+            vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false)-1, _idx[i]+nGridOffset, -1));
+        }
+    }
+    else if (sDir.find("lines") != string::npos)
+    {
+        for (size_t i = 0; i < _idx.size(); i++)
+        {
+            if (_idx[i] < 0 || _idx[i] >= getLines(sTableName, false))
+                continue;
+
+            vResults.push_back((this->*MAF)(sTableName, _idx[i], -1, nGridOffset, getCols(sTableName, false)-1));
+        }
+    }
+    else
+        vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false)-1, nGridOffset, getCols(sTableName, false)-1));
+
+    if (!vResults.size())
+        vResults.push_back(NAN);
+
+    return vResults;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Removes the "data()" table, if it is
+/// available.
+///
+/// \param bAutoSave bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void MemoryManager::removeData(bool bAutoSave)
+{
+    if (vMemory.size() && mCachesMap.find("data") != mCachesMap.end())
+    {
+        deleteTable("data");
+        sDataFile = "";
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a pointer
+/// to an existing Memory instance representing
+/// the selected table or a nullpointer, if the
+/// table does not exist.
+///
+/// \param sTable const string&
+/// \return Memory*
+///
+/////////////////////////////////////////////////
+Memory* MemoryManager::getTable(const string& sTable)
+{
+    if (mCachesMap.find(sTable.substr(0, sTable.find('('))) == mCachesMap.end())
+        return nullptr;
+
+    return vMemory[mCachesMap.at(sTable.substr(0, sTable.find('(')))];
+}
+
+/////////////////////////////////////////////////
+/// \brief This member function either combines
+/// the contents of the passed Memory instance
+/// with an existing one with the passed table
+/// name, or simply appends it to the list of
+/// known tables.
+///
+/// \param _mem Memory*
+/// \param sTable const string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void MemoryManager::melt(Memory* _mem, const string& sTable)
+{
+    // Ensure that the table exists
+    if (!_mem)
+        return;
+
+    // Is a corresponding table known?
+    if (mCachesMap.find(sTable) == mCachesMap.end())
+    {
+        // Append the new table
+        long long int nIndex = vMemory.size();
+        mCachesMap[sTable] = nIndex;
+        vMemory.push_back(_mem);
+    }
+    else
+    {
+        // Combine both tables
+        Memory* _existingMem = vMemory[mCachesMap[sTable]];
+
+        long long int nCols = _existingMem->getCols(false);
+
+        // Resize the existing table to fit the contents
+        // of both tables
+        _existingMem->resizeMemory(std::max(_existingMem->getLines(false), _mem->getLines(false)), _existingMem->getCols(false) + _mem->getCols(false));
+
+        // Copy the contents
+        for (long long int i = 0; i < _mem->getLines(false); i++)
+        {
+            for (long long int j = 0; j < _mem->getCols(false); j++)
+            {
+                if (!i)
+                    _existingMem->setHeadLineElement(j + nCols, _mem->getHeadLineElement(j));
+
+                _existingMem->writeData(i, j + nCols, _mem->readMem(i, j));
+            }
+        }
+
+        _existingMem->setSaveStatus(false);
+
+        // Delete the passed instance (it is not
+        // needed any more).
+        delete _mem;
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function updates the
+/// dimension variables for the selected table to
+/// be used in expressions.
+///
+/// \param sTableName const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool MemoryManager::updateDimensionVariables(const string& sTableName)
+{
+    // Determine the type of table
+    if (sTableName != "string")
+    {
+        // Update the dimensions for the selected
+        // numerical table
+        tableLinesCount = getLines(sTableName, false);
+        tableColumnsCount = getCols(sTableName, false);
+    }
+    else
+    {
+        // Update the dimensions for the selected
+        // string table
+        tableLinesCount = getStringElements();
+        tableColumnsCount = getStringCols();
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function evaluates,
+/// whether the passed command line contains
+/// tables or clusters.
+///
+/// \param sCmdLine const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
+{
+    return containsTables(" " + sCmdLine + " ") || containsClusters(" " + sCmdLine + " ");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns, whether
+/// the passed table name corresponds to a known
+/// table.
+///
+/// \param sTable const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool MemoryManager::isTable(const string& sTable) const
+{
+    if (mCachesMap.find(sTable.substr(0, sTable.find('('))) != mCachesMap.end())
+        return true;
+
     return false;
 }
 
-// This member function detects, whether a table is used
-// in the current expression
+
+/////////////////////////////////////////////////
+/// \brief This member function detects, whether
+/// a table is used in the current expression.
+///
+/// \param sExpression const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MemoryManager::containsTables(const string& sExpression)
 {
     size_t nQuotes = 0;
@@ -508,7 +939,17 @@ bool MemoryManager::containsTables(const string& sExpression)
     return false;
 }
 
-// This member function creates a new table
+
+/////////////////////////////////////////////////
+/// \brief This member function creates a new
+/// table. It is checked, whether its name is
+/// valid and not already used elsewhere.
+///
+/// \param sCache const string&
+/// \param _option const Settings&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MemoryManager::addTable(const string& sCache, const Settings& _option)
 {
     string sCacheName = sCache.substr(0,sCache.find('('));
@@ -522,25 +963,19 @@ bool MemoryManager::addTable(const string& sCache, const Settings& _option)
     // Ensure that the new table does not match a
     // predefined function
     if (sPredefinedFuncs.find(","+sCacheName+"()") != string::npos)
-    {
         throw SyntaxError(SyntaxError::FUNCTION_IS_PREDEFINED, "", SyntaxError::invalid_position, sCacheName+"()");
-    }
 
     // Ensure that the new table does not match a
     // user-defined function
     if (sUserdefinedFuncs.length() && sUserdefinedFuncs.find(";"+sCacheName+";") != string::npos)
-    {
         throw SyntaxError(SyntaxError::FUNCTION_ALREADY_EXISTS, "", SyntaxError::invalid_position, sCacheName);
-    }
 
     // Ensure that the new table does not already
     // exist
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
         if (iter->first == sCacheName)
-        {
             throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, "", SyntaxError::invalid_position, sCacheName+"()");
-        }
     }
 
     // Warn, if the new table equals an existing command
@@ -559,11 +994,20 @@ bool MemoryManager::addTable(const string& sCache, const Settings& _option)
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function removes the
+/// selected table.
+///
+/// \param sCache const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool MemoryManager::deleteTable(const string& sCache)
 {
-    if (sCache == "cache")
+    if (sCache == "table")
         return false;
-    //cerr << sCache << endl;
+
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
         if (iter->first == sCache)
@@ -575,17 +1019,17 @@ bool MemoryManager::deleteTable(const string& sCache)
             }
             else
                 return false;
+
             for (auto iter2 = mCachesMap.begin(); iter2 != mCachesMap.end(); ++iter2)
             {
                 if (iter2->second > iter->second)
                     mCachesMap[iter2->first] = iter2->second-1;
             }
+
             mCachesMap.erase(iter);
-            //cerr << 4 << endl;
+
             if (getSaveStatus() && MemoryManager::isValid())
-            {
                 setSaveStatus(false);
-            }
             else if (!MemoryManager::isValid())
             {
                 if (fileExists(getProgramPath()+"/numere.cache"))
@@ -594,9 +1038,11 @@ bool MemoryManager::deleteTable(const string& sCache)
                     remove(sCachefile.c_str());
                 }
             }
+
             return true;
         }
     }
+
     return false;
 }
 

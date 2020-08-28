@@ -184,7 +184,6 @@ namespace NumeRe
             std::vector<double> m_right;
             std::vector<double> m_top;
             std::vector<double> m_bottom;
-            double m_order;
             bool is2D;
             std::vector<std::vector<double> > m_filterKernel;
 
@@ -199,28 +198,19 @@ namespace NumeRe
             {
                 m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
 
-                is2D = m_windowSize.first > 1 && m_windowSize.second > 1;
-
-                // Determine the order of the filter (i.e. the largest window
-                // window dimension).
-                if (is2D)
-                    m_order = min(m_windowSize.first, m_windowSize.second);
-                else
-                    m_order = max(m_windowSize.first, m_windowSize.second);
-
-                double mean_row = m_windowSize.first * 0.5;
-                double mean_col = m_windowSize.second * 0.5;
-
-                // Single dimension does not have any mean column
                 if (!is2D)
-                    mean_col = 0.0;
+                    is2D = m_windowSize.first > 1 && m_windowSize.second > 1;
+
+                double mean_row = m_windowSize.first > 1 ? 0.5 : 0.0;
+                double mean_col = m_windowSize.second > 1 ? 0.5 : 0.0;
 
                 // Calculate the filter values
                 for (size_t i = 0; i < m_windowSize.first; i++)
                 {
                     for (size_t j = 0; j < m_windowSize.second; j++)
                     {
-                        m_filterKernel[i][j] = sqrt(pow2(i-mean_row)+pow2(j-mean_col)) > m_order*0.5 ? 0.0 : fabs(sqrt(pow2(i-mean_row)+pow2(j-mean_col))/m_order - 0.5);
+                        if (sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) <= 0.5)
+                            m_filterKernel[i][j] = fabs(sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) - 0.5);
                     }
                 }
             }
@@ -237,9 +227,9 @@ namespace NumeRe
             double left(size_t i, size_t j) const
             {
                 if (!is2D)
-                    return m_left.front();
+                    return validize(m_left.front());
 
-                return m_left[i+1];
+                return validize(m_left[i+1]);
             }
 
             /////////////////////////////////////////////////
@@ -254,9 +244,9 @@ namespace NumeRe
             double right(size_t i, size_t j) const
             {
                 if (!is2D)
-                    return m_right.front();
+                    return validize(m_right.front());
 
-                return m_right[i+1];
+                return validize(m_right[i+1]);
             }
 
             /////////////////////////////////////////////////
@@ -273,7 +263,7 @@ namespace NumeRe
                 if (!is2D)
                     return 0.0;
 
-                return m_top[j+1];
+                return validize(m_top[j+1]);
             }
 
             /////////////////////////////////////////////////
@@ -290,7 +280,7 @@ namespace NumeRe
                 if (!is2D)
                     return 0.0;
 
-                return m_bottom[j+1];
+                return validize(m_bottom[j+1]);
             }
 
             /////////////////////////////////////////////////
@@ -306,9 +296,9 @@ namespace NumeRe
             double topleft(size_t i, size_t j) const
             {
                 if (i >= j)
-                    return m_left[i-j];
+                    return validize(m_left[i-j]);
 
-                return m_top[j-i];
+                return validize(m_top[j-i]);
             }
 
             /////////////////////////////////////////////////
@@ -324,9 +314,9 @@ namespace NumeRe
             double topright(size_t i, size_t j) const
             {
                 if (i+j <= m_windowSize.second-1)
-                    return m_top[i+j+2]; // size(m_top) + 2 == m_order
+                    return validize(m_top[i+j+2]); // size(m_top) + 2 == m_order
 
-                return m_right[i+j-m_windowSize.second+1];
+                return validize(m_right[i+j-m_windowSize.second+1]);
             }
 
             /////////////////////////////////////////////////
@@ -342,9 +332,9 @@ namespace NumeRe
             double bottomleft(size_t i, size_t j) const
             {
                 if (i+j <= m_windowSize.first-1)
-                    return m_left[i+j+2]; // size(m_left) + 2 == m_order
+                    return validize(m_left[i+j+2]); // size(m_left) + 2 == m_order
 
-                return m_bottom[i+j-m_windowSize.first+1];
+                return validize(m_bottom[i+j-m_windowSize.first+1]);
             }
 
             /////////////////////////////////////////////////
@@ -360,9 +350,31 @@ namespace NumeRe
             double bottomright(size_t i, size_t j) const
             {
                 if (i >= j)
-                    return m_bottom[m_windowSize.second-(i-j)+1]; // size(m_bottom) + 2 == m_order
+                    return validize(m_bottom[m_windowSize.second-(i-j)+1]); // size(m_bottom) + 2 == m_order
 
-                return m_right[m_windowSize.first-(j-i)+1];
+                return validize(m_right[m_windowSize.first-(j-i)+1]);
+            }
+
+        protected:
+            double m_fallback;
+            bool m_invertedKernel;
+
+            /////////////////////////////////////////////////
+            /// \brief This method checks, whether the passed
+            /// value is a valid value and returns it. If it
+            /// is not, it will be replaced by the fallback
+            /// value.
+            ///
+            /// \param val double
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double validize(double val) const
+            {
+                if (isnan(val))
+                    return m_fallback;
+
+                return val;
             }
 
         public:
@@ -372,12 +384,16 @@ namespace NumeRe
             ///
             /// \param row
             /// \param col
+            /// \param force2D
             ///
             /////////////////////////////////////////////////
-            WeightedLinearFilter(size_t row, size_t col) : Filter(row, col)
+            WeightedLinearFilter(size_t row, size_t col, bool force2D = false) : Filter(row, col)
             {
                 m_type = FilterSettings::FILTER_WEIGHTED_LINEAR;
                 m_isConvolution = false;
+                m_fallback = 0.0;
+                m_invertedKernel = false;
+                is2D = force2D;
 
                 createKernel();
             }
@@ -426,12 +442,17 @@ namespace NumeRe
                     return NAN;
 
                 if (!is2D)
-                    return (1-m_filterKernel[i][j])*val + m_filterKernel[i][j]*(left(i,j) + (right(i,j) - left(i,j))/(m_order + 1.0)*(i + 1.0));
+                {
+                    if (m_invertedKernel)
+                        return m_filterKernel[i][j]*val + (1-m_filterKernel[i][j])*(left(i,j) + (right(i,j) - left(i,j))/(m_windowSize.first + 1.0)*(i + 1.0));
+
+                    return (1-m_filterKernel[i][j])*val + m_filterKernel[i][j]*(left(i,j) + (right(i,j) - left(i,j))/(m_windowSize.first + 1.0)*(i + 1.0));
+                }
 
                 // cross hair: summarize the linearily interpolated values along the rows and cols at the desired position
                 // Summarize implies that the value is not averaged yet
-                double dAverage = top(i,j) + (bottom(i,j) - top(i,j)) / (m_order + 1.0) * (i+1.0)
-                                  + left(i,j) + (right(i,j) - left(i,j)) / (m_order + 1.0) * (j+1.0);
+                double dAverage = top(i,j) + (bottom(i,j) - top(i,j)) / (m_windowSize.first + 1.0) * (i+1.0)
+                                  + left(i,j) + (right(i,j) - left(i,j)) / (m_windowSize.second + 1.0) * (j+1.0);
 
                 // Additional weighting because are the nearest neighbours
                 dAverage *= 2.0;
@@ -439,19 +460,22 @@ namespace NumeRe
                 // Calculate along columns
                 // Find the diagonal neighbours and interpolate the value
                 if (i >= j)
-                    dAverage += topleft(i,j) + (bottomright(i,j) - topleft(i,j)) / (m_order - fabs(i-j) + 1.0) * (j+1.0);
+                    dAverage += topleft(i,j) + (bottomright(i,j) - topleft(i,j)) / (m_windowSize.second - fabs(i-j) + 1.0) * (j+1.0);
                 else
-                    dAverage += topleft(i,j) + (bottomright(i,j) - topleft(i,j)) / (m_order - fabs(i-j) + 1.0) * (i+1.0);
+                    dAverage += topleft(i,j) + (bottomright(i,j) - topleft(i,j)) / (m_windowSize.first - fabs(i-j) + 1.0) * (i+1.0);
 
                 // calculate along rows
                 // Find the diagonal neighbours and interpolate the value
-                if (i + j <= m_order + 1)
+                if (i + j <= m_windowSize.first + 1)
                     dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (i+j+2.0) * (j+1.0);
                 else
-                    dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (2.0*m_order - i - j) * (double)(m_order-i);
+                    dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (m_windowSize.first + m_windowSize.second - i - j) * (double)(m_windowSize.first-i);
 
                 // Restore the desired average
                 dAverage /= 6.0;
+
+                if (m_invertedKernel)
+                    return (1-m_filterKernel[i][j])*dAverage + m_filterKernel[i][j]*val;
 
                 return (1-m_filterKernel[i][j])*val + m_filterKernel[i][j]*dAverage;
             }
@@ -494,12 +518,8 @@ namespace NumeRe
                 m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
 
                 double sum = 0.0;
-                double mean_row = m_windowSize.first * 0.5;
-                double mean_col = m_windowSize.second * 0.5;
-
-                // Single dimension does not have any mean column
-                if (m_windowSize.second == 1)
-                    mean_col = 0.0;
+                double mean_row = (m_windowSize.first - 1) * 0.5;
+                double mean_col = (m_windowSize.second - 1) * 0.5;
 
                 for (size_t i = 0; i < m_windowSize.first; i++)
                 {
@@ -838,6 +858,49 @@ namespace NumeRe
 
         return nullptr;
     }
+
+
+    /////////////////////////////////////////////////
+    /// \brief This class is a specialized
+    /// WeightedLinearFilter used to retouch missing
+    /// data values.
+    /////////////////////////////////////////////////
+    class RetouchRegion : public WeightedLinearFilter
+    {
+        public:
+            /////////////////////////////////////////////////
+            /// \brief Filter constructor. Will automatically
+            /// create the filter kernel.
+            ///
+            /// \param _row
+            /// \param _col
+            ///
+            /////////////////////////////////////////////////
+            RetouchRegion(size_t _row, size_t _col, double _dMedian) : WeightedLinearFilter(_row, _col, true) { m_fallback = _dMedian; m_invertedKernel = true;}
+
+            /////////////////////////////////////////////////
+            /// \brief This method is a wrapper to retouch
+            /// only invalid values. The default value of
+            /// invalid values is the median value declared
+            /// at construction time.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \param val double
+            /// \param med double
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double retouch(size_t i, size_t j, double val, double med)
+            {
+                if (isnan(val) && !isnan(med))
+                    return 0.5*(apply(i, j, m_fallback) + med);
+                else if (isnan(val) && isnan(med))
+                    return apply(i, j, m_fallback);
+
+                return val;
+            }
+    };
 }
 
 

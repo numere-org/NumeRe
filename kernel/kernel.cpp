@@ -19,7 +19,7 @@
 
 
 #include "wx/wx.h"
-#include "../gui/terminal/wxterm.h"
+#include "../gui/terminal/terminal.hpp"
 #include "core/datamanagement/dataops.hpp" // for make_stringmatrix()
 #define KERNEL_PRINT_SLEEP 2
 
@@ -34,13 +34,13 @@ extern const string sVersion;
 Language _lang;
 mglGraph _fontData;
 extern value_type vAns;
-extern Integration_Vars parser_iVars;
+extern DefaultVariables _defVars;
 time_t tTimeZero = time(0);
 
 // Initialization of the static member variables
 NumeReKernel* NumeReKernel::kernelInstance = nullptr;
 int* NumeReKernel::baseStackPosition = nullptr;
-wxTerm* NumeReKernel::m_parent = nullptr;
+NumeReTerminal* NumeReKernel::m_parent = nullptr;
 queue<NumeReTask> NumeReKernel::taskQueue;
 int NumeReKernel::nLINE_LENGTH = 80;
 bool NumeReKernel::bWritingTable = false;
@@ -91,7 +91,7 @@ bool IsWow64()
 /////////////////////////////////////////////////
 /// \brief Constructor of the kernel.
 /////////////////////////////////////////////////
-NumeReKernel::NumeReKernel() : _option(), _data(), _parser(), _stringParser(_parser, _data, _option)
+NumeReKernel::NumeReKernel() : _option(), _memoryManager(), _parser(), _stringParser(_parser, _memoryManager, _option), _functions(false)
 {
     sCommandLine.clear();
     sAnswer.clear();
@@ -146,8 +146,8 @@ void NumeReKernel::setKernelSettings(const Settings& _settings)
 /////////////////////////////////////////////////
 void NumeReKernel::Autosave()
 {
-    if (!_data.getSaveStatus())
-        _data.saveToCacheFile();
+    if (!_memoryManager.getSaveStatus())
+        _memoryManager.saveToCacheFile();
     return;
 }
 
@@ -165,7 +165,7 @@ void NumeReKernel::Autosave()
 /// loads possible available autosaves and
 /// definition files for functions and plugins.
 /////////////////////////////////////////////////
-void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string& sPredefinedFunctions)
+void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const string& sPredefinedFunctions)
 {
     if (_parent && m_parent == nullptr)
         m_parent = _parent;
@@ -178,7 +178,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 
     // Set the functions provided by the syntax object in the parent class
     _functions.setPredefinedFuncs(sPredefinedFunctions);
-    _data.setPredefinedFuncs(_functions.getPredefinedFuncs());
+    _memoryManager.setPredefinedFuncs(_functions.getPredefinedFuncs());
     _script.setPredefinedFuncs(sPredefinedFunctions);
     _procedure.setPredefinedFuncs(sPredefinedFunctions);
 
@@ -216,7 +216,7 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 
     // Set the path tokens for all relevant objects
     _fSys.setTokens(_option.getTokenPaths());
-    _data.setTokens(_option.getTokenPaths());
+    _memoryManager.setTokens(_option.getTokenPaths());
     _out.setTokens(_option.getTokenPaths());
     _pData.setTokens(_option.getTokenPaths());
     _script.setTokens(_option.getTokenPaths());
@@ -232,12 +232,12 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
     _out.setPath(_option.getSavePath(), true, sPath);
     _out.createRevisionsFolder();
 
-    _data.setPath(_option.getLoadPath(), true, sPath);
-    _data.createRevisionsFolder();
-    _data.newCluster("ans").setDouble(0, NAN);
+    _memoryManager.setPath(_option.getLoadPath(), true, sPath);
+    _memoryManager.createRevisionsFolder();
+    _memoryManager.newCluster("ans").setDouble(0, NAN);
 
-    _data.setSavePath(_option.getSavePath());
-    _data.setbLoadEmptyCols(_option.getbLoadEmptyCols());
+    _memoryManager.setSavePath(_option.getSavePath());
+    _memoryManager.setbLoadEmptyCols(_option.getbLoadEmptyCols());
 
     _pData.setPath(_option.getPlotOutputPath(), true, sPath);
     _pData.createRevisionsFolder();
@@ -281,14 +281,13 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
     _lang.loadStrings(_option.getUseCustomLanguageFiles());
     addToLog("> SYSTEM: Language files were loaded.");
 
-    string sAutosave = _option.getSavePath() + "/cache.tmp";
     string sCacheFile = _option.getExePath() + "/numere.cache";
 
     // Load the plugin informations
     if (fileExists(_procedure.getPluginInfoPath()))
     {
         _procedure.loadPlugins();
-        _data.setPluginCommands(_procedure.getPluginNames());
+        _memoryManager.setPluginCommands(_procedure.getPluginNames());
         addToLog("> SYSTEM: Plugin information was loaded.");
     }
 
@@ -303,34 +302,23 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
     _fontData.LoadFont(_option.getDefaultPlotFont().c_str(), (_option.getExePath() + "\\fonts").c_str());
 
     // Load the autosave file
-    if (fileExists(sAutosave) || fileExists(sCacheFile))
+    if (fileExists(sCacheFile))
     {
-        if (fileExists(sAutosave))
-        {
-            _data.openAutosave(sAutosave, _option);
-            _data.setSaveStatus(true);
-            remove(sAutosave.c_str());
-            _data.saveToCacheFile();
-        }
-        else
-        {
-            _data.loadFromCacheFile();
-        }
-
+        _memoryManager.loadFromCacheFile();
         addToLog("> SYSTEM: Automatic backup was loaded.");
     }
 
     // Declare the default variables
     _parser.DefineVar("ans", &vAns);        // Deklariere die spezielle Variable "ans", die stets, das letzte Ergebnis speichert und die vier Standardvariablen
-    _parser.DefineVar(parser_iVars.sName[0], &parser_iVars.vValue[0][0]);
-    _parser.DefineVar(parser_iVars.sName[1], &parser_iVars.vValue[1][0]);
-    _parser.DefineVar(parser_iVars.sName[2], &parser_iVars.vValue[2][0]);
-    _parser.DefineVar(parser_iVars.sName[3], &parser_iVars.vValue[3][0]);
+    _parser.DefineVar(_defVars.sName[0], &_defVars.vValue[0][0]);
+    _parser.DefineVar(_defVars.sName[1], &_defVars.vValue[1][0]);
+    _parser.DefineVar(_defVars.sName[2], &_defVars.vValue[2][0]);
+    _parser.DefineVar(_defVars.sName[3], &_defVars.vValue[3][0]);
 
     // Declare the table dimension variables
-    _parser.DefineVar("nlines", &_data.tableLinesCount);
-    _parser.DefineVar("ncols", &_data.tableColumnsCount);
-    _parser.DefineVar("nlen", &_data.dClusterElementsCount);
+    _parser.DefineVar("nlines", &_memoryManager.tableLinesCount);
+    _parser.DefineVar("ncols", &_memoryManager.tableColumnsCount);
+    _parser.DefineVar("nlen", &_memoryManager.dClusterElementsCount);
 
     // --> VAR-FACTORY Deklarieren (Irgendwo muessen die ganzen Variablen-Werte ja auch gespeichert werden) <--
     _parser.SetVarFactory(parser_AddVariable, &(_parser.m_lDataStorage));
@@ -356,51 +344,50 @@ void NumeReKernel::StartUp(wxTerm* _parent, const string& __sPath, const string&
 void NumeReKernel::defineOperators()
 {
     // --> Syntax fuer die Umrechnungsfunktionen definieren und die zugehoerigen Funktionen deklarieren <--
-    _parser.DefinePostfixOprt(_nrT("'G"), parser_Giga);
-    _parser.DefinePostfixOprt(_nrT("'M"), parser_Mega);
-    _parser.DefinePostfixOprt(_nrT("'k"), parser_Kilo);
-    _parser.DefinePostfixOprt(_nrT("'m"), parser_Milli);
-    _parser.DefinePostfixOprt(_nrT("'mu"), parser_Micro);
-    //_parser.DefinePostfixOprt(_nrT("µ"), parser_Micro);
-    _parser.DefinePostfixOprt(_nrT("'n"), parser_Nano);
+    _parser.DefinePostfixOprt("'G", parser_Giga);
+    _parser.DefinePostfixOprt("'M", parser_Mega);
+    _parser.DefinePostfixOprt("'k", parser_Kilo);
+    _parser.DefinePostfixOprt("'m", parser_Milli);
+    _parser.DefinePostfixOprt("'mu", parser_Micro);
+    _parser.DefinePostfixOprt("'n", parser_Nano);
 
     // --> Einheitenumrechnungen: Werden aufgerufen durch WERT'EINHEIT <--
-    _parser.DefinePostfixOprt(_nrT("'eV"), parser_ElectronVolt);
-    _parser.DefinePostfixOprt(_nrT("'fm"), parser_Fermi);
-    _parser.DefinePostfixOprt(_nrT("'A"), parser_Angstroem);
-    _parser.DefinePostfixOprt(_nrT("'b"), parser_Barn);
-    _parser.DefinePostfixOprt(_nrT("'Torr"), parser_Torr);
-    _parser.DefinePostfixOprt(_nrT("'AU"), parser_AstroUnit);
-    _parser.DefinePostfixOprt(_nrT("'ly"), parser_Lightyear);
-    _parser.DefinePostfixOprt(_nrT("'pc"), parser_Parsec);
-    _parser.DefinePostfixOprt(_nrT("'mile"), parser_Mile);
-    _parser.DefinePostfixOprt(_nrT("'yd"), parser_Yard);
-    _parser.DefinePostfixOprt(_nrT("'ft"), parser_Foot);
-    _parser.DefinePostfixOprt(_nrT("'in"), parser_Inch);
-    _parser.DefinePostfixOprt(_nrT("'cal"), parser_Calorie);
-    _parser.DefinePostfixOprt(_nrT("'psi"), parser_PSI);
-    _parser.DefinePostfixOprt(_nrT("'kn"), parser_Knoten);
-    _parser.DefinePostfixOprt(_nrT("'l"), parser_liter);
-    _parser.DefinePostfixOprt(_nrT("'kmh"), parser_kmh);
-    _parser.DefinePostfixOprt(_nrT("'mph"), parser_mph);
-    _parser.DefinePostfixOprt(_nrT("'TC"), parser_Celsius);
-    _parser.DefinePostfixOprt(_nrT("'TF"), parser_Fahrenheit);
-    _parser.DefinePostfixOprt(_nrT("'Ci"), parser_Curie);
-    _parser.DefinePostfixOprt(_nrT("'Gs"), parser_Gauss);
-    _parser.DefinePostfixOprt(_nrT("'Ps"), parser_Poise);
-    _parser.DefinePostfixOprt(_nrT("'mol"), parser_mol);
+    _parser.DefinePostfixOprt("'eV", parser_ElectronVolt);
+    _parser.DefinePostfixOprt("'fm", parser_Fermi);
+    _parser.DefinePostfixOprt("'A", parser_Angstroem);
+    _parser.DefinePostfixOprt("'b", parser_Barn);
+    _parser.DefinePostfixOprt("'Torr", parser_Torr);
+    _parser.DefinePostfixOprt("'AU", parser_AstroUnit);
+    _parser.DefinePostfixOprt("'ly", parser_Lightyear);
+    _parser.DefinePostfixOprt("'pc", parser_Parsec);
+    _parser.DefinePostfixOprt("'mile", parser_Mile);
+    _parser.DefinePostfixOprt("'yd", parser_Yard);
+    _parser.DefinePostfixOprt("'ft", parser_Foot);
+    _parser.DefinePostfixOprt("'in", parser_Inch);
+    _parser.DefinePostfixOprt("'cal", parser_Calorie);
+    _parser.DefinePostfixOprt("'psi", parser_PSI);
+    _parser.DefinePostfixOprt("'kn", parser_Knoten);
+    _parser.DefinePostfixOprt("'l", parser_liter);
+    _parser.DefinePostfixOprt("'kmh", parser_kmh);
+    _parser.DefinePostfixOprt("'mph", parser_mph);
+    _parser.DefinePostfixOprt("'TC", parser_Celsius);
+    _parser.DefinePostfixOprt("'TF", parser_Fahrenheit);
+    _parser.DefinePostfixOprt("'Ci", parser_Curie);
+    _parser.DefinePostfixOprt("'Gs", parser_Gauss);
+    _parser.DefinePostfixOprt("'Ps", parser_Poise);
+    _parser.DefinePostfixOprt("'mol", parser_mol);
     _parser.DefinePostfixOprt("!", parser_Faculty);
     _parser.DefinePostfixOprt("!!", parser_doubleFaculty);
 
     // --> Logisches NICHT <--
-    _parser.DefineInfixOprt(_nrT("!"), parser_Not);
-    _parser.DefineInfixOprt(_nrT("+"), parser_Ignore);
+    _parser.DefineInfixOprt("!", parser_Not);
+    _parser.DefineInfixOprt("+", parser_Ignore);
 
     // --> Operatoren <--
-    _parser.DefineOprt(_nrT("%"), parser_Mod, prMUL_DIV, oaLEFT, true);
-    _parser.DefineOprt(_nrT("|||"), parser_XOR, prLOGIC, oaLEFT, true);
-    _parser.DefineOprt(_nrT("|"), parser_BinOR, prLOGIC, oaLEFT, true);
-    _parser.DefineOprt(_nrT("&"), parser_BinAND, prLOGIC, oaLEFT, true);
+    _parser.DefineOprt("%", parser_Mod, prMUL_DIV, oaLEFT, true);
+    _parser.DefineOprt("|||", parser_XOR, prLOGIC, oaLEFT, true);
+    _parser.DefineOprt("|", parser_BinOR, prLOGIC, oaLEFT, true);
+    _parser.DefineOprt("&", parser_BinAND, prLOGIC, oaLEFT, true);
 }
 
 
@@ -414,52 +401,52 @@ void NumeReKernel::defineOperators()
 void NumeReKernel::defineConst()
 {
     // --> Eigene Konstanten <--
-    _parser.DefineConst(_nrT("_g"), 9.80665);
-    _parser.DefineConst(_nrT("_c"), 299792458);
-    _parser.DefineConst(_nrT("_elek_feldkonst"), 8.854187817e-12);
-    _parser.DefineConst(_nrT("_n_avogadro"), 6.02214129e23);
-    _parser.DefineConst(_nrT("_k_boltz"), 1.3806488e-23);
-    _parser.DefineConst(_nrT("_elem_ladung"), 1.602176565e-19);
-    _parser.DefineConst(_nrT("_h"), 6.62606957e-34);
-    _parser.DefineConst(_nrT("_hbar"), 1.054571726e-34);
-    _parser.DefineConst(_nrT("_m_elektron"), 9.10938291e-31);
-    _parser.DefineConst(_nrT("_m_proton"), 1.672621777e-27);
-    _parser.DefineConst(_nrT("_m_neutron"), 1.674927351e-27);
-    _parser.DefineConst(_nrT("_m_muon"), 1.883531475e-28);
-    _parser.DefineConst(_nrT("_m_tau"), 3.16747e-27);
-    _parser.DefineConst(_nrT("_magn_feldkonst"), 1.25663706144e-6);
-    _parser.DefineConst(_nrT("_m_erde"), 5.9726e24);
-    _parser.DefineConst(_nrT("_m_sonne"), 1.9885e30);
-    _parser.DefineConst(_nrT("_r_erde"), 6.378137e6);
-    _parser.DefineConst(_nrT("_r_sonne"), 6.9551e8);
-    _parser.DefineConst(_nrT("true"), 1);
-    _parser.DefineConst(_nrT("_theta_weinberg"), 0.49097621387892);
-    _parser.DefineConst(_nrT("false"), 0);
-    _parser.DefineConst(_nrT("_2pi"), 6.283185307179586476925286766559);
-    _parser.DefineConst(_nrT("_R"), 8.3144622);
-    _parser.DefineConst(_nrT("_alpha_fs"), 7.2973525698E-3);
-    _parser.DefineConst(_nrT("_mu_bohr"), 9.27400968E-24);
-    _parser.DefineConst(_nrT("_mu_kern"), 5.05078353E-27);
-    _parser.DefineConst(_nrT("_mu_e"), -9.284764620e-24);
-    _parser.DefineConst(_nrT("_mu_n"), -9.662365e-27);
-    _parser.DefineConst(_nrT("_mu_p"), 1.4106067873e8);
-    _parser.DefineConst(_nrT("_m_amu"), 1.660538921E-27);
-    _parser.DefineConst(_nrT("_r_bohr"), 5.2917721092E-11);
-    _parser.DefineConst(_nrT("_G"), 6.67384E-11);
-    _parser.DefineConst(_nrT("_coul_norm"), 8987551787.99791145324707);
-    _parser.DefineConst(_nrT("_stefan_boltzmann"), 5.670367e-8);
-    _parser.DefineConst(_nrT("_wien"), 2.8977729e-3);
-    _parser.DefineConst(_nrT("_rydberg"), 1.0973731568508e7);
-    _parser.DefineConst(_nrT("_hartree"), 4.35974465e-18);
-    _parser.DefineConst(_nrT("_lande_e"), -2.00231930436182);
-    _parser.DefineConst(_nrT("_gamma_e"), 1.760859644e11);
-    _parser.DefineConst(_nrT("_gamma_n"), 1.83247172e8);
-    _parser.DefineConst(_nrT("_gamma_p"), 2.6752219e8);
-    _parser.DefineConst(_nrT("_feigenbaum_delta"), 4.66920160910299067185);
-    _parser.DefineConst(_nrT("_feigenbaum_alpha"), 2.50290787509589282228);
-    _parser.DefineConst(_nrT("nan"), NAN);
-    _parser.DefineConst(_nrT("inf"), INFINITY);
-    _parser.DefineConst(_nrT("void"), NAN);
+    _parser.DefineConst("_g", 9.80665);
+    _parser.DefineConst("_c", 299792458);
+    _parser.DefineConst("_elek_feldkonst", 8.854187817e-12);
+    _parser.DefineConst("_n_avogadro", 6.02214129e23);
+    _parser.DefineConst("_k_boltz", 1.3806488e-23);
+    _parser.DefineConst("_elem_ladung", 1.602176565e-19);
+    _parser.DefineConst("_h", 6.62606957e-34);
+    _parser.DefineConst("_hbar", 1.054571726e-34);
+    _parser.DefineConst("_m_elektron", 9.10938291e-31);
+    _parser.DefineConst("_m_proton", 1.672621777e-27);
+    _parser.DefineConst("_m_neutron", 1.674927351e-27);
+    _parser.DefineConst("_m_muon", 1.883531475e-28);
+    _parser.DefineConst("_m_tau", 3.16747e-27);
+    _parser.DefineConst("_magn_feldkonst", 1.25663706144e-6);
+    _parser.DefineConst("_m_erde", 5.9726e24);
+    _parser.DefineConst("_m_sonne", 1.9885e30);
+    _parser.DefineConst("_r_erde", 6.378137e6);
+    _parser.DefineConst("_r_sonne", 6.9551e8);
+    _parser.DefineConst("true", 1);
+    _parser.DefineConst("_theta_weinberg", 0.49097621387892);
+    _parser.DefineConst("false", 0);
+    _parser.DefineConst("_2pi", 6.283185307179586476925286766559);
+    _parser.DefineConst("_R", 8.3144622);
+    _parser.DefineConst("_alpha_fs", 7.2973525698E-3);
+    _parser.DefineConst("_mu_bohr", 9.27400968E-24);
+    _parser.DefineConst("_mu_kern", 5.05078353E-27);
+    _parser.DefineConst("_mu_e", -9.284764620e-24);
+    _parser.DefineConst("_mu_n", -9.662365e-27);
+    _parser.DefineConst("_mu_p", 1.4106067873e8);
+    _parser.DefineConst("_m_amu", 1.660538921E-27);
+    _parser.DefineConst("_r_bohr", 5.2917721092E-11);
+    _parser.DefineConst("_G", 6.67384E-11);
+    _parser.DefineConst("_coul_norm", 8987551787.99791145324707);
+    _parser.DefineConst("_stefan_boltzmann", 5.670367e-8);
+    _parser.DefineConst("_wien", 2.8977729e-3);
+    _parser.DefineConst("_rydberg", 1.0973731568508e7);
+    _parser.DefineConst("_hartree", 4.35974465e-18);
+    _parser.DefineConst("_lande_e", -2.00231930436182);
+    _parser.DefineConst("_gamma_e", 1.760859644e11);
+    _parser.DefineConst("_gamma_n", 1.83247172e8);
+    _parser.DefineConst("_gamma_p", 2.6752219e8);
+    _parser.DefineConst("_feigenbaum_delta", 4.66920160910299067185);
+    _parser.DefineConst("_feigenbaum_alpha", 2.50290787509589282228);
+    _parser.DefineConst("nan", NAN);
+    _parser.DefineConst("inf", INFINITY);
+    _parser.DefineConst("void", NAN);
 }
 
 
@@ -516,6 +503,8 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("and", parser_and, true);                                 // and(x,y,z,...)
     _parser.DefineFun("or", parser_or, true);                                   // or(x,y,z,...)
     _parser.DefineFun("xor", parser_xor, true);                                 // xor(x,y,z,...)
+    _parser.DefineFun("minpos", parser_MinPos, true);                           // minpos(x,y,z,...)
+    _parser.DefineFun("maxpos", parser_MaxPos, true);                           // maxpos(x,y,z,...)
     _parser.DefineFun("polynomial", parser_polynomial, true);                   // polynomial(x,a0,a1,a2,a3,...)
     _parser.DefineFun("rand", parser_Random, false);                            // rand(left,right)
     _parser.DefineFun("gauss", parser_gRandom, false);                          // gauss(mean,std)
@@ -820,7 +809,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             if (_script.wasLastCommand())
                             {
                                 print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-                                _data.setPluginCommands(_procedure.getPluginNames());
+                                _memoryManager.setPluginCommands(_procedure.getPluginNames());
                             }
                             sCommandLine.clear();
                             bCancelSignal = false;
@@ -830,7 +819,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             continue;
                     case NUMERE_QUIT:
                         // --> Sind ungesicherte Daten im Cache? Dann moechte der Nutzer diese vielleicht speichern <--
-                        if (!_data.getSaveStatus()) // MAIN_UNSAVED_CACHE
+                        if (!_memoryManager.getSaveStatus()) // MAIN_UNSAVED_CACHE
                         {
                             string c = "";
                             print(LineBreak(_lang.get("MAIN_UNSAVED_CACHE"), _option));
@@ -838,13 +827,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             NumeReKernel::getline(c);
                             if (c == _lang.YES())
                             {
-                                _data.saveToCacheFile(); // MAIN_CACHE_SAVED
+                                _memoryManager.saveToCacheFile(); // MAIN_CACHE_SAVED
                                 print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
                                 Sleep(500);
                             }
                             else
                             {
-                                _data.clearCache();
+                                _memoryManager.removeTablesFromMemory();
                             }
                         }
                         return NUMERE_QUIT;  // Keyword "quit"
@@ -890,9 +879,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // Get data elements for the current command line or determine,
             // if the target value of the current command line is a candidate
             // for a cluster
-            if (!_stringParser.isStringExpression(sLine) && (sLine.find("data(") != string::npos || _data.containsTablesOrClusters(sLine)))
+            if (!_stringParser.isStringExpression(sLine) && _memoryManager.containsTablesOrClusters(sLine))
             {
-                sCache = getDataElements(sLine, _parser, _data, _option);
+                sCache = getDataElements(sLine, _parser, _memoryManager, _option);
 
                 if (sCache.length() && sCache.find('#') == string::npos)
                     bWriteToCache = true;
@@ -923,7 +912,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             if (bWriteToCache)
             {
                 // Get the indices from the corresponding function
-                _idx = getIndices(sCache, _parser, _data, _option);
+                _idx = getIndices(sCache, _parser, _memoryManager, _option);
 
                 if (sCache[sCache.find_first_of("({")] == '{')
                 {
@@ -956,11 +945,11 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 // Is it a cluster?
                 if (bWriteToCluster)
                 {
-                    NumeRe::Cluster& cluster = _data.getCluster(sCache);
+                    NumeRe::Cluster& cluster = _memoryManager.getCluster(sCache);
                     cluster.assignResults(_idx, nNum, v);
                 }
                 else
-                    _data.writeToTable(_idx, sCache, v, nNum);
+                    _memoryManager.writeToTable(_idx, sCache, v, nNum);
             }
         }
         // This section starts the error handling
@@ -1190,7 +1179,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         if (_script.wasLastCommand())
         {
             print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-            _data.setPluginCommands(_procedure.getPluginNames());
+            _memoryManager.setPluginCommands(_procedure.getPluginNames());
             if (!sCmdCache.length())
             {
                 bCancelSignal = false;
@@ -1206,7 +1195,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     if (_script.wasLastCommand())
     {
         print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-        _data.setPluginCommands(_procedure.getPluginNames());
+        _memoryManager.setPluginCommands(_procedure.getPluginNames());
         return NUMERE_DONE_KEYWORD;
     }
 
@@ -1232,24 +1221,12 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
 {
     if (!sCmdCache.length())
     {
-        if (_data.pausedOpening())
-        {
-            _data.openFromCmdLine(_option, "", true);
-            if (_data.isValid())
-            {
-                print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option, true, 4));
-                addToLog("> SYSTEM: Data out of " + _data.getDataFileName("data") + " was successfully loaded.");
-            }
-        }
-
         if (_script.getAutoStart())
         {
             print(LineBreak(_lang.get("PARSER_STARTINGSCRIPT", _script.getScriptFileName()), _option, true, 4));
             addToLog("> SYSTEM: Starting Script " + _script.getScriptFileName());
             _script.openScript();
         }
-
-        _data.setCacheStatus(false);
 
         // --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
         if (_script.isValid() && _script.isOpen())
@@ -1751,7 +1728,7 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
             if (!isInQuotes(sLine, nPos, true))
             {
                 // Execute the current procedure
-                Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _data, _option, _out, _pData, _script);
+                Returnvalue _rTemp = _procedure.execute(__sName, __sVarList, _parser, _functions, _memoryManager, _option, _out, _pData, _script);
                 if (!_procedure.getReturnType())
                     sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
                 else
@@ -1818,7 +1795,7 @@ bool NumeReKernel::executePlugins(string& sLine)
             _option.setSystemPrintStatus(false);
 
             // Call the relevant procedure
-            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script);
+            Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _memoryManager, _option, _out, _pData, _script);
 
             // Handle the return values
             if (_rTemp.isString() && sLine.find("<<RETURNVAL>>") != string::npos)
@@ -1904,7 +1881,7 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
                 if (_script.wasLastCommand())
                 {
                     print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-                    _data.setPluginCommands(_procedure.getPluginNames());
+                    _memoryManager.setPluginCommands(_procedure.getPluginNames());
                 }
 
                 bCancelSignal = false;
@@ -1974,7 +1951,7 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
                 if (_script.wasLastCommand())
                 {
                     print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
-                    _data.setPluginCommands(_procedure.getPluginNames());
+                    _memoryManager.setPluginCommands(_procedure.getPluginNames());
                 }
                 sCommandLine.clear();
                 bCancelSignal = false;
@@ -1985,7 +1962,7 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
                 return false;
         }
 
-        if (sCache.length() && _data.containsTablesOrClusters(sCache) && !bWriteToCache)
+        if (sCache.length() && _memoryManager.containsTablesOrClusters(sCache) && !bWriteToCache)
             bWriteToCache = true;
     }
 
@@ -2112,9 +2089,9 @@ void NumeReKernel::updateLineLenght(int nLength)
 /////////////////////////////////////////////////
 void NumeReKernel::saveData()
 {
-    if (!_data.getSaveStatus())
+    if (!_memoryManager.getSaveStatus())
     {
-        _data.saveToCacheFile();
+        _memoryManager.saveToCacheFile();
         print(LineBreak(_lang.get("MAIN_CACHE_SAVED"), _option));
         Sleep(500);
     }
@@ -2135,12 +2112,12 @@ void NumeReKernel::saveData()
 void NumeReKernel::CloseSession()
 {
     saveData();
-    _data.clearCache();
-    _data.removeData(false);
+    _memoryManager.removeTablesFromMemory();
+    _memoryManager.removeData(false);
 
     // --> Konfiguration aus den Objekten zusammenfassen und anschliessend speichern <--
     _option.setSavePath(_out.getPath());
-    _option.setLoadPath(_data.getPath());
+    _option.setLoadPath(_memoryManager.getPath());
     _option.setPlotOutputPath(_pData.getPath());
     _option.setScriptPath(_script.getPath());
 
@@ -2321,14 +2298,12 @@ NumeReVariables NumeReKernel::getVariableList()
     NumeReVariables vars;
 
     mu::varmap_type varmap = _parser.GetVar();
-    map<string, string> stringmap = _stringParser.getStringVars();
-    map<string, long long int> tablemap = _data.mCachesMap;
-    const map<string, NumeRe::Cluster>& clustermap = _data.getClusterMap();
+    const map<string, string>& stringmap = _stringParser.getStringVars();
+    map<string, long long int> tablemap = _memoryManager.getTableMap();
+    const map<string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     string sCurrentLine;
 
-    if (_data.isValid())
-        tablemap["data"] = -1;
-    if (_data.getStringElements())
+    if (_memoryManager.getStringElements())
         tablemap["string"] = -2;
 
     // Gather all (global) numerical variables
@@ -2363,13 +2338,13 @@ NumeReVariables NumeReKernel::getVariableList()
 
         if (iter->first == "string")
         {
-            sCurrentLine = iter->first + "()\t" + toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
-            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_data.minString()) + "\", ..., \"" + replaceControlCharacters(_data.maxString()) + "\"}\tstring()";
+            sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getStringElements()) + " x " + toString(_memoryManager.getStringCols());
+            sCurrentLine += "\tstring\t{\"" + replaceControlCharacters(_memoryManager.minString()) + "\", ..., \"" + replaceControlCharacters(_memoryManager.maxString()) + "\"}\tstring()";
         }
         else
         {
-            sCurrentLine = iter->first + "()\t" + toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
-            sCurrentLine += "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ..., " + toString(_data.max(iter->first, "")[0], 5) + "}\t" + iter->first + "()";
+            sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x " + toString(_memoryManager.getCols(iter->first, false));
+            sCurrentLine += "\tdouble\t{" + toString(_memoryManager.min(iter->first, "")[0], 5) + ", ..., " + toString(_memoryManager.max(iter->first, "")[0], 5) + "}\t" + iter->first + "()";
         }
 
         vars.vVariables.push_back(sCurrentLine);
@@ -3116,10 +3091,10 @@ NumeRe::Table NumeReKernel::getTable(const string& sTableName)
     if (sSelectedTable.find("()") != string::npos)
         sSelectedTable.erase(sSelectedTable.find("()"));
 
-    if ((!_data.isTable(sSelectedTable) && sSelectedTable != "data") || !_data.getCols(sSelectedTable))
+    if (!_memoryManager.isTable(sSelectedTable) || !_memoryManager.getCols(sSelectedTable))
         return NumeRe::Table();
 
-    return _data.extractTable(sSelectedTable);
+    return _memoryManager.extractTable(sSelectedTable);
 }
 
 
@@ -3136,22 +3111,22 @@ NumeRe::Container<string> NumeReKernel::getStringTable(const string& sStringTabl
     if (sStringTableName == "string()")
     {
         // Create the container for the string table
-        NumeRe::Container<string> stringTable(_data.getStringElements(), _data.getStringCols());
+        NumeRe::Container<string> stringTable(_memoryManager.getStringElements(), _memoryManager.getStringCols());
 
-        for (size_t j = 0; j < _data.getStringCols(); j++)
+        for (size_t j = 0; j < _memoryManager.getStringCols(); j++)
         {
-            for (size_t i = 0; i < _data.getStringElements(j); i++)
+            for (size_t i = 0; i < _memoryManager.getStringElements(j); i++)
             {
-                stringTable.set(i, j, "\"" + _data.readString(i, j) + "\"");
+                stringTable.set(i, j, "\"" + _memoryManager.readString(i, j) + "\"");
             }
         }
 
         return stringTable;
     }
-    else if (_data.isCluster(sStringTableName))
+    else if (_memoryManager.isCluster(sStringTableName))
     {
         // Create the container for the selected cluster
-        NumeRe::Cluster& clust = _data.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
+        NumeRe::Cluster& clust = _memoryManager.getCluster(sStringTableName.substr(0, sStringTableName.find("{}")));
         NumeRe::Container<string> stringTable(clust.size(), 1);
 
         for (size_t i = 0; i < clust.size(); i++)
@@ -3313,12 +3288,9 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     }
 
     // Get the table variable map
-    map<string, long long int> tableMap = getInstance()->getData().mCachesMap;
+    map<string, long long int> tableMap = getInstance()->getMemoryManager().getTableMap();
 
-    if (getInstance()->getData().isValid())
-        tableMap["data"] = -1;
-
-    if (getInstance()->getData().getStringElements())
+    if (getInstance()->getMemoryManager().getStringElements())
         tableMap["string"] = -2;
 
     nLocalTableMapSize = tableMap.size();
@@ -3338,7 +3310,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
         }
     }
 
-    const map<string, NumeRe::Cluster>& clusterMap = getInstance()->getData().getClusterMap();
+    const map<string, NumeRe::Cluster>& clusterMap = getInstance()->getMemoryManager().getClusterMap();
 
     nLocalClusterMapSize = clusterMap.size();
 

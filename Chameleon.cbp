@@ -287,8 +287,6 @@
 		<Unit filename="common/tree_util.h" />
 		<Unit filename="common/vcsmanager.cpp" />
 		<Unit filename="common/vcsmanager.hpp" />
-		<Unit filename="common/verinfo.cpp" />
-		<Unit filename="common/verinfo.h" />
 		<Unit filename="gui/ChameleonProjectManager.cpp" />
 		<Unit filename="gui/ChameleonProjectManager.h" />
 		<Unit filename="gui/DirTraverser.cpp" />
@@ -392,12 +390,12 @@
 		<Unit filename="gui/terminal/networking.h" />
 		<Unit filename="gui/terminal/plinkconnect.cpp" />
 		<Unit filename="gui/terminal/plinkconnect.h" />
+		<Unit filename="gui/terminal/terminal.cpp" />
+		<Unit filename="gui/terminal/terminal.hpp" />
 		<Unit filename="gui/terminal/utils.cpp" />
 		<Unit filename="gui/terminal/winmesgbeep.cpp" />
 		<Unit filename="gui/terminal/wxssh.cpp" />
 		<Unit filename="gui/terminal/wxssh.h" />
-		<Unit filename="gui/terminal/wxterm.cpp" />
-		<Unit filename="gui/terminal/wxterm.h" />
 		<Unit filename="gui/textsplashscreen.hpp" />
 		<Unit filename="gui/wx.cpp" />
 		<Unit filename="gui/wx.h" />
@@ -431,8 +429,6 @@
 		<Unit filename="kernel/core/built-in.cpp" />
 		<Unit filename="kernel/core/built-in.hpp" />
 		<Unit filename="kernel/core/commandfunctions.hpp" />
-		<Unit filename="kernel/core/datamanagement/cache.cpp" />
-		<Unit filename="kernel/core/datamanagement/cache.hpp" />
 		<Unit filename="kernel/core/datamanagement/cluster.cpp" />
 		<Unit filename="kernel/core/datamanagement/cluster.hpp" />
 		<Unit filename="kernel/core/datamanagement/container.hpp" />
@@ -442,9 +438,13 @@
 		<Unit filename="kernel/core/datamanagement/datafile.hpp" />
 		<Unit filename="kernel/core/datamanagement/dataops.cpp" />
 		<Unit filename="kernel/core/datamanagement/dataops.hpp" />
+		<Unit filename="kernel/core/datamanagement/fileadapter.cpp" />
+		<Unit filename="kernel/core/datamanagement/fileadapter.hpp" />
 		<Unit filename="kernel/core/datamanagement/indices.cpp" />
 		<Unit filename="kernel/core/datamanagement/memory.cpp" />
 		<Unit filename="kernel/core/datamanagement/memory.hpp" />
+		<Unit filename="kernel/core/datamanagement/memorymanager.cpp" />
+		<Unit filename="kernel/core/datamanagement/memorymanager.hpp" />
 		<Unit filename="kernel/core/datamanagement/sorter.cpp" />
 		<Unit filename="kernel/core/datamanagement/sorter.hpp" />
 		<Unit filename="kernel/core/datamanagement/stringmemory.cpp" />

@@ -2569,7 +2569,7 @@ void NumeReWindow::runLaTeX()
         return;
     }
 
-    string sMain = createLaTeXMain(filename.GetPath().ToStdString(), filename.GetName().ToStdString());
+    string sMain = createLaTeXMain(filename.GetPath().ToStdString(), filename.GetName().ToStdString()) + " -interaction=nonstopmode";
 
     if (fileExists((m_options->GetLaTeXRoot() + "/xelatex.exe").ToStdString()))
         ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), sMain.c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
@@ -2593,7 +2593,7 @@ void NumeReWindow::compileLaTeX()
     if (fileType == FILE_TEXSOURCE)
     {
         wxFileName filename = m_currentEd->GetFileName();
-        ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), filename.GetName().ToStdString().c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
+        ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), (filename.GetName().ToStdString() + " -interaction=nonstopmode").c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
     }
 }
 
