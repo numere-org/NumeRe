@@ -21,6 +21,8 @@
 #include "wx/wx.h"
 #include "../gui/terminal/terminal.hpp"
 #include "core/datamanagement/dataops.hpp" // for make_stringmatrix()
+#include "core/datamanagement/database.hpp"
+
 #define KERNEL_PRINT_SLEEP 2
 
 extern const string sVersion;
@@ -2033,31 +2035,17 @@ void NumeReKernel::resetAfterError(string& sCmdCache)
 /////////////////////////////////////////////////
 string NumeReKernel::getGreeting()
 {
-    unsigned int nth_Greeting = 0;
-    vector<string> vGreetings;
+    NumeRe::DataBase greetingsDB("<>/docs/greetings.ndb");
 
     // Get the greetings from the database file
     if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/greetings.ndb", ".ndb")))
-        vGreetings = getDBFileContent("<>/user/docs/greetings.ndb", _option);
-    else
-        vGreetings = getDBFileContent("<>/docs/greetings.ndb", _option);
+        greetingsDB.addData("<>/user/docs/greetings.ndb");
 
-    string sLine;
-
-    if (!vGreetings.size())
+    if (!greetingsDB.size())
         return "|-> ERROR: GREETINGS FILE IS EMPTY.\n";
 
-    // --> Einen Seed (aus der Zeit generiert) an die rand()-Funktion zuweisen <--
-    srand(time(NULL));
-
-    // --> Die aktuelle Begruessung erhalten wir als modulo(nGreetings)-Operation auf rand() <--
-    nth_Greeting = (rand() % vGreetings.size());
-
-    if (nth_Greeting >= vGreetings.size())
-        nth_Greeting = vGreetings.size() - 1;
-
-    // --> Gib die zufaellig ausgewaehlte Begruessung zurueck <--
-    return "|-> \"" + vGreetings[nth_Greeting] + "\"\n";
+    // return a random greeting
+    return "|-> \"" + greetingsDB.getElement(greetingsDB.randomRecord(), 0) + "\"\n";
 }
 
 

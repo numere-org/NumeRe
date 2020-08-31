@@ -19,6 +19,7 @@
 
 #include "documentation.hpp"
 #include "../../kernel.hpp"
+#include "../datamanagement/database.hpp"
 
 static bool isValue(const string& sExpr, size_t nPos, size_t nLength)
 {
@@ -1021,7 +1022,7 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, bool generateFile, Settings
 void doc_ReplaceExprContentForHTML(string& sExpr, Settings& _option)
 {
     // Get the mathstyle data base's contents
-    static vector<vector<string> > vHTMLEntities = getDataBase("<>/docs/mathstyle.ndb", _option);
+    static NumeRe::DataBase HTMLEntitiesDB("<>/docs/mathstyle.ndb");
     size_t nPos = 0;
 
     // Set the starting position
@@ -1047,16 +1048,16 @@ void doc_ReplaceExprContentForHTML(string& sExpr, Settings& _option)
         }
 
         // Match the tokens of the data base
-        for (size_t n = 0; n < vHTMLEntities.size(); n++)
+        for (size_t n = 0; n < HTMLEntitiesDB.size(); n++)
         {
-            if (sExpr.substr(i, vHTMLEntities[n][0].length()) == vHTMLEntities[n][0]
-                && ((vHTMLEntities[n][2] == "OP" && isOperator(sExpr, i, vHTMLEntities[n][0].length()))
-                    || (vHTMLEntities[n][2] == "VAL" && isValue(sExpr, i, vHTMLEntities[n][0].length()))
-                    || (vHTMLEntities[n][2] == "FCT" && isFunction(sExpr, i, vHTMLEntities[n][0].length())))
+            if (sExpr.substr(i, HTMLEntitiesDB[n][0].length()) == HTMLEntitiesDB[n][0]
+                && ((HTMLEntitiesDB[n][2] == "OP" && isOperator(sExpr, i, HTMLEntitiesDB[n][0].length()))
+                    || (HTMLEntitiesDB[n][2] == "VAL" && isValue(sExpr, i, HTMLEntitiesDB[n][0].length()))
+                    || (HTMLEntitiesDB[n][2] == "FCT" && isFunction(sExpr, i, HTMLEntitiesDB[n][0].length())))
                 )
             {
-                sExpr.replace(i, vHTMLEntities[n][0].length(), vHTMLEntities[n][1]);
-                i += vHTMLEntities[n][1].length()-1;
+                sExpr.replace(i, HTMLEntitiesDB[n][0].length(), HTMLEntitiesDB[n][1]);
+                i += HTMLEntitiesDB[n][1].length()-1;
             }
         }
 
@@ -1150,233 +1151,68 @@ vector<vector<string> > doc_readTokenTable(const string& sTable, Settings& _opti
 
 void doc_SearchFct(const string& sToLookFor, Settings& _option)
 {
-    bool bResult = false;
-    string* sMultiTopics;
-    string sToLookFor_cp = toLowerCase(sToLookFor);
-    string sUsedIdxKeys = ";";
-    static vector<vector<string> > vTopics;
-    if (!vTopics.size() && _option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
+    static NumeRe::DataBase findDataBase;
+    static vector<double> vWeighting({3.0, 2.0, 1.0});
+
+    if (!findDataBase.size())
     {
-        vector<vector<string> > vStdTopics = getDataBase("<>/docs/find.ndb", _option);
-        vector<vector<string> > vLangTopics = getDataBase("<>/user/docs/find.ndb", _option);
-        map<string,int> mTopics;
-        for (unsigned int i = 0; i < vStdTopics.size(); i++)
-            mTopics[toLowerCase(vStdTopics[i][0])] = i+1;
-        for (unsigned int i = 0; i < vLangTopics.size(); i++)
-            mTopics[toLowerCase(vLangTopics[i][0])] = -i-1;
-        for (auto iter = mTopics.begin(); iter != mTopics.end(); ++iter)
+        findDataBase.addData("<>/docs/find.ndb");
+
+        if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
+            findDataBase.addData("<>/user/docs/find.ndb");
+    }
+
+    map<double,vector<size_t>> mMatches = findDataBase.findRecordsUsingRelevance(sToLookFor, vWeighting);
+
+    if (!mMatches.size())
+    {
+        NumeReKernel::toggleTableStatus();
+        make_hline();
+        NumeReKernel::print(_lang.get("DOC_SEARCHFCT_NO_RESULTS", sToLookFor));
+        NumeReKernel::toggleTableStatus();
+        make_hline();
+        return;
+    }
+
+    double dMax = mMatches.rbegin()->first;
+    size_t nCount = 0;
+
+    NumeReKernel::toggleTableStatus();
+    make_hline();
+    NumeReKernel::print(toSystemCodePage(toUpperCase(_lang.get("DOC_SEARCHFCT_TABLEHEAD"))));
+    make_hline();
+
+    for (auto iter = mMatches.rbegin(); iter != mMatches.rend(); ++iter)
+    {
+        for (size_t j = 0; j < iter->second.size(); j++)
         {
-            if (iter->second > 0)
-                vTopics.push_back(vStdTopics[(iter->second-1)]);
+            NumeReKernel::printPreFmt("|->    [");
+
+            if (intCast(iter->first / dMax * 100) != 100)
+                NumeReKernel::printPreFmt(" ");
+
+            NumeReKernel::printPreFmt(toString(intCast(iter->first / dMax * 100)) + "%]   ");
+
+            if (findDataBase.getElement(iter->second[j], 0) == "NumeRe v $$$")
+                NumeReKernel::printPreFmt("NumeRe v " + sVersion);
             else
-                vTopics.push_back(vLangTopics[abs(iter->second+1)]);
+                NumeReKernel::printPreFmt(toSystemCodePage(findDataBase.getElement(iter->second[j], 0)));
+
+            NumeReKernel::printPreFmt(" -- ");
+
+            if (findDataBase.getElement(iter->second[j], 0) == "NumeRe v $$$")
+                NumeReKernel::printPreFmt(findDataBase.getElement(iter->second[j], 1).substr(0, findDataBase.getElement(iter->second[j], 1).find("$$$")) + replacePathSeparator(_option.getExePath()) + "\n");
+            else
+                NumeReKernel::printPreFmt(findDataBase.getElement(iter->second[j], 1) + "\n");
+
+            nCount++;
         }
-    }
-    else if (!vTopics.size())
-        vTopics = getDataBase("<>/docs/find.ndb", _option);
-    if (!vTopics.size())
-    {
-        make_hline();
-        NumeReKernel::print(LineBreak(_lang.get("DOC_SEARCHFCT_DB_ERROR"), _option));
-        make_hline();
-        return;
     }
 
-    sToLookFor_cp = fromSystemCodePage(sToLookFor_cp);
-    int nMultiTopics = 0;
-    int nMatches[vTopics.size()][2];// save export lösung
-    int nMax[2] = {0,0};
-    int nCount = 0;
-
-    StripSpaces(sToLookFor_cp);
-    if (sToLookFor_cp == "help")
-    {
-        NumeReKernel::toggleTableStatus();
-        make_hline();
-        NumeReKernel::print(toSystemCodePage(toUpperCase(_lang.get("DOC_SEARCHFCT_TABLEHEAD"))));
-        make_hline();
-        for (unsigned int i = 0; i < vTopics.size(); i++)
-        {
-            if (vTopics[i][0].substr(0,4) == "help")
-            {
-                NumeReKernel::print("   [100%]   " + vTopics[i][0] + " -- " + LineBreak(vTopics[i][1], _option, true, 20+vTopics[i][0].length(), 20));
-                break;
-            }
-        }
-        NumeReKernel::printPreFmt("|\n");
-        NumeReKernel::print(toSystemCodePage(_lang.get("DOC_SEARCHFCT_RESULT", "1")));
-        NumeReKernel::toggleTableStatus();
-        make_hline();
-        return;
-    }
-
-
-    if (sToLookFor_cp.find(" ") != string::npos && sToLookFor_cp[0] != '"' && sToLookFor_cp[sToLookFor_cp.length()-1] != '"')
-    {
-        string sTemp = sToLookFor_cp;
-        do
-        {
-            sTemp = sTemp.substr(sTemp.find(" ")+1);
-            nMultiTopics++;
-        }
-        while (sTemp.find(" ") != string::npos);
-        nMultiTopics++;
-    }
-    else if (sToLookFor_cp[0] == '"' && sToLookFor_cp[sToLookFor_cp.length()-1] == '"' && sToLookFor_cp.length() > 1)
-    {
-        nMultiTopics = 1;
-        sToLookFor_cp.erase(0,1);
-        sToLookFor_cp.erase(sToLookFor_cp.length()-1);
-    }
-    else
-    {
-        nMultiTopics = 1;
-    }
-
-    sMultiTopics = new string[nMultiTopics];
-
-    if (nMultiTopics > 1)
-    {
-        sMultiTopics[0] = sToLookFor_cp;
-        for (int k = 0; k < nMultiTopics-1; k++)
-        {
-            sMultiTopics[k+1] = sMultiTopics[k].substr(sMultiTopics[k].find(" ")+1);
-            sMultiTopics[k] = sMultiTopics[k].substr(0,sMultiTopics[k].find(" "));
-        }
-
-        for (int k = 0; k < nMultiTopics; k++)
-        {
-            if (sMultiTopics[k][0] == ' ')
-                sMultiTopics[k] = sMultiTopics[k].substr(1);
-            if (sMultiTopics[k][sMultiTopics[k].length()-1] == ' ')
-                sMultiTopics[k] = sMultiTopics[k].substr(0,sMultiTopics[k].length()-1);
-        }
-    }
-    else
-    {
-        sMultiTopics[0] = sToLookFor_cp;
-    }
-
-    // --> Treffer finden, zaehlen und merken <--
-    for (unsigned int i = 0; i < vTopics.size(); i++)
-    {
-        nMatches[i][0] = 0;
-        nMatches[i][1] = 0;
-        for (int k = 0; k < nMultiTopics; k++)
-        {
-            if (vTopics[i].size() < 3)
-            {
-                //cerr << vTopics[i][0] << endl << vTopics[i].size() << endl;
-                if (sMultiTopics)
-                    delete[] sMultiTopics;
-                make_hline();
-                NumeReKernel::print(LineBreak(_lang.get("DOC_SEARCHFCT_DB_ERROR"), _option));
-                make_hline();
-                return;
-            }
-            for (unsigned int j = 0; j < vTopics[i].size(); j++)
-            {
-                if (toLowerCase(vTopics[i][j]).find(sMultiTopics[k]) != string::npos && sMultiTopics[k].length() && sMultiTopics[k] != " ")
-                {
-                    nMatches[i][0]++;
-                    nMatches[i][1] += vTopics[i].size() - j;
-                        if (!bResult)
-                        bResult = true;
-                    break;
-                }
-            }
-        }
-        if (nMatches[i][0] > nMax[0])
-            nMax[0] = nMatches[i][0];
-        if (nMatches[i][1] > nMax[1])
-            nMax[1] = nMatches[i][1];
-    }
-    // --> Nach Relevanz sortiert ausgeben <--
-    if (bResult)
-    {
-        NumeReKernel::toggleTableStatus();
-        make_hline();
-        NumeReKernel::print(toSystemCodePage(toUpperCase(_lang.get("DOC_SEARCHFCT_TABLEHEAD"))));
-        make_hline();
-
-        if (nMax[0] % nMultiTopics && nMultiTopics > 1)
-        {
-            nMax[1] = nMax[1] / (double)nMax[0] * ( nMultiTopics - (nMax[0] % nMultiTopics) ) + nMax[1];
-        }
-
-        for (int k = nMultiTopics * vTopics[0].size(); k > 0; k--)
-        {
-            for (unsigned int i = 0; i < vTopics.size(); i++)
-            {
-                if (nMatches[i][1] == k)
-                {
-                    NumeReKernel::printPreFmt("|->    [");
-                    if ((int)(nMatches[i][1] / (double)(nMax[1]) * 100) != 100)
-                        NumeReKernel::printPreFmt(" ");
-                    NumeReKernel::printPreFmt(toString((int)(nMatches[i][1] / (double)(nMax[1]) * 100)) + "%]   ");
-                    if (vTopics[i][0] == "NumeRe v $$$")
-                        NumeReKernel::printPreFmt("NumeRe v " + sVersion);
-                    else
-                        NumeReKernel::printPreFmt(toSystemCodePage(vTopics[i][0]));
-                    NumeReKernel::printPreFmt(" -- ");
-                    if (vTopics[i][0] == "NumeRe v $$$")
-                        NumeReKernel::printPreFmt(LineBreak(vTopics[i][1].substr(0, vTopics[i][1].find("$$$")) + replacePathSeparator(_option.getExePath()), _option, true, 29+sVersion.length(), 20) + "\n");
-                    else
-                        NumeReKernel::printPreFmt(LineBreak(vTopics[i][1], _option, true, 20+vTopics[i][0].length(), 20) + "\n");
-                    ///cerr << endl;
-                    nCount++;
-                }
-            }
-        }
-        for (int i = 0; i < nMultiTopics; i++)
-        {
-            if (_option.getHelpIdxKey(sMultiTopics[i]) != "<<NONE>>")
-            {
-                if (sUsedIdxKeys.find(";" + _option.getHelpIdxKey(sMultiTopics[i]) + ";") != string::npos)
-                    continue;
-                NumeReKernel::print(LineBreak("   [HELP]   " + _option.getHelpIdxKey(sMultiTopics[i]) + " -- " + _option.getHelpArticleTitle(_option.getHelpIdxKey(sMultiTopics[i])), _option));
-                sUsedIdxKeys += _option.getHelpIdxKey(sMultiTopics[i])+ ";";
-                nCount++;
-            }
-        }
-        NumeReKernel::printPreFmt("|\n");
-        NumeReKernel::print(toSystemCodePage(_lang.get("DOC_SEARCHFCT_RESULT", toString(nCount))));
-        NumeReKernel::toggleTableStatus();
-        make_hline();
-    }
-    else
-    {
-        NumeReKernel::toggleTableStatus();
-        make_hline();
-        for (int i = 0; i < nMultiTopics; i++)
-        {
-            if (_option.getHelpIdxKey(sMultiTopics[i]) != "<<NONE>>")
-            {
-                if (sUsedIdxKeys.find(";" + _option.getHelpIdxKey(sMultiTopics[i]) + ";") != string::npos)
-                    continue;
-                if (!nCount)
-                {
-                    NumeReKernel::print(toSystemCodePage(toUpperCase(_lang.get("DOC_SEARCHFCT_TABLEHEAD"))));
-                    make_hline();
-                }
-                NumeReKernel::print(LineBreak("   [HELP]   " + _option.getHelpIdxKey(sMultiTopics[i]) + " -- " + _option.getHelpArticleTitle(_option.getHelpIdxKey(sMultiTopics[i])), _option));
-                sUsedIdxKeys += _option.getHelpIdxKey(sMultiTopics[i]) + ";";
-                nCount++;
-            }
-        }
-        if (!nCount)
-            NumeReKernel::print(LineBreak(_lang.get("DOC_SEARCHFCT_NO_RESULTS", sToLookFor_cp), _option));
-        else
-        {
-            NumeReKernel::printPreFmt("|\n");
-            NumeReKernel::print(toSystemCodePage(_lang.get("DOC_SEARCHFCT_RESULT", toString(nCount))));
-        }
-        NumeReKernel::toggleTableStatus();
-        make_hline();
-    }
-    delete[] sMultiTopics;
-    sMultiTopics = 0;
-    return;
+    NumeReKernel::printPreFmt("|\n");
+    NumeReKernel::print(toSystemCodePage(_lang.get("DOC_SEARCHFCT_RESULT", toString(nCount))));
+    NumeReKernel::toggleTableStatus();
+    make_hline();
 }
 
 void doc_FirstStart(const Settings& _option)
@@ -1419,36 +1255,4 @@ void doc_FirstStart(const Settings& _option)
     return;
 }
 
-void doc_TipOfTheDay(Settings& _option)
-{
-    vector<string> vTipList;
-    if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
-        vTipList = getDBFileContent("<>/user/docs/hints.ndb", _option);
-    else
-        vTipList = getDBFileContent("<>/docs/hints.ndb", _option);
-    unsigned int nth_tip = 0;
-    // --> Einen Seed (aus der Zeit generiert) an die rand()-Funktion zuweisen <--
-    srand(time(NULL));
-
-    if (!vTipList.size())
-        return;
-    // --> Die aktuelle Begruessung erhalten wir als modulo(nGreetings)-Operation auf rand() <--
-    nth_tip = (rand() % vTipList.size());
-    if (nth_tip >= vTipList.size())
-        nth_tip = vTipList.size()-1;
-
-    NumeReKernel::toggleTableStatus();
-    NumeReKernel::printPreFmt("|\n");
-    //cerr << "|" << endl;
-    make_hline();
-    //cerr << "|-> NUMERE: SCHON GEWUSST?  [Nr. "<< nth_tip+1 << "/" << vTipList.size() << "]" << endl;
-    NumeReKernel::print(toSystemCodePage(_lang.get("DOC_TIPOFTHEDAY_HEADLINE", toString(nth_tip+1), toString((int)vTipList.size()))));
-    make_hline();
-    NumeReKernel::print(LineBreak(vTipList[nth_tip], _option));
-    //cerr << "|" << endl << LineBreak("|-> Diese Hinweise können mit \"set -hints=false\" deaktiviert werden.", _option) << endl;
-    NumeReKernel::toggleTableStatus();
-    make_hline();
-
-    return;
-}
 

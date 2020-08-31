@@ -330,6 +330,8 @@
 		<Unit filename="gui/compositions/wxTermContainer.h" />
 		<Unit filename="gui/controls/searchctrl.cpp" />
 		<Unit filename="gui/controls/searchctrl.hpp" />
+		<Unit filename="gui/controls/toolbarsearchctrl.cpp" />
+		<Unit filename="gui/controls/toolbarsearchctrl.hpp" />
 		<Unit filename="gui/controls/treelistctrl.cpp" />
 		<Unit filename="gui/controls/treelistctrl.h" />
 		<Unit filename="gui/controls/treesearchctrl.cpp" />
@@ -434,6 +436,8 @@
 		<Unit filename="kernel/core/datamanagement/container.hpp" />
 		<Unit filename="kernel/core/datamanagement/dataaccess.cpp" />
 		<Unit filename="kernel/core/datamanagement/dataaccess.hpp" />
+		<Unit filename="kernel/core/datamanagement/database.cpp" />
+		<Unit filename="kernel/core/datamanagement/database.hpp" />
 		<Unit filename="kernel/core/datamanagement/datafile.cpp" />
 		<Unit filename="kernel/core/datamanagement/datafile.hpp" />
 		<Unit filename="kernel/core/datamanagement/dataops.cpp" />

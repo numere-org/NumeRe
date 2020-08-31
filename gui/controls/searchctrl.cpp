@@ -38,9 +38,16 @@ wxArrayString SearchCtrl::getCandidates(const wxString& enteredText)
     return stringArray;
 }
 
-// This event handler function will be fired, if the
-// user selects a proposed string in the opened dropdown
-// list
+
+/////////////////////////////////////////////////
+/// \brief This event handler function will be
+/// fired, if the user selects a proposed string
+/// in the opened dropdown list.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void SearchCtrl::OnItemSelect(wxCommandEvent& event)
 {
     wxString value = GetValue();
@@ -53,10 +60,18 @@ void SearchCtrl::OnItemSelect(wxCommandEvent& event)
     }
 }
 
-// This event handler function will be fired, if the
-// user changes the text in the control. It will provide
-// a dropdown menu with possible candidates matching to
-// the provided search string
+
+/////////////////////////////////////////////////
+/// \brief This event handler function will be
+/// fired, if the user changes the text in the
+/// control. It will provide a dropdown menu with
+/// possible candidates matching to the provided
+/// search string.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void SearchCtrl::OnTextChange(wxCommandEvent& event)
 {
     textEntryValue = GetValue();
@@ -84,9 +99,17 @@ void SearchCtrl::OnTextChange(wxCommandEvent& event)
     }
 }
 
-// This event handling function will be fired, if the
-// dropdown list is opened. It will simply remove the
-// automatic selection of the control to avoid overtyping
+
+/////////////////////////////////////////////////
+/// \brief This event handling function will be
+/// fired, if the dropdown list is opened. It
+/// will simply remove the automatic selection of
+/// the control to avoid overtyping.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void SearchCtrl::OnPopup(wxCommandEvent& event)
 {
     textChangeMutex = true;

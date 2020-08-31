@@ -21,8 +21,11 @@
 
 #include <wx/wx.h>
 
-// Implementation of a generic search control based
-// upon a combo box
+
+/////////////////////////////////////////////////
+/// \brief Implementation of a generic search
+/// control based on a combo box.
+/////////////////////////////////////////////////
 class SearchCtrl : public wxComboBox
 {
     private:
@@ -36,7 +39,7 @@ class SearchCtrl : public wxComboBox
         virtual wxArrayString getCandidates(const wxString& enteredText);
 
     public:
-        SearchCtrl(wxWindow* parent, wxWindowID id, const wxString& value = wxEmptyString) : wxComboBox(parent, id, value, wxDefaultPosition, wxDefaultSize, 0, nullptr, wxCB_SORT), textChangeMutex(false) {}
+        SearchCtrl(wxWindow* parent, wxWindowID id, const wxString& value = wxEmptyString, int style = wxCB_SORT) : wxComboBox(parent, id, value, wxDefaultPosition, wxDefaultSize, 0, nullptr, style), textChangeMutex(false) {}
 
         // Event handler functions
         void OnItemSelect(wxCommandEvent& event);

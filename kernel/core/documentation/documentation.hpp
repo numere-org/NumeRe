@@ -41,7 +41,6 @@ void doc_ReplaceExprContentForHTML(string& sExpr, Settings& _option);
 vector<vector<string> > doc_readTokenTable(const string& sTable, Settings& _option);
 void doc_SearchFct(const string& sToLookFor, Settings& _option);
 void doc_FirstStart(const Settings& _option);
-void doc_TipOfTheDay(Settings& _option);
 
 
 #endif

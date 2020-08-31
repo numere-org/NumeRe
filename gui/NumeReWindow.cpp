@@ -92,6 +92,7 @@
 #include "../kernel/core/version.h"
 #include "../kernel/core/utils/tools.hpp"
 #include "../kernel/core/procedure/dependency.hpp"
+#include "../kernel/core/datamanagement/database.hpp"
 
 #include "../common/debug.h"
 #include "../common/fixvsbug.h"
@@ -104,6 +105,7 @@
 #include "../common/ipc.hpp"
 
 #include "controls/treesearchctrl.hpp"
+#include "controls/toolbarsearchctrl.hpp"
 
 #include "icons/newstart1.xpm"
 #include "icons/newcontinue1.xpm"
@@ -562,17 +564,14 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     ///Msgbox
     Settings _option = m_terminal->getKernelSettings();
-    vector<string> vTipList;
+    NumeRe::DataBase tipDataBase;
+
     if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
-        vTipList = getDBFileContent("<>/user/docs/hints.ndb", _option);
+        tipDataBase.addData("<>/user/docs/hints.ndb");
     else
-        vTipList = getDBFileContent("<>/docs/hints.ndb", _option);
+        tipDataBase.addData("<>/docs/hints.ndb");
 
-    if (!vTipList.size())
-        vTipList.push_back("CANNOT READ TIPLIST");
-
-
-    tipProvider = new MyTipProvider(vTipList);
+    tipProvider = new MyTipProvider(tipDataBase.getColumn(0));
     showTipAtStartup = _option.getbShowHints();
 }
 
@@ -5300,6 +5299,10 @@ void NumeReWindow::UpdateToolbar()
     t->AddTool(ID_MENU_USEANALYZER, _guilang.get("GUI_TB_ANALYZER"), bmAnalyzer, _guilang.get("GUI_TB_ANALYZER_TTP"), wxITEM_CHECK);
     t->ToggleTool(ID_MENU_USEANALYZER, false);
     t->EnableTool(ID_MENU_USEANALYZER, false);
+
+    t->AddSeparator();
+    NumeRe::DataBase db("<>/docs/find.ndb");
+    t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, "Tell me, what you want to do ..."), "SEARCH");
 
     t->Realize();
 
