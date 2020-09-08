@@ -18,9 +18,17 @@
 
 #include "treesearchctrl.hpp"
 
-// This method searches and selects the item with the
-// passed label in the associated tree
-void TreeSearchCtrl::selectItem(const wxString& value)
+
+/////////////////////////////////////////////////
+/// \brief This method searches and selects the
+/// item with the passed label in the associated
+/// tree.
+///
+/// \param value const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool TreeSearchCtrl::selectItem(const wxString& value)
 {
     // Ensure that a tree as associated
     if (m_associatedCtrl)
@@ -42,13 +50,26 @@ void TreeSearchCtrl::selectItem(const wxString& value)
             {
                 m_associatedCtrl->EnsureVisible(match);
                 m_associatedCtrl->SelectItem(match);
+
+                return true;
             }
         }
     }
+
+    return false;
 }
 
-// This method searches for the tree item, whose
-// label corresponds to the passed string
+
+/////////////////////////////////////////////////
+/// \brief This method searches for the tree
+/// item, whose label corresponds to the passed
+/// string.
+///
+/// \param value const wxString&
+/// \param node wxTreeItemId
+/// \return wxTreeItemId
+///
+/////////////////////////////////////////////////
 wxTreeItemId TreeSearchCtrl::findItem(const wxString& value, wxTreeItemId node)
 {
     // Go through all siblings
@@ -82,8 +103,16 @@ wxTreeItemId TreeSearchCtrl::findItem(const wxString& value, wxTreeItemId node)
     return wxTreeItemId();
 }
 
-// This method returns an array of strings containing
-// possible candidates for the passed search string
+
+/////////////////////////////////////////////////
+/// \brief This method returns an array of
+/// strings containing possible candidates for
+/// the passed search string.
+///
+/// \param enteredText const wxString&
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
 wxArrayString TreeSearchCtrl::getCandidates(const wxString& enteredText)
 {
     // Ensure that a tree control was associated
@@ -105,10 +134,19 @@ wxArrayString TreeSearchCtrl::getCandidates(const wxString& enteredText)
     return wxArrayString();
 }
 
-// This method returns an array of strings containing
-// possible candiates for the passed search string,
-// which correspond to the current tree node, its siblings
-// and its childs
+
+/////////////////////////////////////////////////
+/// \brief This method returns an array of
+/// strings containing possible candiates for the
+/// passed search string, which correspond to the
+/// current tree node, its siblings and its
+/// childs.
+///
+/// \param enteredText const wxString&
+/// \param node wxTreeItemId
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
 wxArrayString TreeSearchCtrl::getChildCandidates(const wxString& enteredText, wxTreeItemId node)
 {
     wxArrayString stringArray;
@@ -119,7 +157,7 @@ wxArrayString TreeSearchCtrl::getChildCandidates(const wxString& enteredText, wx
         // Append the current label, if it contains the
         // searched string
         if (m_associatedCtrl->GetItemText(node).Lower().find(enteredText) != std::string::npos)
-            stringArray.Add(" " + m_associatedCtrl->GetItemText(node));
+            stringArray.Add(m_associatedCtrl->GetItemText(node));
 
         // Find the first child of the current node
         wxTreeItemIdValue cookie;

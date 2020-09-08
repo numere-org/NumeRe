@@ -5302,7 +5302,12 @@ void NumeReWindow::UpdateToolbar()
 
     t->AddSeparator();
     NumeRe::DataBase db("<>/docs/find.ndb");
-    t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, "Tell me, what you want to do ..."), "SEARCH");
+    Settings _opt = m_terminal->getKernelSettings();
+
+    if (_opt.getUseCustomLanguageFiles() && fileExists(_opt.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
+        db.addData("<>/user/docs/find.ndb");
+
+    t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, this, m_terminal, _guilang.get("GUI_SEARCH_TELLME")), wxEmptyString);
 
     t->Realize();
 
@@ -5548,6 +5553,7 @@ void NumeReWindow::setViewerFocus()
 /////////////////////////////////////////////////
 void NumeReWindow::refreshFunctionTree()
 {
+    wxWindow* focus = wxWindow::FindFocus();
     _guilang.loadStrings(m_terminal->getKernelSettings().getUseCustomLanguageFiles());
     prepareFunctionTree();
     m_functionTree->Refresh();
@@ -5559,6 +5565,9 @@ void NumeReWindow::refreshFunctionTree()
     }
 
     m_history->UpdateSyntaxHighlighting(true);
+
+    if (focus)
+        focus->SetFocus();
 }
 
 /////////////////////////////////////////////////

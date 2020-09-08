@@ -23,8 +23,11 @@
 #include <wx/wx.h>
 #include <wx/treectrl.h>
 
-// This class specializes the generic search control
-// to interact with a wxTreeCtrl
+
+/////////////////////////////////////////////////
+/// \brief This class specializes the generic
+/// search control to interact with a wxTreeCtrl.
+/////////////////////////////////////////////////
 class TreeSearchCtrl : public SearchCtrl
 {
     private:
@@ -32,7 +35,7 @@ class TreeSearchCtrl : public SearchCtrl
 
     protected:
         // Interaction functions with the wxTreeCtrl
-        virtual void selectItem(const wxString& value) override;
+        virtual bool selectItem(const wxString& value) override;
         wxTreeItemId findItem(const wxString& value, wxTreeItemId node);
         virtual wxArrayString getCandidates(const wxString& enteredText) override;
         wxArrayString getChildCandidates(const wxString& enteredText, wxTreeItemId node);

@@ -20,31 +20,111 @@
 #define SEARCHCTRL_HPP
 
 #include <wx/wx.h>
+#include <wx/combo.h>
+#include <wx/listctrl.h>
+
+/////////////////////////////////////////////////
+/// \brief The popup control for the generic
+/// search control. Implemented ontop of a list
+/// view.
+/////////////////////////////////////////////////
+class SearchCtrlPopup : public wxListView, public wxComboPopup
+{
+    private:
+        int m_ListId;
+        bool m_enableDragDrop;
+        wxArrayInt m_sizes;
+
+        wxArrayString split(wxString sString);
+
+    public:
+        virtual bool Create(wxWindow* parent) override
+        {
+            return wxListView::Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_REPORT | wxLC_NO_HEADER | wxLC_SINGLE_SEL | wxLC_VRULES);
+        }
+
+        virtual void Init() override
+        {
+            m_ListId = -1;
+            m_sizes.Add(200, 1);
+            m_enableDragDrop = false;
+        }
+
+        virtual wxWindow* GetControl() override
+        {
+            return this;
+        }
+
+        virtual wxString GetStringValue() const override;
+        void OnKeyEvent(wxKeyEvent& event);
+        void OnMouseUp(wxMouseEvent& WXUNUSED(event));
+        void OnMouseMove(wxMouseEvent& event);
+        void OnDragStart(wxListEvent& event);
+
+        void Set(wxArrayString& stringArray);
+
+        /////////////////////////////////////////////////
+        /// \brief Change the column sizes. Will create
+        /// as many columns as fields are in the array.
+        ///
+        /// \param sizes const wxArrayInt&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void SetColSizes(const wxArrayInt& sizes)
+        {
+            m_sizes = sizes;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Enable or disable the drag-drop
+        /// feature of this control.
+        ///
+        /// \param enable bool
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void EnableDragDrop(bool enable)
+        {
+            m_enableDragDrop = enable;
+        }
+
+    private:
+        wxDECLARE_EVENT_TABLE();
+};
 
 
 /////////////////////////////////////////////////
 /// \brief Implementation of a generic search
 /// control based on a combo box.
 /////////////////////////////////////////////////
-class SearchCtrl : public wxComboBox
+class SearchCtrl : public wxComboCtrl
 {
     private:
         bool textChangeMutex;
         wxString textEntryValue;
 
     protected:
+        friend class SearchCtrlPopup;
+
+        SearchCtrlPopup* popUp;
+
         // Virtual functions to interact with the data
         // model
-        virtual void selectItem(const wxString& value);
+        virtual bool selectItem(const wxString& value);
+        virtual wxString getDragDropText(const wxString& value);
         virtual wxArrayString getCandidates(const wxString& enteredText);
 
     public:
-        SearchCtrl(wxWindow* parent, wxWindowID id, const wxString& value = wxEmptyString, int style = wxCB_SORT) : wxComboBox(parent, id, value, wxDefaultPosition, wxDefaultSize, 0, nullptr, style), textChangeMutex(false) {}
+        SearchCtrl(wxWindow* parent, wxWindowID id, const wxString& value = wxEmptyString, int style = wxCB_SORT) : wxComboCtrl(parent, id, value, wxDefaultPosition, wxDefaultSize, style), textChangeMutex(false)
+        {
+            popUp = new SearchCtrlPopup();
+            SetPopupControl(popUp);
+        }
 
         // Event handler functions
         void OnItemSelect(wxCommandEvent& event);
         void OnTextChange(wxCommandEvent& event);
-        void OnPopup(wxCommandEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

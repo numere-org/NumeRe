@@ -330,6 +330,27 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief This member function finds a selected
+    /// record in the first column of the database
+    /// table and returns its ID.
+    ///
+    /// \param _sRecord const string&
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
+    size_t DataBase::findRecord(const string& _sRecord) const
+    {
+        for (size_t i = 0; i < m_dataBase.size(); i++)
+        {
+            if (m_dataBase[i][0] == _sRecord)
+                return i;
+        }
+
+        return string::npos;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function can be used to
     /// search a string in the managed database. The
     /// return value is a map with the record id as
@@ -424,9 +445,12 @@ namespace NumeRe
             }
         }
 
-        // Prepare the weighting, if necessary
+        // Prepare the weighting or add additional
+        // zeros, if necessary
         if (!vWeighting.size())
             vWeighting.assign(getCols(), 1.0);
+        else if (vWeighting.size() < getCols())
+            vWeighting.insert(vWeighting.end(), getCols()-vWeighting.size(), 0.0);
 
         // Calculate the relevance values and append
         // their corresponding record IDs

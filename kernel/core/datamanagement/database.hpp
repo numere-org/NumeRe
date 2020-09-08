@@ -70,6 +70,7 @@ namespace NumeRe
             DataBase& operator=(const DataBase& data);
             size_t randomRecord() const;
 
+            size_t findRecord(const std::string& _sRecord) const;
             std::map<size_t,std::vector<size_t>> find(const std::string& _sSearchString, bool findOnlyFirst = false) const;
             std::map<double,std::vector<size_t>> findRecordsUsingRelevance(const std::string& _sSearchString, std::vector<double> vWeighting = std::vector<double>()) const;
     };

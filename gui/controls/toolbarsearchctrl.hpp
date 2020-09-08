@@ -22,24 +22,51 @@
 #include "searchctrl.hpp"
 #include "../../kernel/core/datamanagement/database.hpp"
 
+class NumeReWindow;
+class NumeReTerminal;
+
+
+/////////////////////////////////////////////////
+/// \brief This class specializes the generic
+/// search control to be placed in the toolbar
+/// and to use the internal NumeRe::DataBase as
+/// data source.
+/////////////////////////////////////////////////
 class ToolBarSearchCtrl : public SearchCtrl
 {
     private:
         NumeRe::DataBase searchDB;
+        NumeReWindow* m_mainframe;
+        NumeReTerminal* m_terminal;
 
     protected:
         // Interaction functions with the wxTreeCtrl
-        virtual void selectItem(const wxString& value) override;
+        virtual bool selectItem(const wxString& value) override;
+        virtual wxString getDragDropText(const wxString& value) override;
         virtual wxArrayString getCandidates(const wxString& enteredText) override;
 
     public:
-        ToolBarSearchCtrl(wxWindow* parent, wxWindowID id, const NumeRe::DataBase& db, const wxString& hint = wxEmptyString) : SearchCtrl(parent, id, wxEmptyString, 0)
+        ToolBarSearchCtrl(wxWindow* parent, wxWindowID id, const NumeRe::DataBase& db, NumeReWindow* _mainframe, NumeReTerminal* _term, const wxString& hint = wxEmptyString, int width = 300, int extension = 200) : SearchCtrl(parent, id, wxEmptyString, 0)
         {
             // Provide a neat hint to the user, what he
             // may expect from this control
             SetHint(hint);
             searchDB = db;
-            SetSize(wxSize(300, -1));
+            m_mainframe = _mainframe;
+            m_terminal = _term;
+
+            // Define size and additional extent
+            // (20 additional pixels for the scroll bar)
+            SetSize(wxSize(width, -1));
+            SetPopupExtents(0, extension+20);
+
+            // Define the number of columns
+            wxArrayInt sizes;
+            sizes.Add(130, 1);
+            sizes.Add(width + extension - 130, 1);
+
+            popUp->SetColSizes(sizes);
+            popUp->EnableDragDrop(true);
         }
 };
 
