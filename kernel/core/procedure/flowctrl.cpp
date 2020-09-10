@@ -1476,6 +1476,9 @@ void FlowCtrl::setCommand(string& __sCmd, int nCurrentLine)
         StripSpaces(sAppendedExpression);
         StripSpaces(__sCmd);
 
+        if (sAppendedExpression.find_first_not_of(";") == string::npos)
+            sAppendedExpression.clear();
+
         // Store the current flow control statement
         vCmdArray.push_back(FlowCtrlCommand(__sCmd, nCurrentLine, true));
     }

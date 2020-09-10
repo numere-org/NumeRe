@@ -23,3 +23,6 @@ Cleaned	During loading are now filenames now stored and will be used for "reload
 Added	Added the multi-argument functions "minpos()" and "maxpos()" as usual function representations for their corresponding methods.
 Cleaned	Resolved an glitch in "export", where the default extension was "ndat" and not "dat".
 Cleaned	Added the LaTeX "nonstopmode" to all LaTeX usages.
+Updated	Reworked all database-related stuff, which is used internally for the "find" command, the hints, and some other stuff.
+Cleaned	Changed the base control for the search bars to be more responsive.
+Added	Created a "Tell me, what you want to do" searchbar in the toolbar.
