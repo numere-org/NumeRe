@@ -43,6 +43,8 @@ Memory::Memory()
 {
     nLines = 128;
     nCols = 8;
+    nCalcCols = -1;
+    nCalcLines = -1;
     nWrittenHeadlines = 0;
     dMemTable = nullptr;
     sHeadLine = nullptr;
@@ -247,6 +249,9 @@ bool Memory::clear()
         nAppendedZeroes = nullptr;
     }
 
+    nCalcLines = -1;
+    nCalcCols = -1;
+
     return true;
 }
 
@@ -300,6 +305,9 @@ long long int Memory::getCols(bool _bFull) const
     {
         if (nAppendedZeroes && bValidData)
         {
+            if (nCalcCols != -1)
+                return std::max(nCalcCols, nWrittenHeadlines);
+
             long long int nReturn = nCols;
 
             /* --> Von oben runterzaehlen, damit nur die leeren Spalten rechts von den Daten
@@ -314,6 +322,8 @@ long long int Memory::getCols(bool _bFull) const
                 if (nAppendedZeroes[i] != nLines)
                     break;
             }
+
+            nCalcCols = nReturn;
 
             return std::max(nReturn, nWrittenHeadlines);
         }
@@ -344,6 +354,9 @@ long long int Memory::getLines(bool _bFull) const
     {
         if (nAppendedZeroes)
         {
+            if (nCalcLines != -1)
+                return nCalcLines;
+
             long long int nReturn = 0;
 
             /* --> Suche die Spalte, in der am wenigsten Nullen angehaengt sind, und gib deren
@@ -354,6 +367,8 @@ long long int Memory::getLines(bool _bFull) const
                 if (nLines - nAppendedZeroes[i] > nReturn)
                     nReturn = nLines - nAppendedZeroes[i];
             }
+
+            nCalcLines = nReturn;
 
             return nReturn;
         }
@@ -765,6 +780,12 @@ bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
             bValidData = true;
     }
 
+    if ((isnan(_dData) || _nLine >= nCalcLines) && nCalcLines != -1)
+        nCalcLines = -1;
+
+    if ((isnan(_dData) || _nCol >= nCalcCols) && nCalcCols != -1)
+        nCalcCols = -1;
+
     // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
     if (bIsSaved)
     {
@@ -1053,6 +1074,9 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
     // the end of columns
     countAppendedZeroes();
 
+    // Number of lines might have changed
+    nCalcLines = -1;
+
     // Increment each index value, if the index
     // vector shall be returned
     if (bReturnIndex)
@@ -1298,6 +1322,9 @@ void Memory::deleteEntry(long long int _nLine, long long int _nCol)
                 }
             }
 
+            nCalcCols = -1;
+            nCalcLines = -1;
+
             if (!getLines(false) && !getCols(false))
                 bValidData = false;
         }
@@ -1388,6 +1415,9 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
         }
     }
 
+    nCalcCols = -1;
+    nCalcLines = -1;
+
     if (!getLines(false) && !getCols(false))
         bValidData = false;
 }
@@ -1428,7 +1458,7 @@ void Memory::countAppendedZeroes()
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
@@ -1436,14 +1466,17 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
     double dAvg = avg(_vLine, _vCol);
     double dStd = 0.0;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
             else if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
@@ -1465,13 +1498,10 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
-
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
 
     return sum(_vLine, _vCol) / num(_vLine, _vCol);
 }
@@ -1486,21 +1516,24 @@ double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
     double dMax = NAN;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
@@ -1527,21 +1560,24 @@ double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
     double dMin = NAN;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
@@ -1568,21 +1604,24 @@ double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
     double dPrd = 1.0;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
@@ -1605,21 +1644,24 @@ double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
     double dSum = 0.0;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
@@ -1642,20 +1684,23 @@ double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0;
     int nInvalid = 0;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 nInvalid++;
             else if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 nInvalid++;
@@ -1675,13 +1720,16 @@ double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0.0;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     double dRetVal = NAN;
 
@@ -1689,7 +1737,7 @@ double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
             if (isnan(dRetVal))
@@ -1716,19 +1764,22 @@ double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0.0;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]) || dMemTable[_vLine[i]][_vCol[j]] != 0)
@@ -1749,13 +1800,16 @@ double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0.0;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     bool isTrue = false;
 
@@ -1763,7 +1817,7 @@ double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]) || dMemTable[_vLine[i]][_vCol[j]] != 0)
@@ -1792,23 +1846,23 @@ double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0;
     int nInvalid = 0;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0
-                    || _vLine[i] >= getLines(true)
-                    || _vCol[j] < 0
-                    || _vCol[j] >= getCols(true))
+            if (_vLine[i] < 0 || _vLine[i] >= nLines || _vCol[j] < 0 || _vCol[j] >= nCols)
                 nInvalid++;
         }
     }
@@ -1826,21 +1880,24 @@ double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
     double dNorm = 0.0;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
@@ -1863,13 +1920,16 @@ double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int _nType)
+double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int _nType) const
 {
     if (!bValidData)
         return NAN;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     enum
     {
@@ -1906,7 +1966,7 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
     {
         for (long long int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
@@ -1991,13 +2051,16 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
+double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     vector<double> vData;
 
@@ -2007,7 +2070,7 @@ double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false) || isnan(dMemTable[_vLine[i]][_vCol[j]]))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols || isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
 
             vData.push_back(dMemTable[_vLine[i]][_vCol[j]]);
@@ -2035,13 +2098,16 @@ double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return double
 ///
 /////////////////////////////////////////////////
-double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct)
+double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct) const
 {
     if (!bValidData)
         return NAN;
 
-    _vLine.setOpenEndIndex(getLines(false)-1);
-    _vCol.setOpenEndIndex(getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vLine.setOpenEndIndex(lines-1);
+    _vCol.setOpenEndIndex(cols-1);
 
     vector<double> vData;
 
@@ -2054,7 +2120,7 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
     {
         for (unsigned int j = 0; j < _vCol.size(); j++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= getLines(false) || _vCol[j] < 0 || _vCol[j] >= getCols(false) || isnan(dMemTable[_vLine[i]][_vCol[j]]))
+            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols || isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
 
             vData.push_back(dMemTable[_vLine[i]][_vCol[j]]);
@@ -2083,19 +2149,22 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> Memory::size(const VectorIndex& _vIndex, int dir)
+vector<double> Memory::size(const VectorIndex& _vIndex, int dir) const
 {
     if (!bValidData)
         return vector<double>(2, 0.0);
 
-    _vIndex.setOpenEndIndex(dir & LINES ? getLines(false)-1 : getCols(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vIndex.setOpenEndIndex(dir & LINES ? lines-1 : cols-1);
     long long int nGridOffset = 2*((dir & GRID) != 0);
 
     // Handle simple things first
     if (dir == ALL)
-        return vector<double>({getLines(false), getCols(false)});
+        return vector<double>({lines, cols});
     else if (dir == GRID)
-        return vector<double>({getLines(false), getCols(false)-2});
+        return vector<double>({lines, cols-2});
     else if (dir & LINES)
     {
         // Compute the sizes of the table rows
@@ -2103,7 +2172,7 @@ vector<double> Memory::size(const VectorIndex& _vIndex, int dir)
 
         for (size_t i = 0; i < _vIndex.size(); i++)
         {
-            if (_vIndex[i] < 0 || _vIndex[i] >= getLines(false))
+            if (_vIndex[i] < 0 || _vIndex[i] >= lines)
                 continue;
 
             for (long long int j = nCols-1; j >= 0; j--)
@@ -2128,7 +2197,7 @@ vector<double> Memory::size(const VectorIndex& _vIndex, int dir)
 
         for (size_t j = 0; j < _vIndex.size(); j++)
         {
-            if (_vIndex[j] < nGridOffset || _vIndex[j] >= getCols(false))
+            if (_vIndex[j] < nGridOffset || _vIndex[j] >= cols)
                 continue;
 
             vSizes.push_back(nLines-getAppendedZeroes(_vIndex[j]));
@@ -2153,12 +2222,15 @@ vector<double> Memory::size(const VectorIndex& _vIndex, int dir)
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir)
+vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir) const
 {
     if (!bValidData)
         return vector<double>(1, NAN);
 
-    _vIndex.setOpenEndIndex(dir & COLS ? getCols(false)-1 : getLines(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vIndex.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
     long long int nGridOffset = 2*((dir & GRID) != 0);
 
     // A special case for the columns. We will compute the
@@ -2169,7 +2241,7 @@ vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir)
 
         for (size_t j = 0; j < _vIndex.size(); j++)
         {
-            if (_vIndex[j] < nGridOffset || _vIndex[j] >= getCols(false))
+            if (_vIndex[j] < nGridOffset || _vIndex[j] >= cols)
                 continue;
 
             vPos.push_back(cmp(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j]), min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j])), 0));
@@ -2190,7 +2262,7 @@ vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir)
     // for GRID and ALL
     for (size_t i = 0; i < _vIndex.size(); i++)
     {
-        if (_vIndex[i] < 0 || _vIndex[i] >= getLines(false))
+        if (_vIndex[i] < 0 || _vIndex[i] >= lines)
             continue;
 
         vPos.push_back(cmp(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END), min(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END)), 0));
@@ -2222,12 +2294,15 @@ vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir)
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir)
+vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
 {
     if (!bValidData)
         return vector<double>(1, NAN);
 
-    _vIndex.setOpenEndIndex(dir & COLS ? getCols(false)-1 : getLines(false)-1);
+    long long int lines = getLines(false);
+    long long int cols = getCols(false);
+
+    _vIndex.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
     long long int nGridOffset = 2*((dir & GRID) != 0);
 
     // A special case for the columns. We will compute the
@@ -2238,7 +2313,7 @@ vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir)
 
         for (size_t j = 0; j < _vIndex.size(); j++)
         {
-            if (_vIndex[j] < nGridOffset || _vIndex[j] >= getCols(false))
+            if (_vIndex[j] < nGridOffset || _vIndex[j] >= cols)
                 continue;
 
             vPos.push_back(cmp(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j]), max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(_vIndex[j])), 0));
@@ -2259,7 +2334,7 @@ vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir)
     // for GRID and ALL
     for (size_t i = 0; i < _vIndex.size(); i++)
     {
-        if (_vIndex[i] < 0 || _vIndex[i] >= getLines(false))
+        if (_vIndex[i] < 0 || _vIndex[i] >= lines)
             continue;
 
         vPos.push_back(cmp(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END), max(VectorIndex(_vIndex[i]), VectorIndex(nGridOffset, VectorIndex::OPEN_END)), 0));

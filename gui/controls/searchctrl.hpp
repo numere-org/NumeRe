@@ -33,7 +33,10 @@ class SearchCtrlPopup : public wxListView, public wxComboPopup
     private:
         int m_ListId;
         bool m_enableDragDrop;
+        bool m_enableColors;
         wxArrayInt m_sizes;
+        wxString m_callTip;
+        wxString m_callTipHighlight;
 
         wxArrayString split(wxString sString);
 
@@ -48,6 +51,9 @@ class SearchCtrlPopup : public wxListView, public wxComboPopup
             m_ListId = -1;
             m_sizes.Add(200, 1);
             m_enableDragDrop = false;
+            m_enableColors = false;
+            m_callTip = wxEmptyString;
+            m_callTipHighlight = wxEmptyString;
         }
 
         virtual wxWindow* GetControl() override
@@ -89,6 +95,33 @@ class SearchCtrlPopup : public wxListView, public wxComboPopup
             m_enableDragDrop = enable;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Enables or disables coloring of
+        /// functions in blue.
+        ///
+        /// \param enable bool
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void EnableColors(bool enable)
+        {
+            m_enableColors = enable;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Sets the calltips for the popup list.
+        ///
+        /// \param calltip const wxString&
+        /// \param calltiphighlight const wxString&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void SetCallTips(const wxString& calltip, const wxString& calltiphighlight = wxEmptyString)
+        {
+            m_callTip = calltip;
+            m_callTipHighlight = calltiphighlight;
+        }
+
     private:
         wxDECLARE_EVENT_TABLE();
 };
@@ -125,6 +158,7 @@ class SearchCtrl : public wxComboCtrl
         // Event handler functions
         void OnItemSelect(wxCommandEvent& event);
         void OnTextChange(wxCommandEvent& event);
+        void OnMouseEnter(wxMouseEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

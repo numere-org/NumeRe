@@ -416,13 +416,13 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     m_filePanel = new TreePanel(m_treeBook, wxID_ANY);
     m_fileTree = new FileTree(m_filePanel, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
-    TreeSearchCtrl* fileSearchCtrl = new TreeSearchCtrl(m_filePanel, wxID_ANY, _guilang.get("GUI_SEARCH_FILES"), m_fileTree);
+    TreeSearchCtrl* fileSearchCtrl = new TreeSearchCtrl(m_filePanel, wxID_ANY, _guilang.get("GUI_SEARCH_FILES"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_fileTree);
     m_filePanel->AddWindows(fileSearchCtrl, m_fileTree);
     m_treeBook->AddPage(m_filePanel, _guilang.get("GUI_FILETREE"));
 
     m_functionPanel = new TreePanel(m_treeBook, wxID_ANY);
     m_functionTree = new FileTree(m_functionPanel, ID_FUNCTIONTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT);
-    TreeSearchCtrl* functionSearchCtrl = new TreeSearchCtrl(m_functionPanel, wxID_ANY, _guilang.get("GUI_SEARCH_SYMBOLS"), m_functionTree);
+    TreeSearchCtrl* functionSearchCtrl = new TreeSearchCtrl(m_functionPanel, wxID_ANY, _guilang.get("GUI_SEARCH_SYMBOLS"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_functionTree);
     m_functionPanel->AddWindows(functionSearchCtrl, m_functionTree);
     m_treeBook->AddPage(m_functionPanel, _guilang.get("GUI_FUNCTIONTREE"));
     m_treeBook->Hide();
@@ -1790,21 +1790,34 @@ void NumeReWindow::OnFileSystemEvent(wxFileSystemWatcherEvent& event)
 /////////////////////////////////////////////////
 void NumeReWindow::CreateProcedureTree(const string& sProcedurePath)
 {
+    vector<string> vFolderTree(1, sProcedurePath);
     vector<string> vProcedureTree;
     vector<string> vCurrentTree;
     string sPath = sProcedurePath;
     Settings _option = m_terminal->getKernelSettings();
 
-    // Find every procedure
+    // Find every folder first
     do
     {
         sPath += "/*";
-        vCurrentTree = getFileList(sPath, _option, 1);
+        vCurrentTree = getFolderList(sPath, _option, 1);
+
+        if (vCurrentTree.size())
+            vFolderTree.insert(vFolderTree.end(), vCurrentTree.begin(), vCurrentTree.end());
+    }
+    while (vCurrentTree.size());
+
+    // Search through every folder for procedures
+    for (size_t i = 0; i < vFolderTree.size(); i++)
+    {
+        if (vFolderTree[i].substr(vFolderTree[i].length()-3) == "/.." || vFolderTree[i].substr(vFolderTree[i].length()-2) == "/.")
+            continue;
+
+        vCurrentTree = getFileList(vFolderTree[i] + "/*.nprc", _option, 1);
 
         if (vCurrentTree.size())
             vProcedureTree.insert(vProcedureTree.end(), vCurrentTree.begin(), vCurrentTree.end());
     }
-    while (vCurrentTree.size());
 
     // Remove the leading path part of the procedure path,
     // which is the procedure default path
@@ -4053,7 +4066,15 @@ void NumeReWindow::Ready()
         m_statusBar->Ready();
 
     if (m_debugViewer)
+    {
         m_debugViewer->OnExecutionFinished();
+
+        for (size_t i = 0; i < m_book->GetPageCount(); i++)
+        {
+            NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+            edit->MarkerDeleteAll(MARKER_FOCUSEDLINE);
+        }
+    }
 
     wxToolBar* tb = GetToolBar();
     tb->EnableTool(ID_MENU_EXECUTE, true);
@@ -5307,7 +5328,7 @@ void NumeReWindow::UpdateToolbar()
     if (_opt.getUseCustomLanguageFiles() && fileExists(_opt.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
         db.addData("<>/user/docs/find.ndb");
 
-    t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, this, m_terminal, _guilang.get("GUI_SEARCH_TELLME")), wxEmptyString);
+    t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, this, m_terminal, _guilang.get("GUI_SEARCH_TELLME"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR_HIGHLIGHT")), wxEmptyString);
 
     t->Realize();
 

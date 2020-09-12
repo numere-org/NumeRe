@@ -447,7 +447,10 @@ string extractStringToken(const string& sCmd, size_t nPos)
 
         // Jump over each parenthesis block
         if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
+        {
             i += getMatchingParenthesis(sCmd.substr(i));
+            continue;
+        }
 
         // Handle the variable to string parser
         if (sCmd[i] == '#')

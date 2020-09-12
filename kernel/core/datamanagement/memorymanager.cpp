@@ -615,7 +615,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
 /// \return VectorIndex
 ///
 /////////////////////////////////////////////////
-VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName)
+VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) const
 {
     if (sDir.find("every=") != string::npos && (sDir.find("cols") != string::npos || sDir.find("lines") != string::npos))
     {
@@ -689,9 +689,11 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName)
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-vector<double> MemoryManager::resolveMAF(const string& sTableName, string sDir, double (MemoryManager::*MAF)(const string&, long long int, long long int, long long int, long long int))
+vector<double> MemoryManager::resolveMAF(const string& sTableName, string sDir, double (MemoryManager::*MAF)(const string&, long long int, long long int, long long int, long long int) const) const
 {
     vector<double> vResults;
+    long long int nlines = getLines(sTableName, false);
+    long long int ncols = getCols(sTableName, false);
 
     // Find the "grid" parameter and use it as an offset
     long long int nGridOffset = sDir.find("grid") != string::npos ? 2 : 0;
@@ -705,24 +707,24 @@ vector<double> MemoryManager::resolveMAF(const string& sTableName, string sDir, 
     {
         for (size_t i = 0; i < _idx.size(); i++)
         {
-            if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= getCols(sTableName, false))
+            if (_idx[i]+nGridOffset < 0 || _idx[i]+nGridOffset >= ncols)
                 continue;
 
-            vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false)-1, _idx[i]+nGridOffset, -1));
+            vResults.push_back((this->*MAF)(sTableName, 0, nlines-1, _idx[i]+nGridOffset, -1));
         }
     }
     else if (sDir.find("lines") != string::npos)
     {
         for (size_t i = 0; i < _idx.size(); i++)
         {
-            if (_idx[i] < 0 || _idx[i] >= getLines(sTableName, false))
+            if (_idx[i] < 0 || _idx[i] >= nlines)
                 continue;
 
-            vResults.push_back((this->*MAF)(sTableName, _idx[i], -1, nGridOffset, getCols(sTableName, false)-1));
+            vResults.push_back((this->*MAF)(sTableName, _idx[i], -1, nGridOffset, ncols-1));
         }
     }
     else
-        vResults.push_back((this->*MAF)(sTableName, 0, getLines(sTableName, false)-1, nGridOffset, getCols(sTableName, false)-1));
+        vResults.push_back((this->*MAF)(sTableName, 0, nlines-1, nGridOffset, ncols-1));
 
     if (!vResults.size())
         vResults.push_back(NAN);

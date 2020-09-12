@@ -19,6 +19,7 @@
 #include "toolbarsearchctrl.hpp"
 #include "../NumeReWindow.h"
 #include "../terminal/terminal.hpp"
+#include "../editor/editor.h"
 
 #include <wx/event.h>
 
@@ -44,7 +45,11 @@ bool ToolBarSearchCtrl::selectItem(const wxString& value)
     if (sTermInput.substr(0, 5) == "help ")
         m_mainframe->ShowHelp(sTermInput.substr(5));
     else
-        m_terminal->ProcessInput(sTermInput.length(), sTermInput);
+    {
+        NumeReEditor* edit = m_mainframe->GetCurrentEditor();
+        edit->InsertText(edit->GetCurrentPos(), sTermInput);
+        edit->GotoPos(edit->GetCurrentPos()+sTermInput.length());
+    }
 
     return true;
 }

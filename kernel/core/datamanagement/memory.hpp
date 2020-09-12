@@ -57,6 +57,8 @@ class Memory : public Sorter
 
 		long long int nLines;
 		long long int nCols;
+		mutable long long int nCalcLines;
+		mutable long long int nCalcCols;
 		long long int nWrittenHeadlines;
 		long long int* nAppendedZeroes;
 		double** dMemTable;
@@ -125,24 +127,24 @@ class Memory : public Sorter
         void importTable(NumeRe::Table _table);
 
         // MAFIMPLEMENTATIONS
-        double std(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double avg(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double max(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double min(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double prd(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double sum(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double num(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double and_func(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double or_func(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double cnt(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double norm(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0);
-        double med(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        double pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5);
-        std::vector<double> size(const VectorIndex& _vIndex, int dir);
-        std::vector<double> minpos(const VectorIndex& _vIndex, int dir);
-        std::vector<double> maxpos(const VectorIndex& _vIndex, int dir);
+        double std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double max(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double min(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double num(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0) const;
+        double med(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        double pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5) const;
+        std::vector<double> size(const VectorIndex& _vIndex, int dir) const;
+        std::vector<double> minpos(const VectorIndex& _vIndex, int dir) const;
+        std::vector<double> maxpos(const VectorIndex& _vIndex, int dir) const;
 
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);

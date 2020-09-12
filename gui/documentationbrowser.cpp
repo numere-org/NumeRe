@@ -53,7 +53,7 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
     TreePanel* treePanel = new TreePanel(splitter, wxID_ANY);
     m_doctree = new wxTreeCtrl(treePanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_SINGLE | wxTR_FULL_ROW_HIGHLIGHT | wxTR_NO_LINES | wxTR_TWIST_BUTTONS);
     m_doctree->SetImageList(m_manager->GetImageList());
-    TreeSearchCtrl* treeSearchCtrl = new TreeSearchCtrl(treePanel, wxID_ANY, _guilang.get("GUI_SEARCH_DOCUMENTATION"), m_doctree);
+    TreeSearchCtrl* treeSearchCtrl = new TreeSearchCtrl(treePanel, wxID_ANY, _guilang.get("GUI_SEARCH_DOCUMENTATION"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_doctree);
     treePanel->AddWindows(treeSearchCtrl, m_doctree);
 
     m_viewer = new HelpViewer(splitter, mainwindow);

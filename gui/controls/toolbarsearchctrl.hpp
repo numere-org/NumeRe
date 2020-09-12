@@ -46,7 +46,7 @@ class ToolBarSearchCtrl : public SearchCtrl
         virtual wxArrayString getCandidates(const wxString& enteredText) override;
 
     public:
-        ToolBarSearchCtrl(wxWindow* parent, wxWindowID id, const NumeRe::DataBase& db, NumeReWindow* _mainframe, NumeReTerminal* _term, const wxString& hint = wxEmptyString, int width = 300, int extension = 200) : SearchCtrl(parent, id, wxEmptyString, 0)
+        ToolBarSearchCtrl(wxWindow* parent, wxWindowID id, const NumeRe::DataBase& db, NumeReWindow* _mainframe, NumeReTerminal* _term, const wxString& hint = wxEmptyString, const wxString& calltip = wxEmptyString, const wxString& calltiphighlight = wxEmptyString, int width = 300, int extension = 200) : SearchCtrl(parent, id, wxEmptyString, 0)
         {
             // Provide a neat hint to the user, what he
             // may expect from this control
@@ -67,6 +67,8 @@ class ToolBarSearchCtrl : public SearchCtrl
 
             popUp->SetColSizes(sizes);
             popUp->EnableDragDrop(true);
+            popUp->EnableColors(true);
+            popUp->SetCallTips(calltip, calltiphighlight);
         }
 };
 

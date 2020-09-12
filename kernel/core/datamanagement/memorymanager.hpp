@@ -57,8 +57,8 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		void reorderColumn(long long int _nLayer, const std::vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 		bool loadFromNewCacheFile();
 		bool loadFromLegacyCacheFile();
-		VectorIndex parseEvery(std::string& sDir, const std::string& sTableName);
-        std::vector<double> resolveMAF(const std::string& sTableName, std::string sDir, double (MemoryManager::*MAF)(const std::string&, long long int, long long int, long long int, long long int));
+		VectorIndex parseEvery(std::string& sDir, const std::string& sTableName) const;
+        std::vector<double> resolveMAF(const std::string& sTableName, std::string sDir, double (MemoryManager::*MAF)(const std::string&, long long int, long long int, long long int, long long int) const) const;
 
         virtual bool saveLayer(std::string _sFileName, const std::string& _sTable, unsigned short nPrecision) override
 		{
@@ -387,72 +387,72 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 		// MAF METHODS
 		// IMPLEMENTATIONS FOR THE TABLE METHODS
-		std::vector<double> std(const std::string& sTable, std::string sDir)
+		std::vector<double> std(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::std);
         }
 
-		std::vector<double> avg(const std::string& sTable, std::string sDir)
+		std::vector<double> avg(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::avg);
         }
 
-		std::vector<double> max(const std::string& sTable, std::string sDir)
+		std::vector<double> max(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::max);
         }
 
-		std::vector<double> min(const std::string& sTable, std::string sDir)
+		std::vector<double> min(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::min);
         }
 
-		std::vector<double> prd(const std::string& sTable, std::string sDir)
+		std::vector<double> prd(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::prd);
         }
 
-        std::vector<double> sum(const std::string& sTable, std::string sDir)
+        std::vector<double> sum(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::sum);
         }
 
-		std::vector<double> num(const std::string& sTable, std::string sDir)
+		std::vector<double> num(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::num);
         }
 
-		std::vector<double> and_func(const std::string& sTable, std::string sDir)
+		std::vector<double> and_func(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::and_func);
         }
 
-		std::vector<double> or_func(const std::string& sTable, std::string sDir)
+		std::vector<double> or_func(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::or_func);
         }
 
-		std::vector<double> xor_func(const std::string& sTable, std::string sDir)
+		std::vector<double> xor_func(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::xor_func);
         }
 
-		std::vector<double> cnt(const std::string& sTable, std::string sDir)
+		std::vector<double> cnt(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::cnt);
         }
 
-		std::vector<double> norm(const std::string& sTable, std::string sDir)
+		std::vector<double> norm(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::norm);
         }
 
-		std::vector<double> med(const std::string& sTable, std::string sDir)
+		std::vector<double> med(const std::string& sTable, std::string sDir) const
         {
             return resolveMAF(sTable, sDir, MemoryManager::med);
         }
 
-		std::vector<double> cmp(const std::string& sTable, std::string sDir, double dRef = 0.0, int nType = 0)
+		std::vector<double> cmp(const std::string& sTable, std::string sDir, double dRef = 0.0, int nType = 0) const
         {
             std::vector<double> vResults;
 
@@ -489,7 +489,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return vResults;
         }
 
-		std::vector<double> pct(const std::string& sTable, std::string sDir, double dPct = 0.5)
+		std::vector<double> pct(const std::string& sTable, std::string sDir, double dPct = 0.5) const
         {
             std::vector<double> vResults;
 
@@ -526,7 +526,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return vResults;
         }
 
-		std::vector<double> size(const std::string& sTable, std::string sDir)
+		std::vector<double> size(const std::string& sTable, std::string sDir) const
         {
             VectorIndex _idx = parseEvery(sDir, sTable);
 
@@ -538,7 +538,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
                 return vMemory[mCachesMap.at(sTable)]->size(VectorIndex(), sDir.find("grid") != std::string::npos ? GRID : ALL);
         }
 
-		std::vector<double> minpos(const std::string& sTable, std::string sDir)
+		std::vector<double> minpos(const std::string& sTable, std::string sDir) const
         {
             VectorIndex _idx = parseEvery(sDir, sTable);
 
@@ -550,7 +550,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
                 return vMemory[mCachesMap.at(sTable)]->minpos(VectorIndex(0, VectorIndex::OPEN_END), sDir.find("grid") != std::string::npos ? GRID : ALL);
         }
 
-		std::vector<double> maxpos(const std::string& sTable, std::string sDir)
+		std::vector<double> maxpos(const std::string& sTable, std::string sDir) const
         {
             VectorIndex _idx = parseEvery(sDir, sTable);
 
@@ -564,152 +564,152 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
         // IMPLEMENTATIONS FOR THE MAFS
-		inline double std(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double std(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->std(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double std(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double std(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->std(_vLine, _vCol);
 		}
 
-		inline double avg(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double avg(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->avg(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double avg(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double avg(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->avg(_vLine, _vCol);
 		}
 
-		inline double max(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double max(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->max(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double max(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double max(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->max(_vLine, _vCol);
 		}
 
-		inline double min(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double min(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->min(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double min(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double min(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->min(_vLine, _vCol);
 		}
 
-		inline double prd(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double prd(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->prd(_vLine, _vCol);
 		}
 
-		inline double prd(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double prd(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->prd(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double sum(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double sum(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->sum(_vLine, _vCol);
 		}
 
-		inline double sum(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double sum(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->sum(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double num(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double num(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->num(_vLine, _vCol);
 		}
 
-		inline double num(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double num(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->num(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double and_func(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double and_func(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->and_func(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double and_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double and_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->and_func(_vLine, _vCol);
 		}
 
-		inline double or_func(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double or_func(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->or_func(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double or_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double or_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->or_func(_vLine, _vCol);
 		}
 
-		inline double xor_func(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double xor_func(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->xor_func(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double xor_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double xor_func(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->xor_func(_vLine, _vCol);
 		}
 
-		inline double cnt(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double cnt(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->cnt(_vLine, _vCol);
 		}
 
-		inline double cnt(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double cnt(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->cnt(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double norm(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double norm(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->norm(_vLine, _vCol);
 		}
 
-		inline double norm(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double norm(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->norm(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double cmp(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0)
+		inline double cmp(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->cmp(_vLine, _vCol, dRef, nType);
 		}
 
-		inline double cmp(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dRef = 0.0, int nType = 0)
+		inline double cmp(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dRef = 0.0, int nType = 0) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->cmp(VectorIndex(i1, i2), VectorIndex(j1, j2), dRef, nType);
 		}
 
-		inline double med(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol)
+		inline double med(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->med(_vLine, _vCol);
 		}
 
-		inline double med(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1)
+		inline double med(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->med(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
 
-		inline double pct(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5)
+		inline double pct(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->pct(_vLine, _vCol, dPct);
 		}
 
-		inline double pct(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dPct = 0.5)
+		inline double pct(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = -1, double dPct = 0.5) const
 		{
 			return vMemory[mCachesMap.at(_sCache)]->pct(VectorIndex(i1, i2), VectorIndex(j1, j2), dPct);
 		}

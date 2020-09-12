@@ -19,6 +19,8 @@
 #include "searchctrl.hpp"
 #include <wx/dnd.h>
 
+#define HIGHLIGHTCOLOR wxColour(0,0,139)
+
 
 wxBEGIN_EVENT_TABLE(SearchCtrlPopup, wxListView)
     EVT_LEFT_UP(SearchCtrlPopup::OnMouseUp)
@@ -67,7 +69,7 @@ wxArrayString SearchCtrlPopup::split(wxString sString)
 /////////////////////////////////////////////////
 wxString SearchCtrlPopup::GetStringValue() const
 {
-    if (m_ListId >= 0)
+    if (m_ListId >= 0 && m_ListId < GetItemCount())
         return wxListView::GetItemText(m_ListId);
 
     return wxEmptyString;
@@ -98,46 +100,57 @@ void SearchCtrlPopup::OnKeyEvent(wxKeyEvent& event)
             switch (chr)
             {
                 case 'Q':
-                    m_combo->AppendText('@');
+                    m_combo->WriteText('@');
                     break;
                 case '+':
-                    m_combo->AppendText('~');
+                    m_combo->WriteText('~');
                     break;
                 case '7':
-                    m_combo->AppendText('{');
+                    m_combo->WriteText('{');
                     break;
                 case '8':
-                    m_combo->AppendText('[');
+                    m_combo->WriteText('[');
                     break;
                 case '9':
-                    m_combo->AppendText(']');
+                    m_combo->WriteText(']');
                     break;
                 case '0':
-                    m_combo->AppendText('}');
+                    m_combo->WriteText('}');
                     break;
                 case 223:
-                    m_combo->AppendText('\\');
+                    m_combo->WriteText('\\');
                     break;
                 case '<':
-                    m_combo->AppendText('|');
+                    m_combo->WriteText('|');
                     break;
             }
         }
         else if (chr >='A' && chr < WXK_DELETE)
         {
             if (event.ShiftDown())
-                m_combo->AppendText(chr);
+                m_combo->WriteText(chr);
             else
-                m_combo->AppendText(wxChar(chr + 'a'-'A'));
+                m_combo->WriteText(wxChar(chr + 'a'-'A'));
         }
-        else if (chr < 32)
+        else if (chr < 32 || chr == WXK_DELETE)
         {
             switch (chr)
             {
                 case WXK_BACK:
                     m_combo->Remove(m_combo->GetInsertionPoint()-1, m_combo->GetInsertionPoint());
                     break;
+                case WXK_DELETE:
+                    m_combo->Remove(m_combo->GetInsertionPoint(), m_combo->GetInsertionPoint()+1);
+                    break;
                 case WXK_ESCAPE:
+                    Dismiss();
+                    break;
+                case WXK_RETURN:
+                    if (GetItemCount() && !GetFirstSelected())
+                        m_ListId = 0;
+                    else if (GetFirstSelected())
+                        m_ListId = GetFirstSelected();
+
                     Dismiss();
                     break;
             }
@@ -149,19 +162,19 @@ void SearchCtrlPopup::OnKeyEvent(wxKeyEvent& event)
                 switch (chr)
                 {
                     case 246: // ö
-                        m_combo->AppendText('ö');
+                        m_combo->WriteText('ö');
                         break;
                     case 228: // ä
-                        m_combo->AppendText('ä');
+                        m_combo->WriteText('ä');
                         break;
                     case 252: // ü
-                        m_combo->AppendText('ü');
+                        m_combo->WriteText('ü');
                         break;
                     case 223: // ß
-                        m_combo->AppendText('ß');
+                        m_combo->WriteText('ß');
                         break;
                     default:
-                        m_combo->AppendText(chr);
+                        m_combo->WriteText(chr);
                 }
             }
             else
@@ -169,64 +182,64 @@ void SearchCtrlPopup::OnKeyEvent(wxKeyEvent& event)
                 switch (chr)
                 {
                     case '-':
-                        m_combo->AppendText('_');
+                        m_combo->WriteText('_');
                         break;
                     case '.':
-                        m_combo->AppendText(':');
+                        m_combo->WriteText(':');
                         break;
                     case ',':
-                        m_combo->AppendText(';');
+                        m_combo->WriteText(';');
                         break;
                     case '<':
-                        m_combo->AppendText('>');
+                        m_combo->WriteText('>');
                         break;
                     case '#':
-                        m_combo->AppendText('\'');
+                        m_combo->WriteText('\'');
                         break;
                     case '+':
-                        m_combo->AppendText('*');
+                        m_combo->WriteText('*');
                         break;
                     case '1':
-                        m_combo->AppendText('!');
+                        m_combo->WriteText('!');
                         break;
                     case '2':
-                        m_combo->AppendText('"');
+                        m_combo->WriteText('"');
                         break;
                     case '3':
-                        m_combo->AppendText('§');
+                        m_combo->WriteText('§');
                         break;
                     case '4':
-                        m_combo->AppendText('$');
+                        m_combo->WriteText('$');
                         break;
                     case '5':
-                        m_combo->AppendText('%');
+                        m_combo->WriteText('%');
                         break;
                     case '6':
-                        m_combo->AppendText('&');
+                        m_combo->WriteText('&');
                         break;
                     case '7':
-                        m_combo->AppendText('/');
+                        m_combo->WriteText('/');
                         break;
                     case '8':
-                        m_combo->AppendText('(');
+                        m_combo->WriteText('(');
                         break;
                     case '9':
-                        m_combo->AppendText(')');
+                        m_combo->WriteText(')');
                         break;
                     case '0':
-                        m_combo->AppendText('=');
+                        m_combo->WriteText('=');
                         break;
                     case 246: // ö
-                        m_combo->AppendText('Ö');
+                        m_combo->WriteText('Ö');
                         break;
                     case 228: // ä
-                        m_combo->AppendText('Ä');
+                        m_combo->WriteText('Ä');
                         break;
                     case 252: // ü
-                        m_combo->AppendText('Ü');
+                        m_combo->WriteText('Ü');
                         break;
                     case 223: // ß
-                        m_combo->AppendText('?');
+                        m_combo->WriteText('?');
                         break;
                 }
             }
@@ -237,12 +250,32 @@ void SearchCtrlPopup::OnKeyEvent(wxKeyEvent& event)
         switch (event.GetKeyCode())
         {
             case WXK_UP:
+                if (!GetSelectedItemCount() || !GetFirstSelected())
+                    Select(GetItemCount()-1);
+                else
+                    Select(GetFirstSelected()-1);
+
+                EnsureVisible(GetFirstSelected());
+                break;
             case WXK_LEFT:
                 m_combo->SetInsertionPoint(m_combo->GetInsertionPoint()-1);
                 break;
             case WXK_DOWN:
+                if (!GetSelectedItemCount() || GetFirstSelected() == GetItemCount()-1)
+                    Select(0);
+                else
+                    Select(GetFirstSelected()+1);
+
+                EnsureVisible(GetFirstSelected());
+                break;
             case WXK_RIGHT:
                 m_combo->SetInsertionPoint(m_combo->GetInsertionPoint()+1);
+                break;
+            case WXK_HOME:
+                m_combo->SetInsertionPoint(0);
+                break;
+            case WXK_END:
+                m_combo->SetInsertionPointEnd();
                 break;
         }
     }
@@ -280,7 +313,14 @@ void SearchCtrlPopup::OnMouseMove(wxMouseEvent& event)
     int id = HitTest(event.GetPosition(), flags, nullptr);
 
     if (id != wxNOT_FOUND && (flags & wxLIST_HITTEST_ONITEM) && wxListView::GetFirstSelected() != id)
+    {
         wxListView::Select(id);
+
+        if (m_enableColors && m_callTipHighlight.length() && GetItemTextColour(id) == HIGHLIGHTCOLOR)
+            SetToolTip(m_callTipHighlight);
+        else if (m_callTip.length())
+            SetToolTip(m_callTip);
+    }
 }
 
 
@@ -342,6 +382,9 @@ void SearchCtrlPopup::Set(wxArrayString& stringArray)
 
             for (size_t j = 1; j < std::min(m_sizes.size(), strings.size()); j++)
                 SetItem(i, j, strings[j]);
+
+            if (m_enableColors && strings[0].find('(') != std::string::npos)
+                SetItemTextColour(i, HIGHLIGHTCOLOR);
         }
     }
 }
@@ -355,6 +398,7 @@ void SearchCtrlPopup::Set(wxArrayString& stringArray)
 BEGIN_EVENT_TABLE(SearchCtrl, wxComboCtrl)
     EVT_COMBOBOX_CLOSEUP(-1, SearchCtrl::OnItemSelect)
     EVT_TEXT(-1, SearchCtrl::OnTextChange)
+    EVT_ENTER_WINDOW(SearchCtrl::OnMouseEnter)
 END_EVENT_TABLE()
 
 
@@ -456,6 +500,7 @@ void SearchCtrl::OnTextChange(wxCommandEvent& event)
         // list part and show it
         if (candidates.size())
         {
+            int insertionPoint = GetInsertionPoint();
             popUp->Set(candidates);
             SetValue(textEntryValue);
 
@@ -463,9 +508,31 @@ void SearchCtrl::OnTextChange(wxCommandEvent& event)
                 Popup();
 
             SelectNone();
-            SetInsertionPointEnd();
+            SetInsertionPoint(insertionPoint);
         }
 
         textChangeMutex = false;
     }
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This event handler will show the drop
+/// down list, if the text field contains data
+/// and the mouse enters the text field.
+/// Replacement for the buggy EVT_SET_FOCUS
+/// event.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void SearchCtrl::OnMouseEnter(wxMouseEvent& event)
+{
+    if (GetValue().length() > 2 && IsPopupWindowState(wxComboCtrl::Hidden))
+        Popup();
+
+    SelectNone();
+    SetInsertionPointEnd();
+}
+

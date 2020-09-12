@@ -222,6 +222,10 @@ class NumeReWindow : public wxFrame
         void refreshFunctionTree();
 
         Networking* GetNetworking();
+        NumeReEditor* GetCurrentEditor()
+        {
+            return m_currentEd;
+        }
 
         void PassImageList(wxImageList* imagelist);
 

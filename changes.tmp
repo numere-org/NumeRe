@@ -26,3 +26,7 @@ Cleaned	Added the LaTeX "nonstopmode" to all LaTeX usages.
 Updated	Reworked all database-related stuff, which is used internally for the "find" command, the hints, and some other stuff.
 Cleaned	Changed the base control for the search bars to be more responsive.
 Added	Created a "Tell me, what you want to do" searchbar in the toolbar.
+Cleaned	If the debugger has finished, the yellow line indicator is now removed automatically.
+Fixed	Large tables made NumeRe stuck after each entered command in the terminal. Multi-argument functions were slow in these cases as well. This has been resolved.
+Fixed	The "throw" command now completely supports string operations.
+Fixed	The autocompletion of procedures now works as expected even if no procedures are available in the "main" namespace.

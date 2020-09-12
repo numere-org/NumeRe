@@ -41,11 +41,12 @@ class TreeSearchCtrl : public SearchCtrl
         wxArrayString getChildCandidates(const wxString& enteredText, wxTreeItemId node);
 
     public:
-        TreeSearchCtrl(wxWindow* parent, wxWindowID id, const wxString& hint = wxEmptyString, wxTreeCtrl* associatedCtrl = nullptr) : SearchCtrl(parent, id, wxEmptyString), m_associatedCtrl(associatedCtrl)
+        TreeSearchCtrl(wxWindow* parent, wxWindowID id, const wxString& hint = wxEmptyString, const wxString& calltip = wxEmptyString, wxTreeCtrl* associatedCtrl = nullptr) : SearchCtrl(parent, id, wxEmptyString), m_associatedCtrl(associatedCtrl)
         {
             // Provide a neat hint to the user, what he
             // may expect from this control
             SetHint(hint);
+            popUp->SetCallTips(calltip);
         }
 
 };
