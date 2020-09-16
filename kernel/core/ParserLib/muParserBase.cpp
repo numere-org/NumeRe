@@ -26,6 +26,7 @@
 #include "muParserBase.h"
 #include "muParserTemplateMagic.h"
 #include "../../kernel.hpp"
+#include "../structures.hpp"
 
 //--- Standard includes ------------------------------------------------------------------------
 #include <cassert>
@@ -46,7 +47,8 @@ using namespace std;
 string toString(int);
 string toString(double, int);
 string toHexString(int nNumber);
-unsigned int getMatchingParenthesis(const string&);
+
+unsigned int getMatchingParenthesis(const StringView&);
 mu::value_type parser_Num(const mu::value_type*, int);
 mu::value_type parser_Cnt(const mu::value_type*, int);
 mu::value_type parser_and(const mu::value_type*, int);
@@ -467,38 +469,44 @@ namespace mu
 	    Triggers first time calculation thus the creation of the bytecode and
 	    scanning of used variables.
 	*/
-	void ParserBase::SetExpr(const string_type& a_sExpr)
+	void ParserBase::SetExpr(StringView a_sExpr)
 	{
 		// Check locale compatibility
-		std::locale loc;
-
-		if (m_pTokenReader->GetArgSep() == std::use_facet<numpunct<char_type> >(loc).decimal_point())
-			Error(ecLOCALE);
+		//std::locale loc;
+        //
+		//if (m_pTokenReader->GetArgSep() == std::use_facet<numpunct<char_type> >(loc).decimal_point())
+		//	Error(ecLOCALE);
 
 		// <ibg> 20060222: Bugfix for Borland-Kylix:
 		// adding a space to the expression will keep Borlands KYLIX from going wild
 		// when calling tellg on a stringstream created from the expression after
 		// reading a value at the end of an expression. (mu::Parser::IsVal function)
 		// (tellg returns -1 otherwise causing the parser to ignore the value)
-		string_type sBuf(a_sExpr + " ");
+		//string_type sBuf(a_sExpr + " ");
 
+		string_type st;
 		// Perform the pre-evaluation of the vectors first
-		if ((sBuf.find('{') != string::npos && sBuf.find('}', sBuf.find('{')) != string::npos) || ContainsVectorVars(sBuf, true))
-			PreEvaluateVectors(sBuf);
+		if ((a_sExpr.find('{') != string::npos && a_sExpr.find('}', a_sExpr.find('{')) != string::npos) || ContainsVectorVars(a_sExpr, true))
+        {
+            st = PreEvaluateVectors(a_sExpr.to_string());
+			a_sExpr = st;
+        }
 
-		if (sBuf.find('{') != string::npos || sBuf.find('}') != string::npos)
-			Error(ecMISSING_PARENS, sBuf, std::min(sBuf.find('{'), sBuf.find('}')), "{}");
+		if (a_sExpr.find('{') != string::npos || a_sExpr.find('}') != string::npos)
+			Error(ecMISSING_PARENS, a_sExpr.to_string(), std::min(a_sExpr.find('{'), a_sExpr.find('}')), "{}");
 
 		// Now check, whether the pre-evaluated formula was already parsed into the bytecode
 		// -> Return, if that is true
 		// -> Invalidate the bytecode for this formula, if necessary
-		if (bMakeLoopByteCode && !bPauseLoopByteCode && IsAlreadyParsed(sBuf))
+		if (bMakeLoopByteCode && !bPauseLoopByteCode && IsAlreadyParsed(a_sExpr))
 			return;
 		else if (bMakeLoopByteCode && !bPauseLoopByteCode && this->GetExpr().length() && vValidByteCode[nthLoopElement][nthLoopPartEquation])
 			vValidByteCode[nthLoopElement][nthLoopPartEquation] = 0;
 
 		// reset vector dimension so that it will be evaluated at least once
 		nVectorDimension = 0;
+
+		string_type sBuf(a_sExpr.to_string() + " ");
 
 		if (mVarMapPntr)
 			replaceLocalVars(sBuf);
@@ -513,12 +521,12 @@ namespace mu
 
     /** \brief Pre-evaluate vectors
      *
-     * \param sExpr std::string& containing the vectors
+     * \param sExpr std::string containing the vectors
      * \return void
      *
      * This function pre-evaluate all vectors, which are contained in the expression in sExpr.
      */
-	void ParserBase::PreEvaluateVectors(std::string& sExpr)
+	std::string ParserBase::PreEvaluateVectors(std::string sExpr)
 	{
 	    // Pause the loop mode if it is active
 		PauseLoopMode();
@@ -621,17 +629,19 @@ namespace mu
 
 		// Re-enable the loop mode if it is used in the moment
 		PauseLoopMode(false);
+
+		return sExpr;
 	}
 
     /** \brief Evaluates the vector expansion
      *
-     * \param sSubExpr string&
+     * \param sSubExpr std::string&
      * \param vResults vector<double>&
      * \return void
      *
      * This function evaluates the vector expansion, e.g. "{1:4}" = {1, 2, 3, 4}
      */
-	void ParserBase::evaluateVectorExpansion(string& sSubExpr, vector<double>& vResults)
+	void ParserBase::evaluateVectorExpansion(std::string sSubExpr, vector<double>& vResults)
 	{
 		int nResults = 0;
 		value_type* v = nullptr;
@@ -701,13 +711,13 @@ namespace mu
      */
 	void ParserBase::expandVector(double dFirst, double dLast, double dIncrement, vector<double>& vResults)
 	{
-		// ignore impossible combinations
+		// ignore impossible combinations. Store only
+		// the accessible value
 		if ((dFirst < dLast && dIncrement < 0)
 				|| (dFirst > dLast && dIncrement > 0)
 				|| dIncrement == 0)
 		{
 			vResults.push_back(dFirst);
-			vResults.push_back(dLast);
 			return;
 		}
 
@@ -2775,36 +2785,65 @@ namespace mu
 		{
 			nStackSize = vNumResultsIDX[nthLoopElement][nthLoopPartEquation];
 			m_vStackBuffer = vLoopStackBuf[nthLoopElement][nthLoopPartEquation];
-            unsigned int nVectorlength = 0;
+            size_t nVectorlength = 0;
 
 			if (g_DbgDumpStack)
                 NumeReKernel::printPreFmt("|-> EvalOpt LoopEl,PartEq = (" + toString(nthLoopElement) +","+ toString(nthLoopPartEquation) +") m_vStackBuffer[1] = " + toString(m_vStackBuffer[1], 5));
 
-			if (mVectorVars.size() && !(mTargets.size() && mVectorVars.size() == 1 && vUsedVar[nthLoopElement][nthLoopPartEquation].find("_~TRGTVCT[~]") != vUsedVar[nthLoopElement][nthLoopPartEquation].end()))
+			if (mVectorVars.size())
 			{
-				varmap_type vars = vUsedVar[nthLoopElement][nthLoopPartEquation];
-				std::map<double*, double> mFirstVals;
-				valbuf_type buffer;
-				buffer.push_back(0.0); // erster Wert wird nicht mitgezaehlt
+				varmap_type& vars = vUsedVar[nthLoopElement][nthLoopPartEquation];
 
 				// Get the maximal size of the used vectors
-				for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
-				{
-					if ((iter->second).size() > nVectorlength && iter->first != "_~TRGTVCT[~]" && vars.find(iter->first) != vars.end())
-						nVectorlength = (iter->second).size();
-				}
+				//for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
+				//{
+				//	if (vars.find(iter->first) != vars.end()
+                //        && (iter->second).size() > nVectorlength
+                //        && iter->first != "_~TRGTVCT[~]")
+				//		nVectorlength = (iter->second).size();
+				//}
+
+				auto iterVector = mVectorVars.begin();
+				auto iterVar = vars.begin();
+
+				for ( ; iterVector != mVectorVars.end() && iterVar != vars.end(); )
+                {
+                    if (iterVector->first == iterVar->first)
+                    {
+                        if (iterVector->second.size() > nVectorlength && iterVector->first != "_~TRGTVCT[~]")
+                            nVectorlength = iterVector->second.size();
+
+                        ++iterVector;
+                        ++iterVar;
+                    }
+                    else
+                    {
+                        if (iterVector->first < iterVar->first)
+                            ++iterVector;
+                        else
+                            ++iterVar;
+                    }
+                }
 
 				// Only do something, if there's at least one vector with
 				// an arbitrary length used
 				if (nVectorlength)
 				{
+                    std::map<double*, double> mFirstVals;
+                    valbuf_type buffer;
+                    buffer.push_back(0.0); // erster Wert wird nicht mitgezaehlt
+
 					// Copy the first elements
-					for (int j = 1; j < nStackSize + 1; j++)
-						buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
+					//for (int j = 1; j < nStackSize + 1; j++)
+                    //    buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
+
+					buffer.insert(buffer.end(),
+                                  vLoopStackBuf[nthLoopElement][nthLoopPartEquation].begin()+1,
+                                  vLoopStackBuf[nthLoopElement][nthLoopPartEquation].begin()+nStackSize+1);
 
                     // Redo the calculations for each component of the
                     // used vectors
-					for (unsigned int i = 0; i < nVectorlength; i++)
+					for (size_t i = 0; i < nVectorlength; i++)
 					{
 						for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
 						{
@@ -2831,8 +2870,12 @@ namespace mu
 						{
 							(this->*m_pParseFormula)();
 
-							for (int j = 1; j < nStackSize + 1; j++)
-								buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
+							//for (int j = 1; j < nStackSize + 1; j++)
+							//	buffer.push_back(vLoopStackBuf[nthLoopElement][nthLoopPartEquation][j]);
+
+							buffer.insert(buffer.end(),
+                                          vLoopStackBuf[nthLoopElement][nthLoopPartEquation].begin()+1,
+                                          vLoopStackBuf[nthLoopElement][nthLoopPartEquation].begin()+nStackSize+1);
 						}
 					}
 
@@ -2874,7 +2917,7 @@ namespace mu
 		else
 		{
 			nStackSize = m_nFinalResultIdx;
-            unsigned int nVectorlength = 0;
+            size_t nVectorlength = 0;
 
 			if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("_~TRGTVCT[~]") != vCurrentUsedVars.end()))
 			{
@@ -2885,10 +2928,10 @@ namespace mu
 				// Get the maximal size of the used vectors
 				for (auto iter = mNonSingletonVectorVars.begin(); iter != mNonSingletonVectorVars.end(); ++iter)
 				{
-					if ((iter->second)->size() > nVectorlength && iter->first != "_~TRGTVCT[~]" && vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
-					{
+					if ((iter->second)->size() > nVectorlength
+                        && iter->first != "_~TRGTVCT[~]"
+                        && vCurrentUsedVars.find(iter->first) != vCurrentUsedVars.end())
 						nVectorlength = (iter->second)->size();
-					}
 				}
 
 				// Only do something, if the vector length is LARGER than 1
@@ -3395,15 +3438,15 @@ namespace mu
     /// the passed expression is already parsed, so
     /// that the parsing step may be omitted.
     ///
-    /// \param sNewEquation string
+    /// \param sNewEquation StringView
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool ParserBase::IsAlreadyParsed(string sNewEquation)
+    bool ParserBase::IsAlreadyParsed(StringView sNewEquation)
     {
-        string sCurrentEquation = GetExpr();
-        StripSpaces(sCurrentEquation);
-        StripSpaces(sNewEquation);
+        StringView sCurrentEquation(GetExpr());
+        sCurrentEquation.strip();
+        sNewEquation.strip();
 
         if (sCurrentEquation == sNewEquation)
             return true;
@@ -3629,12 +3672,12 @@ namespace mu
     /// \brief This member function checks, whether
     /// the passed expression contains a vector.
     ///
-    /// \param sExpr const std::string&
+    /// \param sExpr StringView
     /// \param ignoreSingletons bool
     /// \return bool
     ///
     /////////////////////////////////////////////////
-	bool ParserBase::ContainsVectorVars(const std::string& sExpr, bool ignoreSingletons)
+	bool ParserBase::ContainsVectorVars(StringView sExpr, bool ignoreSingletons)
 	{
 	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
         {
@@ -3643,7 +3686,7 @@ namespace mu
 
             size_t nPos = sExpr.find(iter->first);
 
-            if (nPos != string::npos && (!nPos || checkDelimiter(sExpr.substr(nPos-1, iter->first.length()+2))))
+            if (nPos != string::npos && (!nPos || checkDelimiter(sExpr.subview(nPos-1, iter->first.length()+2))))
                 return true;
         }
 
@@ -3655,22 +3698,23 @@ namespace mu
     /// \brief This member function checks, whether
     /// the passed string is delimited on both sides.
     ///
-    /// \param sLine const std::string&
+    /// \param sLine StringView
     /// \return bool
     ///
     /////////////////////////////////////////////////
-	bool ParserBase::checkDelimiter(const std::string& sLine)
+	bool ParserBase::checkDelimiter(StringView sLine)
 	{
 		bool isDelimitedLeft = false;
 		bool isDelimitedRight = false;
-		std::string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
+		static std::string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
 
 		// --> Versuche jeden Delimiter, der dir bekannt ist und setze bei einem Treffer den entsprechenden BOOL auf TRUE <--
 		for (unsigned int i = 0; i < sDelimiter.length(); i++)
 		{
-			if (sDelimiter[i] == sLine[0])
+			if (sDelimiter[i] == sLine.front())
 				isDelimitedLeft = true;
-			if (sDelimiter[i] == sLine[sLine.length() - 1])
+
+			if (sDelimiter[i] == sLine.back())
 				isDelimitedRight = true;
 		}
 

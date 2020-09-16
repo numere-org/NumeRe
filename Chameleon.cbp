@@ -423,8 +423,6 @@
 		<Unit filename="kernel/core/ParserLib/muParserInt.h" />
 		<Unit filename="kernel/core/ParserLib/muParserStack.h" />
 		<Unit filename="kernel/core/ParserLib/muParserTemplateMagic.h" />
-		<Unit filename="kernel/core/ParserLib/muParserTest.cpp" />
-		<Unit filename="kernel/core/ParserLib/muParserTest.h" />
 		<Unit filename="kernel/core/ParserLib/muParserToken.h" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.cpp" />
 		<Unit filename="kernel/core/ParserLib/muParserTokenReader.h" />

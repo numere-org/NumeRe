@@ -183,17 +183,17 @@ static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatab
 /////////////////////////////////////////////////
 string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs)
 {
-	string sCache = "";             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
-	string sLine_Temp = "";         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
-	unsigned int eq_pos = string::npos;                // int zum Zwischenspeichern der Position des "="
-
 	// Evaluate possible cached equations
-	if (_parser.HasCachedAccess() && !_parser.IsCompiling())
+	if ((_parser.HasCachedAccess() || _parser.GetCachedEquation().length()) && !_parser.IsCompiling())
 		return handleCachedDataAccess(sLine, _parser, _data, _option);
 
 	// Validate the number of parentheses
 	if (!validateParenthesisNumber(sLine))
 		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
+
+	string sCache = "";             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
+	string sLine_Temp = "";         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
+	size_t eq_pos = string::npos;                // int zum Zwischenspeichern der Position des "="
 
 
 	/* --> Jetzt folgt der ganze Spass fuer "cache(". Hier ist relativ viel aehnlich, allerdings gibt es

@@ -301,9 +301,9 @@ bool Memory::resizeMemory(long long int _nLines, long long int _nCols)
 /////////////////////////////////////////////////
 long long int Memory::getCols(bool _bFull) const
 {
-    if (!_bFull && dMemTable && (bValidData || nWrittenHeadlines))
+    if (!_bFull && (bValidData || nWrittenHeadlines))
     {
-        if (nAppendedZeroes && bValidData)
+        if (bValidData)
         {
             if (nCalcCols != -1)
                 return std::max(nCalcCols, nWrittenHeadlines);
@@ -330,7 +330,7 @@ long long int Memory::getCols(bool _bFull) const
         else
             return nWrittenHeadlines;
     }
-    else if (!dMemTable || !bValidData)
+    else if (!bValidData)
         return 0;
     else
         return nCols;
@@ -350,32 +350,31 @@ long long int Memory::getCols(bool _bFull) const
 /////////////////////////////////////////////////
 long long int Memory::getLines(bool _bFull) const
 {
-    if (!_bFull && dMemTable && bValidData)
+    if (!_bFull && bValidData)
     {
-        if (nAppendedZeroes)
+        if (nCalcLines != -1)
+            return nCalcLines;
+
+        long long int nReturn = 0;
+
+        /* --> Suche die Spalte, in der am wenigsten Nullen angehaengt sind, und gib deren
+         *     Laenge zurueck <--
+         */
+        // Refresh nCalcCols (might be smaller than the return
+        // value of getCols())
+        getCols(false);
+
+        for (long long int i = 0; i < nCalcCols; i++)
         {
-            if (nCalcLines != -1)
-                return nCalcLines;
-
-            long long int nReturn = 0;
-
-            /* --> Suche die Spalte, in der am wenigsten Nullen angehaengt sind, und gib deren
-             *     Laenge zurueck <--
-             */
-            for (long long int i = 0; i < nCols; i++)
-            {
-                if (nLines - nAppendedZeroes[i] > nReturn)
-                    nReturn = nLines - nAppendedZeroes[i];
-            }
-
-            nCalcLines = nReturn;
-
-            return nReturn;
+            if (nLines - nAppendedZeroes[i] > nReturn)
+                nReturn = nLines - nAppendedZeroes[i];
         }
-        else
-            return 0;
+
+        nCalcLines = nReturn;
+
+        return nReturn;
     }
-    else if (!dMemTable || !bValidData)
+    else if (!bValidData)
         return 0;
     else
         return nLines;
@@ -583,6 +582,8 @@ bool Memory::getSaveStatus() const
 /////////////////////////////////////////////////
 string Memory::getHeadLineElement(long long int _i) const
 {
+    _i = std::max(0LL, _i);
+
     if (_i >= getCols(false))
         return _lang.get("COMMON_COL") + " " + toString((int)_i + 1) + " (leer)";
     else
@@ -630,6 +631,8 @@ vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
 /////////////////////////////////////////////////
 bool Memory::setHeadLineElement(long long int _i, string _sHead)
 {
+    _i = std::max(0LL, _i);
+
     if (_i < nCols && dMemTable)
     {
         sHeadLine[_i] = _sHead;
@@ -671,6 +674,8 @@ bool Memory::setHeadLineElement(long long int _i, string _sHead)
 /////////////////////////////////////////////////
 long long int Memory::getAppendedZeroes(long long int _i) const
 {
+    _i = std::max(0LL, _i);
+
     if (nAppendedZeroes && _i < nCols)
         return nAppendedZeroes[_i];
     else
@@ -723,13 +728,16 @@ int Memory::getHeadlineCount() const
 /// \param _nLine long long int
 /// \param _nCol long long int
 /// \param _dData double
-/// \return bool
+/// \return void
 ///
 /////////////////////////////////////////////////
-bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
+void Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
 {
     if (!dMemTable && isnan(_dData))
-        return true;
+        return;
+
+    _nLine = std::max(0LL, _nLine);
+    _nCol = std::max(0LL, _nCol);
 
     if (dMemTable && (_nLine < nLines) && (_nCol < nCols))
     {
@@ -792,8 +800,6 @@ bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
         nLastSaved = time(0);
         bIsSaved = false;
     }
-
-    return true;
 }
 
 
@@ -806,21 +812,21 @@ bool Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
 /// \param _idx Indices&
 /// \param _dData double*
 /// \param _nNum unsigned int
-/// \return bool
+/// \return void
 ///
 /////////////////////////////////////////////////
-bool Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
+void Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
 {
     int nDirection = LINES;
 
     if (_nNum == 1)
-        return writeSingletonData(_idx, _dData[0]);
+    {
+        writeSingletonData(_idx, _dData[0]);
+        return;
+    }
 
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _idx.row.front() + _nNum - 1);
-
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + _nNum - 1);
+    _idx.row.setOpenEndIndex(_idx.row.front() + _nNum - 1);
+    _idx.col.setOpenEndIndex(_idx.col.front() + _nNum - 1);
 
     if (_idx.row.size() > 1)
         nDirection = COLS;
@@ -833,19 +839,16 @@ bool Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
         {
             if (nDirection == COLS)
             {
-                if (_nNum > i && !isnan(_idx.row[i]) && !isnan(_idx.col[j]))
+                if (_nNum > i)
                     writeData(_idx.row[i], _idx.col[j], _dData[i]);
             }
             else
             {
-                if (_nNum > j && !isnan(_idx.row[i]) && !isnan(_idx.col[j]))
+                if (_nNum > j)
                     writeData(_idx.row[i], _idx.col[j], _dData[j]);
             }
         }
     }
-
-
-    return true;
 }
 
 
@@ -857,27 +860,21 @@ bool Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
 ///
 /// \param _idx Indices&
 /// \param _dData double
-/// \return bool
+/// \return void
 ///
 /////////////////////////////////////////////////
-bool Memory::writeSingletonData(Indices& _idx, double _dData)
+void Memory::writeSingletonData(Indices& _idx, double _dData)
 {
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, ::max(_idx.row.front(), getLines(false)) - 1);
-
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, ::max(_idx.col.front(), getCols(false)) - 1);
+    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), getLines(false)) - 1);
+    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), getCols(false)) - 1);
 
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
-            if (!isnan(_idx.row[i]) && !isnan(_idx.col[j]))
-                writeData(_idx.row[i], _idx.col[j], _dData);
+            writeData(_idx.row[i], _idx.col[j], _dData);
         }
     }
-
-    return true;
 }
 
 
@@ -934,6 +931,9 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
     bool bError = false;
     bool bReturnIndex = false;
     int nSign = 1;
+
+    i1 = std::max(0LL, i1);
+    j1 = std::max(0LL, j1);
 
     vector<int> vIndex;
 
@@ -1284,6 +1284,9 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
 /////////////////////////////////////////////////
 void Memory::deleteEntry(long long int _nLine, long long int _nCol)
 {
+    if (_nLine < 0 || _nCol < 0)
+        return;
+
     if (dMemTable)
     {
         if (!isnan(dMemTable[_nLine][_nCol]))

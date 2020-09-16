@@ -285,16 +285,20 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		// DIMENSION ACCESS METHODS
 		inline long long int getLines(const std::string& sTable, bool _bFull = false) const
 		{
-		    if (exists(sTable))
-                return vMemory[mCachesMap.at(sTable)]->getLines(_bFull);
+		    auto iter = mCachesMap.find(sTable);
+
+		    if (iter != mCachesMap.end())
+                return vMemory[iter->second]->getLines(_bFull);
 
             return 0;
 		}
 
 		inline long long int getCols(const std::string& sTable, bool _bFull = false) const
 		{
-		    if (exists(sTable))
-                return vMemory[mCachesMap.at(sTable)]->getCols(_bFull);
+		    auto iter = mCachesMap.find(sTable);
+
+		    if (iter != mCachesMap.end())
+                return vMemory[iter->second]->getCols(_bFull);
 
             return 0;
 		}
@@ -368,14 +372,14 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
         // WRITE ACCESS METHODS
-		inline bool writeToTable(long long int _nLine, long long int _nCol, const std::string& _sCache, double _dData)
+		inline void writeToTable(long long int _nLine, long long int _nCol, const std::string& _sCache, double _dData)
 		{
-			return vMemory[mCachesMap.at(_sCache)]->writeData(_nLine, _nCol, _dData);
+			vMemory[mCachesMap.at(_sCache)]->writeData(_nLine, _nCol, _dData);
 		}
 
-		inline bool writeToTable(Indices& _idx, const std::string& _sCache, double* _dData, unsigned int _nNum)
+		inline void writeToTable(Indices& _idx, const std::string& _sCache, double* _dData, unsigned int _nNum)
 		{
-			return vMemory[mCachesMap.at(_sCache)]->writeData(_idx, _dData, _nNum);
+			vMemory[mCachesMap.at(_sCache)]->writeData(_idx, _dData, _nNum);
 		}
 
 		bool setHeadLineElement(long long int _i, const std::string& _sTable, std::string _sHead)

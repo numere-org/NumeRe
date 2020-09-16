@@ -41,6 +41,7 @@
 #include "muParserBytecode.h"
 #include "muParserError.h"
 
+class StringView;
 
 namespace mu
 {
@@ -104,8 +105,8 @@ namespace mu
 			mutable varmap_type vCurrentUsedVars;
 
 			void replaceLocalVars(std::string& sLine);
-			bool checkDelimiter(const std::string& sLine);
-			void evaluateVectorExpansion(std::string& sSubExpr, std::vector<double>& vResults);
+			bool checkDelimiter(StringView sLine);
+			void evaluateVectorExpansion(std::string sSubExpr, std::vector<double>& vResults);
 			void expandVector(double dFirst, double dLast, double dIncrement, std::vector<double>& vResults);
 			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults);
 
@@ -142,7 +143,7 @@ namespace mu
 			bool IsLockedPause() const;
 			void LockPause(bool _bLock = true);
 			void PauseLoopMode(bool _bPause = true);
-			bool IsAlreadyParsed(std::string sNewEquation);
+			bool IsAlreadyParsed(StringView sNewEquation);
 
 			static void EnableDebugDump(bool bDumpCmd, bool bDumpStack);
 
@@ -158,8 +159,8 @@ namespace mu
 
 			int GetNumResults() const;
 
-			void SetExpr(const string_type& a_sExpr);
-			void PreEvaluateVectors(std::string& sExpr);
+			void SetExpr(StringView a_sExpr);
+			std::string PreEvaluateVectors(std::string sExpr);
 			bool ResolveVectorsInMultiArgFunc(std::string& sExpr, size_t& nPos);
 			size_t FindMultiArgFunc(const std::string& sExpr, size_t nPos, std::string& sMultArgFunc);
 			void SetVarFactory(facfun_type a_pFactory, void* pUserData = NULL);
@@ -239,7 +240,7 @@ namespace mu
 			std::vector<double>* GetVectorVar(const std::string& sVarName);
 			void UpdateVectorVar(const std::string& sVarName);
 			void ClearVectorVars(bool bIgnoreProcedureVects = false);
-			bool ContainsVectorVars(const std::string& sExpr, bool ignoreSingletons);
+			bool ContainsVectorVars(StringView sExpr, bool ignoreSingletons);
 
 		protected:
 

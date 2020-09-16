@@ -3599,6 +3599,7 @@ bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
     string sParams = "";
     string sInterval = "";
     string sVar = "x";
+    static string zero = "0.0";
     bool bLogarithmic = false;
 
     // Separate expression and parameters
@@ -3740,7 +3741,7 @@ bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
     else if (dVar)
         _parser.SetExpr(sVar);
     else
-        _parser.SetExpr("0");
+        _parser.SetExpr(zero);
 
     _parser.Eval();
     sCmd = "";

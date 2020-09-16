@@ -103,7 +103,7 @@ namespace mu
         p.DefineVar( _nrT("a"), &afVal[0]);
         p.DefineVar( _nrT("b"), &afVal[1]);
         p.DefineVar( _nrT("c"), &afVal[2]);
-        p.SetExpr( _nrT("a+b+c") );
+        p.SetExpr( string("a+b+c") );
         p.Eval();
       }
       catch(...)

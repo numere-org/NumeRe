@@ -525,9 +525,6 @@ void StripSpaces(string& sToStrip)
 {
     if (!sToStrip.length())
         return;
-    // --> Am Anfgang und am Ende weder ' ' noch '\t' gefunden? Zurueckkehren <--
-    if (sToStrip.front() != ' ' && sToStrip.back() != ' ' && sToStrip.front() != '\t' && sToStrip.back() != '\t')
-        return;
 
     sToStrip.erase(0, sToStrip.find_first_not_of(" \t"));
 
@@ -567,7 +564,7 @@ double StrToDb(const string& sString)
 /// \brief Returns the position of the closing
 /// parenthesis.
 ///
-/// \param sLine const string&
+/// \param sLine StringView
 /// \return unsigned int The position of the closing parenthesis
 ///
 /// This function determines the type of the
@@ -579,7 +576,8 @@ double StrToDb(const string& sString)
 /// the function does not find the matching
 /// parenthesis, it returns string::npos
 /////////////////////////////////////////////////
-unsigned int getMatchingParenthesis(const string& sLine)
+//unsigned int getMatchingParenthesis(const string& sLine)
+unsigned int getMatchingParenthesis(const StringView& sLine)
 {
     // Get the opening parenthesis
     char cParenthesis = sLine.front();
@@ -1786,7 +1784,7 @@ string getArgAtPos(const string& sCmd, unsigned int nPos)
 }
 
 // --> Pruefen wir, ob die Position in dem String von Anfuehrungszeichen umgeben ist <--
-bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser /* = false*/)
+bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser /* = false*/)
 {
     int nQuotes = 0;
 
@@ -1798,13 +1796,13 @@ bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser /*
     for (unsigned int i = 0; i < nPos; i++)
     {
         // Parse the special string_cast function
-        if (sExpr.substr(i, 12) == "string_cast(" && i + 12 <= nPos)
+        if (sExpr.subview(i, 12) == "string_cast(" && i + 12 <= nPos)
         {
             // Argument of "string_cast"?
-            if (getMatchingParenthesis(sExpr.substr(i + 11)) + i + 11 > nPos)
+            if (getMatchingParenthesis(sExpr.subview(i + 11)) + i + 11 > nPos)
                 return true;
             else
-                i += getMatchingParenthesis(sExpr.substr(i + 11)) + 11;
+                i += getMatchingParenthesis(sExpr.subview(i + 11)) + 11;
         }
 
         // Count the quotation marks
@@ -1842,11 +1840,11 @@ bool isInQuotes(const string& sExpr, unsigned int nPos, bool bIgnoreVarParser /*
             if (sExpr[i] == '(')
             {
                 // Has no closing parenthesis -> the closing one must be after the current position
-                if (getMatchingParenthesis(sExpr.substr(i, nPos - i)) == string::npos)
+                if (getMatchingParenthesis(sExpr.subview(i, nPos - i)) == string::npos)
                     return true;
 
                 // Advance the index variabel
-                i += getMatchingParenthesis(sExpr.substr(i, nPos - i));
+                i += getMatchingParenthesis(sExpr.subview(i, nPos - i));
 
                 // Probably we're now at the current position. Then
                 // this is the closing parenthesis of the variable to string parser
@@ -2343,22 +2341,30 @@ string utf8parser(const string& sString)
 
 // This function gets the first argument in the passed argument list
 // if the boolean bCut is true then the argument is erased from the string
-static string getNextCommandLineToken(string& sArgList, bool bCut, char cSep)
+static StringView getNextCommandLineToken(StringView& sArgList, char cSep)
 {
     if (!sArgList.length())
-        return "";
-    unsigned int nPos = 0;
+        return StringView();
+
+    size_t nPos = 0;
     size_t nMatching = 0;
+    size_t nQuotes = 0;
 
     // Go through the complete string
-    for (unsigned int i = 0; i < sArgList.length(); i++)
+    for (size_t i = 0; i < sArgList.length(); i++)
     {
+        if (sArgList[i] == '"' && (!i || sArgList[i-1] != '\\'))
+            nQuotes++;
+
+        if (nQuotes % 2)
+            continue;
+
         // Jump over parentheses
-        if ((sArgList[i] == '(' || sArgList[i] == '[' || sArgList[i] == '{' ) && !isInQuotes(sArgList, i, true) && (nMatching = getMatchingParenthesis(sArgList.substr(i))) != string::npos)
+        if ((sArgList[i] == '(' || sArgList[i] == '[' || sArgList[i] == '{' ) && (nMatching = getMatchingParenthesis(sArgList.subview(i))) != string::npos)
             i += nMatching;
 
         // A comma was found -> break the loop
-        if (sArgList[i] == cSep && !isInQuotes(sArgList, i, true))
+        if (sArgList[i] == cSep)
         {
             nPos = i;
             break;
@@ -2372,20 +2378,16 @@ static string getNextCommandLineToken(string& sArgList, bool bCut, char cSep)
     // If the comma was at the first position, then return nothing
     if (!nPos)
     {
-        if (bCut && sArgList[0] == cSep)
-            sArgList.erase(0, 1);
-        return "";
+        if (sArgList[0] == cSep)
+            sArgList.trim_front(1);
+        return StringView();
     }
 
     // Get the first argument
-    string sArg = sArgList.substr(0, nPos);
-    StripSpaces(sArg);
+    StringView sArg = sArgList.subview(0, nPos);
+    sArg.strip();
 
-    // If the boolean bCut is true, erase the argument from the string
-    if (bCut && sArgList.length() > nPos + 1)
-        sArgList = sArgList.substr(nPos + 1);
-    else if (bCut)
-        sArgList = "";
+    sArgList.trim_front(nPos+1);
 
     // return the first argument
     return sArg;
@@ -2393,17 +2395,45 @@ static string getNextCommandLineToken(string& sArgList, bool bCut, char cSep)
 
 string getNextArgument(string& sArgList, bool bCut)
 {
-    return getNextCommandLineToken(sArgList, bCut, ',');
+    StringView argList(sArgList);
+    string sArg = getNextCommandLineToken(argList, ',').to_string();
+
+    if (bCut)
+        sArgList = argList.to_string();
+
+    return sArg;
 }
 
 string getNextIndex(string& sArgList, bool bCut)
 {
-    return getNextCommandLineToken(sArgList, bCut, ':');
+    StringView argList(sArgList);
+    string sArg = getNextCommandLineToken(argList, ':').to_string();
+
+    if (bCut)
+        sArgList = argList.to_string();
+
+    return sArg;
 }
 
 string getNextSemiColonSeparatedToken(string& sArgList, bool bCut)
 {
-    return getNextCommandLineToken(sArgList, bCut, ';');
+    StringView argList(sArgList);
+    string sArg = getNextCommandLineToken(argList, ';').to_string();
+
+    if (bCut)
+        sArgList = argList.to_string();
+
+    return sArg;
+}
+
+StringView getNextViewedArgument(StringView& sView)
+{
+    return getNextCommandLineToken(sView, ',');
+}
+
+StringView getNextViewedIndex(StringView& sView)
+{
+    return getNextCommandLineToken(sView, ':');
 }
 
 /////////////////////////////////////////////////

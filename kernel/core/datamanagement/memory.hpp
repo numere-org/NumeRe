@@ -111,9 +111,9 @@ class Memory : public Sorter
 		int getHeadlineCount() const;
 
 		// WRITE ACCESS METHODS
-		bool writeSingletonData(Indices& _idx, double _dData);
-		bool writeData(long long int _Line, long long int _nCol, double _dData);
-		bool writeData(Indices& _idx, double* _dData, unsigned int _nNum);
+		void writeSingletonData(Indices& _idx, double _dData);
+		void writeData(long long int _Line, long long int _nCol, double _dData);
+		void writeData(Indices& _idx, double* _dData, unsigned int _nNum);
 		bool setHeadLineElement(long long int _i, std::string _sHead);
 
 		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision);

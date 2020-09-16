@@ -1603,6 +1603,9 @@ void FlowCtrl::eval()
     if (_parserRef->IsLockedPause())
         bLockedPauseMode = true;
 
+    if (!_parserRef->ActiveLoopMode() || !_parserRef->IsLockedPause())
+        _parserRef->ClearVectorVars();
+
     // Evaluate the user options
     if (_optionRef->getUseMaskAsDefault())
         bMask = true;
@@ -1869,7 +1872,7 @@ void FlowCtrl::reset()
     bFunctionsReplaced = false;
 
     // Remove obsolete vector variables
-    if (_parserRef)
+    if (_parserRef && (!_parserRef->ActiveLoopMode() || !_parserRef->IsLockedPause()))
         _parserRef->ClearVectorVars();
 
     // Remove all temporary clusters defined for
@@ -2416,13 +2419,14 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DATAACCESS)
     {
         // --> Datafile/Cache! <--
-        if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
-            && _dataRef->containsTablesOrClusters(sLine))
+        if (nCurrentCalcType
+            || (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
+                && _dataRef->containsTablesOrClusters(sLine)))
         {
             if (!nCurrentCalcType)
                 nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
 
-            if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess())
+            if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess() && !_parserRef->GetCachedEquation().length())
             {
                 bCompiling = true;
                 _parserRef->SetCompiling(true);
@@ -2430,10 +2434,10 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
             sCache = getDataElements(sLine, *_parserRef, *_dataRef, *_optionRef);
 
-            if (sCache.length() && sCache.find('#') == string::npos)
+            if (sCache.length())
                 bWriteToCache = true;
 
-            if (_parserRef->IsCompiling())
+            if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
             {
                 _parserRef->CacheCurrentEquation(sLine);
                 _parserRef->CacheCurrentTarget(sCache);
@@ -2454,7 +2458,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_STRING)
     {
         // --> String-Parser <--
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+        if (nCurrentCalcType || NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
         {
             if (!nCurrentCalcType)
                 nCalcType[nthCmd] |= CALCTYPE_STRING | CALCTYPE_DATAACCESS;
@@ -2497,13 +2501,15 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
             if (!nCurrentCalcType)
                 nCalcType[nthCmd] |= CALCTYPE_DATAACCESS;
 
+            size_t pos;
+
             if (bCompiling)
             {
-                if (sCache[sCache.find_first_of("({")] == '{')
-                    bWriteToCluster = true;
-
                 _parserRef->SetCompiling(true);
                 _idx = getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
+
+                if (sCache[(pos = sCache.find_first_of("({"))] == '{')
+                    bWriteToCluster = true;
 
                 if (!isValidIndexSet(_idx))
                     throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
@@ -2511,7 +2517,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
                 if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                     throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
-                sCache.erase(sCache.find_first_of("({"));
+                sCache.erase(pos);
                 StripSpaces(sCache);
 
                 if (!bWriteToCluster)
@@ -2525,7 +2531,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
             {
                 _idx = getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
 
-                if (sCache[sCache.find_first_of("({")] == '{')
+                if (sCache[(pos = sCache.find_first_of("({"))] == '{')
                     bWriteToCluster = true;
 
                 if (!isValidIndexSet(_idx))
@@ -2534,7 +2540,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
                 if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                     throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
-                sCache.erase(sCache.find_first_of("({"));
+                sCache.erase(pos);
                 StripSpaces(sCache);
             }
         }
@@ -2574,16 +2580,9 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     {
         // Is it a cluster?
         if (bWriteToCluster)
-        {
-            NumeRe::Cluster& cluster = _dataRef->getCluster(sCache);
-            cluster.assignResults(_idx, nNum, v);
-            bWriteToCluster = false;
-        }
+            _dataRef->getCluster(sCache).assignResults(_idx, nNum, v);
         else
-        {
             _dataRef->writeToTable(_idx, sCache, v, nNum);
-            bWriteToCache = false;
-        }
     }
 
     if (bReturnSignal)

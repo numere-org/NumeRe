@@ -21,6 +21,7 @@
 #define STRUCTURES_HPP
 
 #include <string>
+#include <stdexcept>
 #include <vector>
 #include <cmath>
 
@@ -805,6 +806,309 @@ class EndlessVector : public vector<T>
         }
 };
 
+
+class StringView
+{
+    private:
+        const std::string* m_data;
+        size_t m_start;
+        size_t m_len;
+
+        StringView(const std::string* data, size_t start, size_t len) : m_data(data), m_start(start), m_len(len) {}
+
+        void assign(const StringView& view)
+        {
+            m_data = view.m_data;
+            m_start = view.m_start;
+            m_len = view.m_len;
+        }
+
+        void assign(const std::string* data)
+        {
+            if (!data)
+                return;
+
+            m_data = data;
+            m_start = 0;
+            m_len = m_data->length();
+        }
+
+        inline size_t validizeLength(size_t pos, size_t len) const
+        {
+            if (len == std::string::npos || pos+len > m_len)
+                len = m_len - pos;
+
+            return len;
+        }
+
+        inline void clear()
+        {
+            m_data = nullptr;
+            m_start = 0;
+            m_len = 0;
+        }
+
+        inline bool validAbsolutePosition(size_t pos) const
+        {
+            return pos >= m_start && pos < m_start + m_len;
+        }
+
+    public:
+        StringView() : m_data(nullptr), m_start(0), m_len(0) {}
+        StringView(const std::string* data) : StringView()
+        {
+            assign(data);
+        }
+        StringView(std::string& data) : StringView()
+        {
+            assign(&data);
+        }
+        StringView(const std::string& data) : StringView()
+        {
+            assign(&data);
+        }
+        StringView(const StringView& view)
+        {
+            assign(view);
+        }
+        StringView(StringView&& view)
+        {
+            m_data = std::move(view.m_data);
+            m_start = std::move(view.m_start);
+            m_len = std::move(view.m_len);
+        }
+
+        StringView& operator=(const StringView& view)
+        {
+            assign(view);
+            return *this;
+        }
+
+        StringView& operator=(std::string* data)
+        {
+            assign(data);
+            return *this;
+        }
+
+        StringView& operator=(std::string& data)
+        {
+            assign(&data);
+            return *this;
+        }
+
+        inline const char& operator[](size_t pos) const
+        {
+            return m_data->operator[](m_start+pos);
+        }
+
+        inline bool operator==(const StringView& view) const
+        {
+            if (m_data && view.m_data && m_len == view.m_len)
+                return m_data->compare(m_start, m_len, *view.m_data, view.m_start, view.m_len) == 0;
+
+            return false;
+        }
+
+        inline bool operator==(const std::string& sString) const
+        {
+            if (m_data && m_len == sString.length())
+                return m_data->compare(m_start, m_len, sString) == 0;
+
+            return false;
+        }
+
+        inline const char& front() const
+        {
+            if (m_data)
+                return m_data->at(m_start);
+
+            throw std::out_of_range("StringView::front");
+        }
+
+        inline const char& back() const
+        {
+            if (m_data)
+                return m_data->at(m_start+m_len-1);
+
+            throw std::out_of_range("StringView::back");
+        }
+
+        inline void trim_front(size_t len)
+        {
+            if (len < m_len)
+            {
+                m_start += len;
+                m_len -= len;
+            }
+            else
+                clear();
+        }
+
+        inline void trim_back(size_t len)
+        {
+            if (len < m_len)
+                m_len -= len;
+            else
+                clear();
+        }
+
+        inline void strip()
+        {
+            if (!m_data)
+                return;
+
+            size_t pos = m_data->find_first_not_of(" \t", m_start);
+
+            if (!validAbsolutePosition(pos))
+            {
+                clear();
+                return;
+            }
+
+            m_len -= pos - m_start;
+            m_start = pos;
+
+            pos = m_data->find_last_not_of(" \t", m_start+m_len-1);
+
+            if (!validAbsolutePosition(pos))
+                clear();
+            else
+                m_len = pos - m_start + 1;
+        }
+
+        inline size_t length() const
+        {
+            return m_len;
+        }
+
+        inline std::string to_string() const
+        {
+            if (m_data)
+                return m_data->substr(m_start, m_len);
+
+            return "";
+        }
+
+        StringView subview(size_t pos = 0, size_t len = std::string::npos) const
+        {
+            if (m_data && pos < m_len)
+            {
+                len = validizeLength(pos, len);
+                return StringView(m_data, m_start+pos, len);
+            }
+
+            return StringView();
+        }
+
+        size_t find(const std::string& findstr, size_t pos = 0) const
+        {
+            if (m_data)
+            {
+                size_t fnd = m_data->find(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        size_t find(char c, size_t pos = 0) const
+        {
+            if (m_data)
+            {
+                size_t fnd = m_data->find(c, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        size_t rfind(const std::string& findstr, size_t pos = std::string::npos) const
+        {
+            if (m_data)
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = m_data->rfind(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        size_t rfind(char c, size_t pos = std::string::npos) const
+        {
+            if (m_data)
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = m_data->rfind(c, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        size_t find_first_of(const std::string& findstr, size_t pos = 0) const
+        {
+            if (m_data)
+            {
+                size_t fnd = m_data->find_first_of(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        size_t find_first_not_of(const std::string& findstr, size_t pos = std::string::npos) const
+        {
+            if (m_data)
+            {
+                size_t fnd = m_data->find_first_not_of(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        size_t find_last_of(const std::string& findstr, size_t pos = std::string::npos) const
+        {
+            if (m_data)
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = m_data->find_last_of(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        size_t find_last_not_of(const std::string& findstr, size_t pos = 0) const
+        {
+            if (m_data)
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = m_data->find_last_not_of(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+};
 
 /////////////////////////////////////////////////
 /// \brief This structure is central for managing

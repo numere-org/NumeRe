@@ -869,7 +869,7 @@ bool MemoryManager::updateDimensionVariables(const string& sTableName)
 /////////////////////////////////////////////////
 bool MemoryManager::containsTablesOrClusters(const string& sCmdLine)
 {
-    return containsTables(" " + sCmdLine + " ") || containsClusters(" " + sCmdLine + " ");
+    return containsTables(sCmdLine) || containsClusters(sCmdLine);
 }
 
 
