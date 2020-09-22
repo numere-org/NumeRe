@@ -234,7 +234,11 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
             // Handle the "continue" and "break" flow
             // control statements
-            if (!nCalcType[__j])
+            if (nCalcType[__j] & CALCTYPE_CONTINUECMD)
+                break;
+            else if (nCalcType[__j] & CALCTYPE_BREAKCMD)
+                return nJumpTable[nth_Cmd][BLOCK_END];
+            else if (!nCalcType[__j])
             {
                 string sCommand = findCommand(vCmdArray[__j].sCommand).sString;
 
@@ -258,10 +262,6 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                     return nJumpTable[nth_Cmd][BLOCK_END];
                 }
             }
-            else if (nCalcType[__j] & CALCTYPE_CONTINUECMD)
-                break;
-            else if (nCalcType[__j] & CALCTYPE_BREAKCMD)
-                return nJumpTable[nth_Cmd][BLOCK_END];
 
             // Increment the parser index, if the loop parsing
             // mode was activated
@@ -271,7 +271,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
             try
             {
                 // Evaluate the command line with the calc function
-                if (calc(vCmdArray[__j].sCommand, __j, "FOR") == FLOWCTRL_ERROR)
+                if (calc(vCmdArray[__j].sCommand, __j) == FLOWCTRL_ERROR)
                 {
                     if (_optionRef->getUseDebugger())
                     {
@@ -419,7 +419,11 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
 
             // Handle the "continue" and "break" flow
             // control statements
-            if (!nCalcType[__j])
+            if (nCalcType[__j] & CALCTYPE_CONTINUECMD)
+                break;
+            else if (nCalcType[__j] & CALCTYPE_BREAKCMD)
+                return nJumpTable[nth_Cmd][BLOCK_END];
+            else if (!nCalcType[__j])
             {
                 string sCommand = findCommand(vCmdArray[__j].sCommand).sString;
 
@@ -443,10 +447,6 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                     return nJumpTable[nth_Cmd][BLOCK_END];
                 }
             }
-            else if (nCalcType[__j] & CALCTYPE_CONTINUECMD)
-                break;
-            else if (nCalcType[__j] & CALCTYPE_BREAKCMD)
-                return nJumpTable[nth_Cmd][BLOCK_END];
 
             // Increment the parser index, if the loop parsing
             // mode was activated
@@ -456,7 +456,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
             try
             {
                 // Evaluate the command line with the calc function
-                if (calc(vCmdArray[__j].sCommand, __j, "WHL") == FLOWCTRL_ERROR)
+                if (calc(vCmdArray[__j].sCommand, __j) == FLOWCTRL_ERROR)
                 {
                     if (_optionRef->getUseDebugger())
                     {
@@ -573,7 +573,17 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
 
                 // Handle the "continue" and "break" flow
                 // control statements
-                if (!nCalcType[__i])
+                if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+                {
+                    bContinueSignal = true;
+                    return nEndif;
+                }
+                else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+                {
+                    bBreakSignal = true;
+                    return nEndif;
+                }
+                else if (!nCalcType[__i])
                 {
                     string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
 
@@ -593,16 +603,6 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                         return nEndif;
                     }
                 }
-                else if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
-                {
-                    bContinueSignal = true;
-                    return nEndif;
-                }
-                else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
-                {
-                    bBreakSignal = true;
-                    return nEndif;
-                }
 
                 // Increment the parser index, if the loop parsing
                 // mode was activated
@@ -612,7 +612,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                 try
                 {
                     // Evaluate the command line with the calc function
-                    if (calc(vCmdArray[__i].sCommand, __i, "IF") == FLOWCTRL_ERROR)
+                    if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
                     {
                         if (_optionRef->getUseDebugger())
                         {
@@ -686,7 +686,17 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             }
         }
 
-        if (!nCalcType[__i])
+        if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+        {
+            bContinueSignal = true;
+            return nEndif;
+        }
+        else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+        {
+            bBreakSignal = true;
+            return nEndif;
+        }
+        else if (!nCalcType[__i])
         {
             string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
 
@@ -706,16 +716,6 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                 return nEndif;
             }
         }
-        else if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
-        {
-            bContinueSignal = true;
-            return nEndif;
-        }
-        else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
-        {
-            bBreakSignal = true;
-            return nEndif;
-        }
 
         if (bUseLoopParsingMode && !bLockedPauseMode)
             _parserRef->SetIndex(__i);
@@ -723,7 +723,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         try
         {
             // Evaluate the command line with the calc function
-            if (calc(vCmdArray[__i].sCommand, __i, "IF") == FLOWCTRL_ERROR)
+            if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
             {
                 if (_optionRef->getUseDebugger())
                 {
@@ -834,7 +834,17 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 
         // Handle the "continue" and "break" flow
         // control statements
-        if (!nCalcType[__i])
+        if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
+        {
+            bContinueSignal = true;
+            return nSwitchEnd;
+        }
+        else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
+        {
+            // We don't propagate the break signal in this case
+            return nSwitchEnd;
+        }
+        else if (!nCalcType[__i])
         {
             string sCommand = findCommand(vCmdArray[__i].sCommand).sString;
 
@@ -854,16 +864,6 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
                 return nSwitchEnd;
             }
         }
-        else if (nCalcType[__i] & CALCTYPE_CONTINUECMD)
-        {
-            bContinueSignal = true;
-            return nSwitchEnd;
-        }
-        else if (nCalcType[__i] & CALCTYPE_BREAKCMD)
-        {
-            // We don't propagate the break signal in this case
-            return nSwitchEnd;
-        }
 
         // Increment the parser index, if the loop parsing
         // mode was activated
@@ -873,7 +873,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
         try
         {
             // Evaluate the command line with the calc function
-            if (calc(vCmdArray[__i].sCommand, __i, "SWCH") == FLOWCTRL_ERROR)
+            if (calc(vCmdArray[__i].sCommand, __i) == FLOWCTRL_ERROR)
             {
                 if (_optionRef->getUseDebugger())
                 {
@@ -923,6 +923,11 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
     value_type* v = nullptr;
     string sCache = "";
 
+    // Update the parser index, if the loop parsing
+    // mode was activated
+    if (bUseLoopParsingMode && !bLockedPauseMode)
+        _parserRef->SetIndex(nth_Cmd);
+
     // Replace the function definitions, if not already done
     if (!bFunctionsReplaced)
     {
@@ -930,37 +935,6 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
         {
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, sHeadExpression, SyntaxError::invalid_position);
         }
-    }
-
-    // Catch and evaluate all data and cache calls
-    if (_dataRef->containsTablesOrClusters(sHeadExpression) && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
-    {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parserRef->PauseLoopMode();
-
-        // Handle calls to an arbitrary "CACHE()"
-        if (_dataRef->containsTablesOrClusters(sHeadExpression))
-        {
-            for (auto iter = _dataRef->getTableMap().begin(); iter != _dataRef->getTableMap().end(); ++iter)
-            {
-                if (sHeadExpression.find(iter->first + "(") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first + "(")))
-                {
-                    replaceDataEntities(sHeadExpression, iter->first + "(", *_dataRef, *_parserRef, *_optionRef, true);
-                }
-            }
-
-            for (auto iter = _dataRef->getClusterMap().begin(); iter != _dataRef->getClusterMap().end(); ++iter)
-            {
-                if (sHeadExpression.find(iter->first + "{") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first + "{")))
-                {
-                    replaceDataEntities(sHeadExpression, iter->first + "{", *_dataRef, *_parserRef, *_optionRef, true);
-                }
-            }
-
-        }
-
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parserRef->PauseLoopMode(false);
     }
 
     // Call procedures, if necessary
@@ -986,6 +960,54 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
             _parserRef->PauseLoopMode(false);
             _parserRef->LockPause(false);
         }
+    }
+
+    // Catch and evaluate all data and cache calls
+    if (_dataRef->containsTablesOrClusters(sHeadExpression) && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+    {
+        if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess() && !_parserRef->GetCachedEquation().length())
+            _parserRef->SetCompiling(true);
+
+        sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef, *_optionRef);
+
+        //if (sCache.length())
+        //    bWriteToCache = true;
+
+        if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
+        {
+            _parserRef->CacheCurrentEquation(sHeadExpression);
+            _parserRef->CacheCurrentTarget(sCache);
+        }
+
+        _parserRef->SetCompiling(false);
+        //if (!bLockedPauseMode && bUseLoopParsingMode)
+        //    _parserRef->PauseLoopMode();
+        //
+        //// Handle calls to an arbitrary "CACHE()"
+        //if (_dataRef->containsTablesOrClusters(sHeadExpression))
+        //{
+        //
+        //
+        //    for (auto iter = _dataRef->getTableMap().begin(); iter != _dataRef->getTableMap().end(); ++iter)
+        //    {
+        //        if (sHeadExpression.find(iter->first + "(") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first + "(")))
+        //        {
+        //            replaceDataEntities(sHeadExpression, iter->first + "(", *_dataRef, *_parserRef, *_optionRef, true);
+        //        }
+        //    }
+        //
+        //    for (auto iter = _dataRef->getClusterMap().begin(); iter != _dataRef->getClusterMap().end(); ++iter)
+        //    {
+        //        if (sHeadExpression.find(iter->first + "{") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first + "{")))
+        //        {
+        //            replaceDataEntities(sHeadExpression, iter->first + "{", *_dataRef, *_parserRef, *_optionRef, true);
+        //        }
+        //    }
+        //
+        //}
+        //
+        //if (!bLockedPauseMode && bUseLoopParsingMode)
+        //    _parserRef->PauseLoopMode(false);
     }
 
     // Evaluate strings
@@ -1029,11 +1051,6 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode(false);
     }
-
-    // Update the parser index, if the loop parsing
-    // mode was activated
-    if (bUseLoopParsingMode && !bLockedPauseMode)
-        _parserRef->SetIndex(nth_Cmd);
 
     // Evalute the already prepared equation
     if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->IsAlreadyParsed(sHeadExpression))
@@ -1901,14 +1918,12 @@ void FlowCtrl::reset()
 ///
 /// \param sLine string
 /// \param nthCmd int
-/// \param sBlock string
 /// \return int
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
+int FlowCtrl::calc(string sLine, int nthCmd)
 {
-    string sLine_Temp = sLine;
-    string sCache = "";
+    string sCache;
     string sCommand;
 
     value_type* v = 0;
@@ -1921,8 +1936,30 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     // Get the current bytecode for this command
     int nCurrentCalcType = nCalcType[nthCmd];
 
+    // Eval the debugger breakpoint first
+    if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT || nDebuggerCode == NumeReKernel::DEBUGGER_STEP || !nCurrentCalcType)
+    {
+        if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
+        {
+            if (!nCurrentCalcType && sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
+                nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
+
+            if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
+            {
+                sLine.erase(sLine.find_first_not_of(' '), 2);
+                StripSpaces(sLine);
+            }
+
+            if (_optionRef->getUseDebugger() && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
+            {
+                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+                nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
+            }
+        }
+    }
+
     // Handle the suppression semicolon
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_SUPPRESSANSWER)
+    if (nCurrentCalcType & CALCTYPE_SUPPRESSANSWER || !nCurrentCalcType)
     {
         if (nCurrentCalcType & CALCTYPE_SUPPRESSANSWER)
         {
@@ -1941,37 +1978,13 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     else
         bLoopSupressAnswer = false;
 
-    // Eval the debugger breakpoint first
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
-    {
-        if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
-        {
-            if (!nCurrentCalcType && sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
-                nCalcType[nthCmd] |= CALCTYPE_DEBUGBREAKPOINT;
-
-            if (sLine.substr(sLine.find_first_not_of(' '), 2) == "|>")
-            {
-                sLine.erase(sLine.find_first_not_of(' '), 2);
-                sLine_Temp.erase(sLine_Temp.find_first_not_of(' '), 2);
-                StripSpaces(sLine);
-                StripSpaces(sLine_Temp);
-            }
-
-            if (_optionRef->getUseDebugger() && nDebuggerCode != NumeReKernel::DEBUGGER_LEAVE && nDebuggerCode != NumeReKernel::DEBUGGER_STEPOVER)
-            {
-                NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sLine, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
-                nDebuggerCode = evalDebuggerBreakPoint(*_parserRef, *_optionRef);
-            }
-        }
-    }
-
-    if (!nCurrentCalcType
-        || !bFunctionsReplaced
-        || nCurrentCalcType & (CALCTYPE_COMMAND | CALCTYPE_DEFINITION | CALCTYPE_PROGRESS | CALCTYPE_COMPOSE | CALCTYPE_RETURNCOMMAND | CALCTYPE_THROWCOMMAND | CALCTYPE_EXPLICIT))
+    if (!bFunctionsReplaced
+        || nCurrentCalcType & (CALCTYPE_COMMAND | CALCTYPE_DEFINITION | CALCTYPE_PROGRESS | CALCTYPE_COMPOSE | CALCTYPE_RETURNCOMMAND | CALCTYPE_THROWCOMMAND | CALCTYPE_EXPLICIT)
+        || !nCurrentCalcType)
         sCommand = findCommand(sLine).sString;
 
     // Replace the custom defined functions, if it wasn't already done
-    if (!nCurrentCalcType || !(nCurrentCalcType & CALCTYPE_DEFINITION) || !bFunctionsReplaced)
+    if (!(nCurrentCalcType & CALCTYPE_DEFINITION) || !nCurrentCalcType || !bFunctionsReplaced)
     {
         if (!bFunctionsReplaced
             && sCommand != "define"
@@ -1998,7 +2011,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Handle the throw command
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_THROWCOMMAND)
+    if (nCurrentCalcType & CALCTYPE_THROWCOMMAND || !nCurrentCalcType)
     {
         if (sCommand == "throw" || sLine == "throw")
         {
@@ -2022,7 +2035,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Handle the return command
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_RETURNCOMMAND)
+    if (nCurrentCalcType & CALCTYPE_RETURNCOMMAND || !nCurrentCalcType)
     {
         if (sCommand == "return")
         {
@@ -2068,7 +2081,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
 
     // Is it a numerical expression, which was already
     // parsed? Evaluate it here
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_NUMERICAL)
+    if (nCurrentCalcType & CALCTYPE_NUMERICAL || !nCurrentCalcType)
     {
         if (_parserRef->IsValidByteCode() == 1 && _parserRef->IsAlreadyParsed(sLine) && !bLockedPauseMode && bUseLoopParsingMode)
         {
@@ -2099,7 +2112,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     // needed lines here. This is not necessary, if the lines
     // are read from a procedure, which will provide the compositon
     // in a single line
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_COMPOSE || sLoopPlotCompose.length())
+    if (nCurrentCalcType & CALCTYPE_COMPOSE || sLoopPlotCompose.length() || !nCurrentCalcType)
     {
         if ((sCommand == "compose"
             || sCommand == "endcompose"
@@ -2141,7 +2154,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Handle the "to_cmd()" function here
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_TOCOMMAND)
+    if (nCurrentCalcType & CALCTYPE_TOCOMMAND || !nCurrentCalcType)
     {
         if (sLine.find("to_cmd(") != string::npos)
         {
@@ -2189,7 +2202,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Display a progress bar, if it is desired
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_PROGRESS)
+    if (nCurrentCalcType & CALCTYPE_PROGRESS || !nCurrentCalcType)
     {
         if (sCommand == "progress" && sLine.length() > 9)
         {
@@ -2281,7 +2294,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Display the prompt to the user
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_PROMPT)
+    if (nCurrentCalcType & CALCTYPE_PROMPT || !nCurrentCalcType)
     {
         // --> Prompt <--
         if (sLine.find("??") != string::npos)
@@ -2326,7 +2339,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Handle the procedure commands like "namespace" here
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_PROCEDURECMDINTERFACE)
+    if (nCurrentCalcType & CALCTYPE_PROCEDURECMDINTERFACE || !nCurrentCalcType)
     {
         int nProcedureCmd = procedureCmdInterface(sLine);
 
@@ -2345,7 +2358,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Remove the "explicit" command here
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_EXPLICIT)
+    if (nCurrentCalcType & CALCTYPE_EXPLICIT || !nCurrentCalcType)
     {
         if (sCommand == "explicit")
         {
@@ -2358,7 +2371,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Evaluate the command, if this is a command
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_COMMAND)
+    if (nCurrentCalcType & CALCTYPE_COMMAND || !nCurrentCalcType)
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode();
@@ -2412,14 +2425,14 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Expand recursive expressions, if not already done
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_RECURSIVEEXPRESSION)
+    if (nCurrentCalcType & CALCTYPE_RECURSIVEEXPRESSION || !nCurrentCalcType)
         evalRecursiveExpressions(sLine);
 
     // Get the data from the used data object
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DATAACCESS)
+    if (nCurrentCalcType & CALCTYPE_DATAACCESS || !nCurrentCalcType)
     {
         // --> Datafile/Cache! <--
-        if (nCurrentCalcType
+        if ((nCurrentCalcType && !(nCurrentCalcType & CALCTYPE_STRING))
             || (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine)
                 && _dataRef->containsTablesOrClusters(sLine)))
         {
@@ -2455,7 +2468,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Evaluate string expressions
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_STRING)
+    if (nCurrentCalcType & CALCTYPE_STRING || !nCurrentCalcType)
     {
         // --> String-Parser <--
         if (nCurrentCalcType || NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
@@ -2494,7 +2507,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     }
 
     // Get the target indices of the target data object
-    if (!nCurrentCalcType || nCurrentCalcType & CALCTYPE_DATAACCESS)
+    if (nCurrentCalcType & CALCTYPE_DATAACCESS || !nCurrentCalcType)
     {
         if (bWriteToCache)
         {
@@ -2506,7 +2519,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
             if (bCompiling)
             {
                 _parserRef->SetCompiling(true);
-                _idx = getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
+                getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef);
 
                 if (sCache[(pos = sCache.find_first_of("({"))] == '{')
                     bWriteToCluster = true;
@@ -2529,7 +2542,9 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
             }
             else
             {
-                _idx = getIndices(sCache, *_parserRef, *_dataRef, *_optionRef);
+                getIndices(sCache, _idx, *_parserRef, *_dataRef, *_optionRef);
+                //_idx.col.front() = 0;
+                //_idx.row.front() = 0;
 
                 if (sCache[(pos = sCache.find_first_of("({"))] == '{')
                     bWriteToCluster = true;
@@ -2541,7 +2556,6 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
                     throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");
 
                 sCache.erase(pos);
-                StripSpaces(sCache);
             }
         }
     }
@@ -2549,9 +2563,7 @@ int FlowCtrl::calc(string sLine, int nthCmd, string sBlock)
     // Parse the numerical expression, if it is not
     // already available as bytecode
     if (!_parserRef->IsAlreadyParsed(sLine))
-    {
         _parserRef->SetExpr(sLine);
-    }
 
     // Calculate the result
     v = _parserRef->Eval(nNum);
@@ -3044,7 +3056,7 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
         {
             if (vCmdArray[i].sCommand.substr(0, 3) == "for" || vCmdArray[i].sCommand.substr(0, 5) == "while")
             {
-                if (!bUseLoopParsingMode && !bLockedPauseMode)
+                if (!bUseLoopParsingMode)
                     bUseLoopParsingMode = true;
 
                 break;
@@ -3058,20 +3070,14 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
         for (size_t i = 0; i < vCmdArray.size(); i++)
         {
             if (vCmdArray[i].sCommand.find("to_cmd(") != string::npos)
-            {
                 bUseLoopParsingMode = false;
-                break;
-            }
 
             if (vCmdArray[i].sCommand.find('$') != string::npos)
             {
                 int nInlining = 0;
 
                 if (!(nInlining = isInline(vCmdArray[i].sCommand)))
-                {
                     bUseLoopParsingMode = false;
-                    break;
-                }
                 else if (!vCmdArray[i].bFlowCtrlStatement && nInlining != INLINING_GLOBALINRETURN)
                 {
                     vector<string> vExpandedProcedure = expandInlineProcedures(vCmdArray[i].sCommand);
@@ -3127,6 +3133,9 @@ void FlowCtrl::checkParsingModeAndExpandDefinitions()
         else
             bUseLoopParsingMode = false;
     }
+
+    if (bLockedPauseMode && bUseLoopParsingMode)
+        bUseLoopParsingMode = false;
 }
 
 

@@ -579,12 +579,13 @@ double StrToDb(const string& sString)
 //unsigned int getMatchingParenthesis(const string& sLine)
 unsigned int getMatchingParenthesis(const StringView& sLine)
 {
+    size_t pos = sLine.find_first_of("([{");
+
+    if (pos == string::npos)
+        return pos;
+
     // Get the opening parenthesis
-    char cParenthesis = sLine.front();
-
-    if (cParenthesis != '(' && cParenthesis != '[' && cParenthesis != '{' && sLine.find_first_of("([{") != string::npos)
-        cParenthesis = sLine[sLine.find_first_of("({[")];
-
+    char cParenthesis = sLine[pos];
     char cClosingParenthesis = 0;
 
     // Depending on the opening parenthesis, determine the closing one
@@ -605,41 +606,30 @@ unsigned int getMatchingParenthesis(const StringView& sLine)
             cClosingParenthesis = ')';
     }
 
-    // If the opening or the closing parenthesis are not found, return string::npos
-    if (sLine.find(cParenthesis) == string::npos && sLine.find(cClosingParenthesis) == string::npos)
-        return string::npos;
-
     int nOpenParenthesis = 0;
     size_t nQuotes = 0;
-    size_t nStart = 0;
-
-    // Find a reasonable starting position
-    if (sLine.find(cParenthesis))
-        nStart = sLine.find(cParenthesis);
-
-    // Consider the case that the starting
-    // position might be part of a string
-    if (isInQuotes(sLine, nStart, true))
-        nQuotes++;
 
     // Go through the string and count the opening and closing parentheses
     // Consider also whether the the current position is part of a larger string
-    for (size_t i = nStart; i < sLine.length(); i++)
+    for (size_t i = 0; i < sLine.length(); i++)
     {
         // Count unmasked quotation marks
         if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
             nQuotes++;
 
+        if (nQuotes % 2)
+            continue;
+
         // Increment the counter at opening paretheses
-        if (sLine[i] == cParenthesis && !(nQuotes % 2))
+        if (sLine[i] == cParenthesis)
             nOpenParenthesis++;
 
         // Decrement the counter at closing parentheses
-        if (sLine[i] == cClosingParenthesis && !(nQuotes % 2))
+        if (sLine[i] == cClosingParenthesis)
             nOpenParenthesis--;
 
         // All parentheses are closed -> Return the position of this parenthesis
-        if (!nOpenParenthesis && !(nQuotes % 2))
+        if (!nOpenParenthesis && i > pos)
             return i;
     }
 
@@ -1788,12 +1778,8 @@ bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser /* = 
 {
     int nQuotes = 0;
 
-    // Ensure that there are at least string characters available
-    if ((sExpr.find('"') == string::npos && sExpr.find('#') == string::npos && sExpr.find("string_cast(") == string::npos) || nPos + 1 >= sExpr.length())
-        return false;
-
     // --> Zaehlt schlicht und einfach die Anfuehrungszeichen <--
-    for (unsigned int i = 0; i < nPos; i++)
+    for (size_t i = 0; i < nPos; i++)
     {
         // Parse the special string_cast function
         if (sExpr.subview(i, 12) == "string_cast(" && i + 12 <= nPos)
@@ -1806,12 +1792,8 @@ bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser /* = 
         }
 
         // Count the quotation marks
-        if (sExpr[i] == '"')
-        {
-            if (i && sExpr[i - 1] == '\\')
-                continue;
+        if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
             nQuotes++;
-        }
     }
 
     // Simplest case: The number of quotation marks is odd

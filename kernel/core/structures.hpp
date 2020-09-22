@@ -115,6 +115,18 @@ class VectorIndex
         }
 
         /////////////////////////////////////////////////
+        /// \brief VectorIndex move constructor.
+        ///
+        /// \param vIndex VectorIndex&&
+        ///
+        /////////////////////////////////////////////////
+        VectorIndex(VectorIndex&& vIndex)
+        {
+            vStorage = std::move(vIndex.vStorage);
+            expand = std::move(vIndex.expand);
+        }
+
+        /////////////////////////////////////////////////
         /// \brief Constructor from an array of doubles.
         /// The third argument is used only to avoid
         /// misinterpretation from the compiler.
@@ -751,10 +763,12 @@ class VectorIndex
 
 
 /////////////////////////////////////////////////
-/// \brief This class extends the std::vector for endlessness.
+/// \brief This class extends the std::vector for
+/// endlessness.
 ///
-/// This class template automatically creates empty elements,
-/// if the index operator access elements beyond its size.
+/// This class template automatically creates
+/// empty elements, if the index operator access
+/// elements beyond its size.
 /////////////////////////////////////////////////
 template<class T>
 class EndlessVector : public vector<T>
@@ -807,32 +821,43 @@ class EndlessVector : public vector<T>
 };
 
 
-class StringView
+/////////////////////////////////////////////////
+/// \brief This class is a base class for all
+/// string view classes.
+///
+/// It gathers the common const
+/// operations like finding and equality
+/// operators. It can be instantated directly,
+/// but it will do nothing due to a missing
+/// pointer to the viewed std::string.
+///
+/// \note String view classes are neither thread
+/// safe nor do they update, when the data source
+/// has been altered in other locations. They can
+/// only be used in single-thread contexts and
+/// should be considered as immutable. The
+/// MutableStringView class can handle some
+/// modifications but will probably invalidate
+/// all other string views using the same data
+/// source while modifying the data.
+/////////////////////////////////////////////////
+class StringViewBase
 {
-    private:
-        const std::string* m_data;
+    protected:
         size_t m_start;
         size_t m_len;
 
-        StringView(const std::string* data, size_t start, size_t len) : m_data(data), m_start(start), m_len(len) {}
-
-        void assign(const StringView& view)
-        {
-            m_data = view.m_data;
-            m_start = view.m_start;
-            m_len = view.m_len;
-        }
-
-        void assign(const std::string* data)
-        {
-            if (!data)
-                return;
-
-            m_data = data;
-            m_start = 0;
-            m_len = m_data->length();
-        }
-
+        /////////////////////////////////////////////////
+        /// \brief This private member function
+        /// evaluates, whether the passed length is part
+        /// of the viewed section and adapts the length
+        /// correspondingly.
+        ///
+        /// \param pos size_t starting position
+        /// \param len size_t
+        /// \return size_t the new length
+        ///
+        /////////////////////////////////////////////////
         inline size_t validizeLength(size_t pos, size_t len) const
         {
             if (len == std::string::npos || pos+len > m_len)
@@ -841,98 +866,262 @@ class StringView
             return len;
         }
 
-        inline void clear()
+        /////////////////////////////////////////////////
+        /// \brief Reset function.
+        ///
+        /// \return virtual  void
+        ///
+        /////////////////////////////////////////////////
+        virtual inline void clear()
         {
-            m_data = nullptr;
             m_start = 0;
             m_len = 0;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function checks, whether
+        /// the passed (absolute) position is part of the
+        /// viewed string section. Is mostly used in
+        /// string find operations.
+        ///
+        /// \param pos size_t
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         inline bool validAbsolutePosition(size_t pos) const
         {
             return pos >= m_start && pos < m_start + m_len;
         }
 
     public:
-        StringView() : m_data(nullptr), m_start(0), m_len(0) {}
-        StringView(const std::string* data) : StringView()
+
+        /////////////////////////////////////////////////
+        /// \brief StringViewBase default constructor.
+        /////////////////////////////////////////////////
+        StringViewBase() : m_start(0), m_len(0) {}
+
+        /////////////////////////////////////////////////
+        /// \brief This member function returns a const
+        /// pointer to the viewed string. Is only used
+        /// internally.
+        ///
+        /// \return const std::string*
+        ///
+        /////////////////////////////////////////////////
+        virtual inline const std::string* getData() const
         {
-            assign(data);
-        }
-        StringView(std::string& data) : StringView()
-        {
-            assign(&data);
-        }
-        StringView(const std::string& data) : StringView()
-        {
-            assign(&data);
-        }
-        StringView(const StringView& view)
-        {
-            assign(view);
-        }
-        StringView(StringView&& view)
-        {
-            m_data = std::move(view.m_data);
-            m_start = std::move(view.m_start);
-            m_len = std::move(view.m_len);
+            return nullptr;
         }
 
-        StringView& operator=(const StringView& view)
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the equality operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator==(const StringViewBase& view) const
         {
-            assign(view);
-            return *this;
-        }
-
-        StringView& operator=(std::string* data)
-        {
-            assign(data);
-            return *this;
-        }
-
-        StringView& operator=(std::string& data)
-        {
-            assign(&data);
-            return *this;
-        }
-
-        inline const char& operator[](size_t pos) const
-        {
-            return m_data->operator[](m_start+pos);
-        }
-
-        inline bool operator==(const StringView& view) const
-        {
-            if (m_data && view.m_data && m_len == view.m_len)
-                return m_data->compare(m_start, m_len, *view.m_data, view.m_start, view.m_len) == 0;
+            if (getData() && view.getData())
+                return getData()->compare(m_start, m_len, *view.getData(), view.m_start, view.m_len) == 0;
 
             return false;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the equality operator using a const
+        /// std::string instance.
+        ///
+        /// \param sString const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
         inline bool operator==(const std::string& sString) const
         {
-            if (m_data && m_len == sString.length())
-                return m_data->compare(m_start, m_len, sString) == 0;
+            if (getData())
+                return getData()->compare(m_start, m_len, sString) == 0;
 
             return false;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the inequality operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator!=(const StringViewBase& view) const
+        {
+            if (getData() && view.getData())
+                return getData()->compare(m_start, m_len, *view.getData(), view.m_start, view.m_len) != 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the inequality operator using a const
+        /// std::string instance.
+        ///
+        /// \param sString const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator!=(const std::string& sString) const
+        {
+            if (getData())
+                return getData()->compare(m_start, m_len, sString) != 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the less operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator<(const StringViewBase& view) const
+        {
+            if (getData() && view.getData())
+                return getData()->compare(m_start, m_len, *view.getData(), view.m_start, view.m_len) < 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the less operator using a const
+        /// std::string instance.
+        ///
+        /// \param sString const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator<(const std::string& sString) const
+        {
+            if (getData())
+                return getData()->compare(m_start, m_len, sString) < 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the greater operator using another
+        /// StringViewBase instance.
+        ///
+        /// \param view const StringViewBase&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator>(const StringViewBase& view) const
+        {
+            if (getData() && view.getData())
+                return getData()->compare(m_start, m_len, *view.getData(), view.m_start, view.m_len) > 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function is an overload
+        /// for the greater operator using a const
+        /// std::string instance.
+        ///
+        /// \param sString const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool operator>(const std::string& sString) const
+        {
+            if (getData())
+                return getData()->compare(m_start, m_len, sString) > 0;
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function provides a const
+        /// char reference to the first character in the
+        /// viewed section.
+        ///
+        /// \return const char&
+        ///
+        /////////////////////////////////////////////////
         inline const char& front() const
         {
-            if (m_data)
-                return m_data->at(m_start);
+            if (getData())
+                return getData()->at(m_start);
 
             throw std::out_of_range("StringView::front");
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function provides a const
+        /// char reference to the last character in the
+        /// viewed section.
+        ///
+        /// \return const char&
+        ///
+        /////////////////////////////////////////////////
         inline const char& back() const
         {
-            if (m_data)
-                return m_data->at(m_start+m_len-1);
+            if (getData())
+                return getData()->at(m_start+m_len-1);
 
             throw std::out_of_range("StringView::back");
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function provides an
+        /// iterator to the beginning of the viewed
+        /// section of the internal string.
+        ///
+        /// \return std::string::const_iterator
+        ///
+        /////////////////////////////////////////////////
+        inline std::string::const_iterator begin() const
+        {
+            if (getData())
+                return getData()->begin() + m_start;
+
+            return std::string::const_iterator();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function provides an
+        /// iterator to the end of the viewed section of
+        /// the internal string.
+        ///
+        /// \return std::string::const_iterator
+        ///
+        /////////////////////////////////////////////////
+        inline std::string::const_iterator end() const
+        {
+            if (getData())
+                return getData()->begin() + m_start + m_len;
+
+            return std::string::const_iterator();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function can be used to
+        /// remove characters from the front of the
+        /// viewed section.
+        ///
+        /// \param len size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         inline void trim_front(size_t len)
         {
             if (len < m_len)
@@ -944,6 +1133,15 @@ class StringView
                 clear();
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function can be used to
+        /// remove characters from the back of the
+        /// viewed section.
+        ///
+        /// \param len size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         inline void trim_back(size_t len)
         {
             if (len < m_len)
@@ -952,43 +1150,841 @@ class StringView
                 clear();
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function shrinks the
+        /// viewed section to remove all leading or
+        /// trailing whitespace characters. This is the
+        /// corresponding member function to
+        /// StripSpaces(std::string&).
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         inline void strip()
         {
-            if (!m_data)
+            const std::string* data = getData();
+
+            if (!data)
                 return;
 
-            size_t pos = m_data->find_first_not_of(" \t", m_start);
+            // Strip leading
+            while (m_len && isblank(data->operator[](m_start)))
+            {
+                m_start++;
+                m_len--;
+            }
 
-            if (!validAbsolutePosition(pos))
+            if (!m_len)
             {
                 clear();
                 return;
             }
 
-            m_len -= pos - m_start;
-            m_start = pos;
-
-            pos = m_data->find_last_not_of(" \t", m_start+m_len-1);
-
-            if (!validAbsolutePosition(pos))
-                clear();
-            else
-                m_len = pos - m_start + 1;
+            // Strip trailing
+            while (m_len && isblank(data->operator[](m_start+m_len-1)))
+            {
+                m_len--;
+            }
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function simply returns
+        /// the length of the viewed section.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
         inline size_t length() const
         {
             return m_len;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function returns a copy of
+        /// the viewed section of the string
+        /// (via std::string::substr). Note that this is
+        /// an inefficient operation.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
         inline std::string to_string() const
         {
-            if (m_data)
-                return m_data->substr(m_start, m_len);
+            if (getData())
+                return getData()->substr(m_start, m_len);
 
             return "";
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::find()
+        ///
+        /// \param findstr const std::string&
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find(const std::string& findstr, size_t pos = 0) const
+        {
+            if (getData())
+            {
+                size_t fnd = getData()->find(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::find()
+        ///
+        /// \param c char
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find(char c, size_t pos = 0) const
+        {
+            if (getData())
+            {
+                size_t fnd = getData()->find(c, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::rfind()
+        ///
+        /// \param findstr const std::string&
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t rfind(const std::string& findstr, size_t pos = std::string::npos) const
+        {
+            if (getData())
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = getData()->rfind(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::rfind()
+        ///
+        /// \param c char
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t rfind(char c, size_t pos = std::string::npos) const
+        {
+            if (getData())
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = getData()->rfind(c, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::find_first_of()
+        ///
+        /// \param findstr const std::string&
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find_first_of(const std::string& findstr, size_t pos = 0) const
+        {
+            if (getData())
+            {
+                size_t fnd = getData()->find_first_of(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::find_first_not_of()
+        ///
+        /// \param findstr const std::string&
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find_first_not_of(const std::string& findstr, size_t pos = 0) const
+        {
+            if (getData())
+            {
+                size_t fnd = getData()->find_first_not_of(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::find_first_not_of()
+        ///
+        /// \param c char
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find_first_not_of(char c, size_t pos = 0) const
+        {
+            if (getData())
+            {
+                size_t fnd = getData()->find_first_not_of(c, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::find_last_of()
+        ///
+        /// \param findstr const std::string&
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find_last_of(const std::string& findstr, size_t pos = std::string::npos) const
+        {
+            if (getData())
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = getData()->find_last_of(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Wrapper member function for
+        /// std::string::find_last_not_of()
+        ///
+        /// \param findstr const std::string&
+        /// \param pos size_t
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t find_last_not_of(const std::string& findstr, size_t pos = std::string::npos) const
+        {
+            if (getData())
+            {
+                pos = validizeLength(m_start, pos);
+                size_t fnd = getData()->find_last_not_of(findstr, m_start + pos);
+
+                if (validAbsolutePosition(fnd))
+                    return fnd-m_start;
+            }
+
+            return std::string::npos;
+        }
+
+};
+
+
+// Forward declaration for friendship
+class StringView;
+
+
+/////////////////////////////////////////////////
+/// \brief This class is a mutable version of a
+/// string view. It can be used to replace single
+/// characters or entire parts of the string.
+/// It's possible to convert a MutableStringView
+/// into a (const) StringView but not the other
+/// way around.
+/////////////////////////////////////////////////
+class MutableStringView : public StringViewBase
+{
+    private:
+        friend class StringView;
+        std::string* m_data;
+
+        /////////////////////////////////////////////////
+        /// \brief Private constructor used by the
+        /// subview member function.
+        ///
+        /// \param data std::string*
+        /// \param start size_t
+        /// \param len size_t
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView(std::string* data, size_t start, size_t len) : StringViewBase(), m_data(data)
+        {
+            m_start = start;
+            m_len = len;
+        }
+
+    protected:
+        /////////////////////////////////////////////////
+        /// \brief Override to return a pointer to the
+        /// internal string.
+        ///
+        /// \return const std::string*
+        ///
+        /////////////////////////////////////////////////
+        virtual inline const std::string* getData() const override
+        {
+            return m_data;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment member function from
+        /// another MutableStringView instance.
+        ///
+        /// \param view MutableStringView&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(MutableStringView& view)
+        {
+            m_data = view.m_data;
+            m_start = view.m_start;
+            m_len = view.m_len;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment member function from a
+        /// std::string pointer.
+        ///
+        /// \param data std::string*
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(std::string* data)
+        {
+            if (!data)
+                return;
+
+            m_data = data;
+            m_start = 0;
+            m_len = m_data->length();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Override to clear the internal pointer
+        /// as well.
+        ///
+        /// \return virtual  void
+        ///
+        /////////////////////////////////////////////////
+        virtual inline void clear() override
+        {
+            m_data = nullptr;
+            m_start = 0;
+            m_len = 0;
+        }
+
+    public:
+        /////////////////////////////////////////////////
+        /// \brief MutableStringView default constructor.
+        /////////////////////////////////////////////////
+        MutableStringView() : StringViewBase(), m_data(nullptr) {}
+
+        /////////////////////////////////////////////////
+        /// \brief MutableStringView constructor from a
+        /// std::string pointer.
+        ///
+        /// \param data std::string*
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView(std::string* data) : MutableStringView()
+        {
+            assign(data);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief MutableStringView constructor from a
+        /// (non-const) std::string reference.
+        ///
+        /// \param data std::string&
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView(std::string& data) : MutableStringView()
+        {
+            assign(&data);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief MutableStringView copy constrcutor.
+        ///
+        /// \param view MutableStringView&
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView(MutableStringView& view) : MutableStringView()
+        {
+            assign(view);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief MutableStringView move constructor.
+        ///
+        /// \param view MutableStringView&&
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView(MutableStringView&& view)
+        {
+            m_data = std::move(view.m_data);
+            m_start = std::move(view.m_start);
+            m_len = std::move(view.m_len);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator for another
+        /// MutableStringView instance.
+        ///
+        /// \param view MutableStringView&
+        /// \return MutableStringView&
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& operator=(MutableStringView& view)
+        {
+            assign(view);
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator for a std::string
+        /// pointer.
+        ///
+        /// \param data std::string*
+        /// \return MutableStringView&
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& operator=(std::string* data)
+        {
+            assign(data);
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator for a std::string
+        /// (non-const) reference.
+        ///
+        /// \param data std::string&
+        /// \return MutableStringView&
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& operator=(std::string& data)
+        {
+            assign(&data);
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Implementation of the random access
+        /// operator. Returns a (non-const) char
+        /// reference.
+        ///
+        /// \param pos size_t
+        /// \return char&
+        /// \remark No boundary checks are performed.
+        ///
+        /////////////////////////////////////////////////
+        inline char& operator[](size_t pos)
+        {
+            return m_data->operator[](m_start+pos);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function creates a new
+        /// MutableStringView class instance using the
+        /// selected position and length as a new viewed
+        /// part. The position has to be part of the
+        /// viewed section of this instance. This
+        /// function can be used to replace
+        /// std::string::substr.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \return MutableStringView
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView subview(size_t pos = 0, size_t len = std::string::npos) const
+        {
+            if (m_data && pos < m_len)
+            {
+                len = validizeLength(pos, len);
+                return MutableStringView(m_data, m_start+pos, len);
+            }
+
+            return MutableStringView();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function replaces a range
+        /// in the internal viewed string with the passed
+        /// string.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \param s const std::string&
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& replace(size_t pos, size_t len, const std::string& s)
+        {
+            if (m_data && pos < m_len)
+            {
+                len = validizeLength(pos, len);
+                m_data->replace(m_start+pos, len, s);
+                m_len += s.length() - len;
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function replaces a range
+        /// in the internal viewed string with the passed
+        /// string. This function allows to select a
+        /// smaller part of the replacing string.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \param s const std::string&
+        /// \param subpos size_t
+        /// \param sublen size_t
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& replace(size_t pos, size_t len, const std::string& s, size_t subpos, size_t sublen)
+        {
+            if (m_data && pos < m_len)
+            {
+                len = validizeLength(pos, len);
+
+                if (subpos + sublen > s.length())
+                    sublen = s.length() - subpos;
+
+                m_data->replace(m_start+pos, len, s, subpos, sublen);
+                m_len += sublen - len;
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function replaces a range
+        /// in the internal viewed string with the passed
+        /// StringViewBase.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \param view const StringViewBase&
+        /// \return MutableStringView&
+        /// \remark Positions and lengths of other
+        /// StringViews to the same strings are
+        /// invalidated, if the lengths of the replaced
+        /// and the replacing string differ.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView& replace(size_t pos, size_t len, const StringViewBase& view)
+        {
+            return replace(pos, len, view.to_string());
+        }
+
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This class is the immutable (const)
+/// version of a string view. It can be
+/// constructed from a MutableStringView, but
+/// cannot be used to construct a mutable
+/// version.
+/////////////////////////////////////////////////
+class StringView : public StringViewBase
+{
+    private:
+        const std::string* m_data;
+
+        /////////////////////////////////////////////////
+        /// \brief Private constructor used by the
+        /// subview member function.
+        ///
+        /// \param data std::string* const
+        /// \param start size_t
+        /// \param len size_t
+        ///
+        /////////////////////////////////////////////////
+        StringView(const std::string* data, size_t start, size_t len) : StringViewBase(), m_data(data)
+        {
+            m_start = start;
+            m_len = len;
+        }
+
+    protected:
+        /////////////////////////////////////////////////
+        /// \brief Override to return a pointer to the
+        /// internal string.
+        ///
+        /// \return const std::string*
+        ///
+        /////////////////////////////////////////////////
+        virtual inline const std::string* getData() const override
+        {
+            return m_data;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment member function from
+        /// another StringView instance.
+        ///
+        /// \param view const StringView&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(const StringView& view)
+        {
+            m_data = view.m_data;
+            m_start = view.m_start;
+            m_len = view.m_len;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment member function from a
+        /// MutableStringView instance.
+        ///
+        /// \param view const MutableStringView&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(const MutableStringView& view)
+        {
+            m_data = view.m_data;
+            m_start = view.m_start;
+            m_len = view.m_len;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment member function from a
+        /// const std::string pointer.
+        ///
+        /// \param data const std::string*
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(const std::string* data)
+        {
+            if (!data)
+                return;
+
+            m_data = data;
+            m_start = 0;
+            m_len = m_data->length();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Override to clear the internal pointer
+        /// as well.
+        ///
+        /// \return virtual  void
+        ///
+        /////////////////////////////////////////////////
+        virtual inline void clear() override
+        {
+            m_data = nullptr;
+            m_start = 0;
+            m_len = 0;
+        }
+
+    public:
+        /////////////////////////////////////////////////
+        /// \brief StringView default constructor.
+        /////////////////////////////////////////////////
+        StringView() : StringViewBase(), m_data(nullptr) {}
+
+        /////////////////////////////////////////////////
+        /// \brief StringView constructor from a const
+        /// std::string pointer.
+        ///
+        /// \param data const std::string*
+        ///
+        /////////////////////////////////////////////////
+        StringView(const std::string* data) : StringView()
+        {
+            assign(data);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief StringView constructor from a const
+        /// std::string reference.
+        ///
+        /// \param data const std::string&
+        ///
+        /////////////////////////////////////////////////
+        StringView(const std::string& data) : StringView()
+        {
+            assign(&data);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief StringView copy constructor.
+        ///
+        /// \param view const StringView&
+        ///
+        /////////////////////////////////////////////////
+        StringView(const StringView& view) : StringView()
+        {
+            assign(view);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief StringView constructor from a
+        /// MutableStringView class instance.
+        ///
+        /// \param view const MutableStringView&
+        ///
+        /////////////////////////////////////////////////
+        StringView(const MutableStringView& view) : StringView()
+        {
+            assign(view);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief StringView move constructor.
+        ///
+        /// \param view StringView&&
+        ///
+        /////////////////////////////////////////////////
+        StringView(StringView&& view)
+        {
+            m_data = std::move(view.m_data);
+            m_start = std::move(view.m_start);
+            m_len = std::move(view.m_len);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator for another
+        /// StringView instance.
+        ///
+        /// \param view const StringView&
+        /// \return StringView&
+        ///
+        /////////////////////////////////////////////////
+        StringView& operator=(const StringView& view)
+        {
+            assign(view);
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator for a
+        /// MutableStringView class instance.
+        ///
+        /// \param view const MutableStringView&
+        /// \return StringView&
+        ///
+        /////////////////////////////////////////////////
+        StringView& operator=(const MutableStringView& view)
+        {
+            assign(view);
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator for a const
+        /// std::string pointer.
+        ///
+        /// \param data const std::string*
+        /// \return StringView&
+        ///
+        /////////////////////////////////////////////////
+        StringView& operator=(const std::string* data)
+        {
+            assign(data);
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator for a const
+        /// std::string reference.
+        ///
+        /// \param data const std::string&
+        /// \return StringView&
+        ///
+        /////////////////////////////////////////////////
+        StringView& operator=(const std::string& data)
+        {
+            assign(&data);
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Random access operator, returning a
+        /// const char reference.
+        ///
+        /// \param pos size_t
+        /// \return const char&
+        /// \remark No boundary checks are performed.
+        ///
+        /////////////////////////////////////////////////
+        inline const char& operator[](size_t pos) const
+        {
+            return m_data->operator[](m_start+pos);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function creates a new
+        /// StringView class instance using the selected
+        /// position and length as a new viewed part. The
+        /// position has to be part of the viewed section
+        /// of this instance. This function can be used
+        /// to replace std::string::substr.
+        ///
+        /// \param pos size_t
+        /// \param len size_t
+        /// \return StringView
+        ///
+        /////////////////////////////////////////////////
         StringView subview(size_t pos = 0, size_t len = std::string::npos) const
         {
             if (m_data && pos < m_len)
@@ -1000,115 +1996,8 @@ class StringView
             return StringView();
         }
 
-        size_t find(const std::string& findstr, size_t pos = 0) const
-        {
-            if (m_data)
-            {
-                size_t fnd = m_data->find(findstr, m_start + pos);
-
-                if (validAbsolutePosition(fnd))
-                    return fnd-m_start;
-            }
-
-            return std::string::npos;
-        }
-
-        size_t find(char c, size_t pos = 0) const
-        {
-            if (m_data)
-            {
-                size_t fnd = m_data->find(c, m_start + pos);
-
-                if (validAbsolutePosition(fnd))
-                    return fnd-m_start;
-            }
-
-            return std::string::npos;
-        }
-
-        size_t rfind(const std::string& findstr, size_t pos = std::string::npos) const
-        {
-            if (m_data)
-            {
-                pos = validizeLength(m_start, pos);
-                size_t fnd = m_data->rfind(findstr, m_start + pos);
-
-                if (validAbsolutePosition(fnd))
-                    return fnd-m_start;
-            }
-
-            return std::string::npos;
-        }
-
-        size_t rfind(char c, size_t pos = std::string::npos) const
-        {
-            if (m_data)
-            {
-                pos = validizeLength(m_start, pos);
-                size_t fnd = m_data->rfind(c, m_start + pos);
-
-                if (validAbsolutePosition(fnd))
-                    return fnd-m_start;
-            }
-
-            return std::string::npos;
-        }
-
-        size_t find_first_of(const std::string& findstr, size_t pos = 0) const
-        {
-            if (m_data)
-            {
-                size_t fnd = m_data->find_first_of(findstr, m_start + pos);
-
-                if (validAbsolutePosition(fnd))
-                    return fnd-m_start;
-            }
-
-            return std::string::npos;
-        }
-
-        size_t find_first_not_of(const std::string& findstr, size_t pos = std::string::npos) const
-        {
-            if (m_data)
-            {
-                size_t fnd = m_data->find_first_not_of(findstr, m_start + pos);
-
-                if (validAbsolutePosition(fnd))
-                    return fnd-m_start;
-            }
-
-            return std::string::npos;
-        }
-
-        size_t find_last_of(const std::string& findstr, size_t pos = std::string::npos) const
-        {
-            if (m_data)
-            {
-                pos = validizeLength(m_start, pos);
-                size_t fnd = m_data->find_last_of(findstr, m_start + pos);
-
-                if (validAbsolutePosition(fnd))
-                    return fnd-m_start;
-            }
-
-            return std::string::npos;
-        }
-
-        size_t find_last_not_of(const std::string& findstr, size_t pos = 0) const
-        {
-            if (m_data)
-            {
-                pos = validizeLength(m_start, pos);
-                size_t fnd = m_data->find_last_not_of(findstr, m_start + pos);
-
-                if (validAbsolutePosition(fnd))
-                    return fnd-m_start;
-            }
-
-            return std::string::npos;
-        }
-
 };
+
 
 /////////////////////////////////////////////////
 /// \brief This structure is central for managing
@@ -1124,6 +2013,27 @@ struct Indices
     VectorIndex row;
     VectorIndex col;
     string sCompiledAccessEquation;
+
+    Indices() { }
+    Indices(const Indices& _idx)
+    {
+        row = _idx.row;
+        col = _idx.col;
+        sCompiledAccessEquation = _idx.sCompiledAccessEquation;
+    }
+    Indices(Indices&& _idx)
+    {
+        row = std::move(_idx.row);
+        col = std::move(_idx.col);
+        sCompiledAccessEquation = std::move(_idx.sCompiledAccessEquation);
+    }
+    Indices& operator=(const Indices& _idx)
+    {
+        row = _idx.row;
+        col = _idx.col;
+        sCompiledAccessEquation = _idx.sCompiledAccessEquation;
+        return *this;
+    }
 };
 
 

@@ -832,11 +832,11 @@ void MemoryManager::melt(Memory* _mem, const string& sTable)
 /// dimension variables for the selected table to
 /// be used in expressions.
 ///
-/// \param sTableName const string&
+/// \param sTableName StringView
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool MemoryManager::updateDimensionVariables(const string& sTableName)
+bool MemoryManager::updateDimensionVariables(StringView sTableName)
 {
     // Determine the type of table
     if (sTableName != "string")

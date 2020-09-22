@@ -1411,6 +1411,32 @@ namespace NumeRe
         return sClusterName;
     }
 
+    map<string, Cluster>::const_iterator ClusterManager::mapStringViewFind(StringView view) const
+    {
+        for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
+        {
+            if (view == iter->first)
+                return iter;
+            else if (view < iter->first)
+                return mClusterMap.end();
+        }
+
+        return mClusterMap.end();
+    }
+
+    map<string, Cluster>::iterator ClusterManager::mapStringViewFind(StringView view)
+    {
+        for (auto iter = mClusterMap.begin(); iter != mClusterMap.end(); ++iter)
+        {
+            if (view == iter->first)
+                return iter;
+            else if (view < iter->first)
+                return mClusterMap.end();
+        }
+
+        return mClusterMap.end();
+    }
+
     // This member function detects, whether a cluster is used
     // in the current expression
     bool ClusterManager::containsClusters(const string& sCmdLine) const
@@ -1457,12 +1483,34 @@ namespace NumeRe
 
     // This member function returns true, if the passed cluster
     // identifier can be found in the internal map
+    bool ClusterManager::isCluster(StringView sCluster) const
+    {
+        if (mapStringViewFind(sCluster.subview(0, sCluster.find('{'))) != mClusterMap.end())
+            return true;
+
+        return false;
+    }
+
+    // This member function returns true, if the passed cluster
+    // identifier can be found in the internal map
     bool ClusterManager::isCluster(const string& sCluster) const
     {
         if (mClusterMap.find(sCluster.substr(0, sCluster.find('{'))) != mClusterMap.end())
             return true;
 
         return false;
+    }
+
+    // This member function returns a reference to the cluster indicated
+    // by the passed cluster identifier
+    Cluster& ClusterManager::getCluster(StringView sCluster)
+    {
+        auto iter = mapStringViewFind(sCluster);
+
+        if (iter == mClusterMap.end())
+            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster.to_string(), SyntaxError::invalid_position);
+
+        return iter->second;
     }
 
     // This member function returns a reference to the cluster indicated
@@ -1550,10 +1598,10 @@ namespace NumeRe
     // This member function updates the dimension variable
     // reserved for cluster accesses with the size of the
     // current accessed cluster
-    bool ClusterManager::updateClusterSizeVariables(const string& sCluster)
+    bool ClusterManager::updateClusterSizeVariables(StringView sCluster)
     {
         if (isCluster(sCluster))
-            dClusterElementsCount = getCluster(sCluster.substr(0, sCluster.find('{'))).size();
+            dClusterElementsCount = getCluster(sCluster.subview(0, sCluster.find('{'))).size();
         else
             dClusterElementsCount = 0.0;
 

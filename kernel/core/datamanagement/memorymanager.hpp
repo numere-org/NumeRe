@@ -70,6 +70,19 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		    return mCachesMap.find(sTable) != mCachesMap.end();
 		}
 
+		long long int mapStringViewFind(StringView view) const
+		{
+		    for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
+            {
+                if (view == iter->first)
+                    return iter->second;
+                else if (view < iter->first)
+                    return -1;
+            }
+
+            return -1;
+		}
+
 	public:
 		MemoryManager();
 		~MemoryManager();
@@ -79,7 +92,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 		// Variables for the parser
 		double tableLinesCount;
 		double tableColumnsCount;
-        bool updateDimensionVariables(const std::string& sTableName);
+        bool updateDimensionVariables(StringView sTableName);
 
 
         // OTHER METHODS
@@ -283,12 +296,32 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
 		// DIMENSION ACCESS METHODS
+		inline long long int getLines(StringView sTable, bool _bFull = false) const
+		{
+		    long long int idx = mapStringViewFind(sTable);
+
+		    if (idx >= 0)
+                return vMemory[idx]->getLines(_bFull);
+
+            return 0;
+		}
+
 		inline long long int getLines(const std::string& sTable, bool _bFull = false) const
 		{
 		    auto iter = mCachesMap.find(sTable);
 
 		    if (iter != mCachesMap.end())
                 return vMemory[iter->second]->getLines(_bFull);
+
+            return 0;
+		}
+
+		inline long long int getCols(StringView sTable, bool _bFull = false) const
+		{
+		    long long int idx = mapStringViewFind(sTable);
+
+		    if (idx >= 0)
+                return vMemory[idx]->getCols(_bFull);
 
             return 0;
 		}

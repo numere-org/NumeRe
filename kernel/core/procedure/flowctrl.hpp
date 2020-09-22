@@ -124,7 +124,7 @@ class FlowCtrl
         int while_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int if_fork(int nth_Cmd = 0, int nth_Loop = -1);
         int switch_fork(int nth_Cmd = 0, int nth_Loop = -1);
-        int calc(string sLine, int nthCmd, string sBlock);
+        int calc(string sLine, int nthCmd);
         value_type* evalHeader(int& nNum, string& sHeadExpression, bool bIsForHead, int nth_Cmd);
         int evalLoopFlowCommands(int __j, int nth_loop);
         int evalForkFlowCommands(int __j, int nth_loop);

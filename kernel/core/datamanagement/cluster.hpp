@@ -262,6 +262,8 @@ namespace NumeRe
             map<string, Cluster> mClusterMap;
 
             string validateClusterName(const string& sCluster);
+            map<string, Cluster>::iterator mapStringViewFind(StringView view);
+            map<string, Cluster>::const_iterator mapStringViewFind(StringView view) const;
 
         public:
             ClusterManager() {dClusterElementsCount = 0.0;}
@@ -270,7 +272,9 @@ namespace NumeRe
             double dClusterElementsCount;
 
             bool containsClusters(const string& sCmdLine) const;
+            bool isCluster(StringView sCluster) const;
             bool isCluster(const string& sCluster) const;
+            Cluster& getCluster(StringView sCluster);
             Cluster& getCluster(const string& sCluster);
             const Cluster& getCluster(const string& sCluster) const;
             Cluster& newCluster(const string& sCluster);
@@ -278,7 +282,7 @@ namespace NumeRe
             void removeCluster(const string& sCluster);
             string createTemporaryCluster();
             void removeTemporaryClusters();
-            bool updateClusterSizeVariables(const string& sCluster);
+            bool updateClusterSizeVariables(StringView sCluster);
 
             const map<string, Cluster>& getClusterMap() const
             {

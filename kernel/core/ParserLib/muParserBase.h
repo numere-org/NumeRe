@@ -42,6 +42,7 @@
 #include "muParserError.h"
 
 class StringView;
+class MutableStringView;
 
 namespace mu
 {
@@ -106,7 +107,7 @@ namespace mu
 
 			void replaceLocalVars(std::string& sLine);
 			bool checkDelimiter(StringView sLine);
-			void evaluateVectorExpansion(std::string sSubExpr, std::vector<double>& vResults);
+			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<double>& vResults);
 			void expandVector(double dFirst, double dLast, double dIncrement, std::vector<double>& vResults);
 			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults);
 
@@ -131,11 +132,11 @@ namespace mu
 			size_t HasCachedAccess();
 			void DisableAccessCaching();
 			bool CanCacheAccess();
-			CachedDataAccess GetCachedAccess(size_t nthAccess);
+			const CachedDataAccess& GetCachedAccess(size_t nthAccess);
 			void CacheCurrentEquation(const std::string& sEquation);
-			std::string GetCachedEquation();
+			const std::string& GetCachedEquation() const;
 			void CacheCurrentTarget(const std::string& sEquation);
-			std::string GetCachedTarget();
+			const std::string& GetCachedTarget() const;
 			int IsValidByteCode(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
 			void DeclareAsInvalid(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
 			void DeclareAsDelayed(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
@@ -160,9 +161,9 @@ namespace mu
 			int GetNumResults() const;
 
 			void SetExpr(StringView a_sExpr);
-			std::string PreEvaluateVectors(std::string sExpr);
-			bool ResolveVectorsInMultiArgFunc(std::string& sExpr, size_t& nPos);
-			size_t FindMultiArgFunc(const std::string& sExpr, size_t nPos, std::string& sMultArgFunc);
+			MutableStringView PreEvaluateVectors(MutableStringView sExpr);
+			bool ResolveVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos);
+			size_t FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc);
 			void SetVarFactory(facfun_type a_pFactory, void* pUserData = NULL);
 
 			void SetDecSep(char_type cDecSep);
@@ -388,6 +389,7 @@ namespace mu
 			// items merely used for caching state information
 			mutable valbuf_type m_vStackBuffer; ///< This is merely a buffer used for the stack in the cmd parsing routine
 			mutable int m_nFinalResultIdx;
+			const std::string EMPTYSTRING;
 	};
 
 } // namespace mu

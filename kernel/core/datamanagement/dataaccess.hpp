@@ -40,7 +40,8 @@ bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut = 
 double getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
 Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 
-Indices getIndices(const std::string& sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
+Indices getIndices(StringView sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option) __attribute__ ((deprecated));
+void getIndices(StringView sCmd, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
 
 inline bool isValidIndexSet(const Indices& _idx)
 {

@@ -149,7 +149,7 @@ bool DataAccessParser::isCluster()
 
 
 static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs);
-static string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option);
+static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
 static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, const Settings& _option, bool isCluster);
 static string createMafDataAccessString(const string& sAccessString, Parser& _parser);
@@ -515,16 +515,15 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 /// \return string
 ///
 /////////////////////////////////////////////////
-static string handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option)
+static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
-	mu::CachedDataAccess _access;
 	Indices _idx;
 	bool isCluster = false;
 
 	for (size_t i = 0; i < _parser.HasCachedAccess(); i++)
 	{
 		// Get the current cached data access
-		_access = _parser.GetCachedAccess(i);
+		const mu::CachedDataAccess& _access = _parser.GetCachedAccess(i);
 
 		isCluster = _data.isCluster(_access.sAccessEquation);
 

@@ -461,39 +461,29 @@ namespace mu
 		}
 	}
 
-	//---------------------------------------------------------------------------
-	/** \brief Set the formula.
-	    \param a_strFormula Formula as string_type
-	    \throw ParserException in case of syntax errors.
 
-	    Triggers first time calculation thus the creation of the bytecode and
-	    scanning of used variables.
-	*/
+    /////////////////////////////////////////////////
+    /// \brief Set the expression. Triggers first
+    /// time calculation thus the creation of the
+    /// bytecode and scanning of used variables.
+    ///
+    /// \param a_sExpr StringView
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
 	void ParserBase::SetExpr(StringView a_sExpr)
 	{
-		// Check locale compatibility
-		//std::locale loc;
-        //
-		//if (m_pTokenReader->GetArgSep() == std::use_facet<numpunct<char_type> >(loc).decimal_point())
-		//	Error(ecLOCALE);
-
-		// <ibg> 20060222: Bugfix for Borland-Kylix:
-		// adding a space to the expression will keep Borlands KYLIX from going wild
-		// when calling tellg on a stringstream created from the expression after
-		// reading a value at the end of an expression. (mu::Parser::IsVal function)
-		// (tellg returns -1 otherwise causing the parser to ignore the value)
-		//string_type sBuf(a_sExpr + " ");
-
 		string_type st;
-		// Perform the pre-evaluation of the vectors first
-		if ((a_sExpr.find('{') != string::npos && a_sExpr.find('}', a_sExpr.find('{')) != string::npos) || ContainsVectorVars(a_sExpr, true))
-        {
-            st = PreEvaluateVectors(a_sExpr.to_string());
-			a_sExpr = st;
-        }
 
-		if (a_sExpr.find('{') != string::npos || a_sExpr.find('}') != string::npos)
-			Error(ecMISSING_PARENS, a_sExpr.to_string(), std::min(a_sExpr.find('{'), a_sExpr.find('}')), "{}");
+		// Perform the pre-evaluation of the vectors first
+		if (a_sExpr.find_first_of("{}") != string::npos || ContainsVectorVars(a_sExpr, true))
+        {
+            st = a_sExpr.to_string();
+            a_sExpr = PreEvaluateVectors(st);
+
+            if (a_sExpr.find_first_of("{}") != string::npos)
+                Error(ecMISSING_PARENS, a_sExpr.to_string(), a_sExpr.find_first_of("{}"), "{}");
+        }
 
 		// Now check, whether the pre-evaluated formula was already parsed into the bytecode
 		// -> Return, if that is true
@@ -519,14 +509,17 @@ namespace mu
 	}
 
 
-    /** \brief Pre-evaluate vectors
-     *
-     * \param sExpr std::string containing the vectors
-     * \return void
-     *
-     * This function pre-evaluate all vectors, which are contained in the expression in sExpr.
-     */
-	std::string ParserBase::PreEvaluateVectors(std::string sExpr)
+    /////////////////////////////////////////////////
+    /// \brief This function pre-evaluates all
+    /// vectors, which are contained in the
+    /// expression passed through sExpr.
+    ///
+    /// \param sExpr MutableStringView containing the
+    /// expression
+    /// \return MutableStringView
+    ///
+    /////////////////////////////////////////////////
+	MutableStringView ParserBase::PreEvaluateVectors(MutableStringView sExpr)
 	{
 	    // Pause the loop mode if it is active
 		PauseLoopMode();
@@ -544,7 +537,7 @@ namespace mu
 
             while ((match = sExpr.find(iter->first, match)) != string::npos)
             {
-                if (!match || checkDelimiter(sExpr.substr(match-1, iter->first.length()+2)))
+                if (!match || checkDelimiter(sExpr.subview(match-1, iter->first.length()+2)))
                     ResolveVectorsInMultiArgFunc(sExpr, match);
 
                 match++;
@@ -563,19 +556,16 @@ namespace mu
                 vResults.clear();
 
                 // Find the matching brace for the current vector brace
-				size_t j = getMatchingParenthesis(sExpr.substr(i));
+				size_t j = getMatchingParenthesis(sExpr.subview(i));
 
 				if (j != std::string::npos)
 					j += i; // if one is found, add the current position
 
-			    if (j != std::string::npos && sExpr.substr(i, j - i).find(':') != std::string::npos)
+			    if (j != std::string::npos && sExpr.subview(i, j - i).find(':') != std::string::npos)
 				{
 				    // This is vector expansion: e.g. "{1:10}"
-				    // Get the expression
-					std::string sSubExpr = sExpr.substr(i + 1, j - i - 1);
-
-					// evaluate the expansion
-					evaluateVectorExpansion(sSubExpr, vResults);
+				    // Get the expression and evaluate the expansion
+					evaluateVectorExpansion(sExpr.subview(i + 1, j - i - 1), vResults);
 
 					// Store the result in a new temporary vector
                     string sVectorVarName = CreateTempVectorVar(vResults);
@@ -587,7 +577,7 @@ namespace mu
 					{
 					    // This is a normal vector, e.g. "{1,2,3}"
 					    // Set the sub expression and evaluate it
-						SetExpr(sExpr.substr(i + 1, j - i - 1));
+						SetExpr(sExpr.subview(i + 1, j - i - 1));
 						int nResults;
 						value_type* v = Eval(nResults);
 
@@ -608,7 +598,7 @@ namespace mu
 						{
 						    // This is a target vector
 						    // Store the variable names
-							sTargets = sExpr.substr(i + 1, j - i - 1);
+							sTargets = sExpr.subview(i + 1, j - i - 1).to_string();
 
 							// Set the special target vector variable
 							SetVectorVar("_~TRGTVCT[~]", vResults);
@@ -633,15 +623,17 @@ namespace mu
 		return sExpr;
 	}
 
-    /** \brief Evaluates the vector expansion
-     *
-     * \param sSubExpr std::string&
-     * \param vResults vector<double>&
-     * \return void
-     *
-     * This function evaluates the vector expansion, e.g. "{1:4}" = {1, 2, 3, 4}
-     */
-	void ParserBase::evaluateVectorExpansion(std::string sSubExpr, vector<double>& vResults)
+
+    /////////////////////////////////////////////////
+    /// \brief This function evaluates the vector
+    /// expansion, e.g. "{1:4}" = {1, 2, 3, 4}.
+    ///
+    /// \param sSubExpr MutableStringView
+    /// \param vResults vector<double>&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+	void ParserBase::evaluateVectorExpansion(MutableStringView sSubExpr, vector<double>& vResults)
 	{
 		int nResults = 0;
 		value_type* v = nullptr;
@@ -651,7 +643,7 @@ namespace mu
 		for (size_t i = 0; i < sSubExpr.length(); i++)
 		{
 			if (sSubExpr[i] == '(' || sSubExpr[i] == '[' || sSubExpr[i] == '{')
-				i += getMatchingParenthesis(sSubExpr.substr(i));
+				i += getMatchingParenthesis(sSubExpr.subview(i));
 
 			if (sSubExpr[i] == ':')
 			{
@@ -672,7 +664,7 @@ namespace mu
 					isExpansion = 0;
 
 				if (isExpansion == 1)
-					throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sSubExpr, i);
+					throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sSubExpr.to_string(), i);
 			}
 		}
 
@@ -697,6 +689,7 @@ namespace mu
 			}
 		}
 	}
+
 
     /** \brief This function expands the vector.
      *
@@ -745,18 +738,19 @@ namespace mu
 		}
 	}
 
+
     /////////////////////////////////////////////////
     /// \brief This private function will try to find
     /// a surrounding multi-argument function,
     /// resolve the arguments, apply the function and
     /// store the result as a new vector.
     ///
-    /// \param sExpr std::string&
+    /// \param sExpr MutableStringView&
     /// \param nPos size_t&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-	bool ParserBase::ResolveVectorsInMultiArgFunc(std::string& sExpr, size_t& nPos)
+	bool ParserBase::ResolveVectorsInMultiArgFunc(MutableStringView& sExpr, size_t& nPos)
 	{
         string sMultiArgFunc;
 	    // Try to find a multi-argument function. The size_t will store the start position of the function name
@@ -766,12 +760,12 @@ namespace mu
         {
             // This is part of a multi-argument function
             // Find the matching parenthesis for the multi-argument function
-            size_t nClosingParens = getMatchingParenthesis(sExpr.substr(nMultiArgParens)) + nMultiArgParens;
+            size_t nClosingParens = getMatchingParenthesis(sExpr.subview(nMultiArgParens)) + nMultiArgParens;
 
             // Set the argument of the function as expression and evaluate it recursively
             vector<double> vResults;
             int nResults;
-            SetExpr(sExpr.substr(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
+            SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
             value_type* v = Eval(nResults);
 
             // Apply the needed multi-argument function
@@ -792,15 +786,21 @@ namespace mu
         return false;
 	}
 
-    /** \brief This function searches for the first multi-argument function
-     *
-     * \param sExpr const std::string&
-     * \param nPos size_t
-     * \param sMultArgFunc std::string&
-     * \return size_t
-     *
-     */
-	size_t ParserBase::FindMultiArgFunc(const std::string& sExpr, size_t nPos, std::string& sMultArgFunc)
+
+    /////////////////////////////////////////////////
+    /// \brief This function searches for the first
+    /// multi-argument function found in the passed
+    /// expression.
+    ///
+    /// \param sExpr StringView
+    /// \param nPos size_t
+    /// \param sMultArgFunc std::string& will contain
+    /// the name of the function
+    /// \return size_t the position of the opening
+    /// parenthesis
+    ///
+    /////////////////////////////////////////////////
+	size_t ParserBase::FindMultiArgFunc(StringView sExpr, size_t nPos, std::string& sMultArgFunc)
 	{
 	    // Walk through the expression
 		for (int i = nPos; i >= 2; i--)
@@ -809,7 +809,7 @@ namespace mu
 			if (sExpr[i] == '(' && isalpha(sExpr[i - 1]))
 			{
 			    // Get the matching parenthesis
-				size_t nParPos = getMatchingParenthesis(sExpr.substr(i));
+				size_t nParPos = getMatchingParenthesis(sExpr.subview(i));
 
 				if (nParPos == string::npos)
 					return std::string::npos;
@@ -823,7 +823,7 @@ namespace mu
                 // Find the last character before the alphabetic part
 				size_t nSep = sExpr.find_last_of(" +-*/(=:?&|<>!%{^", i - 1) + 1;
 				// Extract the function
-				std::string sFunc = sExpr.substr(nSep, i - nSep);
+				std::string sFunc = sExpr.subview(nSep, i - nSep).to_string();
 
 				// Exclude the following functions
 				if (sFunc == "polynomial")
@@ -3226,10 +3226,10 @@ namespace mu
     /// passed position.
     ///
     /// \param nthAccess size_t
-    /// \return CachedDataAccess
+    /// \return const CachedDataAccess&
     ///
     /////////////////////////////////////////////////
-    CachedDataAccess ParserBase::GetCachedAccess(size_t nthAccess)
+    const CachedDataAccess& ParserBase::GetCachedAccess(size_t nthAccess)
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode && vDataAccessCache[nthLoopElement].size() > nthAccess)
             return vDataAccessCache[nthLoopElement][nthAccess];
@@ -3257,15 +3257,15 @@ namespace mu
     /// \brief Returns the stored equation for this
     /// position.
     ///
-    /// \return string
+    /// \return const std::string&
     ///
     /////////////////////////////////////////////////
-    string ParserBase::GetCachedEquation()
+    const std::string& ParserBase::GetCachedEquation() const
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
             return vCachedEquation[nthLoopElement];
 
-        return "";
+        return EMPTYSTRING;
     }
 
 
@@ -3288,15 +3288,15 @@ namespace mu
     /// \brief Returns the stored target equation for
     /// this position.
     ///
-    /// \return string
+    /// \return const std::string&
     ///
     /////////////////////////////////////////////////
-    string ParserBase::GetCachedTarget()
+    const std::string& ParserBase::GetCachedTarget() const
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
             return vCachedTarget[nthLoopElement];
 
-        return "";
+        return EMPTYSTRING;
     }
 
 
@@ -3704,22 +3704,10 @@ namespace mu
     /////////////////////////////////////////////////
 	bool ParserBase::checkDelimiter(StringView sLine)
 	{
-		bool isDelimitedLeft = false;
-		bool isDelimitedRight = false;
 		static std::string sDelimiter = "+-*/ ()={}^&|!<>,\\%#~[]:";
 
-		// --> Versuche jeden Delimiter, der dir bekannt ist und setze bei einem Treffer den entsprechenden BOOL auf TRUE <--
-		for (unsigned int i = 0; i < sDelimiter.length(); i++)
-		{
-			if (sDelimiter[i] == sLine.front())
-				isDelimitedLeft = true;
-
-			if (sDelimiter[i] == sLine.back())
-				isDelimitedRight = true;
-		}
-
 		// --> Gib die Auswertung dieses logischen Ausdrucks zurueck <--
-		return (isDelimitedLeft && isDelimitedRight);
+		return sDelimiter.find(sLine.front()) != std::string::npos && sDelimiter.find(sLine.back()) != std::string::npos;
 	}
 
 
@@ -3750,7 +3738,6 @@ namespace mu
 				}
 			}
 		}
-		return;
 	}
 
 } // namespace mu

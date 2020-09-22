@@ -30,3 +30,5 @@ Cleaned	If the debugger has finished, the yellow line indicator is now removed a
 Fixed	Large tables made NumeRe stuck after each entered command in the terminal. Multi-argument functions were slow in these cases as well. This has been resolved.
 Fixed	The "throw" command now completely supports string operations.
 Fixed	The autocompletion of procedures now works as expected even if no procedures are available in the "main" namespace.
+Applied	Greatly enhanced calculation speed in some circumstances.
+Added	Created a "Tell me, what you want to do" Toolbox and reworked all search bars.

@@ -20,47 +20,43 @@
 #include "../utils/tools.hpp"
 #include <vector>
 
-// static const variable instances for
-// special index variables
-static const char* IDXNONE = "<<N>>";
-static const char* IDXEMPTY = "<<E>>";
-
 using namespace std;
 using namespace mu;
 
-static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, const string& sArgument, const string& sCmd);
+static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, StringView sArgument, StringView sCmd);
 static void extractIndexList(StringView sArgument, vector<StringView>& vLines, vector<StringView>& vCols);
 static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex);
-static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, const string& sCmd);
+static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sCmd);
 static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vIndex, string& sIndexExpressions, vector<int>& vIndexNumbers, int sign);
-static void expandIndexVectors(Indices& _idx, MemoryManager& _data, const string& sCmd);
+static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView sCmd);
 static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data);
-static bool isCandidateForCasuals(vector<StringView>& vLines, vector<StringView>& vCols);
-/*
- * --> Gibt DATENELEMENT-Indices als Ints in einem Indices-Struct zurueck <--
- * --> Index = -1, falls der Index nicht gefunden wurde/kein DATENELEMENT uebergeben wurde <--
- * --> Index = -2, falls der Index den gesamten Bereich erlaubt <--
- * --> Index = -3, falls der Index eine Stringreferenz ist <--
- * --> Gibt alle angegeben Indices-1 zurueck <--
- */
-Indices getIndices(const string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+
+
+Indices getIndices(StringView sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     Indices _idx;
-    string sTableName = "";
+    getIndices(sCmd, _idx, _parser, _data, _option);
+    return _idx;
+}
+
+void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager& _data, const Settings& _option)
+{
+    StringView sTableName;
+    StringView sIndices;
     size_t nPos = 0;
 
     // Check, whether indices are available
     if ((nPos = sCmd.find_first_of("({")) == string::npos)
-        return _idx;
+        return;
 
     // Find parenthesis position and get the matching closing parenthesis
-    size_t nClosingParens = getMatchingParenthesis(sCmd.substr(nPos));
+    size_t nClosingParens = getMatchingParenthesis(sCmd.subview(nPos));
 
     // Return, if the closing parenthesis is missing
     if (nClosingParens == string::npos)
-        return _idx;
+        return;
 
-    sTableName.assign(sCmd.begin(), sCmd.begin()+nPos);
+    sTableName = sCmd.subview(0, nPos);
 
     // Remove leading whitespaces and operators
     for (size_t i = 0; i < sTableName.length(); i++)
@@ -71,7 +67,7 @@ Indices getIndices(const string& sCmd, Parser& _parser, MemoryManager& _data, co
         if (sTableName[i] == '_' || isalpha(sTableName[i]))
         {
             if (i)
-                sTableName.erase(0, i);
+                sTableName.trim_front(i);
 
             break;
         }
@@ -81,19 +77,24 @@ Indices getIndices(const string& sCmd, Parser& _parser, MemoryManager& _data, co
     //if (sTableName.find_first_of(" +-*/!=&|<>^?:%") != string::npos)
     //    sTableName.erase(0, sTableName.find_last_of(" +-*/!=&|<>^?:%")+1);
 
-    _idx.sCompiledAccessEquation.assign(sCmd.begin()+nPos+1, sCmd.begin()+nPos+nClosingParens);// = sCmd.substr(nPos + 1, nClosingParens - 1);
+    sIndices = sCmd.subview(nPos+1, nClosingParens-1);
 
     // Remove not necessary white spaces
-    StripSpaces(_idx.sCompiledAccessEquation);
+    sIndices.strip();
 
     // This is the handler for the abbreviation TABLE() == TABLE(:,:)
-    if (!_idx.sCompiledAccessEquation.length())
+    if (!sIndices.length())
     {
         _idx.row = VectorIndex(0LL, VectorIndex::OPEN_END);
         _idx.col = VectorIndex(0LL, VectorIndex::OPEN_END);
-        return _idx;
+        return;
     }
+    else
+        _idx.sCompiledAccessEquation.assign(sIndices.begin(), sIndices.end());
 
+        //_idx.row.setIndex(0,0);
+        //_idx.col.setIndex(0,0);
+        //return;
     // If the argument contains tables, get their values. This leads to a recursion!
     if (_data.containsTablesOrClusters(_idx.sCompiledAccessEquation))
         getDataElements(_idx.sCompiledAccessEquation, _parser, _data, _option);
@@ -104,14 +105,12 @@ Indices getIndices(const string& sCmd, Parser& _parser, MemoryManager& _data, co
     else
         _data.updateClusterSizeVariables(sTableName);
 
-       //_idx.row.setIndex(0,0);
-       //_idx.col.setIndex(0,0);
-       //return _idx;
+        //_idx.row.setIndex(0,0);
+        //_idx.col.setIndex(0,0);
+        //return;
 
     // If the argument contains a comma, handle it as a usual index list
     handleArgumentForIndices(_idx, _parser, _data, _idx.sCompiledAccessEquation, sCmd);
-
-    return _idx;
 }
 
 
@@ -119,13 +118,16 @@ Indices getIndices(const string& sCmd, Parser& _parser, MemoryManager& _data, co
  *   LOCAL FUNCTIONS FOR parser_getIndices()
  */
 
-static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, const string& sArgument, const string& sCmd)
+static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, StringView sArgument, StringView sCmd)
 {
     vector<StringView> vLines;
     vector<StringView> vCols;
 
     // extract the (textual) indices from the argument list and store it in sI and sJ
     extractIndexList(sArgument, vLines, vCols);
+        //_idx.row.setIndex(0,0);
+        //_idx.col.setIndex(0,0);
+        //return;
 
     // Detect, whether the line indices are candidates
     // for vectors
@@ -134,9 +136,6 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManag
         // Try to match the textual indices to vectors
         handleIndexVectors(_parser, _idx.row, vLines.front());
     }
-        _idx.row.setIndex(0,0);
-        _idx.col.setIndex(0,0);
-        return;
 
     // Detect, whether the column indices are candidates
     // for vectors
@@ -147,7 +146,7 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManag
     }
 
     // Ensure that the indices are casuals and no indices
-    if (isCandidateForCasuals(vLines, vCols))
+    if (vLines.size() > 1 || vCols.size() > 1)
     {
         // Handle the casual indices
         handleCasualIndices(_parser, _idx, vLines, vCols, sCmd);
@@ -166,12 +165,12 @@ static void extractIndexList(StringView sCols, vector<StringView>& vLines, vecto
     // Split line and column indices at
     // the comma (if it is available). Otherwise
     // only the line indices are available
-    StringView sLines = getNextViewedArgument(sCols);
+    StringView sLines(getNextViewedArgument(sCols));
 
     bool openEnd = sLines.back() == ':';
 
     // Split the line indices
-    vLines.push_back(std::move(getNextViewedIndex(sLines)));
+    vLines.push_back(getNextViewedIndex(sLines));
 
     sLines.strip();
 
@@ -181,14 +180,14 @@ static void extractIndexList(StringView sCols, vector<StringView>& vLines, vecto
         vLines.push_back(StringView());
 
     // If the column indices are available,
-    // split them also. Otherwise use the
-    // <<EMPTY>> tag. It's possible that the
+    // split them also. Otherwise use an
+    // empty StringView instance. It's possible that the
     // column indices are more than two.
     if (sCols.length())
     {
         openEnd = sCols.back() == ':';
 
-        vCols.push_back(std::move(getNextViewedIndex(sCols)));
+        vCols.push_back(getNextViewedIndex(sCols));
 
         // As long as there's a column index
         // available, separate it here
@@ -202,19 +201,6 @@ static void extractIndexList(StringView sCols, vector<StringView>& vLines, vecto
     }
     else
         vCols.push_back(StringView());
-
-    // Ensure that the indices are not only whitespaces
-    /*for (size_t i = 0; i < vLines.size(); i++)
-    {
-        if (!vLines[i].length())
-            vLines[i] = IDXEMPTY;
-    }
-
-    for (size_t i = 0; i < vCols.size(); i++)
-    {
-        if (!vCols[i].length())
-            vCols[i] = IDXEMPTY;
-    }*/
 }
 
 // This function will evaluate the indices and it tries to match it to a vector
@@ -270,7 +256,7 @@ static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vInd
 }
 
 // This function will evaluate all indices at once and store them into the Indices object
-static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, const string& sCmd)
+static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sCmd)
 {
     value_type* v = 0;
     int nResults = 0;
@@ -295,7 +281,7 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
 
         // check whether the number of the results is matching
         if ((size_t)nResults != vIndexNumbers.size())
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position);
 
         // map the results to their assignments
         for (int i = 0; i < nResults; i++)
@@ -303,7 +289,7 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
             if (isinf(v[i])) // infinity => last possible index
                 v[i] = -1; // only -1 because it will be decremented in the following lines
             else if (isnan(v[i]) || intCast(v[i]) <= 0)
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position);
 
             if (vIndexNumbers[i] > 0)
                 _idx.row.setIndex(vIndexNumbers[i] - 1, intCast(v[i]) - 1);
@@ -314,24 +300,23 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
 }
 
 // This function will expand casual indices into vectors
-static void expandIndexVectors(Indices& _idx, MemoryManager& _data, const string& sCmd)
+static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView sCmd)
 {
     // Get the cache name from the command string
     // should now only contain the name of the table
-    string sCache = sCmd.substr(0, sCmd.find_first_of("({"));
-    bool isCluster = sCmd.back() == '{';
+    StringView sCache = sCmd.subview(0, sCmd.find_first_of("({"));
+    bool isCluster = sCache.back() == '{';
 
-    // remove leading whitespaces
-    if (sCache.find(' ') != string::npos)
-        sCache.erase(0, sCache.rfind(' ') + 1);
+    // remove whitespaces
+    sCache.strip();
 
     // check, whether it exists
     if (!sCache.length())
-        throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd.to_string(), SyntaxError::invalid_position);
 
     // Ensure that the indices are valid
     if (!_idx.row.isValid() || !_idx.col.isValid())
-        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position);
 
     // Is it the "string" object?
     if (sCache == "string")
@@ -341,8 +326,8 @@ static void expandIndexVectors(Indices& _idx, MemoryManager& _data, const string
     }
 
     // If the cache is not really a cache
-    if (!isCluster && !_data.isTable(sCache))
-        throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd, SyntaxError::invalid_position);
+    if (!isCluster && !_data.isTable(sCache.to_string()))
+        throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd.to_string(), SyntaxError::invalid_position);
 }
 
 // This static function expands the indices into vectors, if the
@@ -358,11 +343,5 @@ static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data)
     {
         _idx.col.setRange(0, _data.getStringCols()-1);
     }
-}
-
-// This function will ensure that at least one index is a casual one
-static bool isCandidateForCasuals(vector<StringView>& vLines, vector<StringView>& vCols)
-{
-    return (vLines.size() > 1 || vCols.size() > 1);
 }
 
