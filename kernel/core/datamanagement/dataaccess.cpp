@@ -204,8 +204,12 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 	{
 	    isClusterCandidate(sLine, sCache, false);
 
-		// --> Ist links vom ersten "cache(" ein "=" oder ueberhaupt ein "=" im gesamten Ausdruck? <--
-		eq_pos = sLine.find("=");
+		// Only try to find the position of the equality
+		// sign, if the line does not start with a minus. In
+		// these cases, it is most assured a parameter string
+		// full of equality signs.
+        if (sLine[sLine.find_first_not_of(' ')] != '-')
+            eq_pos = sLine.find('=');
 
 		if (eq_pos == string::npos              // gar kein "="?
             || !_data.containsTablesOrClusters(sLine.substr(0, eq_pos))   // nur links von "cache("?
@@ -1321,7 +1325,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 {
     // Do nothing, if the current line does not contain
     // an assignment operator
-    if (sLine.find('=') == string::npos)
+    if (sLine.find('=') == string::npos || sLine[sLine.find_first_not_of(' ')] == '-')
         return false;
 
     size_t nQuotes = 0;
@@ -1340,19 +1344,28 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
         // name
         if (!(nQuotes % 2) && sLine[i] == '{' && (sLine[i-1] == '_' || isalnum(sLine[i-1])))
         {
+            size_t start = 0;
+
+            // Find the starting position
+            for (int j = i-1; j >= 0; j--)
+            {
+                if (!isalnum(sLine[j]) && sLine[j] != '_' && sLine[j] != '~')
+                    start = j+1;
+            }
+
             // Extract the cluster including its braces
-            sCluster = sLine.substr(0, getMatchingParenthesis(sLine.substr(i))+i+1);
+            sCluster = sLine.substr(start, getMatchingParenthesis(sLine.substr(i))+(i-start)+1);
 
             // If the command line shall be splitted, do that
             // here
             if (doCut)
             {
-                sLine.erase(0, sCluster.length());
+                sLine.erase(start, sCluster.length());
 
                 size_t nextCharPos = sLine.find_first_not_of(' ');
 
                 if (nextCharPos != string::npos && sLine[nextCharPos] == '=' && sLine[nextCharPos+1] != '=')
-                    sLine.erase(0, nextCharPos + 1);
+                    sLine.erase(start, nextCharPos + 1);
             }
 
             StripSpaces(sCluster);

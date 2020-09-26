@@ -920,7 +920,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
 /////////////////////////////////////////////////
 value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsForHead, int nth_Cmd)
 {
-    value_type* v = nullptr;
+    int nCurrentCalcType = nCalcType[nth_Cmd];
     string sCache = "";
 
     // Update the parser index, if the loop parsing
@@ -932,13 +932,11 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
     if (!bFunctionsReplaced)
     {
         if (!_functionRef->call(sHeadExpression))
-        {
             throw SyntaxError(SyntaxError::FUNCTION_ERROR, sHeadExpression, SyntaxError::invalid_position);
-        }
     }
 
-    // Call procedures, if necessary
-    if (sHeadExpression.find("$") != string::npos)
+    // Include procedure and plugin calls
+    if (nJumpTable[nth_Cmd][PROCEDURE_INTERFACE])
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
@@ -960,111 +958,91 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
             _parserRef->PauseLoopMode(false);
             _parserRef->LockPause(false);
         }
+
+        if (nReturn == -2 || nReturn == 2)
+            nJumpTable[nth_Cmd][PROCEDURE_INTERFACE] = 1;
+        else
+            nJumpTable[nth_Cmd][PROCEDURE_INTERFACE] = 0;
     }
 
     // Catch and evaluate all data and cache calls
-    if (_dataRef->containsTablesOrClusters(sHeadExpression) && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+    if (nCurrentCalcType & CALCTYPE_DATAACCESS || !nCurrentCalcType)
     {
-        if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess() && !_parserRef->GetCachedEquation().length())
-            _parserRef->SetCompiling(true);
-
-        sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef, *_optionRef);
-
-        //if (sCache.length())
-        //    bWriteToCache = true;
-
-        if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
+        if ((nCurrentCalcType && !(nCurrentCalcType & CALCTYPE_STRING))
+            || (_dataRef->containsTablesOrClusters(sHeadExpression)
+                && !NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression)))
         {
-            _parserRef->CacheCurrentEquation(sHeadExpression);
-            _parserRef->CacheCurrentTarget(sCache);
-        }
+            if (!nCurrentCalcType)
+                nCalcType[nth_Cmd] |= CALCTYPE_DATAACCESS;
 
-        _parserRef->SetCompiling(false);
-        //if (!bLockedPauseMode && bUseLoopParsingMode)
-        //    _parserRef->PauseLoopMode();
-        //
-        //// Handle calls to an arbitrary "CACHE()"
-        //if (_dataRef->containsTablesOrClusters(sHeadExpression))
-        //{
-        //
-        //
-        //    for (auto iter = _dataRef->getTableMap().begin(); iter != _dataRef->getTableMap().end(); ++iter)
-        //    {
-        //        if (sHeadExpression.find(iter->first + "(") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first + "(")))
-        //        {
-        //            replaceDataEntities(sHeadExpression, iter->first + "(", *_dataRef, *_parserRef, *_optionRef, true);
-        //        }
-        //    }
-        //
-        //    for (auto iter = _dataRef->getClusterMap().begin(); iter != _dataRef->getClusterMap().end(); ++iter)
-        //    {
-        //        if (sHeadExpression.find(iter->first + "{") != string::npos && !isInQuotes(sHeadExpression, sHeadExpression.find(iter->first + "{")))
-        //        {
-        //            replaceDataEntities(sHeadExpression, iter->first + "{", *_dataRef, *_parserRef, *_optionRef, true);
-        //        }
-        //    }
-        //
-        //}
-        //
-        //if (!bLockedPauseMode && bUseLoopParsingMode)
-        //    _parserRef->PauseLoopMode(false);
+            if (!_parserRef->HasCachedAccess() && _parserRef->CanCacheAccess() && !_parserRef->GetCachedEquation().length())
+                _parserRef->SetCompiling(true);
+
+            sCache = getDataElements(sHeadExpression, *_parserRef, *_dataRef, *_optionRef);
+
+            if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
+            {
+                _parserRef->CacheCurrentEquation(sHeadExpression);
+                _parserRef->CacheCurrentTarget(sCache);
+            }
+
+            _parserRef->SetCompiling(false);
+        }
     }
 
     // Evaluate strings
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+    if (nCurrentCalcType & CALCTYPE_STRING || !nCurrentCalcType)
     {
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parserRef->PauseLoopMode();
-
-        // Call the string parser
-        auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true);
-
-        // Evaluate the return value
-        if (retVal == NumeRe::StringParser::STRING_SUCCESS)
+        if (nCurrentCalcType || NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
         {
-            StripSpaces(sHeadExpression);
+            if (!nCurrentCalcType)
+                nCalcType[nth_Cmd] |= CALCTYPE_STRING;
 
-            if (bIsForHead && NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
-            {
-                if (_optionRef->getUseDebugger())
-                    NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+            if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parserRef->PauseLoopMode();
 
-                NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::CANNOT_EVAL_FOR, sHeadExpression, SyntaxError::invalid_position));
-            }
-            else if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sHeadExpression))
+            // Call the string parser
+            auto retVal = NumeReKernel::getInstance()->getStringParser().evalAndFormat(sHeadExpression, sCache, true);
+
+            // Evaluate the return value
+            if (retVal != NumeRe::StringParser::STRING_NUMERICAL)
             {
                 StripSpaces(sHeadExpression);
 
-                if (sHeadExpression != "\"\"" && sHeadExpression.length() > 2)
-                    sHeadExpression = "true";
+                if (bIsForHead)
+                {
+                    if (_optionRef->getUseDebugger())
+                        NumeReKernel::getInstance()->getDebugger().gatherLoopBasedInformations(sHeadExpression, getCurrentLineNumber(), mVarMap, vVarArray, sVarArray, nVarArray);
+
+                    NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::CANNOT_EVAL_FOR, sHeadExpression, SyntaxError::invalid_position));
+                }
                 else
-                    sHeadExpression = "false";
+                {
+                    StripSpaces(sHeadExpression);
+
+                    if (sHeadExpression != "\"\"")
+                        sHeadExpression = "true";
+                    else
+                        sHeadExpression = "false";
+                }
             }
+
+            // It's possible that the user might have done
+            // something weird with string operations transformed
+            // into a regular expression. Replace the local
+            // variables here
+            replaceLocalVars(sHeadExpression);
+
+            if (!bLockedPauseMode && bUseLoopParsingMode)
+                _parserRef->PauseLoopMode(false);
         }
-
-        // It's possible that the user might have done
-        // something weird with string operations transformed
-        // into a regular expression. Replace the local
-        // variables here
-        replaceLocalVars(sHeadExpression);
-
-        if (!bLockedPauseMode && bUseLoopParsingMode)
-            _parserRef->PauseLoopMode(false);
     }
 
     // Evalute the already prepared equation
-    if (bUseLoopParsingMode && !bLockedPauseMode && _parserRef->IsValidByteCode() && _parserRef->IsAlreadyParsed(sHeadExpression))
-    {
-        v = _parserRef->Eval(nNum);
-    }
-    else
-    {
+    if (!_parserRef->IsAlreadyParsed(sHeadExpression))
         _parserRef->SetExpr(sHeadExpression);
-        v = _parserRef->Eval(nNum);
-    }
 
-    // Return the evaluation result
-    return v;
+    return _parserRef->Eval(nNum);
 }
 
 

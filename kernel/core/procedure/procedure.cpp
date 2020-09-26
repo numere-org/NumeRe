@@ -1044,7 +1044,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_PROCEDUREINTERFACE
                 && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
         {
-            if (!getLoop())
+            if (!getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
             {
                 // Handle procedure calls and plugins in the common
                 // virtual procedure interface function
@@ -1258,9 +1258,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
     {
         // Ensure that the current procedure is no inline procedure
         if (nFlags & ProcedureCommandLine::FLAG_INLINE)
-        {
             throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sLine, SyntaxError::invalid_position);
-        }
 
         sLine += " ";
         unsigned int nPos = 0;
@@ -1299,9 +1297,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
 
                 // Ensure that each parenthesis has its counterpart
                 if (getMatchingParenthesis(sLine.substr(nParPos)) == string::npos)
-                {
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, nParPos);
-                }
 
                 nParPos += getMatchingParenthesis(sLine.substr(nParPos));
                 __sVarList = __sVarList.substr(1, getMatchingParenthesis(__sVarList) - 1);
@@ -1318,9 +1314,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
                     // If this candidate is not part of a string literal,
                     // prepend the current namespace
                     if (!isInQuotes(__sVarList, nVarPos-1) && __sVarList.substr(nVarPos, __sVarList.find('(', nVarPos) - nVarPos).find('~') == string::npos)
-                    {
                         __sVarList = __sVarList.substr(0, nVarPos) + sNameSpace + __sVarList.substr(nVarPos);
-                    }
                 }
 
                 // Call the current procedure

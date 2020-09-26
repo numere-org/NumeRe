@@ -718,7 +718,6 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
 vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option, bool bEraseInterval)
 {
 	vector<double> vInterval;
-	string sInterval[2] = {"", ""};
 
 	// Get user defined functions
 	if (!_functions.call(sExpr))
@@ -746,31 +745,32 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManag
 			&& sExpr.find(':', sExpr.find('[')) != string::npos)
 	{
 		size_t nPos = 0;
+		size_t nMatchingParens = 0;
 
 		// Find the correct interval bracket
 		do
 		{
 			nPos = sExpr.find('[', nPos);
 
-			if (nPos == string::npos || sExpr.find(']', nPos) == string::npos)
+			if (nPos == string::npos || (nMatchingParens = getMatchingParenthesis(sExpr.substr(nPos))) == string::npos)
 				break;
 
+            nMatchingParens += nPos;
 			nPos++;
 		}
-		while (isInQuotes(sExpr, nPos) || sExpr.substr(nPos, sExpr.find(']') - nPos).find(':') == string::npos);
+		while (isInQuotes(sExpr, nPos) || sExpr.substr(nPos, nMatchingParens - nPos).find(':') == string::npos);
 
 		// If an interval bracket was found
-		if (nPos != string::npos && sExpr.find(']', nPos) != string::npos)
+		if (nPos != string::npos && nMatchingParens != string::npos)
 		{
-			string sRanges[3];
-			sRanges[0] = sExpr.substr(nPos, sExpr.find(']', nPos) - nPos);
+			string sRanges = sExpr.substr(nPos, nMatchingParens - nPos);
 
 			// Erase the interval part from the expression, if needed
 			if (bEraseInterval)
-				sExpr.erase(nPos - 1, sExpr.find(']', nPos) - nPos + 2);
+				sExpr.erase(nPos - 1, nMatchingParens - nPos + 2);
 
             // Split the whole argument list
-            auto args = getAllArguments(sRanges[0]);
+            auto args = getAllArguments(sRanges);
 
 			// Try to split the indices in every argument
 			for (size_t i = 0; i < args.size(); i++)
