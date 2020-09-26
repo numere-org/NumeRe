@@ -317,7 +317,7 @@ wxString SearchController::FindMarkedProcedure(int charpos, bool ignoreDefinitio
 /////////////////////////////////////////////////
 wxString SearchController::FindNameSpaceOfProcedure(int charpos)
 {
-	wxString sNameSpace = "this";
+	wxString sNameSpace = "";
 
 	if (m_editor->m_fileType == FILE_NPRC)
 	{
@@ -366,8 +366,8 @@ wxString SearchController::FindProceduresInCurrentFile(wxString sFirstChars, wxS
 		// Search for procedure commands
 		if (currentline.find("procedure") != string::npos
 				&& currentline.find('$', currentline.find("procedure")) != string::npos
-				&& m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, m_editor->PositionFromLine(i) + currentline.find("procedure"))
-				&& m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_editor->PositionFromLine(i) + currentline.find("procedure")))
+				&& !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_LINE, m_editor->PositionFromLine(i) + currentline.find("procedure"))
+				&& !m_editor->isStyleType(NumeReEditor::STYLE_COMMENT_BLOCK, m_editor->PositionFromLine(i) + currentline.find("procedure")))
 		{
 			currentline.erase(0, currentline.find('$') + 1);
 

@@ -32,3 +32,4 @@ Fixed	The "throw" command now completely supports string operations.
 Fixed	The autocompletion of procedures now works as expected even if no procedures are available in the "main" namespace.
 Applied	Greatly enhanced calculation speed in some circumstances.
 Added	Created a "Tell me, what you want to do" Toolbox and reworked all search bars.
+Fixed	The autocompletion feature now works for procedures correctly.
