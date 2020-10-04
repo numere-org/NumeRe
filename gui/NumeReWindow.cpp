@@ -93,6 +93,7 @@
 #include "../kernel/core/utils/tools.hpp"
 #include "../kernel/core/procedure/dependency.hpp"
 #include "../kernel/core/datamanagement/database.hpp"
+#include "../kernel/core/documentation/docgen.hpp"
 
 #include "../common/debug.h"
 #include "../common/fixvsbug.h"
@@ -2355,208 +2356,15 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
 /////////////////////////////////////////////////
 void NumeReWindow::createLaTeXFile()
 {
-    wxFileName filename = m_currentEd->GetFileName();
-    filename.SetName(filename.GetName() + "_" + filename.GetExt());
-    filename.SetExt("tex");
-    filename.SetPath(m_terminal->getPathSettings()[SAVEPATH] + "/docs");
+    std::string sFileName = m_currentEd->GetFileNameAndPath().ToStdString();
+    DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
 
-    if (m_currentEd->writeLaTeXFile(filename.GetFullPath().ToStdString()))
-        wxMessageBox(_guilang.get("GUI_DLG_LATEX_SUCCESS_MESSAGE", filename.GetFullPath().ToStdString()), _guilang.get("GUI_DLG_LATEX_SUCCESS"), wxCENTER | wxOK, this);
+    std::string sDocFile = docGen.createDocumentation(sFileName);
+
+    if (sDocFile.length())
+        wxMessageBox(_guilang.get("GUI_DLG_LATEX_SUCCESS_MESSAGE", sDocFile), _guilang.get("GUI_DLG_LATEX_SUCCESS"), wxCENTER | wxOK, this);
     else
-        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", filename.GetFullPath().ToStdString()), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function creates a main
-/// LaTeX file including the perviously created
-/// LaTeX documentation file.
-///
-/// \param sRootPath const string&
-/// \param sIncludes const string&
-/// \return string
-///
-/////////////////////////////////////////////////
-string NumeReWindow::createLaTeXMain(const string& sRootPath, const string& sIncludes)
-{
-    ofstream fMain;
-
-    createLaTeXHeader(sRootPath);
-
-    fMain.open((sRootPath + "/" + sIncludes + "_main.tex").c_str());
-
-    if (!fMain.good())
-        return "";
-
-    string sHeadLine = sIncludes;
-
-    for (size_t i = 0; i < sHeadLine.length(); i++)
-    {
-        if (sHeadLine[i] == '_' && (!i || sHeadLine[i-1] != '\\'))
-        {
-            sHeadLine.insert(i, 1, '\\');
-            i++;
-        }
-    }
-
-    fMain << "\\documentclass[DIV=17]{scrartcl}" << endl;
-    fMain << "% Main file for the documentation file " << sIncludes << endl << endl;
-    fMain << "\\input{numereheader}" << endl << endl;
-    fMain << "\\title{Documentation: " << sHeadLine << "}" << endl;
-    fMain << "\\begin{document}" << endl;
-    fMain << "    \\maketitle" << endl;
-
-    if (sIncludes.length())
-        fMain << "    \\input{" << sIncludes << "}" << endl;
-
-    fMain << "\\end{document}" << endl;
-
-    return sRootPath + "/" + sIncludes + "_main.tex";
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function replaces the
-/// passed whitespace-separated keyword list with
-/// a comma-separated list.
-///
-/// \param sKeywordList const string&
-/// \return string
-///
-/////////////////////////////////////////////////
-string NumeReWindow::constructLaTeXHeaderKeywords(const string& sKeywordList)
-{
-    string _sKeywordList = sKeywordList;
-
-    for (size_t i = 0; i < _sKeywordList.length(); i++)
-    {
-        if (_sKeywordList[i] == ' ')
-            _sKeywordList[i] = ',';
-    }
-
-    if (_sKeywordList.back() == ',')
-        _sKeywordList.erase(_sKeywordList.length()-1);
-
-    return _sKeywordList;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function writes the LaTeX
-/// header file used to highlight the code
-/// snippets, which are part of the created code
-/// documentation.
-///
-/// \param sRootPath const string&
-/// \return void
-///
-/////////////////////////////////////////////////
-void NumeReWindow::createLaTeXHeader(const string& sRootPath)
-{
-    ofstream fHeader;
-    fHeader.open((sRootPath + "/numereheader.tex").c_str());
-
-    if (!fHeader.good())
-        return;
-
-    NumeReSyntax* syntax = m_terminal->getSyntax();
-
-    fHeader << "% Header file for NumeRe documentations" << endl;
-
-    fHeader << "\\usepackage{xcolor}" << endl;
-    fHeader << "\\usepackage{listings}" << endl;
-    fHeader << "\\usepackage{etoolbox}" << endl;
-    fHeader << "\\usepackage{amsmath}" << endl;
-    fHeader << "\\usepackage{amssymb}" << endl;
-    fHeader << "\\usepackage{fontspec,unicode-math}" << endl;
-    fHeader << "\\setmainfont{Palatino Linotype}" << endl;
-    fHeader << "\\setmathfont{Cambria Math}" << endl;
-    fHeader << "\\setsansfont{Arial}" << endl;
-    fHeader << "\\setmonofont{Consolas}" << endl << endl;
-
-    fHeader << "% Define the language contents" << endl;
-    fHeader << "\\lstdefinelanguage{nscr}" << endl;
-    fHeader << "{" << endl;
-    fHeader << "    keywordsprefix=$," << endl;
-    fHeader << "    alsoletter={~\\#}," << endl;
-    fHeader << "    keywords=[1]{}," << endl;
-    fHeader << "    keywords=[2]{" << constructLaTeXHeaderKeywords(syntax->getCommands() + syntax->getNPRCCommands()) << "}," << endl;
-    fHeader << "    keywords=[3]{" << constructLaTeXHeaderKeywords(syntax->getFunctions()) << "}," << endl;
-    fHeader << "    keywords=[4]{" << constructLaTeXHeaderKeywords(syntax->getConstants()) << "}," << endl;
-    fHeader << "    keywords=[5]{" << constructLaTeXHeaderKeywords(syntax->getOptions()) << "}," << endl;
-    fHeader << "    keywords=[6]{" << constructLaTeXHeaderKeywords(syntax->getMethods()) << "}," << endl;
-    fHeader << "    keywords=[7]{" << constructLaTeXHeaderKeywords(syntax->getSpecial()) << "}," << endl;
-    fHeader << "    sensitive=true," << endl;
-    fHeader << "    morecomment=[s]{\\#*}{*\\#}," << endl;
-    fHeader << "    morecomment=[l][commentstyle]{\\#\\#}," << endl;
-    fHeader << "    string=[b]\"" << endl;
-    fHeader << "}" << endl << endl;
-    fHeader << "\\newcommand\\realnumberstyle[1]{\\tiny}" << endl;
-    fHeader << "\\newcommand\\oprts[1]{\\textcolor{red}{\\upshape{#1}}}" << endl;
-    fHeader << "\\newcommand\\procedure[1]{\\section{Procedure \\$#1()}}" << endl;
-    fHeader << "\\newcommand\\parameters{\\subsection*{Parameters for this procedure}}" << endl << endl;
-
-    fHeader << "% Apply a patch for the closing parenthesis" <<  endl;
-    fHeader << "\\makeatletter" << endl;
-    fHeader << "\\patchcmd{\\lsthk@SelectCharTable}{`)}{``}{}{}" << endl;
-    fHeader << "\\makeatother" << endl << endl;
-
-    fHeader << "% Define the colors needed for the language" << endl;
-    fHeader << "\\definecolor{ProcedureStyle}{RGB}{128,0,0}" << endl;
-    fHeader << "\\definecolor{CommandStyle}{RGB}{0,128,255}" << endl;
-    fHeader << "\\definecolor{StringStyle}{RGB}{128,128,255}" << endl;
-    fHeader << "\\definecolor{BGColorTwo}{RGB}{245,245,245}" << endl;
-    fHeader << "\\definecolor{BGColorOne}{RGB}{230,230,230}" << endl;
-    fHeader << "\\definecolor{CommentStyle}{RGB}{0,128,0}" << endl;
-    fHeader << "\\definecolor{ConstantStyle}{RGB}{255,0,128}" << endl;
-    fHeader << "\\definecolor{MethodStyle}{RGB}{0,180,50}" << endl;
-    fHeader << "\\definecolor{OptionStyle}{RGB}{0,128,100}" << endl << endl;
-
-    fHeader << "% Activate the language" << endl;
-    fHeader << "\\lstset{" << endl;
-    fHeader << "    language=nscr," << endl;
-    fHeader << "    basicstyle={\\footnotesize\\ttfamily\\itshape}," << endl;
-    fHeader << "    extendedchars=true," << endl;
-    fHeader << "    tabsize=4," << endl;
-    fHeader << "    columns=fixed," << endl;
-    fHeader << "    keepspaces=false," << endl;
-    fHeader << "    breaklines=true," << endl;
-    fHeader << "    showstringspaces=false," << endl;
-    fHeader << "    numbers=left, numberstyle=\\tiny, stepnumber=2, numbersep=5pt," << endl;
-    fHeader << "    commentstyle={\\color{CommentStyle}\\bfseries\\upshape}," << endl;
-    fHeader << "    keywordstyle=[1]{\\color{ProcedureStyle}\\bfseries\\upshape}," << endl;
-    fHeader << "    keywordstyle=[2]{\\color{CommandStyle}\\bfseries\\upshape\\underbar}," << endl;
-    fHeader << "    keywordstyle=[3]{\\color{blue}\\bfseries\\upshape}," << endl;
-    fHeader << "    keywordstyle=[4]{\\color{ConstantStyle}\\bfseries\\upshape}," << endl;
-    fHeader << "    keywordstyle=[5]{\\color{OptionStyle}\\upshape}," << endl;
-    fHeader << "    keywordstyle=[6]{\\color{MethodStyle}\\bfseries\\upshape}," << endl;
-    fHeader << "    keywordstyle=[7]{\\bfseries\\upshape}," << endl;
-    fHeader << "    stringstyle={\\color{StringStyle}\\upshape}," << endl;
-    fHeader << "    backgroundcolor=\\color{BGColorTwo}," << endl;
-    fHeader << "    literate=*{(}{{\\oprts{(}}}1" << endl;
-    fHeader << "        {)}{{\\oprts{)}}}1" << endl;
-    fHeader << "        {[}{{\\oprts{[}}}1" << endl;
-    fHeader << "        {]}{{\\oprts{]}}}1" << endl;
-    fHeader << "        {\\{}{{\\oprts{\\{}}}1" << endl;
-    fHeader << "        {\\}}{{\\oprts{\\}}}}1" << endl;
-    fHeader << "        {+}{{\\oprts{+}}}1" << endl;
-    fHeader << "        {-}{{\\oprts{-}}}1" << endl;
-    fHeader << "        {*}{{\\oprts{*}}}1" << endl;
-    fHeader << "        {/}{{\\oprts{/}}}1" << endl;
-    fHeader << "        {\\^}{{\\oprts{\\^{}}}}1" << endl;
-    fHeader << "        {\\%}{{\\oprts{\\%}}}1" << endl;
-    fHeader << "        {=}{{\\oprts{=}}}1" << endl;
-    fHeader << "        {!}{{\\oprts{!}}}1" << endl;
-    fHeader << "        {?}{{\\oprts{?}}}1" << endl;
-    fHeader << "        {>}{{\\oprts{>}}}1" << endl;
-    fHeader << "        {<}{{\\oprts{<}}}1" << endl;
-    fHeader << "        {\\&}{{\\oprts{\\&}}}1" << endl;
-    fHeader << "        {|}{{\\oprts{|}}}1" << endl;
-    fHeader << "        {;}{{\\oprts{;}}}1" << endl;
-    fHeader << "        {,}{{\\oprts{,}}}1" << endl;
-    fHeader << "        {:}{{\\oprts{:}}}1" << endl;
-    fHeader << "}" << endl;
-
+        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", sFileName), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
 }
 
 
@@ -2570,21 +2378,25 @@ void NumeReWindow::createLaTeXHeader(const string& sRootPath)
 /////////////////////////////////////////////////
 void NumeReWindow::runLaTeX()
 {
-    wxFileName filename = m_currentEd->GetFileName();
-    filename.SetName(filename.GetName() + "_" + filename.GetExt());
-    filename.SetExt("tex");
-    filename.SetPath(m_terminal->getPathSettings()[SAVEPATH] + "/docs");
+    std::string sFileName = m_currentEd->GetFileNameAndPath().ToStdString();
+    DocumentationGenerator docGen(m_terminal->getSyntax(), m_terminal->getPathSettings()[SAVEPATH] + "/docs");
+    std::string sMain = docGen.createFullDocumentation(sFileName);
 
-    if (!m_currentEd->writeLaTeXFile(filename.GetFullPath().ToStdString()))
+    if (!sMain.length())
     {
-        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", filename.GetFullPath().ToStdString()), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
+        wxMessageBox(_guilang.get("GUI_DLG_LATEX_ERROR_MESSAGE", sFileName), _guilang.get("GUI_DLG_LATEX_ERROR"), wxCENTER | wxOK, this);
         return;
     }
 
-    string sMain = createLaTeXMain(filename.GetPath().ToStdString(), filename.GetName().ToStdString()) + " -interaction=nonstopmode";
+    sMain += " -interaction=nonstopmode";
 
     if (fileExists((m_options->GetLaTeXRoot() + "/xelatex.exe").ToStdString()))
-        ShellExecuteA(NULL, "open", (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(), sMain.c_str(), filename.GetPath().ToStdString().c_str(), SW_SHOW);
+        ShellExecuteA(NULL,
+                      "open",
+                      (m_options->GetLaTeXRoot()+"/xelatex.exe").ToStdString().c_str(),
+                      sMain.c_str(),
+                      sMain.substr(0, sMain.rfind('/')).c_str(),
+                      SW_SHOW);
     else
         wxMessageBox(_guilang.get("GUI_DLG_NOTEXBIN_ERROR", m_options->GetLaTeXRoot().ToStdString()), _guilang.get("GUI_DLG_NOTEXBIN"), wxCENTER | wxOK | wxICON_ERROR, this);
 }

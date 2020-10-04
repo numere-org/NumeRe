@@ -23,19 +23,45 @@
 
 // CLASS DEPENDENCYLIST FUNCTIONS
 //
-// Static helper function for DependencyList::unique
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function for
+/// DependencyList::unique.
+///
+/// \param first const Dependency&
+/// \param second const Dependency&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool compare(const Dependency& first, const Dependency& second)
 {
     return first.getProcedureName() < second.getProcedureName();
 }
 
-// Static helper function for DependencyList::unique
+
+/////////////////////////////////////////////////
+/// \brief Static helper function for
+/// DependencyList::unique.
+///
+/// \param first const Dependency&
+/// \param second const Dependency&
+/// \return bool
+///
+/////////////////////////////////////////////////
 static bool isequal(const Dependency& first, const Dependency& second)
 {
     return first.getProcedureName() == second.getProcedureName();
 }
 
-// Implementation of DependencyList::unique
+
+/////////////////////////////////////////////////
+/// \brief Implementation of
+/// DependencyList::unique.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void DependencyList::unique()
 {
     sort(compare);
@@ -45,7 +71,14 @@ void DependencyList::unique()
 
 // CLASS DEPENDENCIES FUNCTIONS
 //
-// Dependencies constructor
+
+
+/////////////////////////////////////////////////
+/// \brief Dependencies constructor
+///
+/// \param procedureFile ProcedureElement*
+///
+/////////////////////////////////////////////////
 Dependencies::Dependencies(ProcedureElement* procedureFile)
 {
     // Get a unix-like path name and extract the thisfile
@@ -57,7 +90,7 @@ Dependencies::Dependencies(ProcedureElement* procedureFile)
     sThisFileNameSpacePrefix += "::";
 
     // Get the current default procedure path
-    string sProcDefPath = NumeReKernel::getInstance()->getSettings().getProcsPath();
+    std::string sProcDefPath = NumeReKernel::getInstance()->getSettings().getProcsPath();
 
     // If the default procedure path is part of the
     // thisfile namespace, remove this part and translate
@@ -89,9 +122,17 @@ Dependencies::Dependencies(ProcedureElement* procedureFile)
     walk(procedureFile);
 }
 
-// This member function will walk through the file and
-// redirect the control to getProcedureDependencies(), if
-// it hits a procedure head
+
+/////////////////////////////////////////////////
+/// \brief This member function will walk through
+/// the file and redirect the control to
+/// getProcedureDependencies(), if it hits a
+/// procedure head.
+///
+/// \param procedureFile ProcedureElement*
+/// \return void
+///
+/////////////////////////////////////////////////
 void Dependencies::walk(ProcedureElement* procedureFile)
 {
     int line = procedureFile->getFirstLine().first;
@@ -108,13 +149,21 @@ void Dependencies::walk(ProcedureElement* procedureFile)
         iter->second.unique();
 }
 
-// This member function calculates the dependencies of the
-// current procedure
+
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// dependencies of the current procedure.
+///
+/// \param procedureFile ProcedureElement*
+/// \param nCurrentLine int
+/// \return int
+///
+/////////////////////////////////////////////////
 int Dependencies::getProcedureDependencies(ProcedureElement* procedureFile, int nCurrentLine)
 {
-    pair<int, ProcedureCommandLine> commandline = procedureFile->getCurrentLine(nCurrentLine);
-    string sProcedureName;
-    string sCurrentNameSpace = "main~";
+    std::pair<int, ProcedureCommandLine> commandline = procedureFile->getCurrentLine(nCurrentLine);
+    std::string sProcedureName;
+    std::string sCurrentNameSpace = "main~";
 
     // Search for the head of the current procedure
     while (commandline.second.getType() != ProcedureCommandLine::TYPE_PROCEDURE_HEAD)
@@ -130,9 +179,9 @@ int Dependencies::getProcedureDependencies(ProcedureElement* procedureFile, int 
 
     // Insert the "thisfile" namespace, if the current procedure is not
     // the main procedure of the current file
-    if (sProcedureName.find('~') != string::npos && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('~')+1) + ".nprc")
+    if (sProcedureName.find('~') != std::string::npos && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('~')+1) + ".nprc")
         sProcedureName.insert(sProcedureName.rfind('~')+1, sThisFileNameSpacePrefix + "thisfile~");
-    else if (sProcedureName.find('/') != string::npos && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('/')+1) + ".nprc")
+    else if (sProcedureName.find('/') != std::string::npos && procedureFile->getFileName().substr(procedureFile->getFileName().rfind('/')+1) != sProcedureName.substr(sProcedureName.rfind('/')+1) + ".nprc")
         sProcedureName.insert(sProcedureName.rfind('/')+1, sThisFileNameSpacePrefix + "thisfile~");
     else
         sMainProcedure = sProcedureName;
@@ -164,37 +213,55 @@ int Dependencies::getProcedureDependencies(ProcedureElement* procedureFile, int 
     return commandline.first;
 }
 
-// This member function extracts the procedure name from the procedure head
-string Dependencies::getProcedureName(string sCommandLine)
+
+/////////////////////////////////////////////////
+/// \brief This member function extracts the
+/// procedure name from the procedure head.
+///
+/// \param sCommandLine std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Dependencies::getProcedureName(std::string sCommandLine)
 {
-    if (sCommandLine.find("procedure ") == string::npos || sCommandLine.find('$') == string::npos)
+    if (sCommandLine.find("procedure ") == std::string::npos || sCommandLine.find('$') == std::string::npos)
         return "";
 
-    if (sThisNameSpace.find('/') != string::npos)
+    if (sThisNameSpace.find('/') != std::string::npos)
         return "$" + sThisNameSpace + "/" + sCommandLine.substr(sCommandLine.find('$')+1, sCommandLine.find('(') - sCommandLine.find('$')-1);
 
     return "$" + sThisNameSpace + "~" + sCommandLine.substr(sCommandLine.find('$')+1, sCommandLine.find('(') - sCommandLine.find('$')-1);
 }
 
-// This member function resilves the procedure calls contained in the current
-// procedure command line
-void Dependencies::resolveProcedureCalls(string sLine, const string& sProcedureName, const string& sCurrentNameSpace)
+
+/////////////////////////////////////////////////
+/// \brief This member function resilves the
+/// procedure calls contained in the current
+/// procedure command line.
+///
+/// \param sLine std::string
+/// \param sProcedureName const std::string&
+/// \param sCurrentNameSpace const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Dependencies::resolveProcedureCalls(std::string sLine, const std::string& sProcedureName, const std::string& sCurrentNameSpace)
 {
-    if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos)
+    if (sLine.find('$') != std::string::npos && sLine.find('(', sLine.find('$')) != std::string::npos)
 	{
 		sLine += " ";
-		unsigned int nPos = 0;
+		size_t nPos = 0;
 
 		// Handle all procedure calls one after the other
-		while (sLine.find('$', nPos) != string::npos && sLine.find('(', sLine.find('$', nPos)) != string::npos)
+		while (sLine.find('$', nPos) != std::string::npos && sLine.find('(', sLine.find('$', nPos)) != std::string::npos)
 		{
 			nPos = sLine.find('$', nPos) + 1;
-            string __sName = sLine.substr(nPos, sLine.find('(', nPos) - nPos);
+            std::string __sName = sLine.substr(nPos, sLine.find('(', nPos) - nPos);
 
 			if (!isInQuotes(sLine, nPos, true))
 			{
                 // Add namespaces, where necessary
-                if (__sName.find('~') == string::npos)
+                if (__sName.find('~') == std::string::npos)
                     __sName = sCurrentNameSpace + __sName;
 
                 if (__sName.substr(0, 5) == "this~")
@@ -207,7 +274,7 @@ void Dependencies::resolveProcedureCalls(string sLine, const string& sProcedureN
                 if (sLine[nPos] == '\'')
                     __sName = sLine.substr(nPos + 1, sLine.find('\'', nPos + 1) - nPos - 1);
 
-                if (__sName.find('/') != string::npos && __sName.find("thisfile~") == string::npos)
+                if (__sName.find('/') != std::string::npos && __sName.find("thisfile~") == std::string::npos)
                     replaceAll(__sName, "~", "/");
 
                 // Add procedure name and called procedure file name to the
@@ -220,33 +287,40 @@ void Dependencies::resolveProcedureCalls(string sLine, const string& sProcedureN
 	}
 }
 
-// This member function returns the file name of the current called
-// procedure
-string Dependencies::getProcedureFileName(string sProc)
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the file
+/// name of the current called procedure.
+///
+/// \param sProc std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Dependencies::getProcedureFileName(std::string sProc)
 {
 	if (sProc.length())
 	{
 		// Handle the "thisfile" namespace by using the call stack
 		// to obtain the corresponding file name
-		if (sProc.find("thisfile~") != string::npos)
+		if (sProc.find("thisfile~") != std::string::npos)
 		    return sFileName;
 
 		// Create a valid file name from the procedure name
 		sProc = NumeReKernel::getInstance()->getProcedureInterpreter().ValidFileName(sProc, ".nprc");
 
 		// Replace tilde characters with path separators
-		if (sProc.find('~') != string::npos)
+		if (sProc.find('~') != std::string::npos)
 		{
-			unsigned int nPos = sProc.rfind('/');
+			size_t nPos = sProc.rfind('/');
 
             // Find the last path separator
-			if (nPos < sProc.rfind('\\') && sProc.rfind('\\') != string::npos)
+			if (nPos < sProc.rfind('\\') && sProc.rfind('\\') != std::string::npos)
 				nPos = sProc.rfind('\\');
 
             // Replace all tilde characters in the current path
             // string. Consider the special namespace "main", which
             // is a reference to the toplevel procedure folder
-			for (unsigned int i = nPos; i < sProc.length(); i++)
+			for (size_t i = nPos; i < sProc.length(); i++)
 			{
 				if (sProc[i] == '~')
 				{

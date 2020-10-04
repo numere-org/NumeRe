@@ -20,15 +20,28 @@
 #include "../ui/error.hpp"
 #include "../utils/tools.hpp"
 
-// destructor avoiding memory leaks; releases the memory allocated for each ProcedureElement
+
+/////////////////////////////////////////////////
+/// \brief Destructor avoiding memory leaks.
+/// Releases the memory allocated for each
+/// ProcedureElement.
+/////////////////////////////////////////////////
 ProcedureLibrary::~ProcedureLibrary()
 {
     for (auto iter = mLibraryEntries.begin(); iter != mLibraryEntries.end(); ++iter)
         delete (iter->second);
 }
 
-// constructs a new ProcedureElement, if the file exists. Otherwise returns a nullptr
-ProcedureElement* ProcedureLibrary::constructProcedureElement(const string& sProcedureFileName)
+
+/////////////////////////////////////////////////
+/// \brief Constructs a new ProcedureElement, if
+/// the file exists. Otherwise returns a nullptr.
+///
+/// \param sProcedureFileName const std::string&
+/// \return ProcedureElement*
+///
+/////////////////////////////////////////////////
+ProcedureElement* ProcedureLibrary::constructProcedureElement(const std::string& sProcedureFileName)
 {
     if (fileExists(sProcedureFileName))
     {
@@ -42,58 +55,88 @@ ProcedureElement* ProcedureLibrary::constructProcedureElement(const string& sPro
             return nullptr;
         }
     }
+
     return nullptr;
 }
 
-// Reads the content of the passed file and returns it as a std::vector
-vector<string> ProcedureLibrary::getFileContents(const string& sProcedureFileName)
+
+/////////////////////////////////////////////////
+/// \brief Reads the contents of the passed file
+/// and returns it as a std::vector.
+///
+/// \param sProcedureFileName const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> ProcedureLibrary::getFileContents(const std::string& sProcedureFileName)
 {
-    ifstream proc_in;
-    vector<string> vProcContents;
-    string currentline;
+    std::ifstream proc_in;
+    std::vector<std::string> vProcContents;
+    std::string currentline;
 
     proc_in.open(sProcedureFileName.c_str());
+
     if (proc_in.fail())
         throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sProcedureFileName, SyntaxError::invalid_position, sProcedureFileName);
 
     while (!proc_in.eof())
     {
-        getline(proc_in, currentline);
+        std::getline(proc_in, currentline);
         vProcContents.push_back(currentline);
     }
+
     return vProcContents;
 }
 
-// Returns the ProcedureElement pointer to the desired procedure. It also creates the element, if it doesn't already exist
-ProcedureElement* ProcedureLibrary::getProcedureContents(const string& sProcedureFileName)
+
+/////////////////////////////////////////////////
+/// \brief Returns the ProcedureElement pointer
+/// to the desired procedure file. It also
+/// creates the element, if it doesn't already
+/// exist.
+///
+/// \param sProcedureFileName const std::string&
+/// \return ProcedureElement*
+///
+/////////////////////////////////////////////////
+ProcedureElement* ProcedureLibrary::getProcedureContents(const std::string& sProcedureFileName)
 {
     if (mLibraryEntries.find(sProcedureFileName) == mLibraryEntries.end())
     {
         ProcedureElement* element = constructProcedureElement(sProcedureFileName);
+
         if (element)
             mLibraryEntries[sProcedureFileName] = element;
         else
             throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sProcedureFileName, SyntaxError::invalid_position, sProcedureFileName);
     }
+
     return mLibraryEntries[sProcedureFileName];
 }
 
-// Perform an update, e.g. if a procedure was deleted.
+
+/////////////////////////////////////////////////
+/// \brief Perform an update, e.g. if a procedure
+/// was deleted.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void ProcedureLibrary::updateLibrary()
 {
     for (auto iter = mLibraryEntries.begin(); iter != mLibraryEntries.end(); )
     {
         delete (iter->second);
+
         ProcedureElement* element = constructProcedureElement(iter->first);
+
         if (element)
         {
             iter->second = element;
             iter++;
         }
         else
-        {
             iter = mLibraryEntries.erase(iter);
-        }
     }
 }
 

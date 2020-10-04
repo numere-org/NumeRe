@@ -25,21 +25,25 @@
 #ifndef PROCEDURELIBRARY_HPP
 #define PROCEDURELIBRARY_HPP
 
-using namespace std;
-
+/////////////////////////////////////////////////
+/// \brief This class manages all already read
+/// and possibly pre-parsed procedure files for
+/// easier and faster access.
+/////////////////////////////////////////////////
 class ProcedureLibrary
 {
     private:
-        map<string, ProcedureElement*> mLibraryEntries;
+        std::map<std::string, ProcedureElement*> mLibraryEntries;
 
-        ProcedureElement* constructProcedureElement(const string& sProcedureFileName);
-        vector<string> getFileContents(const string& sProcedureFileName);
+        ProcedureElement* constructProcedureElement(const std::string& sProcedureFileName);
+        std::vector<std::string> getFileContents(const std::string& sProcedureFileName);
 
     public:
         ~ProcedureLibrary();
 
-        ProcedureElement* getProcedureContents(const string& sProcedureFileName);
+        ProcedureElement* getProcedureContents(const std::string& sProcedureFileName);
         void updateLibrary();
 };
 
 #endif
+

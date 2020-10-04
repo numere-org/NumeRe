@@ -24,31 +24,33 @@
 #ifndef PROCEDUREELEMENT_HPP
 #define PROCEDUREELEMENT_HPP
 
-using namespace std;
-
+// Forward declaration of the dependencies class
 class Dependencies;
 
-// This class contains the pre-parsed contents of a single
-// procedure file
+
+/////////////////////////////////////////////////
+/// \brief This class contains the pre-parsed
+/// contents of a single procedure file.
+/////////////////////////////////////////////////
 class ProcedureElement
 {
     private:
-        map<int, ProcedureCommandLine> mProcedureContents;
-        map<string, int> mProcedureList;
-        string sFileName;
+        std::map<int, ProcedureCommandLine> mProcedureContents;
+        std::map<std::string, int> mProcedureList;
+        std::string sFileName;
         Dependencies* m_dependencies;
 
-        void cleanCurrentLine(string& sProcCommandLine, const string& sCurrentCommand, const string& sFilePath);
+        void cleanCurrentLine(std::string& sProcCommandLine, const std::string& sCurrentCommand, const std::string& sFilePath);
 
     public:
-        ProcedureElement(const vector<string>& vProcedureContents, const string& sFolderPath);
+        ProcedureElement(const std::vector<std::string>& vProcedureContents, const std::string& sFolderPath);
         ~ProcedureElement();
 
-        pair<int, ProcedureCommandLine> getFirstLine();
-        pair<int, ProcedureCommandLine> getCurrentLine(int currentLine);
-        pair<int, ProcedureCommandLine> getNextLine(int currentline);
-        int gotoProcedure(const string& sProcedureName);
-        string getFileName() const
+        std::pair<int, ProcedureCommandLine> getFirstLine();
+        std::pair<int, ProcedureCommandLine> getCurrentLine(int currentLine);
+        std::pair<int, ProcedureCommandLine> getNextLine(int currentline);
+        int gotoProcedure(const std::string& sProcedureName);
+        std::string getFileName() const
         {
             return sFileName;
         }

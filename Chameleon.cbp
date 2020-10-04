@@ -459,6 +459,8 @@
 		<Unit filename="kernel/core/debugger/debugger.hpp" />
 		<Unit filename="kernel/core/documentation/doc_helper.cpp" />
 		<Unit filename="kernel/core/documentation/doc_helper.hpp" />
+		<Unit filename="kernel/core/documentation/docgen.cpp" />
+		<Unit filename="kernel/core/documentation/docgen.hpp" />
 		<Unit filename="kernel/core/documentation/documentation.cpp" />
 		<Unit filename="kernel/core/documentation/documentation.hpp" />
 		<Unit filename="kernel/core/io/file.cpp" />
@@ -469,6 +471,8 @@
 		<Unit filename="kernel/core/io/filesystem.hpp" />
 		<Unit filename="kernel/core/io/output.cpp" />
 		<Unit filename="kernel/core/io/output.hpp" />
+		<Unit filename="kernel/core/io/styledtextfile.cpp" />
+		<Unit filename="kernel/core/io/styledtextfile.hpp" />
 		<Unit filename="kernel/core/maths/command_implementations.cpp" />
 		<Unit filename="kernel/core/maths/command_implementations.hpp" />
 		<Unit filename="kernel/core/maths/define.cpp" />

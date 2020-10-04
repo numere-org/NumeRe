@@ -316,10 +316,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 			return m_fileType;
 		}
 
-		string GetStrippedLine(int nLine);
-		string GetStrippedRange(int nPos1, int nPos2, bool encode = true);
-		bool writeLaTeXFile(const string& sLaTeXFileName);
-		string parseDocumentation(int nPos1, int nPos2);
 		void notifyDialogClose();
 		void SetEditorFont(const wxFont& font);
 		bool isNumeReFileType()

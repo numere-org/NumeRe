@@ -20,14 +20,22 @@
 #include "../utils/tools.hpp"
 #include "dependency.hpp"
 
-// Procedure element constructor. This class is always heap allocated.
-ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, const string& sFilePath) : sFileName(sFilePath), m_dependencies(nullptr)
+
+/////////////////////////////////////////////////
+/// \brief Procedure element constructor. This
+/// class is always heap allocated.
+///
+/// \param vProcedureContents const std::vector<std::string>&
+/// \param sFilePath const std::string&
+///
+/////////////////////////////////////////////////
+ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureContents, const std::string& sFilePath) : sFileName(sFilePath), m_dependencies(nullptr)
 {
-    string sFolderPath = sFileName.substr(0, sFileName.rfind('/'));
-    string sProcCommandLine;
-    string sCurrentCommand;
-    string sCurrentLineCache;
-    string sProcPlotCompose;
+    std::string sFolderPath = sFileName.substr(0, sFileName.rfind('/'));
+    std::string sProcCommandLine;
+    std::string sCurrentCommand;
+    std::string sCurrentLineCache;
+    std::string sProcPlotCompose;
     bool bBlockComment = false;
 
     // Examine the contents of each line
@@ -47,7 +55,7 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
         // Already inside of a block comment?
         if (bBlockComment)
         {
-            if (sProcCommandLine.find("*#") != string::npos)
+            if (sProcCommandLine.find("*#") != std::string::npos)
             {
                 sProcCommandLine.erase(0, sProcCommandLine.find("*#")+2);
                 bBlockComment = false;
@@ -76,7 +84,7 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
             if (!(nQuotes % 2) && sProcCommandLine.substr(j,2) == "#*")
             {
                 // this is a block comment
-                if (sProcCommandLine.find("*#", j+2) != string::npos)
+                if (sProcCommandLine.find("*#", j+2) != std::string::npos)
                 {
                     sProcCommandLine.erase(j, sProcCommandLine.find("*#", j+2)-j+2);
                 }
@@ -180,7 +188,7 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
         }
 
         // Ensure that the parentheses are valid
-        if (sProcCommandLine.find('(') != string::npos || sProcCommandLine.find('{') != string::npos)
+        if (sProcCommandLine.find('(') != std::string::npos || sProcCommandLine.find('{') != std::string::npos)
         {
             if (!validateParenthesisNumber(sProcCommandLine))
             {
@@ -192,36 +200,36 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
         if (sCurrentCommand == "procedure")
         {
             int nFlags = ProcedureCommandLine::FLAG_NONE;
-            string sArgumentList;
+            std::string sArgumentList;
 
             // Extract the flags
-            if (sProcCommandLine.rfind("::") != string::npos)
+            if (sProcCommandLine.rfind("::") != std::string::npos)
             {
-                string sFlags = sProcCommandLine.substr(sProcCommandLine.rfind("::"));
+                std::string sFlags = sProcCommandLine.substr(sProcCommandLine.rfind("::"));
 
-                if (sFlags.find("private") != string::npos)
+                if (sFlags.find("private") != std::string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_PRIVATE;
 
-                if (sFlags.find("explicit") != string::npos)
+                if (sFlags.find("explicit") != std::string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_EXPLICIT;
 
-                if (sFlags.find("inline") != string::npos)
+                if (sFlags.find("inline") != std::string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_INLINE;
 
-                if (sFlags.find("mask") != string::npos || sFlags.find("silent") != string::npos)
+                if (sFlags.find("mask") != std::string::npos || sFlags.find("silent") != std::string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_MASK;
 
-                if (sFlags.find("template") != string::npos)
+                if (sFlags.find("template") != std::string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_TEMPLATE;
             }
 
             // Extract procedure name and argument list
-            if (sProcCommandLine.find('$') != string::npos && sProcCommandLine.find('(', sProcCommandLine.find('$')) != string::npos)
+            if (sProcCommandLine.find('$') != std::string::npos && sProcCommandLine.find('(', sProcCommandLine.find('$')) != std::string::npos)
             {
-                string sProcName = sProcCommandLine.substr(sProcCommandLine.find('$'));
+                std::string sProcName = sProcCommandLine.substr(sProcCommandLine.find('$'));
                 sProcName.erase(sProcName.find('('));
 
-                if (getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find('('))) == string::npos)
+                if (getMatchingParenthesis(sProcCommandLine.substr(sProcCommandLine.find('('))) == std::string::npos)
                     throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, sProcCommandLine.find('('));
 
                 // Ensure that the argument list is defined reasonable
@@ -251,20 +259,35 @@ ProcedureElement::ProcedureElement(const vector<string>& vProcedureContents, con
     }
 }
 
-// Destructor. Cleares the dependency list
+
+/////////////////////////////////////////////////
+/// \brief Destructor. Cleares the dependency
+/// list.
+/////////////////////////////////////////////////
 ProcedureElement::~ProcedureElement()
 {
     if (m_dependencies)
         delete m_dependencies;
 }
 
-// This member function does the hard work on cleaning the current
-// procedure command line. This includes removing tabulators, definition
-// operators and replacing the "<this>" path placeholder.
-void ProcedureElement::cleanCurrentLine(string& sProcCommandLine, const string& sCurrentCommand, const string& sFolderPath)
+
+/////////////////////////////////////////////////
+/// \brief This member function does the hard
+/// work on cleaning the current procedure
+/// command line. This includes removing
+/// tabulators, definition operators and
+/// replacing the "<this>" path placeholder.
+///
+/// \param sProcCommandLine std::string&
+/// \param sCurrentCommand const std::string&
+/// \param sFolderPath const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void ProcedureElement::cleanCurrentLine(std::string& sProcCommandLine, const std::string& sCurrentCommand, const std::string& sFolderPath)
 {
     // Replace the "this" path place holder
-    while (sProcCommandLine.find("<this>") != string::npos)
+    while (sProcCommandLine.find("<this>") != std::string::npos)
         sProcCommandLine.replace(sProcCommandLine.find("<this>"), 6, sFolderPath);
 
     // Remove the "global" command, if it is available
@@ -275,7 +298,7 @@ void ProcedureElement::cleanCurrentLine(string& sProcCommandLine, const string& 
     }
 
     // replace tabulator characters with whitespaces
-    for (unsigned int i = 0; i < sProcCommandLine.length(); i++)
+    for (size_t i = 0; i < sProcCommandLine.length(); i++)
     {
         if (sProcCommandLine[i] == '\t')
             sProcCommandLine[i] = ' ';
@@ -289,7 +312,7 @@ void ProcedureElement::cleanCurrentLine(string& sProcCommandLine, const string& 
         && sCurrentCommand != "redef"
         && sCurrentCommand != "lclfunc")
     {
-        while (sProcCommandLine.find(":=") != string::npos)
+        while (sProcCommandLine.find(":=") != std::string::npos)
             sProcCommandLine.erase(sProcCommandLine.find(":="), 1);
     }
 
@@ -298,35 +321,55 @@ void ProcedureElement::cleanCurrentLine(string& sProcCommandLine, const string& 
 }
 
 
-// This function returns the first line of the stored file
-pair<int, ProcedureCommandLine> ProcedureElement::getFirstLine()
+/////////////////////////////////////////////////
+/// \brief This function returns the first line
+/// of the stored file.
+///
+/// \return std::pair<int, ProcedureCommandLine>
+///
+/////////////////////////////////////////////////
+std::pair<int, ProcedureCommandLine> ProcedureElement::getFirstLine()
 {
     return *mProcedureContents.begin();
 }
 
-// This function returns the selected line of the stored file.
-// This member function will be used in combination with the
-// the member function "gotoProcedure()"
-pair<int, ProcedureCommandLine> ProcedureElement::getCurrentLine(int nCurrentLine)
+
+/////////////////////////////////////////////////
+/// \brief This function returns the selected
+/// line of the stored file. This member function
+/// will be used in combination with the the
+/// member function "gotoProcedure()"
+///
+/// \param nCurrentLine int
+/// \return std::pair<int, ProcedureCommandLine>
+///
+/////////////////////////////////////////////////
+std::pair<int, ProcedureCommandLine> ProcedureElement::getCurrentLine(int nCurrentLine)
 {
-    pair<int, ProcedureCommandLine> currentLine;
+    std::pair<int, ProcedureCommandLine> currentLine;
     auto iter = mProcedureContents.find(nCurrentLine);
 
     if (iter != mProcedureContents.end())
-    {
         currentLine = *iter;
-    }
 
     return currentLine;
 }
 
-// This member function returns the line after the current selected
-// line. This is probably not the same as nCurrentLine++, because
-// line comments and empty lines were omitted during the pre-parsing
-// step
-pair<int, ProcedureCommandLine> ProcedureElement::getNextLine(int nCurrentLine)
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the line
+/// after the current selected line. This is
+/// probably not the same as nCurrentLine++,
+/// because line comments and empty lines were
+/// omitted during the pre-parsing step.
+///
+/// \param nCurrentLine int
+/// \return std::pair<int, ProcedureCommandLine>
+///
+/////////////////////////////////////////////////
+std::pair<int, ProcedureCommandLine> ProcedureElement::getNextLine(int nCurrentLine)
 {
-    pair<int, ProcedureCommandLine> currentLine;
+    std::pair<int, ProcedureCommandLine> currentLine;
     auto iter = mProcedureContents.find(nCurrentLine);
 
     if (iter != mProcedureContents.end())
@@ -340,8 +383,16 @@ pair<int, ProcedureCommandLine> ProcedureElement::getNextLine(int nCurrentLine)
     return currentLine;
 }
 
-// This member function determines, whether the current line
-// is the last line of the stored procedure file
+
+/////////////////////////////////////////////////
+/// \brief This member function determines,
+/// whether the current line is the last line of
+/// the stored procedure file.
+///
+/// \param nCurrentLine int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool ProcedureElement::isLastLine(int nCurrentLine)
 {
     auto iter = mProcedureContents.find(nCurrentLine);
@@ -359,11 +410,22 @@ bool ProcedureElement::isLastLine(int nCurrentLine)
     return false;
 }
 
-// This member function returns the line of the stored file,
-// where the desired procedure may be found or -1 if the
-// procedure is not found in the current file. The procedure name
-// has to be passed with the dollar sign but without the parentheses.
-int ProcedureElement::gotoProcedure(const string& sProcedureName)
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the line
+/// of the stored file, where the desired
+/// procedure may be found or -1 if the procedure
+/// is not found in the current file.
+///
+/// \param sProcedureName const std::string&
+/// \return int
+///
+/// \remark The procedure name has to be passed
+/// with the dollar sign but without the
+/// parentheses.
+///
+/////////////////////////////////////////////////
+int ProcedureElement::gotoProcedure(const std::string& sProcedureName)
 {
     auto iter = mProcedureList.find(sProcedureName);
 
@@ -373,11 +435,22 @@ int ProcedureElement::gotoProcedure(const string& sProcedureName)
     return -1;
 }
 
-// This member function can be used to store the created
-// byte code in the current procedure command line. Note that
-// it is not reasonable to store the byte code in the already
-// obtained procedure command line, because this object will
-// be destroyed after its evaluation.
+
+/////////////////////////////////////////////////
+/// \brief This member function can be used to
+/// store the created byte code in the current
+/// procedure command line.
+///
+/// Note that it is not reasonable to store the
+/// byte code in the already obtained procedure
+/// command line, because this object will be
+/// destroyed after its evaluation.
+///
+/// \param _nByteCode int
+/// \param nCurrentLine int
+/// \return void
+///
+/////////////////////////////////////////////////
 void ProcedureElement::setByteCode(int _nByteCode, int nCurrentLine)
 {
     auto iter = mProcedureContents.find(nCurrentLine);
@@ -388,10 +461,17 @@ void ProcedureElement::setByteCode(int _nByteCode, int nCurrentLine)
     }
 }
 
-// This member function returns the first-level dependencies
-// of the current procedure file. The dependencies are only
-// calculated once and refreshed, if the current procedure
-// has been saved
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// first-level dependencies of the current
+/// procedure file. The dependencies are only
+/// calculated once and refreshed, if the current
+/// procedure has been saved.
+///
+/// \return Dependencies*
+///
+/////////////////////////////////////////////////
 Dependencies* ProcedureElement::getDependencies()
 {
     if (!m_dependencies)

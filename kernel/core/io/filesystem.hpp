@@ -44,13 +44,14 @@ class FileSystem
     private:
         std::string cleanPath(std::string sFilePath) const;
         void resolveWildCards(std::string& _sFileName, bool isFile) const;
-        int createFolders(const std::string& _sPath) const;
 
 	protected:												// In allen CHILD-Klassen verfuegbar
 		std::string sPath;										// String-Variable fuer den Dateipfad
 		std::string sExecutablePath;
 		std::string sTokens[7][2];
 		mutable std::string sValidExtensions;
+
+        int createFolders(const std::string& _sPath) const;
 
 	public:
         FileSystem();

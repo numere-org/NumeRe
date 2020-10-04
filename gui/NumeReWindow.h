@@ -213,9 +213,6 @@ class NumeReWindow : public wxFrame
         void pass_command(const wxString& command);
         void evaluateDebugInfo(const vector<string>& vDebugInfo);
         void createLaTeXFile();
-        string createLaTeXMain(const string& sRootPath, const string& sIncludes);
-        void createLaTeXHeader(const string& sRootPath);
-        string constructLaTeXHeaderKeywords(const string& sKeywordList);
         void runLaTeX();
         void compileLaTeX();
 

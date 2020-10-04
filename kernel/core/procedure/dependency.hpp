@@ -23,73 +23,84 @@
 #include <map>
 #include <list>
 
-using namespace std;
 
-// This class resembles a simple dependency containing
-// a procedure name and the corresponding file name
+/////////////////////////////////////////////////
+/// \brief This class resembles a simple
+/// dependency containing a procedure name and
+/// the corresponding file name.
+/////////////////////////////////////////////////
 class Dependency
 {
     private:
-        string sProcedureName;
-        string sFileName;
+        std::string sProcedureName;
+        std::string sFileName;
 
     public:
-        Dependency(const string& sProcName, const string& sFile) : sProcedureName(sProcName), sFileName(sFile) {}
+        Dependency(const std::string& sProcName, const std::string& sFile) : sProcedureName(sProcName), sFileName(sFile) {}
 
-        string& getFileName()
+        std::string& getFileName()
         {
             return sFileName;
         }
 
-        string& getProcedureName()
+        std::string& getProcedureName()
         {
             return sProcedureName;
         }
 
-        const string& getProcedureName() const
+        const std::string& getProcedureName() const
         {
             return sProcedureName;
         }
 };
 
-// This class is a child of the std::list, where
-// the function unique() has been overridden (i.e. shadowed)
-class DependencyList : public list<Dependency>
+
+/////////////////////////////////////////////////
+/// \brief This class is a child of the
+/// std::list, where the function unique() has
+/// been overridden (i.e. shadowed).
+/////////////////////////////////////////////////
+class DependencyList : public std::list<Dependency>
 {
     public:
         void unique();
 };
 
+
 // Forward declaration of the procedure element class
 class ProcedureElement;
 
-// This class handles the dependencies of the current procedure
-// file (passed as pointer to a ProcedureElement instance) and calculates
-// them during construction
+
+/////////////////////////////////////////////////
+/// \brief This class handles the dependencies of
+/// the current procedure file (passed as pointer
+/// to a ProcedureElement instance) and
+/// calculates them during construction.
+/////////////////////////////////////////////////
 class Dependencies
 {
     private:
-        map<string, DependencyList> mDependencies;
-        string sFileName;
-        string sThisFileNameSpacePrefix;
-        string sThisNameSpace;
-        string sMainProcedure;
+        std::map<std::string, DependencyList> mDependencies;
+        std::string sFileName;
+        std::string sThisFileNameSpacePrefix;
+        std::string sThisNameSpace;
+        std::string sMainProcedure;
 
         void walk(ProcedureElement* procedureFile);
         int getProcedureDependencies(ProcedureElement* procedureFile, int nCurrentLine);
-        string getProcedureName(string sCommandLine);
-        void resolveProcedureCalls(string sCommandLine, const string& sProcedureName, const string& sCurrentNameSpace);
-        string getProcedureFileName(string sProc);
+        std::string getProcedureName(std::string sCommandLine);
+        void resolveProcedureCalls(std::string sCommandLine, const std::string& sProcedureName, const std::string& sCurrentNameSpace);
+        std::string getProcedureFileName(std::string sProc);
 
     public:
         Dependencies(ProcedureElement* procedureFile);
 
-        map<string, DependencyList>& getDependencyMap()
+        std::map<std::string, DependencyList>& getDependencyMap()
         {
             return mDependencies;
         }
 
-        string getMainProcedure() const
+        std::string getMainProcedure() const
         {
             return sMainProcedure;
         }
