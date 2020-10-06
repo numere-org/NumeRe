@@ -845,7 +845,10 @@ void SearchController::AppendToDocumentation(wxString& sDocumentation, const wxS
 
         bBeginEnd = false;
     }
-    else if ((sNewDocLine.length() && (sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 2) == "- " || sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 7) == "\\param ")) || bBeginEnd)
+    else if ((sNewDocLine.length()
+              && (sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 2) == "- "
+                  || sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 7) == "\\param "
+                  || sNewDocLine.substr(sNewDocLine.find_first_not_of(" \t"), 8) == "\\remark ")) || bBeginEnd)
     {
         if (sDocumentation.length() && sDocumentation[sDocumentation.length()-1] != '\n')
             sDocumentation += "\n    ";
@@ -913,9 +916,13 @@ string SearchController::CleanDocumentation(const wxString& __sDoc)
             }
         }
 
+        // Replace \remark
+        while ((nPos = sDocumentation.find("\\remark ")) != string::npos)
+            sDocumentation.replace(nPos, 7, toUpperCase(_guilang.get("GUI_EDITOR_CALLTIP_PROC_REMARK"))+":");
+
         // Remove doubled exclamation marks
-        while (sDocumentation.find("!!") != string::npos)
-            sDocumentation.erase(sDocumentation.find("!!"), 2);
+        while ((nPos = sDocumentation.find("!!")) != string::npos)
+            sDocumentation.erase(nPos, 2);
 
         // Replace \begin{} and \end{} with line breaks
         // This logic bases upon the replacements done

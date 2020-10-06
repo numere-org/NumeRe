@@ -425,10 +425,12 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
                     continue;
                 }
 
-                if (i + 1 == sTextRange.length() || (sTextRange[i] == '\n' && sTextRange[i+1] == '\n'))
+                if (i + 1 == sTextRange.length()
+                    || (sTextRange[i] == '\n' && sTextRange[i+1] == '\n')
+                    || (sTextRange[i+1] == '\\' && sTextRange.substr(i+1, 7) != "\\param "))
                 {
                     vParameters.push_back(sTextRange.substr(nLastParam, i - nLastParam+1));
-                    sTextRange.replace(nItemizeStart, i + nItemizeStart, "\\parameters\n\\noindent\n" + createParametersTable(vParameters));
+                    sTextRange.replace(nItemizeStart, i+1 - nItemizeStart, "\\parameters\n\\noindent\n" + createParametersTable(vParameters));
 
                     break;
                 }
