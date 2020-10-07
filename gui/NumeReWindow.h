@@ -282,7 +282,7 @@ class NumeReWindow : public wxFrame
         void OnRemoveFolder();
         void OnSaveSourceFile( int id );
         void OnOpenSourceFile( int id );
-        void OnExecuteFile(const string& sFileName);
+        void OnExecuteFile(const string& sFileName, int id);
         void OnCalculateDependencies();
         void OnCreatePackage();
 

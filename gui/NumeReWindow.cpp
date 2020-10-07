@@ -1176,9 +1176,10 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
     switch(id)
     {
         case ID_MENU_OPEN_FILE_FROM_TREE:
+        case ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE:
         {
             FileNameTreeData* data = static_cast <FileNameTreeData* > (m_fileTree->GetItemData(m_clickedTreeItem));
-            OnExecuteFile(data->filename.ToStdString());
+            OnExecuteFile(data->filename.ToStdString(), id);
             break;
         }
         case ID_MENU_EDIT_FILE_FROM_TREE:
@@ -1732,7 +1733,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
                 }
             }
             string command = replacePathSeparator((m_currentEd->GetFileName()).GetFullPath().ToStdString());
-            OnExecuteFile(command);
+            OnExecuteFile(command, id);
             break;
         }
         case ID_MENU_STOP_EXECUTION:
@@ -3221,7 +3222,7 @@ void NumeReWindow::EvaluateTab()
     }
 
     string command = replacePathSeparator((edit->GetFileName()).GetFullPath().ToStdString());
-    OnExecuteFile(command);
+    OnExecuteFile(command, 0);
 }
 
 
@@ -5620,7 +5621,10 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         fname_ext = fname_ext.substr(fname_ext.rfind('.')) + ";";
 
         if (loadableExt.find(fname_ext) != string::npos)
+        {
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_LOAD"));
+            popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE, _guilang.get("GUI_TREE_PUP_LOADTOTABLE"));
+        }
         else if (fname_ext == ".nscr;")
             popupMenu.Append(ID_MENU_OPEN_FILE_FROM_TREE, _guilang.get("GUI_TREE_PUP_START"));
         else if (fname_ext == ".nprc;")
@@ -6793,10 +6797,11 @@ void NumeReWindow::OnSaveSourceFile( int id )
 /// current editor.
 ///
 /// \param sFileName const string&
+/// \param id int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::OnExecuteFile(const string& sFileName)
+void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
 {
     if (!sFileName.length())
         return;
@@ -6838,6 +6843,8 @@ void NumeReWindow::OnExecuteFile(const string& sFileName)
 
         command = "start " + command;
     }
+    else if (id == ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE)
+        command = "load \"" + command + "\" -totable";
     else
         command = "load \"" + command + "\" -app -ignore";
 

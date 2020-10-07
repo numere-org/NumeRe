@@ -34,3 +34,4 @@ Applied	Greatly enhanced calculation speed in some circumstances.
 Added	Created a "Tell me, what you want to do" Toolbox and reworked all search bars.
 Fixed	The autocompletion feature now works for procedures correctly.
 Updated	The LaTeX documentation generator functionality has been increased: the documentation generator will now create a documentation for a whole dependency tree. The layout of the documentation has been reworked as well.
+Added	A new context menu entry for loading the data directly to a new table was added to the context menu of the file tree.
