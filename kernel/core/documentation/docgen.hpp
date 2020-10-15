@@ -42,26 +42,26 @@ class DocumentationGenerator : public FileSystem
     private:
         NumeReSyntax* m_syntax;
 
-        void followBranch(const std::string& sFile, std::set<std::string>& fileSet, std::vector<std::string>& vFiles);
+        void followBranch(const std::string& sFile, std::set<std::string>& fileSet, std::vector<std::string>& vFiles) const;
 
-        std::string convertToLaTeX(const std::string& sFileName);
-        std::string getStrippedRange(const StyledTextFile& file, int pos1, int pos2, bool encode = true);
-        std::string parseDocumentation(const StyledTextFile& file, const std::string& sMainProc, int pos1, int pos2);
-        std::string createParametersTable(const std::vector<std::string>& vParams);
-        size_t findListItem(const std::string& sTextRange, size_t& nLength);
+        std::string convertToLaTeX(const std::string& sFileName) const;
+        std::string getStrippedRange(const StyledTextFile& file, int pos1, int pos2, bool encode = true) const;
+        std::string parseDocumentation(const StyledTextFile& file, const std::string& sMainProc, int pos1, int pos2) const;
+        std::string createParametersTable(const std::vector<std::string>& vParams) const;
+        size_t findListItem(const std::string& sTextRange, size_t& nLength) const;
 
-        std::string createMainProcedure(std::string sFileName);
-        std::string createLaTeXFileName(std::string sFileName);
-        std::string prepareFileNameForLaTeX(std::string sFileName);
-        std::string constructKeyWords(std::string sKeyWordList);
-        void createStyleFile();
-        std::string createMainFile(const std::string& sFileName, const std::vector<std::string>& vIncludesList, const std::vector<std::string>& vFiles);
+        std::string createMainProcedure(std::string sFileName) const;
+        std::string createLaTeXFileName(std::string sFileName) const;
+        std::string prepareFileNameForLaTeX(std::string sFileName) const;
+        std::string constructKeyWords(std::string sKeyWordList) const;
+        void createStyleFile() const;
+        std::string createMainFile(const std::string& sFileName, const std::vector<std::string>& vIncludesList, const std::vector<std::string>& vFiles) const;
 
     public:
         DocumentationGenerator(NumeReSyntax* _syntax, const std::string& sRootPath);
 
-        std::string createDocumentation(const std::string& sFileName);
-        std::string createFullDocumentation(const std::string& sFileName);
+        std::string createDocumentation(const std::string& sFileName) const;
+        std::string createFullDocumentation(const std::string& sFileName) const;
 };
 
 

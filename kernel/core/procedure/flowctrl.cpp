@@ -313,7 +313,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs((int)((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20)) * 5) + " %");
                 bPrintedStatus = true;
             }
-            else if (abs(int(vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) >= 99999)
+            else if (abs(int(vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1])) >= 99999
                      && abs((int)((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100))
                      > abs((int)((vVarArray[nVarAdress][0] - 1 - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100)))
             {

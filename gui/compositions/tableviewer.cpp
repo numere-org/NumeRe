@@ -1019,7 +1019,7 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
 {
     vector<wxString> vPaste;
     wxString sClipboard = data;
-    wxString sLine = "";
+    wxString sLine;
 
     // Endless loop
     while (true)

@@ -53,7 +53,7 @@ class FunctionDefinition
         FunctionDefinition(const string& _sDefinitionString = "");
         FunctionDefinition& operator=(const FunctionDefinition&);
         string parse(const string& _sArgList);
-        string exportFunction();
+        string exportFunction() const;
         bool importFunction(const string& _sExportedString);
         string getDefinition() const;
         bool appendComment(const string& _sComment);
@@ -76,7 +76,6 @@ class FunctionDefinitionManager : public FileSystem
     private:
         map<string, FunctionDefinition> mFunctionsMap;
         string sFileName;                   // Dateinamen fuer die Speichern-Funktion
-        fstream Defines_def;                // Filestream, zum Speichern und Einlesen der definierten Funktionen
 
         string sBuilt_In;                   // String, der die Namen der Built-In-Funktionen speichert
         string sCommands;                   // String, der alle NumeRe-Kommandos speichert
@@ -88,7 +87,7 @@ class FunctionDefinitionManager : public FileSystem
 
     public:
         FunctionDefinitionManager(bool _isLocal);                           // Standard-Konstruktor
-        FunctionDefinitionManager(FunctionDefinitionManager& _defined);           // Kopierkonstruktor
+        FunctionDefinitionManager(const FunctionDefinitionManager& _defined);           // Kopierkonstruktor
 
         // --> TRUE, wenn es eine Funktion mit dem angegeben Funktionsnamen gibt <--
         bool isDefined(const string& sFunc);

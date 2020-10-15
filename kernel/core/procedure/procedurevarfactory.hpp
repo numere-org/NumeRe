@@ -103,7 +103,7 @@ class ProcedureVarFactory
         void createLocalTables(string sTableList);
         void createLocalClusters(string sClusterList);
 
-        string resolveVariables(string sProcedureCommandLine)
+        string resolveVariables(const string& sProcedureCommandLine)
             {
                 return resolveLocalTables(resolveLocalClusters(resolveArguments(resolveLocalStrings(resolveLocalVars(sProcedureCommandLine)))));
             }

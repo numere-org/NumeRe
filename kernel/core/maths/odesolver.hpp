@@ -48,8 +48,8 @@ class Odesolver
         gsl_odeiv_control* odeControl;
         gsl_odeiv_evolve* odeEvolve;
 
-        static int odeFunction(double t, const double x[], double dxdt[], void* params);
-        inline static int jacobian(double t, const double x[], double dxdt[], double dfdt[], void* params)
+        static int odeFunction(double x, const double y[], double dydx[], void* params);
+        inline static int jacobian(double x, const double y[], double dydx[], double dfdt[], void* params)
             {return GSL_SUCCESS;}
 
     public:

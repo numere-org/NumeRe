@@ -21,7 +21,7 @@ class WXDLLEXPORT wxProportionalSplitterWindow : public wxSplitterWindow
 	enum { MIN_PANE_SIZE = 1 };
 public:
 	// Default constructor
-	wxProportionalSplitterWindow() : wxSplitterWindow(), splitPercent_(0.5f)
+	wxProportionalSplitterWindow() : wxSplitterWindow(), splitPercent_(0.5f), m_charHeight(0), m_defaultHeight(false)
 	{}
 
 	// Normal constructor

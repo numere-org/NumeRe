@@ -610,7 +610,7 @@ vector<string> Memory::getHeadLineElement(const VectorIndex& _vCol) const
         if (_vCol[i] < 0)
             continue;
 
-        if (_vCol[i] >= nCurCols || _vCol[i] < 0)
+        if (_vCol[i] >= nCurCols)
             vHeadLines.push_back(_lang.get("COMMON_COL") + " " + toString((int)_vCol[i] + 1) + " (leer)");
         else
             vHeadLines.push_back(sHeadLine[_vCol[i]]);
@@ -1049,16 +1049,16 @@ vector<int> Memory::sortElements(long long int i1, long long int i2, long long i
                         subKeyList->nKey[1] = subKeyList->nKey[0] + 1;
 
                     // Reorder the subordinate key list
-                    for (int j = subKeyList->nKey[0]; j < subKeyList->nKey[1]; j++)
-                        reorderColumn(vIndex, i1, i2, j + j1);
+                    for (int _j = subKeyList->nKey[0]; _j < subKeyList->nKey[1]; _j++)
+                        reorderColumn(vIndex, i1, i2, _j + j1);
 
                     // Find the next subordinate list
                     subKeyList = subKeyList->subkeys;
                 }
 
                 // Reset the sorting index for the next column
-                for (int j = i1; j <= i2; j++)
-                    vIndex[j] = j;
+                for (int _j = i1; _j <= i2; _j++)
+                    vIndex[_j] = _j;
             }
 
             // Free the occupied memory
@@ -1920,6 +1920,8 @@ double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param dRef double
+/// \param _nType int
 /// \return double
 ///
 /////////////////////////////////////////////////
@@ -2098,6 +2100,7 @@ double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
+/// \param dPct double
 /// \return double
 ///
 /////////////////////////////////////////////////
@@ -2475,7 +2478,7 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
                                 markModified = true;
                                 break;
                             }
-                            else if (!j && _j+1 < _vCol.size())
+                            else if (_j+1 < _vCol.size())
                             {
                                 for (size_t __j = j; __j < _j; __j++)
                                 {
@@ -2524,7 +2527,7 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
                                 markModified = true;
                                 break;
                             }
-                            else if (!i && _i+1 < _vLine.size())
+                            else if (_i+1 < _vLine.size())
                             {
                                 for (size_t __i = i; __i < _i; __i++)
                                 {
@@ -2630,7 +2633,7 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol)
+bool Memory::onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     return num(_vLine, _vCol) == cnt(_vLine, _vCol);
 }
@@ -2649,7 +2652,7 @@ bool Memory::onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol
 /// \return RetouchBoundary
 ///
 /////////////////////////////////////////////////
-Boundary Memory::findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j)
+Boundary Memory::findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j) const
 {
     Boundary _boundary(i-1, j-1, 2, 2);
 
@@ -3081,11 +3084,11 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
         // Determine final size (only upscale)
         if (nSamples > _vLine.size())
+		{
             resizeMemory(nLines + nSamples - _vLine.size(), nCols - 1);
-
-        // Determine the size of the buffer
-        if (nSamples > _vLine.size())
+			// Determine the size of the buffer
             __nLines += nSamples - _vLine.size();
+		}
     }
     else if (Direction == LINES)// lines
     {
@@ -3094,11 +3097,11 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
         // Determine final size (only upscale)
         if (nSamples > _vCol.size())
+		{
             resizeMemory(nLines - 1, nCols + nSamples - _vCol.size());
-
-        // Determine the size of the buffer
-        if (nSamples > _vCol.size())
+			// Determine the size of the buffer
             __nCols += nSamples - _vCol.size();
+		}
     }
 
     // Ensure that the resampler was created
@@ -3159,8 +3162,8 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
                 // Clear the memory and return
                 delete _resampler;
 
-                for (long long int i = 0; i < __nLines; i++)
-                    delete[] dResampleBuffer[i];
+                for (long long int _i = 0; _i < __nLines; _i++)
+                    delete[] dResampleBuffer[_i];
 
                 delete[] dResampleBuffer;
                 delete[] dInputSamples;
@@ -3240,8 +3243,8 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
             {
                 if (_ret_line + i - (_vLine.last() + 1) + _vLine.front() >= nLines)
                 {
-                    for (long long int i = 0; i < __nLines; i++)
-                        delete[] dResampleBuffer[i];
+                    for (long long int _i = 0; _i < __nLines; _i++)
+                        delete[] dResampleBuffer[_i];
 
                     delete[] dResampleBuffer;
 
@@ -3267,8 +3270,8 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
             {
                 if (_vLine[i] >= nLines)
                 {
-                    for (long long int i = 0; i < __nLines; i++)
-                        delete[] dResampleBuffer[i];
+                    for (long long int _i = 0; _i < __nLines; _i++)
+                        delete[] dResampleBuffer[_i];
 
                     delete[] dResampleBuffer;
 
@@ -3289,8 +3292,8 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
             {
                 if (_final_cols + j - (_vCol.last() + 1) + _vCol.front() >= nCols)
                 {
-                    for (long long int i = 0; i < __nLines; i++)
-                        delete[] dResampleBuffer[i];
+                    for (long long int _i = 0; _i < __nLines; _i++)
+                        delete[] dResampleBuffer[_i];
 
                     delete[] dResampleBuffer;
 
@@ -3316,8 +3319,8 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
             {
                 if (_vCol[j] >= nCols)
                 {
-                    for (long long int i = 0; i < __nLines; i++)
-                        delete[] dResampleBuffer[i];
+                    for (long long int _i = 0; _i < __nLines; _i++)
+                        delete[] dResampleBuffer[_i];
 
                     delete[] dResampleBuffer;
 

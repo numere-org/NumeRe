@@ -190,7 +190,7 @@ class NumeReWindow : public wxFrame
         void SetIntVar(int variableName, int value);
         int GetIntVar(int variableName);
 
-        void FocusOnLine(wxString filename, int linenumber, bool showMarker = true, wxString linecontents = wxEmptyString);
+        void FocusOnLine(wxString filename, int linenumber, bool showMarker = true);
 
         NetworkCallResult CheckNetworkStatus();
 
@@ -202,7 +202,7 @@ class NumeReWindow : public wxFrame
         void OpenSourceFile(wxArrayString fnames, unsigned int nLine = 0, int nOpenFileFlag = OPENFILE_NOTHING);
         void openImage(wxFileName filename);
         void openPDF(wxFileName filename);
-        bool ShowHelp(const wxString& docId);
+        bool ShowHelp(const wxString& sDocId);
         void openHTML(wxString HTMLcontent);
         void openTable(NumeRe::Container<string> _stringTable, const string& sTableName);
         void openTable(NumeRe::Table _table, const string& sTableName);

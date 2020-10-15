@@ -50,7 +50,7 @@ namespace NumeRe
             ClusterItem(unsigned short type) : nType(type) {}
             virtual ~ClusterItem() {}
 
-            unsigned short getType()
+            unsigned short getType() const
             {
                 return nType;
             }
@@ -215,7 +215,7 @@ namespace NumeRe
             double getDouble(size_t i) const;
             void setDouble(size_t i, double value);
             vector<double> getDoubleArray() const;
-            void insertDataInArray(vector<double>* vTarget, const VectorIndex& vLine);
+            void insertDataInArray(vector<double>* vTarget, const VectorIndex& _vLine);
             void setDoubleArray(const vector<double>& vVals);
             void setDoubleArray(int nNum, double* data);
             void assignResults(Indices _idx, int nNum, double* data);
@@ -247,7 +247,7 @@ namespace NumeRe
             double xor_func(const VectorIndex& _vLine);
             double cnt(const VectorIndex& _vLine);
             double norm(const VectorIndex& _vLine);
-            double cmp(const VectorIndex& _vLine, double dRef, int nType);
+            double cmp(const VectorIndex& _vLine, double dRef, int _nType);
             double med(const VectorIndex& _vLine);
             double pct(const VectorIndex& _vLine, double dPct);
 

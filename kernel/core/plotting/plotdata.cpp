@@ -61,7 +61,6 @@ PlotData::PlotData() : FileSystem()
 // --> Allgemeiner Konstruktor <--
 PlotData::PlotData(int _nLines, int _nRows, int _nLayers) : PlotData()
 {
-    PlotData();
     nRows = _nRows;
     nLines = _nLines;
     nLayers = _nLayers;
@@ -84,120 +83,6 @@ PlotData::PlotData(int _nLines, int _nRows, int _nLayers) : PlotData()
         dRanges[i][1] = 10.0;
     }
 
-}
-
-PlotData::PlotData(const PlotData& _pData) : PlotData()
-{
-    PlotData(_pData.nLines, _pData.nRows, _pData.nRequestedLayers);
-
-    for (int i = 0; i < nLines; i++)
-    {
-        for (int j = 0; j < nRows; j++)
-        {
-            for (int k = 0; k < nLayers; k++)
-                dPlotData[i][j][k] = _pData.dPlotData[i][j][k];
-        }
-    }
-
-    for (int i = 0; i < 3; i++)
-    {
-        dRanges[i][0] = _pData.dRanges[i][0];
-        dRanges[i][1] = _pData.dRanges[i][1];
-        dOrigin[i] = _pData.dOrigin[i];
-        nSlices[i] = _pData.nSlices[i];
-        bRanges[i] = _pData.bRanges[i];
-        bMirror[i] = _pData.bMirror[i];
-        sAxisLabels[i] = _pData.sAxisLabels[i];
-        bDefaultAxisLabels[i] = _pData.bDefaultAxisLabels[i];
-        _lHlines[i] = _pData._lHlines[i];
-        _lVLines[i] = _pData._lVLines[i];
-    }
-
-    for (int i = 0; i < 4; i++)
-    {
-        bLogscale[i] = _pData.bLogscale[i];
-        dAxisScale[i] = _pData.dAxisScale[i];
-        sTickTemplate[i] = _pData.sTickTemplate[i];
-        sCustomTicks[i] = _pData.sCustomTicks[i];
-    }
-
-    for (int i = 0; i < 2; i++)
-    {
-        dtParam[i] = _pData.dtParam[i];
-        dColorRange[i] = _pData.dColorRange[i];
-        dRotateAngles[i] = _pData.dRotateAngles[i];
-        _AddAxes[i] = _pData._AddAxes[i];
-    }
-
-    nSamples = _pData.nSamples;
-    nRanges = _pData.nRanges;
-    sFileName = _pData.sFileName;
-    sPlotTitle = _pData.sPlotTitle;
-    sFontStyle = _pData.sFontStyle;
-    sAxisBind = _pData.sAxisBind;
-    sFunctionAxisBind = _pData.sFunctionAxisBind;
-    dMin = _pData.dMin;
-    dMax = _pData.dMax;
-    dMaximum = _pData.dMaximum;
-
-    nGrid = _pData.nGrid;
-    nLighting = _pData.nLighting;
-    bAlpha = _pData.bAlpha;
-    bAxis = _pData.bAxis;
-    bBox = _pData.bBox;
-    bContProj = _pData.bContProj;
-    bContLabels = _pData.bContLabels;
-    bContFilled = _pData.bContFilled;
-    bxError = _pData.bxError;
-    byError = _pData.byError;
-    bConnectPoints = _pData.bConnectPoints;
-    bDrawPoints = _pData.bDrawPoints;
-    bOpenImage = _pData.bOpenImage;
-    bInterpolate = _pData.bInterpolate;
-    bSilentMode = _pData.bSilentMode;
-    bAnimate = _pData.bAnimate;
-    bCutBox = _pData.bCutBox;
-    bFlow = _pData.bFlow;
-    bPipe = _pData.bPipe;
-    bFixedLength = _pData.bFixedLength;
-    bColorbar = _pData.bColorbar;
-    bOrthoProject = _pData.bOrthoProject;
-    bArea = _pData.bArea;
-    dBars = _pData.dBars;
-    bColorMask = _pData.bColorMask;
-    bAlphaMask = _pData.bAlphaMask;
-    bSchematic = _pData.bSchematic;
-    bCloudPlot = _pData.bCloudPlot;
-    bRegion = _pData.bRegion;
-    bStepPlot = _pData.bStepPlot;
-    bBoxPlot = _pData.bBoxPlot;
-    bCrust = _pData.bCrust;
-    dHBars = _pData.dHBars;
-    dPerspective = _pData.dPerspective;
-    sColorScheme = _pData.sColorScheme;
-    sColorSchemeMedium = _pData.sColorSchemeMedium;
-    sColorSchemeLight = _pData.sColorSchemeLight;
-    sBackgroundColorScheme = _pData.sBackgroundColorScheme;
-    sBackground = _pData.sBackground;
-    nAnimateSamples = _pData.nAnimateSamples;
-    nHighResLevel = _pData.nHighResLevel;
-    bAllHighRes = _pData.bAllHighRes;
-    nCoords = _pData.nCoords;
-    dAspect = _pData.dAspect;
-    nMarks = _pData.nMarks;
-    dTextsize = _pData.dTextsize;
-    sColors = _pData.sColors;
-    sGreys = _pData.sGreys;
-    sPointStyles = _pData.sPointStyles;
-    sLineStyles = _pData.sLineStyles;
-    sLineStylesGrey = _pData.sLineStylesGrey;
-    sContColors = _pData.sContColors;
-    sContGreys = _pData.sContGreys;
-    sLineSizes = _pData.sLineSizes;
-    sGridStyle = _pData.sGridStyle;
-    nLegendstyle = _pData.nLegendstyle;
-    nRequestedLayers = _pData.nRequestedLayers;
-    nLegendPosition = _pData.nLegendPosition;
 }
 
 // --> Destruktor <--
@@ -2384,7 +2269,7 @@ string PlotData::getParams(const Settings& _option, bool asstr) const
     }
     sReturn += "]" + sSepString;
     if (asstr)
-        sReturn + "\"";
+        sReturn += "\"";
     return sReturn;
 }
 
@@ -2508,7 +2393,7 @@ int PlotData::getLayers(bool bFull) const
 }
 
 // --> Minimum aller Daten im Speicher lesen <--
-double PlotData::getMin(int nCol)
+double PlotData::getMin(int nCol) const
 {
     double _dMin = NAN;
     if (dPlotData)
@@ -2561,7 +2446,7 @@ double PlotData::getMin(int nCol)
 }
 
 // --> Maximum aller Daten im Speicher lesen <--
-double PlotData::getMax(int nCol)
+double PlotData::getMax(int nCol) const
 {
     double _dMax = NAN;
     if (dPlotData)
@@ -2716,7 +2601,7 @@ void PlotData::setRanges(int _j, double x_0, double x_1)
 }
 
 // --> Grenzen eines Intervalls lesen <--
-double PlotData::getRanges(int _j, int _i)
+double PlotData::getRanges(int _j, int _i) const
 {
     return dRanges[_j][_i];
 }

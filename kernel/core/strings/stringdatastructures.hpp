@@ -106,6 +106,8 @@ struct StringFuncHandle
 	StringFuncHandle()
 	{
 		bTakesMultiArguments = false;
+		fType = PARSER_INT;
+		fHandle = nullptr;
 	}
 
 	StringFuncHandle(FunctionSignatureType _fType, StringFunc _fHandle, bool _bTakesMultiArguments) : fType(_fType), fHandle(_fHandle), bTakesMultiArguments(_bTakesMultiArguments) {}

@@ -72,7 +72,7 @@ class StyledTextFile
 
         std::string getFileName() const;
 
-        std::string getTextRange(int nPos1, int nPos2) const;
+        std::string getTextRange(int pos1, int pos2) const;
         std::string getLine(size_t line) const;
         int getLastPosition() const;
         int getLinesCount() const;

@@ -63,7 +63,7 @@ class VariableViewer : public wxcode::wxTreeListCtrl
 
 
     public:
-        VariableViewer(wxWindow* parent, NumeReWindow* mainWind, int fieldsize = 600);
+        VariableViewer(wxWindow* parent, NumeReWindow* mainWin, int fieldsize = 600);
 
         void ExpandAll();
         void OnRightClick(wxTreeEvent& event);

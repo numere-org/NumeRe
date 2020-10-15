@@ -42,7 +42,7 @@ END_EVENT_TABLE()
 EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxNotebook(parent, id, pos, size, style, name)
 {
     m_mouseFocus = false;
-	//m_top_parent = static_cast<NumeReWindow*>(parent);//(NumeReWindow*)wxTheApp->GetTopWindow();
+    m_top_parent = nullptr;
 }
 
 

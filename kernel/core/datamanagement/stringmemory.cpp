@@ -194,17 +194,17 @@ vector<int> StringInternalMemory::sortElements(long long int i1, long long int i
                     if (subKeyList->nKey[1] == -1)
                         subKeyList->nKey[1] = subKeyList->nKey[0]+1;
 
-                    for (int j = subKeyList->nKey[0]; j < subKeyList->nKey[1]; j++)
+                    for (int _j = subKeyList->nKey[0]; _j < subKeyList->nKey[1]; _j++)
                     {
-                        reorderColumn(vIndex, i1, i2, j+j1);
+                        reorderColumn(vIndex, i1, i2, _j+j1);
                     }
 
                     subKeyList = subKeyList->subkeys;
                 }
 
                 // Re-create the plain index
-                for (int j = i1; j <= i2; j++)
-                    vIndex[j] = j;
+                for (int _j = i1; _j <= i2; _j++)
+                    vIndex[_j] = _j;
             }
 
             // Free the memory of the ColumnKeys object

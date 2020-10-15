@@ -139,10 +139,9 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
         return false;
     }
 
-    string sLine = "";
-    string sDocIndex = "";
-    string sKeyWord = "";
-    int nIndex = 0;
+    string sLine;
+    string sDocIndex;
+    string sKeyWord;
     vector<string> vEntry;
 
     // Read the index file's contents completely to memory
@@ -199,7 +198,7 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
         // is this item already known? (user lang file)
         if (mDocumentationIndex.find(vEntry.back()) == mDocumentationIndex.end())
         {
-            nIndex = vDocIndexTable.size();
+            int nIndex = vDocIndexTable.size();
             mDocumentationIndex[vEntry.back()] = nIndex;
 
             while (sLine.find("<keyword") != string::npos)
@@ -256,7 +255,7 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Documentation::findPositionInDocumentationIndex(const string& sTopic)
+int Documentation::findPositionInDocumentationIndex(const string& sTopic) const
 {
     int nIndex = -1;
     auto iter = mDocumentationIndex.begin();
@@ -436,7 +435,7 @@ void Documentation::loadDocIndex(bool bLoadUserLangFiles)
                 loadIndexFile("<>/update.hlpidx");
         }
     }
-    else if (bLoadUserLangFiles && fileExists(FileSystem::ValidFileName("<>/user/numere.hlpidx", ".hlpidx")))
+    else if (fileExists(FileSystem::ValidFileName("<>/user/numere.hlpidx", ".hlpidx")))
         loadIndexFile("<>/user/numere.hlpidx");
 }
 
@@ -500,8 +499,8 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
-    string sKeyWord = "";
-    string sLine = "";
+    string sKeyWord;
+    string sLine;
     vector<string> vEntry;
     int nIndex = vDocIndexTable.size();
 
@@ -651,15 +650,13 @@ void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFile
 vector<string> Documentation::getHelpArticle(const string& sTopic)
 {
     vector<string> vReturn;
-    int nIndex = -1;
-    string sLine = "";
 
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
     if (sTopic != "idx" && sTopic != "index")
     {
-        nIndex = findPositionInDocumentationIndex(sTopic);
+        int nIndex = findPositionInDocumentationIndex(sTopic);
 
         if (nIndex != -1)
         {
@@ -676,7 +673,7 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
     }
     else
     {
-        string sKeyList = "";
+        string sKeyList;
         vReturn.push_back("Index");
         map<string,string> mIdx;
 
@@ -719,7 +716,7 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
 /// \return vector<string>
 ///
 /////////////////////////////////////////////////
-vector<string> Documentation::getDocIndex()
+vector<string> Documentation::getDocIndex() const
 {
     vector<string> vReturn;
     list<string> lIndex;

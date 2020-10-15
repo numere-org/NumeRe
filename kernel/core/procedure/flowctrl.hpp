@@ -148,7 +148,7 @@ class FlowCtrl
     public:
         FlowCtrl();
         FlowCtrl(int _nDefaultLength);
-        ~FlowCtrl();
+        virtual ~FlowCtrl();
 
         int nthRecursion;
         inline int getLoop() const

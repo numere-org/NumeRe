@@ -36,7 +36,7 @@ extern Language _guilang;
 /// \param opts Options*
 ///
 /////////////////////////////////////////////////
-CodeAnalyzer::CodeAnalyzer(NumeReEditor* parent, Options* opts) : m_editor(parent), m_options(opts)
+CodeAnalyzer::CodeAnalyzer(NumeReEditor* parent, Options* opts) : m_editor(parent), m_options(opts), m_nCurPos(0), m_nCurrentLine(0), m_hasProcedureDefinition(false)
 {
 	m_sNote = _guilang.get("GUI_ANALYZER_NOTE");
 	m_sWarn = _guilang.get("GUI_ANALYZER_WARN");
@@ -492,7 +492,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             // Ignore the parenthesis in the MATLAB case
             if (m_editor->GetCharAt(j) == '(' || m_editor->m_fileType == FILE_MATLAB)
             {
-                int nPos = m_editor->BraceMatch(j);
+                int nPos;
 
                 // If the first character is a parenthesis
                 if (m_editor->GetCharAt(j) == '(')
@@ -762,7 +762,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         // If there are variables available
         if (sArgs.length())
         {
-            string currentArg = "";
+            string currentArg;
 
             // Extract variable by variable
             while (getNextArgument(sArgs, false).length())
@@ -832,7 +832,6 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     {
         // Use the block match function, which is capable of doing both: NumeRe and MATLAB syntax
         vector<int> vBlock = m_editor->BlockMatch(m_nCurPos);
-        int nProcedureEnd = 0;
         m_hasProcedureDefinition = true;
 
         // If the current file is a procedure file, then decode the
@@ -857,13 +856,9 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             }
         }
 
-        if (vBlock.back() == wxSTC_INVALID_POSITION)
+        if (vBlock.back() != wxSTC_INVALID_POSITION)
         {
-            nProcedureEnd = m_editor->GetLastPosition();
-        }
-        else
-        {
-            nProcedureEnd = vBlock.back();
+            int nProcedureEnd = vBlock.back();
 
             // This is only needed for NumeRe procedures
             if (m_editor->m_fileType == FILE_NPRC)
@@ -928,7 +923,6 @@ AnnotationCount CodeAnalyzer::analyseCommands()
         // Ensure that the end of the procedure was found
         if (nProcedureEnd == -1)
         {
-            nProcedureEnd = m_editor->GetLastPosition();
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_MISSINGENDPROCEDURE")), ANNOTATION_ERROR);
         }
 

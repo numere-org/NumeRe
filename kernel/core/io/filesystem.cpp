@@ -178,7 +178,7 @@ void FileSystem::resolveWildCards(string& _sFileName, bool isFile) const
                 break;
             else if (sNewFileName.find('.') != string::npos)
                 sNewFileName = "";
-            else if (sNewFileName.find('.') == string::npos)
+            else
                 sNewFileName += ".*";
         }
         while (FindNextFile(hFind, &FindFileData) != 0);

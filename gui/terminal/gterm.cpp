@@ -96,14 +96,14 @@ void GenericTerminal::Reset()
 ///  Resizes the terminal's display.  This ONLY changes what's being displayed, and
 ///  does NOT change the size as far as the server is concerned!
 ///
-///  @param  width  int  The new width, in characters
-///  @param  height int  The new height, in characters
+///  @param  _width  int  The new width, in characters
+///  @param  _height int  The new height, in characters
 ///
 ///  @return void
 ///
 ///  @author Timothy Miller @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-void GenericTerminal::ResizeTerminal(int w, int h)
+void GenericTerminal::ResizeTerminal(int _width, int _height)
 {
     // Create an invalid cursor
     LogicalCursor cursor;
@@ -116,11 +116,11 @@ void GenericTerminal::ResizeTerminal(int w, int h)
     }
 
 #ifdef DO_LOG
-    wxLogDebug("Resizing terminal: w = %d, h = %d", w, h);
+    wxLogDebug("Resizing terminal: _width = %d, _height = %d", _width, _height);
 #endif
 
     // Perform the resize in the internal buffer
-	tm.Resize(w, h);
+	tm.Resize(_width, _height);
 
 	// If the cursor is valid and has a non-zero position
     if (cursor && (cursor.pos || cursor.line))
@@ -131,12 +131,12 @@ void GenericTerminal::ResizeTerminal(int w, int h)
             termCursor = tm.getCurrentViewPos();
     }
 
-	width = w;
+	width = _width;
 
     // Does the height change?
-	if (h != height)
+	if (_height != height)
     {
-        height = h;
+        height = _height;
 
         // Update the scroll indicators
         scroll_bot = height - 1;
@@ -165,7 +165,7 @@ GenericTerminal::GenericTerminal(int w, int h) : width(w), height(h)
 
 	// Load the syntax
 	wxFileName f(wxStandardPaths::Get().GetExecutablePath());
-	_syntax.loadSyntax(f.GetPath(true).ToStdString());
+	_syntax.loadSyntax(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR).ToStdString());
 
 	// Set the terminal view cursor to top left
 	// To make the cursor valid, we have to instantiate it with zeros

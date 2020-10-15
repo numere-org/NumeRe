@@ -356,7 +356,7 @@ void ImagePanel::OnSaveAs(wxCommandEvent& event)
     wxString title = _guilang.get("GUI_DLG_SAVEAS");
     wxString filterString = "PNG (*.png)|*.png|Bitmap (*.bmp)|*.bmp|JPEG (*.jpg)|*.jpg";
     wxFileName fileName = currentFile;
-    wxFileDialog dlg(this, title, fileName.GetPath(true), fileName.GetName(), filterString, wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
+    wxFileDialog dlg(this, title, fileName.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR), fileName.GetName(), filterString, wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
 
     // ie, user clicked cancel
     if(dlg.ShowModal() != wxID_OK)
@@ -399,10 +399,10 @@ void ImagePanel::OnCopy(wxCommandEvent& event)
 void ImagePanel::OnNextImage(wxCommandEvent& event)
 {
     wxFileName filename(currentFile);
-    wxArrayString filelist = getFileList(filename.GetPath(true));
+    wxArrayString filelist = getFileList(filename.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR));
     if (!filelist.size())
         return;
-    int nIndex = filelist.Index(filename.GetPath(wxPATH_GET_SEPARATOR) + filename.GetFullName());
+    int nIndex = filelist.Index(filename.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + filename.GetFullName());
     if (nIndex == wxNOT_FOUND)
         return;
 
@@ -428,10 +428,10 @@ void ImagePanel::OnNextImage(wxCommandEvent& event)
 void ImagePanel::OnPreviousImage(wxCommandEvent& event)
 {
     wxFileName filename(currentFile);
-    wxArrayString filelist = getFileList(filename.GetPath(true));
+    wxArrayString filelist = getFileList(filename.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR));
     if (!filelist.size())
         return;
-    int nIndex = filelist.Index(filename.GetPath(wxPATH_GET_SEPARATOR) + filename.GetFullName());
+    int nIndex = filelist.Index(filename.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + filename.GetFullName());
     if (nIndex == wxNOT_FOUND)
         return;
 

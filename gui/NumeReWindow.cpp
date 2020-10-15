@@ -231,7 +231,7 @@ bool MyApp::OnInit()
     wxInitAllImageHandlers();
     wxBitmap splashImage;
 
-    if (splashImage.LoadFile(f.GetPath(true)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
+    if (splashImage.LoadFile(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR)+"icons\\splash.png", wxBITMAP_TYPE_PNG))
     {
         wxSplashScreen* splash = new wxSplashScreen(splashImage, wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 3000, nullptr, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
         //wxApp::Yield();
@@ -3033,8 +3033,6 @@ void NumeReWindow::DefaultPage()
     else
         GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
 
-    vector<string> vPaths = m_terminal->getPathSettings();
-
     m_fileNum += 1;
 
     ProjectInfo* singleFileProject = new ProjectInfo();
@@ -3782,32 +3780,19 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 bool NumeReWindow::GetFileContents(wxString fileToLoad, wxString &fileContents, wxString &fileName)
 {
     wxFileName fn(fileToLoad);
-    if (false)
-    {
-        wxString remotePath = fn.GetPath(false, wxPATH_UNIX);
-        wxString remoteFile = fn.GetFullName();
+	wxFile file(fileToLoad);
 
-        if (!m_network->GetFileContents(fn, fileContents))
-        {
-            CheckNetworkStatus();
-        }
-    }
-    else
-    {
-        wxFile file(fileToLoad);
+	if (!file.IsOpened())
+	{
+		return false;
+	}
 
-        if (!file.IsOpened())
-        {
-            return false;
-        }
+	long lng = file.Length();
 
-        long lng = file.Length();
-
-        if (lng > 0)
-        {
-            file.ReadAll(&fileContents, wxConvAuto(wxFONTENCODING_CP1252));
-        }
-    }
+	if (lng > 0)
+	{
+		file.ReadAll(&fileContents, wxConvAuto(wxFONTENCODING_CP1252));
+	}
 
     fileName = fn.GetFullName();
     return true;
@@ -4050,7 +4035,6 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 
         int currentTab = m_book->GetSelection();
 
-        wxString locationPrefix = "(L) ";
         m_book->SetPageText(currentTab, simpleFileName);
         m_book->Refresh();
         UpdateWindowTitle(simpleFileName);
@@ -4592,10 +4576,7 @@ void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
 
     if (enable)
     {
-        int tabNum = m_book->GetSelection();
-        wxString title = m_book->GetPageText(tabNum);
-
-        if(!title.Contains("*"))
+        if (title.find("*") == std::string::npos)
         {
             title += "*";
             m_book->SetPageText(tabNum, title);
@@ -4605,7 +4586,7 @@ void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
     }
     else
     {
-        if(title.Contains("*"))
+        if (title.find("*") != std::string::npos)
         {
             title.RemoveLast(1);
             m_book->SetPageText(tabNum, title);
@@ -4619,7 +4600,7 @@ void NumeReWindow::OnUpdateSaveUI()//wxUpdateUIEvent &event)
     wxMenuBar* mb = GetMenuBar();
     WXWidget handle = mb->GetHandle();
 
-    if(handle != NULL)
+    if (handle != NULL)
     {
         mb->FindItem(ID_MENU_SAVE)->Enable(enable);
     }
@@ -6386,13 +6367,13 @@ void NumeReWindow::RemoveFileFromProject()
 //////////////////////////////////////////////////////////////////////////////
 NetworkCallResult NumeReWindow::CheckNetworkStatus()
 {
-    NetworkStatus result = m_network->GetStatus();
+    /*NetworkStatus result = m_network->GetStatus();
 
     switch((int)result)
     {
     case NET_UNKNOWN_HOST:
         {
-            wxString hostname = m_options->GetHostname();
+            wxString hostname = "";//m_options->GetHostname();
             wxString fingerprint = m_network->GetStatusDetails();
 
             wxString message = "The SSH fingerprint for the server " + hostname + " was not recognized.";
@@ -6453,7 +6434,9 @@ NetworkCallResult NumeReWindow::CheckNetworkStatus()
     default:
         return NETCALL_WORKED;
         break;
-    }
+    }*/
+
+    return NETCALL_FAILED;
 }
 
 
@@ -6464,7 +6447,6 @@ NetworkCallResult NumeReWindow::CheckNetworkStatus()
 ///  @param  filename     wxString  The filename to look for
 ///  @param  linenumber   int       The line number to go to
 ///  @param  showMarker   bool      [=true] Whether or not to show a marker to highlight the line
-///  @param  linecontents wxString  [=wxEmptyString] The text that the given line should have in it
 ///
 ///  @return void
 ///
@@ -6473,17 +6455,17 @@ NetworkCallResult NumeReWindow::CheckNetworkStatus()
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::FocusOnLine(wxString filename, int linenumber, bool showMarker, wxString linecontents /* = wxEmptyString */)
+void NumeReWindow::FocusOnLine(wxString filename, int linenumber, bool showMarker)
 {
     wxFileName fn(filename);
 
     int tabNum = GetPageNum(fn, false);
 
-    if(tabNum == -1)
+    if (tabNum == -1)
     {
-        if(m_projMultiFiles != NULL)
+        if (m_projMultiFiles != NULL)
         {
-            if(m_projMultiFiles->FileExistsInProject(filename))
+            if (m_projMultiFiles->FileExistsInProject(filename))
             {
                 wxArrayString filesToOpen;
                 filesToOpen.Add(filename);
@@ -6493,19 +6475,12 @@ void NumeReWindow::FocusOnLine(wxString filename, int linenumber, bool showMarke
         }
     }
 
-    if(tabNum != -1)
+    if (tabNum != -1)
     {
         PageHasChanged(tabNum);
 
         // Adjust for Scintilla's zero-based line numbers
-        int adjustedLineNum = linenumber - 1;
-
-        if(linecontents != wxEmptyString)
-        {
-            wxString edLineContents = m_currentEd->GetLine(adjustedLineNum);
-        }
-
-        m_currentEd->FocusOnLine(adjustedLineNum, showMarker);
+        m_currentEd->FocusOnLine(linenumber-1, showMarker);
     }
 }
 
@@ -6547,11 +6522,11 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
             return;
         }
 
-        int pos = m_currentEd->GetSelectionStart();
+        pos = m_currentEd->GetSelectionStart();
         wxString replaceString = event.GetReplaceString();
         m_currentEd->ReplaceSelection(replaceString);
         m_currentEd->EnsureCaretVisible();
-        m_currentEd->SetSelection(pos, pos + replaceString.Length());
+        m_currentEd->SetSelection(pos, pos + replaceString.length());
 
         // TODO Do a Find after this for the next item automatically?
     }
@@ -6616,9 +6591,9 @@ int NumeReWindow::FindString(const wxString &findString, int start_pos, int flag
     }
     else
     {
-        if (labs(m_currentEd->GetTargetEnd() - m_currentEd->GetTargetStart()) == long(findString.Length()))
+        if (labs(m_currentEd->GetTargetEnd() - m_currentEd->GetTargetStart()) == long(findString.length()))
         {
-            pos -= findString.Length() + 1; // doesn't matter if it matches or not, skip it
+            pos -= findString.length() + 1; // doesn't matter if it matches or not, skip it
         }
 
         m_currentEd->SetTargetStart(wxMax(0, pos));
@@ -6632,7 +6607,7 @@ int NumeReWindow::FindString(const wxString &findString, int start_pos, int flag
     {
         if (highlight)
         {
-            m_currentEd->SetSelection(pos, pos + findString.Length());
+            m_currentEd->SetSelection(pos, pos + findString.length());
             m_currentEd->EnsureCaretVisible();
         }
     }

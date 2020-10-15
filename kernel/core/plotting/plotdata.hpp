@@ -140,6 +140,9 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         int nRequestedLayers;
         int nLegendPosition;
 
+        PlotData(const PlotData&) = delete;
+        PlotData& operator=(const PlotData&) = delete;
+
         inline bool checkColorChars(const string& sColorSet)
             {
                 string sColorChars = "#| wWhHkRrQqYyEeGgLlCcNnBbUuMmPp123456789{}";
@@ -186,7 +189,6 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         // --> Konstruktoren und Destruktoren <--
         PlotData();
         PlotData(int _nLines, int _nRows = 1, int _nLayers = 1);
-        PlotData(const PlotData& _pData);
         ~PlotData();
 
         enum Coordinates
@@ -445,11 +447,11 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                 else
                     return _lLine;
             }
-        inline size_t getHLinesSize()
+        inline size_t getHLinesSize() const
             {
                 return _lHlines.size();
             }
-        inline Line getVLines(unsigned int i = 0)
+        inline Line getVLines(unsigned int i = 0) const
             {
                 Line _lLine;
                 _lLine.dPos = 0.0;
@@ -459,7 +461,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                 else
                     return _lLine;
             }
-        inline size_t getVLinesSize()
+        inline size_t getVLinesSize() const
             {
                 return _lVLines.size();
             }
@@ -544,12 +546,12 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         int getLayers(bool bFull = false) const;
 
         // --> Maximum und Minimum aller Werte im Speicher lesen <--
-        double getMin(int nCol = ALLRANGES);
-        double getMax(int nCol = ALLRANGES);
+        double getMin(int nCol = ALLRANGES) const;
+        double getMax(int nCol = ALLRANGES) const;
         vector<double> getWeightedRanges(int nCol = ALLRANGES, double dLowerPercentage = 0.75, double dUpperPercentage = 0.75);
 
         // --> Intervallgrenzen lesen <--
-        double getRanges(int _j, int _i = 0);
+        double getRanges(int _j, int _i = 0) const;
 };
 
 #endif

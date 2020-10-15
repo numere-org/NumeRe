@@ -20,6 +20,9 @@ private:
 	bool AddIconToList(wxString iconInfo);
 	void CreateDisabledIcon(wxString iconInfo);
 
+	IconManager(const IconManager&) = delete;
+	IconManager& operator=(const IconManager&) = delete;
+
 
 	StringIntHashmap m_iconExtensionMapping;
 	wxImageList* m_images;

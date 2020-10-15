@@ -69,12 +69,12 @@ END_EVENT_TABLE()
  * wxTermContainer constructors
  */
 
-wxTermContainer::wxTermContainer( )
+wxTermContainer::wxTermContainer( ) : m_terminal(nullptr), m_scrollbar(nullptr), m_lastThumbPosition(0), m_sizer(nullptr), m_lastLinesReceived(0)
 {
 }
 
 wxTermContainer::wxTermContainer( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style )
-: m_terminal(NULL)
+: m_terminal(nullptr)
 {
     Create(parent, id, pos, size, style);
 

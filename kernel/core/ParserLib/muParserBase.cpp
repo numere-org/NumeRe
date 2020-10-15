@@ -301,16 +301,16 @@ namespace mu
 		{
 			if (mVectorVars.find(pExpr->substr(nStart, nEnd - nStart)) != mVectorVars.end())
 				return;
+			
 			std::vector<double> vVar;
+			
 			if (GetVar().find(pExpr->substr(nStart, nEnd - nStart)) != GetVar().end())
-			{
-				vVar[0] = *(GetVar().find(pExpr->substr(nStart, nEnd - nStart))->second);
-			}
+				vVar.push_back(*(GetVar().find(pExpr->substr(nStart, nEnd - nStart))->second));
 			else
-				vVar[0] = 0.0;
+				vVar.push_back(0.0);
+			
 			SetVectorVar(pExpr->substr(nStart, nEnd - nStart), vVar);
 		}
-		return;
 	}
 
 	//---------------------------------------------------------------------------
@@ -1140,7 +1140,7 @@ namespace mu
 			// because it deletes the array with the used variables
 			m_pParseFormula = &ParserBase::ParseString;
 			m_pTokenReader->IgnoreUndefVar(false);
-			throw e;
+			throw;
 		}
 
 		return m_pTokenReader->GetUsedVar();
@@ -3315,7 +3315,7 @@ namespace mu
         if (!bMakeLoopByteCode)
             return 0;
 
-        if (_nthLoopElement >= 0 && _nthLoopElement < nLoopLength)
+        if (_nthLoopElement < nLoopLength)
             return vValidByteCode[_nthLoopElement][_nthPartEquation];
         else
             return vValidByteCode[nthLoopElement][_nthPartEquation];
@@ -3338,7 +3338,7 @@ namespace mu
             if (g_DbgDumpStack)
                 NumeReKernel::print("DEBUG: Declared as invalid: (" + toString(_nthLoopElement) + "," + toString(_nthPartEquation) + ")");
 
-            if (_nthLoopElement >= 0 && _nthLoopElement < nLoopLength)
+            if (_nthLoopElement < nLoopLength)
                 vValidByteCode[_nthLoopElement][_nthPartEquation] = 0;
             else
                 vValidByteCode[nthLoopElement][_nthPartEquation] = 0;
@@ -3359,7 +3359,7 @@ namespace mu
     {
         if (bMakeLoopByteCode && !bPauseLoopByteCode)
         {
-            if (_nthLoopElement >= 0 && _nthLoopElement < nLoopLength)
+            if (_nthLoopElement < nLoopLength)
                 vValidByteCode[_nthLoopElement][_nthPartEquation] = -1;
             else
                 vValidByteCode[nthLoopElement][_nthPartEquation] = -1;

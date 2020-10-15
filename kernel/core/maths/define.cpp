@@ -169,7 +169,7 @@ string FunctionDefinition::parse(const string& _sArgList)
 /// \return string
 ///
 /////////////////////////////////////////////////
-string FunctionDefinition::exportFunction()
+string FunctionDefinition::exportFunction() const
 {
     string sExport = sName + "; " + sParsedDefinitionString + "; " + sDefinitionString + "; ";
 
@@ -463,14 +463,12 @@ bool FunctionDefinition::convertToValues()
 /////////////////////////////////////////////////
 bool FunctionDefinition::replaceArgumentOccurences()
 {
-    size_t nPos = 0;
-
     // Replace all occurences in the expression with
     // new placeholders
     for (size_t i = 0; i < vArguments.size(); i++)
     {
-        // reset position index
-        nPos = 0;
+        // create new position index
+        size_t nPos = 0;
 
         // Search for the next occurence of the variable
         while ((nPos = sParsedDefinitionString.find(vArguments[i], nPos)) != string::npos)
@@ -520,10 +518,10 @@ FunctionDefinitionManager::FunctionDefinitionManager(bool _isLocal) : FileSystem
 /// constructor. Delegates first to the default
 /// constructor.
 ///
-/// \param _defined FunctionDefinitionManager&
+/// \param _defined const FunctionDefinitionManager&
 ///
 /////////////////////////////////////////////////
-FunctionDefinitionManager::FunctionDefinitionManager(FunctionDefinitionManager& _defined) : FunctionDefinitionManager(true)
+FunctionDefinitionManager::FunctionDefinitionManager(const FunctionDefinitionManager& _defined) : FunctionDefinitionManager(true)
 {
     sFileName = _defined.sFileName;
     sTables = _defined.sTables;
@@ -548,7 +546,7 @@ string FunctionDefinitionManager::resolveRecursiveDefinitions(string sDefinition
     // Get the different parts of the definition
     string sFunctionName = sDefinition.substr(0, sDefinition.find('(')+1);
     string sFunction = sDefinition.substr(sDefinition.find(":=")+2);
-    string sFuncOccurence = "";
+    string sFuncOccurence;
 
     // Remove obsolete surrounding whitespaces
     StripSpaces(sFunction);
@@ -598,7 +596,7 @@ map<string, FunctionDefinition>::const_iterator FunctionDefinitionManager::findI
     // As long as the ID is not zero,
     // we increment the iterator and
     // decrement the ID
-    while (iter != mFunctionsMap.end() && id >= 0)
+    while (iter != mFunctionsMap.end())
     {
         // Return the current iterator,
         // if the ID is zero
@@ -676,7 +674,7 @@ bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, 
 
     // Catch all possible syntax errors at this location
     if (sExpr.find('(') == string::npos
-        || (sExpr.find('(') != string::npos && sExpr.find('(') > sExpr.find(":="))
+        || sExpr.find('(') > sExpr.find(":=")
         || sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != string::npos
         || (sTables.length() && sTables.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
         || sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != string::npos
@@ -687,7 +685,7 @@ bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, 
         {
             throw SyntaxError(SyntaxError::CANNOT_FIND_DEFINE_OPRT, sExpr, SyntaxError::invalid_position);
         }
-        else if (sExpr.find('(') == string::npos || (sExpr.find('(') != string::npos && sExpr.find('(') > sExpr.find(":=")))
+        else if (sExpr.find('(') == string::npos || sExpr.find('(') > sExpr.find(":="))
         {
             throw SyntaxError(SyntaxError::CANNOT_FIND_FUNCTION_ARGS, sExpr, SyntaxError::invalid_position);
         }
@@ -816,9 +814,6 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
     if (!NumeReKernel::getInstance())
         return false;
 
-    unsigned int nPos = 0;
-    unsigned int nPos_2 = 0;
-
     string sTemp = "";
     string sImpFunc = "";
     bool bDoRecursion = false;
@@ -848,7 +843,7 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
     // possible matches
     for (auto iter = mFunctionsMap.begin(); iter != mFunctionsMap.end(); ++iter)
     {
-        nPos = 0;
+        size_t nPos = 0;
 
         // Is there a possible match?
         if (sExpr.find(iter->second.sName + "(") != string::npos)
@@ -876,7 +871,7 @@ bool FunctionDefinitionManager::call(string& sExpr, int nRecursion)
 
                 // Copy the calling arguments
                 string sArgs = sExpr.substr(nPos);
-                nPos_2 = getMatchingParenthesis(sArgs);
+                size_t nPos_2 = getMatchingParenthesis(sArgs);
 
                 // Check, whether the sArgs are terminated
                 // by a parenthesis
@@ -1131,12 +1126,7 @@ bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
     if (ifDefinedFile.good())
     {
         if (_option.getSystemPrintStatus() && !bAutoLoad)
-        {
-            if (!bAutoLoad)
-                NumeReKernel::printPreFmt("|-> ");
-
-            NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("DEFINE_LOADING_FUNCTIONS")) + " ... ");
-        }
+            NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("DEFINE_LOADING_FUNCTIONS")) + " ... ");
 
         // Read every line of the definition file
         while (!ifDefinedFile.eof())

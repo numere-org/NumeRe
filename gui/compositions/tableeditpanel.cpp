@@ -31,6 +31,7 @@ END_EVENT_TABLE()
 // creates the controls
 TableEditPanel::TableEditPanel(wxFrame* parent, wxWindowID id, wxStatusBar* statusbar) : wxPanel(parent, id)
 {
+	m_terminal = nullptr;
     finished = false;
     vsizer = new wxBoxSizer(wxVERTICAL);
     hsizer = new wxBoxSizer(wxHORIZONTAL);

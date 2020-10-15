@@ -9,7 +9,7 @@ class Recycler : public SHFILEOPSTRUCT
 	public:
 		Recycler();
 
-		int recycle(const char* psPath, bool bDelete = false);
+		int recycle(const char* pszPath, bool bDelete = false);
 };
 
 #endif // RECYCLER_HPP

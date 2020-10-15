@@ -62,7 +62,7 @@ Language::Language(const Language& _lang) : FileSystem()
 /// \return map<string,string>
 ///
 /////////////////////////////////////////////////
-map<string,string> Language::getLangFileContent(const string& sFile)
+map<string,string> Language::getLangFileContent(const string& sFile) const
 {
     map<string,string> mLangFileContent;
     ifstream fFile_in;

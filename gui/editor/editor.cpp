@@ -209,14 +209,14 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* 
 
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     //wxInitAllImageHandlers();
-    this->RegisterImage(NumeReSyntax::SYNTAX_COMMAND, wxBitmap(f.GetPath(true) + "icons\\cmd.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_FUNCTION, wxBitmap(f.GetPath(true) + "icons\\fnc.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_OPTION, wxBitmap(f.GetPath(true) + "icons\\opt.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_CONSTANT, wxBitmap(f.GetPath(true) + "icons\\cnst.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_SPECIALVAL, wxBitmap(f.GetPath(true) + "icons\\spv.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_OPERATOR, wxBitmap(f.GetPath(true) + "icons\\opr.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_METHODS, wxBitmap(f.GetPath(true) + "icons\\mthd.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_PROCEDURE, wxBitmap(f.GetPath(true) + "icons\\prc.png", wxBITMAP_TYPE_PNG));
+    this->RegisterImage(NumeReSyntax::SYNTAX_COMMAND, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cmd.png", wxBITMAP_TYPE_PNG));
+    this->RegisterImage(NumeReSyntax::SYNTAX_FUNCTION, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\fnc.png", wxBITMAP_TYPE_PNG));
+    this->RegisterImage(NumeReSyntax::SYNTAX_OPTION, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opt.png", wxBITMAP_TYPE_PNG));
+    this->RegisterImage(NumeReSyntax::SYNTAX_CONSTANT, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cnst.png", wxBITMAP_TYPE_PNG));
+    this->RegisterImage(NumeReSyntax::SYNTAX_SPECIALVAL, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\spv.png", wxBITMAP_TYPE_PNG));
+    this->RegisterImage(NumeReSyntax::SYNTAX_OPERATOR, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opr.png", wxBITMAP_TYPE_PNG));
+    this->RegisterImage(NumeReSyntax::SYNTAX_METHODS, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\mthd.png", wxBITMAP_TYPE_PNG));
+    this->RegisterImage(NumeReSyntax::SYNTAX_PROCEDURE, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\prc.png", wxBITMAP_TYPE_PNG));
 
     wxFont font = m_options->GetEditorFont();
     this->StyleSetFont(wxSTC_STYLE_DEFAULT, font);
@@ -555,7 +555,7 @@ bool NumeReEditor::SaveGeneralFile(const wxString& filename)
 //////////////////////////////////////////////////////////////////////////////
 bool NumeReEditor::LoadFileText(wxString fileContents)
 {
-    if (fileContents.Length() > 0)
+    if (fileContents.length() > 0)
     {
         m_bLoadingFile = true;
         defaultPage = false;
@@ -574,57 +574,26 @@ bool NumeReEditor::LoadFileText(wxString fileContents)
     // determine and set EOL mode
     int eolMode = -1;
 
-    bool eolMix = false;
+    //wxString eolName;
 
-    wxString eolName;
-
-    if ( fileContents.Contains("\r\n") )
+    if (fileContents.find("\r\n") != std::string::npos)
     {
         eolMode = wxSTC_EOL_CRLF;
-
-        eolName = _("CR+LF (Windows)");
+        //eolName = _("CR+LF (Windows)");
     }
-    else if ( fileContents.Contains("\r") )
+    else if (fileContents.find("\r") != std::string::npos)
     {
-        if (eolMode != -1)
-        {
-            eolMix = true;
-        }
-        else
-        {
-            eolMode = wxSTC_EOL_CR;
-
-            eolName = _("CR (Macintosh)");
-        }
+		eolMode = wxSTC_EOL_CR;
+		//eolName = _("CR (Macintosh)");
     }
-    else if ( fileContents.Contains("\n") )
+    else if (fileContents.find("\n") != std::string::npos)
     {
-        if (eolMode != -1)
-        {
-            eolMix = true;
-        }
-        else
-        {
-            eolMode = wxSTC_EOL_LF;
-
-            eolName = _("LF (Unix)");
-        }
+		eolMode = wxSTC_EOL_LF;
+		//eolName = _("LF (Unix)");
     }
 
-    if ( eolMode != -1 )
+    if (eolMode != -1)
     {
-        if ( eolMix && wxMessageBox(_("Convert all line endings to ")
-                                    + eolName + _("?"), _("Line endings"), wxYES_NO | wxICON_QUESTION)
-                == wxYES )
-        {
-            ConvertEOLs(eolMode);
-
-            // set staus bar text
-            // g_statustext->Clear();
-            //g_statustext->Append(_("Converted line endings to "));
-            //g_statustext->Append(eolName);
-        }
-
         SetEOLMode(eolMode);
     }
 
@@ -2476,7 +2445,7 @@ void NumeReEditor::JumpToBookmark(bool down)
             nCurrentLine--;
     }
 
-    int nMarker = nCurrentLine;
+    int nMarker;
     int nMarkerMask = (1 << MARKER_BOOKMARK) | (1 << MARKER_SECTION);
 
     // Find the next marker
@@ -3508,8 +3477,8 @@ vector<int> NumeReEditor::BlockMatchMATLAB(int nPos)
 
     vPos.push_back(nStartPos);
 
-    if (nSearchDir == -1)
-        nStartPos = WordEndPosition(nPos, true);
+    //if (nSearchDir == -1)
+    //    nStartPos = WordEndPosition(nPos, true);
 
     for (int i = nStartPos; (i < GetLastPosition() && i >= 0); i += nSearchDir) // iterates down, if nSearchDir == 1, and up of nSearchDir == -1
     {
@@ -4434,7 +4403,7 @@ void NumeReEditor::OnRightClick(wxMouseEvent& event)
     }
 
     // If th user clicked a word or made a selection
-    if (clickedWord.Length() > 0 || HasSelection())
+    if (clickedWord.length() > 0 || HasSelection())
     {
         if (this->GetStyleAt(charpos) == wxSTC_NSCR_PROCEDURES)
         {
@@ -5458,7 +5427,7 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
     else if (pathname.find("$thisfile~") != string::npos)
     {
         // Search for the procedure in the current file
-        wxString procedurename = pathname.substr(pathname.rfind('~') + 1);
+        wxString name = pathname.substr(pathname.rfind('~') + 1);
         wxString procedureline;
         int nminpos = 0;
         int nmaxpos = GetLastPosition();
@@ -5476,7 +5445,7 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
 
             // If the line contains the necessary syntax elements
             // jump to it
-            if (procedureline.find("$" + procedurename) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$" + procedurename) + procedurename.length() + 1)] == '(')
+            if (procedureline.find("$" + name) != string::npos && procedureline[procedureline.find_first_not_of(' ', procedureline.find("$" + name) + name.length() + 1)] == '(')
             {
                 this->SetFocus();
                 this->GotoLine(LineFromPosition(nminpos));
@@ -5493,7 +5462,7 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
             return;
 
         // Get the template
-        wxString proctemplate = getTemplateContent(procedurename);
+        wxString proctemplate = getTemplateContent(name);
 
         // Add the template after the last line
         int nLastLine = this->GetLineCount();
@@ -5503,7 +5472,7 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
 
         // Replace the name in the template with the correct name
         // and goto the position
-        nLastLine = FindText(this->PositionFromLine(nLastLine), this->GetLastPosition(), "procedure $" + procedurename, wxSTC_FIND_MATCHCASE);
+        nLastLine = FindText(this->PositionFromLine(nLastLine), this->GetLastPosition(), "procedure $" + name, wxSTC_FIND_MATCHCASE);
         this->GotoPipe(nLastLine);
 
         // Update the syntax highlighting and the analyzer state
@@ -5867,7 +5836,7 @@ void NumeReEditor::AbstrahizeSection()
             // Ignore functions, which are not part of any argument list;
             // these are most probably actual functions
             if ((!sMatlabReturnListSet.size() || sMatlabReturnListSet.find(sCurrentToken.ToStdString()) == sMatlabReturnListSet.end())
-                && (!sArgumentListSet.size() || sArgumentListSet.find(sCurrentToken.ToStdString()) == sMatlabReturnListSet.end()))
+                && (!sArgumentListSet.size() || sArgumentListSet.find(sCurrentToken.ToStdString()) == sArgumentListSet.end()))
                 continue;
 
             // Find all occurences
@@ -6294,7 +6263,7 @@ wxString NumeReEditor::generateAutoCompList(const wxString& wordstart, string sP
 {
     map<wxString, int> mAutoCompMap;
     wxString wReturn = "";
-    string sCurrentWord = "";
+    string sCurrentWord;
 
     // Store the list of predefined values in the map
     if (sPreDefList.length())
@@ -7152,7 +7121,7 @@ void NumeReEditor::detectCodeDuplicates(int startline, int endline, int nDuplica
 ///
 /// \param nLine1 int
 /// \param nLine2 int
-/// \param nDuplicateFlag int
+/// \param nDuplicateFlags int
 /// \return double
 ///
 /// This function performs a semantic code comparison
@@ -7162,14 +7131,14 @@ void NumeReEditor::detectCodeDuplicates(int startline, int endline, int nDuplica
 /// If the line lengths differ too much, the
 /// analysis is omitted.
 /////////////////////////////////////////////////
-double NumeReEditor::compareCodeLines(int nLine1, int nLine2, int nDuplicateFlag)
+double NumeReEditor::compareCodeLines(int nLine1, int nLine2, int nDuplicateFlags)
 {
     size_t nMatchedCount = 0;
 
     // Get the code lines transformed into semantic
     // code
-    string sSemLine1 = this->getSemanticLine(nLine1, nDuplicateFlag);
-    string sSemLine2 = this->getSemanticLine(nLine2, nDuplicateFlag);
+    string sSemLine1 = this->getSemanticLine(nLine1, nDuplicateFlags);
+    string sSemLine2 = this->getSemanticLine(nLine2, nDuplicateFlags);
 
     // It is possible that the lines are semantical identical although they may contain different vars
     if (!sSemLine1.length() && sSemLine2.length())
@@ -7198,25 +7167,25 @@ double NumeReEditor::compareCodeLines(int nLine1, int nLine2, int nDuplicateFlag
 /// code.
 ///
 /// \param nLine int
-/// \param nDuplicateFlag int
+/// \param nDuplicateFlags int
 /// \return string
 ///
 /// If the selected line was already transformed
 /// into semantic code, the semantic code is read
 /// from a buffer.
 /////////////////////////////////////////////////
-string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
+string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlags)
 {
     if (vParsedSemanticCode[nLine].length())
         return vParsedSemanticCode[nLine];
 
     // Use the correct parser for the current language
     if (getFileType() == FILE_NSCR || getFileType() == FILE_NPRC)
-        return getSemanticLineNSCR(nLine, nDuplicateFlag);
+        return getSemanticLineNSCR(nLine, nDuplicateFlags);
     else if (getFileType() == FILE_MATLAB)
-        return getSemanticLineMATLAB(nLine, nDuplicateFlag);
+        return getSemanticLineMATLAB(nLine, nDuplicateFlags);
     else if (getFileType() == FILE_CPP)
-        return getSemanticLineCPP(nLine, nDuplicateFlag);
+        return getSemanticLineCPP(nLine, nDuplicateFlags);
     else
         return "";
 }
@@ -7227,18 +7196,18 @@ string NumeReEditor::getSemanticLine(int nLine, int nDuplicateFlag)
 /// code.
 ///
 /// \param nLine int
-/// \param nDuplicateFlag int
+/// \param nDuplicateFlags int
 /// \return string
 ///
 /// This function parses NumeRe code into semantic
 /// code and returns it. The degree of transformation
-/// is selected using a bit or in \c nDuplicateFlag:
+/// is selected using a bit or in \c nDuplicateFlags:
 /// \li 0 = direct comparison
 /// \li 1 = use var semanticals
 /// \li 2 = use string semanticals
 /// \li 4 = use numeric semanticals
 /////////////////////////////////////////////////
-string NumeReEditor::getSemanticLineNSCR(int nLine, int nDuplicateFlag)
+string NumeReEditor::getSemanticLineNSCR(int nLine, int nDuplicateFlags)
 {
     string sSemLine = "";
 
@@ -7251,7 +7220,7 @@ string NumeReEditor::getSemanticLineNSCR(int nLine, int nDuplicateFlag)
                 || isStyleType(STYLE_COMMENT_LINE, i)
                 || isStyleType(STYLE_COMMENT_BLOCK, i))
             continue;
-        else if ((nDuplicateFlag & SEMANTICS_VAR)
+        else if ((nDuplicateFlags & SEMANTICS_VAR)
                  && (this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT
                      || this->GetStyleAt(i) == wxSTC_NSCR_DEFAULT_VARS
                      || this->GetStyleAt(i) == wxSTC_NSCR_IDENTIFIER))
@@ -7266,7 +7235,7 @@ string NumeReEditor::getSemanticLineNSCR(int nLine, int nDuplicateFlag)
 
             sSemLine += "VAR";
         }
-        else if ((nDuplicateFlag & SEMANTICS_STRING) && this->GetStyleAt(i) == wxSTC_NSCR_STRING)
+        else if ((nDuplicateFlags & SEMANTICS_STRING) && this->GetStyleAt(i) == wxSTC_NSCR_STRING)
         {
             // replace string literals with a placeholder
             i++;
@@ -7276,7 +7245,7 @@ string NumeReEditor::getSemanticLineNSCR(int nLine, int nDuplicateFlag)
 
             sSemLine += "STR";
         }
-        else if ((nDuplicateFlag & SEMANTICS_NUM) && this->GetStyleAt(i) == wxSTC_NSCR_NUMBERS)
+        else if ((nDuplicateFlags & SEMANTICS_NUM) && this->GetStyleAt(i) == wxSTC_NSCR_NUMBERS)
         {
             // replace numeric literals with a placeholder
             while (this->GetStyleAt(i + 1) == wxSTC_NSCR_NUMBERS)
@@ -7297,7 +7266,7 @@ string NumeReEditor::getSemanticLineNSCR(int nLine, int nDuplicateFlag)
 
             sSemLine += "NUM";
         }
-        else if ((nDuplicateFlag & SEMANTICS_FUNCTION) && this->GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
+        else if ((nDuplicateFlags & SEMANTICS_FUNCTION) && this->GetStyleAt(i) == wxSTC_NSCR_CUSTOM_FUNCTION)
         {
             // replace functions and caches with a placeholder
             while (this->GetStyleAt(i + 1) == wxSTC_NSCR_CUSTOM_FUNCTION)
@@ -7321,18 +7290,18 @@ string NumeReEditor::getSemanticLineNSCR(int nLine, int nDuplicateFlag)
 /// code.
 ///
 /// \param nLine int
-/// \param nDuplicateFlag int
+/// \param nDuplicateFlags int
 /// \return string
 ///
 /// This function parses MATLAB code into semantic
 /// code and returns it. The degree of transformation
-/// is selected using a bit or in \c nDuplicateFlag:
+/// is selected using a bit or in \c nDuplicateFlags:
 /// \li 0 = direct comparison
 /// \li 1 = use var semanticals
 /// \li 2 = use string semanticals
 /// \li 4 = use numeric semanticals
 /////////////////////////////////////////////////
-string NumeReEditor::getSemanticLineMATLAB(int nLine, int nDuplicateFlag)
+string NumeReEditor::getSemanticLineMATLAB(int nLine, int nDuplicateFlags)
 {
     string sSemLine = "";
 
@@ -7344,7 +7313,7 @@ string NumeReEditor::getSemanticLineMATLAB(int nLine, int nDuplicateFlag)
                 || this->GetCharAt(i) == '\n'
                 || this->GetStyleAt(i) == wxSTC_MATLAB_COMMENT)
             continue;
-        else if ((nDuplicateFlag & SEMANTICS_VAR)
+        else if ((nDuplicateFlags & SEMANTICS_VAR)
                  && (this->GetStyleAt(i) == wxSTC_MATLAB_DEFAULT
                      || this->GetStyleAt(i) == wxSTC_MATLAB_IDENTIFIER))
         {
@@ -7357,7 +7326,7 @@ string NumeReEditor::getSemanticLineMATLAB(int nLine, int nDuplicateFlag)
 
             sSemLine += "VAR";
         }
-        else if ((nDuplicateFlag & SEMANTICS_STRING) && this->GetStyleAt(i) == wxSTC_MATLAB_STRING)
+        else if ((nDuplicateFlags & SEMANTICS_STRING) && this->GetStyleAt(i) == wxSTC_MATLAB_STRING)
         {
             // replace string literals with a placeholder
             i++;
@@ -7367,7 +7336,7 @@ string NumeReEditor::getSemanticLineMATLAB(int nLine, int nDuplicateFlag)
 
             sSemLine += "STR";
         }
-        else if ((nDuplicateFlag & SEMANTICS_NUM) && this->GetStyleAt(i) == wxSTC_MATLAB_NUMBER)
+        else if ((nDuplicateFlags & SEMANTICS_NUM) && this->GetStyleAt(i) == wxSTC_MATLAB_NUMBER)
         {
             // replace numeric literals with a placeholder
             while (this->GetStyleAt(i + 1) == wxSTC_MATLAB_NUMBER)
@@ -7404,18 +7373,18 @@ string NumeReEditor::getSemanticLineMATLAB(int nLine, int nDuplicateFlag)
 /// code.
 ///
 /// \param nLine int
-/// \param nDuplicateFlag int
+/// \param nDuplicateFlags int
 /// \return string
 ///
 /// This function parses C++ code into semantic
 /// code and returns it. The degree of transformation
-/// is selected using a bit or in \c nDuplicateFlag:
+/// is selected using a bit or in \c nDuplicateFlags:
 /// \li 0 = direct comparison
 /// \li 1 = use var semanticals
 /// \li 2 = use string semanticals
 /// \li 4 = use numeric semanticals
 /////////////////////////////////////////////////
-string NumeReEditor::getSemanticLineCPP(int nLine, int nDuplicateFlag)
+string NumeReEditor::getSemanticLineCPP(int nLine, int nDuplicateFlags)
 {
     string sSemLine = "";
 
@@ -7427,7 +7396,7 @@ string NumeReEditor::getSemanticLineCPP(int nLine, int nDuplicateFlag)
                 || this->GetCharAt(i) == '\n'
                 || isStyleType(STYLE_COMMENT_LINE, i) || isStyleType(STYLE_COMMENT_BLOCK, i))
             continue;
-        else if ((nDuplicateFlag & SEMANTICS_VAR)
+        else if ((nDuplicateFlags & SEMANTICS_VAR)
                  && (this->GetStyleAt(i) == wxSTC_C_DEFAULT
                      || this->GetStyleAt(i) == wxSTC_C_IDENTIFIER))
         {
@@ -7440,7 +7409,7 @@ string NumeReEditor::getSemanticLineCPP(int nLine, int nDuplicateFlag)
 
             sSemLine += "VAR";
         }
-        else if ((nDuplicateFlag & SEMANTICS_STRING) && (this->GetStyleAt(i) == wxSTC_C_STRING || this->GetStyleAt(i) == wxSTC_C_CHARACTER))
+        else if ((nDuplicateFlags & SEMANTICS_STRING) && (this->GetStyleAt(i) == wxSTC_C_STRING || this->GetStyleAt(i) == wxSTC_C_CHARACTER))
         {
             // replace string literals with a placeholder
             i++;
@@ -7450,7 +7419,7 @@ string NumeReEditor::getSemanticLineCPP(int nLine, int nDuplicateFlag)
 
             sSemLine += "STR";
         }
-        else if ((nDuplicateFlag & SEMANTICS_NUM) && this->GetStyleAt(i) == wxSTC_C_NUMBER)
+        else if ((nDuplicateFlags & SEMANTICS_NUM) && this->GetStyleAt(i) == wxSTC_C_NUMBER)
         {
             // replace numeric literals with a placeholder
             while (this->GetStyleAt(i + 1) == wxSTC_C_NUMBER)

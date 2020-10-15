@@ -210,9 +210,26 @@ class SyntaxError
         static size_t invalid_position;
         static int invalid_index;
 
-        SyntaxError() : nErrorPosition(invalid_position), errorcode(EMPTY_ERROR_MESSAGE) {}
-        SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos) : sFailingExpression(sExpr), nErrorPosition(n_pos), errorcode(_err) {}
-        SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos, const string& sToken) : sFailingExpression(sExpr), sErrorToken(sToken), nErrorPosition(n_pos), errorcode(_err) {}
+        SyntaxError() : nErrorPosition(invalid_position), errorcode(EMPTY_ERROR_MESSAGE)
+			{
+                nErrorIndices[0] = -1;
+                nErrorIndices[1] = -1;
+                nErrorIndices[2] = -1;
+                nErrorIndices[3] = -1;
+            }
+        SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos) : SyntaxError()
+            {
+                sFailingExpression = sExpr;
+                nErrorPosition = n_pos;
+                errorcode = _err;
+            }
+        SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos, const string& sToken) : SyntaxError()
+            {
+                sFailingExpression = sExpr;
+                sErrorToken = sToken;
+                nErrorPosition = n_pos;
+                errorcode = _err;
+            }
         SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), nErrorPosition(n_pos), errorcode(_err)
             {
                 nErrorIndices[0] = nInd1;
@@ -228,12 +245,17 @@ class SyntaxError
                 nErrorIndices[3] = nInd4;
             }
 
-        SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok) : sFailingExpression(sExpr), errorcode(_err)
+        SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok) : SyntaxError()
             {
+                sFailingExpression = sExpr;
+                errorcode = _err;
                 nErrorPosition = sFailingExpression.find(sErrTok);
             }
-        SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok, const string& sToken) : sFailingExpression(sExpr), sErrorToken(sToken), errorcode(_err)
+        SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok, const string& sToken) : SyntaxError()
             {
+                sFailingExpression = sExpr;
+                sErrorToken = sToken;
+                errorcode = _err;
                 nErrorPosition = sFailingExpression.find(sErrTok);
             }
         SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), errorcode(_err)
@@ -253,13 +275,13 @@ class SyntaxError
                 nErrorIndices[3] = nInd4;
             }
 
-        string getExpr()
+        string getExpr() const
             {return sFailingExpression;}
-        string getToken()
+        string getToken() const
             {return sErrorToken;}
-        size_t getPosition()
+        size_t getPosition() const
             {return nErrorPosition;}
-        int* getIndices()
+        const int* getIndices() const
             {return nErrorIndices;}
 
 };

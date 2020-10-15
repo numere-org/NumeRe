@@ -737,7 +737,7 @@ void wxMGL::OnMouseDown(wxMouseEvent &ev)
 
 // This member function is the event handling function
 // applied, when the user releases the left mouse button
-void wxMGL::OnMouseLeftUp(wxMouseEvent& event)
+void wxMGL::OnMouseLeftUp(wxMouseEvent& ev)
 {
     // Apply the zooming
     if (bZoomingMode)
@@ -785,7 +785,7 @@ void wxMGL::OnMouseLeftUp(wxMouseEvent& event)
     if (drawMode != DM_NONE)
     {
         drawModeActive = false;
-        DrawCurrentObject(event.GetX(), event.GetY());
+        DrawCurrentObject(ev.GetX(), ev.GetY());
     }
 }
 

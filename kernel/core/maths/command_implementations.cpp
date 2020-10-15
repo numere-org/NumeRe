@@ -604,16 +604,8 @@ vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _pars
             // Print a status value, if needed
             if (_option.getSystemPrintStatus() && bLargeInterval)
             {
-                if (!bLargeInterval)
-                {
-                    if ((int)((x - x0) / (x1 - x0) * 20) > (int)((x - dx - x0) / (x1 - x0) * 20))
-                        NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 20) * 5) + " %");
-                }
-                else
-                {
-                    if ((int)((x - x0) / (x1 - x0) * 100) > (int)((x - dx - x0) / (x1 - x0) * 100))
-                        NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 100)) + " %");
-                }
+				if ((int)((x - x0) / (x1 - x0) * 100) > (int)((x - dx - x0) / (x1 - x0) * 100))
+					NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 100)) + " %");
 
                 if (NumeReKernel::GetAsyncCancelState())//GetAsyncKeyState(VK_ESCAPE))
                 {

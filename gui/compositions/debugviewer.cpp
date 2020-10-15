@@ -47,6 +47,7 @@ END_EVENT_TABLE()
 /////////////////////////////////////////////////
 DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& title) : ViewerFrame(parent, title)
 {
+    m_terminal = nullptr;
     m_options = _options;
     nLineColumn = 0;
     nModuleColumn = 0;
@@ -106,7 +107,7 @@ DebugViewer::DebugViewer(wxWindow* parent, Options* _options, const wxString& ti
         m_stacktrace->SetColumnWidth(nModuleColumn, 0);
 
     // Create the variable viewer in debugger mode
-    m_varViewer = new VariableViewer(varBox->GetStaticBox(), (NumeReWindow*)parent);
+    m_varViewer = new VariableViewer(varBox->GetStaticBox(), static_cast<NumeReWindow*>(parent));
     m_varViewer->setDebuggerMode(true);
 
     // Add the GUI elements to the static box sizers

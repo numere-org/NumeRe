@@ -116,7 +116,7 @@ string Plugin::getOptionValue(const string& sInstallInfoString, const string& sO
 /// \return string
 ///
 /////////////////////////////////////////////////
-string Plugin::exportDefinition()
+string Plugin::exportDefinition() const
 {
     return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + ",";
 }
@@ -172,7 +172,7 @@ void Plugin::importDefinition(string sDefinitionString)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Plugin::operator==(const Plugin& _plugin)
+bool Plugin::operator==(const Plugin& _plugin) const
 {
     return _plugin.sCommand == sCommand && _plugin.sName == sName && _plugin.sAuthor == sAuthor;
 }
@@ -186,7 +186,7 @@ bool Plugin::operator==(const Plugin& _plugin)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Plugin::operator!=(const Plugin& _plugin)
+bool Plugin::operator!=(const Plugin& _plugin) const
 {
     return !operator==(_plugin);
 }
@@ -229,9 +229,7 @@ void Plugin::update(const Plugin& _plugin)
 /////////////////////////////////////////////////
 void Plugin::incrementVersion()
 {
-    string sTempVersion = sVersion;
-
-    // Remove the dots in the version string
+	// Remove the dots in the version string
     for (unsigned int n = 0; n < sVersion.length(); n++)
     {
         if (sVersion[n] == '.')

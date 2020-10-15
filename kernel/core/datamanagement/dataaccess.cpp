@@ -141,7 +141,7 @@ Indices& DataAccessParser::getIndices()
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool DataAccessParser::isCluster()
+bool DataAccessParser::isCluster() const
 {
     return bIsCluster;
 }
@@ -192,7 +192,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 		throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sLine, SyntaxError::invalid_position);
 
 	string sCache = "";             // Rueckgabe-string: Ggf. der linke Teil der Gleichung, falls es sich um eine Zuweisung handelt
-	string sLine_Temp = "";         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
+	string sLine_Temp;         // temporaerer string, da wir die string-Referenz nicht unnoetig veraendern wollen
 	size_t eq_pos = string::npos;                // int zum Zwischenspeichern der Position des "="
 
 
@@ -522,14 +522,13 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	Indices _idx;
-	bool isCluster = false;
-
+	
 	for (size_t i = 0; i < _parser.HasCachedAccess(); i++)
 	{
 		// Get the current cached data access
 		const mu::CachedDataAccess& _access = _parser.GetCachedAccess(i);
 
-		isCluster = _data.isCluster(_access.sAccessEquation);
+		bool isCluster = _data.isCluster(_access.sAccessEquation);
 
 		if (_access.sAccessEquation.find("().") != string::npos)
 		{
@@ -1021,7 +1020,7 @@ static string createMafVectorName(string sAccessString)
 static string getLastToken(const string& sLine)
 {
 	string sToken = sLine;
-	size_t pos = string::npos;
+	size_t pos;
 	// Strip the spaces, because the string may end with "... FUNCTION(   "
 	StripSpaces(sToken);
 
@@ -1493,56 +1492,5 @@ bool parser_CheckMultArgFunc(const string& sLeft, const string& sRight)
 	else
 		return false;
 }
-
-
-/////////////////////////////////////////////////
-/// \brief This function checks, whether the
-/// second index is greater than the first one
-/// exchanges them if necessary.
-///
-/// \param nIndex_1 int&
-/// \param nIndex_2 int&
-/// \return void
-///
-/////////////////////////////////////////////////
-void parser_CheckIndices(int& nIndex_1, int& nIndex_2)
-{
-	if (nIndex_1 < 0)
-		nIndex_1 = 0;
-	if (nIndex_2 < nIndex_1)
-	{
-		int nTemp = nIndex_1;
-		nIndex_1 = nIndex_2,
-		nIndex_2 = nTemp;
-		if (nIndex_1 < 0)
-			nIndex_1 = 0;
-	}
-	return;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Override for long long integers.
-///
-/// \param nIndex_1 long longint&
-/// \param nIndex_2 long longint&
-/// \return void
-///
-/////////////////////////////////////////////////
-void parser_CheckIndices(long long int& nIndex_1, long long int& nIndex_2)
-{
-	if (nIndex_1 < 0)
-		nIndex_1 = 0;
-	if (nIndex_2 < nIndex_1)
-	{
-		long long int nTemp = nIndex_1;
-		nIndex_1 = nIndex_2,
-		nIndex_2 = nTemp;
-		if (nIndex_1 < 0)
-			nIndex_1 = 0;
-	}
-	return;
-}
-
 
 

@@ -108,10 +108,8 @@ class VectorIndex
         /// \param vIndex const VectorIndex&
         ///
         /////////////////////////////////////////////////
-        VectorIndex(const VectorIndex& vIndex)
+        VectorIndex(const VectorIndex& vIndex) : vStorage(vIndex.vStorage), expand(vIndex.expand)
         {
-            vStorage = vIndex.vStorage;
-            expand = vIndex.expand;
         }
 
         /////////////////////////////////////////////////
@@ -120,10 +118,9 @@ class VectorIndex
         /// \param vIndex VectorIndex&&
         ///
         /////////////////////////////////////////////////
-        VectorIndex(VectorIndex&& vIndex)
+        VectorIndex(VectorIndex&& vIndex) : expand(std::move(vIndex.expand))
         {
-            vStorage = std::move(vIndex.vStorage);
-            expand = std::move(vIndex.expand);
+			std::swap(vStorage, vIndex.vStorage);
         }
 
         /////////////////////////////////////////////////
@@ -2015,17 +2012,14 @@ struct Indices
     string sCompiledAccessEquation;
 
     Indices() { }
-    Indices(const Indices& _idx)
+    Indices(const Indices& _idx) : row(_idx.row), col(_idx.col), sCompiledAccessEquation(_idx.sCompiledAccessEquation)
     {
-        row = _idx.row;
-        col = _idx.col;
-        sCompiledAccessEquation = _idx.sCompiledAccessEquation;
     }
     Indices(Indices&& _idx)
     {
-        row = std::move(_idx.row);
-        col = std::move(_idx.col);
-        sCompiledAccessEquation = std::move(_idx.sCompiledAccessEquation);
+        std::swap(_idx.row, row);
+        std::swap(_idx.col, col);
+        std::swap(_idx.sCompiledAccessEquation, sCompiledAccessEquation);
     }
     Indices& operator=(const Indices& _idx)
     {

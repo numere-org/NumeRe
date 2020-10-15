@@ -51,7 +51,7 @@ class Documentation : public FileSystem
 
         void updateIndexFile();
         bool loadIndexFile(const string& sIndexFile);
-        int findPositionInDocumentationIndex(const string& sTopic);
+        int findPositionInDocumentationIndex(const string& sTopic) const;
         vector<string> loadDocumentationArticle(const string& sFileName, const string& sArticleID);
 
     public:
@@ -63,7 +63,7 @@ class Documentation : public FileSystem
         void addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles);
         void removeFromDocIndex(const string& _sID, bool bUseUserLangFiles);
         vector<string> getHelpArticle(const string& sTopic);
-        vector<string> getDocIndex();
+        vector<string> getDocIndex() const;
         string getHelpIdxKey(const string& sTopic);
         string getHelpArtclID(const string& sTopic);
         string getHelpArticleTitle(const string& _sIdxKey);

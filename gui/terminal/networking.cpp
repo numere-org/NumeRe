@@ -41,9 +41,9 @@ END_EVENT_TABLE()
 Networking::Networking(Options* options)
 {
 	m_options = options;
-	m_currHost = m_options->GetHostname();
-	m_currUser = m_options->GetUsername();
-	m_currPass = m_options->GetPassphrase();
+	m_currHost = "";//m_options->GetHostname();
+	m_currUser = "";//m_options->GetUsername();
+	m_currPass = "";//m_options->GetPassphrase();
 
 	//Timer:
 	m_timer.SetOwner(this);
@@ -55,7 +55,7 @@ Networking::Networking(Options* options)
 	}
 
 	//Plink:
-	m_plinks = new PlinkConnect(m_options->GetPlinkApp(), m_currHost,
+	m_plinks = new PlinkConnect(""/*m_options->GetPlinkApp()*/, m_currHost,
 								m_currUser, m_currPass);
 
 	m_processManager = new LocalProcessManager();
@@ -321,8 +321,8 @@ bool Networking::SSHGetFileContents(wxString file, wxString &contents)
 bool Networking::SCPDoTransfer(wxString from_path_name, wxString to_path_name)
 {
 	// right now this only does local -> remote transfers
-	wxString cmd = m_options->GetPscpApp() // + " -l " + ssh_user
-					+ " -pw " + m_currPass + " -batch "
+	wxString cmd = //m_options->GetPscpApp() +// + " -l " + ssh_user
+					" -pw " + m_currPass + " -batch "
 					+ from_path_name + " "
 					+ m_currUser + "@" + m_currHost + ":" + to_path_name;
 					//+ " && echo Chameleon-Transfer-Success";
@@ -520,9 +520,9 @@ bool Networking::SSHExecSyncCommand(wxString command, wxString &output) {
 //////////////////////////////////////////////////////////////////////////////
 //Private:
 bool Networking::MaintainSettings() {
-	wxString newH = m_options->GetHostname();
-	wxString newU = m_options->GetUsername();
-	wxString newP = m_options->GetPassphrase();
+	wxString newH = "";//m_options->GetHostname();
+	wxString newU = "";//m_options->GetUsername();
+	wxString newP = "";//m_options->GetPassphrase();
 
 	if(newH != m_currHost || newU != m_currUser || newP != m_currPass ) {
 		// I don't check for plinkApp changes because I don't keep track of those
@@ -640,7 +640,7 @@ bool Networking::SSHCacheFingerprint()
 {
 	//Start the program asynchonously, answer "y" to caching, then Kill it:
 
-	wxString cmd = m_options->GetPlinkApp() + " " + m_currHost;
+	wxString cmd = "";//m_options->GetPlinkApp() + " " + m_currHost;
 	wxProcess* proc = new wxProcess(0);
 	proc->Redirect();
 	long pid = wxExecute(cmd, wxEXEC_ASYNC, proc);

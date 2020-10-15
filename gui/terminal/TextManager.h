@@ -84,27 +84,27 @@ struct LogicalCursor
 	{
 		return this->revert();
 	}
-	bool operator==(const LogicalCursor& cursor)
+	bool operator==(const LogicalCursor& cursor) const
 	{
 		return cursor.isValid == isValid && cursor.pos == pos && cursor.line == line;
 	}
-	bool operator<(const LogicalCursor& cursor)
+	bool operator<(const LogicalCursor& cursor) const
 	{
 		return (isValid == cursor.isValid) && (line < cursor.line || (line == cursor.line && pos < cursor.pos));
 	}
-	bool operator<=(const LogicalCursor& cursor)
+	bool operator<=(const LogicalCursor& cursor) const
 	{
 		return operator<(cursor) || operator==(cursor);
 	}
-	bool operator>(const LogicalCursor& cursor)
+	bool operator>(const LogicalCursor& cursor) const
 	{
 		return !(operator<=(cursor));
 	}
-	bool operator>=(const LogicalCursor& cursor)
+	bool operator>=(const LogicalCursor& cursor) const
 	{
 		return !(operator<(cursor));
 	}
-	bool operator!=(const LogicalCursor& cursor)
+	bool operator!=(const LogicalCursor& cursor) const
 	{
 		return !(operator==(cursor));
 	}
@@ -153,27 +153,27 @@ struct ViewCursor
 	{
 		return this->revert();
 	}
-	bool operator==(const ViewCursor& cursor)
+	bool operator==(const ViewCursor& cursor) const
 	{
 		return cursor.isValid == isValid && cursor.x == x && cursor.y == y;
 	}
-	bool operator<(const ViewCursor& cursor)
+	bool operator<(const ViewCursor& cursor) const
 	{
 		return (isValid == cursor.isValid) && (y < cursor.y || (y == cursor.y && x < cursor.x));
 	}
-	bool operator<=(const ViewCursor& cursor)
+	bool operator<=(const ViewCursor& cursor) const
 	{
 		return operator<(cursor) || operator==(cursor);
 	}
-	bool operator>(const ViewCursor& cursor)
+	bool operator>(const ViewCursor& cursor) const
 	{
 		return !(operator<=(cursor));
 	}
-	bool operator>=(const ViewCursor& cursor)
+	bool operator>=(const ViewCursor& cursor) const
 	{
 		return !(operator<(cursor));
 	}
-	bool operator!=(const ViewCursor& cursor)
+	bool operator!=(const ViewCursor& cursor) const
 	{
 		return !(operator==(cursor));
 	}
@@ -244,12 +244,12 @@ struct Character
         m_style |= (unsigned char)flags << 12;
     }
 
-    bool userText()
+    bool userText() const
     {
         return m_style & USERTEXT;
     }
 
-    bool editable()
+    bool editable() const
     {
         return m_style & EDITABLE;
     }
@@ -275,12 +275,12 @@ struct Character
         m_style &= ~SELECTED;
     }
 
-    bool isSelected()
+    bool isSelected() const
     {
         return m_style & SELECTED;
     }
 
-    int getColor()
+    int getColor() const
     {
         return m_style & COLOR;
     }
@@ -355,7 +355,23 @@ class CharacterVector : public vector<Character>
             return vector<Character>::operator[](i);
         }
 
+        const Character& operator[](size_t i) const
+        {
+            if (!size())
+                return m_dummy;
+
+            return vector<Character>::operator[](i);
+        }
+
         Character& front()
+        {
+            if (!size())
+                return m_dummy;
+
+            return vector<Character>::front();
+        }
+
+        const Character& front() const
         {
             if (!size())
                 return m_dummy;
@@ -371,7 +387,15 @@ class CharacterVector : public vector<Character>
             return vector<Character>::back();
         }
 
-        string toString()
+        const Character& back() const
+        {
+            if (!size())
+                return m_dummy;
+
+            return vector<Character>::back();
+        }
+
+        string toString() const
         {
             string sRet;
 
@@ -381,12 +405,12 @@ class CharacterVector : public vector<Character>
             return sRet;
         }
 
-        string substr(size_t pos, size_t len = string::npos)
+        string substr(size_t pos, size_t len = string::npos) const
         {
             return toString().substr(pos, len);
         }
 
-        vector<unsigned short> subcolors(size_t pos, size_t len = string::npos)
+        vector<unsigned short> subcolors(size_t pos, size_t len = string::npos) const
         {
             if (pos >= size())
                 return vector<unsigned short>();
@@ -403,7 +427,7 @@ class CharacterVector : public vector<Character>
 
         }
 
-        size_t length()
+        size_t length() const
         {
             return size();
         }
@@ -439,13 +463,13 @@ class TextManager
 		void printOutput(const string& sLine);
 		void insertInput(const string& sLine, size_t logicalpos = string::npos);
 
-		ViewCursor toViewCursor(const LogicalCursor& logCursor);
-		ViewCursor getCurrentViewPos();
-		LogicalCursor toLogicalCursor(const ViewCursor& viewCursor);
-		LogicalCursor getCurrentLogicalPos();
+		ViewCursor toViewCursor(const LogicalCursor& logCursor) const;
+		ViewCursor getCurrentViewPos() const;
+		LogicalCursor toLogicalCursor(const ViewCursor& viewCursor) const;
+		LogicalCursor getCurrentLogicalPos() const;
 
-		string getRenderedString(size_t viewLine);
-		vector<unsigned short> getRenderedColors(size_t viewLine);
+		string getRenderedString(size_t viewLine) const;
+		vector<unsigned short> getRenderedColors(size_t viewLine) const;
 
 		size_t tab();
 		void newLine();
@@ -455,26 +479,26 @@ class TextManager
 
 		void selectText(const ViewCursor& viewCursor, bool bSelect = true);
 		void unselectAll();
-		bool isSelected(const ViewCursor& viewCursor);
-		string getSelectedText();
-		string getCurrentInputLine();
+		bool isSelected(const ViewCursor& viewCursor) const;
+		string getSelectedText() const;
+		string getCurrentInputLine() const;
 
-		int GetSize();
-		int GetMaxSize();
-		int GetHeight();
-		int GetNumLinesScrolled();
-		int GetLinesReceived();
+		int GetSize() const;
+		int GetMaxSize() const;
+		int GetHeight() const;
+		int GetNumLinesScrolled() const;
+		int GetLinesReceived() const;
 		string GetInputHistory(bool vcursorup = true);
-		string GetTextRange(int y, int x0, int x1);
-		string GetWordAt(int y, int x);
-		string GetWordStartAt(int y, int x);
-		char GetCharAdjusted(int y, int x);
-		char GetCharLogical(const LogicalCursor& cursor);
-		bool IsUserText(int y, int x);
-		bool IsEditable(int y, int x);
-		bool IsEditableLogical(LogicalCursor& logCursor);
-		unsigned short GetColor(int y, int x);
-		unsigned short GetColorAdjusted(int y, int x);
+		string GetTextRange(int y, int x0, int x1) const;
+		string GetWordAt(int y, int x) const;
+		string GetWordStartAt(int y, int x) const;
+		char GetCharAdjusted(int y, int x) const;
+		char GetCharLogical(const LogicalCursor& cursor) const;
+		bool IsUserText(int y, int x) const;
+		bool IsEditable(int y, int x) const;
+		bool IsEditableLogical(const LogicalCursor& logCursor) const;
+		unsigned short GetColor(int y, int x) const;
+		unsigned short GetColorAdjusted(int y, int x) const;
 
 		void ChangeEditableState();
 
@@ -491,7 +515,7 @@ class TextManager
 
 		string operator[](int index);
 
-		int AdjustIndex(int index);
+		int AdjustIndex(int index) const;
 
 	private:
 		GenericTerminal* m_parent;
@@ -516,7 +540,7 @@ class TextManager
 		void updateColors(bool isErrorLine = false);
 		void renderLayout();
 		void synchronizeRenderedBlock(int linesToDelete);
-		size_t findNextLinebreak(const string& currentLine, size_t currentLinebreak);
+		size_t findNextLinebreak(const string& currentLine, size_t currentLinebreak) const;
 
 		enum
 		{

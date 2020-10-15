@@ -71,4 +71,4 @@ class TipDialog : public wxDialog
 };
 
 
-bool ShowTip(wxWindow* parent, wxTipProvider* tipprovider, const wxArrayString& text, bool showAtStartUp = true);
+bool ShowTip(wxWindow* parent, wxTipProvider* tipProvider, const wxArrayString& text, bool showAtStartUp = true);

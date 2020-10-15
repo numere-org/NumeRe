@@ -88,9 +88,9 @@ class Dependencies
 
         void walk(ProcedureElement* procedureFile);
         int getProcedureDependencies(ProcedureElement* procedureFile, int nCurrentLine);
-        std::string getProcedureName(std::string sCommandLine);
+        std::string getProcedureName(std::string sCommandLine) const;
         void resolveProcedureCalls(std::string sCommandLine, const std::string& sProcedureName, const std::string& sCurrentNameSpace);
-        std::string getProcedureFileName(std::string sProc);
+        std::string getProcedureFileName(std::string sProc) const;
 
     public:
         Dependencies(ProcedureElement* procedureFile);

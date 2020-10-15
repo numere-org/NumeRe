@@ -213,7 +213,7 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision, bool bData, bool bCache, bool bSave, bool bDefaultName)
 {
 	string sCache = _sCache;
-	string sFileName = "";
+	string sFileName;
 
 	// Do only stuff, if data is available
 	if (_data.isValid())		// Sind ueberhaupt Daten vorhanden?
@@ -494,8 +494,8 @@ void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
 	string sCmd = __sCmd;
 
 	// Copy the default path and the path tokens
-	int nArgument = 0;
-	string sArgument = "";
+	int nArgument;
+	string sArgument;
 
 	// Get string variable values, if needed
 	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
@@ -1247,10 +1247,10 @@ bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefin
 bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 {
 	fstream fFile;
-	string sFileName = "";
-	string sExpression = "";
-	string sParams = "";
-	string sArgument = "";
+	string sFileName;
+	string sExpression;
+	string sParams;
+	string sArgument;
 	bool bAppend = false;
 	bool bTrunc = true;
 	bool bNoQuotes = false;
@@ -1541,9 +1541,9 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
 /////////////////////////////////////////////////
 bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
 {
-	string sFileName = "";
-	string sInput = "";
-	string sParams = "";
+	string sFileName;
+	string sInput;
+	string sParams;
 	string sTargetCache = "image";
 	Indices _idx;
 	vector<double> vIndices;

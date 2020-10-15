@@ -278,7 +278,7 @@ wxBitmap AboutChameleonDialog::GetBitmapResource( const wxString& name )
     wxUnusedVar(name);
     if (name == _T("chamlogo_1.xpm"))
     {
-        wxBitmap bitmap(f.GetPath(true)+"icons\\folder.png", wxBITMAP_TYPE_PNG);
+        wxBitmap bitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR)+"icons\\folder.png", wxBITMAP_TYPE_PNG);
         return bitmap;
     }
     /*else if (name == _T("team_1.xpm"))

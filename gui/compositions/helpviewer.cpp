@@ -45,7 +45,7 @@ bool HelpViewer::SetPage(const wxString& source)
 // and handled correspondingly
 bool HelpViewer::ShowPageOnItem(wxString docID)
 {
-    wxString pageContent = "";
+    wxString pageContent;
     bool openself = true;
 
     // Determine the type of the content: is it a link, a html page
@@ -53,8 +53,8 @@ bool HelpViewer::ShowPageOnItem(wxString docID)
     if (docID.substr(0,10) == "history://")
     {
         // History link: only for legacy reasons
-        if (docID.find("?frame=new") != string::npos)
-            openself = false;
+        //if (docID.find("?frame=new") != string::npos)
+        //    openself = false;
 
         docID.erase(0,10);
 
@@ -100,32 +100,20 @@ bool HelpViewer::ShowPageOnItem(wxString docID)
             return false;
 
         // Open the page
-        if (openself)
-        {
-            if (m_nHistoryPointer+1 != vHistory.size())
-            {
-                // erase the obsolete history
-                vHistory.erase(vHistory.begin()+1+m_nHistoryPointer, vHistory.end());
-            }
+		if (m_nHistoryPointer+1 != vHistory.size())
+		{
+			// erase the obsolete history
+			vHistory.erase(vHistory.begin()+1+m_nHistoryPointer, vHistory.end());
+		}
 
-            vHistory.push_back(docID);
-            m_nHistoryPointer++;
-            this->SetPage(pageContent);
-        }
-        else
-        {
-            m_mainFrame->ShowHelp(pageContent);
-        }
+		vHistory.push_back(docID);
+		m_nHistoryPointer++;
+		this->SetPage(pageContent);
     }
     else if (docID.substr(0,15) == "<!DOCTYPE html>")
     {
         // This is a html page, display it directly
-        if (openself)
-        {
-            this->SetPage(docID);
-        }
-        else
-            m_mainFrame->ShowHelp(docID);
+		this->SetPage(docID);
     }
     else if (docID.find("://") == string::npos)
     {

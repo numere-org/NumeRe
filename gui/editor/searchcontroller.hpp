@@ -42,7 +42,7 @@ class SearchController
 		wxString FindProcedureDefinitionInOtherFile(const wxString& pathname, const wxString& procedurename);
 
 		void AppendToDocumentation(wxString& sDocumentation, const wxString& sNewDocLine);
-		string CleanDocumentation(const wxString& sDocumentation);
+		string CleanDocumentation(const wxString& __sDoc);
 
 
     public:

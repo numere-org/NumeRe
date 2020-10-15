@@ -24,7 +24,7 @@ using namespace std;
 using namespace mu;
 
 static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, StringView sArgument, StringView sCmd);
-static void extractIndexList(StringView sArgument, vector<StringView>& vLines, vector<StringView>& vCols);
+static void extractIndexList(StringView sCols, vector<StringView>& vLines, vector<StringView>& vCols);
 static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex);
 static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sCmd);
 static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vIndex, string& sIndexExpressions, vector<int>& vIndexNumbers, int sign);
@@ -258,8 +258,6 @@ static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vInd
 // This function will evaluate all indices at once and store them into the Indices object
 static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sCmd)
 {
-    value_type* v = 0;
-    int nResults = 0;
     string sIndexExpressions;
     vector<int> vIndexNumbers;
 
@@ -277,7 +275,8 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
     if (sIndexExpressions.length())
     {
         _parser.SetExpr(sIndexExpressions);
-        v = _parser.Eval(nResults);
+		int nResults;
+        value_type* v = _parser.Eval(nResults);
 
         // check whether the number of the results is matching
         if ((size_t)nResults != vIndexNumbers.size())
@@ -305,7 +304,7 @@ static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView s
     // Get the cache name from the command string
     // should now only contain the name of the table
     StringView sCache = sCmd.subview(0, sCmd.find_first_of("({"));
-    bool isCluster = sCache.back() == '{';
+    bool isCluster = sCmd[sCache.length()] == '{';
 
     // remove whitespaces
     sCache.strip();

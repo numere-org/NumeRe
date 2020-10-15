@@ -100,7 +100,7 @@ void RevisionDialog::populateRevisionList()
                 revisionList->SetItemTextColour(currentItem, wxColour(0, 128, 0));
 
             // Do not display the "DIFF" comment identifier
-            if (revisionList->GetItemText(currentItem, 2).substr(0, 7) == "DIFF")
+            if (revisionList->GetItemText(currentItem, 2).substr(0, 4) == "DIFF")
                 revisionList->SetItemText(currentItem, 2, "");
 
             if (revisionList->GetItemText(currentItem, 0) == currentRev)

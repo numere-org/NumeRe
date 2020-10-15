@@ -36,7 +36,7 @@ class FileRevisions
         wxString createDiff(const wxString& revisionContent);
         wxString createMerge(const wxString& diffFile);
         wxString readExternalFile(const wxString& filePath);
-        size_t createNewRevision(const wxString& revisionContent, const wxString& comment);
+        size_t createNewRevision(const wxString& revContent, const wxString& comment);
         size_t createNewTag(const wxString& revString, const wxString& comment);
         void fileMove(const wxString& newRevPath, const wxString& comment);
         size_t getMaxDiffFileSize(size_t nFileSize);

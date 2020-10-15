@@ -496,7 +496,6 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 
 		sObject = _fSys.ValidFileName(sObject, ".nprc");
 
-		vector<string> vTokens;
 		vTokens.push_back(sProcedure.substr(1));
 		vTokens.push_back(getTimeStamp(false));
 
@@ -979,10 +978,10 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 	LARGE_INTEGER Filesize;
 	double dFilesize = 0.0;
 	double dFilesizeTotal = 0.0;
-	string sConnect = "";
+	string sConnect;
 	string sPattern = "*";
 	string sFilesize = " Bytes";
-	string sFileName = "";
+	string sFileName;
 	string sDirectory = "";
 	int nLength = 0;
 	int nCount[2] = {0, 0};
@@ -1399,9 +1398,6 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 
 		if (sSpecified == "wp")
 		{
-			if (!sSpecified.length())
-				NumeReKernel::printPreFmt("|\n" );
-
 		    NumeReKernel::print(createListDirectoryHeader(_option.getWorkPath(), _lang.get("BUILTIN_LISTFILES_WORKPATH"), _option.getWindow()));
 
 			if (!listDirectory("WORKPATH", __sCmd, _option))
@@ -2106,7 +2102,7 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
 		if (_option.getSystemPrintStatus())
 			NumeReKernel::printPreFmt("|-> " + _lang.get("COMMON_EVALUATING") + " ... ");
 
-		while (bWaitForTermination)
+		while (true)
 		{
 			// wait 1sec and check, whether the user pressed the ESC key
 			if (WaitForSingleObject(ShExecInfo.hProcess, 1000) == WAIT_OBJECT_0)
@@ -2338,7 +2334,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
         _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "precision", '=')));
         nPrecision = _parser.Eval();
 
-        if (nPrecision < 0 || nPrecision > 14)
+        if (nPrecision > 14)
             nPrecision = _option.getPrecision();
     }
 
@@ -7445,10 +7441,10 @@ static CommandReturnValues cmd_load(string& sCmd)
                 MemoryManager _cache;
                 _cache.setTokens(_option.getTokenPaths());
                 _cache.setPath(_data.getPath(), false, _data.getProgramPath());
-                for (unsigned int i = 0; i < vFilelist.size(); i++)
+                for (size_t n = 0; n < vFilelist.size(); n++)
                 {
-                    _cache.openFile(sPath + vFilelist[i], false, nArgument);
-                    sTarget = generateCacheName(sPath + vFilelist[i], _option);
+                    _cache.openFile(sPath + vFilelist[n], false, nArgument);
+                    sTarget = generateCacheName(sPath + vFilelist[n], _option);
                     if (!_data.isTable(sTarget + "()"))
                         _data.addTable(sTarget + "()", _option);
                     nArgument = _data.getCols(sTarget, false);

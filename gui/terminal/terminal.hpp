@@ -244,12 +244,12 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		void SetCursorBlinkRate(int rate);
 
 		// Text printing functions
-		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const string& sText);
-		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c);
+		virtual void DrawText(int fg_color, int bg_color, int flags, int x, int y, const string& sText) override;
+		virtual void DrawCursor(int fg_color, int bg_color, int flags, int x, int y, unsigned char c) override;
 
-		virtual void ClearChars(int bg_color, int x, int y, int w, int h);
-		virtual void ProcessInput(int len, const string& sData);
-		virtual void ProcessOutput(int len, const string& sData);
+		virtual void ClearChars(int bg_color, int x, int y, int w, int h) override;
+		virtual void ProcessInput(int len, const string& sData) override;
+		virtual void ProcessOutput(int len, const string& sData) override;
 
 		// Terminal control functions
 		void ScrollTerminal(int numLines, bool scrollUp = true);
@@ -262,9 +262,9 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		}
 		void UpdateSize();
 		void UpdateColors();
-		virtual void ModeChange(int state);
-		virtual void Bell();
-		virtual void ResizeTerminal(int w, int h);
+		virtual void ModeChange(int state) override;
+		virtual void Bell() override;
+		virtual void ResizeTerminal(int width, int height) override;
 		virtual void UpdateRemoteSize(int width, int height);
 		int GetTermWidth()
 		{

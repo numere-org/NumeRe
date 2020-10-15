@@ -925,7 +925,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             }
         }
     }
-    else if (!isCluster && nDim == 4)
+    else if (nDim == 4)
     {
         int nErrorCols = 2;
 
@@ -1086,7 +1086,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             sDimsForFitLog += toString(_idx.col[0] + 1) + ", " + toString(_idx.col[1] + 1) + ", " + toString(_idx.col[2] + 1);
 
             if (nErrorCols == 2)
-                sDimsForFitLog + ", " + toString(_idx.col[3] + 1);
+                sDimsForFitLog += ", " + toString(_idx.col[3] + 1);
         }
         else
         {

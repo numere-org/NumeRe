@@ -69,9 +69,8 @@ Settings::Settings() : Documentation()
 	nColorTheme = 0;
 }
 
-Settings::Settings(const Settings& _settings)
+Settings::Settings(const Settings& _settings) : Settings()
 {
-    Settings();
     copySettings(_settings);
 }
 // --> Destruktor: Falls die INI-Datei noch geoeffnet ist, wird sie hier auf jeden Fall geschlossen <--

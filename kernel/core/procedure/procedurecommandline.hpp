@@ -96,31 +96,31 @@ class ProcedureCommandLine
               sCommandLine(_procCommandLine.sCommandLine), sArgumentList(_procCommandLine.sArgumentList) {}
 
         // Get the command line
-        std::string getCommandLine()
+        std::string getCommandLine() const
         {
             return sCommandLine;
         }
 
         // Get the argument list
-        std::string getArgumentList()
+        std::string getArgumentList() const
         {
             return sArgumentList;
         }
 
         // Get the type of the current command line
-        int getType()
+        int getType() const
         {
             return nType;
         }
 
         // Get the flags
-        int getFlags()
+        int getFlags() const
         {
             return nFlags;
         }
 
         // Get the byte code
-        int getByteCode()
+        int getByteCode() const
         {
             return nByteCode;
         }
@@ -135,7 +135,7 @@ class ProcedureCommandLine
 
         // Get the information on whether the
         // (whole) procedure is inlinable
-        int isInlineable()
+        int isInlineable() const
         {
             if (nFlags & FLAG_INLINE)
                 return nInlinable;

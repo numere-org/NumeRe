@@ -277,7 +277,7 @@ namespace NumeRe
         // Evaluate ternaries first (will start a recursion)
         sLine = evalStringTernary(sLine);
 
-        unsigned int nPos = 0;
+        unsigned int nPos;
 
         // Handle parenthesed expression parts
         // (will start a recursion)

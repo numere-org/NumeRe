@@ -1025,12 +1025,12 @@ namespace NumeRe
 
             if (isStringExpression(sType))
             {
-                StringResult strRes = eval(sType, "");
+                StringResult res = eval(sType, "");
 
-                if (!strRes.vResult.size())
+                if (!res.vResult.size())
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
-                sType = strRes.vResult[0];
+                sType = res.vResult[0];
             }
 
             _parser.SetExpr(sType);

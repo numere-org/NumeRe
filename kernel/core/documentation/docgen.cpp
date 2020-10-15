@@ -34,7 +34,7 @@
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DocumentationGenerator::followBranch(const std::string& sFile, std::set<std::string>& fileSet, std::vector<std::string>& vFiles)
+void DocumentationGenerator::followBranch(const std::string& sFile, std::set<std::string>& fileSet, std::vector<std::string>& vFiles) const
 {
     // Add the current file to the set
     fileSet.insert(sFile);
@@ -74,7 +74,7 @@ void DocumentationGenerator::followBranch(const std::string& sFile, std::set<std
 /// sections are printed as listings and the
 /// documentation strings are used as normal text.
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName)
+std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName) const
 {
     std::string sFileContents;
     std::string sLaTeXFileName = createLaTeXFileName(sFileName) + ".tex";
@@ -221,7 +221,7 @@ std::string DocumentationGenerator::convertToLaTeX(const std::string& sFileName)
 /// option is activated, then umlauts are converted
 /// into their two-letter representation.
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::getStrippedRange(const StyledTextFile& file, int pos1, int pos2, bool encode)
+std::string DocumentationGenerator::getStrippedRange(const StyledTextFile& file, int pos1, int pos2, bool encode) const
 {
     std::string sTextRange = file.getTextRange(pos1, pos2);
 
@@ -301,7 +301,7 @@ std::string DocumentationGenerator::getStrippedRange(const StyledTextFile& file,
 /// \li german umlauts
 /// \li inline code sequences
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& file, const std::string& sMainProc, int pos1, int pos2)
+std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& file, const std::string& sMainProc, int pos1, int pos2) const
 {
     // Get the text range
     std::string sTextRange = getStrippedRange(file, pos1, pos2, false);
@@ -497,13 +497,12 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::createParametersTable(const std::vector<std::string>& vParams)
+std::string DocumentationGenerator::createParametersTable(const std::vector<std::string>& vParams) const
 {
     // Table heads
     std::string sTable = "\\begin{tabular}{p{0.22\\textwidth}p{0.15\\textwidth}p{0.55\\textwidth}}\n\t\\toprule\n\tParameter & Defaults to & Description\\\\\n\t\\midrule\n";
     std::string sParameter;
 
-    size_t nDefaultPos;
     size_t nDescPos;
 
     // Write every single parameter line
@@ -512,7 +511,7 @@ std::string DocumentationGenerator::createParametersTable(const std::vector<std:
         sParameter = vParams[i];
         replaceAll(sParameter, "\n", " ");
 
-        nDefaultPos = sParameter.find("(!!", 8);
+        size_t nDefaultPos = sParameter.find("(!!", 8);
 
         if (nDefaultPos != std::string::npos)
             nDescPos = sParameter.find_first_not_of(' ', sParameter.find("!!)")+3);
@@ -550,7 +549,7 @@ std::string DocumentationGenerator::createParametersTable(const std::vector<std:
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-size_t DocumentationGenerator::findListItem(const std::string& sTextRange, size_t& nLength)
+size_t DocumentationGenerator::findListItem(const std::string& sTextRange, size_t& nLength) const
 {
     size_t nItemCandidate = sTextRange.find("- ");
 
@@ -577,7 +576,7 @@ size_t DocumentationGenerator::findListItem(const std::string& sTextRange, size_
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::createMainProcedure(std::string sFileName)
+std::string DocumentationGenerator::createMainProcedure(std::string sFileName) const
 {
     std::vector<std::string> vPaths = NumeReKernel::getInstance()->getPathSettings();
 
@@ -617,7 +616,7 @@ std::string DocumentationGenerator::createMainProcedure(std::string sFileName)
 /// contain any file extension.
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::createLaTeXFileName(std::string sFileName)
+std::string DocumentationGenerator::createLaTeXFileName(std::string sFileName) const
 {
     std::vector<std::string> vPaths = NumeReKernel::getInstance()->getPathSettings();
 
@@ -663,7 +662,7 @@ std::string DocumentationGenerator::createLaTeXFileName(std::string sFileName)
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::prepareFileNameForLaTeX(std::string sFileName)
+std::string DocumentationGenerator::prepareFileNameForLaTeX(std::string sFileName) const
 {
     std::vector<std::string> vPaths = NumeReKernel::getInstance()->getPathSettings();
 
@@ -704,7 +703,7 @@ std::string DocumentationGenerator::prepareFileNameForLaTeX(std::string sFileNam
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::constructKeyWords(std::string sKeyWordList)
+std::string DocumentationGenerator::constructKeyWords(std::string sKeyWordList) const
 {
     for (size_t i = 0; i < sKeyWordList.length(); i++)
     {
@@ -730,7 +729,7 @@ std::string DocumentationGenerator::constructKeyWords(std::string sKeyWordList)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void DocumentationGenerator::createStyleFile()
+void DocumentationGenerator::createStyleFile() const
 {
     ifstream fHeaderTemplate;
 
@@ -799,7 +798,7 @@ void DocumentationGenerator::createStyleFile()
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::createMainFile(const std::string& sFileName, const std::vector<std::string>& vIncludesList, const std::vector<std::string>& vFiles)
+std::string DocumentationGenerator::createMainFile(const std::string& sFileName, const std::vector<std::string>& vIncludesList, const std::vector<std::string>& vFiles) const
 {
     std::ofstream fMain;
     std::string sLaTeXMainFile = createLaTeXFileName(sFileName) + "_main.tex";
@@ -870,7 +869,7 @@ DocumentationGenerator::DocumentationGenerator(NumeReSyntax* _syntax, const std:
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::createDocumentation(const std::string& sFileName)
+std::string DocumentationGenerator::createDocumentation(const std::string& sFileName) const
 {
     if (sFileName.find(".nscr") == std::string::npos && sFileName.find(".nprc") == std::string::npos)
         return "";
@@ -889,7 +888,7 @@ std::string DocumentationGenerator::createDocumentation(const std::string& sFile
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string DocumentationGenerator::createFullDocumentation(const std::string& sFileName)
+std::string DocumentationGenerator::createFullDocumentation(const std::string& sFileName) const
 {
     if (sFileName.find(".nscr") == std::string::npos && sFileName.find(".nprc") == std::string::npos)
         return "";

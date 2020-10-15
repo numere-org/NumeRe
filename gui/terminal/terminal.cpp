@@ -407,9 +407,9 @@ void NumeReTerminal::StartKernelTask()
 /////////////////////////////////////////////////
 wxThread::ExitCode NumeReTerminal::Entry()
 {
-	string sCommand = "";
-	bool bCommandAvailable = false;
-	bool updateLibrary = false;
+	string sCommand;
+	bool bCommandAvailable;
+	bool updateLibrary;
 	_kernel.printVersionInfo();
 
 	// Test repeatedly, whether the thread shall terminate
@@ -458,8 +458,6 @@ wxThread::ExitCode NumeReTerminal::Entry()
 						break;
 						//All others
 				}
-
-				bCommandAvailable = false;
 			}
 			else if (m_KernelStatus == NumeReKernel::NUMERE_QUIT) //quit
 			{
@@ -966,12 +964,12 @@ NumeReTerminal::OnChar(wxKeyEvent& event)
 		GenericTerminal::resetAutoComp();
 
 		// Unclear if this is needed
-        if ((GetMode() & NEWLINE) && !(GetMode() & PC) && (buf[len - 1] == 10))
-        {
-            buf[len - 1] = 13;
-            buf[len] = 10;
-            len++;
-        }
+        //if ((GetMode() & NEWLINE) && !(GetMode() & PC) && (buf[len - 1] == 10))
+        //{
+        //    buf[len - 1] = 13;
+        //    buf[len] = 10;
+        //    len++;
+        //}
 
         wxClientDC dc(this);
 
@@ -1804,6 +1802,8 @@ void NumeReTerminal::UpdateSize()
         dc = new wxClientDC(this);
 		m_curDC = dc;
 	}
+	else
+		return;
 
 	// Set the normal font
 	dc->SetFont(m_boldFont);
@@ -1841,11 +1841,8 @@ void NumeReTerminal::UpdateSize()
 	m_inUpdateSize = false;
 	Refresh();
 
-	if (dc)
-	{
-		delete dc;
-		m_curDC = nullptr;
-	}
+	delete dc;
+	m_curDC = nullptr;
 }
 
 

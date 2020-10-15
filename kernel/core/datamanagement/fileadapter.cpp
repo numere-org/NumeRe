@@ -85,7 +85,6 @@ namespace NumeRe
         long long int nColTemp = _mem->nCols;
         long long int nLinesTemp = _mem->nLines;
         long long int nEmptyCols = 0;
-        long long int nSkip = 0;
 
         // Count the number of empty columns
         for (long long int i = 0; i < nColTemp; i++)
@@ -132,7 +131,7 @@ namespace NumeRe
             // table
             for (long long int i = 0; i < _mem->nLines; i++)
             {
-                nSkip = 0;
+                long long int nSkip = 0;
 
                 for (long long int j = 0; j < nColTemp; j++)
                 {
@@ -334,8 +333,7 @@ namespace NumeRe
     std::string FileAdapter::getDataFileNameShort() const
     {
         string sFileName = getDataFileName("data");
-        unsigned int nPos = -1;
-        unsigned int nPos_2 = 0;
+        size_t nPos = std::string::npos;
 
         while (sFileName.find('\\') != string::npos)
         {
@@ -348,7 +346,7 @@ namespace NumeRe
 
             if (nPos != 0 && nPos-1 != ':')
             {
-                nPos_2 = sFileName.rfind('/', nPos-1);
+                size_t nPos_2 = sFileName.rfind('/', nPos-1);
 
                 if (nPos_2 != string::npos)
                 {

@@ -687,7 +687,6 @@ static string strfnc_and(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_or(StringFuncArgs& funcArgs)
 {
-    string sToChar = "";
     for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
     {
         if (funcArgs.nMultiArg[i])
@@ -707,7 +706,6 @@ static string strfnc_or(StringFuncArgs& funcArgs)
 /////////////////////////////////////////////////
 static string strfnc_xor(StringFuncArgs& funcArgs)
 {
-    string sToChar = "";
     bool isTrue = false;
     for (size_t i = 0; i < funcArgs.nMultiArg.size(); i++)
     {

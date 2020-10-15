@@ -63,7 +63,7 @@ namespace NumeRe
         /// \return bool
         ///
         /////////////////////////////////////////////////
-        bool isAssignmentOperator(size_t eq_pos)
+        bool isAssignmentOperator(size_t eq_pos) const
         {
             if (!eq_pos || eq_pos >= sLine.length())
                 return false;

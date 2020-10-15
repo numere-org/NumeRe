@@ -57,6 +57,9 @@ class Plot
         PlotInfo _pInfo;
         mglGraph* _graph;
 
+        Plot(const Plot&) = delete;
+        Plot& operator=(const Plot&) = delete;
+
     protected:
         void determinePlottingDimensions(const string& sPlotCommand);
         size_t createSubPlotSet(PlotData& _pData, MemoryManager& _data, Parser& _parser, FunctionDefinitionManager& _functions, Settings& _option, string& sOutputName, bool& bAnimateVar, vector<string>& vPlotCompose, size_t nSubPlotStart, size_t nMultiplots[2], size_t& nSubPlots, size_t& nSubPlotMap);

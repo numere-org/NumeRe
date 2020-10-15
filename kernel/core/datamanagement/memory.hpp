@@ -71,10 +71,10 @@ class Memory : public Sorter
 		bool Allocate(long long int _nNLines, long long int _nNCols, bool shrink = false);
 		void createTableHeaders();
 		bool clear();
-		Boundary findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j);
+		Boundary findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j) const;
 		bool retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction);
 		bool retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol);
-		bool onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol);
+		bool onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		void reorderColumn(const std::vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
 		virtual int compare(int i, int j, int col) override;
         virtual bool isValue(int line, int col) override;
@@ -112,7 +112,7 @@ class Memory : public Sorter
 
 		// WRITE ACCESS METHODS
 		void writeSingletonData(Indices& _idx, double _dData);
-		void writeData(long long int _Line, long long int _nCol, double _dData);
+		void writeData(long long int _nLine, long long int _nCol, double _dData);
 		void writeData(Indices& _idx, double* _dData, unsigned int _nNum);
 		bool setHeadLineElement(long long int _i, std::string _sHead);
 
@@ -139,7 +139,7 @@ class Memory : public Sorter
         double xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
         double cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
         double norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int nType = 0) const;
+        double cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int _nType = 0) const;
         double med(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
         double pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5) const;
         std::vector<double> size(const VectorIndex& _vIndex, int dir) const;

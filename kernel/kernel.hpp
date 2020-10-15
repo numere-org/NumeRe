@@ -223,8 +223,8 @@ class NumeReKernel
 
         static void toggleTableStatus();
         static void flush();
-        static void print(const string& sLine, bool printingEnabled = true);
-        static void printPreFmt(const string& sLine, bool printingEnabled = true);
+        static void print(const string& __sLine, bool printingEnabled = true);
+        static void printPreFmt(const string& __sLine, bool printingEnabled = true);
         static string formatResultOutput(int nNum, value_type* v);
         static string formatResultOutput(const vector<string>& vStringResults);
         static void issueWarning(string sWarningMessage);
@@ -330,10 +330,16 @@ class NumeReKernel
         vector<string> getDocIndex();
         NumeReVariables getVariableList();
         bool SettingsModified();
-        int getAutosaveInterval() {return _option.getAutoSaveInterval();}
-        long long int getLastSavedTime() {return _memoryManager.getLastSaved();}
+        int getAutosaveInterval() const 
+		{
+			return _option.getAutoSaveInterval();
+		}
+        long long int getLastSavedTime() const
+		{
+			return _memoryManager.getLastSaved();
+		}
         void Autosave();
-        void StartUp(NumeReTerminal* _parent, const string& sPath, const string& sPredefinedFuncs);
+        void StartUp(NumeReTerminal* _parent, const string& __sPath, const string& sPredefinedFunctions);
         void CloseSession();
         void CancelCalculation()
         {
@@ -363,6 +369,8 @@ struct NumeReTask
     NumeRe::Window window;
     NumeRe::Container<string> stringTable;
     int taskType;
+
+    NumeReTask() : sString(), nLine(0), vDebugEvent(), table(), window(), stringTable(), taskType(0) {}
 };
 
 

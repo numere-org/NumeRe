@@ -85,7 +85,6 @@ void DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const string
     // Get the dependencies
     Dependencies* dep = lib.getProcedureContents(replacePathSeparator(mainfile))->getDependencies();
     m_mainProcedure = dep->getMainProcedure();
-    bool restart = false;
 
     // Insert the dependencies into the main map
     m_deps.insert(dep->getDependencyMap().begin(), dep->getDependencyMap().end());
@@ -96,7 +95,7 @@ void DependencyDialog::calculateDependencies(ProcedureLibrary& lib, const string
     // Go through the map
     while (iter != m_deps.end())
     {
-        restart = false;
+        bool restart = false;
 
         // Go through all dependencies
         for (auto listiter = iter->second.begin(); listiter != iter->second.end(); ++listiter)

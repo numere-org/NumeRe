@@ -173,7 +173,6 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
         m_parent = _parent;
     //Do some start-up stuff here
 
-    string sFile = ""; 			// String fuer den Dateinamen.
     string sTime = getTimeStamp(false);
     string sLogFile = "numere.log";
     string sPath = __sPath;
@@ -612,11 +611,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     // indices as target for cache writing actions
     Indices _idx;
 
-    bool bWriteToCache = false; // TRUE, wenn das/die errechneten Ergebnisse in den Cache geschrieben werden sollen
-    bool bWriteToCluster = false;
-
     string sLine_Temp = "";     // Temporaerer String fuer die Eingabe
-    string sCache = "";         // Zwischenspeicher fuer die Cache-Koordinaten
+    string sCache;         // Zwischenspeicher fuer die Cache-Koordinaten
     string sKeep = "";          // Zwei '\' am Ende einer Zeile ermoeglichen es, dass die Eingabe auf mehrere Zeilen verteilt wird.
     string sCmdCache = "";      // Die vorherige Zeile wird hierin zwischengespeichert
     string sLine = "";          // The actual line
@@ -671,9 +667,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     do
     {
         bSupressAnswer = false;
-        bWriteToCache = false;
-        bWriteToCluster = false;
-        sCache = "";
+        sCache.clear();
 
         // Reset the parser variable map pointer
         if (_parser.mVarMapPntr)
@@ -877,6 +871,9 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // --> Gibt es "??" ggf. nochmal? Dann rufe die Prompt-Funktion auf <--
             if (sLine.find("??") != string::npos)
                 sLine = promptForUserInput(sLine);
+
+			bool bWriteToCache = false;
+			bool bWriteToCluster = false;
 
             // Get data elements for the current command line or determine,
             // if the target value of the current command line is a candidate
@@ -2484,7 +2481,7 @@ void NumeReKernel::print(const string& __sLine, bool printingEnabled)
 
             for (size_t i = 0; i < sLine.length(); i++)
             {
-                if (sLine[i] == '\n' && i < sLine.length() - 2)
+                if (i < sLine.length() - 2 && sLine[i] == '\n')
                     sLine.insert(i + 1, 1, (char)15);
             }
         }
@@ -2531,7 +2528,7 @@ void NumeReKernel::printPreFmt(const string& __sLine, bool printingEnabled)
 
             for (size_t i = 0; i < sLine.length(); i++)
             {
-                if (sLine[i] == '\n' && i < sLine.length() - 2)
+                if (i < sLine.length() - 2 && sLine[i] == '\n')
                     sLine.insert(i + 1, 1, (char)15);
             }
         }
@@ -2614,7 +2611,7 @@ string NumeReKernel::formatResultOutput(int nNum, value_type* v)
 /////////////////////////////////////////////////
 string NumeReKernel::formatResultOutput(const vector<string>& vStringResults)
 {
-    Settings& _option = getInstance()->getSettings();
+    const Settings& _option = getInstance()->getSettings();
 
     if (vStringResults.size() > 1)
     {
@@ -3229,7 +3226,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 
     // Obtain references to the debugger and the parser
     NumeReDebugger& _debugger = getInstance()->getDebugger();
-    Parser& _parser = getInstance()->getParser();
+    const Parser& _parser = getInstance()->getParser();
 
     // Get the numerical variable map
     varmap = _parser.GetVar();
@@ -3325,7 +3322,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     // Clean up memory
     if (sLocalVars)
     {
-        for (size_t i = 0; i < nLocalVarMapSize; i++)
+        for (i = 0; i < nLocalVarMapSize; i++)
             delete[] sLocalVars[i];
 
         delete[] sLocalVars;
@@ -3334,7 +3331,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 
     if (sLocalStrings)
     {
-        for (size_t i = 0; i < nLocalStringMapSize; i++)
+        for (i = 0; i < nLocalStringMapSize; i++)
             delete[] sLocalStrings[i];
 
         delete[] sLocalStrings;
@@ -3342,7 +3339,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 
     if (sLocalTables)
     {
-        for (size_t i = 0; i < nLocalTableMapSize; i++)
+        for (i = 0; i < nLocalTableMapSize; i++)
             delete[] sLocalTables[i];
 
         delete[] sLocalTables;
@@ -3350,7 +3347,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 
     if (sLocalClusters)
     {
-        for (size_t i = 0; i < nLocalClusterMapSize; i++)
+        for (i = 0; i < nLocalClusterMapSize; i++)
             delete[] sLocalClusters[i];
 
         delete[] sLocalClusters;

@@ -80,15 +80,15 @@ CommandReturnValues commandHandler(string& sCmd)
         return cmd_data(sCmd);
 
     // Get a reference to the datafile object
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    const MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Try to find any other table in the command
     // string
     // DECLARED AS DEPRECATED
-	for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
+	for (auto tableIter = _data.getTableMap().begin(); tableIter != _data.getTableMap().end(); ++tableIter)
 	{
-		if (findCommand(sCmd, iter->first).sString == iter->first)
-            return cmd_tableAsCommand(sCmd, iter->first);
+		if (findCommand(sCmd, tableIter->first).sString == tableIter->first)
+            return cmd_tableAsCommand(sCmd, tableIter->first);
 	}
 
 	// No command found
@@ -435,16 +435,16 @@ bool parseCmdArg(const string& sCmd, const string& sParam, Parser& _parser, int&
 	if (!sCmd.length() || !sParam.length())
 		return false;
 
-	unsigned int nPos = 0;
-
 	if (findParameter(sCmd, sParam) || findParameter(sCmd, sParam, '='))
 	{
+		unsigned int nPos;
+		
 		if (findParameter(sCmd, sParam))
 			nPos = findParameter(sCmd, sParam) + sParam.length();
 		else
 			nPos = findParameter(sCmd, sParam, '=') + sParam.length();
 
-		while (sCmd[nPos] == ' ' && nPos < sCmd.length() - 1)
+		while (nPos < sCmd.length() - 1 && sCmd[nPos] == ' ')
 			nPos++;
 
 		if (sCmd[nPos] == ' ' || nPos >= sCmd.length() - 1)

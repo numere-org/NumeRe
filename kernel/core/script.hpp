@@ -60,7 +60,7 @@ class Script : public FileSystem
         unsigned int nCurrentPackage;
         FunctionDefinitionManager _localDef;
 
-        string stripLineComments(const string& sLine);
+        string stripLineComments(const string& sLine) const;
         string stripBlockComments(const string& sLine);
         bool startInstallation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
         bool handleInstallInformation(string& sScriptCommand, bool& bFirstPassedInstallCommand);

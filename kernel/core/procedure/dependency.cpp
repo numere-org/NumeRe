@@ -222,7 +222,7 @@ int Dependencies::getProcedureDependencies(ProcedureElement* procedureFile, int 
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Dependencies::getProcedureName(std::string sCommandLine)
+std::string Dependencies::getProcedureName(std::string sCommandLine) const
 {
     if (sCommandLine.find("procedure ") == std::string::npos || sCommandLine.find('$') == std::string::npos)
         return "";
@@ -296,7 +296,7 @@ void Dependencies::resolveProcedureCalls(std::string sLine, const std::string& s
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string Dependencies::getProcedureFileName(std::string sProc)
+std::string Dependencies::getProcedureFileName(std::string sProc) const
 {
 	if (sProc.length())
 	{

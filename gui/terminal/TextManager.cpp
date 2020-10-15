@@ -49,7 +49,7 @@ using namespace std;
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
 TextManager::TextManager(GenericTerminal* parent, int width, int height, int maxWidth, int maxHeight /* = 50 */)
-    : m_parent(parent), m_viewportWidth(width), m_viewportHeight(height), m_maxWidth(maxWidth), m_maxHeight(maxHeight)
+    : m_parent(parent), m_viewportWidth(width), m_viewportHeight(height), m_maxWidth(maxWidth), m_maxHeight(maxHeight), m_virtualCursor(0)
 {
     if (m_parent != nullptr)
     {
@@ -71,14 +71,14 @@ TextManager::~TextManager()
 /////////////////////////////////////////////////
 /// \brief This is the read-only print function
 ///
-/// \param _sLine const string&
+/// \param sLine const string&
 /// \return void
 ///
 /// Adds the passed stringt to the internal managed
 /// text, stores it as read-only text and triggers
 /// the rendering section
 /////////////////////////////////////////////////
-void TextManager::printOutput(const string& _sLine)
+void TextManager::printOutput(const string& sLine)
 {
     // Create a new line if the buffer is empty
     if (!m_managedText.size())
@@ -86,15 +86,15 @@ void TextManager::printOutput(const string& _sLine)
 
     // Copy the line and determine, whether the current line
     // contains the error signature (character #15)
-    string sLine = _sLine;
-    bool isErrorLine = sLine.find((char)15) != string::npos;
+    string _sLine = sLine;
+    bool isErrorLine = _sLine.find((char)15) != string::npos;
 
     // Remove the error signature
-    while (sLine.find((char)15) != string::npos)
-        sLine.erase(sLine.find((char)15), 1);
+    while (_sLine.find((char)15) != string::npos)
+        _sLine.erase(_sLine.find((char)15), 1);
 
     // Append the line to the current line
-    m_managedText.back() += CharacterVector(sLine, KERNEL_TEXT);
+    m_managedText.back() += CharacterVector(_sLine, KERNEL_TEXT);
 
     // Synchronize the rendered layout by deleting the
     // current line
@@ -146,7 +146,7 @@ void TextManager::insertInput(const string& sLine, size_t logicalpos /*= string:
 /// cursor (line, position) into a view cursor (x, y)
 /// for the current viewport size.
 /////////////////////////////////////////////////
-ViewCursor TextManager::toViewCursor(const LogicalCursor& logCursor)
+ViewCursor TextManager::toViewCursor(const LogicalCursor& logCursor) const
 {
     // Ensure that the cursor is valid
     if (!logCursor)
@@ -200,7 +200,7 @@ ViewCursor TextManager::toViewCursor(const LogicalCursor& logCursor)
 /// position (which is a logical cursor) and returns
 /// it as a view cursor
 /////////////////////////////////////////////////
-ViewCursor TextManager::getCurrentViewPos()
+ViewCursor TextManager::getCurrentViewPos() const
 {
     // If the text was not rendered yet, return an invalid cursor
     if (!m_renderedBlock.size())
@@ -221,7 +221,7 @@ ViewCursor TextManager::getCurrentViewPos()
 /// cursor (x,y) into a logical cursor (line,position)
 /// depending on the current viewport size.
 /////////////////////////////////////////////////
-LogicalCursor TextManager::toLogicalCursor(const ViewCursor& viewCursor)
+LogicalCursor TextManager::toLogicalCursor(const ViewCursor& viewCursor) const
 {
     // Go to the corresponding x and y positions in the rendered layout
     // block and return the contained coordinates
@@ -247,7 +247,7 @@ LogicalCursor TextManager::toLogicalCursor(const ViewCursor& viewCursor)
 /// This position is extracted from the current
 /// position in the last line of the managed text
 /////////////////////////////////////////////////
-LogicalCursor TextManager::getCurrentLogicalPos()
+LogicalCursor TextManager::getCurrentLogicalPos() const
 {
     // Ensure that there's text in the buffer
     if (!m_managedText.size())
@@ -270,7 +270,7 @@ LogicalCursor TextManager::getCurrentLogicalPos()
 /// requires that the managed text is already
 /// rendered
 /////////////////////////////////////////////////
-string TextManager::getRenderedString(size_t viewLine)
+string TextManager::getRenderedString(size_t viewLine) const
 {
     // Return an empty line, if the line is not valid
     if (viewLine + m_topLine - m_numLinesScrolledUp >= m_renderedBlock.size() || viewLine > (size_t)m_viewportHeight)
@@ -291,7 +291,7 @@ string TextManager::getRenderedString(size_t viewLine)
 /// This function requires that the managed text is
 /// already rendered
 /////////////////////////////////////////////////
-vector<unsigned short> TextManager::getRenderedColors(size_t viewLine)
+vector<unsigned short> TextManager::getRenderedColors(size_t viewLine) const
 {
     // Return an empty vector, if the line is not valid
     if (viewLine + m_topLine - m_numLinesScrolledUp >= m_renderedBlock.size() || viewLine > (size_t)m_viewportHeight)
@@ -400,7 +400,6 @@ void TextManager::renderLayout()
     // Go through the complete container
     for (size_t i = lastRenderedLine; i < m_managedText.size(); i++)
     {
-        size_t breakpos;
         size_t lastbreakpos = 0;
         bool firstline = true;
         LogicalCursor cursor(0, i);
@@ -415,7 +414,7 @@ void TextManager::renderLayout()
                 firstline = false;
 
             // Get the new break position
-            breakpos = findNextLinebreak(m_managedText[i].toString(), lastbreakpos);
+            size_t breakpos = findNextLinebreak(m_managedText[i].toString(), lastbreakpos);
 
             // If it's not the first line, add the indent here
             if (!firstline)
@@ -533,7 +532,7 @@ void TextManager::synchronizeRenderedBlock(int linesToDelete)
 /// position from the current position using a simple
 /// heuristic
 /////////////////////////////////////////////////
-size_t TextManager::findNextLinebreak(const string& currentLine, size_t currentLinebreak)
+size_t TextManager::findNextLinebreak(const string& currentLine, size_t currentLinebreak) const
 {
     // If the current line is shorter than the current viewport width,
     // return the length of the current line as next break position
@@ -818,7 +817,7 @@ void TextManager::unselectAll()
 /// This member function returns true, if the character
 /// pointed by the passed view cursor is selected
 /////////////////////////////////////////////////
-bool TextManager::isSelected(const ViewCursor& viewCursor)
+bool TextManager::isSelected(const ViewCursor& viewCursor) const
 {
     // Convert the view cursor into a logical cursor
     LogicalCursor cursor = toLogicalCursor(viewCursor);
@@ -838,7 +837,7 @@ bool TextManager::isSelected(const ViewCursor& viewCursor)
 /// \return string
 ///
 /////////////////////////////////////////////////
-string TextManager::getSelectedText()
+string TextManager::getSelectedText() const
 {
     string sText;
 
@@ -875,7 +874,7 @@ string TextManager::getSelectedText()
 /// This member function will return the contents
 /// of the current user input line
 /////////////////////////////////////////////////
-string TextManager::getCurrentInputLine()
+string TextManager::getCurrentInputLine() const
 {
     // Ensure that the buffer is available and that there's user text
     if (!m_managedText.size() || !m_managedText.back().back().editable())
@@ -1015,7 +1014,7 @@ bool TextManager::Scroll(int numLines, bool scrollUp)
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-int TextManager::GetSize()
+int TextManager::GetSize() const
 {
     return m_managedText.size();
 }
@@ -1181,7 +1180,7 @@ string TextManager::GetInputHistory(bool vcursorup)
 /// \return string
 ///
 /////////////////////////////////////////////////
-string TextManager::GetTextRange(int y, int x0, int x1)
+string TextManager::GetTextRange(int y, int x0, int x1) const
 {
     // Convert the coordinates to a logical cursor
     LogicalCursor cursor = toLogicalCursor(ViewCursor(x0, y));
@@ -1205,7 +1204,7 @@ string TextManager::GetTextRange(int y, int x0, int x1)
 /// This member function returns the word, which
 /// contains the character at (x,y)
 /////////////////////////////////////////////////
-string TextManager::GetWordAt(int y, int x)
+string TextManager::GetWordAt(int y, int x) const
 {
     // Convert the coordinates to a logical cursor
     LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
@@ -1249,7 +1248,7 @@ string TextManager::GetWordAt(int y, int x)
 /// This member function returns the word start, which
 /// contains the character at (x,y)
 /////////////////////////////////////////////////
-string TextManager::GetWordStartAt(int y, int x)
+string TextManager::GetWordStartAt(int y, int x) const
 {
     // Convert the coordinates to a logical cursor
     LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
@@ -1285,7 +1284,7 @@ string TextManager::GetWordStartAt(int y, int x)
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-char TextManager::GetCharAdjusted(int y, int x)
+char TextManager::GetCharAdjusted(int y, int x) const
 {
     LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
     return GetCharLogical(cursor);
@@ -1299,7 +1298,7 @@ char TextManager::GetCharAdjusted(int y, int x)
 /// \return char
 ///
 /////////////////////////////////////////////////
-char TextManager::GetCharLogical(const LogicalCursor& cursor)
+char TextManager::GetCharLogical(const LogicalCursor& cursor) const
 {
     if (!cursor)
         return ' ';
@@ -1317,7 +1316,7 @@ char TextManager::GetCharLogical(const LogicalCursor& cursor)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool TextManager::IsUserText(int y, int x)
+bool TextManager::IsUserText(int y, int x) const
 {
     LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
 
@@ -1340,7 +1339,7 @@ bool TextManager::IsUserText(int y, int x)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool TextManager::IsEditable(int y, int x)
+bool TextManager::IsEditable(int y, int x) const
 {
     LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
 
@@ -1358,11 +1357,11 @@ bool TextManager::IsEditable(int y, int x)
 /////////////////////////////////////////////////
 /// \brief Determines, whether the character at the logical position is editable text
 ///
-/// \param logCursor LogicalCursor&
+/// \param logCursor const LogicalCursor&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool TextManager::IsEditableLogical(LogicalCursor& logCursor)
+bool TextManager::IsEditableLogical(const LogicalCursor& logCursor) const
 {
     if (!logCursor)
         return false;
@@ -1386,7 +1385,7 @@ bool TextManager::IsEditableLogical(LogicalCursor& logCursor)
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-unsigned short TextManager::GetColor(int y, int x)
+unsigned short TextManager::GetColor(int y, int x) const
 {
     return m_managedText[y][x].getColor();
 }
@@ -1403,7 +1402,7 @@ unsigned short TextManager::GetColor(int y, int x)
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-unsigned short TextManager::GetColorAdjusted(int y, int x)
+unsigned short TextManager::GetColorAdjusted(int y, int x) const
 {
     LogicalCursor cursor = toLogicalCursor(ViewCursor(x, y));
 
@@ -1470,7 +1469,7 @@ void TextManager::ChangeEditableState()
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-int TextManager::AdjustIndex(int index)
+int TextManager::AdjustIndex(int index) const
 {
     int adjustedIndex = m_topLine + index - m_numLinesScrolledUp;
     return adjustedIndex;
@@ -1485,7 +1484,7 @@ int TextManager::AdjustIndex(int index)
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-int TextManager::GetNumLinesScrolled()
+int TextManager::GetNumLinesScrolled() const
 {
     return m_numLinesScrolledUp;
 }
@@ -1547,7 +1546,7 @@ void TextManager::SetMaxSize(int newSize)
 ///
 ///  @author Mark Erikson @date 04-23-2004
 //////////////////////////////////////////////////////////////////////////////
-int TextManager::GetLinesReceived()
+int TextManager::GetLinesReceived() const
 {
     return m_renderedBlock.size();
 }
@@ -1559,7 +1558,7 @@ int TextManager::GetLinesReceived()
 /// \return int
 ///
 /////////////////////////////////////////////////
-int TextManager::GetMaxSize()
+int TextManager::GetMaxSize() const
 {
     return m_maxHeight;
 }

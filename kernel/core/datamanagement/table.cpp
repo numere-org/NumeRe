@@ -64,20 +64,16 @@ namespace NumeRe
     }
 
     // Copy constructor
-    Table::Table(const Table& _table)
+    Table::Table(const Table& _table) : vTableData(_table.vTableData), vTableHeadings(_table.vTableHeadings), sTableName(_table.sTableName)
     {
-        vTableData = _table.vTableData;
-        vTableHeadings = _table.vTableHeadings;
-        sTableName = _table.sTableName;
     }
 
     // Move constructor
-    Table::Table(Table&& _table)
+    Table::Table(Table&& _table) : sTableName(_table.sTableName)
     {
         // We move by using the std::swap() functions
         std::swap(vTableData, _table.vTableData);
         std::swap(vTableHeadings, _table.vTableHeadings);
-        sTableName = _table.sTableName;
     }
 
     // Destructor
@@ -245,7 +241,7 @@ namespace NumeRe
     }
 
     // Getter function for the table headline
-    string Table::getName()
+    string Table::getName() const
     {
         return sTableName;
     }
@@ -281,7 +277,7 @@ namespace NumeRe
     }
 
     // Getter function for the selected column's headline
-    string Table::getHead(size_t i)
+    string Table::getHead(size_t i) const
     {
         if (vTableHeadings.size() > i)
             return vTableHeadings[i];
@@ -291,7 +287,7 @@ namespace NumeRe
 
     // Getter function for the selected column's headline.
     // Underscores and masked headlines are replaced on-the-fly
-    string Table::getCleanHead(size_t i)
+    string Table::getCleanHead(size_t i) const
     {
         if (vTableHeadings.size() > i)
         {
@@ -325,15 +321,15 @@ namespace NumeRe
             size_t pos = 0;
 
             // Complex case: find the selected part
-            for (size_t i = 0; i < head.length(); i++)
+            for (size_t j = 0; j < head.length(); j++)
             {
-                if (head[i] == '\n')
+                if (head[j] == '\n')
                 {
                     if (!part)
-                        return head.substr(pos, i - pos);
+                        return head.substr(pos, j - pos);
 
                     part--;
-                    pos = i+1;
+                    pos = j+1;
                 }
             }
 
@@ -384,7 +380,7 @@ namespace NumeRe
     }
 
     // Get the number of lines
-    size_t Table::getLines()
+    size_t Table::getLines() const
     {
         return vTableData.size();
     }
@@ -396,7 +392,7 @@ namespace NumeRe
     }
 
     // Return, whether the table is empty
-    bool Table::isEmpty()
+    bool Table::isEmpty() const
     {
         return vTableData.empty();
     }

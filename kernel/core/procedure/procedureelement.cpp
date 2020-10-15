@@ -70,8 +70,7 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
         for (size_t j = 0; j < sProcCommandLine.length(); j++)
         {
             // count the quotation marks
-            if (sProcCommandLine[j] == '"'
-                && (!j || (j && sProcCommandLine[j-1] != '\\')))
+            if (sProcCommandLine[j] == '"' && (!j || sProcCommandLine[j-1] != '\\'))
                 nQuotes++;
 
             if (!(nQuotes % 2) && sProcCommandLine.substr(j,2) == "##")

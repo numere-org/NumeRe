@@ -467,7 +467,7 @@ namespace NumeRe
         if (!m_mStringVars.size())
             return;
 
-        unsigned int __nPos = nPos;
+        unsigned int __nPos;
         sLine += " ";
 
         // Try to find every string variable into the passed string and

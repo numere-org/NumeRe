@@ -62,11 +62,11 @@ class Plugin
         Plugin();
         Plugin(const string& sInstallInfoString);
 
-        string exportDefinition();
+        string exportDefinition() const;
         void importDefinition(string sDefinitionString);
 
-        bool operator==(const Plugin& _plugin);
-        bool operator!=(const Plugin& _plugin);
+        bool operator==(const Plugin& _plugin) const;
+        bool operator!=(const Plugin& _plugin) const;
         void update(const Plugin& _plugin);
         void incrementVersion();
 };

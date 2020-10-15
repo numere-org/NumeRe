@@ -182,7 +182,7 @@ wxString SearchController::FindMarkedInclude(int charpos)
 			clickedWord.replace(clickedWord.find("<>"), 2, m_terminal->getPathSettings()[EXEPATH]);
 
 		if (clickedWord.find("<this>") != string::npos)
-			clickedWord.replace(clickedWord.find("<this>"), 6, m_editor->GetFileName().GetPath(wxPATH_GET_VOLUME));
+			clickedWord.replace(clickedWord.find("<this>"), 6, m_editor->GetFileName().GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR));
 
 		if (clickedWord.find("<loadpath>") != string::npos)
 			clickedWord.replace(clickedWord.find("<loadpath>"), 10, m_terminal->getPathSettings()[LOADPATH]);
@@ -347,14 +347,14 @@ wxString SearchController::FindNameSpaceOfProcedure(int charpos)
 /// \brief Finds procedures, which might match the passed word start
 ///
 /// \param sFirstChars wxString
-/// \param sSelectedNamespace wxString
+/// \param sSelectedNameSpace wxString
 /// \return wxString
 ///
 /// Finds all procedures in the current file, which might
 /// fit the passed word start, and return them as a single
 /// autocompletion string
 /////////////////////////////////////////////////
-wxString SearchController::FindProceduresInCurrentFile(wxString sFirstChars, wxString sSelectedNamespace)
+wxString SearchController::FindProceduresInCurrentFile(wxString sFirstChars, wxString sSelectedNameSpace)
 {
 	wxString sThisFileProcedures;
 
@@ -382,7 +382,7 @@ wxString SearchController::FindProceduresInCurrentFile(wxString sFirstChars, wxS
 		}
 	}
 
-	if (sSelectedNamespace.length())
+	if (sSelectedNameSpace.length())
 		return sThisFileProcedures;
 
 	return sThisFileProcedures + m_editor->_syntax->getNameSpaceAutoCompList(sFirstChars.ToStdString());

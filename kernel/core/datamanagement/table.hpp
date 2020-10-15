@@ -56,18 +56,18 @@ namespace NumeRe
             void setValue(size_t i, size_t j, double _dValue);
             void setValueAsString(size_t i, size_t j, const string& _sValue);
 
-            string getName();
+            string getName() const;
             int getHeadCount();
-            string getHead(size_t i);
-            string getCleanHead(size_t i);
+            string getHead(size_t i) const;
+            string getCleanHead(size_t i) const;
             string getCleanHeadPart(size_t i, size_t part = 0);
             double getValue(size_t i, size_t j);
             string getValueAsString(size_t i, size_t j);
 
-            size_t getLines();
+            size_t getLines() const;
             size_t getCols();
 
-            bool isEmpty();
+            bool isEmpty() const;
 
             bool insertLines(size_t nPos = 0, size_t nNum = 1);
             bool appendLines(size_t nNum = 1);

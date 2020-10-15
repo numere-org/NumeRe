@@ -86,7 +86,7 @@ Script::~Script()
 /// install section is currently executed and
 /// we're inside of a procedure.
 /////////////////////////////////////////////////
-string Script::stripLineComments(const string& sLine)
+string Script::stripLineComments(const string& sLine) const
 {
     // Comment signs are the only chars? -> return an empty string
     if (sLine == "##")
@@ -98,8 +98,7 @@ string Script::stripLineComments(const string& sLine)
     // which are not masked by quotation marks
     for (size_t i = 0; i < sLine.length(); i++)
     {
-        if (sLine[i] == '"'
-            && (!i || (i && sLine[i-1] != '\\')))
+        if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
             nQuotes++;
 
         // Found a documentation string
@@ -142,8 +141,7 @@ string Script::stripBlockComments(const string& sLine)
     // which are not masked by quotation marks
     for (size_t i = 0; i < sReturn.length(); i++)
     {
-        if (sReturn[i] == '"'
-            && (!i || (i && sReturn[i-1] != '\\')))
+        if (sReturn[i] == '"' && (!i || sReturn[i-1] != '\\'))
             nQuotes++;
 
         // Found a documentation string

@@ -664,9 +664,7 @@ void OptionsDialog::ExitDialog()
 //////////////////////////////////////////////////////////////////////////////
 bool OptionsDialog::EvaluateOptions()
 {
-	wxString outputMessage = wxEmptyString;
-
-    _option->setbCompact(m_compactTables->GetValue());
+	_option->setbCompact(m_compactTables->GetValue());
     _option->setbDefineAutoLoad(m_AutoLoadDefines->GetValue());
     _option->setbGreeting(m_showGreeting->GetValue());
     _option->setbLoadEmptyCols(m_LoadCompactTables->GetValue());

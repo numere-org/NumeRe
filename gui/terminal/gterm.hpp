@@ -132,12 +132,12 @@ class GenericTerminal
         // function to control terminal
         virtual void ProcessInput(int len, const string& sData);
         virtual void ProcessOutput(int len, const string& sData);
-        virtual void ResizeTerminal(int width, int height);
-        int Width()
+        virtual void ResizeTerminal(int _width, int _height);
+        int Width() const
         {
             return width;
         }
-        int Height()
+        int Height() const
         {
             return height;
         }
@@ -152,7 +152,7 @@ class GenericTerminal
         void SetTerminalHistory(int size);
 
         bool IsScrolledUp();
-        int GetMode()
+        int GetMode() const
         {
             return mode_flags;
         }

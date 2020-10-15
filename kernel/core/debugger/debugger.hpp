@@ -72,23 +72,23 @@ class NumeReDebugger
                 bExceptionHandled = false;
                 reset();
             }
-        inline bool validDebuggingInformations()
+        inline bool validDebuggingInformations() const
             {
                 return bAlreadyThrown;
             }
-        inline unsigned int getLineNumber()
+        inline unsigned int getLineNumber() const
             {
                 return nLineNumber;
             }
-        inline string getErrorModule()
+        inline string getErrorModule() const
             {
                 return sErraticModule;
             }
-        inline size_t getStackSize()
+        inline size_t getStackSize() const
             {
                 return vStackTrace.size();
             }
-        inline bool isActive()
+        inline bool isActive() const
             {
                 return bDebuggerActive;
             }
@@ -102,7 +102,7 @@ class NumeReDebugger
                 return _breakpointManager;
             }
         void showError(const string& sTitle);
-        void showError(exception_ptr e);
+        void showError(exception_ptr e_ptr);
         void throwException(SyntaxError error);
 
         int showBreakPoint();

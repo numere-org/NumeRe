@@ -64,7 +64,6 @@ namespace NumeRe
     string StringParser::getDataForString(string sLine, size_t n_pos)
     {
         // Get the contents of "string()", "data()" and the other caches
-        string sDummy;
         size_t nEndPosition;
 
         if (sLine.find_first_of("({") == string::npos)
@@ -1210,7 +1209,6 @@ namespace NumeRe
                     vStringResult.pop_back();
                     int nResults = 0;
                     value_type* v = _parser.Eval(nResults);
-                    string stres;
 
                     for (int k = 0; k < nResults-1; k++)
                     {
@@ -1718,7 +1716,7 @@ namespace NumeRe
                     size_t nPos = getMatchingParenthesis(strExpr.sLine.substr(i)) + i;
 
                     // Ignore any calls to "string()"
-                    if (i < 6 || (i >= 6 && strExpr.sLine.substr(i - 6, 6) != "string"))
+                    if (i < 6 || strExpr.sLine.substr(i - 6, 6) != "string")
                     {
                         // The contents of the parenthesis
                         string sString = strExpr.sLine.substr(i + 1, nPos - i - 1);

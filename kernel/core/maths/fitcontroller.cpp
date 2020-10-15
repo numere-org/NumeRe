@@ -37,9 +37,8 @@ Fitcontroller::Fitcontroller()
     zvar = 0;
 }
 
-Fitcontroller::Fitcontroller(Parser* _parser)
+Fitcontroller::Fitcontroller(Parser* _parser) : Fitcontroller()
 {
-    Fitcontroller();
     _fitParser = _parser;
     mu::varmap_type mVars = _parser->GetVar();
     xvar = mVars["x"];
@@ -58,7 +57,7 @@ Fitcontroller::~Fitcontroller()
 // Bei NaN Ergebnisse auf double MAX gesetzt. Kann ggf. Schwierigkeiten bei Fitfunktionen mit Minima nahe NaN machen...
 int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector* fvals)
 {
-    FitData* _fData = (FitData*)data;
+    FitData* _fData = static_cast<FitData*>(data);
     unsigned int i = 0;
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
@@ -104,7 +103,7 @@ int Fitcontroller::fitfunction(const gsl_vector* params, void* data, gsl_vector*
 
 int Fitcontroller::fitjacobian(const gsl_vector* params, void* data, gsl_matrix* Jac)
 {
-    FitData* _fData = (FitData*)data;
+    FitData* _fData = static_cast<FitData*>(data);
     unsigned int i = 0;
     const double dEps = _fData->dPrecision*1.0e-1;
     vector<vector<double> > vFuncRes;
@@ -206,7 +205,7 @@ int Fitcontroller::fitfuncjac(const gsl_vector* params, void* data, gsl_vector* 
 
 int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, gsl_vector* fvals)
 {
-    FitData* _fData = (FitData*)data;
+    FitData* _fData = static_cast<FitData*>(data);
     unsigned int i = 0;
     int nVals = 0;
     value_type* v = 0;
@@ -256,7 +255,7 @@ int Fitcontroller::fitfunctionrestricted(const gsl_vector* params, void* data, g
 
 int Fitcontroller::fitjacobianrestricted(const gsl_vector* params, void* data, gsl_matrix* Jac)
 {
-    FitData* _fData = (FitData*)data;
+    FitData* _fData = static_cast<FitData*>(data);
     unsigned int i = 0;
     const double dEps = _fData->dPrecision*1.0e-1;
     vector<vector<double> > vFuncRes;
@@ -440,7 +439,6 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     double params[mParams.size()];
     int nStatus = 0;
     int nRetry = 0;
-    unsigned int i = 0;
     unsigned int nPoints = (_fData.vz.size()) ? _fData.vx.size()*_fData.vy.size() : _fData.vx.size();
 
     // Validation
@@ -477,22 +475,24 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
 
     if (_fData.vy_w.size())
     {
-        for (unsigned int i = 0; i < _fData.vy_w.size(); i++)
+        for (size_t i = 0; i < _fData.vy_w.size(); i++)
             _fData.vy_w[i] += 1.0;
     }
+
     if (_fData.vz_w.size())
     {
-        for (unsigned int i = 0; i < _fData.vz_w.size(); i++)
+        for (size_t i = 0; i < _fData.vz_w.size(); i++)
         {
-            for (unsigned int j = 0; j < _fData.vz_w[i].size(); j++)
+            for (size_t j = 0; j < _fData.vz_w[i].size(); j++)
                 _fData.vz_w[i][j] += 1.0;
         }
     }
 
+	size_t n = 0;
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        params[i] = *(iter->second);
-        i++;
+        params[n] = *(iter->second);
+        n++;
     }
 
     gsl_vector_view vparams = gsl_vector_view_array(params, mParams.size());
@@ -522,10 +522,10 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
         {
             if (!nIterations && !nRetry) //Algorithmus kommt mit den Startparametern nicht klar (und nur mit diesen)
             {
-                for (unsigned int i = 0; i < mParams.size(); i++)
+                for (size_t j = 0; j < mParams.size(); j++)
                 {
-                    if (!gsl_vector_get(&vparams.vector, i)) // 0 durch 1 ersetzen und nochmal probieren
-                        gsl_vector_set(&vparams.vector, i, 1.0);
+                    if (!gsl_vector_get(&vparams.vector, j)) // 0 durch 1 ersetzen und nochmal probieren
+                        gsl_vector_set(&vparams.vector, j, 1.0);
                 }
                 gsl_multifit_fdfsolver_free(solver);
                 solver = gsl_multifit_fdfsolver_alloc(type, nPoints, mParams.size());
@@ -556,18 +556,18 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     gsl_matrix* mCovar = gsl_matrix_alloc(mParams.size(), mParams.size());
     gsl_multifit_covar(solver->J, 0.0, mCovar);
     vCovarianceMatrix = vector<vector<double> >(mParams.size(), vector<double>(mParams.size(), 0.0));
-    for (unsigned int i = 0; i < mParams.size(); i++)
+    for (size_t i = 0; i < mParams.size(); i++)
     {
-        for (unsigned int j = 0; j < mParams.size(); j++)
+        for (size_t j = 0; j < mParams.size(); j++)
             vCovarianceMatrix[i][j] = gsl_matrix_get(mCovar, i, j);
     }
     gsl_matrix_free(mCovar);
 
-    i = 0;
+    n = 0;
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        *(iter->second) = gsl_vector_get(solver->x, i);
-        i++;
+        *(iter->second) = gsl_vector_get(solver->x, n);
+        n++;
     }
     dChiSqr = gsl_blas_dnrm2(solver->f);
     dChiSqr*=dChiSqr;

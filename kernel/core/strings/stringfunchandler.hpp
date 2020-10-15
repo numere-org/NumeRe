@@ -59,7 +59,7 @@ namespace NumeRe
             void declareStringFuncs(const map<string,StringFuncHandle>& mStringFuncs);
             size_t findNextFunction(const string& sFunc, const string& sLine, size_t nStartPos, size_t& nEndPosition, bool searchForMethods = false);
             string getFunctionArgumentList(const string& sFunc, const string& sLine, size_t nStartPosition, size_t nEndPosition);
-            size_t getStringFuncMapSize()
+            size_t getStringFuncMapSize() const
             {
                 return m_mStringFuncs.size();
             }

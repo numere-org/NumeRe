@@ -29,6 +29,7 @@
 /////////////////////////////////////////////////
 NumeReDebugger::NumeReDebugger()
 {
+	nCurrentStackElement = 0;
     nLineNumber = string::npos;
     sErraticCommand = "";
     sErraticModule = "";
@@ -48,7 +49,7 @@ NumeReDebugger::NumeReDebugger()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReDebugger::showError(exception_ptr e)
+void NumeReDebugger::showError(exception_ptr e_ptr)
 {
     if (!bDebuggerActive)
         return;
@@ -57,7 +58,7 @@ void NumeReDebugger::showError(exception_ptr e)
     // type and its message
     try
     {
-        rethrow_exception(e);
+        rethrow_exception(e_ptr);
     }
     catch (mu::Parser::exception_type& e)
     {

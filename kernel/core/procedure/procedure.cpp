@@ -1352,7 +1352,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
         // Ensure that this is no "wrong" procedure call
         for (size_t i = 0; i < sLine.length(); i++)
         {
-            if (sLine[i] == '"' && (!i || (i && sLine[i - 1] != '\\')))
+            if (sLine[i] == '"' && (!i || sLine[i - 1] != '\\'))
                 nQuotes++;
 
             if (sLine[i] == '$' && !(nQuotes % 2))
@@ -1689,8 +1689,6 @@ bool Procedure::writeProcedure(string sProcedureLine)
                  || sProcedureLine.find(" case") != string::npos
                  || sProcedureLine.find(" default") != string::npos
                  || sProcedureLine.find(" endswitch") != string::npos
-                 || sProcedureLine.find(" endif") != string::npos
-                 || sProcedureLine.find(" endif") != string::npos
                  || sProcedureLine.find(" while ") != string::npos
                  || sProcedureLine.find(" while(") != string::npos
                  || sProcedureLine.find(" endwhile") != string::npos)
@@ -1711,7 +1709,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
                             || sProcedureLine.substr(n, 8) == " switch "
                             || sProcedureLine.substr(n, 8) == " switch("
                             || sProcedureLine.substr(n, 6) == " case "
-                            || sProcedureLine.substr(n, 8) == " default "
+                            || sProcedureLine.substr(n, 9) == " default "
                             || sProcedureLine.substr(n, 9) == " default:"
                             || sProcedureLine.substr(n, 10) == " endswitch"
                             || sProcedureLine.substr(n, 7) == " while "
@@ -2616,7 +2614,7 @@ void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _p
     bool bSkipNextLine = false;
     bool bAppendNextLine = false;
     bool bBlockComment = false;
-    int nCurrentByteCode = 0;
+    int nCurrentByteCode;
 
     // Read as long as the end of the included script was not reached
     while (!fInclude.eof())

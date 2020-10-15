@@ -28,8 +28,6 @@
 #include "../structures.hpp"
 
 bool parser_CheckMultArgFunc(const std::string&, const std::string&);
-void parser_CheckIndices(long long int&, long long int&);
-void parser_CheckIndices(int&, int&);
 
 std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs = true);
 void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, const Settings&, bool);
@@ -62,7 +60,7 @@ class DataAccessParser
         DataAccessParser(const std::string& sCommand);
         std::string& getDataObject();
         Indices& getIndices();
-        bool isCluster();
+        bool isCluster() const;
 };
 
 
