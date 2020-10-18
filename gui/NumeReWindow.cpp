@@ -1319,6 +1319,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_currentEd->ApplyAutoFormat();
             break;
         }
+        case ID_MENU_TRANSPOSESELECTION:
+        {
+            m_currentEd->OnTranspose();
+            break;
+        }
         case ID_MENU_GOTOLINE:
         {
             gotoLine();
@@ -4880,6 +4885,11 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuFile, _guilang.get("GUI_MENU_FILE"));
 
+    // stripspaces (only front, only back, all)
+    wxMenu* menuStripSpaces = new wxMenu();
+    menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BOTH, _guilang.get("GUI_MENU_STRIP_BOTH"), _guilang.get("GUI_MENU_STRIP_BOTH_TTP"));
+    menuStripSpaces->Append(ID_MENU_STRIP_SPACES_FRONT, _guilang.get("GUI_MENU_STRIP_FRONT"), _guilang.get("GUI_MENU_STRIP_FRONT_TTP"));
+    menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BACK, _guilang.get("GUI_MENU_STRIP_BACK"), _guilang.get("GUI_MENU_STRIP_BACK_TTP"));
 
     wxMenu* menuEdit = new wxMenu();
 
@@ -4892,6 +4902,11 @@ void NumeReWindow::UpdateMenuBar()
     menuEdit->AppendSeparator();
     menuEdit->Append(ID_MENU_SELECTION_UP, _guilang.get("GUI_MENU_SELECT_UP"), _guilang.get("GUI_MENU_SELECT_UP_TTP"));
     menuEdit->Append(ID_MENU_SELECTION_DOWN, _guilang.get("GUI_MENU_SELECT_DOWN"), _guilang.get("GUI_MENU_SELECT_DOWN_TTP"));
+    menuEdit->AppendSeparator();
+    menuEdit->Append(ID_MENU_TRANSPOSESELECTION, _guilang.get("GUI_MENU_TRANSPOSESELECTION"), _guilang.get("GUI_MENU_TRANSPOSESELECTION_TTP"));
+    menuEdit->Append(wxID_ANY, _guilang.get("GUI_MENU_STRIP"), menuStripSpaces);
+    menuEdit->Append(ID_MENU_SORT_SELECTION_ASC, _guilang.get("GUI_MENU_SORT_ASC"), _guilang.get("GUI_MENU_SORT_ASC_TTP"));
+    menuEdit->Append(ID_MENU_SORT_SELECTION_DESC, _guilang.get("GUI_MENU_SORT_DESC"), _guilang.get("GUI_MENU_SORT_DESC_TTP"));
 
     // TODO Implement these Edit menu items
 
@@ -4936,11 +4951,6 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuView, _guilang.get("GUI_MENU_VIEW"));
 
-    // stripspaces (only front, only back, all)
-    wxMenu* menuStripSpaces = new wxMenu();
-    menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BOTH, _guilang.get("GUI_MENU_STRIP_BOTH"), _guilang.get("GUI_MENU_STRIP_BOTH_TTP"));
-    menuStripSpaces->Append(ID_MENU_STRIP_SPACES_FRONT, _guilang.get("GUI_MENU_STRIP_FRONT"), _guilang.get("GUI_MENU_STRIP_FRONT_TTP"));
-    menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BACK, _guilang.get("GUI_MENU_STRIP_BACK"), _guilang.get("GUI_MENU_STRIP_BACK_TTP"));
 
     wxMenu* menuFormat = new wxMenu();
     menuFormat->Append(ID_MENU_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
@@ -4972,10 +4982,7 @@ void NumeReWindow::UpdateMenuBar()
     menuTools->Append(ID_MENU_TOGGLE_COMMENT_LINE, _guilang.get("GUI_MENU_COMMENTLINE"), _guilang.get("GUI_MENU_COMMENTLINE_TTP"));
     menuTools->Append(ID_MENU_TOGGLE_COMMENT_SELECTION, _guilang.get("GUI_MENU_COMMENTSELECTION"), _guilang.get("GUI_MENU_COMMENTSELECTION_TTP"));
     menuTools->AppendSeparator();
-    menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_STRIP"), menuStripSpaces);
-    menuTools->Append(ID_MENU_SORT_SELECTION_ASC, _guilang.get("GUI_MENU_SORT_ASC"), _guilang.get("GUI_MENU_SORT_ASC_TTP"));
-    menuTools->Append(ID_MENU_SORT_SELECTION_DESC, _guilang.get("GUI_MENU_SORT_DESC"), _guilang.get("GUI_MENU_SORT_DESC_TTP"));
-    menuTools->AppendSeparator();
+
     menuTools->Append(ID_MENU_CREATE_DOCUMENTATION, _guilang.get("GUI_MENU_CREATE_DOCUMENTATION"), _guilang.get("GUI_MENU_CREATE_DOCUMENTATION_TTP"));
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
     menuTools->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));

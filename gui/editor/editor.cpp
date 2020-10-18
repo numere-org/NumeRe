@@ -34,6 +34,7 @@
 
 #include <wx/datetime.h>
 #include <wx/stdpaths.h>
+#include <wx/tokenzr.h>
 #include <vector>
 #include <string>
 #include <set>
@@ -6598,6 +6599,32 @@ void NumeReEditor::OnAbstrahizeSectionFromMenu()
 
 
 /////////////////////////////////////////////////
+/// \brief On MenuEvent handler for the transpose
+/// functionality of the editor.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::OnTranspose()
+{
+    int nFirstLine = 0;
+    int nLastLine = -1;
+
+    if (HasSelection())
+    {
+        nFirstLine = LineFromPosition(GetSelectionStart());
+        nLastLine = LineFromPosition(GetSelectionEnd());
+
+        // Decrement, if first position is selected
+        if (GetSelectionEnd() == PositionFromLine(nLastLine))
+            nLastLine--;
+    }
+
+    Transpose(nFirstLine, nLastLine);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Displays the duplicated code dialog.
 ///
 /// \return bool
@@ -7918,6 +7945,98 @@ string NumeReEditor::addLinebreaks(const string& sLine, bool onlyDocumentation /
 void NumeReEditor::ApplyAutoFormat(int nFirstLine, int nLastLine)
 {
     m_formatter->FormatCode(nFirstLine, nLastLine);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method transposes tabular data in
+/// between (including) starting and last line.
+/// If the current file is a CSV, heuristics are
+/// applied to determine the separator character,
+/// otherwise all usual whitespace characters are
+/// used to sparate the different cells of the
+/// tabular data.
+///
+/// \param nFirstLine int
+/// \param nLastLine int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::Transpose(int nFirstLine, int nLastLine)
+{
+    if (nFirstLine < 0)
+		nFirstLine = 0;
+
+	if (nLastLine <= 0 || nLastLine > GetLineCount())
+		nLastLine = GetLineCount()-1;
+
+    int nFirstPos = PositionFromLine(nFirstLine);
+    int nLastPos = GetLineEndPosition(nLastLine);
+    size_t maxLines = 0;
+
+    // Clear all selections
+    if (HasSelection())
+        ClearSelections();
+
+    std::vector<std::vector<wxString>> vTable;
+    wxStringTokenizer tokenizer;
+    wxString sDelimiter;
+
+    // Determine the delimiter characters
+    if (GetFileName().GetExt() == "csv")
+    {
+        // For a CSV file, we will search for
+        // some distinct combinations to determine,
+        // whether a comma or a semicolon is used
+        // as separator character
+        wxString origSection = GetTextRange(nFirstPos, nLastPos);
+
+        if (origSection.find(';') != string::npos && origSection.find(',') != string::npos)
+            sDelimiter = ";\r\n"; // Comma is decimal separator
+        else if (origSection.find('.') != string::npos && origSection.find(',') != string::npos)
+            sDelimiter = ",\r\n"; // dot is decimal separator
+        else
+            sDelimiter = ";,\r\n"; // Fallback: separate both
+    }
+    else
+        sDelimiter = "\t \r\n";
+
+    // Tokenize the selected lines into a string table
+    for (int i = nFirstLine; i <= nLastLine; i++)
+    {
+        vTable.push_back(std::vector<wxString>());
+        tokenizer.SetString(GetLine(i), sDelimiter);
+
+        while (tokenizer.HasMoreTokens())
+            vTable[i-nFirstLine].push_back(tokenizer.GetNextToken());
+
+        // Update the numbers of columns (will be lines),
+        // if necessary
+        if (vTable[i-nFirstLine].size() > maxLines)
+            maxLines = vTable[i-nFirstLine].size();
+    }
+
+    wxString finalLayout;
+
+    // Layout the transposed table
+    for (size_t i = 0; i < maxLines; i++)
+    {
+        for (size_t j = 0; j < vTable.size(); j++)
+        {
+            if (vTable[j].size() > i)
+                finalLayout += vTable[j][i];
+
+            if (j+1 < vTable.size())
+                finalLayout += sDelimiter[0];
+        }
+
+        if (i+1 < maxLines)
+            finalLayout += "\r\n";
+    }
+
+    // Replace the original section with the
+    // transposed table
+    Replace(nFirstPos, nLastPos, finalLayout);
 }
 
 

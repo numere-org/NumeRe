@@ -35,3 +35,5 @@ Added	Created a "Tell me, what you want to do" Toolbox and reworked all search b
 Fixed	The autocompletion feature now works for procedures correctly.
 Updated	The LaTeX documentation generator functionality has been increased: the documentation generator will now create a documentation for a whole dependency tree. The layout of the documentation has been reworked as well.
 Added	A new context menu entry for loading the data directly to a new table was added to the context menu of the file tree.
+Added	The editor now has a "transpose" functionality, which may be found in the "edit" menu.
+Cleaned	Moved some functionalities from the "tools" menu to the "edit" menu.

@@ -218,6 +218,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnRenameSymbolsFromMenu();
 		void OnAbstrahizeSection(wxCommandEvent& event);
 		void OnAbstrahizeSectionFromMenu();
+		void OnTranspose();
+
 		void OnAnalyzerTimer(wxTimerEvent& event);
 		bool InitDuplicateCode();
 		void OnFindDuplicateCode(int nDuplicateFlag = 1, int nNumDuplicatedLines = 6); // 0 = direct comparison, 1 = use var semanticals, 2 = use string semanticals,
@@ -251,6 +253,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		void ApplyAutoIndentation(int nFirstLine = 0, int nLastLine = -1);
 		void ApplyAutoFormat(int nFirstLine = 0, int nLastLine = -1);
+		void Transpose(int nFirstLine = 0, int nLastLine = -1);
 
 		void ToggleSettings(int _setting);
 		bool getEditorSetting(EditorSettings _setting);

@@ -39,6 +39,13 @@
 extern const string sVersion;
 using namespace std;
 
+enum TIMESTAMP
+{
+    GET_ONLY_TIME = 1,
+    GET_AS_TIMESTAMP = 2,
+    GET_WITH_TEXT = 4
+};
+
 
 /** \brief Macht aus einem Int ein String (mit Praezision)
  *
@@ -78,11 +85,11 @@ string toString(int);
 /** \brief Transforms a time_t into a string (formatted as time)
  *
  * \param tTime time_t
- * \param bOnlyTime bool
+ * \param timeStampFlags int
  * \return string
  *
  */
-string toString(time_t tTime, bool bOnlyTime = false);
+string toString(time_t tTime, int timeStampFlags = 0);
 
 /** \brief Macht aus einem Int ein String (ohne Praezision)
  *

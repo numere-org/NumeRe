@@ -59,37 +59,66 @@ string toString(size_t nNumber)
 }
 
 // time_t to string - Will convert a time into a time string
-string toString(time_t tTime, bool bOnlyTime)
+string toString(time_t tTime, int timeStampFlags)
 {
     tm* ltm = localtime(&tTime);
-    ostringstream Temp_str;
+    ostringstream timeStream;
 
-    if (!bOnlyTime)
+    if (!(timeStampFlags & GET_ONLY_TIME))
     {
-        if (ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
-            Temp_str << "0";
-        Temp_str << ltm->tm_mday << "."; 	// DD
-        if (1 + ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
-            Temp_str << "0";
-        Temp_str << 1 + ltm->tm_mon << "."; // MM-
-        Temp_str << 1900 + ltm->tm_year << ", "; //YYYY-
-    }
-    if (ltm->tm_hour < 10)
-        Temp_str << "0";
-    if (bOnlyTime)
-        Temp_str << ltm->tm_hour - 1; 	// hh
-    else
-        Temp_str << ltm->tm_hour; 	// hh
-    Temp_str << ":";		// ':' im regulaeren Datum
-    if (ltm->tm_min < 10)
-        Temp_str << "0";
-    Temp_str << ltm->tm_min;	// mm
-    Temp_str << ":";
-    if (ltm->tm_sec < 10)
-        Temp_str << "0";
-    Temp_str << ltm->tm_sec;	// ss
+        timeStream << 1900 + ltm->tm_year << "-"; //YYYY-
 
-    return Temp_str.str();
+        if (1 + ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
+            timeStream << "0";
+
+        timeStream << 1 + ltm->tm_mon << "-"; // MM-
+
+        if (ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
+            timeStream << "0";
+
+        timeStream << ltm->tm_mday; 	// DD
+
+        if (timeStampFlags & GET_AS_TIMESTAMP)
+            timeStream << "_";
+        else
+        {
+            timeStream << ", ";	// Komma im regulaeren Datum
+
+            if (timeStampFlags & GET_WITH_TEXT)
+            {
+                if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
+                    timeStream << "at ";
+                else
+                    timeStream << _lang.get("TOOLS_TIMESTAMP_AT") << " ";
+            }
+        }
+    }
+
+    if (ltm->tm_hour < 10)
+        timeStream << "0";
+
+    if (timeStampFlags & GET_ONLY_TIME)
+        timeStream << ltm->tm_hour - 1; 	// hh
+    else
+        timeStream << ltm->tm_hour; 	// hh
+
+    if (!(timeStampFlags & GET_AS_TIMESTAMP))
+        timeStream << ":";		// ':' im regulaeren Datum
+
+    if (ltm->tm_min < 10)
+        timeStream << "0";
+
+    timeStream << ltm->tm_min;	// mm
+
+    if (!(timeStampFlags & GET_AS_TIMESTAMP))
+        timeStream << ":";
+
+    if (ltm->tm_sec < 10)
+        timeStream << "0";
+
+    timeStream << ltm->tm_sec;	// ss
+
+    return timeStream.str();
 }
 
 // long long int to string
@@ -2581,43 +2610,7 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
 // This function simple returns the current time as a default timestamp
 string getTimeStamp(bool bGetStamp)
 {
-
-    time_t now = time(0);		// Aktuelle Zeit initialisieren
-    tm* ltm = localtime(&now);
-    ostringstream Temp_str;
-
-    Temp_str << 1900 + ltm->tm_year << "-"; //YYYY-
-    if (1 + ltm->tm_mon < 10)		// 0, falls Monat kleiner als 10
-        Temp_str << "0";
-    Temp_str << 1 + ltm->tm_mon << "-"; // MM-
-    if (ltm->tm_mday < 10)		// 0, falls Tag kleiner als 10
-        Temp_str << "0";
-    Temp_str << ltm->tm_mday; 	// DD
-    if (bGetStamp)
-        Temp_str << "_";		// Unterstrich im Dateinamen
-    else
-    {
-        Temp_str << ", ";	// Komma im regulaeren Datum
-        if (_lang.get("TOOLS_TIMESTAMP_AT") == "TOOLS_TIMESTAMP_AT")
-            Temp_str << "at";
-        else
-            Temp_str << _lang.get("TOOLS_TIMESTAMP_AT");
-        Temp_str << " ";
-    }
-    if (ltm->tm_hour < 10)
-        Temp_str << "0";
-    Temp_str << ltm->tm_hour; 	// hh
-    if (!bGetStamp)
-        Temp_str << ":";		// ':' im regulaeren Datum
-    if (ltm->tm_min < 10)
-        Temp_str << "0";
-    Temp_str << ltm->tm_min;	// mm
-    if (!bGetStamp)
-        Temp_str << ":";
-    if (ltm->tm_sec < 10)
-        Temp_str << "0";
-    Temp_str << ltm->tm_sec;	// ss
-    return Temp_str.str();
+    return toString(time(0), bGetStamp ? GET_AS_TIMESTAMP : GET_WITH_TEXT);
 }
 
 // This function resolves the possibility to select multiple paths at once by inserting something
