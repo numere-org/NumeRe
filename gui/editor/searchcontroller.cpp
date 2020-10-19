@@ -278,6 +278,11 @@ wxString SearchController::FindMarkedProcedure(int charpos, bool ignoreDefinitio
 	    // Find the the namespace
 		wxString sNameSpace = FindNameSpaceOfProcedure(charpos);
 
+		// Fallback namespace, if we're currently also searching
+		// definitions
+		if (!sNameSpace.length() && !ignoreDefinitions)
+            sNameSpace = "this";
+
 		// Insert the namespace, if it is
 		// available
 		if (sNameSpace.length())
@@ -317,7 +322,7 @@ wxString SearchController::FindMarkedProcedure(int charpos, bool ignoreDefinitio
 /////////////////////////////////////////////////
 wxString SearchController::FindNameSpaceOfProcedure(int charpos)
 {
-	wxString sNameSpace = "";
+	wxString sNameSpace;
 
 	if (m_editor->m_fileType == FILE_NPRC)
 	{
