@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-
+#include <boost/math/distributions/students_t.hpp>
 
 #include "plugins.hpp"
 #include "../kernel.hpp"

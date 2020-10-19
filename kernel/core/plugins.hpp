@@ -19,12 +19,8 @@
 
 #include <string>
 #include <cmath>
-#include <ctime>
-#include <random>
 #include <iomanip>
 #include <mgl2/mgl.h>
-
-#include <boost/math/distributions/students_t.hpp>
 
 #include "ui/error.hpp"
 #include "datamanagement/memorymanager.hpp"
@@ -44,5 +40,5 @@ using namespace std;
 // --> Prototypen der plugin_*-Funktionen. Nur fuer den Compiler <--
 void plugin_statistics(string& sCmd, MemoryManager& _data, Output& _out, Settings& _option, bool bUseCache = false, bool bUseData = false);
 void plugin_histogram(string& sCmd, MemoryManager& _data, MemoryManager& _target, Output& _out, Settings& _option, PlotData& _pData, bool bUseCache = false, bool bUseData = false);
-void plugin_random(string& sCmd, MemoryManager& _data, Output& _out, Settings& _option, bool bAllowOverride = false);
+void plugin_random(string& sCmd);
 #endif

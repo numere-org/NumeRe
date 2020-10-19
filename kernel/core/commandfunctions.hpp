@@ -6801,14 +6801,7 @@ static CommandReturnValues cmd_matop(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_random(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Output& _out = NumeReKernel::getInstance()->getOutput();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
-    if (findParameter(sCmd, "o"))
-        plugin_random(sCmd, _data, _out, _option, true);
-    else
-        plugin_random(sCmd, _data, _out, _option);
+    plugin_random(sCmd);
 
     return COMMAND_PROCESSED;
 }

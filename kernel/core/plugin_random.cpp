@@ -21,117 +21,96 @@
  * Realisierung des Random-Plugins
  */
 
+#include <random>
+#include <ctime>
+
 #include "plugins.hpp"
 #include "../kernel.hpp"
+#include "maths/parser_functions.hpp"
+#include "structures.hpp"
 
-const string PI_RAND = "0.2.3";
-
-void plugin_random(string& sCmd, MemoryManager& _data, Output& _out, Settings& _option, bool bAllowOverride)
+/////////////////////////////////////////////////
+/// \brief This static function unifies the
+/// parameter detection of the random command
+/// implementation.
+///
+/// \param sCmd const std::string&
+/// \param sLongVersion const std::string&
+/// \param sShortVersion const std::string&
+/// \param _parser Parser&
+/// \param defaultVal double
+/// \return double
+///
+/////////////////////////////////////////////////
+static double getParameterValue(const std::string& sCmd, const std::string& sLongVersion, const std::string& sShortVersion, Parser& _parser, double defaultVal)
 {
-    long long int nDataPoints = 0;			// Variable zur Festlegung, wie viele Datenpunkte erzeugt werden sollen
-    long long int nDataRows = 0;
-    long long int nFilledCols = 0;
-    if (_data.isValid() && !bAllowOverride)       // Frage die Zahl der (irgendwie) vollgeschriebenen Spalten ab
-        nFilledCols = _data.getCols("table", false);
-    double dDistributionWidth = 1.0; // Die Breite der Verteilung
-    double dDistributionMean = 0.0;	// Der Mittelwert der Verteilung
-    unsigned int nFreedoms = 1;
-    double dShape = 1.0;
-    double dScale = 1.0;
-    double dProbability = 0.5;
-    unsigned int nUpperBound = 1;
-    unsigned int nDistribution = 0;
+    if (findParameter(sCmd, sLongVersion, '=') || findParameter(sCmd, sShortVersion, '='))
+    {
+        int nPos = 0;
+
+        if (findParameter(sCmd, sLongVersion, '='))
+            nPos = findParameter(sCmd, sLongVersion, '=')+sLongVersion.length();
+        else
+            nPos = findParameter(sCmd, sShortVersion, '=')+sShortVersion.length();
+
+        _parser.SetExpr(getArgAtPos(sCmd, nPos));
+        return _parser.Eval();
+    }
+
+    return defaultVal;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This enumeration defines all available
+/// random distributions.
+/////////////////////////////////////////////////
+enum RandomDistribution
+{
+    NORMAL_DISTRIBUTION,
+    POISSON_DISTRIBUTION,
+    GAMMA_DISTRIBUTION,
+    UNIFORM_DISTRIBUTION,
+    BINOMIAL_DISTRIBUTION,
+    STUDENT_DISTRIBUTION
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This function is the implementation of
+/// the random command.
+///
+/// \param sCmd string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void plugin_random(string& sCmd)
+{
+    // Get all necessary references
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+    Indices _idx;
+
+    RandomDistribution nDistribution = NORMAL_DISTRIBUTION;
     static double dSeedBase = 1.0;
-
-    string sDistrib = "normalverteilte";
+    string sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_GAUSS");
+    string sTarget = evaluateTargetOptionInCommand(sCmd, "table", _idx, _parser, _data, _option);
     double dRandomNumber = 0.0;
-    string sInput = "";
-    time_t now = dSeedBase * time(0);			// Aktuelle Zeit fuer einen Seed initialisieren
+    default_random_engine randomGenerator(dSeedBase * time(0)); // Zufallszahlengenerator initialisieren
 
-    default_random_engine randomGenerator (now); // Zufallszahlengenerator initialisieren
+    // Get all parameter values (or use default ones)
+    long long int nDataPoints = intCast(getParameterValue(sCmd, "lines", "l", _parser, 0.0));
+    long long int nDataRows = intCast(getParameterValue(sCmd, "cols", "c", _parser, 0.0));
+    double dDistributionMean = getParameterValue(sCmd, "mean", "m", _parser, 0.0);
+    double dDistributionWidth = fabs(getParameterValue(sCmd, "width", "w", _parser, 1.0));
+    double dShape = fabs(getParameterValue(sCmd, "shape", "sh", _parser, 1.0));
+    double dScale = fabs(getParameterValue(sCmd, "scale", "sc", _parser, 1.0));
+    double dProbability = fabs(getParameterValue(sCmd, "prob", "p", _parser, 0.5));
+    unsigned int nUpperBound = abs(intCast(getParameterValue(sCmd, "ubound", "ub", _parser, 1.0)));
+    unsigned int nFreedoms = abs(intCast(getParameterValue(sCmd, "freedoms", "f", _parser, 1.0)));
 
-    // --> Zunaechst extrahieren wir die ggf. uebergebenen Parameter <--
-    if (findParameter(sCmd, "lines", '=') || findParameter(sCmd, "l", '='))
-    {
-        if (findParameter(sCmd, "lines", '='))
-            nDataPoints = findParameter(sCmd, "lines", '=')+5;
-        else
-            nDataPoints = findParameter(sCmd, "l", '=')+1;
-        nDataPoints = (int)StrToDb(getArgAtPos(sCmd, nDataPoints));
-    }
-    if (findParameter(sCmd, "cols", '=') || findParameter(sCmd, "c", '='))
-    {
-        if (findParameter(sCmd, "cols", '='))
-            nDataRows = findParameter(sCmd, "cols", '=')+4;
-        else
-            nDataRows = findParameter(sCmd, "c", '=')+1;
-        nDataRows = (int)StrToDb(getArgAtPos(sCmd, nDataRows));
-    }
-    if (findParameter(sCmd, "mean", '=') || findParameter(sCmd, "m", '='))
-    {
-        int nPos = 0;
-        if (findParameter(sCmd, "mean", '='))
-            nPos = findParameter(sCmd, "mean", '=')+4;
-        else
-            nPos = findParameter(sCmd, "m", '=')+1;
-        dDistributionMean = StrToDb(getArgAtPos(sCmd, nPos));
-    }
-    if (findParameter(sCmd, "width", '=') || findParameter(sCmd, "w", '='))
-    {
-        int nPos = 0;
-        if (findParameter(sCmd, "width", '='))
-            nPos = findParameter(sCmd, "width", '=')+5;
-        else
-            nPos = findParameter(sCmd, "w", '=')+1;
-        dDistributionWidth = StrToDb(getArgAtPos(sCmd, nPos));
-    }
-    if (findParameter(sCmd, "shape", '=') || findParameter(sCmd, "sh", '='))
-    {
-        int nPos = 0;
-        if (findParameter(sCmd, "shape", '='))
-            nPos = findParameter(sCmd, "shape", '=')+5;
-        else
-            nPos = findParameter(sCmd, "sh", '=')+2;
-        dShape = fabs(StrToDb(getArgAtPos(sCmd, nPos)));
-    }
-    if (findParameter(sCmd, "scale", '=') || findParameter(sCmd, "sc", '='))
-    {
-        int nPos = 0;
-        if (findParameter(sCmd, "scale", '='))
-            nPos = findParameter(sCmd, "scale", '=')+5;
-        else
-            nPos = findParameter(sCmd, "sc", '=')+2;
-        dScale = fabs(StrToDb(getArgAtPos(sCmd, nPos)));
-    }
-    if (findParameter(sCmd, "ubound", '=') || findParameter(sCmd, "ub", '='))
-    {
-        int nPos = 0;
-        if (findParameter(sCmd, "ubound", '='))
-            nPos = findParameter(sCmd, "ubound", '=')+6;
-        else
-            nPos = findParameter(sCmd, "ub", '=')+2;
-        nUpperBound = abs(StrToInt(getArgAtPos(sCmd, nPos)));
-    }
-    if (findParameter(sCmd, "prob", '=') || findParameter(sCmd, "p", '='))
-    {
-        int nPos = 0;
-        if (findParameter(sCmd, "prob", '='))
-            nPos = findParameter(sCmd, "prob", '=')+4;
-        else
-            nPos = findParameter(sCmd, "p", '=')+1;
-        dProbability = fabs(StrToDb(getArgAtPos(sCmd, nPos)));
-        if (dProbability > 1.0)
-            dProbability = 0.5;
-    }
-    if (findParameter(sCmd, "freedoms", '=') || findParameter(sCmd, "f", '='))
-    {
-        int nPos = 0;
-        if (findParameter(sCmd, "freedoms", '='))
-            nPos = findParameter(sCmd, "freedoms", '=')+8;
-        else
-            nPos = findParameter(sCmd, "f", '=')+1;
-        nFreedoms = abs(StrToInt(getArgAtPos(sCmd, nPos)));
-    }
+    // Find the type of random distribution
     if (findParameter(sCmd, "distrib", '=') || findParameter(sCmd, "d", '='))
     {
         int nPos = 0;
@@ -140,95 +119,89 @@ void plugin_random(string& sCmd, MemoryManager& _data, Output& _out, Settings& _
             nPos = findParameter(sCmd, "distrib", '=')+7;
         else
             nPos = findParameter(sCmd, "d", '=')+1;
+
         sDistrib = getArgAtPos(sCmd, nPos);
+
         if (sDistrib == "gauss" || sDistrib == "normal")
         {
             sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_GAUSS");
-            nDistribution = 0;
+            nDistribution = NORMAL_DISTRIBUTION;
         }
         else if (sDistrib == "poisson")
         {
             sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_POISSON");
-            nDistribution = 1;
+            nDistribution = POISSON_DISTRIBUTION;
         }
         else if (sDistrib == "gamma")
         {
             sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_GAMMA");
-            nDistribution = 2;
+            nDistribution = GAMMA_DISTRIBUTION;
         }
         else if (sDistrib == "uniform")
         {
             sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_UNIFORM");
-            nDistribution = 3;
+            nDistribution = UNIFORM_DISTRIBUTION;
         }
         else if (sDistrib == "binomial")
         {
             sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_BINOMIAL");
-            nDistribution = 4;
+            nDistribution = BINOMIAL_DISTRIBUTION;
         }
         else if (sDistrib == "student")
         {
             sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_STUDENT");
-            nDistribution = 5;
+            nDistribution = STUDENT_DISTRIBUTION;
         }
         else
         {
             sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_GAUSS");
-            nDistribution = 0;
+            nDistribution = NORMAL_DISTRIBUTION;
         }
     }
 
-
-    //cerr << "|-> ZUFALLSZAHLENGENERATOR (v " << PI_RAND << ")" << endl;
-    //cerr << "|   " << std::setfill((char)196) << std::setw(32) << (char)196 << endl;
-    //cerr << LineBreak("|-> Generiert einen oder mehrere Datensaetze an Zufallszahlen und speichert diese(n) in den Cache.", _option) << endl;
-
-
     if (!nDataRows)
-    {
         throw SyntaxError(SyntaxError::NO_COLS, sCmd, SyntaxError::invalid_position);
-    }
 
     if (!nDataPoints)
-    {
         throw SyntaxError(SyntaxError::NO_ROWS, sCmd, SyntaxError::invalid_position);
-    }
 
+    // Create random distributions
+    normal_distribution<double> normalDistribution(dDistributionMean, dDistributionWidth);
+    poisson_distribution<int> poissonDistribution(dDistributionMean);
+    gamma_distribution<double> gammaDistribution(dShape, dScale);
+    uniform_real_distribution<double> uniformDistribution(dDistributionMean-0.5*dDistributionWidth, dDistributionMean+0.5*dDistributionWidth);
+    binomial_distribution<int> binomialDistribution(nUpperBound, dProbability);
+    student_t_distribution<double> studentTDistribution(nFreedoms);
 
-    // --> Zufallsverteilungen erzeugen <--
-    normal_distribution<double> normalDistribution(dDistributionMean, dDistributionWidth);  // 0
-    poisson_distribution<int> poissonDistribution(dDistributionMean);                       // 1
-    gamma_distribution<double> gammaDistribution(dShape, dScale);                           // 2
-    uniform_real_distribution<double> uniformDistribution(dDistributionMean-0.5*dDistributionWidth, dDistributionMean+0.5*dDistributionWidth);  // 3
-    binomial_distribution<int> binomialDistribution(nUpperBound, dProbability);             // 4
-    student_t_distribution<double> studentTDistribution(nFreedoms);                         // 5
-    if (nDataPoints * nDataRows > 1e6)
-        NumeReKernel::printPreFmt(toSystemCodePage("|-> "+_lang.get("RANDOM_RESERVING_MEM")+" ... "));
-    if (!_data.resizeTable(nDataPoints, nDataRows+nFilledCols, "table"))
-        return;
-    if (nDataPoints * nDataRows > 1e6)
-        NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
-
-    if (_option.getbDebug())
-        cerr << "|-> DEBUG: Cache angepasst!" << endl;
-
+    // Fill the table with the newly created random numbers
     for (long long int i = 0; i < nDataPoints; i++)
     {
         for (long long int j = 0; j < nDataRows; j++)
         {
-            if (nDistribution == 0)
-                dRandomNumber = normalDistribution(randomGenerator);
-            else if (nDistribution == 1)
-                dRandomNumber = poissonDistribution(randomGenerator);
-            else if (nDistribution == 2)
-                dRandomNumber = gammaDistribution(randomGenerator);
-            else if (nDistribution == 3)
-                dRandomNumber = uniformDistribution(randomGenerator);
-            else if (nDistribution == 4)
-                dRandomNumber = binomialDistribution(randomGenerator);
-            else if (nDistribution == 5)
-                dRandomNumber = studentTDistribution(randomGenerator);
-            _data.writeToTable(i, j+nFilledCols, "table", dRandomNumber);
+            switch (nDistribution)
+            {
+                case NORMAL_DISTRIBUTION:
+                    dRandomNumber = normalDistribution(randomGenerator);
+                    break;
+                case POISSON_DISTRIBUTION:
+                    dRandomNumber = poissonDistribution(randomGenerator);
+                    break;
+                case GAMMA_DISTRIBUTION:
+                    dRandomNumber = gammaDistribution(randomGenerator);
+                    break;
+                case UNIFORM_DISTRIBUTION:
+                    dRandomNumber = uniformDistribution(randomGenerator);
+                    break;
+                case BINOMIAL_DISTRIBUTION:
+                    dRandomNumber = binomialDistribution(randomGenerator);
+                    break;
+                case STUDENT_DISTRIBUTION:
+                    dRandomNumber = studentTDistribution(randomGenerator);
+                    break;
+            }
+
+            if (i < _idx.row.size() && j < _idx.col.size())
+                _data.writeToTable(_idx.row[i], _idx.col[j], sTarget, dRandomNumber);
 
             if ((!i && !j) || dSeedBase == 0.0)
             {
@@ -240,8 +213,7 @@ void plugin_random(string& sCmd, MemoryManager& _data, Output& _out, Settings& _
         }
     }
 
-    NumeReKernel::print(LineBreak(_lang.get("RANDOM_SUCCESS", toString(nDataRows*nDataPoints), sDistrib), _option));
-    //cerr << LineBreak("|-> Es wurde(n) " + toString(nDataRows*nDataPoints) + " " + sDistrib + " Zufallszahlen erfolgreich in den Cache geschrieben.", _option) << endl;
-    //cerr << "|-> Das Plugin wurde erfolgreich beendet." << endl;
-    return;
+    NumeReKernel::print(_lang.get("RANDOM_SUCCESS", toString(nDataRows*nDataPoints), sDistrib));
 }
+
+
