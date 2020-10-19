@@ -37,3 +37,4 @@ Updated	The LaTeX documentation generator functionality has been increased: the 
 Added	A new context menu entry for loading the data directly to a new table was added to the context menu of the file tree.
 Added	The editor now has a "transpose" functionality, which may be found in the "edit" menu.
 Cleaned	Moved some functionalities from the "tools" menu to the "edit" menu.
+New	The editor tabs may now configured to display the relative part of the file path (corresponding to their respective root path).

@@ -259,6 +259,8 @@ class NumeReWindow : public wxFrame
         Options* getOptions() {return m_options;}
         void FindAndOpenProcedure(const wxString& procedureName);
 
+        void UpdateLocationIfOpen(const wxFileName& fname, const wxFileName& newFName);
+
 
     private:
         void InitializeProgramOptions();

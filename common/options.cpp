@@ -31,7 +31,8 @@ Options::Options()
 	m_printStyle = wxSTC_PRINT_BLACKONWHITE;
 
 
-	m_showToolbarText = true;
+	m_showToolbarText = false;
+	m_showPathsOnTabs = false;
 	m_printLineNumbers = false;
 	m_saveSession = false;
 	m_saveBookmarksInSession = false;

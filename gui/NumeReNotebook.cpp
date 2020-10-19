@@ -43,6 +43,7 @@ EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, const wxPoint& p
 {
     m_mouseFocus = false;
     m_top_parent = nullptr;
+    m_showPathsOnTabs = false;
 }
 
 
@@ -51,6 +52,89 @@ EditorNotebook::EditorNotebook(wxWindow* parent, wxWindowID id, const wxPoint& p
 /////////////////////////////////////////////////
 EditorNotebook::~EditorNotebook()
 {
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function enables/disables
+/// the relative paths on the tab and refreshes
+/// the tab texts automatically.
+///
+/// \param showText bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::SetShowPathsOnTabs(bool showText)
+{
+    m_showPathsOnTabs = showText;
+
+    for (size_t i = 0; i < GetPageCount(); i++)
+    {
+        NumeReEditor* edit = static_cast<NumeReEditor*>(GetPage(i));
+        SetTabText(i, edit->GetFileNameAndPath());
+    }
+
+    Refresh();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Set a text for the selected editor
+/// tab. Note that this function expects a
+/// filepath.
+///
+/// \param nTab size_t
+/// \param text const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::SetTabText(size_t nTab, const wxString& text)
+{
+    size_t pos = 0;
+    std::string path = replacePathSeparator(text.ToStdString());
+    std::vector<std::string> vPaths = m_top_parent->getPathDefs();
+
+    if (m_showPathsOnTabs)
+    {
+        for (int i = LOADPATH; i < PATH_LAST; i++)
+        {
+            if (path.substr(0, vPaths[i].length()) == vPaths[i])
+            {
+                pos = vPaths[i].length();
+
+                while (path[pos] == '/')
+                    pos++;
+
+                break;
+            }
+        }
+
+        // Nothing found-must be an absolute path. We will
+        // replace /PATH/ with /../
+        if (!pos)
+            path = shortenFileName(path);
+    }
+    else
+        pos = path.rfind('/')+1;
+
+    SetPageText(nTab, path.substr(pos));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Wrapper for AddPage, which
+/// automatically calls SetTabText.
+///
+/// \param window wxWindow*
+/// \param text const wxString&
+/// \param select bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void EditorNotebook::AddNewTab(wxWindow* window, const wxString& text, bool select)
+{
+    AddPage(window, "page", select);
+    SetTabText(GetPageCount()-1, text);
 }
 
 

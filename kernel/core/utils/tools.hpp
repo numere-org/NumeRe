@@ -290,6 +290,7 @@ void evalRecursiveExpressions(string& sExpr);
 
 size_t qSortDouble(double* dArray, size_t nlength);
 void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const string& sReplacement);
+std::string shortenFileName(const std::string& sFullFileName);
 
 #endif
 

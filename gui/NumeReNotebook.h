@@ -21,6 +21,10 @@ public:
 	void SetTopParent(NumeReWindow* window)
         {m_top_parent = window;}
 
+    void SetShowPathsOnTabs(bool showText);
+    void SetTabText(size_t nTab, const wxString& text);
+    void AddNewTab(wxWindow* window, const wxString& text, bool select);
+
 	int FindPagePosition(wxNotebookPage* page);
 
 	void OnTabRightClicked (wxMouseEvent &event);
@@ -37,6 +41,7 @@ private:
 
 	NumeReWindow* m_top_parent;
 	bool m_mouseFocus;
+	bool m_showPathsOnTabs;
 
 
 	DECLARE_EVENT_TABLE()

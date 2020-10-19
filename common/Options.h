@@ -46,6 +46,7 @@ class Options
 		// Modifiers:
 		void SetPrintStyle(int style);
 		void SetShowToolbarText(bool useText);
+		void SetShowPathOnTabs(bool useText) {m_showPathsOnTabs = useText;}
 		void SetShowCompileCommands(bool showCommands);
 		void SetLineNumberPrinting(bool printLineNumbers);
 		void SetSaveSession(bool saveSession) {m_saveSession = saveSession;}
@@ -70,6 +71,7 @@ class Options
 		wxString GetLaTeXRoot() const { return m_LaTeXRoot;}
 		int GetPrintStyle() const { return m_printStyle; }
 		bool GetShowToolbarText() const { return m_showToolbarText; }
+		bool GetShowPathOnTabs() const { return m_showPathsOnTabs; }
 		bool GetLineNumberPrinting() const {return m_printLineNumbers; }
 		bool GetSaveSession() const {return m_saveSession;}
 		bool GetSaveBookmarksInSession() const {return m_saveBookmarksInSession;}
@@ -180,6 +182,7 @@ class Options
 		bool m_showGlobalVariables;
 
 		bool m_showToolbarText;
+		bool m_showPathsOnTabs;
 		bool m_printLineNumbers;
 		bool m_saveSession;
 		bool m_saveBookmarksInSession;

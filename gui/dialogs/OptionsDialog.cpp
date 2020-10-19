@@ -227,6 +227,7 @@ void OptionsDialog::CreateConfigPage()
     m_foldDuringLoading = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FOLD_DURING_LOADING"));
     m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
     m_showToolbarText = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
+    m_FilePathsInTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_FILEPATHS"));
     m_caretBlinkTime = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
 
     // Create a group
@@ -703,6 +704,7 @@ bool OptionsDialog::EvaluateOptions()
     m_options->SetLaTeXRoot(m_LaTeXRoot->GetValue());
 
     m_options->SetShowToolbarText(m_showToolbarText->IsChecked());
+    m_options->SetShowPathOnTabs(m_FilePathsInTabs->IsChecked());
     m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
     m_options->SetSaveSession(m_saveSession->IsChecked());
     m_options->SetSaveBookmarksInSession(m_saveBookmarksInSession->IsChecked());
@@ -753,6 +755,7 @@ void OptionsDialog::InitializeDialog()
 	m_caretBlinkTime->SetValue(m_options->GetCaretBlinkTime());
 
 	m_showToolbarText->SetValue(m_options->GetShowToolbarText());
+	m_FilePathsInTabs->SetValue(m_options->GetShowPathOnTabs());
 	m_cbPrintLineNumbers->SetValue(m_options->GetLineNumberPrinting());
     m_saveSession->SetValue(m_options->GetSaveSession());
     m_saveBookmarksInSession->SetValue(m_options->GetSaveBookmarksInSession());

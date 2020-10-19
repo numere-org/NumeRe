@@ -838,8 +838,11 @@ void NumeReWindow::InitializeProgramOptions()
         int printStyle = printInColor ? wxSTC_PRINT_COLOURONWHITE : wxSTC_PRINT_BLACKONWHITE;
         m_options->SetPrintStyle(printStyle);
 
-        bool showToolbarText = (m_config->Read("Interface/ShowToolbarText", "true") == "true");
+        bool showToolbarText = (m_config->Read("Interface/ShowToolbarText", "false") == "true");
         m_options->SetShowToolbarText(showToolbarText);
+
+        bool showPathsOnTabs = (m_config->Read("Interface/ShowPathsOnTabs", "false") == "true");
+        m_options->SetShowPathOnTabs(showPathsOnTabs);
 
         bool printLineNumbers = (m_config->Read("Miscellaneous/PrintLineNumbers", "false") == "true");
         m_options->SetLineNumberPrinting(printLineNumbers);
@@ -919,6 +922,7 @@ void NumeReWindow::InitializeProgramOptions()
 #endif
         m_config->Write("Miscellaneous/TerminalHistory", m_options->GetTerminalHistorySize());
         m_config->Write("Interface/CaretBlinkTime", m_options->GetCaretBlinkTime());
+        m_config->Write("Interface/ShowPathsOnTabs", m_options->GetShowPathOnTabs());
         m_config->Write("Interface/FoldDuringLoading", m_options->GetFoldDuringLoading() ? "true" : "false");
         m_config->Write("Styles/HighlightLocalVariables", m_options->GetHighlightLocalVariables() ? "true" : "false");
         m_config->Write("Miscellaneous/LaTeXRoot", m_options->GetLaTeXRoot());
@@ -2523,6 +2527,7 @@ void NumeReWindow::renameFile()
     }
 
     wxRenameFile(source_filename.GetFullPath(), target_filename.GetFullPath());
+    UpdateLocationIfOpen(source_filename, target_filename);
 }
 
 
@@ -2811,7 +2816,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_currentEd->UpdateSyntaxHighlighting();
 
         // Add a new tab for the editor
-        m_book->AddPage (edit, filename, true);
+        m_book->AddNewTab(edit, m_currentEd->GetFileNameAndPath(), true);
         m_currentEd->ToggleSettings(settings);
     }
     else
@@ -2958,7 +2963,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_currentEd->EmptyUndoBuffer();
 
         // Add a new tab for the editor
-        m_book->AddPage (edit, filename, true);
+        m_book->AddNewTab(edit, edit->GetFileNameAndPath(), true);
         m_currentEd->ToggleSettings(settings);
     }
 }
@@ -3722,10 +3727,10 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                 && !m_currentEd->HasBeenSaved()
                 && (m_currentEd->GetText().IsEmpty() || m_currentEd->GetText() == "\r\n")) || m_currentEd->defaultPage )
             {
-                m_book->SetPageText(m_currentPage, /*locationPrefix + */fileNameNoPath);
                 m_currentEd->SetProject(proj);
                 m_currentEd->LoadFileText(fileContents);
                 m_currentEd->SetFilename(newFileName, m_remoteMode);
+                m_book->SetTabText(m_currentPage, m_currentEd->GetFileNameAndPath());
             }
             // need to create a new buffer for the file
             else
@@ -3737,10 +3742,10 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                 edit->LoadFileText(fileContents);
                 int settings = CopyEditorSettings(_fileType);
                 m_currentPage = m_book->GetPageCount();
-                m_book->AddPage(edit, fileNameNoPath, true);
                 m_currentEd = edit;
                 m_currentEd->SetFilename(newFileName, m_remoteMode);
                 m_currentEd->ToggleSettings(settings);
+                m_book->AddNewTab(edit, edit->GetFileNameAndPath(), true);
             }
 
             m_currentEd->UpdateSyntaxHighlighting();
@@ -4036,13 +4041,12 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
             wxMessageBox(_guilang.get("GUI_DLG_SAVE_ERROR"), _guilang.get("GUI_DLG_SAVE"), wxCENTRE | wxOK | wxICON_ERROR, this);
             return false;
         }
-        wxString simpleFileName = m_currentEd->GetFilenameString();
 
         int currentTab = m_book->GetSelection();
 
-        m_book->SetPageText(currentTab, simpleFileName);
+        m_book->SetTabText(currentTab, m_currentEd->GetFileNameAndPath());
         m_book->Refresh();
-        UpdateWindowTitle(simpleFileName);
+        UpdateWindowTitle(m_book->GetPageText(currentTab));
 
     }
     else
@@ -4771,7 +4775,7 @@ void NumeReWindow::EvaluateOptions()
 
     // Update the syntax highlighting in every
     // editor instance
-    for(int i = 0; i < (int)m_book->GetPageCount(); i++)
+    for (int i = 0; i < (int)m_book->GetPageCount(); i++)
     {
         NumeReEditor* edit = static_cast<NumeReEditor*> (m_book->GetPage(i));
         edit->UpdateSyntaxHighlighting();
@@ -4784,6 +4788,11 @@ void NumeReWindow::EvaluateOptions()
         m_debugViewer->updateSettings();
     }
 
+    m_book->SetShowPathsOnTabs(m_options->GetShowPathOnTabs());
+
+    if (m_book->GetSelection() != wxNOT_FOUND)
+        UpdateWindowTitle(m_book->GetPageText(m_book->GetSelection()));
+
     // Copy the settings in the options object
     // into the configuration object
     int newMaxTermSize = m_options->GetTerminalHistorySize();
@@ -4793,6 +4802,7 @@ void NumeReWindow::EvaluateOptions()
     int newCaretBlinkTime = m_options->GetCaretBlinkTime();
     m_termContainer->SetCaretBlinkTime(newCaretBlinkTime);
     m_config->Write("Interface/CaretBlinkTime", newCaretBlinkTime);
+    m_config->Write("Interface/ShowPathsOnTabs", m_options->GetShowPathOnTabs() ? "true" : "false");
 
     bool foldDuringLoading = m_options->GetFoldDuringLoading();
     m_config->Write("Interface/FoldDuringLoading", foldDuringLoading ? "true" : "false");
@@ -6713,6 +6723,35 @@ wxRect NumeReWindow::DeterminePrintSize ()
 void NumeReWindow::FindAndOpenProcedure(const wxString& procedureName)
 {
     m_currentEd->FindAndOpenProcedure(procedureName);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Updates the editor's and notebook's
+/// filename location, if it already opened and
+/// not modified.
+///
+/// \param fname const wxFileName&
+/// \param newFName const wxFileName&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::UpdateLocationIfOpen(const wxFileName& fname, const wxFileName& newFName)
+{
+    int num = GetPageNum(fname, true, 0);
+
+    if (num != wxNOT_FOUND)
+    {
+        NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(num));
+
+        if (edit->Modified())
+            return;
+
+        edit->SetFilename(newFName, false);
+        m_book->SetTabText(num, edit->GetFileNameAndPath());
+        m_book->Refresh();
+        UpdateWindowTitle(m_book->GetPageText(m_book->GetSelection()));
+    }
 }
 
 

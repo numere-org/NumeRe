@@ -332,35 +332,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     std::string FileAdapter::getDataFileNameShort() const
     {
-        string sFileName = getDataFileName("data");
-        size_t nPos = std::string::npos;
-
-        while (sFileName.find('\\') != string::npos)
-        {
-            sFileName[sFileName.find('\\')] = '/';
-        }
-
-        while (sFileName.rfind('/', nPos) != string::npos)
-        {
-            nPos = sFileName.rfind('/', nPos);
-
-            if (nPos != 0 && nPos-1 != ':')
-            {
-                size_t nPos_2 = sFileName.rfind('/', nPos-1);
-
-                if (nPos_2 != string::npos)
-                {
-                    sFileName = sFileName.substr(0,nPos_2+1) + ".." + sFileName.substr(nPos);
-                    nPos = nPos_2;
-                }
-                else
-                    break;
-            }
-            else
-                break;
-        }
-
-        return sFileName;
+        return shortenFileName(getDataFileName("data"));
     }
 
 

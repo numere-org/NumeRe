@@ -3875,3 +3875,44 @@ void replaceStringMethod(string& sLine, size_t nPos, size_t nLength, const strin
         replaceSearchMethods(sLine, nPos, nFinalPos, sReplacement, sMethod, sArgument);
     }
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This function will return a shortened
+/// version of the data file name, where each
+/// "/Path/" string part is transformed to
+/// "/../".
+///
+/// \param sFullFileName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string shortenFileName(const std::string& sFullFileName)
+{
+    size_t nPos = std::string::npos;
+
+    std::string sFileName = replacePathSeparator(sFullFileName);
+
+    while (sFileName.rfind('/', nPos) != string::npos)
+    {
+        nPos = sFileName.rfind('/', nPos);
+
+        if (nPos != 0 && nPos-1 != ':')
+        {
+            size_t nPos_2 = sFileName.rfind('/', nPos-1);
+
+            if (nPos_2 != string::npos)
+            {
+                sFileName = sFileName.substr(0,nPos_2+1) + ".." + sFileName.substr(nPos);
+                nPos = nPos_2;
+            }
+            else
+                break;
+        }
+        else
+            break;
+    }
+
+    return sFileName;
+}
+
