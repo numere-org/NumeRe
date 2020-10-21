@@ -17,9 +17,11 @@
 ******************************************************************************/
 
 
+#ifndef PLUGINS_HPP
+#define PLUGINS_HPP
+
 #include <string>
 #include <cmath>
-#include <iomanip>
 #include <mgl2/mgl.h>
 
 #include "ui/error.hpp"
@@ -29,16 +31,12 @@
 #include "utils/tools.hpp"
 #include "plotting/plotdata.hpp"
 
-#ifndef PLUGINS_HPP
-#define PLUGINS_HPP
-using namespace std;
-
 /*
  * Headerdatei fuer alle Plugins!
  */
 
-// --> Prototypen der plugin_*-Funktionen. Nur fuer den Compiler <--
-void plugin_statistics(string& sCmd, MemoryManager& _data, Output& _out, Settings& _option, bool bUseCache = false, bool bUseData = false);
-void plugin_histogram(string& sCmd, MemoryManager& _data, MemoryManager& _target, Output& _out, Settings& _option, PlotData& _pData, bool bUseCache = false, bool bUseData = false);
-void plugin_random(string& sCmd);
+void plugin_statistics(std::string& sCmd, MemoryManager& _data);
+void plugin_histogram(std::string& sCmd, MemoryManager& _data, MemoryManager& _target, Output& _out, Settings& _option, PlotData& _pData, bool bUseCache = false, bool bUseData = false);
+void plugin_random(std::string& sCmd);
 #endif
+

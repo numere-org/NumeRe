@@ -4047,7 +4047,7 @@ static CommandReturnValues cmd_data(string& sCmd)
     {
         sArgument = evaluateParameterValues(sCmd);
         if (_data.isValid())
-            plugin_statistics(sArgument, _data, _out, _option, false, true);
+            plugin_statistics(sArgument, _data);
         else
             //throw NO_DATA_AVAILABLE;
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, sArgument, sArgument);
@@ -4639,7 +4639,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
         }
 
         if (_data.isValid())
-            plugin_statistics(sArgument, _data, _out, _option, true, false);
+            plugin_statistics(sArgument, _data);
         else
             //throw NO_DATA_AVAILABLE;
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
@@ -5575,13 +5575,13 @@ static CommandReturnValues cmd_stats(string& sCmd)
     {
         // DEPRECATED: Declared at v1.1.2rc2
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-        plugin_statistics(sArgument, _data, _out, _option, false, true);
+        plugin_statistics(sArgument, _data);
     }
     else if (_data.matchTableAsParameter(sCmd).length() && _data.isValid())
     {
         // DEPRECATED: Declared at v1.1.2rc2
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-        plugin_statistics(sArgument, _data, _out, _option, true, false);
+        plugin_statistics(sArgument, _data);
     }
     else
     {
@@ -5601,7 +5601,7 @@ static CommandReturnValues cmd_stats(string& sCmd)
 
             sArgument = "stats -table " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
             sArgument = evaluateParameterValues(sArgument);
-            plugin_statistics(sArgument, _cache, _out, _option, true, false);
+            plugin_statistics(sArgument, _cache);
 
             return COMMAND_PROCESSED;
         }

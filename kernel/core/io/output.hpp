@@ -91,7 +91,7 @@ class Output : public FileSystem				// Diese Klasse ist ein CHILD von FileSystem
 			 * Zuletzt werden diese formatierten Eintraege zeilenweise an die Output-Klasse uebergeben, die sie entsprechend
 			 * der Voreinstellung weiterverarbeitet.
 			 */
-		void format(string** _sMatrix, long long int _nCol, long long int _nLine, Settings& _option, bool bDontAsk = false, int nHeadLineCount = 1);
+		void format(string** _sMatrix, long long int _nCol, long long int _nLine, const Settings& _option, bool bDontAsk = false, int nHeadLineCount = 1);
 		void print(string sOutput); 			// Zentrale Methode
 												// 		|-> Schreibt den String in das Ziel.
 												// 		|-> Prueft ggf., ob bFileOpen == true und ruft ggf. start() auf.

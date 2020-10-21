@@ -80,11 +80,11 @@ enum RandomDistribution
 /// \brief This function is the implementation of
 /// the random command.
 ///
-/// \param sCmd string&
+/// \param sCmd std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void plugin_random(string& sCmd)
+void plugin_random(std::string& sCmd)
 {
     // Get all necessary references
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
@@ -94,10 +94,10 @@ void plugin_random(string& sCmd)
 
     RandomDistribution nDistribution = NORMAL_DISTRIBUTION;
     static double dSeedBase = 1.0;
-    string sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_GAUSS");
-    string sTarget = evaluateTargetOptionInCommand(sCmd, "table", _idx, _parser, _data, _option);
+    std::string sDistrib = _lang.get("RANDOM_DISTRIB_TYPE_GAUSS");
+    std::string sTarget = evaluateTargetOptionInCommand(sCmd, "table", _idx, _parser, _data, _option);
     double dRandomNumber = 0.0;
-    default_random_engine randomGenerator(dSeedBase * time(0)); // Zufallszahlengenerator initialisieren
+    std::default_random_engine randomGenerator(dSeedBase * time(0)); // Zufallszahlengenerator initialisieren
 
     // Get all parameter values (or use default ones)
     long long int nDataPoints = intCast(getParameterValue(sCmd, "lines", "l", _parser, 0.0));
@@ -166,12 +166,12 @@ void plugin_random(string& sCmd)
         throw SyntaxError(SyntaxError::NO_ROWS, sCmd, SyntaxError::invalid_position);
 
     // Create random distributions
-    normal_distribution<double> normalDistribution(dDistributionMean, dDistributionWidth);
-    poisson_distribution<int> poissonDistribution(dDistributionMean);
-    gamma_distribution<double> gammaDistribution(dShape, dScale);
-    uniform_real_distribution<double> uniformDistribution(dDistributionMean-0.5*dDistributionWidth, dDistributionMean+0.5*dDistributionWidth);
-    binomial_distribution<int> binomialDistribution(nUpperBound, dProbability);
-    student_t_distribution<double> studentTDistribution(nFreedoms);
+    std::normal_distribution<double> normalDistribution(dDistributionMean, dDistributionWidth);
+    std::poisson_distribution<int> poissonDistribution(dDistributionMean);
+    std::gamma_distribution<double> gammaDistribution(dShape, dScale);
+    std::uniform_real_distribution<double> uniformDistribution(dDistributionMean-0.5*dDistributionWidth, dDistributionMean+0.5*dDistributionWidth);
+    std::binomial_distribution<int> binomialDistribution(nUpperBound, dProbability);
+    std::student_t_distribution<double> studentTDistribution(nFreedoms);
 
     // Fill the table with the newly created random numbers
     for (long long int i = 0; i < nDataPoints; i++)

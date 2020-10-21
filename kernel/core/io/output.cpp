@@ -398,7 +398,7 @@ string Output::getDate(bool bForFile)	// Der Boolean entscheidet, ob ein Dateina
 }
 
 
-void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine, Settings& _option, bool bDontAsk, int nHeadLineCount)
+void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine, const Settings& _option, bool bDontAsk, int nHeadLineCount)
 {
     if (!nHeadLineCount)
         nHeadLineCount = 1;

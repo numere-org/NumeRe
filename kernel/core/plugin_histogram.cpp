@@ -23,7 +23,7 @@
 /*
  * Plugin zur Erzeugung von Histogramm-Rubriken
  */
-
+using namespace std;
 
 const string PI_HIST = "1.0.1";
 extern mglGraph _fontData;
