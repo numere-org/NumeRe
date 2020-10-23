@@ -125,9 +125,25 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
         boost::math::students_t dist(vStats[STATS_NUM][j]);
         vStats[STATS_S_T].push_back(boost::math::quantile(boost::math::complement(dist, 0.025)));
     }
+
+    return vStats;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function will create the
+/// output file using the functionalities of the
+/// Output class.
+///
+/// \param _out Output&
+/// \param vStats const std::vector<std::vector<double>>&
+/// \param sSavePath const std::string&
+/// \param _data MemoryManager&
+/// \param sTable const std::string&
+/// \param _option const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void createStatsFile(Output& _out, const std::vector<std::vector<double>>& vStats, const std::string& sSavePath, MemoryManager& _data, const std::string& sTable, const Settings& _option)
 {
     int nLine = _data.getLines(sTable);
@@ -135,7 +151,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
     int nHeadlines = _data.getHeadlineCount(sTable);
     const int nPrecision = 4;
 
-    // --> Allozieren einer Ausgabe-String-Matrix <--
+    // Create an output string matrix on the heap
     std::string** sOut = new std::string*[nLine + STATS_FIELD_COUNT+1 + nHeadlines];
 
     for (int i = 0; i < nLine + STATS_FIELD_COUNT+1 + nHeadlines; i++)
@@ -143,9 +159,11 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
         sOut[i] = new std::string[nCol];
     }
 
-    // --> Berechnung fuer jede Spalte der Matrix! <--
+    // Fill the output matrix with the
+    // previously calculated values
     for (int j = 0; j < nCol; j++)
     {
+        // Write an empty column, if no values are available
         if (!vStats[STATS_NUM][j])
         {
             sOut[nHeadlines + nLine + 0][j] = "<<SUMBAR>>";
@@ -167,6 +185,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
             continue;
         }
 
+        // Add the headlines to the columns
         std::string sHeadline = _data.getHeadLineElement(j, sTable);
 
         for (int i = 0; i < nHeadlines; i++)
@@ -182,7 +201,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
             }
         }
 
-
+        // Write the table values to the single columns
         for (int i = 0; i < nLine; i++)
         {
             if (!_data.isValidElement(i,j, sTable))
@@ -194,6 +213,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
             sOut[i + nHeadlines][j] = toString(_data.getElement(i,j, sTable), _option); // Kopieren der Matrix in die Ausgabe
         }
 
+        // Write the calculated stats to the columns
         sOut[nHeadlines + nLine + 0][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
         sOut[nHeadlines + nLine + 1 + STATS_AVG][j] = _lang.get("STATS_TYPE_AVG") + ": " + toString(vStats[STATS_AVG][j], nPrecision);
         sOut[nHeadlines + nLine + 1 + STATS_STD][j] = _lang.get("STATS_TYPE_STD") + ": " + toString(vStats[STATS_STD][j], nPrecision);
@@ -232,15 +252,35 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function creates the
+/// output table for the terminal. The table will
+/// get formatted using the Output class.
+///
+/// This function will also redirect the control
+/// to createStatsFile if a file shall be created.
+///
+/// \param _out Output&
+/// \param vStats const std::vector<std::vector<double>>&
+/// \param sSavePath const std::string&
+/// \param _data MemoryManager&
+/// \param sTable const std::string&
+/// \param _option const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void createStatsOutput(Output& _out, const std::vector<std::vector<double>>& vStats, const std::string& sSavePath, MemoryManager& _data, const std::string& sTable, const Settings& _option)
 {
     int nCol = _data.getCols(sTable);
     int nHeadlines = _data.getHeadlineCount(sTable);
     const int nPrecision = 4;
 
+    // Redirect the control, if necessary
     if (_out.isFile())
         createStatsFile(_out, vStats, sSavePath, _data, sTable, _option);
 
+    // Create the overview string table
+    // on the heap
     std::string** sOverview = new std::string*[STATS_FIELD_COUNT + nHeadlines];
 
     for (int i = 0; i < STATS_FIELD_COUNT+nHeadlines; i++)
@@ -248,8 +288,11 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
 
     sOverview[0][0] = " ";
 
+    // Write the calculated statistics to the
+    // string table
     for (int j = 0; j < nCol; j++)
     {
+        // Write the table column headlines
         std::string sHeadline = _data.getHeadLineElement(j, sTable);
 
         for (int i = 0; i < nHeadlines; i++)
@@ -265,6 +308,7 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
             }
         }
 
+        // Write the first column with table row names
         if (!j)
         {
             sOverview[nHeadlines + STATS_AVG][j] = _lang.get("STATS_TYPE_AVG") + ":";
@@ -284,6 +328,7 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
             sOverview[nHeadlines + STATS_S_T][j] = "s_t:";
         }
 
+        // Write the actual values to the string table
         for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
         {
             if (n == STATS_CONFINT)
@@ -317,6 +362,15 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This is the implementation of the
+/// stats command.
+///
+/// \param sCmd std::string&
+/// \param _data MemoryManager& Might be different from the usual MemoryManager
+/// \return void
+///
+/////////////////////////////////////////////////
 void plugin_statistics(std::string& sCmd, MemoryManager& _data)
 {
     MemoryManager& _rootData = NumeReKernel::getInstance()->getMemoryManager();
@@ -325,10 +379,10 @@ void plugin_statistics(std::string& sCmd, MemoryManager& _data)
 
     Indices _idx;
 
-    std::string sSavePath = "";  // Variable fuer den Speicherpfad
-    std::string sTarget = evaluateTargetOptionInCommand(sCmd, "table", _idx, NumeReKernel::getInstance()->getParser(), _rootData, _option);
+    std::string sSavePath = "";
 
-    if (!_data.isValid())	// Sind eigentlich Daten verfuegbar?
+    // Ensure that at least some data is available
+    if (!_data.isValid())
         throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
 
     if (findParameter(sCmd, "save", '=') || findParameter(sCmd, "export", '='))
@@ -352,11 +406,17 @@ void plugin_statistics(std::string& sCmd, MemoryManager& _data)
     if (_data.matchTableAsParameter(sCmd).length())
         sDatatable = _data.matchTableAsParameter(sCmd);
 
-    if (!_data.getLines(sDatatable) || !_data.getCols(sDatatable))
+    // Ensure that the table is not empty
+    if (_data.isEmpty(sDatatable))
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
+    // Get the target table
+    std::string sTarget = evaluateTargetOptionInCommand(sCmd, "stats_"+sDatatable, _idx, NumeReKernel::getInstance()->getParser(), _rootData, _option);
+
+    // Calculate the statistics
     std::vector<std::vector<double>> vStats = calcStats(_data, sDatatable);
 
+    // Write the statistics to the target table
     for (size_t i = 0; i < vStats.size(); i++)
     {
         for (size_t j = 0; j < vStats[i].size(); j++)
@@ -369,6 +429,8 @@ void plugin_statistics(std::string& sCmd, MemoryManager& _data)
         }
     }
 
+    // Create the output for the terminal and the file,
+    // if necessary
     createStatsOutput(_out, vStats, sSavePath, _data, sDatatable, _option);
 }
 

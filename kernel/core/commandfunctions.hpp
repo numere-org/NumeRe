@@ -5593,13 +5593,16 @@ static CommandReturnValues cmd_stats(string& sCmd)
 
             copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
 
+            if (_accessParser.getDataObject() != "table")
+                _cache.renameTable("table", _accessParser.getDataObject(), true);
+
             if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
                 NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
             if (findParameter(sCmd, "export", '='))
                 addArgumentQuotes(sCmd, "export");
 
-            sArgument = "stats -table " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+            sArgument = "stats -" + _accessParser.getDataObject() + " " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
             sArgument = evaluateParameterValues(sArgument);
             plugin_statistics(sArgument, _cache);
 
