@@ -35,8 +35,8 @@
  * Headerdatei fuer alle Plugins!
  */
 
-void plugin_statistics(std::string& sCmd, MemoryManager& _data);
-void plugin_histogram(std::string& sCmd, MemoryManager& _data, MemoryManager& _target, Output& _out, Settings& _option, PlotData& _pData, bool bUseCache = false, bool bUseData = false);
+std::string plugin_statistics(std::string& sCmd, MemoryManager& _data);
+void plugin_histogram(std::string& sCmd);
 void plugin_random(std::string& sCmd);
 #endif
 

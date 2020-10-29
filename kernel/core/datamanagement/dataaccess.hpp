@@ -46,9 +46,13 @@ inline bool isValidIndexSet(const Indices& _idx)
     return _idx.row.isValid() && _idx.col.isValid();
 }
 
-// This class is defined to abstract the determination
-// of the correct data object and the calculation of
-// the corresponding indices
+
+/////////////////////////////////////////////////
+/// \brief This class is defined to abstrahize
+/// the determination of the correct data object
+/// and the calculation of the corresponding
+/// indices.
+/////////////////////////////////////////////////
 class DataAccessParser
 {
     private:
@@ -57,7 +61,8 @@ class DataAccessParser
         bool bIsCluster;
 
     public:
-        DataAccessParser(const std::string& sCommand);
+        DataAccessParser(StringView sCommand);
+        void evalIndices();
         std::string& getDataObject();
         Indices& getIndices();
         bool isCluster() const;

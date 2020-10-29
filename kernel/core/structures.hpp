@@ -149,8 +149,8 @@ class VectorIndex
         /////////////////////////////////////////////////
         /// \brief Constructor for single indices.
         ///
-        /// \param nStart long longint
-        /// \param nEnd long long int nEnd
+        /// \param nStart long long int
+        /// \param nEnd long long int
         ///
         /////////////////////////////////////////////////
         VectorIndex(long long int nStart, long long int nEnd = INVALID)
@@ -224,6 +224,10 @@ class VectorIndex
         /// However, already expanded indices will result
         /// in an expanded subindex vector.
         ///
+        /// \note A length of 0 or 1 will both create a
+        /// VectorIndex with only one valid entry (the
+        /// first).
+        ///
         /// \param pos size_t
         /// \param nLen size_t
         /// \return VectorIndex
@@ -239,7 +243,7 @@ class VectorIndex
                 nLen = size() - pos;
 
             // Return a single index
-            if (!nLen)
+            if (nLen <= 1)
                 return VectorIndex(getIndex(pos));
 
             // Calculate the starting and ending indices for

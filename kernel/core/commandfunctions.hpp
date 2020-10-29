@@ -3839,7 +3839,6 @@ static CommandReturnValues cmd_data(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Output& _out = NumeReKernel::getInstance()->getOutput();
-    PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
 
     string sArgument;
     int nArgument;
@@ -4057,7 +4056,7 @@ static CommandReturnValues cmd_data(string& sCmd)
     {
         sArgument = evaluateParameterValues(sCmd);
         if (_data.isValid())
-            plugin_histogram(sArgument, _data, _data, _out, _option, _pData, false, true);
+            plugin_histogram(sArgument);
         else
             //throw NO_DATA_AVAILABLE;
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, sArgument, sArgument);
@@ -4587,8 +4586,6 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Output& _out = NumeReKernel::getInstance()->getOutput();
-    PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
-    //Define& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     string sArgument;
     int nArgument;
@@ -4618,7 +4615,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     {
         sArgument = evaluateParameterValues(sCmd);
         if (_data.isValid())
-            plugin_histogram(sArgument, _data, _data, _out, _option, _pData, true, false);
+            plugin_histogram(sArgument);
         else
             //throw NO_DATA_AVAILABLE;
             throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
@@ -5566,8 +5563,12 @@ static CommandReturnValues cmd_warn(string& sCmd)
 static CommandReturnValues cmd_stats(string& sCmd)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Output& _out = NumeReKernel::getInstance()->getOutput();
+    Match _match = findCommand(sCmd, "stats");
+    string sExpr = sCmd;
+
+    sExpr.replace(_match.nPos, string::npos, "_~load[~_~]");
+    sCmd.erase(0, _match.nPos);
+
 
     string sArgument = evaluateParameterValues(sCmd);
 
@@ -5604,7 +5605,14 @@ static CommandReturnValues cmd_stats(string& sCmd)
 
             sArgument = "stats -" + _accessParser.getDataObject() + " " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
             sArgument = evaluateParameterValues(sArgument);
-            plugin_statistics(sArgument, _cache);
+            std::string sRet = plugin_statistics(sArgument, _cache);
+
+            if (sRet.length())
+            {
+                sExpr.replace(_match.nPos, string::npos, sRet);
+                sCmd = sExpr;
+                return COMMAND_HAS_RETURNVALUE;
+            }
 
             return COMMAND_PROCESSED;
         }
@@ -6627,9 +6635,6 @@ static CommandReturnValues cmd_swap(string& sCmd)
 static CommandReturnValues cmd_hist(string& sCmd)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Output& _out = NumeReKernel::getInstance()->getOutput();
-    PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
 
     string sArgument = evaluateParameterValues(sCmd);
     string sCommand = findCommand(sCmd).sString;
@@ -6638,43 +6643,17 @@ static CommandReturnValues cmd_hist(string& sCmd)
     {
         // DEPRECATED: Declared at v1.1.2rc1
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRACATED"));
-        plugin_histogram(sArgument, _data, _data, _out, _option, _pData, false, true);
+        plugin_histogram(sArgument);
     }
     else if (_data.matchTableAsParameter(sCmd).length())
     {
         // a cache as object, passed as parameter
         // DEPRECATED: Declared at v1.1.2rc2
         NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-        plugin_histogram(sArgument, _data, _data, _out, _option, _pData, true, false);
+        plugin_histogram(sArgument);
     }
     else
-    {
-        DataAccessParser _accessParser(sCmd);
-
-        if (_accessParser.getDataObject().length())
-        {
-            MemoryManager _cache;
-
-            copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
-
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-            if (findParameter(sCmd, "export", '='))
-                addArgumentQuotes(sCmd, "export");
-
-            if (sCommand == "hist2d")
-                sArgument = "hist2d -table c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-            else
-                sArgument = "hist -table c=1:inf " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-
-            sArgument = evaluateParameterValues(sArgument);
-            plugin_histogram(sArgument, _cache, _data, _out, _option, _pData, true, false);
-            return COMMAND_PROCESSED;
-        }
-        else
-            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
-    }
+        plugin_histogram(sArgument);
 
     return COMMAND_PROCESSED;
 }
@@ -8069,6 +8048,7 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["graph"] = cmd_plotting;
     mCommandFuncMap["graph3d"] = cmd_plotting;
     mCommandFuncMap["hist"] = cmd_hist;
+    mCommandFuncMap["hist2d"] = cmd_hist;
     mCommandFuncMap["hline"] = cmd_hline;
     mCommandFuncMap["ifndef"] = cmd_ifndefined;
     mCommandFuncMap["ifndefined"] = cmd_ifndefined;
@@ -8110,7 +8090,6 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["smooth"] = cmd_smooth;
     mCommandFuncMap["spline"] = cmd_spline;
     mCommandFuncMap["start"] = cmd_start;
-    mCommandFuncMap["stats"] = cmd_stats;
     mCommandFuncMap["stfa"] = cmd_stfa;
     mCommandFuncMap["string"] = cmd_string;
     mCommandFuncMap["surf"] = cmd_plotting;
@@ -8161,6 +8140,7 @@ static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["readline"] = cmd_readline;
     mCommandFuncMap["reload"] = cmd_reload;
     mCommandFuncMap["sort"] = cmd_sort;
+    mCommandFuncMap["stats"] = cmd_stats;
     mCommandFuncMap["zeroes"] = cmd_zeroes;
 
     return mCommandFuncMap;

@@ -40,3 +40,4 @@ Cleaned	Moved some functionalities from the "tools" menu to the "edit" menu.
 New	The editor tabs may now configured to display the relative part of the file path (corresponding to their respective root path).
 Cleaned	Removed the override option for "random". Instead enabled "target=TABLE()", which defaults to "table()"
 Added	Enabled option "target=TABLE()" option for "stats".
+Added	Enabled option "target=TABLE()" option for "hist" and enabled the z range for "hist2d".

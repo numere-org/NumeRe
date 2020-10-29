@@ -131,6 +131,57 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
 
 
 /////////////////////////////////////////////////
+/// \brief This static function maps the
+/// statistical value enumerators to strings used
+/// for the tables and the return value.
+///
+/// \param nStatField int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string getStatFieldName(int nStatField)
+{
+    switch (nStatField)
+    {
+        case STATS_AVG:
+            return _lang.get("STATS_TYPE_AVG");
+        case STATS_STD:
+            return _lang.get("STATS_TYPE_STD");
+        case STATS_CONFINT:
+            return _lang.get("STATS_TYPE_CONFINT");
+        case STATS_STDERR:
+            return _lang.get("STATS_TYPE_STDERR");
+        case STATS_MED:
+            return _lang.get("STATS_TYPE_MED");
+        case STATS_Q1:
+            return "Q1";
+        case STATS_Q3:
+            return "Q3";
+        case STATS_RMS:
+            return _lang.get("STATS_TYPE_RMS");
+        case STATS_SKEW:
+            return _lang.get("STATS_TYPE_SKEW");
+        case STATS_EXC:
+            return _lang.get("STATS_TYPE_EXCESS");
+        case STATS_MIN:
+            return "min";
+        case STATS_MAX:
+            return "max";
+        case STATS_NUM:
+            return "num";
+        case STATS_CNT:
+            return "cnt";
+        case STATS_S_T:
+            return "s_t";
+        case STATS_FIELD_COUNT:
+            return "";
+    }
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function will create the
 /// output file using the functionalities of the
 /// Output class.
@@ -167,21 +218,10 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
         if (!vStats[STATS_NUM][j])
         {
             sOut[nHeadlines + nLine + 0][j] = "<<SUMBAR>>";
-            sOut[nHeadlines + nLine + 1 + STATS_AVG][j] = _lang.get("STATS_TYPE_AVG") + ": ---";
-            sOut[nHeadlines + nLine + 1 + STATS_STD][j] = _lang.get("STATS_TYPE_STD") + ": ---";
-            sOut[nHeadlines + nLine + 1 + STATS_CONFINT][j] = _lang.get("STATS_TYPE_CONFINT") + ": ---";
-            sOut[nHeadlines + nLine + 1 + STATS_STDERR][j] = _lang.get("STATS_TYPE_STDERR") + ": ---";
-            sOut[nHeadlines + nLine + 1 + STATS_MED][j] = _lang.get("STATS_TYPE_MED") + ": ---";
-            sOut[nHeadlines + nLine + 1 + STATS_Q1][j] = "Q1: ---";
-            sOut[nHeadlines + nLine + 1 + STATS_Q3][j] = "Q3: ---";
-            sOut[nHeadlines + nLine + 1 + STATS_RMS][j] = _lang.get("STATS_TYPE_RMS") + ": ---";
-            sOut[nHeadlines + nLine + 1 + STATS_SKEW][j] = _lang.get("STATS_TYPE_SKEW") + ": ---";
-            sOut[nHeadlines + nLine + 1 + STATS_EXC][j] = _lang.get("STATS_TYPE_EXCESS") + ": ---";
-            sOut[nHeadlines + nLine + 1 + STATS_MIN][j] = "min: ---";
-            sOut[nHeadlines + nLine + 1 + STATS_MAX][j] = "max: ---";
-            sOut[nHeadlines + nLine + 1 + STATS_NUM][j] = "num: ---";
-            sOut[nHeadlines + nLine + 1 + STATS_CNT][j] = "cnt: ---";
-            sOut[nHeadlines + nLine + 1 + STATS_S_T][j] = "s_t: ---";
+
+            for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
+                sOut[nHeadlines + nLine + 1 + n][j] = getStatFieldName(n) + ": ---";
+
             continue;
         }
 
@@ -215,21 +255,9 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
 
         // Write the calculated stats to the columns
         sOut[nHeadlines + nLine + 0][j] = "<<SUMBAR>>"; // Schreiben der berechneten Werte in die letzten drei Zeilen der Ausgabe
-        sOut[nHeadlines + nLine + 1 + STATS_AVG][j] = _lang.get("STATS_TYPE_AVG") + ": " + toString(vStats[STATS_AVG][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_STD][j] = _lang.get("STATS_TYPE_STD") + ": " + toString(vStats[STATS_STD][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_CONFINT][j] = _lang.get("STATS_TYPE_CONFINT") + ": " + toString(vStats[STATS_CONFINT][j], nPrecision) + " %";
-        sOut[nHeadlines + nLine + 1 + STATS_STDERR][j] = _lang.get("STATS_TYPE_STDERR") + ": " + toString(vStats[STATS_STDERR][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_MED][j] = _lang.get("STATS_TYPE_MED") + ": " + toString(vStats[STATS_MED][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_Q1][j] = "Q1: " + toString(vStats[STATS_Q1][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_Q3][j] = "Q3: " + toString(vStats[STATS_Q3][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_RMS][j] = _lang.get("STATS_TYPE_RMS") + ": " + toString(vStats[STATS_RMS][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_SKEW][j] = _lang.get("STATS_TYPE_SKEW") + ": " + toString(vStats[STATS_SKEW][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_EXC][j] = _lang.get("STATS_TYPE_EXCESS") + ": " + toString(vStats[STATS_EXC][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_MIN][j] = "min: " + toString(vStats[STATS_MIN][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_MAX][j] = "max: " + toString(vStats[STATS_MAX][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_NUM][j] = "num: " + toString(vStats[STATS_NUM][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_CNT][j] = "cnt: " + toString(vStats[STATS_CNT][j], nPrecision);
-        sOut[nHeadlines + nLine + 1 + STATS_S_T][j] = "s_t: " + toString(vStats[STATS_S_T][j], nPrecision);
+
+        for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
+            sOut[nHeadlines + nLine + 1 + n][j] = getStatFieldName(n) + ": " + toString(vStats[n][j], nPrecision);
     }
 
     // --> Allgemeine Ausgabe-Info-Parameter setzen <--
@@ -311,21 +339,8 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
         // Write the first column with table row names
         if (!j)
         {
-            sOverview[nHeadlines + STATS_AVG][j] = _lang.get("STATS_TYPE_AVG") + ":";
-            sOverview[nHeadlines + STATS_STD][j] = _lang.get("STATS_TYPE_STD") + ":";
-            sOverview[nHeadlines + STATS_CONFINT][j] = _lang.get("STATS_TYPE_CONFINT") + ":";
-            sOverview[nHeadlines + STATS_STDERR][j] = _lang.get("STATS_TYPE_STDERR") + ":";
-            sOverview[nHeadlines + STATS_MED][j] = _lang.get("STATS_TYPE_MED") + ":";
-            sOverview[nHeadlines + STATS_Q1][j] = "Q1:";
-            sOverview[nHeadlines + STATS_Q3][j] = "Q3:";
-            sOverview[nHeadlines + STATS_RMS][j] = _lang.get("STATS_TYPE_RMS") + ":";
-            sOverview[nHeadlines + STATS_SKEW][j] = _lang.get("STATS_TYPE_SKEW") + ":";
-            sOverview[nHeadlines + STATS_EXC][j] = _lang.get("STATS_TYPE_EXCESS") + ":";
-            sOverview[nHeadlines + STATS_MIN][j] = "min:";
-            sOverview[nHeadlines + STATS_MAX][j] = "max:";
-            sOverview[nHeadlines + STATS_NUM][j] = "num:";
-            sOverview[nHeadlines + STATS_CNT][j] = "cnt:";
-            sOverview[nHeadlines + STATS_S_T][j] = "s_t:";
+            for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
+                sOverview[nHeadlines + n][j] = getStatFieldName(n) + ":";
         }
 
         // Write the actual values to the string table
@@ -368,10 +383,10 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
 ///
 /// \param sCmd std::string&
 /// \param _data MemoryManager& Might be different from the usual MemoryManager
-/// \return void
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-void plugin_statistics(std::string& sCmd, MemoryManager& _data)
+std::string plugin_statistics(std::string& sCmd, MemoryManager& _data)
 {
     MemoryManager& _rootData = NumeReKernel::getInstance()->getMemoryManager();
     Output& _out = NumeReKernel::getInstance()->getOutput();
@@ -379,7 +394,12 @@ void plugin_statistics(std::string& sCmd, MemoryManager& _data)
 
     Indices _idx;
 
-    std::string sSavePath = "";
+    std::string sSavePath;
+    std::string sRet;
+
+    // Get the target table, if the user specified one,
+    // otherwise just leave it empty
+    std::string sTarget = evaluateTargetOptionInCommand(sCmd, "", _idx, NumeReKernel::getInstance()->getParser(), _rootData, _option);
 
     // Ensure that at least some data is available
     if (!_data.isValid())
@@ -410,28 +430,40 @@ void plugin_statistics(std::string& sCmd, MemoryManager& _data)
     if (_data.isEmpty(sDatatable))
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
-    // Get the target table
-    std::string sTarget = evaluateTargetOptionInCommand(sCmd, "stats_"+sDatatable, _idx, NumeReKernel::getInstance()->getParser(), _rootData, _option);
-
     // Calculate the statistics
     std::vector<std::vector<double>> vStats = calcStats(_data, sDatatable);
 
-    // Write the statistics to the target table
-    for (size_t i = 0; i < vStats.size(); i++)
+    // Write the statistics to the target table, if a
+    // target table was specified
+    if (sTarget.length())
     {
-        for (size_t j = 0; j < vStats[i].size(); j++)
+        for (size_t i = 0; i < vStats.size(); i++)
         {
-            if (!i && j < _idx.col.size())
-                _rootData.setHeadLineElement(_idx.col[j], sTarget, _data.getHeadLineElement(j, sDatatable));
+            for (size_t j = 0; j < vStats[i].size(); j++)
+            {
+                if (!i && j < _idx.col.size())
+                    _rootData.setHeadLineElement(_idx.col[j], sTarget, _data.getHeadLineElement(j, sDatatable));
 
-            if (i < _idx.row.size() && j < _idx.col.size())
-                _rootData.writeToTable(_idx.row[i], _idx.col[j], sTarget, vStats[i][j]);
+                if (i < _idx.row.size() && j < _idx.col.size())
+                    _rootData.writeToTable(_idx.row[i], _idx.col[j], sTarget, vStats[i][j]);
+            }
         }
+
+        sRet = "{";
+
+        for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
+        {
+            sRet += "\"" + getStatFieldName(n) + "\",";
+        }
+
+        sRet.back() = '}';
     }
 
     // Create the output for the terminal and the file,
     // if necessary
     createStatsOutput(_out, vStats, sSavePath, _data, sDatatable, _option);
+
+    return sRet;
 }
 
 

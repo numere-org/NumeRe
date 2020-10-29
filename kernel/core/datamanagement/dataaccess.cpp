@@ -32,10 +32,10 @@ using namespace mu;
 /// determine, whether it is a cluster and
 /// calculate the corresponding index set.
 ///
-/// \param sCommand const string&
+/// \param sCommand StringView
 ///
 /////////////////////////////////////////////////
-DataAccessParser::DataAccessParser(const string& sCommand)
+DataAccessParser::DataAccessParser(StringView sCommand)
 {
     size_t pos = string::npos;
     bIsCluster = false;
@@ -66,7 +66,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                 if (sCommand[i] == '(')
                 {
                     // This is a usual table or a reference to "string()"
-                    sDataObject = sCommand.substr(pos, i - pos);
+                    sDataObject = sCommand.subview(pos, i - pos).to_string();
 
                     // Ensure that the table exists
                     if (!instance->getMemoryManager().isTable(sDataObject) && sDataObject != "string")
@@ -77,13 +77,13 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     }
 
                     // Calculate the indices
-                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+                    ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
                     break;
                 }
                 else if (sCommand[i] == '{')
                 {
                     // This is a cluster reference
-                    sDataObject = sCommand.substr(pos, i - pos);
+                    sDataObject = sCommand.subview(pos, i - pos).to_string();
 
                     // Ensure that the cluster exists
                     if (!instance->getMemoryManager().isCluster(sDataObject))
@@ -96,7 +96,7 @@ DataAccessParser::DataAccessParser(const string& sCommand)
                     // Calculate the indices and switch the access
                     // to a cluster access
                     bIsCluster = true;
-                    idx = ::getIndices(sCommand.substr(pos), instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+                    ::getIndices(sCommand.subview(pos), idx, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
                     break;
                 }
                 else
@@ -105,6 +105,35 @@ DataAccessParser::DataAccessParser(const string& sCommand)
         }
     }
 
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Evaluates open end indices using the
+/// identified data object size.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void DataAccessParser::evalIndices()
+{
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
+    if (idx.row.isOpenEnd())
+    {
+        if (bIsCluster)
+            idx.row.setRange(0, _data.getCluster(sDataObject).size()-1);
+        else
+            idx.row.setRange(0, _data.getLines(sDataObject)-1);
+    }
+
+    if (idx.col.isOpenEnd())
+    {
+        if (bIsCluster)
+            idx.col = VectorIndex(idx.col.front());
+        else
+            idx.col.setRange(0, _data.getCols(sDataObject)-1);
+    }
 }
 
 
@@ -383,7 +412,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 		sEntityStringReplacement.clear();
 
 		// Reading the indices happens in this function
-		_idx = getIndices(sEntityOccurence, _parser, _data, _option);
+		getIndices(sEntityOccurence, _idx, _parser, _data, _option);
 
 		// check the indices, whether they are possible in the current context
 		if (!isValidIndexSet(_idx))
@@ -522,7 +551,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
 	Indices _idx;
-	
+
 	for (size_t i = 0; i < _parser.HasCachedAccess(); i++)
 	{
 		// Get the current cached data access
@@ -538,7 +567,7 @@ static const string& handleCachedDataAccess(string& sLine, Parser& _parser, Memo
 		}
 
 		// Read the indices
-		_idx = getIndices(_access.sAccessEquation, _parser, _data, _option);
+		getIndices(_access.sAccessEquation, _idx, _parser, _data, _option);
 
 		// check the indices
 		if (!isValidIndexSet(_idx))

@@ -213,7 +213,7 @@ void plugin_random(std::string& sCmd)
         }
     }
 
-    NumeReKernel::print(_lang.get("RANDOM_SUCCESS", toString(nDataRows*nDataPoints), sDistrib));
+    NumeReKernel::print(_lang.get("RANDOM_SUCCESS", toString(nDataRows*nDataPoints), sDistrib, sTarget + "()"));
 }
 
 

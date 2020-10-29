@@ -32,6 +32,19 @@ static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView s
 static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data);
 
 
+/////////////////////////////////////////////////
+/// \brief Wrapper for the new getIndices
+/// function interface.
+///
+/// \param sCmd StringView
+/// \param _parser Parser&
+/// \param _data MemoryManager&
+/// \param _option const Settings&
+/// \return Indices
+///
+/// \deprecated Marked as deprecated.
+///
+/////////////////////////////////////////////////
 Indices getIndices(StringView sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     Indices _idx;
@@ -39,6 +52,20 @@ Indices getIndices(StringView sCmd, Parser& _parser, MemoryManager& _data, const
     return _idx;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief The new interface function to
+/// determine the used indices in the current
+/// expression part.
+///
+/// \param sCmd StringView
+/// \param _idx Indices&
+/// \param _parser Parser&
+/// \param _data MemoryManager&
+/// \param _option const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     StringView sTableName;
@@ -73,10 +100,6 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
         }
     }
 
-    // TODO: for loop might be wrong although more efficient
-    //if (sTableName.find_first_of(" +-*/!=&|<>^?:%") != string::npos)
-    //    sTableName.erase(0, sTableName.find_last_of(" +-*/!=&|<>^?:%")+1);
-
     sIndices = sCmd.subview(nPos+1, nClosingParens-1);
 
     // Remove not necessary white spaces
@@ -92,9 +115,6 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     else
         _idx.sCompiledAccessEquation.assign(sIndices.begin(), sIndices.end());
 
-        //_idx.row.setIndex(0,0);
-        //_idx.col.setIndex(0,0);
-        //return;
     // If the argument contains tables, get their values. This leads to a recursion!
     if (_data.containsTablesOrClusters(_idx.sCompiledAccessEquation))
         getDataElements(_idx.sCompiledAccessEquation, _parser, _data, _option);
@@ -118,6 +138,19 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
  *   LOCAL FUNCTIONS FOR parser_getIndices()
  */
 
+/////////////////////////////////////////////////
+/// \brief This static function is the main
+/// driver function for extracting the indices
+/// into VectorIndex representations.
+///
+/// \param _idx Indices&
+/// \param _parser Parser&
+/// \param _data MemoryManager&
+/// \param sArgument StringView
+/// \param sCmd StringView
+/// \return void
+///
+/////////////////////////////////////////////////
 static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManager& _data, StringView sArgument, StringView sCmd)
 {
     vector<StringView> vLines;
@@ -159,7 +192,19 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManag
     }
 }
 
-// separates the argument into its up to four parts and returns the position after the last operator
+
+/////////////////////////////////////////////////
+/// \brief This static function separates the
+/// argument into its row and column parts and
+/// returns them as vectors of StringView
+/// instances.
+///
+/// \param sCols StringView
+/// \param vLines vector<StringView>&
+/// \param vCols vector<StringView>&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void extractIndexList(StringView sCols, vector<StringView>& vLines, vector<StringView>& vCols)
 {
     // Split line and column indices at
@@ -203,7 +248,17 @@ static void extractIndexList(StringView sCols, vector<StringView>& vLines, vecto
         vCols.push_back(StringView());
 }
 
-// This function will evaluate the indices and it tries to match it to a vector
+
+/////////////////////////////////////////////////
+/// \brief This static function will evaluate the
+/// indices and it tries to match it to a vector.
+///
+/// \param _parser Parser&
+/// \param _vIdx VectorIndex&
+/// \param sIndex StringView
+/// \return void
+///
+/////////////////////////////////////////////////
 static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex)
 {
     value_type* v;
@@ -228,6 +283,21 @@ static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView s
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This static function is a helper
+/// function for handleCasualIndices(), which
+/// will be applied to row and column indices
+/// separately.
+///
+/// \param _vIdx VectorIndex&
+/// \param vIndex vector<StringView>&
+/// \param sIndexExpressions string&
+/// \param vIndexNumbers vector<int>&
+/// \param sign int
+/// \return void
+///
+/////////////////////////////////////////////////
 static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vIndex, string& sIndexExpressions, vector<int>& vIndexNumbers, int sign)
 {
     for (size_t n = 0; n < vIndex.size(); n++)
@@ -255,7 +325,21 @@ static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vInd
     }
 }
 
-// This function will evaluate all indices at once and store them into the Indices object
+
+/////////////////////////////////////////////////
+/// \brief This function will evaluate all
+/// indices, which are interpreted as casual
+/// indices, at once and store them into the
+/// Indices object.
+///
+/// \param _parser Parser&
+/// \param _idx Indices&
+/// \param vLines vector<StringView>&
+/// \param vCols vector<StringView>&
+/// \param sCmd StringView
+/// \return void
+///
+/////////////////////////////////////////////////
 static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringView>& vLines, vector<StringView>& vCols, StringView sCmd)
 {
     string sIndexExpressions;
@@ -298,7 +382,18 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
     }
 }
 
-// This function will expand casual indices into vectors
+
+/////////////////////////////////////////////////
+/// \brief This function will expand casual
+/// indices into vectors. Actually, it is only
+/// used for the special case of a string vector.
+///
+/// \param _idx Indices&
+/// \param _data MemoryManager&
+/// \param sCmd StringView
+/// \return void
+///
+/////////////////////////////////////////////////
 static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView sCmd)
 {
     // Get the cache name from the command string
@@ -329,8 +424,17 @@ static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView s
         throw SyntaxError(SyntaxError::INVALID_DATA_ACCESS, sCmd.to_string(), SyntaxError::invalid_position);
 }
 
-// This static function expands the indices into vectors, if the
-// the current object is the string object
+
+/////////////////////////////////////////////////
+/// \brief This static function expands the
+/// indices into vectors, if the current object
+/// is the string object.
+///
+/// \param _idx Indices&
+/// \param _data MemoryManager&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void expandStringIndexVectors(Indices& _idx, MemoryManager& _data)
 {
     if (_idx.row.isOpenEnd())
