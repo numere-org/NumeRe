@@ -85,15 +85,20 @@ struct HistogramParameters
 /////////////////////////////////////////////////
 static std::string getParameterValue(const std::string& sCmd, const std::string& sVersion1, const std::string& sVersion2, const std::string& sDefaultVal)
 {
+    // Try to find one of the two possible
+    // option variants
     if (findParameter(sCmd, sVersion1, '=') || findParameter(sCmd, sVersion2, '='))
     {
         int nPos = 0;
 
+        // Use the detected variant
         if (findParameter(sCmd, sVersion1, '='))
             nPos = findParameter(sCmd, sVersion1, '=')+sVersion1.length();
         else
             nPos = findParameter(sCmd, sVersion2, '=')+sVersion2.length();
 
+        // Get the value of the option and
+        // strip all surrounding spaces
         std::string val = getArgAtPos(sCmd, nPos);
         StripSpaces(val);
         return val;
@@ -117,10 +122,14 @@ static std::string getParameterValue(const std::string& sCmd, const std::string&
 /////////////////////////////////////////////////
 static void getIntervalDef(const std::string& sCmd, const std::string& sIdentifier, double& dMin, double& dMax)
 {
+    // Does this interval definition exist?
     if (findParameter(sCmd, sIdentifier, '='))
     {
+        // Get the interval definition
         std::string sTemp =  getArgAtPos(sCmd, findParameter(sCmd, sIdentifier, '=') + sIdentifier.length());
 
+        // If the interval definition actually contains
+        // a colon, decode it and use it
         if (sTemp.find(':') != std::string::npos)
         {
             if (sTemp.substr(0, sTemp.find(':')).length())
@@ -148,6 +157,8 @@ static void getIntervalDef(const std::string& sCmd, const std::string& sIdentifi
 /////////////////////////////////////////////////
 static void prepareIntervalsForHist(const std::string& sCmd, double& dMin, double& dMax, double dDataMin, double dDataMax)
 {
+    // Replace the missing interval boundaries
+    // with the minimal and maximal data values
     if (isnan(dMin) && isnan(dMax))
     {
         dMin = dDataMin;
@@ -161,6 +172,7 @@ static void prepareIntervalsForHist(const std::string& sCmd, double& dMin, doubl
     else if (isnan(dMax))
         dMax = dDataMax;
 
+    // Ensure the correct order
     if (dMax < dMin)
     {
         double dTemp = dMax;
@@ -168,6 +180,8 @@ static void prepareIntervalsForHist(const std::string& sCmd, double& dMin, doubl
         dMin = dTemp;
     }
 
+    // Ensure that the selected interval is part of
+    // the data interval
     if (!isnan(dMin) && !isnan(dMax))
     {
         if (dMin > dDataMax || dMax < dDataMin)
@@ -197,6 +211,7 @@ static void prepareIntervalsForHist(const std::string& sCmd, double& dMin, doubl
 /////////////////////////////////////////////////
 static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data, const Indices& _idx, const HistogramParameters& _histParams, mglData& _histData, mglData& _mAxisVals, int& nMax, std::vector<std::string>& vLegends, bool bGrid, bool isXLog)
 {
+    // Prepare the data table
     std::vector<std::vector<double>> vHistMatrix(_histParams.nBin, std::vector<double>(bGrid ? 1 : _idx.col.size(), 0.0));
 
     int nCount = 0;
@@ -205,10 +220,13 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
     {
         nMax = 0;
 
+        // Repeat for every bin
         for (int k = 0; k < _histParams.nBin; k++)
         {
             nCount = 0;
 
+            // Detect the number of values, which
+            // are part of the current bin interval
             for (size_t i = 2; i < _idx.col.size(); i++)
             {
                 for (size_t l = 0; l < _idx.row.size(); l++)
@@ -241,6 +259,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                     _mAxisVals.a[k] = pow(10.0, log10(_histParams.ranges.z[0]) + (k + 0.5) * _histParams.binWidth[0]);
             }
 
+            // Store the value in the corresponding column
             vHistMatrix[k][0] = nCount;
             _histData.a[k] = nCount;
 
@@ -254,12 +273,16 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
     {
         nMax = 0;
 
+        // Repeat for every data set
         for (size_t i = 0; i < _idx.col.size(); i++)
         {
+            // Repeat for every bin
             for (int k = 0; k < _histParams.nBin; k++)
             {
                 nCount = 0;
 
+                // Detect the number of values, which
+                // are part of the current bin interval
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
                     if (isXLog)
@@ -281,6 +304,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                 else if (!i)
                     _mAxisVals.a[k] = pow(10.0, log10(_histParams.ranges.x[0]) + (k + 0.5) * _histParams.binWidth[0]);
 
+                // Store the value in the corresponding column
                 vHistMatrix[k][i] = nCount;
                 _histData.a[k + (_histParams.nBin * i)] = nCount;
 
@@ -288,6 +312,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                     nMax = nCount;
             }
 
+            // Create the plot legend entry for the current data set
             vLegends.push_back(_data.getTopHeadLineElement(_idx.col[i], _histParams.sTable));
 
             while (vLegends.back().find('_') != std::string::npos)
@@ -318,6 +343,8 @@ static std::string prepareTicksForHist1d(const HistogramParameters& _histParams,
     std::string sTicks;
     double dCommonExponent = 1.0;
 
+    // Try to find the common bin interval exponent to
+    // factorize it out
     if (bGrid)
     {
         if (toString(_histParams.ranges.z[0] + _histParams.binWidth[0] / 2.0, 3).find('e') != std::string::npos || toString(_histParams.ranges.z[0] + _histParams.binWidth[0] / 2.0, 3).find('E') != std::string::npos)
@@ -363,6 +390,8 @@ static std::string prepareTicksForHist1d(const HistogramParameters& _histParams,
             sTicks = toString(_histParams.ranges.x[0] + _histParams.binWidth[0] / 2.0, 3) + "\\n";
     }
 
+    // Create the ticks list by factorizing out
+    // the common exponent
     for (int i = 1; i < _histParams.nBin - 1; i++)
     {
         if (_histParams.nBin > 16)
@@ -402,6 +431,7 @@ static std::string prepareTicksForHist1d(const HistogramParameters& _histParams,
 
     sTicks += toString(_mAxisVals.a[_histParams.nBin - 1] / dCommonExponent, 3);
 
+    // Convert the common exponent into a LaTeX string
     if (sCommonExponent.length())
     {
         while (sTicks.find(sCommonExponent) != std::string::npos)
@@ -458,6 +488,11 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
         for (size_t i = 1; i < vHistMatrix[0].size() + 1; i++)
         {
             sOut[0][i] = condenseText(_histParams.sCountLabel) + ":_" + _data.getTopHeadLineElement(_idx.col[i-1], _histParams.sTable);
+
+            size_t nPos;
+
+            while ((nPos = sOut[0][i].find(' ')) != std::string::npos)
+                sOut[0][i][nPos] = '_';
         }
     }
 
@@ -545,17 +580,20 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
 /////////////////////////////////////////////////
 static mglGraph* prepareGraphForHist(double dAspect, PlotData& _pData, bool bSilent)
 {
+    // Create a new mglGraph instance on the heap
     mglGraph* _histGraph = new mglGraph();
 
-    if (_pData.getHighRes() == 2 && bSilent && _pData.getSilentMode())           // Aufloesung und Qualitaet einstellen
+    // Apply plot output size using the resolution
+    // and the aspect settings
+    if (_pData.getHighRes() == 2 && bSilent && _pData.getSilentMode())
     {
         double dHeight = sqrt(1920.0 * 1440.0 / dAspect);
-        _histGraph->SetSize((int)lrint(dAspect * dHeight), (int)lrint(dHeight));        // FullHD!
+        _histGraph->SetSize((int)lrint(dAspect * dHeight), (int)lrint(dHeight));
     }
     else if (_pData.getHighRes() == 1 && bSilent && _pData.getSilentMode())
     {
         double dHeight = sqrt(1280.0 * 960.0 / dAspect);
-        _histGraph->SetSize((int)lrint(dAspect * dHeight), (int)lrint(dHeight));         // ehem. die bessere Standard-Aufloesung
+        _histGraph->SetSize((int)lrint(dAspect * dHeight), (int)lrint(dHeight));
     }
     else
     {
@@ -563,13 +601,16 @@ static mglGraph* prepareGraphForHist(double dAspect, PlotData& _pData, bool bSil
         _histGraph->SetSize((int)lrint(dAspect * dHeight), (int)lrint(dHeight));
     }
 
-    // --> Noetige Einstellungen und Deklarationen fuer den passenden Plot-Stil <--
+    // Get curret plot font, font size
+    // and the width of the bars
     _histGraph->CopyFont(&_fontData);
     _histGraph->SetFontSizeCM(0.24 * ((double)(1 + _pData.getTextSize()) / 6.0), 72);
     _histGraph->SetBarWidth(_pData.getBars() ? _pData.getBars() : 0.9);
 
     _histGraph->SetRanges(1, 2, 1, 2, 1, 2);
 
+    // Apply logarithmic functions to the axes,
+    // if necessary
     if (_pData.getxLogscale() && !_pData.getyLogscale() && !_pData.getzLogscale())
         _histGraph->SetFunc("lg(x)", "");
     else if (_pData.getxLogscale() && _pData.getyLogscale() && !_pData.getzLogscale())
@@ -609,18 +650,22 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
+    // Define aspect and plotting colors
     double dAspect = 8.0 / 3.0;
     int nStyle = 0;
     const int nStyleMax = 14;
     std::string sColorStyles[nStyleMax] = {"r", "g", "b", "q", "m", "P", "u", "R", "G", "B", "Q", "M", "p", "U"};
 
+    // Get current color definition
     for (int i = 0; i < nStyleMax; i++)
     {
         sColorStyles[i] = _pData.getColors()[i];
     }
 
+    // Get a new mglGraph instance located on the heap
     mglGraph* _histGraph = prepareGraphForHist(dAspect, _pData, bSilent);
 
+    // Add all legends to the graph
     for (size_t i = 0; i < vLegends.size(); i++)
     {
         _histGraph->AddLegend(vLegends[i].c_str(), sColorStyles[nStyle].c_str());
@@ -631,15 +676,20 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
             nStyle++;
     }
 
+    // Get the common exponent and the precalculated ticks
     std::string sCommonExponent;
     std::string sTicks = prepareTicksForHist1d(_histParams, _mAxisVals, sCommonExponent, bGrid);
 
+    // If we calculated a single histogram from a data grid,
+    // we need to use the z ranges for the x ranges, because
+    // those are the values we binned for
     if (bGrid)
     {
         _histParams.ranges.x[0] = _histParams.ranges.z[0];
         _histParams.ranges.x[1] = _histParams.ranges.z[1];
     }
 
+    // Update the x ranges for a possible logscale
     if (_pData.getxLogscale() && _histParams.ranges.x[0] <= 0.0 && _histParams.ranges.x[1] > 0.0)
         _histParams.ranges.x[0] = _histParams.ranges.x[1] / 1e3;
     else if (_pData.getxLogscale() && _histParams.ranges.x[0] < 0.0 && _histParams.ranges.x[1] <= 0.0)
@@ -648,11 +698,13 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         _histParams.ranges.x[1] = 1.0;
     }
 
+    // Update the y ranges for a possible logscale
     if (_pData.getyLogscale())
         _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], 0.1, 1.4 * (double)nMax);
     else
         _histGraph->SetRanges(_histParams.ranges.x[0], _histParams.ranges.x[1], 0.0, 1.05 * (double)nMax);
 
+    // Create the axes
     if (_pData.getAxis())
     {
         if (!_pData.getxLogscale())
@@ -682,9 +734,11 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         }
     }
 
+    // Create the surrounding box
     if (_pData.getBox())
         _histGraph->Box();
 
+    // Write the axis labels
     if (_pData.getAxis())
     {
         _histGraph->Label('x', _histParams.sBinLabel.c_str(), 0.0);
@@ -700,6 +754,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
             _histGraph->Label('y', _histParams.sCountLabel.c_str(), 1.1);
     }
 
+    // Create the grid
     if (_pData.getGrid())
     {
         if (_pData.getGrid() == 2)
@@ -711,6 +766,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
             _histGraph->Grid("xy", _pData.getGridStyle().c_str());
     }
 
+    // Position the legend
     if (!_pData.getBox())
         _histGraph->Legend(1.25, 1.0);
     else
@@ -731,6 +787,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
     std::string sColor = "";
     nStyle = 0;
 
+    // Create the color definition for the bars
     for (int i = 0; i < _histData.GetNy(); i++)
     {
         sColor += sColorStyles[nStyle];
@@ -741,8 +798,11 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
             nStyle++;
     }
 
+    // Create the actual bars
     _histGraph->Bars(_mAxisVals, _histData, sColor.c_str());
 
+    // Open the plot in the graph viewer
+    // of write it directly to file
     if (_pData.getOpenImage() && !_pData.getSilentMode() && !bSilent)
     {
         GraphHelper* _graphHelper = new GraphHelper(_histGraph, _pData);
@@ -901,15 +961,17 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
 
     _mAxisVals.Create(_histParams.nBin);
 
-
-////////////////////////////////////////////////////////// CALCULATE DATA
+    // Calculate the data for the histogram
     std::vector<std::string> vLegends;
     std::vector<std::vector<double>> vHistMatrix = calculateHist1dData(_data, _idx, _histParams, _histData, _mAxisVals, nMax, vLegends, bGrid, _pData.getxLogscale());
 
-/////////////////////////////////////////////////////// CREATE OUTPUT
+    // Create the textual data for the terminal
+    // and the file, if necessary
     createOutputForHist1D(_data, _idx, vHistMatrix, _histParams, _mAxisVals, bGrid,
                           !bWriteToCache || findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '='), bSilent);
 
+    // Store the results into the output table,
+    // if desired
     if (bWriteToCache)
     {
         _data.setHeadLineElement(_tIdx.col.front(), sTargettable, "Bins");
@@ -934,7 +996,7 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
         }
     }
 
-////////////////////////////////////////////////////////////////// CREATE PLOT
+    // Create the plot using the calculated data
     createPlotForHist1D(_histParams, _mAxisVals, _histData, vLegends, nMax, bSilent, bGrid);
 }
 
@@ -1485,6 +1547,8 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     if (_idx.col.size() > 3)
         bSum = true;
 
+    // Update the interval ranges using the minimal and maximal
+    // data values in the corresponding spatial directions
     prepareIntervalsForHist(sCmd, _histParams.ranges.x[0], _histParams.ranges.x[1],
                             _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)),
                             _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)));
@@ -1497,6 +1561,7 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
                             _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(2)),
                             _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(2)));
 
+    // Adapt the ranges for logscale
     if (_pData.getxLogscale() && _histParams.ranges.x[1] < 0.0)
         throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
     else if (_pData.getxLogscale())
@@ -1513,6 +1578,8 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
             _histParams.ranges.y[0] = (1e-2 * _histParams.ranges.y[1] < 1e-2 ? 1e-2 * _histParams.ranges.y[1] : 1e-2);
     }
 
+    // Count the number of valid entries for determining
+    // the number of bins based upon the methods automatically
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
         for (size_t j = 2; j < _idx.col.size(); j++)
@@ -1526,6 +1593,8 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
         }
     }
 
+    // Determine the number of bins based upon the
+    // selected method
     if (!_histParams.nBin && _histParams.binWidth[0] == 0.0)
     {
         if (_histParams.nMethod == STURGES)
@@ -1536,6 +1605,8 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
            _histParams.binWidth[0] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.75) - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.25)) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
     }
 
+    // Determine the number of bins based upon the
+    // selected bin interval width
     if (!_histParams.nBin)
     {
         if (_histParams.binWidth[0] > _histParams.ranges.x[1] - _histParams.ranges.x[0])
@@ -1554,6 +1625,7 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     _mAxisVals[0].Create(_histParams.nBin);
     _mAxisVals[1].Create(_histParams.nBin);
 
+    // Determine the bin interval width
     if (_histParams.binWidth[0] == 0.0)
     {
         // --> Berechne die Intervall-Laenge (Explizite Typumwandlung von int->double) <--
@@ -1563,36 +1635,36 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
             _histParams.binWidth[0] = abs(_histParams.ranges.x[1] - _histParams.ranges.x[0]) / (double)_histParams.nBin;
     }
 
+    // Determine the bin interval width in
+    // y direction
     if (_pData.getyLogscale())
         _histParams.binWidth[1] = (log10(_histParams.ranges.y[1]) - log10(_histParams.ranges.y[0])) / (double)_histParams.nBin;
     else
         _histParams.binWidth[1] = abs(_histParams.ranges.y[1] - _histParams.ranges.y[0]) / (double)_histParams.nBin;
 
-
-////////////////////////////////////////////////////// CENTER GRAPH DATA
+    // Calculate the necessary data for the center plot
     calculateDataForCenterPlot(_data, _idx, _histParams, _hist2DData);
 
-////////////////////////////////////////////////////// BAR DATA
+    // Calculate the necessary data for the bar chart
+    // along the y axis of the central plot
     mglData _barHistData = calculateXYHist(_data, _idx, _histParams, &_mAxisVals[0],
                                            _histParams.ranges.x[0], _histParams.ranges.y[0], _histParams.ranges.y[1], _histParams.binWidth[0],
                                            nMax, _pData.getxLogscale(), false, bSum);
 
-
-//////////////////////////////////////////////////////////////// H-BAR DATA
+    // Calculate the necessary data for the horizontal
+    // bar chart along the x axis of the central plot
     mglData _hBarHistData = calculateXYHist(_data, _idx, _histParams, &_mAxisVals[1],
                                             _histParams.ranges.y[0], _histParams.ranges.x[0], _histParams.ranges.x[1], _histParams.binWidth[1],
                                             nMax, _pData.getyLogscale(), true, bSum);
 
-
-
-//////////////////////////////////////////////////////////////// FORMAT OUTPUT
+    // Format the data for the textual output for the
+    // terminal, the text file and store the result in
+    // the target table, if desired
     createOutputForHist2D(_data, _idx, sTargettable, _tIdx, _histParams, _mAxisVals, _barHistData, _hBarHistData, bSum, bWriteToCache,
                           !bWriteToCache || findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '='),
                           !_option.getSystemPrintStatus() || bSilent);
 
-
-
-//////////////////////////////////////////////////////// CREATE PLOTS
+    // Create the three plots as subplots
     createPlotsForHist2D(sCmd, _histParams, _mAxisVals, _barHistData, _hBarHistData, _hist2DData, _idx.col.size() == 3, bSum, bSilent);
 
     _out.reset();
