@@ -911,7 +911,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             if (bWriteToCache)
             {
                 // Get the indices from the corresponding function
-                _idx = getIndices(sCache, _parser, _memoryManager, _option);
+                getIndices(sCache, _idx, _parser, _memoryManager, _option);
 
                 if (sCache[sCache.find_first_of("({")] == '{')
                 {

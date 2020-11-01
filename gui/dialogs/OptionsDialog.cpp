@@ -34,14 +34,7 @@
 #include "OptionsDialog.h"
 #include "../NumeReWindow.h"
 
-#include "../../common/debug.h"
-
 #include "../compositions/grouppanel.hpp"
-
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 extern Language _guilang;
 /*!

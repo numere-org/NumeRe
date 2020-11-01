@@ -4,14 +4,6 @@
 #include "wx/progdlg.h"   // wxProgressDialog
 #include "../../common/Options.h"
 
-#include "../../common/debug.h"
-
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
-
 extern wxPrintData *g_printData;
 extern wxPageSetupData *g_pageSetupData;
 

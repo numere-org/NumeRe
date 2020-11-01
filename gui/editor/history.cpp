@@ -67,7 +67,6 @@ using namespace std;
 ///
 /// \param mframe NumeReWindow*
 /// \param options Options*
-/// \param project ProjectInfo*
 /// \param parent wxWindow*
 /// \param id wxWindowID
 /// \param __syntax NumeReSyntax*
@@ -78,9 +77,9 @@ using namespace std;
 /// \param name const wxString&
 ///
 /////////////////////////////////////////////////
-NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, ProjectInfo* project, wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax,
+NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax,
                              NumeReTerminal* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
-                                 NumeReEditor(mframe, options, project, parent, id, __syntax, __terminal, pos, size, style, name)
+                                 NumeReEditor(mframe, options, parent, id, __syntax, __terminal, pos, size, style, name)
 {
 	_syntax = __syntax;
 	m_mainframe = mframe;

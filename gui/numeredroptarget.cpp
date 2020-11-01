@@ -20,7 +20,7 @@
 #include "numeredroptarget.hpp"
 #include "NumeReWindow.h"
 #include "editor/editor.h"
-#include "terminal/wxssh.h"
+#include "terminal/terminal.hpp"
 #include "compositions/filetree.hpp"
 #include "DirTraverser.hpp"
 #include "../common/vcsmanager.hpp"

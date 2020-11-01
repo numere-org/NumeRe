@@ -1,11 +1,6 @@
 // Copyright Timothy Miller, 1999
 
 #include "gterm.hpp"
-#include "../../common/debug.h"
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 // Returns the encoded color bitlist
 int GenericTerminal::calc_color( int fg, int bg, int flags )

@@ -26,11 +26,6 @@
 #include <wx/dcmemory.h>
 #include <wx/image.h>
 #include "gterm.hpp"
-#include "../../common/debug.h"
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 using namespace std;
 

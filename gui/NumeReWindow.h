@@ -24,7 +24,6 @@
 #include "globals.hpp"
 #include "wx/dnd.h"
 #include "../common/datastructures.h"
-#include "../common/DebugEvent.h"
 #include "../common/filewatcher.hpp"
 #include "../kernel/windowmanager.hpp"
 #include "../kernel/core/ui/language.hpp"
@@ -109,10 +108,7 @@ class IntIntHashmap;
 class WindowPointerArray;
 class wxPanel;
 class wxSplitterWindow;
-class RemoteFileDialog;
 class OptionsDialog;
-class Networking;
-//class Compiler;
 class wxFileConfig;
 class wxTelnet;
 class wxMenu;
@@ -122,11 +118,9 @@ class wxNotebookEvent;
 class wxSplitterEvent;
 class wxTreeEvent;
 class wxStatusBar;
-class ProjectInfo;
-class wxSSH;
 class Options;
+class NumeReTerminal;
 class wxTermContainer;
-//class Debugger;
 class VariableWatchPanel;
 class wxTimer;
 class wxListCtrl;
@@ -134,9 +128,7 @@ class CompilerOutputPanel;
 class IconManager;
 class wxProportionalSplitterWindow;
 class wxCHMHelpController;
-//class DebugManager;
 class DebugViewer;
-class ChameleonProjectManager;
 
 namespace DDE
 {
@@ -192,8 +184,6 @@ class NumeReWindow : public wxFrame
 
         void FocusOnLine(wxString filename, int linenumber, bool showMarker = true);
 
-        NetworkCallResult CheckNetworkStatus();
-
         void NewFile(FileFilterType _filetype = FILE_NONSOURCE, const wxString& defaultfilename = "");
         void ShowRevision(const wxString& revisionName, const wxString& revisionContent);
         void DefaultPage();
@@ -218,7 +208,6 @@ class NumeReWindow : public wxFrame
 
         void refreshFunctionTree();
 
-        Networking* GetNetworking();
         NumeReEditor* GetCurrentEditor()
         {
             return m_currentEd;
@@ -240,7 +229,7 @@ class NumeReWindow : public wxFrame
 
         string m_UnrecoverableFiles;
 
-        wxSSH* getTerminal() {return m_terminal;}
+        NumeReTerminal* getTerminal() {return m_terminal;}
         vector<string> getPathDefs();
 
         void addToReloadBlackList(const wxString& sFilename);
@@ -273,7 +262,6 @@ class NumeReWindow : public wxFrame
         void OnAbout();
         void OnPrintPreview();
         void OnPrintPage();
-        void OnProjectIncludeExcludeFile( int id );
         void OnOptions();
         void OnFindReplace(int id );
         void OnOpenInExplorer();
@@ -336,13 +324,6 @@ class NumeReWindow : public wxFrame
         int GetPageNum(wxFileName fn, bool compareWholePath = true, int startingTab = 0);
         int HandleModifiedFile(int pageNr, ModifiedFileAction fileAction);
 
-        void OpenProjectFile(bool isRemote);
-        void AddFileToProject();
-        void RemoveFileFromProject();
-        void SaveProjectFile();
-        void CloseProjectFile(bool canUserCancel = true);
-        void LoadFilesIntoProjectTree(wxString configPath, FileFilterType fileType, wxTreeItemId treeid,
-                                      wxFileConfig& config, wxPathFormat currentPathFormat);
         void LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid);
 
 
@@ -421,9 +402,7 @@ class NumeReWindow : public wxFrame
         /*! Displays watched variables */
         VariableWatchPanel* m_watchPanel;
         /*! The actual terminal widget */
-        wxSSH* m_terminal;
-        /*! The actual debug I/O widget */
-        wxSSH* m_debugTerminal;
+        NumeReTerminal* m_terminal;
 
         wxPanel* m_watchPanelContainer;
         wxPanel* m_container1;
@@ -432,8 +411,6 @@ class NumeReWindow : public wxFrame
 
         // dialogs
         OptionsDialog*  m_optionsDialog;
-        RemoteFileDialog* m_remoteFileDialog;
-
 
         /* Responsible for writing the Chameleon settings to the INI file */
         wxFileConfig* m_config;
@@ -461,13 +438,9 @@ class NumeReWindow : public wxFrame
         FileFilterType m_projectSelectedFolderType;
         wxTreeItemId m_dragDropSourceItem;
 
-        Networking* m_network;
         Options* m_options;
-        /*! The currently open multi-file project */
-        ProjectInfo* m_projMultiFiles;
         DebugViewer* m_debugViewer;
         IconManager* m_iconManager;
-        ChameleonProjectManager* m_projectManager;
 
         int m_numPages;
         /*! Tracks the active editor tab */

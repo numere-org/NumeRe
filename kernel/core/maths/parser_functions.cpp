@@ -590,7 +590,7 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 			_data.addTable(sTargetTable.substr(0, sTargetTable.find('(')), _option);
 
 		// Read the target indices
-		_idx = getIndices(sTargetTable, _parser, _data, _option);
+		getIndices(sTargetTable, _idx, _parser, _data, _option);
 		sTargetTable.erase(sTargetTable.find('('));
 
 		// check the indices

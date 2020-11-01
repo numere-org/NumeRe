@@ -172,7 +172,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
                 bAllowMatrixClearing = true;
         }
 
-        _idx = getIndices(sTargetName, _parser, _data, _option);
+        getIndices(sTargetName, _idx, _parser, _data, _option);
 
         if (!isValidIndexSet(_idx))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sTargetName, sTargetName);

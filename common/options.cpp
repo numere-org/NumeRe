@@ -4,7 +4,6 @@
 #include <wx/filename.h>
 #include <wx/arrstr.h>
 #include <wx/dir.h>
-#include "debug.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

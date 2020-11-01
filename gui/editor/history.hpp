@@ -27,9 +27,7 @@
 #include "editor.h"
 #include "../terminal/terminal.hpp"
 #include "../../common/datastructures.h"
-//#include "../../compiler/compilerevent.h"
 #include "../../kernel/syntax.hpp"
-//#include <wx/wx.h>
 
 #define RM_WS_BOTH 0
 #define RM_WS_FRONT 1
@@ -38,7 +36,7 @@
 class NumeReHistory : public NumeReEditor
 {
 public:
-	NumeReHistory(NumeReWindow* mframe, Options* options, ProjectInfo* project,
+	NumeReHistory(NumeReWindow* mframe, Options* options,
 					wxWindow *parent, wxWindowID id, NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos = wxDefaultPosition,
 					const wxSize& size = wxDefaultSize, long style = 0,
 					const wxString& name = wxSTCNameStr);

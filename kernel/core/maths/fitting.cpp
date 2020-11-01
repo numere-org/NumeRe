@@ -423,7 +423,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
 
         if (fitData.sChiMap.length())
         {
-            _idx = getIndices(fitData.sChiMap, _parser, _data, _option);
+            getIndices(fitData.sChiMap, _idx, _parser, _data, _option);
 
             if (!isValidIndexSet(_idx))
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);

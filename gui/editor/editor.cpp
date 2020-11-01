@@ -49,13 +49,9 @@
 
 #include "../../common/datastructures.h"
 #include "../../common/Options.h"
-#include "../../common/DebugEvent.h"
-#include "../../common/ProjectInfo.h"
-#include "../../common/debug.h"
 #include "../../common/vcsmanager.hpp"
 #include "../../common/filerevisions.hpp"
 #include "../dialogs/renamesymbolsdialog.hpp"
-//#include "../../common/fixvsbug.h"
 #include "../globals.hpp"
 
 #define MARGIN_FOLD 3
@@ -77,10 +73,6 @@
 #define SEMANTICS_STRING 2
 #define SEMANTICS_NUM 4
 #define SEMANTICS_FUNCTION 8
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 
 BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
@@ -136,7 +128,6 @@ using namespace std;
 ///
 /// \param mframe NumeReWindow*
 /// \param options Options*
-/// \param project ProjectInfo*
 /// \param parent wxWindow*
 /// \param id wxWindowID
 /// \param __syntax NumeReSyntax*
@@ -147,15 +138,13 @@ using namespace std;
 /// \param name const wxString&
 ///
 /////////////////////////////////////////////////
-NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* project, wxWindow* parent, wxWindowID id,
+NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* parent, wxWindowID id,
                            NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos, const wxSize& size, long style, const wxString& name) :
                                wxStyledTextCtrl(parent, id, pos, size, style, name)
 {
     defaultPage = false;
     m_mainFrame = mframe;
     m_options = options;
-    m_project = project;
-    m_project->AddEditor(this);
     m_analyzer = new CodeAnalyzer(this, options);
     m_search = new SearchController(this, __terminal);
     m_formatter = new CodeFormatter(this);
@@ -324,16 +313,6 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* 
 //////////////////////////////////////////////////////////////////////////////
 NumeReEditor::~NumeReEditor()
 {
-    if (m_project && m_project->IsSingleFile())
-    {
-        delete m_project;
-        m_project = nullptr;
-    }
-    else if (m_project)
-    {
-        m_project->RemoveEditor(this);
-    }
-
     if (m_analyzer)
     {
         delete m_analyzer;
@@ -3581,7 +3560,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 
     this->StyleSetBackground(wxSTC_STYLE_DEFAULT, m_options->GetSyntaxStyle(Options::STANDARD).background);
 
-    FileFilterType filetype = m_project->GetFileType(filename);
+    FileFilterType filetype = this->GetFileType(filename);
 
     if (m_fileType != filetype)
         m_fileType = filetype;
@@ -4163,66 +4142,44 @@ void NumeReEditor::applyStrikeThrough()
 void NumeReEditor::SetFilename(wxFileName filename, bool fileIsRemote)
 {
     m_bLastSavedRemotely = fileIsRemote;
-
-    //m_fileNameAndPath.Assign(path, name, fileIsRemote ? wxPATH_UNIX : wxPATH_DOS);
-
-    if (m_project->IsSingleFile())
-    {
-        wxString oldFileName = m_fileNameAndPath.GetFullPath(m_bLastSavedRemotely ? wxPATH_UNIX : wxPATH_DOS);
-
-        if (m_project->FileExistsInProject(oldFileName))
-        {
-            FileFilterType oldFilterType;
-            wxString oldExtension = m_fileNameAndPath.GetExt();
-            if (oldExtension.StartsWith("h"))
-            {
-                oldFilterType = FILE_NPRC;
-            }
-            else if (oldExtension.StartsWith("c"))
-            {
-                oldFilterType = FILE_NSCR;
-            }
-            else if (oldExtension.StartsWith("txt"))
-            {
-                oldFilterType = FILE_NONSOURCE;
-            }
-            else
-            {
-                oldFilterType = FILE_NONSOURCE;
-            }
-
-            m_project->RemoveFileFromProject(oldFileName, oldFilterType);
-        }
-
-        wxString newFileName = filename.GetFullPath(fileIsRemote ? wxPATH_UNIX : wxPATH_DOS);
-        if (!m_project->FileExistsInProject(newFileName))
-        {
-            FileFilterType newFilterType;
-            wxString newExtension = filename.GetExt();
-            if (newExtension.StartsWith("h"))
-            {
-                newFilterType = FILE_NPRC;
-            }
-            else if (newExtension.StartsWith("c"))
-            {
-                newFilterType = FILE_NSCR;
-            }
-            else if (newExtension.StartsWith("txt"))
-            {
-                newFilterType = FILE_NONSOURCE;
-            }
-            else
-            {
-                newFilterType = FILE_NONSOURCE;
-            }
-            m_project->AddFileToProject(newFileName, newFilterType);
-        }
-
-        m_project->SetRemote(fileIsRemote);
-    }
-
     m_fileNameAndPath = filename;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the FileFilterType which
+/// corresponds to the passed file name.
+///
+/// \param filename const wxString&
+/// \return FileFilterType
+///
+/////////////////////////////////////////////////
+FileFilterType NumeReEditor::GetFileType(const wxString& filename)
+{
+	wxFileName file(filename);
+
+	wxString extension = file.GetExt();
+
+	FileFilterType fileType = FILE_NONSOURCE;
+
+	if (extension == "nprc")
+		fileType = FILE_NPRC;
+	else if (extension == "nscr")
+		fileType = FILE_NSCR;
+	else if (extension == "ndat" || extension == "dat" || extension == "csv" || extension == "jdx" || extension == "dx" || extension == "jcm")
+		fileType = FILE_DATAFILES;
+	else if (extension == "tex")
+        fileType = FILE_TEXSOURCE;
+	else if (extension == "m")
+        fileType = FILE_MATLAB;
+	else if (extension == "cxx" || extension == "hxx" || extension == "c" || extension == "h" || extension == "cpp" || extension == "hpp")
+        fileType = FILE_CPP;
+	else if (extension == "diff" || extension == "patch")
+        fileType = FILE_DIFF;
+
+	return fileType;
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4312,13 +4269,6 @@ void NumeReEditor::ResetEditor()
     MarkerDeleteAll(MARKER_FOCUSEDLINE);
     MarkerDeleteAll(MARKER_MODIFIED);
     MarkerDeleteAll(MARKER_SAVED);
-
-    if (m_project != NULL && m_project->IsSingleFile())
-    {
-        delete m_project;
-    }
-
-    m_project = new ProjectInfo();
 }
 
 
@@ -4532,8 +4482,6 @@ void NumeReEditor::markSaved()
 //////////////////////////////////////////////////////////////////////////////
 void NumeReEditor::OnEditorModified(wxStyledTextEvent& event)
 {
-    m_project->SetCompiled(false);
-
     if (!m_bLoadingFile && (event.GetModificationType() & wxSTC_MOD_INSERTTEXT || event.GetModificationType() & wxSTC_MOD_DELETETEXT))
     {
         m_modificationHappened = true;
@@ -5075,9 +5023,7 @@ void NumeReEditor::OnClearBreakpoints(wxCommandEvent& event)
     for (int i = 0; i < numBreakpoints; i++)
     {
         int markerHandle = m_breakpoints[i];
-        int linenum = this->MarkerLineFromHandle(markerHandle);
         this->MarkerDeleteHandle(markerHandle);
-        CreateBreakpointEvent(linenum, false);
     }
 
     m_terminal->clearBreakpoints(GetFileNameAndPath().ToStdString());
@@ -5168,38 +5114,6 @@ wxArrayInt NumeReEditor::GetBreakpoints()
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-///  public HasBeenCompiled
-///  Returns the compiled status for this editor's project
-///
-///  @return bool Whether or not the editor's project has been compiled
-///
-///  @author Mark Erikson @date 04-22-2004
-///
-/// \todo Evaluate, whether this method is still needed
-//////////////////////////////////////////////////////////////////////////////
-bool NumeReEditor::HasBeenCompiled()
-{
-    return m_project->IsCompiled();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-///  public SetCompiled
-///  Set this editor's project's compiled status
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-///
-/// \todo Evaluate, whether this method is still needed
-//////////////////////////////////////////////////////////////////////////////
-void NumeReEditor::SetCompiled()
-{
-    m_project->SetCompiled(true);
-}
-
-
 /////////////////////////////////////////////////
 /// \brief Registers the passed procedure viewer.
 ///
@@ -5265,58 +5179,6 @@ void NumeReEditor::FocusOnLine(int linenumber, bool showMarker)
 
 
 //////////////////////////////////////////////////////////////////////////////
-///  private CreateBreakpointEvent
-///  Sets up a debug event when a breakpoint is added or deleted
-///
-///  @param  linenumber    int   The line number of the toggled breakpoint
-///  @param  addBreakpoint bool  Whether the breakpoint is being added or deleted
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-///
-/// \todo Evaluate, whether this method is still needed
-//////////////////////////////////////////////////////////////////////////////
-void NumeReEditor::CreateBreakpointEvent(int linenumber, bool addBreakpoint)
-{
-    wxDebugEvent dbg;
-    wxString filename = m_fileNameAndPath.GetFullPath(wxPATH_UNIX);
-    dbg.SetSourceFilename(filename);
-
-    // adjust for the zero-based index
-    dbg.SetLineNumber(linenumber + 1);
-    int type = addBreakpoint ? ID_DEBUG_ADD_BREAKPOINT : ID_DEBUG_REMOVE_BREAKPOINT;
-    dbg.SetId(type);
-    dbg.SetId(type);
-    dbg.SetProject(m_project);
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-///  public SetProject
-///  Sets the project for this editor
-///
-///  @param  project ProjectInfo * The new project
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-///
-/// \todo Evaluate, whether this method is still needed
-//////////////////////////////////////////////////////////////////////////////
-void NumeReEditor::SetProject(ProjectInfo* project)
-{
-    if (m_project != NULL && m_project->IsSingleFile())
-    {
-        delete m_project;
-    }
-
-    m_project = project;
-    m_project->AddEditor(this);
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
 ///  private OnRunToCursor
 ///  Creates a "one-shot" breakpoint and tells the debugger to run to that line
 ///
@@ -5330,20 +5192,6 @@ void NumeReEditor::SetProject(ProjectInfo* project)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReEditor::OnRunToCursor(wxCommandEvent& event)
 {
-    /*
-    int charpos = PositionFromPoint(m_lastRightClick);
-    int linenum = LineFromPosition(charpos);
-    // adjust for Scintilla's internal zero-based line numbering
-    linenum++;
-    */
-
-    /*int linenum = GetLineForBreakpointOperation();
-    wxDebugEvent debugEvent;
-    debugEvent.SetId(ID_DEBUG_RUNTOCURSOR);
-    debugEvent.SetSourceFilename(GetFilenameString());
-    debugEvent.SetLineNumber(linenum);
-    m_debugManager->AddPendingEvent(debugEvent);//m_mainFrame->AddPendingEvent(debugEvent);*/
-
     ResetRightClickLocation();
 }
 
@@ -5945,7 +5793,7 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
 {
     // Creata a new window and a new editor
     ViewerFrame* copyFrame = new ViewerFrame(m_mainFrame, _guilang.get("GUI_REFACTORING_COPYWINDOW_HEAD"));
-    NumeReEditor* edit = new NumeReEditor(m_mainFrame, m_options, new ProjectInfo(true), copyFrame, wxID_ANY, _syntax, m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
+    NumeReEditor* edit = new NumeReEditor(m_mainFrame, m_options, copyFrame, wxID_ANY, _syntax, m_terminal, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
     wxStatusBar* statusbar = copyFrame->CreateStatusBar();
     int sizes[] = {-2, -1};
     statusbar->SetFieldsCount(2, sizes);
@@ -6877,7 +6725,6 @@ void NumeReEditor::AddBreakpoint( int linenum )
             // Add the breakpoint to the internal
             // logic
             m_breakpoints.Add(markerNum);
-            CreateBreakpointEvent(linenum, true);
             m_terminal->addBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
             break;
         }
@@ -6898,7 +6745,6 @@ void NumeReEditor::RemoveBreakpoint( int linenum )
     // need to remove the marker handle from the array - use
     // LineFromHandle on debug start and clean up then
     MarkerDelete(linenum, MARKER_BREAKPOINT);
-    CreateBreakpointEvent(linenum, false);
     m_terminal->removeBreakpoint(GetFileNameAndPath().ToStdString(), linenum);
 }
 

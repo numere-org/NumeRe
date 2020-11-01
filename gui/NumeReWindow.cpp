@@ -61,7 +61,6 @@
 #include "DirTraverser.hpp"
 #include "IconManager.h"
 #include "wxProportionalSplitterWindow.h"
-#include "ChameleonProjectManager.h"
 #include "documentationbrowser.hpp"
 #include "graphviewer.hpp"
 #include "textsplashscreen.hpp"
@@ -79,15 +78,13 @@
 #include "editor/NumeRePrintout.h"
 
 #include "dialogs/OptionsDialog.h"
-#include "dialogs/RemoteFileDialog.h"
 #include "dialogs/AboutChameleonDialog.h"
 #include "dialogs/textoutputdialog.hpp"
 #include "dialogs/packagedialog.hpp"
 #include "dialogs/dependencydialog.hpp"
 #include "dialogs/revisiondialog.hpp"
 
-#include "terminal/wxssh.h"
-#include "terminal/networking.h"
+#include "terminal/terminal.hpp"
 
 #include "../kernel/core/version.h"
 #include "../kernel/core/utils/tools.hpp"
@@ -95,12 +92,8 @@
 #include "../kernel/core/datamanagement/database.hpp"
 #include "../kernel/core/documentation/docgen.hpp"
 
-#include "../common/debug.h"
-#include "../common/fixvsbug.h"
-#include "../common/ProjectInfo.h"
 #include "../common/recycler.hpp"
 #include "../common/Options.h"
-#include "../common/DebugEvent.h"
 #include "../common/vcsmanager.hpp"
 #include "../common/filerevisions.hpp"
 #include "../common/ipc.hpp"
@@ -117,11 +110,6 @@
 #include "icons/breakpoint_octagon.xpm"
 #include "icons/breakpoint_octagon_crossed.xpm"
 #include "icons/breakpoint_octagon_disable.xpm"
-
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
 std::string replacePathSeparator(const std::string&);
@@ -345,10 +333,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_optionsDialog = nullptr;
     m_config = nullptr;
     m_options = nullptr;
-    m_network = nullptr;
     m_iconManager = nullptr;
     m_debugViewer = nullptr;
-    m_projectManager = nullptr;
     m_watcher = nullptr;
     m_currentEd = nullptr;
     m_currentView = nullptr;
@@ -383,9 +369,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     InitializeProgramOptions();
 
-
-    m_network = new Networking(m_options);
-
     m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
     m_splitEditorOutput = new wxProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
     m_splitCommandHistory = new wxProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
@@ -395,7 +378,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM);
 
-    m_terminal = new wxSSH(m_termContainer, ID_TERMINAL, m_network, m_options, programPath, wxPoint(0, 0));
+    m_terminal = new NumeReTerminal(m_termContainer, ID_TERMINAL, m_options, programPath, wxPoint(0, 0));
     m_terminal->set_mode_flag(GenericTerminal::CURSORINVISIBLE);
     m_termContainer->SetTerminal(m_terminal);
     m_terminal->SetParent(this);
@@ -409,10 +392,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
         _guilang.loadStrings(false);
 
     m_optionsDialog = new OptionsDialog(this, m_options, ID_OPTIONSDIALOG, _guilang.get("GUI_DLG_OPTIONS"));
-    m_projectManager = new ChameleonProjectManager(m_book);
 
     // project setup
-    m_projMultiFiles = NULL;
     m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
 
     m_filePanel = new TreePanel(m_treeBook, wxID_ANY);
@@ -441,13 +422,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_functionTree->SetImageList(fileIcons);
 
     int idxFolderOpen = m_iconManager->GetIconIndex("FOLDEROPEN");
-
-    m_remoteFileDialog = new RemoteFileDialog(this, ID_REMOTEFILEDIALOG);
-    m_remoteFileDialog->SetNetworking(m_network);
-
-    // This also sets the imagelist for the listview
-    m_remoteFileDialog->SetIconManager(m_iconManager);
-
 
     wxTreeItemId rootNode = m_fileTree->AddRoot(_guilang.get("GUI_TREE_WORKSPACE"), m_iconManager->GetIconIndex("WORKPLACE"));
     m_projectFileFolders[0] = m_fileTree->AppendItem(rootNode, _guilang.get("GUI_TREE_DATAFILES"), idxFolderOpen);
@@ -490,7 +464,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_splitEditorOutput->Show();
     m_splitCommandHistory->Show();
     m_book->Show();
-    m_history = new NumeReHistory(this, m_options, new ProjectInfo(), m_noteTerm, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
+    m_history = new NumeReHistory(this, m_options, m_noteTerm, -1, m_terminal->getSyntax(), m_terminal, wxDefaultPosition, wxDefaultSize);
     m_varViewer = new VariableViewer(m_noteTerm, this);
     m_procedureViewer = new ProcedureViewer(m_noteTerm);
 
@@ -544,8 +518,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_extensionMappings["cpp_disabled"] = ICON_DISABLED_SOURCE_CPP;
     m_extensionMappings["h_disabled"] = ICON_DISABLED_SOURCE_H;
     m_extensionMappings["hpp_disabled"] = ICON_DISABLED_SOURCE_H;
-
-    m_projMultiFiles = nullptr;
 
     g_findReplace = nullptr;
 
@@ -619,14 +591,8 @@ NumeReWindow::~NumeReWindow()
     if (m_options)
         delete m_options;
 
-    if (m_network)
-        delete m_network;
-
     if (m_iconManager)
         delete m_iconManager;
-
-    if (m_projectManager)
-        delete m_projectManager;
 
     if (m_watcher)
         delete m_watcher;
@@ -1136,11 +1102,6 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
         return;
     }
 
-    if (m_projMultiFiles != nullptr)
-    {
-        CloseProjectFile();
-    }
-
     if (m_updateTimer)
     {
         m_updateTimer->Stop();
@@ -1490,19 +1451,6 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             break;
         }
 
-        case ID_OPEN_PROJECT_LOCAL:
-        case ID_OPEN_PROJECT_REMOTE:
-        {
-            OpenProjectFile(id == ID_OPEN_PROJECT_REMOTE);
-            break;
-        }
-
-        case ID_CLOSE_PROJECT:
-        {
-            CloseProjectFile();
-            break;
-        }
-
         case ID_MENU_CLOSETAB:
         {
             CloseTab();
@@ -1667,25 +1615,6 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_CREATE_DOCUMENTATION:
         {
             m_currentEd->AddProcedureDocumentation();
-            break;
-        }
-
-        case ID_PROJECT_ADDFILE:
-        {
-            AddFileToProject();
-            break;
-        }
-
-        case ID_PROJECT_REMOVEFILE:
-        {
-            RemoveFileFromProject();
-            break;
-        }
-
-        case ID_PROJECT_EXCLUDE_FILE:
-        case ID_PROJECT_INCLUDE_FILE:
-        {
-            OnProjectIncludeExcludeFile(id);
             break;
         }
 
@@ -2775,8 +2704,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         //wxString locationPrefix = "(?) ";
 
         wxString noname = _guilang.get("GUI_NEWFILE_UNTITLED") + " " + wxString::Format ("%d", m_fileNum);
-        ProjectInfo* singleFileProject = new ProjectInfo();
-        NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        NumeReEditor* edit = new NumeReEditor (this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
         //edit->SetSyntax(m_terminal->getSyntax());
 
     #if wxUSE_DRAG_AND_DROP
@@ -2802,8 +2730,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_fileNum += 1;
 
         // Create a new editor
-        ProjectInfo* singleFileProject = new ProjectInfo();
-        NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        NumeReEditor* edit = new NumeReEditor (this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
         edit->SetText("DIFF");
         int settings = CopyEditorSettings(_filetype);
 
@@ -2937,8 +2864,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_fileNum += 1;
 
         // Create a new editor
-        ProjectInfo* singleFileProject = new ProjectInfo();
-        NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+        NumeReEditor* edit = new NumeReEditor (this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
         edit->SetText(template_file);
 
         int settings = CopyEditorSettings(_filetype);
@@ -3045,8 +2971,7 @@ void NumeReWindow::DefaultPage()
 
     m_fileNum += 1;
 
-    ProjectInfo* singleFileProject = new ProjectInfo();
-    NumeReEditor* edit = new NumeReEditor (this, m_options, singleFileProject, m_book, -1, m_terminal->getSyntax(), m_terminal);
+    NumeReEditor* edit = new NumeReEditor (this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
 
 #if wxUSE_DRAG_AND_DROP
     edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
@@ -3704,7 +3629,6 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
         }
         else
         {
-            ProjectInfo* proj;
             FileFilterType _fileType;
 
             if (fnames[n].rfind(".nscr") != string::npos)
@@ -3714,20 +3638,11 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             else
                 _fileType = FILE_NOTYPE;
 
-            if ((m_projMultiFiles != NULL) && (m_projMultiFiles->FileExistsInProject(fnames[n])))
-                proj = m_projMultiFiles;
-            else
-            {
-                proj = new ProjectInfo();
-                proj->SetRemote(m_remoteMode);
-            }
-
             // current buffer is empty and untouched, so load the file into it
             if ((!m_currentEd->Modified()
                 && !m_currentEd->HasBeenSaved()
                 && (m_currentEd->GetText().IsEmpty() || m_currentEd->GetText() == "\r\n")) || m_currentEd->defaultPage )
             {
-                m_currentEd->SetProject(proj);
                 m_currentEd->LoadFileText(fileContents);
                 m_currentEd->SetFilename(newFileName, m_remoteMode);
                 m_book->SetTabText(m_currentPage, m_currentEd->GetFileNameAndPath());
@@ -3735,7 +3650,7 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             // need to create a new buffer for the file
             else
             {
-                NumeReEditor *edit = new NumeReEditor(this, m_options, proj, m_book, -1, m_terminal->getSyntax(), m_terminal);
+                NumeReEditor *edit = new NumeReEditor(this, m_options, m_book, -1, m_terminal->getSyntax(), m_terminal);
 #if wxUSE_DRAG_AND_DROP
                 edit->SetDropTarget(new NumeReDropTarget(this, edit, NumeReDropTarget::EDITOR));
 #endif
@@ -4047,36 +3962,9 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
         m_book->SetTabText(currentTab, m_currentEd->GetFileNameAndPath());
         m_book->Refresh();
         UpdateWindowTitle(m_book->GetPageText(currentTab));
-
-    }
-    else
-    {
-        wxFile newProjectFile(filename, wxFile::write);
-        newProjectFile.Write(fileContents);
-        newProjectFile.Close();
-    }
-
-    if (isSourceFile)
-    {
         m_currentEd->SetSavePoint();
         m_currentEd->UpdateSyntaxHighlighting();
         m_book->Refresh();
-    }
-    else
-    {
-        if (m_projMultiFiles != NULL)
-            CloseProjectFile();
-
-        m_projMultiFiles = new ProjectInfo(false);
-        m_projMultiFiles->SetRemote(m_remoteMode);
-
-        wxFileName projectFile(filename);
-        m_projMultiFiles->SetProjectFile(projectFile);
-        m_projMultiFiles->SetProjectName(projectFile.GetName());
-
-        wxTreeItemId rootItem = m_fileTree->GetRootItem();
-        m_fileTree->SetItemText(rootItem, m_projMultiFiles->GetProjectName());
-
     }
 
     return true;
@@ -4725,8 +4613,6 @@ void NumeReWindow::PassImageList(wxImageList* imagelist)
 //////////////////////////////////////////////////////////////////////////////
 void NumeReWindow::EvaluateOptions()
 {
-    m_network->PingOptions();
-
     // Update the GUI elements by re-constructing them
     UpdateToolbar();
 
@@ -5680,157 +5566,6 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
 
 
 //////////////////////////////////////////////////////////////////////////////
-///  private OpenProjectFile
-///  Opens a project file
-///
-///  @param  isRemote bool  Whether the user wants to open a remote or local file
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::OpenProjectFile(bool isRemote)
-{
-    m_remoteMode = isRemote;
-    wxPathFormat currentPathFormat = m_remoteMode ? wxPATH_UNIX : wxPATH_DOS;
-
-    if(m_projMultiFiles != NULL)
-    {
-        wxString message = "A project is already open.  Do you want to replace the currently open project";
-        message += " with a different one?";
-        int result = wxMessageBox(message, "Project already open", wxOK | wxCANCEL | wxICON_QUESTION);
-
-        if(result == wxCANCEL)
-        {
-            return;
-        }
-    }
-
-    wxArrayString fileNames = OpenFile(FILE_NUMERE);
-
-    if(fileNames.Count() < 1)
-    {
-#ifdef DO_LOG
-        wxLogDebug("No files selected when adding to project");
-#endif
-        return;
-    }
-
-    m_fileTree->Freeze();
-    if(m_projMultiFiles != NULL)
-    {
-        CloseProjectFile();
-    }
-
-    m_projMultiFiles = new ProjectInfo(false);
-
-    m_fileTree->DeleteChildren(m_projectFileFolders[0]);
-    m_fileTree->DeleteChildren(m_projectFileFolders[1]);
-    m_fileTree->DeleteChildren(m_projectFileFolders[2]);
-    m_fileTree->DeleteChildren(m_projectFileFolders[3]);
-    m_fileTree->DeleteChildren(m_projectFileFolders[4]);
-
-    wxString fileContents;
-    wxString fileName;
-
-    GetFileContents(fileNames[0], fileContents, fileName);
-
-
-    // set the current project's base path based on the project file's directory,
-    // choosing the path separators based on where the file is stored
-
-    wxFileName projectFileName(fileNames[0]);
-
-    m_projMultiFiles->SetProjectFile(projectFileName);
-    m_projMultiFiles->SetRemote(m_remoteMode);
-
-    wxTreeItemId rootItem = m_fileTree->GetRootItem();
-    m_fileTree->SetItemText(rootItem, fileName);
-    m_fileTree->SetItemBold(rootItem);
-
-    wxMemoryInputStream projectFileStream(fileContents, fileContents.Len());
-
-    wxFileConfig config(projectFileStream);
-
-    LoadFilesIntoProjectTree("/Sources", FILE_NSCR, m_projectFileFolders[0], config, currentPathFormat);
-    LoadFilesIntoProjectTree("/Headers", FILE_NPRC, m_projectFileFolders[1], config, currentPathFormat);
-    LoadFilesIntoProjectTree("/Libraries", FILE_DATAFILES, m_projectFileFolders[2], config, currentPathFormat);
-    LoadFilesIntoProjectTree("/Other", FILE_NONSOURCE, m_projectFileFolders[3], config, currentPathFormat);
-
-    m_fileTree->ExpandAll();
-
-    m_fileTree->Thaw();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-///  private AddFileToProject
-///  Adds a file to the current multi-file project
-///
-///  @return void
-///
-///  @remarks This function currently requires the user to have right-clicked in
-///  @remarks the project tree.  It might be useful to expand this to, say,
-///  @remarks two overloads and a grunt work function.  One overload would be called
-///  @remarks from a menubar item, one would be called from a right-click, and both
-///  @remarks would call the actual add function with the right settings
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::AddFileToProject()
-{
-    m_remoteMode = m_projMultiFiles->IsRemote();
-    wxArrayString fileNames = OpenFile(m_projectSelectedFolderType);
-
-    if(fileNames.Count() < 1)
-    {
-#ifdef DO_LOG
-        wxLogDebug("No files selected when adding to project");
-#endif
-        return;
-    }
-
-    wxString fileToOpen = fileNames[0];
-
-    if(m_projMultiFiles->FileExistsInProject(fileToOpen))
-    {
-        wxString message = "The file " + fileToOpen + " already exists in this project, so it was not added.";
-        wxMessageBox(message, "File already in project", wxOK | wxCENTRE | wxICON_EXCLAMATION);
-        return;
-    }
-
-    wxString fileContents;
-    wxString fileName;
-
-    m_remoteMode = m_projMultiFiles->IsRemote();
-
-    m_projMultiFiles->AddFileToProject(fileToOpen, m_projectSelectedFolderType);
-
-    int iconIndex = m_extensionMappings[wxFileName(fileToOpen).GetExt()];
-
-    FileNameTreeData* data = new FileNameTreeData();
-    data->filename = fileToOpen;
-
-    wxString simpleName = wxFileName(fileToOpen).GetFullName();
-
-    m_fileTree->AppendItem(m_clickedTreeItem, simpleName, iconIndex, -1, data);
-    m_fileTree->SortChildren(m_clickedTreeItem);
-    m_fileTree->Refresh();
-
-    wxFileName fn(fileToOpen);
-    int pageNum = GetPageNum(fn);
-
-    if(pageNum != -1)
-    {
-        NumeReEditor* edit = static_cast<NumeReEditor*> (m_book->GetPage(pageNum));
-        edit->SetProject(m_projMultiFiles);
-    }
-
-    SaveProjectFile();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
 ///  private OnTreeItemActivated
 ///  Attempts to open a file when an item is double-clicked in the project tree
 ///
@@ -6108,218 +5843,6 @@ wxString NumeReWindow::getFileDetails(const wxFileName& filename)
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-///  private CloseProjectFile
-///  Closes the currently open multi-file project
-///
-///  @param  canUserCancel bool  [=true] Whether or not to let the user cancel the project close
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::CloseProjectFile(bool canUserCancel)
-{
-    if(!m_appClosing)
-    {
-        EditorPointerArray edList = m_projMultiFiles->GetEditors();
-
-        if(edList.GetCount() > 0)
-        {
-            int allowedResponse = wxYES_NO;
-
-            if(canUserCancel)
-            {
-                allowedResponse |= wxCANCEL;
-            }
-
-            int response = wxMessageBox("Do you want to close all files from this project?",
-                "Close Project", allowedResponse | wxCENTER | wxICON_QUESTION);
-
-            if(response == wxYES)
-            {
-                for(int i = 0; i < (int)edList.GetCount(); i++)
-                {
-                    NumeReEditor* ed = edList[i];
-                    int tabnum = m_book->FindPagePosition(ed);
-                    CloseFile(tabnum);
-                }
-            }
-            else if(response == wxNO)
-            {
-                for(int i = 0; i < (int)edList.GetCount(); i++)
-                {
-                    NumeReEditor* ed = edList[i];
-                    ProjectInfo* proj = new ProjectInfo();
-                    proj->SetRemote(ed->LastSavedRemotely());
-                    ed->SetProject(proj);
-                }
-            }
-            else
-            {
-                return;
-            }
-        }
-    }
-
-    SaveProjectFile();
-
-    // Clear out all items in the project tree
-    for(int i = 0; i < 4; i++)
-    {
-        m_fileTree->DeleteChildren(m_projectFileFolders[i]);
-    }
-
-    m_fileTree->SetItemText(m_fileTree->GetRootItem(), "No project");
-
-    delete m_projMultiFiles;
-    m_projMultiFiles = NULL;
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-///  private SaveProjectFile
-///  Saves the currently open multi-file project
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::SaveProjectFile()
-{
-    wxPathFormat currentPathFormat = (m_projMultiFiles->IsRemote() ? wxPATH_UNIX : wxPATH_DOS);
-    wxMemoryInputStream mis("", 0);
-    wxFileConfig config(mis);
-
-    config.SetPath("/Headers");
-    wxArrayString headers = m_projMultiFiles->GetHeaders();
-    for(size_t i = 0; i < headers.Count(); i++)
-    {
-        wxString headerName;
-        headerName << (i + 1);
-        wxFileName relativeName(headers[i]);
-        config.Write(headerName, relativeName.GetFullPath(currentPathFormat));
-    }
-
-    config.SetPath("/Sources");
-    wxArrayString sources = m_projMultiFiles->GetSources();
-    for(size_t i = 0; i < sources.Count(); i++)
-    {
-        wxString sourceName;
-        sourceName << (i + 1);
-        wxFileName relativeName(sources[i]);
-        config.Write(sourceName, relativeName.GetFullPath(currentPathFormat));
-    }
-
-    config.SetPath("/Libraries");
-    wxArrayString libraries = m_projMultiFiles->GetLibraries();
-    for(size_t i = 0; i < libraries.Count(); i++)
-    {
-        wxString libraryName;
-        libraryName << (i + 1);
-        wxFileName relativeName(libraries[i]);
-        config.Write(libraryName, relativeName.GetFullPath(currentPathFormat));
-    }
-
-    config.SetPath("/Other");
-    wxArrayString other = m_projMultiFiles->GetNonSources();
-    for(size_t i = 0; i < other.Count(); i++)
-    {
-        wxString otherName;
-        otherName << (i + 1);
-        wxFileName relativeName(other[i]);
-        config.Write(otherName, relativeName.GetFullPath(currentPathFormat));
-    }
-
-    wxMemoryOutputStream outputStream;
-    //config.FlushToStream(outputStream);
-    config.Save(outputStream);
-
-    wxString resultContents;
-    size_t streamsize = outputStream.GetSize();
-
-    if(streamsize == 0)
-    {
-        resultContents = "[Headers]\n\n[Sources]\n\n[Libraries]\n\n[Other]";
-    }
-    else
-    {
-        //char* bufptr = resultContents.GetWriteBuf(streamsize);
-        outputStream.CopyTo((void*)resultContents.fn_str(),streamsize);
-        //resultContents.UngetWriteBuf();
-    }
-
-    wxString projBasePath = m_projMultiFiles->GetProjectBasePath();
-    wxString projName = m_projMultiFiles->GetProjectFile().GetFullName();
-    if(m_projMultiFiles->IsRemote())
-    {
-        wxFileName fn(projBasePath, projName);
-        m_network->SendFileContents(resultContents, fn);
-    }
-    else
-    {
-        wxString filename = projBasePath + "\\" + projName;
-        wxFile projectFile(filename, wxFile::write);
-        projectFile.Write(resultContents);
-        projectFile.Close();
-    }
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-///  private LoadFilesIntoProjectTree
-///  Loads the given files into the project tree
-///
-///  @param  configPath          wxString       The internal path the wxConfig should look in for file entries
-///  @param  fileType			 FileFilterType The type of files being loaded
-///  @param  treeid              wxTreeItemId   The tree ID of the folder to add the files to
-///  @param  config              wxFileConfig & The wxFileConfig containing the project file
-///  @param  currentPathFormat   wxPathFormat   The path format to use for the filenames
-///
-///  @return void
-///
-///  @author Mark Erikson @date 03-29-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::LoadFilesIntoProjectTree(wxString configPath,  FileFilterType fileType, wxTreeItemId treeid,
-                                           wxFileConfig& config, wxPathFormat currentPathFormat)
-{
-    config.SetPath(configPath);
-
-    int numEntries = config.GetNumberOfEntries();
-
-    for(int i = 1; i <= numEntries; i++)
-    {
-        wxString keyname;
-        keyname << i;
-        wxString fileName = config.Read(keyname);
-
-        if(fileName != wxEmptyString)
-        {
-            wxFileName newFileName(fileName);
-            //int iconNum = m_extensionMappings[newFileName.GetExt()];
-            int iconNum = m_iconManager->GetIconIndex(newFileName.GetExt());
-
-            FileNameTreeData* data = new FileNameTreeData();
-            data->filename = newFileName.GetFullPath(currentPathFormat);
-
-            m_fileTree->AppendItem(treeid, newFileName.GetFullName(), iconNum, -1, data);
-
-            m_projMultiFiles->AddFileToProject(data->filename, fileType);
-
-            int pageNum = GetPageNum(newFileName);
-
-            if(pageNum != -1)
-            {
-                NumeReEditor* edit = static_cast<NumeReEditor*> (m_book->GetPage(pageNum));
-                edit->SetProject(m_projMultiFiles);
-            }
-        }
-    }
-
-    m_fileTree->SortChildren(treeid);
-}
-
-
 /////////////////////////////////////////////////
 /// \brief This member function loads the file
 /// details to the file tree.
@@ -6335,125 +5858,6 @@ void NumeReWindow::LoadFilesToTree(wxString fromPath, FileFilterType fileType, w
     wxDir currentDir(fromPath);
     DirTraverser _traverser(m_fileTree, m_iconManager, treeid, fromPath, fileType);
     currentDir.Traverse(_traverser);
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-///  private RemoveFileFromProject
-///  Removes a file from the current multi-file project
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::RemoveFileFromProject()
-{
-    FileNameTreeData* treeData = static_cast<FileNameTreeData*> (m_fileTree->GetItemData(m_clickedTreeItem));
-
-    if(m_projMultiFiles->FileExistsInProject(treeData->filename))
-    {
-        m_projMultiFiles->RemoveFileFromProject(treeData->filename, m_projectSelectedFolderType);
-
-        wxFileName fn(treeData->filename);
-        int pageNum = GetPageNum(fn);
-
-        if(pageNum != -1)
-        {
-            NumeReEditor* pEdit = static_cast <NumeReEditor* >(m_book->GetPage(pageNum));
-            ProjectInfo* proj = new ProjectInfo();
-            pEdit->SetProject(proj);
-        }
-
-        m_fileTree->Delete(m_clickedTreeItem);
-
-        SaveProjectFile();
-    }
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-///  public CheckNetworkStatus
-///  Shows an appropriate error message if a network operation failed.
-///
-///  @return NetworkCallResult Whether to redo the operation or not
-///
-///  @remarks The NetworkCallResult enum is outdated and unneeded, so this
-///  @remarks should probably be revised at some point to get rid of it.
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-NetworkCallResult NumeReWindow::CheckNetworkStatus()
-{
-    /*NetworkStatus result = m_network->GetStatus();
-
-    switch((int)result)
-    {
-    case NET_UNKNOWN_HOST:
-        {
-            wxString hostname = "";//m_options->GetHostname();
-            wxString fingerprint = m_network->GetStatusDetails();
-
-            wxString message = "The SSH fingerprint for the server " + hostname + " was not recognized.";
-            message += "\nThe fingerprint was " + fingerprint + ".  \nDo you want to cache it?";
-            int result = wxMessageBox(message, "Unknown SSH Fingerprint", wxYES_NO | wxICON_QUESTION);
-
-            if(result == wxYES)
-            {
-                m_network->SSHCacheFingerprint();
-                return NETCALL_REDO;
-            }
-
-            return NETCALL_FAILED;
-            break;
-        }
-    case NET_ERROR_MESSAGE:
-        {
-            wxString message = "An unknown network error has occurred.";
-            wxString statusDetails = m_network->GetStatusDetails();;
-            message += "\nError details: " + statusDetails;
-#ifdef DO_LOG
-            wxLogDebug("NET_ERROR_MESSAGE: %s", statusDetails);
-#endif
-            wxMessageBox(message, "Unknown network error", wxOK | wxICON_EXCLAMATION);
-            return NETCALL_FAILED;
-            break;
-        }
-    case NET_AUTH_FAILED:
-        {
-            // If everything's still default, go ahead and ask the user for the password.
-            if(m_options->GetPassphrase() == "" &&
-                m_options->GetHostname() != "127.0.0.1" &&
-                m_options->GetUsername() != "username")
-            {
-                //if(AskUserForPassword())
-                {
-                    return NETCALL_REDO;
-                }
-
-            }
-            else
-            {
-                wxString message = "Chameleon was unable to log you in using the current username and password.";
-                message += "\nPlease check them in the Options menu and try again.";
-                wxMessageBox(message, "Login failed", wxOK | wxICON_EXCLAMATION);
-                return NETCALL_FAILED;
-            }
-
-        }
-    case NET_CONN_REFUSED:
-        {
-            wxString message = "Connection to the remote server was refused.";
-            message += "\nPlease check the remote hostname in the Options menu and try again.";
-            wxMessageBox(message, "Connection Refused", wxOK | wxICON_EXCLAMATION);
-            return NETCALL_FAILED;
-            break;
-        }
-    default:
-        return NETCALL_WORKED;
-        break;
-    }*/
-
-    return NETCALL_FAILED;
 }
 
 
@@ -6480,16 +5884,10 @@ void NumeReWindow::FocusOnLine(wxString filename, int linenumber, bool showMarke
 
     if (tabNum == -1)
     {
-        if (m_projMultiFiles != NULL)
-        {
-            if (m_projMultiFiles->FileExistsInProject(filename))
-            {
-                wxArrayString filesToOpen;
-                filesToOpen.Add(filename);
-                OpenSourceFile(filesToOpen);
-                tabNum = GetPageNum(fn, false);
-            }
-        }
+        wxArrayString filesToOpen;
+        filesToOpen.Add(filename);
+        OpenSourceFile(filesToOpen);
+        tabNum = GetPageNum(fn, false);
     }
 
     if (tabNum != -1)
@@ -7035,34 +6433,6 @@ void NumeReWindow::OnOptions()
     }
 
     m_currentEd->SetFocus();
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Legacy project handling function.
-///
-/// \param id int
-/// \return void
-///
-/////////////////////////////////////////////////
-void NumeReWindow::OnProjectIncludeExcludeFile(int id)
-{
-    bool include = (id == ID_PROJECT_INCLUDE_FILE);
-    FileNameTreeData* data = static_cast<FileNameTreeData*>(m_fileTree->GetItemData(m_clickedTreeItem));
-    m_projMultiFiles->SetFileBuildInclusion(data->filename, m_projectSelectedFolderType, include);
-
-    wxString extension = wxFileName(data->filename).GetExt();
-    int iconIndex;
-
-    if (include)
-        iconIndex = m_extensionMappings[extension];
-    else
-    {
-        extension += "_disabled";
-        iconIndex = m_extensionMappings[extension];
-    }
-
-    m_fileTree->SetItemImage(m_clickedTreeItem, iconIndex);
 }
 
 

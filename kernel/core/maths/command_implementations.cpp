@@ -4340,7 +4340,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, MemoryManager& _data, Functio
     sAudioFileName = _data.ValidFileName(sAudioFileName, ".wav");
 
     // Indices lesen
-    _idx = getIndices(sCmd, _parser, _data, _option);
+    getIndices(sCmd, _idx, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
 
@@ -4462,7 +4462,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, Func
     }
 
     // Indices lesen
-    _idx = getIndices(sCmd, _parser, _data, _option);
+    getIndices(sCmd, _idx, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
     MemoryManager _cache;
@@ -4538,7 +4538,7 @@ bool analyzePulse(string& _sCmd, Parser& _parser, MemoryManager& _data, Function
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, _sCmd, SyntaxError::invalid_position);
 
     // Indices lesen
-    _idx = getIndices(sCmd, _parser, _data, _option);
+    getIndices(sCmd, _idx, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
     MemoryManager _cache;
@@ -4641,36 +4641,10 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
             nSamples = 0;
     }
 
-    if (findParameter(sCmd, "target", '='))
-    {
-        sTargetCache = getArgAtPos(sCmd, findParameter(sCmd, "target", '=') + 6);
-
-        if (!_data.isTable(sTargetCache))
-            _data.addTable(sTargetCache, _option);
-
-        _target = getIndices(sTargetCache, _parser, _data, _option);
-        sTargetCache.erase(sTargetCache.find('('));
-
-        if (!isValidIndexSet(_target))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
-    }
-    else
-    {
-        _target.row = VectorIndex(0LL, VectorIndex::OPEN_END);
-        _target.col.front() = 0;
-
-        if (_data.isTable("stfdat()"))
-            _target.col.front() += _data.getCols("stfdat", false);
-        else
-            _data.addTable("stfdat()", _option);
-
-        sTargetCache = "stfdat";
-        _target.col.back() = VectorIndex::OPEN_END;
-    }
-
+    sTargetCache = evaluateTargetOptionInCommand(sCmd, "stdfat", _target, _parser, _data, _option);
 
     // Indices lesen
-    _idx = getIndices(sCmd, _parser, _data, _option);
+    getIndices(sCmd, _idx, _parser, _data, _option);
     sDataset = sCmd.substr(0, sCmd.find('('));
     StripSpaces(sDataset);
     MemoryManager _cache;
@@ -4769,7 +4743,7 @@ bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, Funct
     string sTableName = sCmd.substr(sCmd.find(' '));
     StripSpaces(sTableName);
 
-    _idx = getIndices(sTableName, _parser, _data, _option);
+    getIndices(sTableName, _idx, _parser, _data, _option);
     sTableName.erase(sTableName.find('('));
     getData(sTableName, _idx, _data, _cache);
 

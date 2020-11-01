@@ -28,11 +28,6 @@
 #include "wxTermContainer.h"
 #include "../terminal/terminal.hpp"
 
-#include "../../common/debug.h"
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 ////@begin XPM images
 

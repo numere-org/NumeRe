@@ -2,7 +2,6 @@
 #include "NumeReNotebook.h"
 #include "NumeReWindow.h"
 
-#include "../common/debug.h"
 #include "../common/vcsmanager.hpp"
 #include "editor/editor.h"
 
@@ -11,13 +10,8 @@
 #include <wx/notebook.h>
 #include <windows.h>
 #include <commctrl.h>
-//#include <wx/tabctrl.h>
 
 #include "../common/datastructures.h"
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 BEGIN_EVENT_TABLE(EditorNotebook, wxNotebook)
 	EVT_MIDDLE_UP	(EditorNotebook::OnTabMiddleClicked)

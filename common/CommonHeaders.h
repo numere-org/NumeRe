@@ -35,13 +35,6 @@
 #include <wx/mstream.h>
 
 
-
-//#include "debug.h"
-
-#ifdef MSVC6
-#include "../common/fixvsbug.h"
-#endif
-
 #if (_MSC_VER >= 1400)       // VC8+
 #pragma warning(disable : 4996)    // Either disable all deprecation warnings,
 // Or just turn off warnings about the newly deprecated CRT functions.

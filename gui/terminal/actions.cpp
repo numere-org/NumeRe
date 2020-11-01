@@ -1,13 +1,6 @@
 // Copyright Timothy Miller, 1999
 
 #include "gterm.hpp"
-#include "../../common/debug.h"
-
-#ifdef _DEBUG
-
-#define new DEBUG_NEW
-
-#endif
 
 #define GTERM_PC
 // For efficiency, this grabs all printing characters from buffer, up to

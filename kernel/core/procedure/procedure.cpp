@@ -428,7 +428,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         if (bWriteToCache)
         {
             // Get the indices from the corresponding function
-            _idx = getIndices(sCache, _parser, _data, _option);
+            getIndices(sCache, _idx, _parser, _data, _option);
 
             if (sCache[sCache.find_first_of("({")] == '{')
                 bWriteToCluster = true;

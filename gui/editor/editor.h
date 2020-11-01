@@ -41,7 +41,6 @@ class NumeReWindow;
 class EditorNotebook;
 class wxFileName;
 class Options;
-class ProjectInfo;
 class DebugManager;
 class ProcedureViewer;
 class CodeAnalyzer;
@@ -57,7 +56,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 	    friend class SearchController;
 	    friend class CodeFormatter;
 
-		NumeReEditor(NumeReWindow* mframe, Options* options, ProjectInfo* project,
+		NumeReEditor(NumeReWindow* mframe, Options* options,
 					 wxWindow* parent, wxWindowID id, NumeReSyntax* __syntax, NumeReTerminal* __terminal, const wxPoint& pos = wxDefaultPosition,
 					 const wxSize& size = wxDefaultSize, long style = 0,
 					 const wxString& name = wxSTCNameStr);
@@ -90,10 +89,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		 *
 		 */
 		bool Modified();
-		bool HasBeenCompiled();
 		bool HasBeenSaved();
-
-		void SetCompiled();
 		void registerProcedureViewer(ProcedureViewer* viewer);
 
 		void OnChar(wxStyledTextEvent& event);
@@ -172,6 +168,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		 */
 		void FocusOnLine(int linenumber, bool showMarker = true);
 
+		FileFilterType GetFileType(const wxString& filename);
 
 		wxString GetFileNameAndPath();
 		wxString GetFilenameString();
@@ -182,14 +179,9 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		}
 		wxString GetFilePath();
 		wxArrayInt GetBreakpoints();
-		ProjectInfo* GetProject()
-		{
-			return m_project;
-		}
 
 		void SetFilename(wxFileName filename, bool fileIsRemote);
 		void SetExecutableFilename(wxFileName filename);
-		void SetProject(ProjectInfo* project);
 		void ResetEditor();
 		bool LastSavedRemotely()
 		{
@@ -402,7 +394,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		wxString generateAutoCompList(const wxString& wordstart, string sPreDefList);
 
-		void CreateBreakpointEvent(int linenumber, bool addBreakpoint);
 		bool MarkerOnLine(int linenum, int nMarker);
 
 		void detectCodeDuplicates(int startline, int endline, int nDuplicateFlags, int nNumDuplicatedLines);
@@ -416,7 +407,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 
 		NumeReWindow* m_mainFrame;
 		ProcedureViewer* m_procedureViewer;
-		ProjectInfo* m_project;
 		CodeAnalyzer* m_analyzer;
 		SearchController* m_search;
 		CodeFormatter* m_formatter;

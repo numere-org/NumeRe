@@ -6,17 +6,9 @@
 #endif
 
 #include "gterm.hpp"
-#include "../../common/debug.h"
 #include <wx/stdpaths.h>
 #include <wx/wx.h>
 #include <wx/filename.h>
-
-#ifdef _DEBUG
-
-#define new DEBUG_NEW
-
-#endif
-
 
 /////////////////////////////////////////////////
 /// \brief Simple wrapper around update_changes()
