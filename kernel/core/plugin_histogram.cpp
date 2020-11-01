@@ -876,7 +876,7 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
                                 _data.max(_histParams.sTable, _idx.row, _idx.col));
     }
 
-    for (size_t i = 0; i < _idx.col.size(); i++)
+    for (size_t i = 0; i < _idx.row.size(); i++)
     {
         for (size_t j = 2 * bGrid; j < _idx.col.size(); j++)
         {

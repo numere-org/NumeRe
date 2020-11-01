@@ -88,6 +88,20 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
 
     for (long long int j = 0; j < nCols; j++)
     {
+        // Many values make no sense if no data
+        // is available
+        if (!vStats[STATS_NUM][j])
+        {
+            vStats[STATS_CONFINT].push_back(NAN);
+            vStats[STATS_SKEW].push_back(NAN);
+            vStats[STATS_EXC].push_back(NAN);
+            vStats[STATS_STDERR].push_back(NAN);
+            vStats[STATS_S_T].push_back(NAN);
+            vStats[STATS_STD][j] = NAN;
+            vStats[STATS_RMS][j] = NAN;
+            continue;
+        }
+
         vStats[STATS_CONFINT].push_back(0.0);
         vStats[STATS_SKEW].push_back(0.0);
         vStats[STATS_EXC].push_back(0.0);
@@ -343,6 +357,20 @@ static void createStatsOutput(Output& _out, const std::vector<std::vector<double
                 sOverview[nHeadlines + n][j] = getStatFieldName(n) + ":";
         }
 
+        // Write an empty column, if no values are available
+        if (!vStats[STATS_NUM][j])
+        {
+            for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
+            {
+                if (n == STATS_CONFINT)
+                    sOverview[nHeadlines + n][j+1] = "--- %";
+                else
+                    sOverview[nHeadlines + n][j+1] = "---";
+            }
+
+            continue;
+        }
+
         // Write the actual values to the string table
         for (int n = STATS_AVG; n < STATS_FIELD_COUNT; n++)
         {
@@ -443,6 +471,9 @@ std::string plugin_statistics(std::string& sCmd, MemoryManager& _data)
             {
                 if (!i && j < _idx.col.size())
                     _rootData.setHeadLineElement(_idx.col[j], sTarget, _data.getHeadLineElement(j, sDatatable));
+
+                if (!vStats[STATS_NUM][j])
+                    continue;
 
                 if (i < _idx.row.size() && j < _idx.col.size())
                     _rootData.writeToTable(_idx.row[i], _idx.col[j], sTarget, vStats[i][j]);
