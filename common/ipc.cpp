@@ -124,6 +124,7 @@ namespace DDE
         if (m_Frame && m_fileToLoad.length())
             m_Frame->OpenFileByType(m_fileToLoad);
 
+        m_Frame->RequestUserAttention();
         return true;
     }
 
