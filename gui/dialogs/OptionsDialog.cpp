@@ -658,28 +658,31 @@ void OptionsDialog::ExitDialog()
 //////////////////////////////////////////////////////////////////////////////
 bool OptionsDialog::EvaluateOptions()
 {
-	_option->setbCompact(m_compactTables->GetValue());
-    _option->setbDefineAutoLoad(m_AutoLoadDefines->GetValue());
-    _option->setbGreeting(m_showGreeting->GetValue());
-    _option->setbLoadEmptyCols(m_LoadCompactTables->GetValue());
-    _option->setbExtendedFileInfo(m_ExtendedInfo->GetValue());
-    _option->setbShowHints(m_ShowHints->GetValue());
-    _option->setUserLangFiles(m_CustomLanguage->GetValue());
-    _option->setbUseESCinScripts(m_ESCinScripts->GetValue());
-    _option->setbUseLogFile(m_UseLogfile->GetValue());
-    _option->setExternalDocViewer(m_UseExternalViewer->GetValue());
-    _option->setUseExecuteCommand(m_useExecuteCommand->GetValue());
-    _option->setLoadPath(m_LoadPath->GetValue().ToStdString());
-    _option->setSavePath(m_SavePath->GetValue().ToStdString());
-    _option->setScriptPath(m_ScriptPath->GetValue().ToStdString());
-    _option->setProcPath(m_ProcPath->GetValue().ToStdString());
-    _option->setPlotOutputPath(m_PlotPath->GetValue().ToStdString());
-    _option->setprecision(m_precision->GetValue());
-    _option->setDefaultPlotFont(m_defaultFont->GetValue().ToStdString());
-    _option->setWindowBufferSize(0, m_termHistory->GetValue());
-    _option->setAutoSaveInterval(m_autosaveinterval->GetValue());
-    _option->setUseMaskAsDefault(m_useMaskAsDefault->GetValue());
-    _option->setTryToDecodeProcedureArguments(m_debuggerDecodeArguments->GetValue());
+    std::map<std::string, SettingsValue>& mSettings = _option->getSettings();
+
+    mSettings[SETTING_B_COMPACT].active() = m_compactTables->GetValue();
+    mSettings[SETTING_B_DEFCONTROL].active() = m_AutoLoadDefines->GetValue();
+    mSettings[SETTING_B_GREETING].active() = m_showGreeting->GetValue();
+    mSettings[SETTING_B_LOADEMPTYCOLS].active() = m_LoadCompactTables->GetValue();
+    mSettings[SETTING_B_EXTENDEDFILEINFO].active() = m_ExtendedInfo->GetValue();
+    mSettings[SETTING_B_SHOWHINTS].active() = m_ShowHints->GetValue();
+    mSettings[SETTING_B_USECUSTOMLANG].active() = m_CustomLanguage->GetValue();
+    mSettings[SETTING_B_USEESCINSCRIPTS].active() = m_ESCinScripts->GetValue();
+    mSettings[SETTING_B_LOGFILE].active() = m_UseLogfile->GetValue();
+    mSettings[SETTING_B_EXTERNALDOCWINDOW].active() = m_UseExternalViewer->GetValue();
+    mSettings[SETTING_B_ENABLEEXECUTE].active() = m_useExecuteCommand->GetValue();
+    mSettings[SETTING_B_MASKDEFAULT].active() = m_useMaskAsDefault->GetValue();
+    mSettings[SETTING_B_DECODEARGUMENTS].active() = m_debuggerDecodeArguments->GetValue();
+    mSettings[SETTING_S_LOADPATH].stringval() = m_LoadPath->GetValue().ToStdString();
+    mSettings[SETTING_S_SAVEPATH].stringval() = m_SavePath->GetValue().ToStdString();
+    mSettings[SETTING_S_SCRIPTPATH].stringval() = m_ScriptPath->GetValue().ToStdString();
+    mSettings[SETTING_S_PROCPATH].stringval() = m_ProcPath->GetValue().ToStdString();
+    mSettings[SETTING_S_PLOTPATH].stringval() = m_PlotPath->GetValue().ToStdString();
+    mSettings[SETTING_S_PLOTFONT].stringval() = m_defaultFont->GetValue().ToStdString();
+    mSettings[SETTING_V_PRECISION].value() = m_precision->GetValue();
+    mSettings[SETTING_V_BUFFERSIZE].value() = m_termHistory->GetValue();
+    mSettings[SETTING_V_AUTOSAVE].value() = m_autosaveinterval->GetValue();
+
     m_options->SetTerminalHistorySize(m_termHistory->GetValue());
     m_options->SetCaretBlinkTime(m_caretBlinkTime->GetValue());
 
@@ -743,8 +746,10 @@ void OptionsDialog::InitializeDialog()
 		printStyleString = _guilang.get("GUI_OPTIONS_PRINT_BW");
 	}
 
+	std::map<std::string, SettingsValue>& mSettings = _option->getSettings();
+
 	m_printStyle->SetValue(printStyleString);
-	m_termHistory->SetValue(_option->getBuffer(1));//m_options->GetTerminalHistorySize());
+	m_termHistory->SetValue(mSettings[SETTING_V_BUFFERSIZE].value());//m_options->GetTerminalHistorySize());
 	m_caretBlinkTime->SetValue(m_options->GetCaretBlinkTime());
 
 	m_showToolbarText->SetValue(m_options->GetShowToolbarText());
@@ -754,27 +759,28 @@ void OptionsDialog::InitializeDialog()
     m_saveBookmarksInSession->SetValue(m_options->GetSaveBookmarksInSession());
     m_formatBeforeSaving->SetValue(m_options->GetFormatBeforeSaving());
 
-    m_compactTables->SetValue(_option->getbCompact());
-    m_AutoLoadDefines->SetValue(_option->getbDefineAutoLoad());
-    m_showGreeting->SetValue(_option->getbGreeting());
-    m_LoadCompactTables->SetValue(_option->getbLoadEmptyCols());
-    m_ExtendedInfo->SetValue(_option->getbShowExtendedFileInfo());
-    m_ShowHints->SetValue(_option->getbShowHints());
-    m_CustomLanguage->SetValue(_option->getUseCustomLanguageFiles());
-    m_ESCinScripts->SetValue(_option->getbUseESCinScripts());
-    m_UseLogfile->SetValue(_option->getbUseLogFile());
-    m_UseExternalViewer->SetValue(_option->getUseExternalViewer());
-    m_useExecuteCommand->SetValue(_option->getUseExecuteCommand());
-    m_useMaskAsDefault->SetValue(_option->getUseMaskAsDefault());
-    m_LoadPath->SetValue(_option->getLoadPath());
-    m_SavePath->SetValue(_option->getSavePath());
-    m_ScriptPath->SetValue(_option->getScriptPath());
-    m_ProcPath->SetValue(_option->getProcsPath());
-    m_PlotPath->SetValue(_option->getPlotOutputPath());
+    m_compactTables->SetValue(mSettings[SETTING_B_COMPACT].active());
+    m_AutoLoadDefines->SetValue(mSettings[SETTING_B_DEFCONTROL].active());
+    m_showGreeting->SetValue(mSettings[SETTING_B_GREETING].active());
+    m_LoadCompactTables->SetValue(mSettings[SETTING_B_LOADEMPTYCOLS].active());
+    m_ExtendedInfo->SetValue(mSettings[SETTING_B_EXTENDEDFILEINFO].active());
+    m_ShowHints->SetValue(mSettings[SETTING_B_SHOWHINTS].active());
+    m_CustomLanguage->SetValue(mSettings[SETTING_B_USECUSTOMLANG].active());
+    m_ESCinScripts->SetValue(mSettings[SETTING_B_USEESCINSCRIPTS].active());
+    m_UseLogfile->SetValue(mSettings[SETTING_B_LOGFILE].active());
+    m_UseExternalViewer->SetValue(mSettings[SETTING_B_EXTERNALDOCWINDOW].active());
+    m_useExecuteCommand->SetValue(mSettings[SETTING_B_ENABLEEXECUTE].active());
+    m_useMaskAsDefault->SetValue(mSettings[SETTING_B_MASKDEFAULT].active());
 
-    m_defaultFont->SetValue(_option->getDefaultPlotFont());
-    m_precision->SetValue(_option->getPrecision());
-    m_autosaveinterval->SetValue(_option->getAutoSaveInterval());
+    m_LoadPath->SetValue(mSettings[SETTING_S_LOADPATH].stringval());
+    m_SavePath->SetValue(mSettings[SETTING_S_SAVEPATH].stringval());
+    m_ScriptPath->SetValue(mSettings[SETTING_S_SCRIPTPATH].stringval());
+    m_ProcPath->SetValue(mSettings[SETTING_S_PROCPATH].stringval());
+    m_PlotPath->SetValue(mSettings[SETTING_S_PLOTPATH].stringval());
+    m_defaultFont->SetValue(mSettings[SETTING_S_PLOTFONT].stringval());
+
+    m_precision->SetValue(mSettings[SETTING_V_PRECISION].value());
+    m_autosaveinterval->SetValue(mSettings[SETTING_V_AUTOSAVE].value());
 
 
     for (size_t i = 0; i < m_options->GetStyleIdentifier().size(); i++)
@@ -803,7 +809,7 @@ void OptionsDialog::InitializeDialog()
     m_highlightLocalVariables->SetValue(m_options->GetHighlightLocalVariables());
 
     m_debuggerFocusLine->SetValue(m_options->GetDebuggerFocusLine());
-    m_debuggerDecodeArguments->SetValue(_option->getTryToDecodeProcedureArguments());
+    m_debuggerDecodeArguments->SetValue(_option->decodeArguments());
     m_debuggerShowGlobals->SetValue(m_options->GetShowGlobalVariables());
     m_debuggerShowLineNumbers->SetValue(m_options->GetShowLinesInStackTrace());
     m_debuggerShowModules->SetValue(m_options->GetShowModulesInStackTrace());

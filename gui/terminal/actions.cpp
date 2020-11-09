@@ -1,6 +1,7 @@
 // Copyright Timothy Miller, 1999
 
 #include "gterm.hpp"
+#include <wx/log.h>
 
 #define GTERM_PC
 // For efficiency, this grabs all printing characters from buffer, up to

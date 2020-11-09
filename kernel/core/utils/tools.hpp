@@ -161,7 +161,7 @@ string replaceToTeX(const string& sString, bool replaceForTeXFile = false);
 Match findCommand(const string& sCmd, string sCommand = "");
 string extractCommandString(const string& sCmd, const Match& _mMatch);
 void removeArgSep(string&);
-void openExternally(const string&, const string&, const string&);
+void openExternally(const string&);
 void moveFile(const string&, const string&);
 void writeTeXMain(const string&);
 string addControlSymbols(const string&);
@@ -207,6 +207,7 @@ inline bool isValidValue(double d)
 bool validateParenthesisNumber(const string& sCmd);
 
 void addArgumentQuotes(string& sToAdd, const string& sParam);
+void addArgumentQuotes(string& sToAdd, size_t pos);
 
 /** \brief Calculates the power of a number using an integer as exponent
  *

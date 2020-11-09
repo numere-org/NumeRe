@@ -19,414 +19,1127 @@
 
 #ifndef SETTINGS_HPP
 #define SETTINGS_HPP
+
 #include <string>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-#include <windows.h>
+#include <map>
+
+#ifndef RELEASE
+#include <cassert>
+#endif
 
 #include "ui/error.hpp"
 #include "documentation/doc_helper.hpp"
 
-using namespace std;
+#define SETTING_B_DEVELOPERMODE       "internal.developermode"
+#define SETTING_B_DEBUGGER            "internal.debugger"
+#define SETTING_B_SYSTEMPRINTS        "internal.usesystemprints"
+#define SETTING_B_DRAFTMODE           "plotting.draftmode"
+#define SETTING_B_COMPACT             "table.compact"
+#define SETTING_B_LOADEMPTYCOLS       "table.loademptycols"
+#define SETTING_B_SHOWHINTS           "ui.showhints"
+#define SETTING_B_USECUSTOMLANG       "ui.usecustomlang"
+#define SETTING_B_EXTERNALDOCWINDOW   "ui.externaldocwindow"
+#define SETTING_B_EXTENDEDFILEINFO    "io.extendedfileinfo"
+#define SETTING_B_LOGFILE             "io.logfile"
+#define SETTING_B_DEFCONTROL          "io.defcontrol"
+#define SETTING_B_USEESCINSCRIPTS     "flowctrl.useescinscripts"
+#define SETTING_B_ENABLEEXECUTE       "flowctrl.enableexecute"
+#define SETTING_B_MASKDEFAULT         "flowctrl.maskdefault"
+#define SETTING_B_DECODEARGUMENTS     "debugger.decodearguments"
+#define SETTING_B_GREETING            "terminal.greeting"
+#define SETTING_V_PRECISION           "terminal.precision"
+#define SETTING_V_WINDOW_X            "terminal.windowsize.x"
+#define SETTING_V_WINDOW_Y            "terminal.windowsize.y"
+#define SETTING_V_BUFFERSIZE          "terminal.buffersize"
+#define SETTING_V_AUTOSAVE            "table.autosave"
+#define SETTING_S_EXEPATH             "path.exepath"
+#define SETTING_S_SAVEPATH            "path.savepath"
+#define SETTING_S_LOADPATH            "path.loadpath"
+#define SETTING_S_PLOTPATH            "path.plotpath"
+#define SETTING_S_SCRIPTPATH          "path.scriptpath"
+#define SETTING_S_PROCPATH            "path.procpath"
+#define SETTING_S_WORKPATH            "path.workpath"
+#define SETTING_S_PLOTFONT            "plotting.plotfont"
+
+/* Setting value definitions for the GUI (can be integrated later)
+#define SETTING_S_LATEXROOT           "path.latexpath"
+#define SETTING_V_CARETBLINKTIME      "ui.caretblinktime"
+#define SETTING_V_FOCUSEDLINE         "debugger.focusedline"
+#define SETTING_B_LINESINSTACK        "debugger.linenumbersinstacktrace"
+#define SETTING_B_GLOBALVARS          "debugger.globalvars"
+#define SETTING_B_TOOLBARTEXT         "ui.showtoolbartext"
+#define SETTING_B_PATHSONTABS         "ui.showpathsontabs"
+#define SETTING_B_PRINTINCOLOR        "print.usecolor"
+#define SETTING_B_PRINTLINENUMBERS    "print.linenumbers"
+#define SETTING_B_SAVESESSION         "save.session"
+#define SETTING_B_SAVEBOOKMARKS       "save.bookmarks"
+#define SETTING_B_FORMATBEFORESAVING  "save.format"
+#define SETTING_B_USEREVISIONS        "save.revisions"
+#define SETTING_B_FOLDLOADEDFILE      "editor.foldloadedfile"
+#define SETTING_B_HIGHLIGHTLOCALS     "editor.highlightlocals"
+#define SETTING_S_EDITORFONT          "editor.font"
+#define SETTING_B_AN_USENOTES         "editor.analyzer.usenotes"
+#define SETTING_B_AN_USEWARNINGS      "editor.analyzer.usewarnings"
+#define SETTING_B_AN_USEERRORS        "editor.analyzer.useerrors"
+#define SETTING_B_AN_MAGICNUMBERS     "editor.analyzer.style.magicnumbers"
+#define SETTING_B_AN_UNDERSCOREARGS   "editor.analyzer.style.underscoredarguments"
+#define SETTING_B_AN_THISFILE         "editor.analyzer.namespace.thisfile"
+#define SETTING_B_AN_COMMENTDENS      "editor.analyzer.metrics.commentdensity"
+#define SETTING_B_AN_LOC              "editor.analyzer.metrics.linesofcode"
+#define SETTING_B_AN_COMPLEXITY       "editor.analyzer.metrics.complexity"
+#define SETTING_B_AN_ALWAYSMETRICS    "editor.analyzer.metrics.showalways"
+#define SETTING_B_AN_RESULTSUP        "editor.analyzer.result.suppression"
+#define SETTING_B_AN_RESULTASS        "editor.analyzer.result.assignment"
+#define SETTING_B_AN_TYPING           "editor.analyzer.variables.typing"
+#define SETTING_B_AN_VARLENGTH        "editor.analyzer.variables.length"
+#define SETTING_B_AN_UNUSEDVARS       "editor.analyzer.variables.unused"
+#define SETTING_B_AN_GLOBALVARS       "editor.analyzer.variables.globals"
+#define SETTING_B_AN_CONSTANTS        "editor.analyzer.runtime.constants"
+#define SETTING_B_AN_INLINEIF         "editor.analyzer.runtime.inlineif"
+#define SETTING_B_AN_PROCLENGTH       "editor.analyzer.runtime.procedurelength"
+#define SETTING_B_AN_PROGRESS         "editor.analyzer.runtime.progress"
+#define SETTING_B_AN_FALLTHROUGH      "editor.analyzer.switch.fallthrough"
+#define SETTING_S_ST_STANDARD         "editor.style.standard.editor"
+#define SETTING_S_ST_CONSOLESTD       "editor.style.standard.terminal"
+#define SETTING_S_ST_COMMAND          "editor.style.command.default"
+#define SETTING_S_ST_PROCCOMMAND      "editor.style.command.procedure"
+#define SETTING_S_ST_COMMENT          "editor.style.comment"
+#define SETTING_S_ST_DOCCOMMENT       "editor.style.documentation.comment"
+#define SETTING_S_ST_DOCKEYWORD       "editor.style.documentation.keyword"
+#define SETTING_S_ST_OPTION           "editor.style.option"
+#define SETTING_S_ST_FUNCTION         "editor.style.function.builtin"
+#define SETTING_S_ST_CUSTOMFUNC       "editor.style.function.custom"
+#define SETTING_S_ST_CLUSTER          "editor.style.cluster"
+#define SETTING_S_ST_CONSTANT         "editor.style.constant"
+#define SETTING_S_ST_SPECIALVAL       "editor.style.specialval"
+#define SETTING_S_ST_STRING           "editor.style.string.literals"
+#define SETTING_S_ST_STRINGPARSER     "editor.style.string.parser"
+#define SETTING_S_ST_INCLUDES         "editor.style.includes"
+#define SETTING_S_ST_OPERATOR         "editor.style.operator"
+#define SETTING_S_ST_PROCEDURE        "editor.style.procedure"
+#define SETTING_S_ST_NUMBER           "editor.style.number"
+#define SETTING_S_ST_METHODS          "editor.style.methods"
+#define SETTING_S_ST_INSTALL          "editor.style.install"
+#define SETTING_S_ST_DEFVARS          "editor.style.defaultvariables"
+#define SETTING_S_ST_ACTIVELINE       "editor.style.activeline"
+*/
+
+
 /*
  * Headerdatei zur Settings-Klasse
  */
 
-int StrToInt(const string&);
-int findParameter(const string& sCmd, const string& sParam, const char cFollowing);
-void StripSpaces(string&);
 
+
+
+/////////////////////////////////////////////////
+/// \brief This class represents a single
+/// abstract settings value implemented as void*.
+/// We're using asserts to avoid memory issues.
+/// Those won't trigger in release mode, of
+/// course. A setting value might either be a
+/// boolean, a unsigned int or a std::string.
+/////////////////////////////////////////////////
+class SettingsValue
+{
+    public:
+        /////////////////////////////////////////////////
+        /// \brief The type of the setting value.
+        /////////////////////////////////////////////////
+        enum SettingsValueType
+        {
+            TYPELESS,
+            BOOL,
+            UINT,
+            STRING
+        };
+
+        /////////////////////////////////////////////////
+        /// \brief Additional setting value properties.
+        /////////////////////////////////////////////////
+        enum SettingsValueProperties
+        {
+            NONE = 0x0,
+            SAVE = 0x1,
+            HIDDEN = 0x2,
+            PATH = 0x4,
+            IMMUTABLE = 0x8
+        };
+
+    private:
+        void* m_value;
+        SettingsValueType m_type;
+        int m_valueProperties;
+        size_t m_min;
+        size_t m_max;
+
+        /////////////////////////////////////////////////
+        /// \brief Assign a new boolean value to the
+        /// internal memory.
+        ///
+        /// \param value bool
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(bool value)
+        {
+            m_type = BOOL;
+            m_value = static_cast<void*>(new bool);
+            *(static_cast<bool*>(m_value)) = value;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assign a new unsigned int value to the
+        /// internal memory.
+        ///
+        /// \param value size_t
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(size_t value)
+        {
+            m_type = UINT;
+            m_value = static_cast<void*>(new size_t);
+            *(static_cast<size_t*>(m_value)) = value;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assign a new std::string value to the
+        /// internal memory.
+        ///
+        /// \param value const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void assign(const std::string& value)
+        {
+            m_type = STRING;
+            m_value = static_cast<void*>(new std::string);
+            *(static_cast<std::string*>(m_value)) = value;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Clear the internal memory (called by
+        /// the destructor, for example).
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        void clear()
+        {
+            switch (m_type)
+            {
+                case BOOL:
+                    delete (bool*)m_value;
+                    break;
+                case UINT:
+                    delete (size_t*)m_value;
+                    break;
+                case STRING:
+                    delete (std::string*)m_value;
+                    break;
+                case TYPELESS:
+                    break;
+            }
+
+            m_type = TYPELESS;
+            m_value = nullptr;
+        }
+
+    public:
+        /////////////////////////////////////////////////
+        /// \brief Default constructor. Creates an empty
+        /// and typeless setting value.
+        /////////////////////////////////////////////////
+        SettingsValue() : m_value(nullptr), m_type(TYPELESS), m_valueProperties(SettingsValue::NONE), m_min(0), m_max(0) {}
+
+        /////////////////////////////////////////////////
+        /// \brief Create a setting value from a boolean.
+        ///
+        /// \param value bool
+        /// \param properties int
+        ///
+        /////////////////////////////////////////////////
+        explicit SettingsValue(bool value, int properties = SettingsValue::SAVE) : m_min(0), m_max(0)
+        {
+            m_valueProperties = properties;
+            assign(value);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Create a setting value from an
+        /// unsigned integer and define its minimal and
+        /// maximal possible values
+        ///
+        /// \param value size_t
+        /// \param _min size_t
+        /// \param _max size_t
+        /// \param properties int
+        ///
+        /////////////////////////////////////////////////
+        SettingsValue(size_t value, size_t _min, size_t _max, int properties = SettingsValue::SAVE)
+        {
+            m_valueProperties = properties;
+            m_min = _min;
+            m_max = _max;
+            assign(value);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Create a setting value from a const
+        /// char*, represented as a std::string internally.
+        ///
+        /// \param value const char*
+        /// \param properties int
+        ///
+        /////////////////////////////////////////////////
+        explicit SettingsValue(const char* value, int properties = SettingsValue::SAVE) : m_min(0), m_max(0)
+        {
+            m_valueProperties = properties;
+            assign(std::string(value));
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Create a setting value from a
+        /// std::string.
+        ///
+        /// \param value const std::string&
+        /// \param properties int
+        ///
+        /////////////////////////////////////////////////
+        SettingsValue(const std::string& value, int properties = SettingsValue::SAVE) : m_min(0), m_max(0)
+        {
+            m_valueProperties = properties;
+            assign(value);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Destructor. Will free the allocated
+        /// memory.
+        /////////////////////////////////////////////////
+        ~SettingsValue()
+        {
+            clear();
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Copy constructor. Creates a new
+        /// instance and copies all contents. (Does not
+        /// copy the pointers themselves, of course.)
+        ///
+        /// \param value const SettingsValue&
+        ///
+        /////////////////////////////////////////////////
+        SettingsValue(const SettingsValue& value)
+        {
+            m_valueProperties = value.m_valueProperties;
+            m_min = value.m_min;
+            m_max = value.m_max;
+
+            switch (value.m_type)
+            {
+                case BOOL:
+                    assign(*(bool*)value.m_value);
+                    break;
+                case UINT:
+                    assign(*(size_t*)value.m_value);
+                    break;
+                case STRING:
+                    assign(*(std::string*)value.m_value);
+                    break;
+                case TYPELESS:
+                    break;
+            }
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator overload. Clears
+        /// the contents of the assignee and takes the
+        /// value and the type of the assigned value.
+        ///
+        /// \param value const SettingsValue&
+        /// \return SettingsValue&
+        /// \remark Does change the internal value type,
+        /// if necessary.
+        ///
+        /////////////////////////////////////////////////
+        SettingsValue& operator=(const SettingsValue& value)
+        {
+            clear();
+            m_valueProperties = value.m_valueProperties;
+            m_min = value.m_min;
+            m_max = value.m_max;
+
+            switch (value.m_type)
+            {
+                case BOOL:
+                    assign(*(bool*)value.m_value);
+                    break;
+                case UINT:
+                    assign(*(size_t*)value.m_value);
+                    break;
+                case STRING:
+                    assign(*(std::string*)value.m_value);
+                    break;
+                case TYPELESS:
+                    break;
+            }
+
+            return *this;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Get the internal value type.
+        ///
+        /// \return SettingsValueType
+        ///
+        /////////////////////////////////////////////////
+        SettingsValueType getType() const
+        {
+            return m_type;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether this is a setting
+        /// value, which shall be saved to the
+        /// configuration file.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool shallSave() const
+        {
+            return m_valueProperties & SAVE;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether this setting value is
+        /// an internal-only setting and should not be
+        /// presented to and modified by the user.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isHidden() const
+        {
+            return m_valueProperties & HIDDEN;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether this setting value
+        /// represents a file path and a corresponding
+        /// validation is necessary.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isPath() const
+        {
+#ifndef RELEASE
+            assert(m_type == STRING);
+#endif
+            return m_valueProperties & PATH;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether this setting value is
+        /// mutable by the user in the terminal.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool isMutable() const
+        {
+            return !(m_valueProperties & (IMMUTABLE | HIDDEN));
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the minimal value of an
+        /// unsigned int value type.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t min() const
+        {
+#ifndef RELEASE
+            assert(m_type == UINT);
+#endif
+            return m_min;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the maximal value of an
+        /// unsigned int value type.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t max() const
+        {
+#ifndef RELEASE
+            assert(m_type == UINT);
+#endif
+            return m_max;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns a reference to a boolean value
+        /// type setting.
+        ///
+        /// \return bool&
+        ///
+        /////////////////////////////////////////////////
+        bool& active()
+        {
+#ifndef RELEASE
+            assert(m_type != TYPELESS);
+            assert(m_value != nullptr);
+            assert(m_type == BOOL);
+#endif
+            return *static_cast<bool*>(m_value);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns a reference to an unsigned int
+        /// value type setting.
+        ///
+        /// \return size_t&
+        ///
+        /////////////////////////////////////////////////
+        size_t& value()
+        {
+#ifndef RELEASE
+            assert(m_type != TYPELESS);
+            assert(m_value != nullptr);
+            assert(m_type == UINT);
+#endif
+            return *static_cast<size_t*>(m_value);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns a reference to a std::string
+        /// value type setting.
+        ///
+        /// \return std::string&
+        ///
+        /////////////////////////////////////////////////
+        std::string& stringval()
+        {
+#ifndef RELEASE
+            assert(m_type != TYPELESS);
+            assert(m_value != nullptr);
+            assert(m_type == STRING);
+#endif
+            return *static_cast<std::string*>(m_value);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the value of a boolean value
+        /// type setting.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        bool active() const
+        {
+#ifndef RELEASE
+            assert(m_type != TYPELESS);
+            assert(m_value != nullptr);
+            assert(m_type == BOOL);
+#endif
+            return *static_cast<bool*>(m_value);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the value of an unsigned int
+        /// value type setting.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        size_t value() const
+        {
+#ifndef RELEASE
+            assert(m_type != TYPELESS);
+            assert(m_value != nullptr);
+            assert(m_type == UINT);
+#endif
+            return *static_cast<size_t*>(m_value);
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the value of a std::string
+        /// value type setting.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string stringval() const
+        {
+#ifndef RELEASE
+            assert(m_type != TYPELESS);
+            assert(m_value != nullptr);
+            assert(m_type == STRING);
+#endif
+            return *static_cast<std::string*>(m_value);
+        }
+
+};
+
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief This class manages the setting values
+/// of the internal (kernel) settings of this
+/// application.
+/////////////////////////////////////////////////
 class Settings : public Documentation
 {
 	private:
-		bool bDebug;			    // Determiniert, ob der Debug-Modus aktiv ist
-		bool bTestTabelle;		    // Determiniert, ob automatisch die Test-Tabelle generiert wird... -> Debugging
-		bool bOnce;				    // Determiniert, ob das Programm nur einmal durchlaeuft
-		bool bFastStart;            // Determiniert, ob der Parser zu Beginn getestet wird
-		bool bCompact;              // Kompakte-Ausgabe-Boolean
-		bool bGreeting;             // Begruessungs-Bool
-		bool bDefineAutoLoad;       // Determiniert, ob die functions.def automatisch geladen und gespeichert wird
-		bool bUseDraftMode;         // Determiniert, ob der "Draft-Modus" beim Plotten verwendet werden soll
-		bool bUseSystemPrints;
-		bool bShowExtendedFileInfo;
-		bool bUseLogfile;
-		bool bLoadEmptyCols;
-		bool bShowHints;
-		bool bUseESCinScripts;
-		bool bUseDebugger;
-		bool bUseCustomLanguageFile;
-		bool bUseExternalDocViewer;
-		bool bUseExecuteCommand;
-		bool bUseMaskAsDefault;
-        bool bTryToDecodeProcedureArguments;
-		int nPrecision;			    // Setzt die Genauigkeit der Ausgabe
-		int nAutoSaveInterval;      // Das Intervall fuer die automatische Speicherung
-		string sPath;               // Programm-Hauptpfad
-		string sSavePath;		    // Pfad zur Ausgabe
-		string sPlotOutputPath;     // Pfad zur Plot-Ausgabe
-		string sLoadPath;		    // Pfad zum Einlesen
-		string sScriptpath;         // Pfad zu den Scripten
-		string sProcsPath;          // Pfad zu den Prozeduren
-		string sWorkPath;           // Pfad zu den Prozeduren
-		fstream Settings_ini;	    // file-stream fuer das Settings-ini-file
-		string sSettings_ini;       // Dateiname des INI-Files
-		string sFramework;          // string, der das Standard-Framework beim Start bestimmt
-		string sViewer;             // string, der den Pfad zum Plotviewer speichert
-		string sEditor;             // string, der den (Pfad zum) Editor speichert
-		string sCmdCache;
-		string sDefaultfont;        // string, der die Standard-Schriftart speichert
-		unsigned int nBuffer_x;
-		unsigned int nBuffer_y;
-		unsigned int nWindow_x;
-        unsigned int nWindow_y;
-        unsigned int nColorTheme;
+	    std::map<std::string, SettingsValue> m_settings;
+		std::string sSettings_ini;
 
+		// Imports of different configuration file versions
+		void import_v1x(const std::string& sSettings);
+		bool set(const std::string&);
 
-		bool set(const string&);    // PRIVATE-SET-Methode: Erkennt die Parameter im INI-File und setzt die Werte entsprechend
-		inline string replaceExePath(const string& _sPath)
-            {
-                string sReturn = _sPath;
-                if (sReturn.find(sPath) != string::npos)
-                    sReturn.replace(sReturn.find(sPath), sPath.length(), "<>");
-                return sReturn;
-            }
+		// Helper
+		std::string replaceExePath(const std::string& _sPath);
+		void prepareFilePaths(const std::string& _sExePath);
 
 	public:
-		Settings();				    // Standard-Konstruktor
+		Settings();
 		Settings(const Settings& _settings);
-		~Settings();                // Destruktor (schliesst ggf. die INI-Datei)
 
-        Settings sendSettings();
         void copySettings(const Settings& _settings);
 
-        // --> Speicher- und Lade-Methoden <--
-		void save(string _sWhere, bool bMkBackUp = false);
-		void load(string _sWhere);
+        /////////////////////////////////////////////////
+        /// \brief Assignment operator overload.
+        ///
+        /// \param _settings const Settings&
+        /// \return Settings&
+        ///
+        /////////////////////////////////////////////////
+        Settings& operator=(const Settings& _settings)
+        {
+            copySettings(_settings);
+            return *this;
+        }
 
-		/* --> Methoden, um ein Element zu erreichen, und seinen Status zu aendern. Nichts
-		 *     besonderes. Selbsterklaerend <--
-		 * --> Aufgrund geringer Komplexitaet als inline deklariert <--
-		 * --> Zuerst alle SET-Methoden: <--
-		 */
-		inline void setbTestTabelle(bool _bTestTabelle)
-            {
-                bTestTabelle = _bTestTabelle;
-                return;
-            }
-		inline void setbDebug(bool _bDebug)
-            {
-                bDebug = _bDebug;
-                return;
-            }
-		inline void setbOnce(bool _bOnce)
-            {
-                bOnce = _bOnce;
-                return;
-            }
-		inline void setbFastStart(bool _bFastStart)
-            {
-                bFastStart = _bFastStart;
-                return;
-            }
-        inline void setbUseDraftMode(bool _bDraftMode)
-            {
-                bUseDraftMode = _bDraftMode;
-                return;
-            }
-		inline void setbGreeting(bool _bGreeting)
-            {
-                bGreeting = _bGreeting;
-                return;
-            }
-        inline void setbDefineAutoLoad(bool _bDefineAutoLoad)
-            {
-                bDefineAutoLoad = _bDefineAutoLoad;
-                return;
-            }
-		inline void setprecision(int _nPrec)
-            {
-                if (_nPrec > 0 && _nPrec < 15)
-                    nPrecision = _nPrec;
-                return;
-            }
-        inline void setExePath(const string& _sPath)
-            {
-                if (_sPath.length())
-                    sPath = _sPath;
-                return;
-            }
-        inline void setWorkPath(const string& _sWorkPath)
-            {
-                if (_sWorkPath.length())
-                    sWorkPath = _sWorkPath;
-                return;
-            }
-		inline void setSavePath(const string& _sSavePath)
-            {
-                if (_sSavePath.length())
-                    sSavePath = _sSavePath;
-                return;
-            }
-		inline void setPlotOutputPath(const string& _sPlOutPath)
-            {
-                if (_sPlOutPath.length())
-                    sPlotOutputPath = _sPlOutPath;
-                return;
-            }
-		inline void setLoadPath(const string& _sLoadPath)
-            {
-                if (_sLoadPath.length())
-                    sLoadPath = _sLoadPath;
-                return;
-            }
-		inline void setScriptPath(const string& _sScriptPath)
-            {
-                if (_sScriptPath.length())
-                    sScriptpath = _sScriptPath;
-                return;
-            }
-        inline void setProcPath(const string& _sProcPath)
-            {
-                if (_sProcPath.length())
-                    sProcsPath = _sProcPath;
-                return;
-            }
-		inline void setFramework(const string& _sFramework)
-            {
-                if (_sFramework == "calc" || _sFramework == "menue")
-                    sFramework = _sFramework;
-                return;
-            }
-		inline void setbCompact(bool _bCompact)
-            {
-                bCompact = _bCompact;
-                return;
-            }
-		inline void setbExtendedFileInfo(bool _bExtendedFileInfo)
-            {
-                bShowExtendedFileInfo = _bExtendedFileInfo;
-                return;
-            }
-        inline void setbUseLogFile(bool _bUseLogfile)
-            {
-                bUseLogfile = _bUseLogfile;
-                return;
-            }
-        inline void setbLoadEmptyCols(bool _bLoadEmptyCols)
-            {
-                bLoadEmptyCols = _bLoadEmptyCols;
-                return;
-            }
-		inline void setAutoSaveInterval(int _nInterval)
-            {
-                if(_nInterval > 0)
-                    nAutoSaveInterval = _nInterval;
-                return;
-            }
-        inline void setWindowBufferSize(unsigned int _nBuffer_x = 81, unsigned int _nBuffer_y = 300)
-            {
-                if (_nBuffer_x >= 81)
-                    nBuffer_x = _nBuffer_x;
-                if (_nBuffer_y >= 100 && _nBuffer_y <= 1000)
-                    nBuffer_y = _nBuffer_y;
-                return;
-            }
-        inline void setWindowSize(unsigned int _nWindow_x = 81, unsigned int _nWindow_y = 35)
-            {
-                if (_nWindow_x >= 81)
-                    nWindow_x = _nWindow_x-1;
-                if (_nWindow_y >= 35)
-                    nWindow_y = _nWindow_y-1;
-                return;
-            }
-        inline void setColorTheme(unsigned int _nColorTheme)
-            {
-                nColorTheme = _nColorTheme;
-                return;
-            }
-        inline void setSystemPrintStatus(bool _bSystemPrints = true)
-            {
-                bUseSystemPrints = _bSystemPrints;
-                return;
-            }
-        inline void setbShowHints(bool _bShowHints)
-            {
-                bShowHints = _bShowHints;
-                return;
-            }
-        inline void setbUseESCinScripts(bool _bUseESC)
-            {
-                bUseESCinScripts = _bUseESC;
-                return;
-            }
-        inline void setDefaultPlotFont(const string& plotFont)
-            {
-                string _sPlotFont = plotFont;
-                if (_sPlotFont == "palatino")
-                    _sPlotFont = "pagella";
-                if (_sPlotFont == "times")
-                    _sPlotFont = "termes";
-                if (_sPlotFont == "bookman")
-                    _sPlotFont = "bonum";
-                if (_sPlotFont == "avantgarde")
-                    _sPlotFont = "adventor";
-                if (_sPlotFont == "chancery")
-                    _sPlotFont = "chorus";
-                if (_sPlotFont == "courier")
-                    _sPlotFont = "cursor";
-                if (_sPlotFont == "helvetica")
-                    _sPlotFont = "heros";
-                if (_sPlotFont == "pagella"
-                        || _sPlotFont == "adventor"
-                        || _sPlotFont == "bonum"
-                        || _sPlotFont == "chorus"
-                        || _sPlotFont == "cursor"
-                        || _sPlotFont == "heros"
-                        || _sPlotFont == "heroscn"
-                        || _sPlotFont == "schola"
-                        || _sPlotFont == "termes"
-                    )
-                {
-                    sDefaultfont = _sPlotFont;
-                }
-                return;
-            }
-        inline void setDebbuger(bool _debugger)
-            {
-                bUseDebugger = _debugger;
-                return;
-            }
-        inline void setUserLangFiles(bool _langfiles)
-            {
-                bUseCustomLanguageFile = _langfiles;
-                return;
-            }
-        inline void setExternalDocViewer(bool _externalViewer)
-            {
-                bUseExternalDocViewer = _externalViewer;
-                return;
-            }
-        inline void setUseExecuteCommand(bool _useExecuteCommand)
-            {
-                bUseExecuteCommand = _useExecuteCommand;
-                return;
-            }
-        inline void setUseMaskAsDefault(bool _useMask)
-            {
-                bUseMaskAsDefault = _useMask;
-                return;
-            }
-        inline void setTryToDecodeProcedureArguments(bool _decode)
-            {
-                bTryToDecodeProcedureArguments = _decode;
-                return;
-            }
+        // loading and saving configuration files
+		void save(const std::string& _sWhere, bool bMkBackUp = false);
+		void load(const std::string& _sWhere);
 
-        // --> Keine inline-Methode, da hoehere Komplexitaet <--
-		void setViewerPath(const string& _sViewerPath);
-		void setEditorPath(const string& _sEditorPath);
+        /////////////////////////////////////////////////
+        /// \brief Returns a reference to the setting
+        /// value, which corresponds to the passed
+        /// string. Throws an exception, if the setting
+        /// does not exist.
+        ///
+        /// \param value const std::string&
+        /// \return SettingsValue&
+        ///
+        /////////////////////////////////////////////////
+		SettingsValue& getSetting(const std::string& value)
+		{
+		    auto iter = m_settings.find(value);
 
+		    if (iter != m_settings.end())
+                return iter->second;
 
-        inline void cacheCmd(const string& _sCmd)
+            throw SyntaxError(SyntaxError::INVALID_SETTING, "", value);
+		}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns a const reference to the
+        /// setting value, which corresponds to the
+        /// passed string. Throws an exception, if the
+        /// setting does not exist.
+        ///
+        /// \param value const std::string&
+        /// \return const SettingsValue&
+        ///
+        /////////////////////////////////////////////////
+		const SettingsValue& getSetting(const std::string& value) const
+		{
+		    auto iter = m_settings.find(value);
+
+		    if (iter != m_settings.end())
+                return iter->second;
+
+            throw SyntaxError(SyntaxError::INVALID_SETTING, "", value);
+		}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns a reference to the internal
+        /// map of setting values.
+        ///
+        /// \return std::map<std::string, SettingsValue>&
+        ///
+        /////////////////////////////////////////////////
+		std::map<std::string, SettingsValue>& getSettings()
+		{
+		    return m_settings;
+		}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns a const reference to the
+        /// internal map of setting values.
+        ///
+        /// \return const std::map<std::string, SettingsValue>&
+        ///
+        /////////////////////////////////////////////////
+		const std::map<std::string, SettingsValue>& getSettings() const
+		{
+		    return m_settings;
+		}
+
+        /////////////////////////////////////////////////
+        /// \brief Enables a setting with boolean value
+        /// type. If the setting does not have this type,
+        /// nothing happens.
+        ///
+        /// \param option const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+		void enable(const std::string& option)
+		{
+		    auto iter = m_settings.find(option);
+
+		    if (iter != m_settings.end() && iter->second.getType() == SettingsValue::BOOL)
+                iter->second.active() = true;
+		}
+
+        /////////////////////////////////////////////////
+        /// \brief Disables a setting with boolean value
+        /// type. If the setting does not have this type,
+        /// nothing happens.
+        ///
+        /// \param option const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+		void disable(const std::string& option)
+		{
+		    auto iter = m_settings.find(option);
+
+		    if (iter != m_settings.end() && iter->second.getType() == SettingsValue::BOOL)
+                iter->second.active() = false;
+		}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns true, if the setting with
+        /// boolean value type is enabled, false
+        /// otherwise. If the setting does not have a
+        /// boolean value type, this method will return
+        /// false as well.
+        ///
+        /// \param option const std::string&
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+		bool isEnabled(const std::string& option) const
+        {
+            auto iter = m_settings.find(option);
+
+		    if (iter != m_settings.end() && iter->second.getType() == SettingsValue::BOOL)
+                return iter->second.active();
+
+            return false;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Enables or disables the system
+        /// printing functionality. This is a convenience
+        /// wrapper for the direct map access.
+        ///
+        /// \param _bSystemPrints bool
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void enableSystemPrints(bool _bSystemPrints = true)
+        {
+            m_settings[SETTING_B_SYSTEMPRINTS].active() = _bSystemPrints;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Update the default plotting font. This
+        /// member function evaluates first, whether the
+        /// selected font actually exists.
+        ///
+        /// \param plotFont const std::string&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void setDefaultPlotFont(const std::string& plotFont)
+        {
+            std::string _sPlotFont = plotFont;
+
+            if (_sPlotFont == "palatino")
+                _sPlotFont = "pagella";
+
+            if (_sPlotFont == "times")
+                _sPlotFont = "termes";
+
+            if (_sPlotFont == "bookman")
+                _sPlotFont = "bonum";
+
+            if (_sPlotFont == "avantgarde")
+                _sPlotFont = "adventor";
+
+            if (_sPlotFont == "chancery")
+                _sPlotFont = "chorus";
+
+            if (_sPlotFont == "courier")
+                _sPlotFont = "cursor";
+
+            if (_sPlotFont == "helvetica")
+                _sPlotFont = "heros";
+
+            if (_sPlotFont == "pagella"
+                    || _sPlotFont == "adventor"
+                    || _sPlotFont == "bonum"
+                    || _sPlotFont == "chorus"
+                    || _sPlotFont == "cursor"
+                    || _sPlotFont == "heros"
+                    || _sPlotFont == "heroscn"
+                    || _sPlotFont == "schola"
+                    || _sPlotFont == "termes"
+                )
             {
-                if (_sCmd.length())
-                    sCmdCache = _sCmd;
-                return;
+                m_settings[SETTING_S_PLOTFONT].stringval() = _sPlotFont;
             }
+        }
 
-        // --> Alle GET-Methoden. const-Methoden, da sie das Objekt nicht aendern <--
-		inline bool getbDebug() const
-            {return bDebug;}
-		inline bool getbTestTabelle() const
-            {return bTestTabelle;}
-		inline bool getbOnce() const
-            {return bOnce;}
-		inline bool getbFastStart() const
-            {return bFastStart;}
-        inline bool getbUseDraftMode() const
-            {return bUseDraftMode;}
-		inline bool getbCompact() const
-            {return bCompact;}
-		inline bool getbGreeting() const
-            {return bGreeting;}
-        inline bool getbShowHints() const
-            {return bShowHints;}
-        inline bool getbUseESCinScripts() const
-            {return bUseESCinScripts;}
-        inline bool getbDefineAutoLoad() const
-            {return bDefineAutoLoad;}
-        inline bool getbShowExtendedFileInfo() const
-            {return bShowExtendedFileInfo;}
-        inline bool getbUseLogFile() const
-            {return bUseLogfile;}
-        inline bool getbLoadEmptyCols() const
-            {return bLoadEmptyCols;}
-		inline int getPrecision() const
-            {return nPrecision;}
-        inline string getExePath() const
-            {return sPath;}
-        inline string getWorkPath() const
-            {return sWorkPath;}
-		inline string getSavePath() const
-            {return sSavePath;}
-		inline string getLoadPath() const
-            {return sLoadPath;}
-		inline string getPlotOutputPath() const
-            {return sPlotOutputPath;}
-		inline string getScriptPath() const
-            {return sScriptpath;}
-        inline string getProcsPath() const
-            {return sProcsPath;}
-		inline string getFramework() const
-            {return sFramework;}
-		inline string getViewerPath() const
-            {return sViewer;}
-        inline string getEditorPath() const
-            {return sEditor;}
-		inline int getAutoSaveInterval() const
-            {return nAutoSaveInterval;}
-        inline unsigned int getBuffer(int nBuffer = 0) const
-            {return nBuffer ? nBuffer_y : nBuffer_x;}
-        inline unsigned int getWindow(int nWindow = 0) const
-            {return nWindow ? nWindow_y : nWindow_x;}
-        inline unsigned int getColorTheme() const
-            {return nColorTheme;}
-        inline string getDefaultPlotFont() const
-            {return sDefaultfont;}
-        inline string getTokenPaths() const
-            {return "<>="+sPath
-                    +";<wp>="+sWorkPath
-                    +";<savepath>="+sSavePath
-                    +";<loadpath>="+sLoadPath
-                    +";<plotpath>="+sPlotOutputPath
-                    +";<scriptpath>="+sScriptpath
-                    +";<procpath>="+sProcsPath+";";}
+        // Getter wrappers
+        //
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether the developer mode is
+        /// currently enabled.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+		inline bool isDeveloperMode() const
+            {return m_settings.at(SETTING_B_DEVELOPERMODE).active();}
 
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether the plotting draft
+        /// mode is enabled.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool isDraftMode() const
+            {return m_settings.at(SETTING_B_DRAFTMODE).active();}
 
-        inline string readCmdCache(bool bClear = false)
-            {
-                string sTemp = sCmdCache;
-                if (bClear)
-                    sCmdCache = "";
-                return sTemp;
-            }
-        inline bool getSystemPrintStatus() const
-            {return bUseSystemPrints;}
-        inline bool getUseDebugger() const
-            {return bUseDebugger;}
-        inline bool getUseCustomLanguageFiles() const
-            {return bUseCustomLanguageFile;}
-        inline bool getUseExternalViewer() const
-            {return bUseExternalDocViewer;}
-        inline bool getUseExecuteCommand() const
-            {return bUseExecuteCommand;}
-        inline bool getUseMaskAsDefault() const
-            {return bUseMaskAsDefault;}
-        inline bool getTryToDecodeProcedureArguments() const
-            {
-                return bTryToDecodeProcedureArguments;
-            }
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether tables shall be
+        /// displayed in a more compact way (does nothing
+        /// in the external table viewer).
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+		inline bool createCompactTables() const
+            {return m_settings.at(SETTING_B_COMPACT).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether NumeRe shall greet
+        /// the user with a funny message at application
+        /// start-up.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+		inline bool showGreeting() const
+            {return m_settings.at(SETTING_B_GREETING).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether the tip-of-the-day
+        /// shall be displayed to the user at application
+        /// start-up.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool showHints() const
+            {return m_settings.at(SETTING_B_SHOWHINTS).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether ESC key presses shall
+        /// be handled, when scripts are being executed.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool useEscInScripts() const
+            {return m_settings.at(SETTING_B_USEESCINSCRIPTS).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether NumeRe shall load and
+        /// save custom functions automatically.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool controlDefinitions() const
+            {return m_settings.at(SETTING_B_DEFCONTROL).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether the file tree or the
+        /// terminal file explorer shall display extended
+        /// file information for NumeRe data files.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool showExtendedFileInfo() const
+            {return m_settings.at(SETTING_B_EXTENDEDFILEINFO).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether the terminal inputs
+        /// shall be protocoled in a dedicated logfile.
+        /// This setting does not modify the history
+        /// functionality.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool useLogFile() const
+            {return m_settings.at(SETTING_B_LOGFILE).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether NumeRe shall keep
+        /// empty columns when loading a file to memory.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool loadEmptyCols() const
+            {return m_settings.at(SETTING_B_LOADEMPTYCOLS).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the precision for displaying
+        /// floating numbers in the terminal. This value
+        /// determines the number of valid numbers, which
+        /// shall be displayed.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+		inline size_t getPrecision() const
+            {return m_settings.at(SETTING_V_PRECISION).value();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current application root
+        /// folder path.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string getExePath() const
+            {return m_settings.at(SETTING_S_EXEPATH).stringval();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current working path
+        /// (connected to the <wp> token).
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string getWorkPath() const
+            {return m_settings.at(SETTING_S_WORKPATH).stringval();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current saving path.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+		inline std::string getSavePath() const
+            {return m_settings.at(SETTING_S_SAVEPATH).stringval();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current loading path.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+		inline std::string getLoadPath() const
+            {return m_settings.at(SETTING_S_LOADPATH).stringval();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current plotting path
+        /// (plot storing location).
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+		inline std::string getPlotPath() const
+            {return m_settings.at(SETTING_S_PLOTPATH).stringval();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current script import
+        /// folder path.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+		inline std::string getScriptPath() const
+            {return m_settings.at(SETTING_S_SCRIPTPATH).stringval();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current procedure root
+        /// import path.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string getProcPath() const
+            {return m_settings.at(SETTING_S_PROCPATH).stringval();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the timespan for the autosave
+        /// interval in seconds.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+		inline size_t getAutoSaveInterval() const
+            {return m_settings.at(SETTING_V_AUTOSAVE).value();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current terminal buffer
+        /// size.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
+        inline size_t getBuffer() const
+            {return m_settings.at(SETTING_V_BUFFERSIZE).value();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current window size of the
+        /// terminal.
+        ///
+        /// \param nWindow int
+        /// \return size_t
+        /// \todo The y value might not be updated if the
+        /// user changes the height of the terminal.
+        ///
+        /////////////////////////////////////////////////
+        inline size_t getWindow(int nWindow = 0) const
+            {return nWindow ? m_settings.at(SETTING_V_WINDOW_Y).value() : m_settings.at(SETTING_V_WINDOW_X).value();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the current plotting font
+        /// name.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string getDefaultPlotFont() const
+            {return m_settings.at(SETTING_S_PLOTFONT).stringval();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns a semicolon-separated list of
+        /// the current defined path placeholders and
+        /// their values.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        inline std::string getTokenPaths() const
+        {
+            return "<>="+m_settings.at(SETTING_S_EXEPATH).stringval()
+                +";<wp>="+m_settings.at(SETTING_S_WORKPATH).stringval()
+                +";<savepath>="+m_settings.at(SETTING_S_SAVEPATH).stringval()
+                +";<loadpath>="+m_settings.at(SETTING_S_LOADPATH).stringval()
+                +";<plotpath>="+m_settings.at(SETTING_S_PLOTPATH).stringval()
+                +";<scriptpath>="+m_settings.at(SETTING_S_SCRIPTPATH).stringval()
+                +";<procpath>="+m_settings.at(SETTING_S_PROCPATH).stringval()+";";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether system messages shall
+        /// be printed to the terminal.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool systemPrints() const
+            {return m_settings.at(SETTING_B_SYSTEMPRINTS).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether the debugger is
+        /// currently active.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool useDebugger() const
+            {return m_settings.at(SETTING_B_DEBUGGER).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether user language files
+        /// shall be used to override internal language
+        /// strings.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool useCustomLangFiles() const
+            {return m_settings.at(SETTING_B_USECUSTOMLANG).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether documentations shall
+        /// be displayed in external windows.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool useExternalDocWindow() const
+            {return m_settings.at(SETTING_B_EXTERNALDOCWINDOW).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether the user enabled the
+        /// \c execute command.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool executeEnabled() const
+            {return m_settings.at(SETTING_B_ENABLEEXECUTE).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether loop flow control
+        /// statements shall use the \c mask option
+        /// automatically.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool useMaskDefault() const
+            {return m_settings.at(SETTING_B_MASKDEFAULT).active();}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns, whether the debugger shall
+        /// try to decode procedure arguments.
+        ///
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool decodeArguments() const
+            {return m_settings.at(SETTING_B_DECODEARGUMENTS).active();}
 
 };
+
+
 #endif
+
+

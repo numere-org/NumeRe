@@ -42,3 +42,5 @@ Cleaned	Removed the override option for "random". Instead enabled "target=TABLE(
 Added	Enabled option "target=TABLE()" option for "stats".
 Added	Enabled option "target=TABLE()" option for "hist" and enabled the z range for "hist2d".
 Cleaned	Unused source files were removed and some warnings were resolved.
+Cleaned	Changed the structure of the INI file and the internal memory representation.
+Cleaned	Enabled a "dash-less" syntax for the commands "set" and "get".

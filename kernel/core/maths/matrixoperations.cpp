@@ -3793,7 +3793,7 @@ static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Pa
 /////////////////////////////////////////////////
 static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
 {
-    if (!_option.getSystemPrintStatus() || NumeReKernel::bSupressAnswer)
+    if (!_option.systemPrints() || NumeReKernel::bSupressAnswer)
         return;
     //(_option.getWindow()-1-15) / (_option.getPrecision()+9) _mResult.size() > (_option.getWindow()-1-15) / (4+9)
     NumeReKernel::toggleTableStatus();
@@ -4052,7 +4052,7 @@ static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, Fun
         return;
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 

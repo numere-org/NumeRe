@@ -443,9 +443,9 @@ namespace NumeRe
                         else if (sLineToParsed.find("<savepath>") == 0)
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getSavePath()) + "\"";
                         else if (sLineToParsed.find("<plotpath>") == 0)
-                            sLineToParsedTemp += "\"" + replacePathSeparator(_option.getPlotOutputPath()) + "\"";
+                            sLineToParsedTemp += "\"" + replacePathSeparator(_option.getPlotPath()) + "\"";
                         else if (sLineToParsed.find("<procpath>") == 0)
-                            sLineToParsedTemp += "\"" + replacePathSeparator(_option.getProcsPath()) + "\"";
+                            sLineToParsedTemp += "\"" + replacePathSeparator(_option.getProcPath()) + "\"";
                         else
                             sLineToParsedTemp += "\"" + replacePathSeparator(_option.getScriptPath()) + "\"";
                         sLineToParsed = sLineToParsed.substr(sLineToParsed.find('>') + 1);

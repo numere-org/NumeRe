@@ -840,7 +840,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
     else
         sConsoleOut += "|-> "+toSystemCodePage(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString(_nCol*(_nLine-nHeadLineCount)), sFileName));
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
         NumeReKernel::printPreFmt(LineBreak(sConsoleOut, _option) + "\n");
 
     if (bFile)

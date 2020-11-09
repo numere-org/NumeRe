@@ -262,7 +262,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
 
     // Only try to decode the arguments, if the user decided to
     // do so
-    if (!NumeReKernel::getInstance()->getSettings().getTryToDecodeProcedureArguments())
+    if (!NumeReKernel::getInstance()->getSettings().decodeArguments())
         return "\t1 x 1\t(...)\t";
 
     // Is the current argument value a table?

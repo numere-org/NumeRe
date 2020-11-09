@@ -302,7 +302,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         nSamples = (int)_parser.Eval();
         if (isnan(_parser.Eval()) || isinf(_parser.Eval()))
             nSamples = 100;
-        if (_option.getbDebug())
+        if (_option.isDeveloperMode())
             cerr << "|-> DEBUG: nSamples = " << nSamples << endl;
     }
     if (findParameter(sCmd, "t", '=') && (nType == ALL || nType & LOCAL))

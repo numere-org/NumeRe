@@ -61,7 +61,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
         make_hline();
         return;
     }
-    else if (findParameter(__sTopic, "html") || _option.getUseExternalViewer()) // HTML-Export generieren
+    else if (findParameter(__sTopic, "html") || _option.useExternalDocWindow()) // HTML-Export generieren
     {
         ofstream fHTML;
         string sHTML;
@@ -925,13 +925,13 @@ void doc_ReplaceTokens(string& sDocParagraph, Settings& _option)
         if (sDocParagraph.substr(k,6) == "&quot;")
             sDocParagraph.replace(k,6,"\"");
         if (sDocParagraph.substr(k,10) == "&PLOTPATH&")
-            sDocParagraph.replace(k,10,replacePathSeparator(_option.getPlotOutputPath()));
+            sDocParagraph.replace(k,10,replacePathSeparator(_option.getPlotPath()));
         if (sDocParagraph.substr(k,10) == "&LOADPATH&")
             sDocParagraph.replace(k,10,replacePathSeparator(_option.getLoadPath()));
         if (sDocParagraph.substr(k,10) == "&SAVEPATH&")
             sDocParagraph.replace(k,10,replacePathSeparator(_option.getSavePath()));
         if (sDocParagraph.substr(k,10) == "&PROCPATH&")
-            sDocParagraph.replace(k,10,replacePathSeparator(_option.getProcsPath()));
+            sDocParagraph.replace(k,10,replacePathSeparator(_option.getProcPath()));
         if (sDocParagraph.substr(k,12) == "&SCRIPTPATH&")
             sDocParagraph.replace(k,12,replacePathSeparator(_option.getScriptPath()));
         if (sDocParagraph.substr(k,9) == "&EXEPATH&")
@@ -1002,13 +1002,13 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, bool generateFile, Settings
             k += sImg.length();
         }
         if (sDocParagraph.substr(k, 10) == "&PLOTPATH&")
-            sDocParagraph.replace(k, 10, generateFile ? "&lt;plotpath&gt;" : replacePathSeparator(_option.getPlotOutputPath()));
+            sDocParagraph.replace(k, 10, generateFile ? "&lt;plotpath&gt;" : replacePathSeparator(_option.getPlotPath()));
         if (sDocParagraph.substr(k, 10) == "&LOADPATH&")
             sDocParagraph.replace(k, 10, generateFile ? "&lt;loadpath&gt;" : replacePathSeparator(_option.getLoadPath()));
         if (sDocParagraph.substr(k, 10) == "&SAVEPATH&")
             sDocParagraph.replace(k, 10, generateFile ? "&lt;savepath&gt;" : replacePathSeparator(_option.getSavePath()));
         if (sDocParagraph.substr(k, 10) == "&PROCPATH&")
-            sDocParagraph.replace(k, 10, generateFile ? "&lt;procpath&gt;" : replacePathSeparator(_option.getProcsPath()));
+            sDocParagraph.replace(k, 10, generateFile ? "&lt;procpath&gt;" : replacePathSeparator(_option.getProcPath()));
         if (sDocParagraph.substr(k, 12) == "&SCRIPTPATH&")
             sDocParagraph.replace(k, 12, generateFile ? "&lt;scriptpath&gt;" : replacePathSeparator(_option.getScriptPath()));
         if (sDocParagraph.substr(k, 9) == "&EXEPATH&")
@@ -1158,7 +1158,7 @@ void doc_SearchFct(const string& sToLookFor, Settings& _option)
     {
         findDataBase.addData("<>/docs/find.ndb");
 
-        if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
+        if (_option.useCustomLangFiles() && fileExists(_option.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
             findDataBase.addData("<>/user/docs/find.ndb");
     }
 

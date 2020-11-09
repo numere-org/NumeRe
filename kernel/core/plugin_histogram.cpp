@@ -520,7 +520,7 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
             _out.generateFileName();
     }
     else
-        _out.setCompact(_option.getbCompact());
+        _out.setCompact(_option.createCompactTables());
 
     // --> Fuelle die Ausgabe-Matrix <--
     for (size_t i = 1; i < vHistMatrix.size() + 1; i++)
@@ -537,7 +537,7 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
     // --> Uebergabe an Output::format(string**,int,int,Settings&), das den Rest erledigt
     if (bFormat)
     {
-        if (_out.isFile() || (!bSilent && _option.getSystemPrintStatus()))
+        if (_out.isFile() || (!bSilent && _option.systemPrints()))
         {
             if (!_out.isFile())
             {
@@ -776,7 +776,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
 
     // --> Ausgabe-Info-Parameter loeschen und ggf. bFile = FALSE setzen <--
 
-    if (_option.getSystemPrintStatus() && !bSilent)
+    if (_option.systemPrints() && !bSilent)
         NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("HIST_GENERATING_PLOT") + " ... "));
 
     if (_out.isFile())
@@ -816,7 +816,7 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         _histGraph->WriteFrame(sHistSavePath.c_str());
         delete _histGraph;
 
-        if (_option.getSystemPrintStatus() && !bSilent)
+        if (_option.systemPrints() && !bSilent)
         {
             NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
             NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option) + "\n");
@@ -1240,7 +1240,7 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
             _out.generateFileName();
     }
     else
-        _out.setCompact(_option.getbCompact());
+        _out.setCompact(_option.createCompactTables());
 
     if (shallFormat)
     {
@@ -1485,7 +1485,7 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
 ////////////////////////////////// OUTPUT
     std::string sHistSavePath = _out.getFileName();
 
-    if (_option.getSystemPrintStatus() && !bSilent)
+    if (_option.systemPrints() && !bSilent)
         NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("HIST_GENERATING_PLOT") + " ... "));
 
     if (_out.isFile())
@@ -1506,9 +1506,9 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
         _histGraph->WriteFrame(sHistSavePath.c_str());
         delete _histGraph;
 
-        if (_option.getSystemPrintStatus() && !bSilent)
+        if (_option.systemPrints() && !bSilent)
             NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
-        if (!_out.isFile() && _option.getSystemPrintStatus() && !bSilent)
+        if (!_out.isFile() && _option.systemPrints() && !bSilent)
             NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("HIST_SAVED_AT", sHistSavePath), _option) + "\n");
     }
 }
@@ -1662,7 +1662,7 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     // the target table, if desired
     createOutputForHist2D(_data, _idx, sTargettable, _tIdx, _histParams, _mAxisVals, _barHistData, _hBarHistData, bSum, bWriteToCache,
                           !bWriteToCache || findParameter(sCmd, "export", '=') || findParameter(sCmd, "save", '='),
-                          !_option.getSystemPrintStatus() || bSilent);
+                          !_option.systemPrints() || bSilent);
 
     // Create the three plots as subplots
     createPlotsForHist2D(sCmd, _histParams, _mAxisVals, _barHistData, _hBarHistData, _hist2DData, _idx.col.size() == 3, bSum, bSilent);

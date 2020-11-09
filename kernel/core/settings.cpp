@@ -20,377 +20,395 @@
 #include "settings.hpp"
 #include "../kernel.hpp"
 
+#include <fstream>
+
+int StrToInt(const std::string&);
+int findParameter(const std::string& sCmd, const std::string& sParam, const char cFollowing);
+void StripSpaces(std::string&);
+
 /*
  * Realisierung der Klasse Settings
  */
 
-// --> Standard-Konstruktor <--
+
+/////////////////////////////////////////////////
+/// \brief Settings class default constructor.
+/// Creates and fills the internal setting value
+/// map with their default values.
+/////////////////////////////////////////////////
 Settings::Settings() : Documentation()
 {
-	bDebug = false;
-	bUseDebugger = false;
-	bTestTabelle = false;
-	bOnce = false;
-	bFastStart = false;
-	bUseDraftMode = false;
-	bCompact = false;
-	bGreeting = true;
-	bDefineAutoLoad = false;
-	bUseSystemPrints = true;
-	bShowExtendedFileInfo = false;
-	bUseLogfile = true;
-	bLoadEmptyCols = false;
-	bShowHints = true;
-	bUseESCinScripts = true;
-	bUseCustomLanguageFile = true;
-	bUseExternalDocViewer = true;
-	bUseExecuteCommand = false; // execute command is disabled by the default
-	bUseMaskAsDefault = false; // mask is disabled as default
-	bTryToDecodeProcedureArguments = false;
-	nPrecision = 7;			// Standardmaessig setzen wir die Praezision auf 7
-	nAutoSaveInterval = 30; // 30 sec
-	sPath = "./";
-	sSavePath = "<>/save";
-	sLoadPath = "<>/data";
-	sPlotOutputPath = "<>/plots";
-	sScriptpath = "<>/scripts";
-	sProcsPath = "<>/procedures";
-	sWorkPath = "<>";
-	sFramework = "calc";
+    m_settings[SETTING_B_DEVELOPERMODE] = SettingsValue(false, SettingsValue::HIDDEN);
+    m_settings[SETTING_B_DEBUGGER] = SettingsValue(false, SettingsValue::NONE);
+    m_settings[SETTING_B_DRAFTMODE] = SettingsValue(false);
+    m_settings[SETTING_B_COMPACT] = SettingsValue(false);
+    m_settings[SETTING_B_GREETING] = SettingsValue(true);
+    m_settings[SETTING_B_DEFCONTROL] = SettingsValue(false);
+    m_settings[SETTING_B_SYSTEMPRINTS] = SettingsValue(true, SettingsValue::HIDDEN);
+    m_settings[SETTING_B_EXTENDEDFILEINFO] = SettingsValue(false);
+    m_settings[SETTING_B_LOGFILE] = SettingsValue(true);
+    m_settings[SETTING_B_LOADEMPTYCOLS] = SettingsValue(false);
+    m_settings[SETTING_B_SHOWHINTS] = SettingsValue(true);
+    m_settings[SETTING_B_USEESCINSCRIPTS] = SettingsValue(true);
+    m_settings[SETTING_B_USECUSTOMLANG] = SettingsValue(true);
+    m_settings[SETTING_B_EXTERNALDOCWINDOW] = SettingsValue(true);
+    m_settings[SETTING_B_ENABLEEXECUTE] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_MASKDEFAULT] = SettingsValue(false);
+    m_settings[SETTING_B_DECODEARGUMENTS] = SettingsValue(false);
+    m_settings[SETTING_V_PRECISION] = SettingsValue(7u, 1u, 14u);
+    m_settings[SETTING_V_AUTOSAVE] = SettingsValue(30u, 1u, -1u);
+    m_settings[SETTING_V_WINDOW_X] = SettingsValue(140u, 0u, -1u, SettingsValue::HIDDEN);
+    m_settings[SETTING_V_WINDOW_Y] = SettingsValue(34u, 0u, -1u, SettingsValue::HIDDEN);
+    m_settings[SETTING_V_BUFFERSIZE] = SettingsValue(300u, 300u, 1000u, SettingsValue::IMMUTABLE | SettingsValue::SAVE);
+    m_settings[SETTING_S_EXEPATH] = SettingsValue("./", SettingsValue::PATH | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_S_SAVEPATH] = SettingsValue("<>/save", SettingsValue::SAVE | SettingsValue::PATH);
+    m_settings[SETTING_S_LOADPATH] = SettingsValue("<>/data", SettingsValue::SAVE | SettingsValue::PATH);
+    m_settings[SETTING_S_PLOTPATH] = SettingsValue("<>/plots", SettingsValue::SAVE | SettingsValue::PATH);
+    m_settings[SETTING_S_SCRIPTPATH] = SettingsValue("<>/scripts", SettingsValue::SAVE | SettingsValue::PATH);
+    m_settings[SETTING_S_PROCPATH] = SettingsValue("<>/procedures", SettingsValue::SAVE | SettingsValue::PATH);
+    m_settings[SETTING_S_WORKPATH] = SettingsValue("<>", SettingsValue::PATH);
+    m_settings[SETTING_S_PLOTFONT] = SettingsValue("pagella");
+/*
+    m_settings[SETTING_S_LATEXROOT] = SettingsValue("C:/Program Files", SettingsValue::SAVE | SettingsValue::PATH);
+    m_settings[SETTING_B_PRINTINCOLOR] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_V_CARETBLINKTIME] = SettingsValue(500u, 100u, 2000u, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_V_FOCUSEDLINE] = SettingsValue(10u, 1u, 30u, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_LINESINSTACK] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_GLOBALVARS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_TOOLBARTEXT] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_PATHSONTABS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_PRINTLINENUMBERS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_SAVESESSION] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_SAVEBOOKMARKS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_FORMATBEFORESAVING] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_USEREVISIONS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_FOLDLOADEDFILE] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_HIGHLIGHTLOCALS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_S_EDITORFONT] = SettingsValue("consolas 10 windows-1252", SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_AN_USENOTES] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_USEWARNINGS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_USEERRORS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_MAGICNUMBERS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_UNDERSCOREARGS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_THISFILE] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_COMMENTDENS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_LOC] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_COMPLEXITY] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_ALWAYSMETRICS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_RESULTSUP] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_RESULTASS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_TYPING] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_VARLENGTH] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_UNUSEDVARS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_GLOBALVARS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_CONSTANTS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_INLINEIF] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_PROCLENGTH] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_PROGRESS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_B_AN_FALLTHROUGH] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_STANDARD] = SettingsValue("0:0:0-255:255:255-0100", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_CONSOLESTD] = SettingsValue("0:0:100-255:255:255-0000", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_COMMAND] = SettingsValue("0:128:255-255:255:255-1011", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_PROCCOMMAND] = SettingsValue("128:0:0-255:255:255-1011", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_COMMENT] = SettingsValue("0:128:0-255:255:183-0000", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_DOCCOMMENT] = SettingsValue("0:128:192-255:255:183-1000", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_DOCKEYWORD] = SettingsValue("128:0:0-255:255:183-1000", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_OPTION] = SettingsValue("0:128:100-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_FUNCTION] = SettingsValue("0:0:255-255:255:255:1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_CUSTOMFUNC] = SettingsValue("0:0:160-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_CLUSTER] = SettingsValue("96:96:96-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_CONSTANT] = SettingsValue("255:0:128-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_SPECIALVAL] = SettingsValue("0:0:0-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_STRING] = SettingsValue("128:128:255-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_STRINGPARSER] = SettingsValue("0:128:192-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_INCLUDES] = SettingsValue("128:0:0-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_OPERATOR] = SettingsValue("255:0:0-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_PROCEDURE] = SettingsValue("128:0:0-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_NUMBER] = SettingsValue("176:150:0-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_METHODS] = SettingsValue("0:180:50-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_INSTALL] = SettingsValue("128:128:128-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_DEFVARS] = SettingsValue("0:0:160-255:255:255-1101", SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_ACTIVELINE] = SettingsValue("0:0:0-221:230:255-0000", SettingsValue::SAVE | SettingsValue::HIDDEN);
+*/
+
 	sSettings_ini = "numere.ini";
-	sCmdCache = "";
-	sViewer = "";
-	sEditor = "notepad.exe";
-	sDefaultfont = "pagella";
-	nBuffer_x = 141;
-	nBuffer_y = 300;
-	nWindow_x = 140;
-	nWindow_y = 34;
-	nColorTheme = 0;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Settings class copy constructor.
+/// Delegates the initialization to the default
+/// constructor.
+///
+/// \param _settings const Settings&
+///
+/////////////////////////////////////////////////
 Settings::Settings(const Settings& _settings) : Settings()
 {
     copySettings(_settings);
 }
-// --> Destruktor: Falls die INI-Datei noch geoeffnet ist, wird sie hier auf jeden Fall geschlossen <--
-Settings::~Settings()
+
+
+/////////////////////////////////////////////////
+/// \brief Saves the setting values to the
+/// corresponding config file. Does only save the
+/// setting values, which are marked that they
+/// shall be saved.
+///
+/// \param _sWhere const std::string&
+/// \param bMkBackUp bool
+/// \return void
+///
+/////////////////////////////////////////////////
+void Settings::save(const std::string& _sWhere, bool bMkBackUp)
 {
-	if(Settings_ini.is_open())
-	{
-		Settings_ini.close();
-	}
-}
+    std::fstream Settings_ini;
+    std::string sExecutablePath = _sWhere + "\\" + sSettings_ini;
 
-// --> Dateipfad zum Image-Viewer einstellen <--
-void Settings::setViewerPath(const string& _sViewerPath)
-{
-    sViewer = _sViewerPath;
-
-    // --> Entferne umschliessende Leerzeichen <--
-    StripSpaces(sViewer);
-
-    // --> Wenn nicht ".exe" gefunden wird, wird es hier ergaenzt <--
-    if (sViewer.find(".exe") == string::npos)
-        sViewer += ".exe";
-
-    /* --> Sollte IN dem Dateipfad ein oder mehrere Leerzeichen sein, sollten wir den Pfad
-     *     auf jeden Fall mit Anfuehrungszeichen umschliessen, falls selbige noch nicht
-     *     vorhanden sind <--
-     */
-    if (sViewer.find(' ') != string::npos)
-    {
-        if (sViewer[0] != '"')
-            sViewer = "\"" + sViewer;
-        if (sViewer[sViewer.length()-1] != '"')
-            sViewer += "\"";
-    }
-    return;
-}
-
-
-// --> Dateipfad zum Editor einstellen <--
-void Settings::setEditorPath(const string& _sEditorPath)
-{
-    sEditor = _sEditorPath;
-
-    // --> Entferne umschliessende Leerzeichen <--
-    StripSpaces(sEditor);
-
-    // --> Wenn nicht ".exe" gefunden wird, wird es hier ergaenzt <--
-    if (sEditor.find(".exe") == string::npos)
-        sEditor += ".exe";
-
-    /* --> Sollte IN dem Dateipfad ein oder mehrere Leerzeichen sein, sollten wir den Pfad
-     *     auf jeden Fall mit Anfuehrungszeichen umschliessen, falls selbige noch nicht
-     *     vorhanden sind <--
-     */
-    if (sEditor.find(' ') != string::npos)
-    {
-        if (sEditor[0] != '"')
-            sEditor = "\"" + sEditor;
-        if (sEditor[sEditor.length()-1] != '"')
-            sEditor += "\"";
-    }
-    return;
-}
-
-// --> Methode zum Speichern der getaetigten Einstellungen <--
-void Settings::save(string _sWhere, bool bMkBackUp)
-{
-    string sExecutablePath = _sWhere + "\\" + sSettings_ini;
     if (bMkBackUp)
         sExecutablePath += ".back";
 
-    // --> INI-Datei oeffnen, wobei "ios_base::out" bedeutet, dass wir in die Datei schreiben moechten <--
-	Settings_ini.open(sExecutablePath.c_str(), ios_base::out | ios_base::trunc);
+    // Open config file
+	Settings_ini.open(sExecutablePath.c_str(), std::ios_base::out | std::ios_base::trunc);
 
-	/* --> Sollte aus irgendeinem Grund nicht in die INI-Datei geschrieben werden koennen, brechen wir ab und
-	 *     geben eine entsprechende Fehlermeldung aus <--
-	 */
-	if (Settings_ini.fail() && !bMkBackUp)
+	// Ensure that the file is writeable
+	if (Settings_ini.fail())
 	{
 		NumeReKernel::print("ERROR: Could not save your configuration.");
 		Settings_ini.close();
 		return;
 	}
-	else if (Settings_ini.fail() && bMkBackUp)
-	{
-        NumeReKernel::print("ERROR: Could not save a backup of your configuration.");
-        Settings_ini.close();
-        return;
-	}
 
-	// --> Ggf vorherige Error-Flags, die beim Lesen aufgetreten sind, entfernen <--
-	//Settings_ini.clear();
+	// Write the header for the current configuration
+	// file version
+	Settings_ini << "# NUMERE-CONFIG-1x-SERIES\n";
+	Settings_ini << "# =======================\n";
+	Settings_ini << "# !!! DO NOT MODIFY THIS FILE UNLESS YOU KNOW THE CONSEQUENCES!!!\n#\n";
+	Settings_ini << "# This file contains the configuration of NumeRe. This configuration is incompatible\n";
+	Settings_ini << "# to versions prior to v 1.1.2.\n";
+	Settings_ini << "# If you experience issues resulting form erroneous configurations, you may delete\n";
+	Settings_ini << "# this and all other INI files in this directory. Delete also the numere.ini.back\n";
+	Settings_ini << "# file for a complete reset. All configuration values will of course get lost during\n";
+	Settings_ini << "# this process.\n#\n";
+	Settings_ini << "# (relative paths are anchored in NumeRe's root directory):" << endl;
 
-	// --> Zum Anfang springen <--
-	Settings_ini.seekg(0);
+	// Write the setting values to the file. The values
+	// are structured by their names and therefore will be
+	// grouped together automatically
+	for (auto iter = m_settings.begin(); iter != m_settings.end(); ++iter)
+    {
+        // Ensure that the setting shall be saved
+        if (iter->second.shallSave())
+        {
+            // Write setting value identifier string
+            Settings_ini << iter->first + "=";
 
-	// --> Info-Text in die INI schreiben <--
-	Settings_ini << "# NUMERE-CONFIG-09-SERIES" << endl;
-	Settings_ini << "# =======================" << endl;
-	Settings_ini << "# !!!Dieses File (speziell die allererste Zeile) nicht bearbeiten!!!" << endl;
-	Settings_ini << "# In dieser Datei wird die Konfiguration fuer NumeRe gespeichert. Diese" << endl;
-	Settings_ini << "# Konfiguration ist zu NumeRe-Versionen unterhalb v 0.9.3 NICHT kompatibel!" << endl;
-	Settings_ini << "# Sollte es einmal zu Problemen beim Laden der Konfiguration kommen, oder es" << endl;
-	Settings_ini << "# soll eine Version geringer v 0.9.3 geladen werden, dann muss diese Datei" << endl;
-	Settings_ini << "# vollstaendig geloescht werden, um NumeRe's DEFAULT-KONFIGURATION zu laden." << endl;
+            // Write the value
+            switch (iter->second.getType())
+            {
+                case SettingsValue::BOOL:
+                    Settings_ini << (iter->second.active() ? "true" : "false") << endl;
+                    break;
+                case SettingsValue::UINT:
+                    Settings_ini << iter->second.value() << endl;
+                    break;
+                case SettingsValue::STRING:
+                    Settings_ini << replaceExePath(iter->second.stringval()) << endl;
+                    break;
+                case SettingsValue::TYPELESS:
+                    break;
+            }
+        }
+    }
 
-	/* --> Sollte aus irgendeinem Grund nicht in die INI-Datei geschrieben werden koennen, brechen wir ab und
-	 *     geben eine entsprechende Fehlermeldung aus <--
-	 */
-	if (Settings_ini.fail() && !bMkBackUp)
-	{
-		NumeReKernel::print("ERROR: Could not save your configuration.");
-		Settings_ini.close();
-		return;
-	}
-	else if (Settings_ini.fail() && bMkBackUp)
-	{
-        NumeReKernel::print("ERROR: Could not save a backup of your configuration.");
-        Settings_ini.close();
-        return;
-	}
+    // Write a footer line
+	Settings_ini << "#\n# End of configuration file" << endl;
 
-	// --> Eigentliche Einstellungen schreiben <--
-	Settings_ini << "#" << endl << "# Standard-Dateipfade (relative Pfade gehen stets vom NumeRe-Stammordner aus):" << endl;
-	Settings_ini << "-SAVEPATH=" << replaceExePath(sSavePath) << endl;
-	Settings_ini << "-LOADPATH=" << replaceExePath(sLoadPath) << endl;
-	Settings_ini << "-PLOTPATH=" << replaceExePath(sPlotOutputPath) << endl;
-	Settings_ini << "-SCRIPTPATH=" << replaceExePath(sScriptpath) << endl;
-	Settings_ini << "-PROCPATH=" << replaceExePath(sProcsPath) << endl;
-	if (sViewer.length())
-        Settings_ini << "-PLOTVIEWERPATH=" << replaceExePath(sViewer) << endl;
-    Settings_ini << "-EDITORPATH=" << replaceExePath(sEditor) << endl;
-	Settings_ini << "#" << endl << "# Programmkonfiguration:" << endl;
-	Settings_ini << "-DEFAULTFRAMEWORK=" << sFramework << endl;
-	Settings_ini << "-PRECISION=" << nPrecision << endl;
-	Settings_ini << "-AUTOSAVEINTERVAL=" << nAutoSaveInterval << endl;
-	Settings_ini << "-FASTSTART=" << bFastStart << endl;
-	Settings_ini << "-GREETING=" << bGreeting << endl;
-	Settings_ini << "-HINTS=" << bShowHints << endl;
-	Settings_ini << "-ESCINSCRIPTS=" << bUseESCinScripts << endl;
-	Settings_ini << "-PLOTFONT=" << sDefaultfont << endl;
-	Settings_ini << "-USECOMPACTTABLES=" << bCompact << endl;
-	Settings_ini << "-USECUSTOMLANGFILE=" << bUseCustomLanguageFile << endl;
-	Settings_ini << "-USEEXTERNALVIEWER=" << bUseExternalDocViewer << endl;
-	Settings_ini << "-USEEXECUTECOMMAND=" << bUseExecuteCommand << endl;
-	Settings_ini << "-USEMASKASDEFAULT=" << bUseMaskAsDefault << endl;
-	Settings_ini << "-TRYTODECODEPROCEDUREARGUMENTS=" << bTryToDecodeProcedureArguments << endl;
-	Settings_ini << "-DEFCONTROL=" << bDefineAutoLoad << endl;
-	Settings_ini << "-USEDRAFTMODE=" << bUseDraftMode << endl;
-	Settings_ini << "-EXTENDEDFILEINFO=" << bShowExtendedFileInfo << endl;
-	Settings_ini << "-USELOGFILE=" << bUseLogfile << endl;
-	Settings_ini << "-LOADEMPTYCOLS=" << bLoadEmptyCols << endl;
-	Settings_ini << "-BUFFERSIZE=" << nBuffer_x << "," << nBuffer_y << endl;
-	Settings_ini << "-WINDOWSIZE=" << nWindow_x << "," << nWindow_y << endl;
-	Settings_ini << "-COLORTHEME=" << nColorTheme << endl;
-	Settings_ini << "#" << endl << "# Ende der Konfiguration" << endl;
-
-	// --> Datei auf jeden Fall wieder schliessen, Erfolgsmeldung ausgeben und zurueck zur aufrufenden Stelle <--
+	// Close the file stream
 	Settings_ini.close();
+
 	if (!bMkBackUp)
         NumeReKernel::print(toSystemCodePage(_lang.get("SETTINGS_SAVE_SUCCESS"))+"\n");
-	return;
 }
 
-// --> PRIVATE-Methode, die die Parameter des INI-Files identifiziert und die Einstellungen uebernimmt <--
-bool Settings::set(const string& _sOption)
+
+/////////////////////////////////////////////////
+/// \brief Imports a setting value string from
+/// a v1.x configuration file.
+///
+/// \param sSettings const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Settings::import_v1x(const std::string& sSettings)
+{
+    // Separate identifier and corresponding value
+    std::string id = sSettings.substr(0, sSettings.find('='));
+    std::string value = sSettings.substr(sSettings.find('=')+1);
+
+    // Search for the identifier
+    auto iter = m_settings.find(id);
+
+    // If the identifier exists, import
+    // the value
+    if (iter != m_settings.end())
+    {
+        switch (iter->second.getType())
+        {
+            case SettingsValue::BOOL:
+                iter->second.active() = value == "true" ? true : false;
+                break;
+            case SettingsValue::UINT:
+                iter->second.value() = (size_t)StrToInt(value);
+                break;
+            case SettingsValue::STRING:
+                iter->second.stringval() = value;
+                break;
+            case SettingsValue::TYPELESS:
+                break;
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Imports a setting value from a v0.9x
+/// configuration file.
+///
+/// \param _sOption const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Settings::set(const std::string& _sOption)
 {
     /* --> Im Wesentlichen immer dasselbe: wenn der Parameter "-PARAM=" in der Zeile auftaucht,
      *     verwende alles danach (bis zum Ende der Zeile) als Wert der entsprechenden Einstellung <--
      */
     if (findParameter(_sOption, "savepath", '='))
     {
-        sSavePath = _sOption.substr(_sOption.find('=')+1);
+        std::string sSavePath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sSavePath);
+
         if (sSavePath.length())
         {
             while (sSavePath.find('\\') != string::npos)
                 sSavePath[sSavePath.find('\\')] = '/';
+
+            m_settings[SETTING_S_SAVEPATH].stringval() = sSavePath;
             return true;
         }
-        else
-            sSavePath = "<>/save";
     }
     else if (findParameter(_sOption, "loadpath", '='))
     {
-        sLoadPath = _sOption.substr(_sOption.find('=')+1);
+        std::string sLoadPath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sLoadPath);
+
         if (sLoadPath.length())
         {
             while (sLoadPath.find('\\') != string::npos)
                 sLoadPath[sLoadPath.find('\\')] = '/';
+
+            m_settings[SETTING_S_LOADPATH].stringval() = sLoadPath;
             return true;
         }
-        else
-            sLoadPath = "<>/data";
     }
     else if (findParameter(_sOption, "plotpath", '='))
     {
-        sPlotOutputPath = _sOption.substr(_sOption.find('=')+1);
+        std::string sPlotOutputPath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sPlotOutputPath);
+
         if (sPlotOutputPath.length())
         {
             while (sPlotOutputPath.find('\\') != string::npos)
                 sPlotOutputPath[sPlotOutputPath.find('\\')] = '/';
+
+            m_settings[SETTING_S_PLOTPATH].stringval() = sPlotOutputPath;
             return true;
         }
-        else
-            sPlotOutputPath = "<>/plots";
     }
     else if (findParameter(_sOption, "scriptpath", '='))
     {
-        sScriptpath = _sOption.substr(_sOption.find('=')+1);
+        std::string sScriptpath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sScriptpath);
+
         if (sScriptpath.length())
         {
             while (sScriptpath.find('\\') != string::npos)
                 sScriptpath[sScriptpath.find('\\')] = '/';
+
+            m_settings[SETTING_S_SCRIPTPATH].stringval() = sScriptpath;
             return true;
         }
-        else
-            sScriptpath = "<>/scripts";
     }
     else if (findParameter(_sOption, "procpath", '='))
     {
-        sProcsPath = _sOption.substr(_sOption.find('=')+1);
+        std::string sProcsPath = _sOption.substr(_sOption.find('=')+1);
         StripSpaces(sProcsPath);
+
         if (sProcsPath.length())
         {
             while (sProcsPath.find('\\') != string::npos)
                 sProcsPath[sProcsPath.find('\\')] = '/';
+
+            m_settings[SETTING_S_PROCPATH].stringval() = sProcsPath;
             return true;
-        }
-        else
-            sProcsPath = "<>/procedures";
-    }
-    else if (findParameter(_sOption, "plotviewerpath", '='))
-    {
-        sViewer = _sOption.substr(_sOption.find('=')+1);
-        StripSpaces(sViewer);
-        if (sViewer.length())
-        {
-            while (sViewer.find('\\') != string::npos)
-                sViewer[sViewer.find('\\')] = '/';
-            return true;
-        }
-    }
-    else if (findParameter(_sOption, "editorpath", '='))
-    {
-        sEditor = _sOption.substr(_sOption.find('=')+1);
-        StripSpaces(sEditor);
-        if (sEditor.length())
-        {
-            while (sEditor.find('\\') != string::npos)
-                sEditor[sEditor.find('\\')] = '/';
-            return true;
-        }
-        else
-        {
-            sEditor = "notepad.exe";
         }
     }
     else if (findParameter(_sOption, "precision", '='))
     {
-        nPrecision = StrToInt(_sOption.substr(_sOption.find('=')+1));
+        size_t nPrecision = StrToInt(_sOption.substr(_sOption.find('=')+1));
+
         if (nPrecision > 0 && nPrecision < 15)
+        {
+            m_settings[SETTING_V_PRECISION].value() = nPrecision;
             return true;
-        else
-            nPrecision = 7;
-    }
-    else if (findParameter(_sOption, "faststart", '='))
-    {
-        bFastStart = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
-        return true;
+        }
     }
     else if (findParameter(_sOption, "greeting", '='))
     {
-        bGreeting = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_GREETING].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "hints", '='))
     {
-        bShowHints = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_SHOWHINTS].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "escinscripts", '='))
     {
-        bUseESCinScripts = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_USEESCINSCRIPTS].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "usedraftmode", '='))
     {
-        bUseDraftMode = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_DRAFTMODE].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
-    }
-    else if (findParameter(_sOption, "defaultframework", '='))
-    {
-        sFramework = _sOption.substr(_sOption.find('=')+1);
-        StripSpaces(sFramework);
-        if (sFramework == "calc" || sFramework == "menue")
-            return true;
-        else
-            sFramework = "calc";
     }
     else if (findParameter(_sOption, "plotfont", '='))
     {
-        sDefaultfont = _sOption.substr(_sOption.find('=')+1);
+        std::string sDefaultfont = _sOption.substr(_sOption.find('=')+1);
+
         if (sDefaultfont == "palatino")
             sDefaultfont = "pagella";
+
         if (sDefaultfont == "times")
             sDefaultfont = "termes";
+
         if (sDefaultfont == "bookman")
             sDefaultfont = "bonum";
+
         if (sDefaultfont == "avantgarde")
             sDefaultfont = "adventor";
+
         if (sDefaultfont == "chancery")
             sDefaultfont = "chorus";
+
         if (sDefaultfont == "courier")
             sDefaultfont = "cursor";
+
         if (sDefaultfont == "helvetica")
             sDefaultfont = "heros";
+
         if (sDefaultfont == "pagella"
                 || sDefaultfont == "adventor"
                 || sDefaultfont == "bonum"
@@ -402,96 +420,90 @@ bool Settings::set(const string& _sOption)
                 || sDefaultfont == "termes"
             )
         {
+            m_settings[SETTING_S_PLOTFONT].stringval() = sDefaultfont;
             return true;
         }
-        else
-            sDefaultfont = "pagella";
     }
     else if (findParameter(_sOption, "usecompacttables", '='))
     {
-        bCompact = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_COMPACT].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "usecustomlangfile", '='))
     {
-        bUseCustomLanguageFile = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_USECUSTOMLANG].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "useexternaldocviewer", '=') || findParameter(_sOption, "useexternalviewer", '='))
     {
-        bUseExternalDocViewer = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_EXTERNALDOCWINDOW].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "useexecutecommand", '='))
     {
-        bUseExecuteCommand = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_ENABLEEXECUTE].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "usemaskasdefault", '='))
     {
-        bUseMaskAsDefault = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_MASKDEFAULT].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "trytodecodeprocedurearguments", '='))
     {
-        bTryToDecodeProcedureArguments = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_DECODEARGUMENTS].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "extendedfileinfo", '='))
     {
-        bShowExtendedFileInfo = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_EXTENDEDFILEINFO].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "uselogfile", '='))
     {
-        bUseLogfile = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_LOGFILE].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "loademptycols", '='))
     {
-        bLoadEmptyCols = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_LOADEMPTYCOLS].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
     else if (findParameter(_sOption, "autosaveinterval", '='))
     {
-        nAutoSaveInterval = StrToInt(_sOption.substr(_sOption.find('=')+1));
+        size_t nAutoSaveInterval = StrToInt(_sOption.substr(_sOption.find('=')+1));
+
         if (nAutoSaveInterval)
+        {
+            m_settings[SETTING_V_AUTOSAVE].value() = nAutoSaveInterval;
             return true;
-        else
-            nAutoSaveInterval = 30;
+        }
     }
     else if (findParameter(_sOption, "buffersize", '='))
     {
-        nBuffer_x = (unsigned)StrToInt(_sOption.substr(_sOption.find('=')+1,_sOption.find(',')));
-        nBuffer_y = (unsigned)StrToInt(_sOption.substr(_sOption.find(',')+1));
-        if (nBuffer_x >= 81 && nBuffer_y >= 300)
-            return true;
-        else
+        size_t nBuffer_y = (size_t)StrToInt(_sOption.substr(_sOption.find(',')+1));
+
+        if (nBuffer_y >= 300)
         {
-            nBuffer_x = 81;
-            nBuffer_y = 300;
+            m_settings[SETTING_V_BUFFERSIZE].value() = nBuffer_y;
+            return true;
         }
     }
     else if (findParameter(_sOption, "windowsize", '='))
     {
-        nWindow_x = (unsigned)StrToInt(_sOption.substr(_sOption.find('=')+1,_sOption.find(',')));
-        nWindow_y = (unsigned)StrToInt(_sOption.substr(_sOption.find(',')+1));
-        if(nWindow_x >= 80 && nWindow_y >= 34)
-            return true;
-        else
+        size_t nWindow_x = (size_t)StrToInt(_sOption.substr(_sOption.find('=')+1,_sOption.find(',')));
+        size_t nWindow_y = (size_t)StrToInt(_sOption.substr(_sOption.find(',')+1));
+
+        if (nWindow_x >= 80 && nWindow_y >= 34)
         {
-            nWindow_x = 80;
-            nWindow_y = 34;
+            m_settings[SETTING_V_WINDOW_X].value() = nWindow_x;
+            m_settings[SETTING_V_WINDOW_Y].value() = nWindow_y;
+            return true;
         }
     }
     else if (findParameter(_sOption, "defcontrol", '='))
     {
-        bDefineAutoLoad = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
-        return true;
-    }
-    else if (findParameter(_sOption, "colortheme", '='))
-    {
-        nColorTheme = (unsigned)StrToInt(_sOption.substr(_sOption.find('=')+1));
+        m_settings[SETTING_B_DEFCONTROL].active() = (bool)StrToInt(_sOption.substr(_sOption.find('=')+1));
         return true;
     }
 
@@ -502,138 +514,139 @@ bool Settings::set(const string& _sOption)
     return false;
 }
 
-// --> Methode zum Laden der Einstellungen aus dem INI-File "numere.ini" <--
-void Settings::load(string _sWhere)
+
+/////////////////////////////////////////////////
+/// \brief This member function is a helper,
+/// which will replace the executable path part
+/// in the passed file path with the <> path
+/// token.
+///
+/// \param _sPath const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Settings::replaceExePath(const std::string& _sPath)
 {
-	string s;       // Temporaerer string fuer die verwendete Funktion "getline()"
+    const std::string& sPath = m_settings[SETTING_S_EXEPATH].stringval();
+    std::string sReturn = _sPath;
 
-    string sExecutablePath = _sWhere + "\\" + sSettings_ini;
-	// --> Oeffne die INI-Datei mit dem IOS-Flag "in" <--
-	Settings_ini.open(sExecutablePath.c_str(),ios_base::in);
+    if (sReturn.find(sPath) != std::string::npos)
+        sReturn.replace(sReturn.find(sPath), sPath.length(), "<>");
 
-	// --> Falls etwas schief laeuft, oder die Datei nicht existiert, gib eine Fehlermeldung aus und kehre zurueck <--
+    return sReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function is a helper,
+/// which will replace the <> path token in all
+/// default file paths with the corresponding
+/// executable path.
+///
+/// \param _sExePath const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Settings::prepareFilePaths(const std::string& _sExePath)
+{
+    if (m_settings[SETTING_S_EXEPATH].stringval() == "./" || m_settings[SETTING_S_EXEPATH].stringval() == "<>")
+        m_settings[SETTING_S_EXEPATH].stringval() = _sExePath;
+
+    m_settings[SETTING_S_WORKPATH].stringval() = m_settings[SETTING_S_EXEPATH].stringval();
+
+    if (m_settings[SETTING_S_LOADPATH].stringval().substr(0, 3) == "<>/")
+        m_settings[SETTING_S_LOADPATH].stringval().replace(0, 2, _sExePath);
+
+    if (m_settings[SETTING_S_SAVEPATH].stringval().substr(0, 3) == "<>/")
+        m_settings[SETTING_S_SAVEPATH].stringval().replace(0, 2, _sExePath);
+
+    if (m_settings[SETTING_S_PLOTPATH].stringval().substr(0, 3) == "<>/")
+        m_settings[SETTING_S_PLOTPATH].stringval().replace(0, 2, _sExePath);
+
+    if (m_settings[SETTING_S_SCRIPTPATH].stringval().substr(0, 3) == "<>/")
+        m_settings[SETTING_S_SCRIPTPATH].stringval().replace(0, 2, _sExePath);
+
+    if (m_settings[SETTING_S_PROCPATH].stringval().substr(0, 3) == "<>/")
+        m_settings[SETTING_S_PROCPATH].stringval().replace(0, 2, _sExePath);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Opens the configuration file,
+/// identifies its version and imports the
+/// setting values.
+///
+/// \param _sWhere const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Settings::load(const std::string& _sWhere)
+{
+    std::ifstream Settings_ini;
+	std::string s;
+
+    std::string sExecutablePath = _sWhere + "\\" + sSettings_ini;
+
+	// Open the configuration file
+	Settings_ini.open(sExecutablePath.c_str());
+
+	// If the file is not readable, try the *.ini.back
+	// file as fallback
 	if (Settings_ini.fail())
 	{
         Settings_ini.close();
         Settings_ini.clear();
         Settings_ini.open((sExecutablePath+".back").c_str(),ios_base::in);
+
         if (Settings_ini.fail())
         {
             NumeReKernel::printPreFmt(" -> NOTE: Could not find the configuration file \"" + sSettings_ini + "\".\n");
             NumeReKernel::printPreFmt("    Loading default settings.\n");
             Sleep(500);
             Settings_ini.close();
-            if (sPath == "./" || sPath == "<>")
-                sPath = _sWhere;
-            if (sLoadPath.substr(0,3) == "<>/")
-                sLoadPath.replace(0,2,_sWhere);
-            if (sSavePath.substr(0,3) == "<>/")
-                sSavePath.replace(0,2,_sWhere);
-            if (sPlotOutputPath.substr(0,3) == "<>/")
-                sPlotOutputPath.replace(0,2,_sWhere);
-            if (sScriptpath.substr(0,3) == "<>/")
-                sScriptpath.replace(0,2,_sWhere);
-            if (sProcsPath.substr(0,3) == "<>/")
-                sProcsPath.replace(0,2,_sWhere);
+
+            prepareFilePaths(_sWhere);
 
             return;
         }
 	}
 
-    // --> Lies' die erste Zeile ein <--
-    getline(Settings_ini,s);
+    // Read the first line
+    std::getline(Settings_ini,s);
 
-    // --> Falls was schief laeuft: Zurueck <--
-    if(Settings_ini.eof() || Settings_ini.fail())
-    {
+    // Ensure that the file contains some
+    // strings
+    if (Settings_ini.eof() || Settings_ini.fail())
         return;
-    }
 
-    // --> Lautet die erste Zeile "# NUMERE-CONFIG-09-SERIES"? <--
-    if (s != "# NUMERE-CONFIG-09-SERIES")
+    // Identify the version of the configuration
+    // file and use the corresponding importing
+    // member function
+    if (s == "# NUMERE-CONFIG-1x-SERIES")
     {
-        /* --> Nein? Dann ist das hier ein INI-File aus einer NumeRe-Version vor 0.9.3 <--
-         * --> Hier stehen die Werte einfach so in den Zeilen und die Beschreibung darueber <--
-         */
-        getline(Settings_ini,s);
-        getline(Settings_ini,s);
-        if (bDebug)
-            cerr << "|-> DEBUG: s = " << s << endl;
-        nPrecision = StrToInt(s);
-        getline(Settings_ini,s);
-        getline(Settings_ini,sLoadPath);
-        getline(Settings_ini,s);
-        getline(Settings_ini,sSavePath);
-        if (!Settings_ini.eof())
+        // Read every line of the file and
+        // import the values
+        while (!Settings_ini.eof())
         {
-            getline(Settings_ini, s);
-            getline(Settings_ini, s);
-            if(s.length())
-                bFastStart = (bool)StrToInt(s);
-        }
-        else
-        {
-            bFastStart = false;
-        }
-        if (!Settings_ini.eof())
-        {
-            getline(Settings_ini, s);
-            getline(Settings_ini, s);
-            if (s == "calc" || s == "menue")
-                sFramework = s;
-            else
-                sFramework = "calc";
-        }
-        else
-        {
-            sFramework = "calc";
-        }
-        if (!Settings_ini.eof())
-        {
-            getline(Settings_ini, s);
-            getline(Settings_ini, s);
-            if (s.length())
-                bCompact = (bool)StrToInt(s);
-        }
-        else
-        {
-            bCompact = false;
-        }
-        if (!Settings_ini.eof())
-        {
-            getline(Settings_ini, s);
-            getline(Settings_ini, s);
-            if (s.length())
-                nAutoSaveInterval = StrToInt(s);
-        }
-        else
-        {
-            nAutoSaveInterval = 30;
-        }
-        if (!Settings_ini.eof())
-        {
-            getline(Settings_ini, s);
-            getline(Settings_ini, s);
-            if (s.length())
-                sPlotOutputPath = s;
-        }
-    }
-    else
-    {
-        // --> Ja? Dann ist das hier das neue Format der INI-Datei. Zurueck zum ersten Zeichen <--
-        Settings_ini.seekg(0);
+            std::getline(Settings_ini, s);
 
-        // --> Lese jetzt nacheinander jede Zeile ein <--
-        do
-        {
-            getline(Settings_ini, s);
-
-            // --> Ist das erste Zeichen ein "#"? Dann ist das ein Kommentar. Ignorieren! <--
-            if (s[0] == '#')
+            // Ignore empty lines or comments
+            if (!s.length() || s[0] == '#')
                 continue;
 
-            // --> Besitzt die Zeile gar keine Zeichen? Ebenfalls ignorieren <--
-            if (!s.length())
+            import_v1x(s);
+        }
+    }
+    else if (s == "# NUMERE-CONFIG-09-SERIES")
+    {
+        // Read every line of the file and
+        // import the values
+        while (!Settings_ini.eof())
+        {
+            std::getline(Settings_ini, s);
+
+            // Ignore empty lines or comments
+            if (!s.length() || s[0] == '#')
                 continue;
 
             // --> Gib die Zeile an die Methode "set()" weiter <--
@@ -645,71 +658,64 @@ void Settings::load(string _sWhere)
                 continue;
             }
         }
-        while (!Settings_ini.eof() && !Settings_ini.fail());    // So lange nicht der EOF-Flag oder der FAIL-FLAG erscheint
     }
-
-    if (sPath == "./" || sPath == "<>")
+    else
     {
-        sPath = _sWhere;
-        sWorkPath = _sWhere;
-    }
-    if (sWorkPath == "<>")
-        sWorkPath = sPath;
-    if (sLoadPath.substr(0,3) == "<>/")
-        sLoadPath.replace(0,2,_sWhere);
-    if (sSavePath.substr(0,3) == "<>/")
-        sSavePath.replace(0,2,_sWhere);
-    if (sPlotOutputPath.substr(0,3) == "<>/")
-        sPlotOutputPath.replace(0,2,_sWhere);
-    if (sScriptpath.substr(0,3) == "<>/")
-        sScriptpath.replace(0,2,_sWhere);
-    if (sProcsPath.substr(0,3) == "<>/")
-        sProcsPath.replace(0,2,_sWhere);
-    if (sEditor.find("<>/") != string::npos)
-        sEditor.replace(sEditor.find("<>/"), 2, sPath);
-    if (sViewer.find("<>/") != string::npos)
-        sViewer.replace(sViewer.find("<>/"), 2, sPath);
+        // This is a legacy format before v0.9.x
+        std::getline(Settings_ini, s);
+        std::getline(Settings_ini, s);
+        m_settings[SETTING_V_PRECISION].value() = StrToInt(s);
+        std::getline(Settings_ini, s);
+        std::getline(Settings_ini, m_settings[SETTING_S_LOADPATH].stringval());
+        std::getline(Settings_ini, s);
+        std::getline(Settings_ini, m_settings[SETTING_S_SAVEPATH].stringval());
 
-    // --> Datei schliessen, Erfolgsmeldung und zurueck zur aufrufenden Stelle <--
-    Settings_ini.close();
+        if (!Settings_ini.eof())
+        {
+            for (size_t i = 0; i < 6; i++)
+                std::getline(Settings_ini, s);
+
+            if (s.length())
+                m_settings[SETTING_B_COMPACT].active() = (bool)StrToInt(s);
+        }
+
+        if (!Settings_ini.eof())
+        {
+            std::getline(Settings_ini, s);
+            std::getline(Settings_ini, s);
+
+            if (s.length())
+                m_settings[SETTING_V_AUTOSAVE].value() = StrToInt(s);
+        }
+
+        if (!Settings_ini.eof())
+        {
+            std::getline(Settings_ini, s);
+            std::getline(Settings_ini, s);
+
+            if (s.length())
+                m_settings[SETTING_S_PLOTPATH].stringval() = s;
+        }
+    }
+
+    prepareFilePaths(_sWhere);
+
     Settings::save(_sWhere, true);
     NumeReKernel::printPreFmt(" -> Configuration loaded successful.");
-	return;
 }
 
-Settings Settings::sendSettings()
-{
-    Settings _option(*this);
-    return _option;
-}
 
+/////////////////////////////////////////////////
+/// \brief This member function is an alias for
+/// the assignment operator overload.
+///
+/// \param _settings const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
 void Settings::copySettings(const Settings& _settings)
 {
-    bCompact = _settings.bCompact;
-    bDefineAutoLoad = _settings.bDefineAutoLoad;
-    bGreeting = _settings.bGreeting;
-    bLoadEmptyCols = _settings.bLoadEmptyCols;
-    bShowExtendedFileInfo = _settings.bShowExtendedFileInfo;
-    bShowHints = _settings.bShowHints;
-    bUseCustomLanguageFile = _settings.bUseCustomLanguageFile;
-    bUseESCinScripts = _settings.bUseESCinScripts;
-    bUseLogfile = _settings.bUseLogfile;
-    sPath = _settings.sPath;
-    sLoadPath = _settings.sLoadPath;
-    sSavePath = _settings.sSavePath;
-    sScriptpath = _settings.sScriptpath;
-    sProcsPath = _settings.sProcsPath;
-    sPlotOutputPath = _settings.sPlotOutputPath;
-    sDefaultfont = _settings.sDefaultfont;
-    nPrecision = _settings.nPrecision;
-    nAutoSaveInterval = _settings.nAutoSaveInterval;
-    nBuffer_x = _settings.nBuffer_x;
-    nBuffer_y = _settings.nBuffer_y;
-    bUseDebugger = _settings.bUseDebugger;
-    bUseExternalDocViewer = _settings.bUseExternalDocViewer;
-    bUseExecuteCommand = _settings.bUseExecuteCommand;
-    bUseMaskAsDefault = _settings.bUseMaskAsDefault;
-    bTryToDecodeProcedureArguments = _settings.bTryToDecodeProcedureArguments;
+    m_settings = _settings.m_settings;
     setTokens(_settings.getTokenPaths());
 }
 

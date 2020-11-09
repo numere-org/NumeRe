@@ -64,7 +64,7 @@ enum CommandReturnValues
 CommandReturnValues commandHandler(string& sCmd);
 string evaluateParameterValues(const string& sCmd);
 bool extractFirstParameterStringValue(const string& sCmd, string& sArgument);
-bool parseCmdArg(const string& sCmd, const string& sParam, Parser& _parser, int& nArgument);
+bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgument);
 
 
 #endif

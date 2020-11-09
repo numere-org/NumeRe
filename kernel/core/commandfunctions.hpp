@@ -169,7 +169,7 @@ static bool undefineFunctions(string sFunctionList, FunctionDefinitionManager& _
     }
 
     // Inform the user that (some) of the functions were undefined
-    if (_option.getSystemPrintStatus() && sSuccessFulRemoved.length())
+    if (_option.systemPrints() && sSuccessFulRemoved.length())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_UNDEF_SUCCESS", sSuccessFulRemoved.substr(0, sSuccessFulRemoved.length()-2)));
 
     return true;
@@ -282,7 +282,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 				return false;
 		}
 
-		if (sReturnVal.length() && _option.getSystemPrintStatus())
+		if (sReturnVal.length() && _option.systemPrints())
 		{
 			if (findParameter(sCmd, "free"))
 				NumeReKernel::print(_lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal));
@@ -359,7 +359,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 					return false;
 			}
 
-			if (sReturnVal.length() && _option.getSystemPrintStatus())
+			if (sReturnVal.length() && _option.systemPrints())
 			{
 				if (findParameter(sCmd, "free"))
 					NumeReKernel::print(LineBreak(  _lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal), _option) );
@@ -380,7 +380,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 	if (!sObject.length())
 		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
 
-	if (_option.getbDebug())
+	if (_option.isDeveloperMode())
 		NumeReKernel::print("DEBUG: sObject = " + sObject );
 
     // Create the objects
@@ -388,7 +388,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 	{
 		int nReturn = _fSys.setPath(sObject, true, _option.getExePath());
 
-		if (nReturn == 1 && _option.getSystemPrintStatus())
+		if (nReturn == 1 && _option.systemPrints())
 			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_FOLDERCREATED", sObject), _option) );
 	}
 	else if (nType == 2) // Script template
@@ -429,7 +429,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 				throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, sObject, sObject);
 		}
 
-		if (_option.getSystemPrintStatus())
+		if (_option.systemPrints())
 			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_SCRIPTCREATED", sObject), _option) );
 	}
 	else if (nType == 3) // Procedure template
@@ -453,10 +453,10 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 			while (sPath.find('$') != string::npos)
 				sPath.erase(sPath.find('$'), 1);
 
-			_fSys.setPath(sPath, true, _option.getProcsPath());
+			_fSys.setPath(sPath, true, _option.getProcPath());
 		}
 		else
-			_fSys.setPath(_option.getProcsPath(), false, _option.getExePath());
+			_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
 
 		string sProcedure = sObject;
 
@@ -510,7 +510,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 				throw SyntaxError(SyntaxError::CANNOT_GENERATE_PROCEDURE, sCmd, SyntaxError::invalid_position, sObject);
 		}
 
-		if (_option.getSystemPrintStatus())
+		if (_option.systemPrints())
 			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_PROCCREATED", sObject), _option) );
 	}
 	else if (nType == 4) // Arbitrary file template
@@ -557,7 +557,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 				throw SyntaxError(SyntaxError::CANNOT_GENERATE_FILE, sCmd, SyntaxError::invalid_position, sObject);
 		}
 
-		if (_option.getSystemPrintStatus())
+		if (_option.systemPrints())
 			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_FILECREATED", sObject), _option) );
 	}
 	else if (nType == 5) // Plugin template
@@ -605,7 +605,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 				throw SyntaxError(SyntaxError::CANNOT_GENERATE_SCRIPT, sCmd, SyntaxError::invalid_position, sObject);
 		}
 
-		if (_option.getSystemPrintStatus())
+		if (_option.systemPrints())
 			NumeReKernel::print(LineBreak( _lang.get("BUILTIN_NEW_PLUGINCREATED", sPluginName, sObject), _option) );
 	}
 
@@ -688,14 +688,14 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 		_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
 		sObject = _fSys.ValidFileName(sObject, ".nscr");
 	}
-	else if (sObject.find("<plotpath>") != string::npos || sObject.find(_option.getPlotOutputPath()) != string::npos)
+	else if (sObject.find("<plotpath>") != string::npos || sObject.find(_option.getPlotPath()) != string::npos)
 	{
-		_fSys.setPath(_option.getPlotOutputPath(), false, _option.getExePath());
+		_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
 		sObject = _fSys.ValidFileName(sObject, ".png");
 	}
-	else if (sObject.find("<procpath>") != string::npos || sObject.find(_option.getProcsPath()) != string::npos)
+	else if (sObject.find("<procpath>") != string::npos || sObject.find(_option.getProcPath()) != string::npos)
 	{
-		_fSys.setPath(_option.getProcsPath(), false, _option.getExePath());
+		_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
 		sObject = _fSys.ValidFileName(sObject, ".nprc");
 	}
 	else if (sObject.find("<wp>") != string::npos || sObject.find(_option.getWorkPath()) != string::npos)
@@ -736,15 +736,15 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 			else if (sObject.substr(sObject.rfind('.')) == ".nscr")
 				_fSys.setPath(_option.getScriptPath(), false, _option.getExePath());
 			else if (sObject.substr(sObject.rfind('.')) == ".nprc")
-				_fSys.setPath(_option.getProcsPath(), false, _option.getExePath());
+				_fSys.setPath(_option.getProcPath(), false, _option.getExePath());
 			else if (sObject.substr(sObject.rfind('.')) == ".png"
 					 || sObject.substr(sObject.rfind('.')) == ".gif"
 					 || sObject.substr(sObject.rfind('.')) == ".svg"
 					 || sObject.substr(sObject.rfind('.')) == ".eps")
-				_fSys.setPath(_option.getPlotOutputPath(), false, _option.getExePath());
+				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
 			else if (sObject.substr(sObject.rfind('.')) == ".tex")
 			{
-				_fSys.setPath(_option.getPlotOutputPath(), false, _option.getExePath());
+				_fSys.setPath(_option.getPlotPath(), false, _option.getExePath());
 				string sTemporaryObjectName = _fSys.ValidFileName(sObject, ".tex");
 
 				if (!fileExists(sTemporaryObjectName))
@@ -837,7 +837,7 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 		NumeReKernel::gotoLine(sObject);
 	}
 	else if (nType == 2)
-		openExternally(sObject, _option.getViewerPath(), _option.getExePath());
+		openExternally(sObject);
 
 	return true;
 }
@@ -864,13 +864,8 @@ static void listOptions(Settings& _option)
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_3", _option.getSavePath()), _option, true, 0, 25) + "\n" );
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_4", _option.getLoadPath()), _option, true, 0, 25) + "\n" );
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_5", _option.getScriptPath()), _option, true, 0, 25) + "\n" );
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_6", _option.getProcsPath()), _option, true, 0, 25) + "\n" );
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_7", _option.getPlotOutputPath()), _option, true, 0, 25) + "\n" );
-	if (_option.getViewerPath().length())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_8", _option.getViewerPath()), _option, true, 0, 25) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_8", _lang.get("BUILTIN_LISTOPT_NOVIEWER")), _option, true, 0, 25) + "\n");
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_9", _option.getEditorPath()), _option, true, 0, 25) + "\n");
+	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_6", _option.getProcPath()), _option, true, 0, 25) + "\n" );
+	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_7", _option.getPlotPath()), _option, true, 0, 25) + "\n" );
 	NumeReKernel::printPreFmt("|\n" );
 
 	// List all other settings
@@ -880,46 +875,46 @@ static void listOptions(Settings& _option)
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_11", toString(_option.getAutoSaveInterval())), _option) + "\n");
 
 	// Greeting
-	if (_option.getbGreeting())
+	if (_option.showGreeting())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_12", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_12", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
 
 	// Buffer
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_13", toString(_option.getBuffer(1))), _option) + "\n");
+	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_13", toString(_option.getBuffer())), _option) + "\n");
 
 	// Draftmode
-	if (_option.getbUseDraftMode())
+	if (_option.isDraftMode())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_15", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_15", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
 
 	// Extendedfileinfo
-	if (_option.getbShowExtendedFileInfo())
+	if (_option.showExtendedFileInfo())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_16", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_16", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
 
 	// ESC in Scripts
-	if (_option.getbUseESCinScripts())
+	if (_option.useEscInScripts())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_17", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_17", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
 
 	// Defcontrol
-	if (_option.getbDefineAutoLoad())
+	if (_option.controlDefinitions())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_19", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_19", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
 
 	// Compact table view in the terminal
-	if (_option.getbCompact())
+	if (_option.createCompactTables())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_20", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_20", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
 
 	// Loading empty columns
-	if (_option.getbLoadEmptyCols())
+	if (_option.loadEmptyCols())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_21", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_21", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
@@ -928,7 +923,7 @@ static void listOptions(Settings& _option)
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_22", toString(_option.getPrecision())), _option) + "\n");
 
 	// Create a logfile of the terminal inputs
-	if (_option.getbUseLogFile())
+	if (_option.useLogFile())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_23", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_23", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
@@ -937,19 +932,19 @@ static void listOptions(Settings& _option)
 	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_25", _option.getDefaultPlotFont()), _option) + "\n");
 
 	// Display Hints
-	if (_option.getbShowHints())
+	if (_option.showHints())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
 
 	// Use UserLangFiles
-	if (_option.getUseCustomLanguageFiles())
+	if (_option.useCustomLangFiles())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
 
 	//  Use the ExternalDocViewer
-	if (_option.getUseExternalViewer())
+	if (_option.useExternalDocWindow())
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_28", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
 	else
 		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_28", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
@@ -1024,8 +1019,8 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 		}
 		else if (sDir == "PLOTPATH")
 		{
-			hFind = FindFirstFile((_option.getPlotOutputPath() + "\\" + sPattern).c_str(), &FindFileData);
-			sDirectory = _option.getPlotOutputPath();
+			hFind = FindFirstFile((_option.getPlotPath() + "\\" + sPattern).c_str(), &FindFileData);
+			sDirectory = _option.getPlotPath();
 		}
 		else if (sDir == "SCRIPTPATH")
 		{
@@ -1034,8 +1029,8 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 		}
 		else if (sDir == "PROCPATH")
 		{
-			hFind = FindFirstFile((_option.getProcsPath() + "\\" + sPattern).c_str(), &FindFileData);
-			sDirectory = _option.getProcsPath();
+			hFind = FindFirstFile((_option.getProcPath() + "\\" + sPattern).c_str(), &FindFileData);
+			sDirectory = _option.getProcPath();
 		}
 		else if (sDir == "WORKPATH")
 		{
@@ -1068,13 +1063,13 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 				}
 				else if (sDir.substr(0, 10) == "<plotpath>")
 				{
-					hFind = FindFirstFile((_option.getPlotOutputPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getPlotOutputPath() + sDir.substr(10);
+					hFind = FindFirstFile((_option.getPlotPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
+					sDirectory = _option.getPlotPath() + sDir.substr(10);
 				}
 				else if (sDir.substr(0, 10) == "<procpath>")
 				{
-					hFind = FindFirstFile((_option.getProcsPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
-					sDirectory = _option.getProcsPath() + sDir.substr(10);
+					hFind = FindFirstFile((_option.getProcPath() + "\\" + sDir.substr(sDir.find('>') + 1) + "\\" + sPattern).c_str(), &FindFileData);
+					sDirectory = _option.getProcPath() + sDir.substr(10);
 				}
 				else if (sDir.substr(0, 4) == "<wp>")
 				{
@@ -1178,7 +1173,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 				sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length(), ' ');
 				sConnect += sFilesize;
 
-				if (sExt == ".ndat" && _option.getbShowExtendedFileInfo())
+				if (sExt == ".ndat" && _option.showExtendedFileInfo())
 				{
 					sConnect += "$     ";
 					sConnect += getFileInfo(sFileName);
@@ -1379,7 +1374,7 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 			if (!sSpecified.length())
 				NumeReKernel::printPreFmt("|\n" );
 
-		    NumeReKernel::print(createListDirectoryHeader(_option.getProcsPath(), _lang.get("BUILTIN_LISTFILES_PROCPATH"), _option.getWindow()));
+		    NumeReKernel::print(createListDirectoryHeader(_option.getProcPath(), _lang.get("BUILTIN_LISTFILES_PROCPATH"), _option.getWindow()));
 
 			if (!listDirectory("PROCPATH", __sCmd, _option))
 				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
@@ -1390,7 +1385,7 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 			if (!sSpecified.length())
 				NumeReKernel::printPreFmt("|\n" );
 
-		    NumeReKernel::print(createListDirectoryHeader(_option.getPlotOutputPath(), _lang.get("BUILTIN_LISTFILES_PLOTPATH"), _option.getWindow()));
+		    NumeReKernel::print(createListDirectoryHeader(_option.getPlotPath(), _lang.get("BUILTIN_LISTFILES_PLOTPATH"), _option.getWindow()));
 
 			if (!listDirectory("PLOTPATH", __sCmd, _option))
 				NumeReKernel::printPreFmt(LineBreak("|   -- " + _lang.get("BUILTIN_LISTFILES_NOFILES") + " --", _option) + "\n");
@@ -1990,7 +1985,7 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 /////////////////////////////////////////////////
 static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
-	if (!_option.getUseExecuteCommand())
+	if (!_option.executeEnabled())
 		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
 
 	sCmd = evaluateParameterValues(sCmd);
@@ -2099,7 +2094,7 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
     // Do we have to wait for termination?
 	if (bWaitForTermination)
 	{
-		if (_option.getSystemPrintStatus())
+		if (_option.systemPrints())
 			NumeReKernel::printPreFmt("|-> " + _lang.get("COMMON_EVALUATING") + " ... ");
 
 		while (true)
@@ -2110,14 +2105,14 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
 
 			if (NumeReKernel::GetAsyncCancelState())
 			{
-				if (_option.getSystemPrintStatus())
+				if (_option.systemPrints())
 					NumeReKernel::printPreFmt(_lang.get("COMMON_CANCEL") + "\n");
 
 				throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
 			}
 		}
 
-		if (_option.getSystemPrintStatus())
+		if (_option.systemPrints())
 			NumeReKernel::printPreFmt(_lang.get("COMMON_DONE") + ".\n");
 	}
 
@@ -2141,18 +2136,18 @@ static void autoSave(MemoryManager& _data, Output& _out, Settings& _option)
 	if (_data.isValid() && !_data.getSaveStatus())
 	{
 	    // Inform the user
-		if (_option.getSystemPrintStatus())
+		if (_option.systemPrints())
 			NumeReKernel::printPreFmt(toSystemCodePage(  _lang.get("BUILTIN_AUTOSAVE") + " ... "));
 
 		// Try to save the cache
 		if (_data.saveToCacheFile())
 		{
-			if (_option.getSystemPrintStatus())
+			if (_option.systemPrints())
 				NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS") + ".") );
 		}
 		else
 		{
-			if (_option.getSystemPrintStatus())
+			if (_option.systemPrints())
 				NumeReKernel::printPreFmt("\n");
 			throw SyntaxError(SyntaxError::CANNOT_SAVE_CACHE, "", SyntaxError::invalid_position);
 		}
@@ -2167,16 +2162,15 @@ static void autoSave(MemoryManager& _data, Output& _out, Settings& _option)
 /// by cmd_set().
 ///
 /// \param sCmd string&
-/// \param sPathParameter const string&
+/// \param pos size_t
 /// \return string
 ///
 /////////////////////////////////////////////////
-static string getPathForSetting(string& sCmd, const string& sPathParameter)
+static string getPathForSetting(string& sCmd, size_t pos)
 {
     string sPath;
 
-    if (findParameter(sCmd, sPathParameter, '='))
-        addArgumentQuotes(sCmd, sPathParameter);
+    addArgumentQuotes(sCmd, pos);
 
     while (sCmd.find('\\') != string::npos)
         sCmd[sCmd.find('\\')] = '/';
@@ -2239,6 +2233,34 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
 }
 
 
+static size_t findSettingOption(const std::string& sCmd, const std::string& sOption)
+{
+    size_t pos = findParameter(sCmd, sOption);
+
+    if (pos)
+        return pos-1+sOption.length();
+
+    pos = findParameter(sCmd, sOption, '=');
+
+    if (pos)
+        return pos + sOption.length();
+
+    pos = sCmd.find(sOption);
+
+    if (pos != std::string::npos
+        && (!pos || sCmd[pos-1] == ' '))
+    {
+        if (pos+sOption.length() == sCmd.length() || sCmd[pos+sOption.length()] == ' ')
+            return pos + sOption.length();
+
+        if (sCmd[pos+sOption.length()] == '=')
+            return pos + sOption.length()+1;
+    }
+
+    return 0u;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This static function handles the
 /// swapping of the data of the values of two
@@ -2270,7 +2292,7 @@ static CommandReturnValues swapTables(string& sCmd, MemoryManager& _data, Settin
         // Swap the caches
         _data.swapTables(_data.matchTableAsParameter(sCmd, '='), sArgument);
 
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", _data.matchTableAsParameter(sCmd, '='), sArgument), _option) );
     }
     else if (sCmd.find("()") != string::npos && sCmd.find(',') != string::npos)
@@ -2299,7 +2321,7 @@ static CommandReturnValues swapTables(string& sCmd, MemoryManager& _data, Settin
         // Swap the caches
         _data.swapTables(sCmd, sArgument);
 
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCmd, sArgument), _option) );
     }
 
@@ -2372,7 +2394,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
 
             if (_cache.saveFile(_access.getDataObject(), sArgument, nPrecision))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
 
                 return COMMAND_PROCESSED;
@@ -2386,7 +2408,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
         // Auto-generate a file name during saving
         if (_cache.saveFile(_access.getDataObject(), "", nPrecision))
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
         }
         else
@@ -2925,7 +2947,7 @@ static CommandReturnValues cmd_plotting(string& sCmd)
                 else
                     _pData.setParams(sCmd.substr(sCmd.find("-set")), _parser, _option);
 
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_PLOTPARAMS")));
 
             }
@@ -3020,274 +3042,142 @@ static CommandReturnValues cmd_get(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
 
+    const std::map<std::string, SettingsValue>& mSettings = _option.getSettings();
+
     size_t nPos = findCommand(sCmd, "get").nPos;
     string sCommand = extractCommandString(sCmd, findCommand(sCmd, "get"));
 
-    if (findParameter(sCmd, "savepath"))
+    bool asVal = findParameter(sCmd, "asval");
+    bool asStr = findParameter(sCmd, "asstr");
+
+    for (auto iter = mSettings.begin(); iter != mSettings.end(); ++iter)
     {
-        if (findParameter(sCmd, "asstr"))
+        if (findSettingOption(sCmd, iter->first.substr(iter->first.find('.')+1)) && !iter->second.isHidden())
         {
-            if (!nPos)
-                sCmd = "\"" + _option.getSavePath() + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + _option.getSavePath() + "\"");
+            std::string convertedValue;
 
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("SAVEPATH: \"" + _option.getSavePath() + "\"");
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "loadpath"))
-    {
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + _option.getLoadPath() + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + _option.getLoadPath() + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("LOADPATH: \"" + _option.getLoadPath() + "\"");
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "workpath"))
-    {
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + _option.getWorkPath() + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + _option.getWorkPath() + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("WORKPATH: \"" + _option.getWorkPath() + "\"");
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "viewer"))
-    {
-        if (_option.getViewerPath().length())
-        {
-            if (findParameter(sCmd, "asstr"))
+            switch (iter->second.getType())
             {
-                if (_option.getViewerPath()[0] == '"' && _option.getViewerPath()[_option.getViewerPath().length() - 1] == '"')
-                {
-                    if (!nPos)
-                        sCmd = _option.getViewerPath();
+                case SettingsValue::BOOL:
+                    convertedValue = toString(iter->second.active());
+                    break;
+                case SettingsValue::UINT:
+                    convertedValue = toString(iter->second.value());
+                    break;
+                case SettingsValue::STRING:
+                    convertedValue = iter->second.stringval();
+                    break;
+            }
+
+            switch (iter->second.getType())
+            {
+                case SettingsValue::BOOL:
+                case SettingsValue::UINT:
+                    if (asVal)
+                    {
+                        if (!nPos)
+                            sCmd = convertedValue;
+                        else
+                            sCmd.replace(nPos, sCommand.length(), convertedValue);
+
+                        break;
+                    }
+                // Fallthrough intended
+                case SettingsValue::STRING:
+                    if (asStr || asVal)
+                    {
+                        if (!nPos)
+                            sCmd = "\"" + convertedValue + "\"";
+                        else
+                            sCmd.replace(nPos, sCommand.length(), "\"" + convertedValue + "\"");
+                    }
                     else
-                        sCmd.replace(nPos, sCommand.length(), _option.getViewerPath());
-                }
-                else
-                {
-                    if (!nPos)
-                        sCmd = "\"" + _option.getViewerPath() + "\"";
-                    else
-                        sCmd.replace(nPos, sCommand.length(), "\"" + _option.getViewerPath() + "\"");
-                }
+                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + convertedValue);
 
+                    break;
+            }
+
+            if (asStr || asVal)
                 return COMMAND_HAS_RETURNVALUE;
-            }
-            if (_option.getViewerPath()[0] == '"' && _option.getViewerPath()[_option.getViewerPath().length() - 1] == '"')
-                NumeReKernel::print(LineBreak("IMAGEVIEWER: " + _option.getViewerPath(), _option));
             else
-                NumeReKernel::print(LineBreak("|-> IMAGEVIEWER: \"" + _option.getViewerPath() + "\"", _option));
+                return COMMAND_PROCESSED;
         }
-        else
+    }
+
+    if (findSettingOption(sCmd, "windowsize"))
+    {
+        std::string convertedValue = "x = " + toString(mSettings.at(SETTING_V_WINDOW_X).value() + 1) + ", y = " + toString(mSettings.at(SETTING_V_WINDOW_Y).value() + 1);
+        if (asVal)
         {
-            if (findParameter(sCmd, "asstr"))
-            {
-                if (!nPos)
-                    sCmd = "\"\"";
-                else
-                    sCmd.replace(nPos, sCommand.length(), "\"\"");
-
-                return COMMAND_HAS_RETURNVALUE;
-            }
+            if (!nPos)
+                sCmd = convertedValue;
             else
-                NumeReKernel::print("Kein Imageviewer deklariert!");
+                sCmd.replace(nPos, sCommand.length(), "{" + toString(mSettings.at(SETTING_V_WINDOW_X).value() + 1) + ", " + toString(mSettings.at(SETTING_V_WINDOW_Y).value() + 1) + "}");
+
+            return COMMAND_HAS_RETURNVALUE;
         }
 
+        if (asStr)
+        {
+            if (!nPos)
+                sCmd = "\"" + convertedValue + "\"";
+            else
+                sCmd.replace(nPos, sCommand.length(), "\"" + convertedValue + "\"");
+
+            return COMMAND_HAS_RETURNVALUE;
+        }
+
+        NumeReKernel::print("WINDOWSIZE: " + convertedValue);
         return COMMAND_PROCESSED;
     }
-    else if (findParameter(sCmd, "editor"))
+    else if (findSettingOption(sCmd, "varlist"))
     {
-        if (findParameter(sCmd, "asstr"))
+        if (asStr)
         {
-            if (_option.getEditorPath()[0] == '"' && _option.getEditorPath()[_option.getEditorPath().length() - 1] == '"')
-            {
-                if (!nPos)
-                    sCmd = _option.getEditorPath();
-                else
-                    sCmd.replace(nPos, sCommand.length(), _option.getEditorPath());
-            }
+            if (!nPos)
+                sCmd = getVarList("vars -asstr", _parser, _data, _option);
             else
-            {
-                if (!nPos)
-                    sCmd = "\"" + _option.getEditorPath() + "\"";
-                else
-                    sCmd.replace(nPos, sCommand.length(), "\"" + _option.getEditorPath() + "\"");
-            }
+                sCmd.replace(nPos, sCommand.length(), getVarList("vars -asstr", _parser, _data, _option));
 
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (_option.getEditorPath()[0] == '"' && _option.getEditorPath()[_option.getEditorPath().length() - 1] == '"')
-            NumeReKernel::print(LineBreak("TEXTEDITOR: " + _option.getEditorPath(), _option));
-        else
-            NumeReKernel::print(LineBreak("TEXTEDITOR: \"" + _option.getEditorPath() + "\"", _option));
-
+        NumeReKernel::print(LineBreak("VARLIST: " + getVarList("vars", _parser, _data, _option), _option, false));
         return COMMAND_PROCESSED;
     }
-    else if (findParameter(sCmd, "scriptpath"))
+    else if (findSettingOption(sCmd, "stringlist"))
     {
-        if (findParameter(sCmd, "asstr"))
+        if (asStr)
         {
             if (!nPos)
-                sCmd = "\"" + _option.getScriptPath() + "\"";
+                sCmd = getVarList("strings -asstr", _parser, _data, _option);
             else
-                sCmd.replace(nPos, sCommand.length(), "\"" + _option.getScriptPath() + "\"");
+                sCmd.replace(nPos, sCommand.length(), getVarList("strings -asstr", _parser, _data, _option));
 
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        NumeReKernel::print("SCRIPTPATH: \"" + _option.getScriptPath() + "\"");
+        NumeReKernel::print(LineBreak("STRINGLIST: " + getVarList("strings", _parser, _data, _option), _option, false));
         return COMMAND_PROCESSED;
     }
-    else if (findParameter(sCmd, "procpath"))
+    else if (findSettingOption(sCmd, "numlist"))
     {
-        if (findParameter(sCmd, "asstr"))
+        if (asStr)
         {
             if (!nPos)
-                sCmd = "\"" + _option.getProcsPath() + "\"";
+                sCmd = getVarList("nums -asstr", _parser, _data, _option);
             else
-                sCmd.replace(nPos, sCommand.length(), "\"" + _option.getProcsPath() + "\"");
+                sCmd.replace(nPos, sCommand.length(), getVarList("nums -asstr", _parser, _data, _option));
 
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        NumeReKernel::print("PROCPATH: \"" + _option.getProcsPath() + "\"");
+        NumeReKernel::print(LineBreak("NUMLIST: " + getVarList("nums", _parser, _data, _option), _option, false));
         return COMMAND_PROCESSED;
     }
-    else if (findParameter(sCmd, "plotfont"))
+    else if (findSettingOption(sCmd, "plotparams"))
     {
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + _option.getDefaultPlotFont() + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + _option.getDefaultPlotFont() + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("PLOTFONT: \"" + _option.getDefaultPlotFont() + "\"");
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "precision"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getPrecision());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getPrecision()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getPrecision()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getPrecision()) + "\"");
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("PRECISION = " + toString(_option.getPrecision()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "faststart"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbFastStart());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbFastStart()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbFastStart()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbFastStart()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("FASTSTART: " + toString(_option.getbFastStart()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "compact"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbCompact());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbCompact()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbCompact()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbCompact()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("COMPACT-MODE: " + toString(_option.getbCompact()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "autosave"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getAutoSaveInterval());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getAutoSaveInterval()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getAutoSaveInterval()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getAutoSaveInterval()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("AUTOSAVE-INTERVAL: " + toString(_option.getAutoSaveInterval()) + " [sec]");
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "plotparams"))
-    {
-        if (findParameter(sCmd, "asstr"))
+        if (asStr)
         {
             if (!nPos)
                 sCmd = _pData.getParams(_option, true);
@@ -3298,389 +3188,6 @@ static CommandReturnValues cmd_get(string& sCmd)
         }
 
         NumeReKernel::print(LineBreak("PLOTPARAMS: " + _pData.getParams(_option), _option, false));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "varlist"))
-    {
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = getVarList("vars -asstr", _parser, _data, _option);
-            else
-                sCmd.replace(nPos, sCommand.length(), getVarList("vars -asstr", _parser, _data, _option));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print(LineBreak("VARS: " + getVarList("vars", _parser, _data, _option), _option, false));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "stringlist"))
-    {
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = getVarList("strings -asstr", _parser, _data, _option);
-            else
-                sCmd.replace(nPos, sCommand.length(), getVarList("strings -asstr", _parser, _data, _option));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print(LineBreak("STRINGS: " + getVarList("strings", _parser, _data, _option), _option, false));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "numlist"))
-    {
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = getVarList("nums -asstr", _parser, _data, _option);
-            else
-                sCmd.replace(nPos, sCommand.length(), getVarList("nums -asstr", _parser, _data, _option));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print(LineBreak("NUMS: " + getVarList("nums", _parser, _data, _option), _option, false));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "plotpath"))
-    {
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + _option.getPlotOutputPath() + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + _option.getPlotOutputPath() + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("PLOTPATH: \"" + _option.getPlotOutputPath() + "\"");
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "greeting"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbGreeting());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbGreeting()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbGreeting()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbGreeting()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("GREETING: " + toString(_option.getbGreeting()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "hints"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbShowHints());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbShowHints()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbShowHints()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbGreeting()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("HINTS: " + toString(_option.getbGreeting()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "useescinscripts"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbUseESCinScripts());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbUseESCinScripts()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbUseESCinScripts()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbUseESCinScripts()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("USEESCINSCRIPTS: " + toString(_option.getbUseESCinScripts()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "usecustomlang"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getUseCustomLanguageFiles());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getUseCustomLanguageFiles()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getUseCustomLanguageFiles()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getUseCustomLanguageFiles()) + "\"");
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("USECUSTOMLANG: " + toString(_option.getUseCustomLanguageFiles()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "externaldocwindow"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getUseExternalViewer());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getUseExternalViewer()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getUseExternalViewer()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getUseExternalViewer()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("EXTERNALDOCWINDOW: " + toString(_option.getUseExternalViewer()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "draftmode"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbUseDraftMode());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbUseDraftMode()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbUseDraftMode()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbUseDraftMode()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("DRAFTMODE: " + toString(_option.getbUseDraftMode()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "extendedfileinfo"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbShowExtendedFileInfo());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbShowExtendedFileInfo()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbShowExtendedFileInfo()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbShowExtendedFileInfo()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("EXTENDED FILEINFO: " + toString(_option.getbShowExtendedFileInfo()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "loademptycols"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbLoadEmptyCols());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbLoadEmptyCols()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbLoadEmptyCols()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbLoadEmptyCols()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("LOAD EMPTY COLS: " + toString(_option.getbLoadEmptyCols()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "logfile"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbUseLogFile());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbUseLogFile()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbUseLogFile()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbUseLogFile()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("EXTENDED FILEINFO: " + toString(_option.getbUseLogFile()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "defcontrol"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString(_option.getbDefineAutoLoad());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString(_option.getbDefineAutoLoad()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString(_option.getbDefineAutoLoad()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString(_option.getbDefineAutoLoad()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("DEFCONTROL: " + toString(_option.getbDefineAutoLoad()));
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "buffersize"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString((int)_option.getBuffer(1));
-            else
-                sCmd.replace(nPos, sCommand.length(), toString((int)_option.getBuffer(1)));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString((int)_option.getBuffer(1)) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString((int)_option.getBuffer(1)) + "\"");
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("BUFFERSIZE: " + _option.getBuffer(1) );
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "windowsize"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = "x = " + toString((int)_option.getWindow() + 1) + ", y = " + toString((int)_option.getWindow(1) + 1);
-            else
-                sCmd.replace(nPos, sCommand.length(), "{" + toString((int)_option.getWindow() + 1) + ", " + toString((int)_option.getWindow(1) + 1) + "}");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"x = " + toString((int)_option.getWindow() + 1) + ", y = " + toString((int)_option.getWindow(1) + 1) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"x = " + toString((int)_option.getWindow() + 1) + ", y = " + toString((int)_option.getWindow(1) + 1) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("WINDOWSIZE: x = " + toString((int)_option.getWindow() + 1) + ", y = " + toString((int)_option.getWindow(1) + 1) );
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "colortheme"))
-    {
-        if (findParameter(sCmd, "asval"))
-        {
-            if (!nPos)
-                sCmd = toString((int)_option.getColorTheme());
-            else
-                sCmd.replace(nPos, sCommand.length(), toString((int)_option.getColorTheme()));
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        if (findParameter(sCmd, "asstr"))
-        {
-            if (!nPos)
-                sCmd = "\"" + toString((int)_option.getColorTheme()) + "\"";
-            else
-                sCmd.replace(nPos, sCommand.length(), "\"" + toString((int)_option.getColorTheme()) + "\"");
-
-            return COMMAND_HAS_RETURNVALUE;
-        }
-
-        NumeReKernel::print("COLORTHEME: " + _option.getColorTheme() );
         return COMMAND_PROCESSED;
     }
     else
@@ -3874,7 +3381,7 @@ static CommandReturnValues cmd_data(string& sCmd)
             {
                 if (_data.isValid())
                 {
-                    if (_option.getSystemPrintStatus())
+                    if (_option.systemPrints())
                         _data.removeData(false);
                     else
                         _data.removeData(true);
@@ -3914,7 +3421,7 @@ static CommandReturnValues cmd_data(string& sCmd)
                 {
                     _data.openFile(sArgument, false, nArgument);
                 }
-                if (_data.isValid() && _option.getSystemPrintStatus())
+                if (_data.isValid() && _option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
             }
@@ -3953,7 +3460,7 @@ static CommandReturnValues cmd_data(string& sCmd)
                 }
                 else
                     _data.openFile(sArgument, false, nArgument);
-                if (_data.isValid() && _option.getSystemPrintStatus())
+                if (_data.isValid() && _option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
             }
@@ -4000,7 +3507,7 @@ static CommandReturnValues cmd_data(string& sCmd)
                 }
                 else
                     _data.openFile(sArgument);
-                if (_data.isValid() && _option.getSystemPrintStatus())
+                if (_data.isValid() && _option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich aktualisiert.", _option) );
             }
@@ -4014,7 +3521,7 @@ static CommandReturnValues cmd_data(string& sCmd)
             sArgument = _data.getDataFileName("data");
             _data.removeData(false);
             _data.openFile(sArgument);
-            if (_data.isValid() && _option.getSystemPrintStatus())
+            if (_data.isValid() && _option.systemPrints())
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"), _option) );
             //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich aktualisiert.", _option) );
         }
@@ -4034,7 +3541,7 @@ static CommandReturnValues cmd_data(string& sCmd)
     }
     else if (findParameter(sCmd, "show"))
     {
-        _out.setCompact(_option.getbCompact());
+        _out.setCompact(_option.createCompactTables());
         show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
         return COMMAND_PROCESSED;
     }
@@ -4073,7 +3580,7 @@ static CommandReturnValues cmd_data(string& sCmd)
         {
             if (_data.saveFile("data", sArgument))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
             }
@@ -4093,7 +3600,7 @@ static CommandReturnValues cmd_data(string& sCmd)
                 sArgument = sArgument.substr(0, sArgument.rfind('.')) + ".ndat";
             if (_data.saveFile("data", "copy_of_" + sArgument))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
             }
@@ -4599,7 +4106,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
     }
     else if (findParameter(sCmd, "show"))
     {
-        _out.setCompact(_option.getbCompact());
+        _out.setCompact(_option.createCompactTables());
         show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true);
         return COMMAND_PROCESSED;
     }
@@ -4653,7 +4160,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
         {
             if (_data.saveFile(sCommand, sArgument))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
             }
@@ -4667,7 +4174,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
         {
             if (_data.saveFile(sCommand, ""))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
             }
@@ -4718,7 +4225,7 @@ static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCache
 
         sArgument = getArgAtPos(sCmd, findParameter(sCmd, "swap", '=') + 4);
         _data.swapTables(sCommand, sArgument);
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCommand, sArgument), _option) );
         //NumeReKernel::print(LineBreak("|-> Der Inhalt von \""+sCommand+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) );
         return COMMAND_PROCESSED;
@@ -5041,7 +4548,7 @@ static CommandReturnValues cmd_delete(string& sCmd)
 
         if (deleteCacheEntry(sCmd, _parser, _data, _option))
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_SUCCESS"));
         }
         else
@@ -5052,12 +4559,12 @@ static CommandReturnValues cmd_delete(string& sCmd)
     {
         if (_data.removeStringElements(0))
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", "1"));
         }
         else
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", "1"));
         }
 
@@ -5070,12 +4577,12 @@ static CommandReturnValues cmd_delete(string& sCmd)
 
         if (_data.removeStringElements(nArgument))
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", toString(nArgument + 1)));
         }
         else
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", toString(nArgument + 1)));
         }
 
@@ -5144,12 +4651,12 @@ static CommandReturnValues cmd_clear(string& sCmd)
     {
         if (_data.clearStringElements())
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"));
         }
         else
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"));
         }
 
@@ -5189,7 +4696,7 @@ static CommandReturnValues cmd_ifndefined(string& sCmd)
         if (!_functions.isDefined(sArgument.substr(0, sArgument.find(":="))))
         {
             if (_functions.defineFunc(sArgument))
-                NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
+                NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
             else
                 NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
         }
@@ -5253,7 +4760,7 @@ static CommandReturnValues cmd_copy(string& sCmd)
     {
         if (CopyData(sCmd, _parser, _data, _option))
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYDATA_SUCCESS"));
         }
         else
@@ -5270,7 +4777,7 @@ static CommandReturnValues cmd_copy(string& sCmd)
 
         if (copyFile(sCmd, _parser, _data, _option))
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
             {
                 if (nArgument)
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_ALL_SUCCESS", sCmd));
@@ -5411,7 +4918,7 @@ static CommandReturnValues cmd_audio(string& sCmd)
 
     if (!writeAudioFile(sCmd, _parser, _data, _functions, _option))
         throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
-    else if (_option.getSystemPrintStatus())
+    else if (_option.systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_AUDIO_SUCCESS"));
 
     return COMMAND_PROCESSED;
@@ -5497,9 +5004,9 @@ static CommandReturnValues cmd_workpath(string& sCmd)
     FileSystem _fSys;
     _fSys.setTokens(_option.getTokenPaths());
     _fSys.setPath(sArgument, true, _data.getProgramPath());
-    _option.setWorkPath(_fSys.getPath());
+    _option.getSetting(SETTING_S_WORKPATH).stringval() = _fSys.getPath();
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
         NumeReKernel::print(toSystemCodePage(_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")));
 
     return COMMAND_PROCESSED;
@@ -5718,237 +5225,133 @@ static CommandReturnValues cmd_set(string& sCmd)
     Script& _script = NumeReKernel::getInstance()->getScript();
     PlotData& _pData = NumeReKernel::getInstance()->getPlottingData();
 
-    int nArgument;
+    std::map<std::string, SettingsValue>& mSettings = _option.getSettings();
+
+    size_t nArgument;
+    size_t pos;
     string sArgument;
 
     if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
         NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-    if (findParameter(sCmd, "savepath") || findParameter(sCmd, "savepath", '='))
+    for (auto iter = mSettings.begin(); iter != mSettings.end(); ++iter)
     {
-        sArgument = getPathForSetting(sCmd, "savepath");
-        _out.setPath(sArgument, true, _out.getProgramPath());
-        _option.setSavePath(_out.getPath());
-        _data.setSavePath(_option.getSavePath());
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-
-        NumeReKernel::modifiedSettings = true;
-    }
-    else if (findParameter(sCmd, "loadpath") || findParameter(sCmd, "loadpath", '='))
-    {
-        sArgument = getPathForSetting(sCmd, "loadpath");
-        _data.setPath(sArgument, true, _data.getProgramPath());
-        _option.setLoadPath(_data.getPath());
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-
-        NumeReKernel::modifiedSettings = true;
-    }
-    else if (findParameter(sCmd, "workpath") || findParameter(sCmd, "workpath", '='))
-    {
-        sArgument = getPathForSetting(sCmd, "workpath");
-        FileSystem _fSys;
-        _fSys.setTokens(_option.getTokenPaths());
-        _fSys.setPath(sArgument, true, _data.getProgramPath());
-        _option.setWorkPath(_fSys.getPath());
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-
-        NumeReKernel::modifiedSettings = true;
-    }
-    else if (findParameter(sCmd, "viewer") || findParameter(sCmd, "viewer", '='))
-    {
-        sArgument = getPathForSetting(sCmd, "viewer");
-        _option.setViewerPath(sArgument);
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage(  _lang.get("BUILTIN_CHECKKEYWORD_SET_PROGRAM", "Imageviewer")) );
-    }
-    else if (findParameter(sCmd, "editor") || findParameter(sCmd, "editor", '='))
-    {
-        sArgument = getPathForSetting(sCmd, "editor");
-        _option.setEditorPath(sArgument);
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage(  _lang.get("BUILTIN_CHECKKEYWORD_SET_PROGRAM", "Texteditor")) );
-    }
-    else if (findParameter(sCmd, "scriptpath") || findParameter(sCmd, "scriptpath", '='))
-    {
-        sArgument = getPathForSetting(sCmd, "scriptpath");
-        _script.setPath(sArgument, true, _script.getProgramPath());
-        _option.setScriptPath(_script.getPath());
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-
-        NumeReKernel::modifiedSettings = true;
-    }
-    else if (findParameter(sCmd, "plotpath") || findParameter(sCmd, "plotpath", '='))
-    {
-        sArgument = getPathForSetting(sCmd, "plotpath");
-        _pData.setPath(sArgument, true, _pData.getProgramPath());
-        _option.setPlotOutputPath(_pData.getPath());
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-
-        NumeReKernel::modifiedSettings = true;
-    }
-    else if (findParameter(sCmd, "procpath") || findParameter(sCmd, "procpath", '='))
-    {
-        sArgument = getPathForSetting(sCmd, "procpath");
-        _option.setProcPath(sArgument);
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")) );
-
-        NumeReKernel::modifiedSettings = true;
-    }
-    else if (findParameter(sCmd, "plotfont") || findParameter(sCmd, "plotfont", '='))
-    {
-        if (findParameter(sCmd, "plotfont", '='))
-            addArgumentQuotes(sCmd, "plotfont");
-
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
+        if (iter->second.isMutable() && (pos = findSettingOption(sCmd, iter->first.substr(iter->first.find('.')+1))))
         {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_DEFAULTFONT"))) );
-
-            do
+            switch (iter->second.getType())
             {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
+                case SettingsValue::BOOL:
+                    if (!parseCmdArg(sCmd, pos, _parser, nArgument) || (nArgument != 0 && nArgument != 1))
+                        nArgument = !iter->second.active();
+
+                    iter->second.active() = (bool)nArgument;
+
+                    _data.setbLoadEmptyCols(mSettings[SETTING_B_LOADEMPTYCOLS].active());
+
+                    if (mSettings[SETTING_B_DEFCONTROL].active()
+                        && !_functions.getDefinedFunctions()
+                        && fileExists(_option.getExePath() + "\\functions.def"))
+                        _functions.load(_option);
+
+                    if (_option.systemPrints())
+                        NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + toString((bool)nArgument));
+
+                    break;
+                case SettingsValue::UINT:
+                    if (parseCmdArg(sCmd, pos, _parser, nArgument)
+                        && nArgument >= iter->second.min()
+                        && nArgument <= iter->second.max())
+                    {
+                        iter->second.value() = nArgument;
+
+                        if (_option.systemPrints())
+                            NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + toString(nArgument));
+                    }
+
+                    break;
+                case SettingsValue::STRING:
+                    if (iter->second.isPath())
+                    {
+                        sArgument = getPathForSetting(sCmd, pos);
+
+                        FileSystem _fSys;
+                        _fSys.setTokens(_option.getTokenPaths());
+                        _fSys.setPath(sArgument, true, _data.getProgramPath());
+
+                        iter->second.stringval() = _fSys.getPath();
+
+                        _out.setPath(mSettings[SETTING_S_SAVEPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
+                        _data.setSavePath(mSettings[SETTING_S_SAVEPATH].stringval());
+                        _data.setPath(mSettings[SETTING_S_LOADPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
+                        _script.setPath(mSettings[SETTING_S_SCRIPTPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
+                        _pData.setPath(mSettings[SETTING_S_PLOTPATH].stringval(), false, mSettings[SETTING_S_EXEPATH].stringval());
+                        NumeReKernel::modifiedSettings = true;
+
+                        if (_option.systemPrints())
+                            NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + iter->second.stringval());
+                    }
+                    else
+                    {
+                        if (sCmd[pos] == '=')
+                            addArgumentQuotes(sCmd, pos);
+
+                        if (extractFirstParameterStringValue(sCmd, sArgument))
+                        {
+                            if (sArgument.front() == '"')
+                                sArgument.erase(0, 1);
+
+                            if (sArgument.back() == '"')
+                                sArgument.erase(sArgument.length() - 1);
+
+                            if (iter->first == SETTING_S_PLOTFONT)
+                            {
+                                _option.setDefaultPlotFont(sArgument);
+                                _fontData.LoadFont(mSettings[SETTING_S_PLOTFONT].stringval().c_str(), mSettings[SETTING_S_EXEPATH].stringval().c_str());
+                                _pData.setFont(mSettings[SETTING_S_PLOTFONT].stringval());
+                            }
+                            else
+                                iter->second.stringval() = sArgument;
+
+                            if (_option.systemPrints())
+                                NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + sArgument);
+                        }
+                    }
+
             }
-            while (!sArgument.length());
-        }
 
-        if (sArgument[0] == '"')
-            sArgument.erase(0, 1);
-
-        if (sArgument[sArgument.length() - 1] == '"')
-            sArgument.erase(sArgument.length() - 1);
-
-        _option.setDefaultPlotFont(sArgument);
-        _fontData.LoadFont(_option.getDefaultPlotFont().c_str(), _option.getExePath().c_str());
-        _pData.setFont(_option.getDefaultPlotFont());
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_DEFAULTFONT"))) );
-    }
-    else if (findParameter(sCmd, "precision") || findParameter(sCmd, "precision", '='))
-    {
-        if (!parseCmdArg(sCmd, "precision", _parser, nArgument) || (!nArgument || nArgument > 14))
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_PRECISION")) + " (1-14)") );
-
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-                nArgument = StrToInt(sArgument);
-            }
-            while (!nArgument || nArgument > 14);
-        }
-
-        _option.setprecision(nArgument);
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_PRECISION"))) );
-    }
-    else if (findParameter(sCmd, "draftmode") || findParameter(sCmd, "draftmode", '='))
-    {
-        if (!parseCmdArg(sCmd, "draftmode", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getbUseDraftMode();
-
-        _option.setbUseDraftMode((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DRAFTMODE"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DRAFTMODE"), _lang.get("COMMON_INACTIVE")), _option) );
+            return COMMAND_PROCESSED;
         }
     }
-    else if (findParameter(sCmd, "extendedfileinfo") || findParameter(sCmd, "extendedfileinfo", '='))
+
+    if ((pos = findSettingOption(sCmd, "mode")))
     {
-        if (!parseCmdArg(sCmd, "extendedfileinfo", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getbShowExtendedFileInfo();
-
-        _option.setbExtendedFileInfo((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_EXTENDEDINFO"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_EXTENDEDINFO"), _lang.get("COMMON_INACTIVE")), _option) );
-        }
-    }
-    else if (findParameter(sCmd, "loademptycols") || findParameter(sCmd, "loademptycols", '='))
-    {
-        if (!parseCmdArg(sCmd, "loademptycols", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getbLoadEmptyCols();
-
-        _option.setbLoadEmptyCols((bool)nArgument);
-        _data.setbLoadEmptyCols((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOADEMPTYCOLS"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOADEMPTYCOLS"), _lang.get("COMMON_INACTIVE")), _option) );
-        }
-    }
-    else if (findParameter(sCmd, "logfile") || findParameter(sCmd, "logfile", '='))
-    {
-        if (!parseCmdArg(sCmd, "logfile", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getbUseLogFile();
-
-        _option.setbUseLogFile((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOGFILE"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_LOGFILE"), _lang.get("COMMON_INACTIVE")), _option) );
-
-            NumeReKernel::print(LineBreak("|   (" + _lang.get("BUILTIN_CHECKKEYWORD_SET_RESTART_REQUIRED") + ")", _option) );
-        }
-    }
-    else if (findParameter(sCmd, "mode") || findParameter(sCmd, "mode", '='))
-    {
-        if (findParameter(sCmd, "mode", '='))
+        if (sCmd[pos] == '=')
             addArgumentQuotes(sCmd, "mode");
 
         extractFirstParameterStringValue(sCmd, sArgument);
 
         if (sArgument.length() && sArgument == "debug")
         {
-            if (_option.getUseDebugger())
+            if (_option.useDebugger())
             {
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEBUGGER"), _lang.get("COMMON_INACTIVE")), _option) );
-                _option.setDebbuger(false);
+                mSettings[SETTING_B_DEBUGGER].active() = false;
                 NumeReKernel::getInstance()->getDebugger().setActive(false);
             }
             else
             {
-                _option.setDebbuger(true);
+                mSettings[SETTING_B_DEBUGGER].active() = true;
                 NumeReKernel::getInstance()->getDebugger().setActive(true);
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEBUGGER"), _lang.get("COMMON_ACTIVE")), _option) );
             }
+
+            if (_option.systemPrints())
+                NumeReKernel::print("DEBUGGER: " + toString(_option.useDebugger()));
         }
         else if (sArgument.length() && sArgument == "developer")
         {
-            if (_option.getbDebug())
+            if (_option.isDeveloperMode())
             {
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_INACTIVE"), _option) );
-                _option.setbDebug(false);
+                mSettings[SETTING_B_DEVELOPERMODE].active() = false;
                 _parser.EnableDebugDump(false, false);
             }
             else
@@ -5965,7 +5368,7 @@ static CommandReturnValues cmd_set(string& sCmd)
 
                 if (sArgument == AutoVersion::STATUS)
                 {
-                    _option.setbDebug(true);
+                    mSettings[SETTING_B_DEVELOPERMODE].active() = true;
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_DEVMODE_SUCCESS"), _option) );
                     _parser.EnableDebugDump(true, true);
                 }
@@ -5974,179 +5377,7 @@ static CommandReturnValues cmd_set(string& sCmd)
             }
         }
     }
-    else if (findParameter(sCmd, "compact") || findParameter(sCmd, "compact", '='))
-    {
-        if (!parseCmdArg(sCmd, "compact", _parser, nArgument) || !(nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getbCompact();
-
-        _option.setbCompact((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_COMPACT"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_COMPACT"), _lang.get("COMMON_INACTIVE")), _option) );
-        }
-    }
-    else if (findParameter(sCmd, "greeting") || findParameter(sCmd, "greeting", '='))
-    {
-        if (!parseCmdArg(sCmd, "greeting", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getbGreeting();
-
-        _option.setbGreeting((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_GREETING"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_GREETING"), _lang.get("COMMON_INACTIVE")), _option) );
-        }
-    }
-    else if (findParameter(sCmd, "hints") || findParameter(sCmd, "hints", '='))
-    {
-        if (!parseCmdArg(sCmd, "hints", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getbShowHints();
-
-        _option.setbShowHints((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_HINTS"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_HINTS"), _lang.get("COMMON_INACTIVE")), _option) );
-        }
-    }
-    else if (findParameter(sCmd, "useescinscripts") || findParameter(sCmd, "useescinscripts", '='))
-    {
-        if (!parseCmdArg(sCmd, "useescinscripts", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getbUseESCinScripts();
-
-        _option.setbUseESCinScripts((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_ESC_IN_SCRIPTS"), _lang.get("COMMON_INACTIVE")), _option) );
-        }
-    }
-    else if (findParameter(sCmd, "usecustomlang") || findParameter(sCmd, "usecustomlang", '='))
-    {
-        if (!parseCmdArg(sCmd, "usecustomlang", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getUseCustomLanguageFiles();
-
-        _option.setUserLangFiles((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_CUSTOM_LANG"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_CUSTOM_LANG"), _lang.get("COMMON_INACTIVE")), _option) );
-        }
-    }
-    else if (findParameter(sCmd, "externaldocwindow") || findParameter(sCmd, "externaldocwindow", '='))
-    {
-        if (!parseCmdArg(sCmd, "externaldocwindow", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getUseExternalViewer();
-
-        _option.setExternalDocViewer((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DOC_VIEWER"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DOC_VIEWER"), _lang.get("COMMON_INACTIVE")), _option) );
-        }
-    }
-    else if (findParameter(sCmd, "defcontrol") || findParameter(sCmd, "defcontrol", '='))
-    {
-        if (!parseCmdArg(sCmd, "defcontrol", _parser, nArgument) || (nArgument != 0 && nArgument != 1))
-            nArgument = !_option.getbDefineAutoLoad();
-
-        _option.setbDefineAutoLoad((bool)nArgument);
-
-        if (_option.getSystemPrintStatus())
-        {
-            if (nArgument)
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEFCONTROL"), _lang.get("COMMON_ACTIVE")), _option) );
-            else
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SET_MODE", _lang.get("BUILTIN_CHECKKEYWORD_DEFCONTROL"), _lang.get("COMMON_INACTIVE")), _option) );
-        }
-
-        if (_option.getbDefineAutoLoad() && !_functions.getDefinedFunctions() && fileExists(_option.getExePath() + "\\functions.def"))
-            _functions.load(_option);
-    }
-    else if (findParameter(sCmd, "autosave") || findParameter(sCmd, "autosave", '='))
-    {
-        if (!parseCmdArg(sCmd, "autosave", _parser, nArgument) && !nArgument)
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_AUTOSAVE") + "? [sec]") );
-
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-                nArgument = StrToInt(sArgument);
-            }
-            while (!nArgument);
-        }
-
-        _option.setAutoSaveInterval(nArgument);
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_AUTOSAVE"))) );
-    }
-    else if (findParameter(sCmd, "buffersize") || findParameter(sCmd, "buffersize", '='))
-    {
-        if (!parseCmdArg(sCmd, "buffersize", _parser, nArgument) || nArgument < 300)
-        {
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_BUFFERSIZE") + "? (>= 300)") );
-
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-                nArgument = StrToInt(sArgument);
-            }
-            while (nArgument < 300);
-        }
-
-        _option.setWindowBufferSize(0, (unsigned)nArgument);
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_BUFFERSIZE"))) );
-
-        NumeReKernel::modifiedSettings = true;
-    }
-    else if (findParameter(sCmd, "windowsize"))
-    {
-        if (findParameter(sCmd, "x", '='))
-        {
-            parseCmdArg(sCmd, "x", _parser, nArgument);
-            _option.setWindowSize((unsigned)nArgument, 0);
-            _option.setWindowBufferSize(_option.getWindow() + 1, 0);
-            NumeReKernel::nLINE_LENGTH = _option.getWindow();
-        }
-
-        if (findParameter(sCmd, "y", '='))
-        {
-            parseCmdArg(sCmd, "y", _parser, nArgument);
-            _option.setWindowSize(0, (unsigned)nArgument);
-
-            if (_option.getWindow(1) + 1 > _option.getBuffer(1))
-                _option.setWindowBufferSize(0, _option.getWindow(1) + 1);
-        }
-
-        if (_option.getSystemPrintStatus())
-            NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_CHANGE_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_WINDOWSIZE"))) );
-    }
-    else if (findParameter(sCmd, "save"))
+    else if (findSettingOption(sCmd, "save"))
         _option.save(_option.getExePath());
     else
         doc_Help("set", _option);
@@ -6267,7 +5498,7 @@ static CommandReturnValues cmd_script(string& sCmd)
 
             if (fileExists(_script.getScriptFileName()))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SCRIPTLOAD_SUCCESS", _script.getScriptFileName()));
             }
             else
@@ -6330,7 +5561,7 @@ static CommandReturnValues cmd_show(string& sCmd)
     if (sCmd.substr(0, 5) == "showf")
         _out.setCompact(false);
     else
-        _out.setCompact(_option.getbCompact());
+        _out.setCompact(_option.createCompactTables());
 
     // Determine the correct data object
     if (_data.matchTableAsParameter(sCmd).length())
@@ -6560,7 +5791,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
 
         if (success)
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SMOOTH", "\"" + _access.getDataObject() + "\""));
         }
         else
@@ -6594,12 +5825,12 @@ static CommandReturnValues cmd_string(string& sCmd)
 
         if (_data.clearStringElements())
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"));
         }
         else
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"));
         }
 
@@ -6702,7 +5933,7 @@ static CommandReturnValues cmd_move(string& sCmd)
         {
             if (moveData(sCmd, _parser, _data, _option))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_MOVEDATA_SUCCESS"), _option) );
             }
             else
@@ -6717,7 +5948,7 @@ static CommandReturnValues cmd_move(string& sCmd)
 
             if (moveFile(sCmd, _parser, _data, _option))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                 {
                     if (nArgument)
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_ALL_SUCCESS", sCmd));
@@ -6811,7 +6042,7 @@ static CommandReturnValues cmd_redefine(string& sCmd)
             addArgumentQuotes(sCmd, "comment");
 
         if (_functions.defineFunc(sCmd.substr(sCmd.find(' ') + 1), true))
-            NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
+            NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
         else
             NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
     }
@@ -6880,7 +6111,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
         {
             if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::GRID))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + _access.getDataObject() + "\""), _option) );
             }
             else
@@ -6890,7 +6121,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
         {
             if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::ALL))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + _access.getDataObject() + "\""), _option) );
             }
             else
@@ -6900,7 +6131,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
         {
             if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::COLS))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_COLS")), _option) );
             }
             else
@@ -6910,7 +6141,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
         {
             if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::LINES))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) );
             }
             else
@@ -6964,7 +6195,7 @@ static CommandReturnValues cmd_remove(string& sCmd)
             }
         }
 
-        if (sArgument.length() && _option.getSystemPrintStatus())
+        if (sArgument.length() && _option.systemPrints())
             NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REMOVECACHE", sArgument));
     }
     else if (sCmd.length() > 7)
@@ -6976,7 +6207,7 @@ static CommandReturnValues cmd_remove(string& sCmd)
 
         if (!removeFile(sCmd, _parser, _data, _option))
             throw SyntaxError(SyntaxError::CANNOT_REMOVE_FILE, sCmd, SyntaxError::invalid_position, sCmd);
-        else if (_option.getSystemPrintStatus())
+        else if (_option.systemPrints())
         {
             if (nArgument)
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REMOVE_ALL_FILE"));
@@ -7022,7 +6253,7 @@ static CommandReturnValues cmd_rename(string& sCmd)
         // Rename the cache
         _data.renameTable(_data.matchTableAsParameter(sCmd, '='), sArgument);
 
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) );
     }
     else if (sCmd.find("()") != string::npos && sCmd.find(',') != string::npos)
@@ -7051,7 +6282,7 @@ static CommandReturnValues cmd_rename(string& sCmd)
         // Rename the cache
         _data.renameTable(sArgument, sCmd);
 
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sCmd), _option) );
     }
 
@@ -7096,7 +6327,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         {
             if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::GRID))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
             }
             else
@@ -7106,7 +6337,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         {
             if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::ALL))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
             }
             else
@@ -7116,7 +6347,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         {
             if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::LINES))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_LINES")), _option) );
             }
             else
@@ -7126,7 +6357,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         {
             if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::COLS))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
             }
             else
@@ -7157,7 +6388,7 @@ static CommandReturnValues cmd_regularize(string& sCmd)
 
     if (!regularizeDataSet(sCmd, _parser, _data, _functions, _option))
         throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, SyntaxError::invalid_position);
-    else if (_option.getSystemPrintStatus())
+    else if (_option.systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REGULARIZE"));
 
     return COMMAND_PROCESSED;
@@ -7205,7 +6436,7 @@ static CommandReturnValues cmd_define(string& sCmd)
         else
         {
             if (_functions.defineFunc(sCmd.substr(7)))
-                NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
+                NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
             else
                 NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
         }
@@ -7236,7 +6467,7 @@ static CommandReturnValues cmd_datagrid(string& sCmd)
 
     if (!createDatagrid(sCmd, sArgument, _parser, _data, _functions, _option))
         doc_Help("datagrid", _option);
-    else if (_option.getSystemPrintStatus())
+    else if (_option.systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DATAGRID_SUCCESS", sArgument));
 
     return COMMAND_PROCESSED;
@@ -7447,7 +6678,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             {
                 if (!_data.isEmpty("data"))
                 {
-                    if (_option.getSystemPrintStatus())
+                    if (_option.systemPrints())
                         _data.removeData(false);
                     else
                         _data.removeData(true);
@@ -7484,7 +6715,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 }
                 else
                     _data.openFile(sArgument, false, nArgument);
-                if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
+                if (!_data.isEmpty("data") && _option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
 
@@ -7522,7 +6753,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 }
                 else
                     _data.openFile(sArgument, false, nArgument);
-                if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
+                if (!_data.isEmpty("data") && _option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
                 //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
 
@@ -7557,7 +6788,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             _script.setScriptFileName(sArgument);
             if (fileExists(_script.getScriptFileName()))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SCRIPTLOAD_SUCCESS", _script.getScriptFileName()), _option) );
                 //NumeReKernel::print(LineBreak("|-> Script \"" + _script.getScriptFileName() + "\" wurde erfolgreich geladen!", _option) );
             }
@@ -7729,7 +6960,7 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 if (!_data.isEmpty("data"))
                 {
-                    if (_option.getSystemPrintStatus())
+                    if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
 
                     _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", false), 1, _data.getCols("data", false)});
@@ -7801,7 +7032,7 @@ static CommandReturnValues cmd_reload(string& sCmd)
                 else
                     _data.openFile(sArgument);
 
-                if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
+                if (!_data.isEmpty("data") && _option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) );
             }
             else
@@ -7819,7 +7050,7 @@ static CommandReturnValues cmd_reload(string& sCmd)
             _data.removeData(false);
             _data.openFile(sArgument);
 
-            if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
+            if (!_data.isEmpty("data") && _option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"));
         }
         else

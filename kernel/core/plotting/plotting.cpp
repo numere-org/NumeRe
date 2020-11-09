@@ -300,7 +300,7 @@ Plot::Plot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _optio
 
     // The following statement moves the output cursor to the first postion and
     // cleans the line to avoid overwriting
-    if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+    if (!_pData.getSilentMode() && _option.systemPrints())
         NumeReKernel::printPreFmt("\r");
 
     size_t nPlotStart = 0;
@@ -373,7 +373,7 @@ Plot::Plot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _optio
         // --> Speichern und Erfolgsmeldung <--
         if (!_pData.getAnimateSamples() || !bAnimateVar)
         {
-            if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+            if (!_pData.getSilentMode() && _option.systemPrints())
                 NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("PLOT_SAVING")) + " ... ");
 
             if (sOutputName.substr(sOutputName.length()-4) == ".bps")
@@ -390,11 +390,11 @@ Plot::Plot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _optio
             if (sOutputName.substr(sOutputName.length() - 4, 4) == ".tex")
                 writeTeXMain(sOutputName);
 
-            if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+            if (!_pData.getSilentMode() && _option.systemPrints())
                 NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
         }
 
-        if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+        if (!_pData.getSilentMode() && _option.systemPrints())
             NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("PLOT_SAVE_LOCATION", sOutputName), _option, 0) + "\n");
     }
 }
@@ -819,7 +819,7 @@ size_t Plot::createSubPlotSet(PlotData& _pData, MemoryManager& _data, Parser& _p
 
         bNewSubPlot = false;
 
-        if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+        if (!_pData.getSilentMode() && _option.systemPrints())
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
     }
 
@@ -935,15 +935,15 @@ bool Plot::createPlotOrAnimation(PlotData& _pData, MemoryManager& _data, Parser&
     // black/white color scheme
     if (_pData.getBackground().length() && _pData.getBGColorScheme() != "<<REALISTIC>>")
     {
-        if (_pData.getAnimateSamples() && _option.getSystemPrintStatus())
+        if (_pData.getAnimateSamples() && _option.systemPrints())
             NumeReKernel::printPreFmt("|-> ");
 
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_LOADING_BACKGROUND")) + " ... ");
 
         _mBackground.Import(_pData.getBackground().c_str(), "kw");
 
-        if (_pData.getAnimateSamples() && _option.getSystemPrintStatus())
+        if (_pData.getAnimateSamples() && _option.systemPrints())
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
     }
 
@@ -961,7 +961,7 @@ bool Plot::createPlotOrAnimation(PlotData& _pData, MemoryManager& _data, Parser&
         // If it is an animation, then we're required to reset the plotting
         // variables for each frame. Additionally, we have to start a new
         // frame at this location.
-        if (_pData.getAnimateSamples() && !_pData.getSilentMode() && _option.getSystemPrintStatus() && bAnimateVar)
+        if (_pData.getAnimateSamples() && !_pData.getSilentMode() && _option.systemPrints() && bAnimateVar)
         {
             NumeReKernel::printPreFmt("\r|-> " + toSystemCodePage(_lang.get("PLOT_RENDERING_FRAME", toString(t_animate + 1), toString(_pData.getAnimateSamples() + 1))) + " ... ");
             nStyle = 0;
@@ -1368,7 +1368,7 @@ bool Plot::plot2d(PlotData& _pData, mglData& _mData, mglData& _mMaskData, mglDat
     }
     else if (_pInfo.sCommand.substr(0, 4) == "grad")
     {
-        if (_pData.getHighRes() || !_option.getbUseDraftMode())
+        if (_pData.getHighRes() || !_option.isDraftMode())
         {
             if (_pData.getContFilled() && _pData.getContProj())
                 _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mData, _pData.getColorSchemeMedium().c_str(), "value 10");
@@ -2098,7 +2098,7 @@ void Plot::create3dPlot(PlotData& _pData, const Settings& _option)
         }
         else if (_pInfo.sCommand.substr(0, 4) == "grad")
         {
-            if (_pData.getHighRes() || !_option.getbUseDraftMode())
+            if (_pData.getHighRes() || !_option.isDraftMode())
             {
                 if (_pData.getContFilled() && _pData.getContProj())
                     _graph->Grad(_mAxisVals[0], _mAxisVals[1], _mAxisVals[2], _mData, _pData.getColorSchemeMedium().c_str(), "value 10");
@@ -2987,7 +2987,7 @@ void Plot::createStd3dPlot(PlotData& _pData, MemoryManager& _data, Parser& _pars
         }
         nPos[0] = 0;
     }
-    if (_option.getbDebug())
+    if (_option.isDeveloperMode())
         cerr << LineBreak("|-> DEBUG: sLabels = " + sLabels, _option) << endl;
 
 
@@ -3816,7 +3816,7 @@ void Plot::evaluateSubplot(PlotData& _pData, Parser& _parser, MemoryManager& _da
 /////////////////////////////////////////////////
 void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnimateVar)
 {
-    if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+    if (!_pData.getSilentMode() && _option.systemPrints())
         NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("PLOT_CALCULATING_DATA_FOR") + " "));
 
     if (_pInfo.sCommand == "surface3d"
@@ -3835,20 +3835,20 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnima
         {
             if (_pData.getHighRes() == 2 && _pInfo.nSamples > 151)
                 _pInfo.nSamples = 151;
-            else if ((_pData.getHighRes() == 1 || !_option.getbUseDraftMode()) && _pInfo.nSamples > 151)
+            else if ((_pData.getHighRes() == 1 || !_option.isDraftMode()) && _pInfo.nSamples > 151)
                 _pInfo.nSamples = 151;
             else
                 _pInfo.nSamples = 51;
         }
-        if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "surf")
+        if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "surf")
             NumeReKernel::printPreFmt("3D-" + toSystemCodePage(_lang.get("PLOT_SURFACE")) + "-");
-        else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "mesh")
+        else if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "mesh")
             NumeReKernel::printPreFmt("3D-" + toSystemCodePage(_lang.get("PLOT_MESHGRID")) + "-");
-        else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "cont")
+        else if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "cont")
             NumeReKernel::printPreFmt("3D-" + toSystemCodePage(_lang.get("PLOT_CONTOUR")) + "-");
-        else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "dens")
+        else if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "dens")
             NumeReKernel::printPreFmt("3D-" + toSystemCodePage(_lang.get("PLOT_DENSITY")) + "-");
-        else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "grad")
+        else if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "grad")
             NumeReKernel::printPreFmt("3D-" + toSystemCodePage(_lang.get("PLOT_GRADIENT")) + "-");
     }
     else if (_pInfo.sCommand.substr(0, 6) == "vect3d" || _pInfo.sCommand == "vector3d")
@@ -3856,7 +3856,7 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnima
         _pInfo.b3DVect = true;
         if (_pInfo.nSamples > 11)
             _pInfo.nSamples = 11;
-        if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+        if (!_pData.getSilentMode() && _option.systemPrints())
             NumeReKernel::printPreFmt("3D-" + toSystemCodePage(_lang.get("PLOT_VECTOR")) + "-");
         if (_pData.getPipe() || _pData.getFlow())
         {
@@ -3869,7 +3869,7 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnima
         _pInfo.b2DVect = true;
         if (_pInfo.nSamples > 21)
             _pInfo.nSamples = 21;
-        if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+        if (!_pData.getSilentMode() && _option.systemPrints())
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_VECTOR")) + "-");
     }
     else if (_pInfo.sCommand.substr(0, 4) == "mesh"
@@ -3879,20 +3879,20 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnima
              || _pInfo.sCommand.substr(0, 4) == "dens")
     {
         _pInfo.b2D = true;
-        if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "surf")
+        if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "surf")
             NumeReKernel::printPreFmt("2D-" + toSystemCodePage(_lang.get("PLOT_SURFACE")) + "-");
-        else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "mesh")
+        else if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "mesh")
             NumeReKernel::printPreFmt("2D-" + toSystemCodePage(_lang.get("PLOT_MESHGRID")) + "-");
-        else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "cont")
+        else if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "cont")
             NumeReKernel::printPreFmt("2D-" + toSystemCodePage(_lang.get("PLOT_CONTOUR")) + "-");
-        else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "dens")
+        else if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "dens")
             NumeReKernel::printPreFmt("2D-" + toSystemCodePage(_lang.get("PLOT_DENSITY")) + "-");
-        else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand.substr(0, 4) == "grad")
+        else if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand.substr(0, 4) == "grad")
             NumeReKernel::printPreFmt("2D-" + toSystemCodePage(_lang.get("PLOT_GRADIENT")) + "-");
     }
     else if (_pInfo.sCommand == "plot3d")
     {
-        if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+        if (!_pData.getSilentMode() && _option.systemPrints())
             NumeReKernel::printPreFmt("3D-");
     }
     else if (_pInfo.sCommand == "draw")
@@ -3902,19 +3902,19 @@ void Plot::displayMessage(PlotData& _pData, const Settings& _option, bool bAnima
     else if (_pInfo.sCommand == "draw3d")
     {
         _pInfo.bDraw3D = true;
-        if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+        if (!_pData.getSilentMode() && _option.systemPrints())
             NumeReKernel::printPreFmt("3D-");
     }
     else if (_pInfo.sCommand == "implot")
         _pInfo.b2D = true;
 
-    if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !bAnimateVar && !(_pInfo.bDraw3D || _pInfo.bDraw) && _pInfo.sCommand != "implot")
+    if (!_pData.getSilentMode() && _option.systemPrints() && !bAnimateVar && !(_pInfo.bDraw3D || _pInfo.bDraw) && _pInfo.sCommand != "implot")
         NumeReKernel::printPreFmt("Plot ... ");
-    else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && _pInfo.sCommand == "implot")
+    else if (!_pData.getSilentMode() && _option.systemPrints() && _pInfo.sCommand == "implot")
         NumeReKernel::printPreFmt("Image plot ... ");
-    else if (!_pData.getSilentMode() && _option.getSystemPrintStatus() && !bAnimateVar)
+    else if (!_pData.getSilentMode() && _option.systemPrints() && !bAnimateVar)
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_DRAWING")) + " ... ");
-    else if (!_pData.getSilentMode() && _option.getSystemPrintStatus())
+    else if (!_pData.getSilentMode() && _option.systemPrints())
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("PLOT_ANIMATION")) + " ... \n");
 
 }

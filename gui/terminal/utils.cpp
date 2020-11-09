@@ -1,6 +1,7 @@
 // Copyright Timothy Miller, 1999
 
 #include "gterm.hpp"
+#include <wx/log.h>
 
 // Returns the encoded color bitlist
 int GenericTerminal::calc_color( int fg, int bg, int flags )

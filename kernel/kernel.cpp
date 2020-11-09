@@ -121,7 +121,7 @@ NumeReKernel::~NumeReKernel()
 /////////////////////////////////////////////////
 Settings NumeReKernel::getKernelSettings()
 {
-    return _option.sendSettings();
+    return _option;
 }
 
 
@@ -135,7 +135,7 @@ Settings NumeReKernel::getKernelSettings()
 void NumeReKernel::setKernelSettings(const Settings& _settings)
 {
     _option.copySettings(_settings);
-    _debugger.setActive(_settings.getUseDebugger());
+    _debugger.setActive(_settings.useDebugger());
 }
 
 
@@ -194,11 +194,11 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
 
     // Set the path in the settings object and load the settings
     // from the config file
-    _option.setExePath(sPath);
+    _option.getSetting(SETTING_S_EXEPATH).stringval() = sPath;
     _option.load(sPath);				// Lade Informationen aus einem ini-File
 
     // Initialize the log file
-    if (_option.getbUseLogFile())
+    if (_option.useLogFile())
     {
         reduceLogFilesize((sPath + "/" + sLogFile).c_str());
         oLogFile.open((sPath + "/" + sLogFile).c_str(), ios_base::out | ios_base::app | ios_base::ate);
@@ -238,15 +238,15 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     _memoryManager.newCluster("ans").setDouble(0, NAN);
 
     _memoryManager.setSavePath(_option.getSavePath());
-    _memoryManager.setbLoadEmptyCols(_option.getbLoadEmptyCols());
+    _memoryManager.setbLoadEmptyCols(_option.loadEmptyCols());
 
-    _pData.setPath(_option.getPlotOutputPath(), true, sPath);
+    _pData.setPath(_option.getPlotPath(), true, sPath);
     _pData.createRevisionsFolder();
 
     _script.setPath(_option.getScriptPath(), true, sPath);
     _script.createRevisionsFolder();
 
-    _procedure.setPath(_option.getProcsPath(), true, sPath);
+    _procedure.setPath(_option.getProcPath(), true, sPath);
     _procedure.createRevisionsFolder();
 
     // Create the default paths, if they are not present
@@ -271,15 +271,15 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     }
 
     // Load custom language files
-    if (_option.getUseCustomLanguageFiles())
+    if (_option.useCustomLangFiles())
     {
         // Load the custom documentation index
-        _option.loadDocIndex(_option.getUseCustomLanguageFiles());
+        _option.loadDocIndex(_option.useCustomLangFiles());
         addToLog("> SYSTEM: User Documentation index was loaded.");
     }
 
     // Load the language strings
-    _lang.loadStrings(_option.getUseCustomLanguageFiles());
+    _lang.loadStrings(_option.useCustomLangFiles());
     addToLog("> SYSTEM: Language files were loaded.");
 
     string sCacheFile = _option.getExePath() + "/numere.cache";
@@ -293,7 +293,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     }
 
     // Load the function definitions
-    if (_option.getbDefineAutoLoad() && fileExists(_option.getExePath() + "\\functions.def"))
+    if (_option.controlDefinitions() && fileExists(_option.getExePath() + "\\functions.def"))
     {
         _functions.load(_option, true);
         addToLog("> SYSTEM: Function definitions were loaded.");
@@ -578,7 +578,7 @@ void NumeReKernel::printVersionInfo()
 
     printPreFmt("|\n");
 
-    if (_option.getbGreeting() && fileExists(_option.getExePath() + "\\numere.ini"))
+    if (_option.showGreeting() && fileExists(_option.getExePath() + "\\numere.ini"))
         printPreFmt(toSystemCodePage(getGreeting()) + "|\n");
 
     print(LineBreak(_lang.get("PARSER_INTRO"), _option));;
@@ -656,10 +656,10 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     bSupressAnswer = false;
 
     // set the procedure main path to the desired one. --> check, whether this is necessary here
-    if (_procedure.getPath() != _option.getProcsPath())
+    if (_procedure.getPath() != _option.getProcPath())
     {
-        _procedure.setPath(_option.getProcsPath(), true, _procedure.getProgramPath());
-        _option.setProcPath(_procedure.getPath());
+        _procedure.setPath(_option.getProcPath(), true, _procedure.getProgramPath());
+        _option.getSetting(SETTING_S_PROCPATH).stringval() = _procedure.getPath();
     }
 
     // Evaluate the passed commands or the contents of the script
@@ -697,7 +697,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 if (sLine.substr(0, 2) == "|>")
                     sLine.erase(0, 2);
 
-                if (_option.getUseDebugger() && nDebuggerCode != DEBUGGER_LEAVE)
+                if (_option.useDebugger() && nDebuggerCode != DEBUGGER_LEAVE)
                 {
                     nDebuggerCode = evalDebuggerBreakPoint(sLine);
                 }
@@ -709,7 +709,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // Handle, whether the pressed the ESC key
             if (GetAsyncCancelState() && _script.isValid() && _script.isOpen())
             {
-                if (_option.getbUseESCinScripts())
+                if (_option.useEscInScripts())
                     throw SyntaxError(SyntaxError::PROCESS_ABORTED_BY_USER, "", SyntaxError::invalid_position);
             }
             // Done explicitly twice to clear the key cache
@@ -954,7 +954,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         // This section starts the error handling
         catch (mu::Parser::exception_type& e)
         {
-            _option.setSystemPrintStatus(true);
+            _option.enableSystemPrints(true);
             // --> Vernuenftig formatierte Fehlermeldungen <--
             unsigned int nErrorPos = (int)e.GetPos();
             sendErrorNotification();
@@ -1018,7 +1018,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         }
         catch (const std::bad_alloc& e)
         {
-            _option.setSystemPrintStatus(true);
+            _option.enableSystemPrints(true);
             /* --> Das ist die schlimmste aller Exceptions: Fehler bei der Speicherallozierung.
              *     Leider gibt es bis dato keine Moeglichkeit, diesen wieder zu beheben, also bleibt
              *     vorerst nichts anderes uebrig, als NumeRe mit terminate() abzuschiessen <--
@@ -1038,7 +1038,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         }
         catch (const std::exception& e)
         {
-            _option.setSystemPrintStatus(true);
+            _option.enableSystemPrints(true);
             // --> Alle anderen Standard-Exceptions <--
             sendErrorNotification();
             make_hline();
@@ -1057,7 +1057,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         }
         catch (SyntaxError& e)
         {
-            _option.setSystemPrintStatus(true);
+            _option.enableSystemPrints(true);
             sendErrorNotification();
             make_hline();
             if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
@@ -1157,7 +1157,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             /* --> Allgemeine Exception abfangen, die nicht durch mu::exception_type oder std::exception
              *     abgedeckt wird <--
              */
-            _option.setSystemPrintStatus(true);
+            _option.enableSystemPrints(true);
             sendErrorNotification();
             make_hline();
             print(toUpperCase(_lang.get("ERR_CATCHALL_HEAD")));
@@ -1232,11 +1232,6 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
         {
             sLine = _script.getNextScriptCommand();
         }
-        else if (_option.readCmdCache().length())
-        {
-            addToLog("> SYSTEM: Processing command line parameters:");
-            sLine = _option.readCmdCache(true);
-        }
 
         // --> Leerzeichen und Tabulatoren entfernen <--
         StripSpaces(sLine);
@@ -1254,7 +1249,7 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
         {
             _procedure.addHelpIndex(sLine.substr(0, sLine.find("<<>>")), getArgAtPos(sLine, sLine.find("id=") + 3));
             sLine.erase(0, sLine.find("<<>>") + 4);
-            _option.addToDocIndex(sLine, _option.getUseCustomLanguageFiles());
+            _option.addToDocIndex(sLine, _option.useCustomLangFiles());
             return false;
         }
 
@@ -1622,7 +1617,7 @@ bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCo
                 while (sPlugin.length())
                 {
                     // Remove the reference from the help index
-                    _option.removeFromDocIndex(getNextArgument(sPlugin, true), _option.getUseCustomLanguageFiles());
+                    _option.removeFromDocIndex(getNextArgument(sPlugin, true), _option.useCustomLangFiles());
                 }
             }
 
@@ -1791,7 +1786,7 @@ bool NumeReKernel::executePlugins(string& sLine)
         // Evaluate the command and store procedure name and argument list internally
         if (_procedure.evalPluginCmd(sLine))
         {
-            _option.setSystemPrintStatus(false);
+            _option.enableSystemPrints(false);
 
             // Call the relevant procedure
             Returnvalue _rTemp = _procedure.execute(_procedure.getPluginProcName(), _procedure.getPluginVarList(), _parser, _functions, _memoryManager, _option, _out, _pData, _script);
@@ -1810,7 +1805,7 @@ bool NumeReKernel::executePlugins(string& sLine)
                 sLine.replace(sLine.find("<<RETURNVAL>>"), 13, "_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]");
                 _parser.SetVectorVar("_~PLUGIN[" + _procedure.getPluginProcName() + "~ROOT]", _rTemp.vNumVal);
             }
-            _option.setSystemPrintStatus(true);
+            _option.enableSystemPrints(true);
             if (!sLine.length())
                 return false;
         }
@@ -2035,7 +2030,7 @@ string NumeReKernel::getGreeting()
     NumeRe::DataBase greetingsDB("<>/docs/greetings.ndb");
 
     // Get the greetings from the database file
-    if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/greetings.ndb", ".ndb")))
+    if (_option.useCustomLangFiles() && fileExists(_option.ValidFileName("<>/user/docs/greetings.ndb", ".ndb")))
         greetingsDB.addData("<>/user/docs/greetings.ndb");
 
     if (!greetingsDB.size())
@@ -2060,7 +2055,7 @@ void NumeReKernel::updateLineLenght(int nLength)
     if (nLength > 0)
     {
         nLINE_LENGTH = nLength;
-        _option.setWindowSize(nLength);
+        _option.getSetting(SETTING_V_WINDOW_X).value() = nLength;
     }
 }
 
@@ -2098,18 +2093,17 @@ void NumeReKernel::CloseSession()
 {
     saveData();
     _memoryManager.removeTablesFromMemory();
-    _memoryManager.removeData(false);
 
     // --> Konfiguration aus den Objekten zusammenfassen und anschliessend speichern <--
-    _option.setSavePath(_out.getPath());
-    _option.setLoadPath(_memoryManager.getPath());
-    _option.setPlotOutputPath(_pData.getPath());
-    _option.setScriptPath(_script.getPath());
+    _option.getSetting(SETTING_S_SAVEPATH).stringval() = _out.getPath();
+    _option.getSetting(SETTING_S_LOADPATH).stringval() = _memoryManager.getPath();
+    _option.getSetting(SETTING_S_PLOTPATH).stringval() = _pData.getPath();
+    _option.getSetting(SETTING_S_SCRIPTPATH).stringval() = _script.getPath();
 
     // Save the function definitions
-    if (_option.getbDefineAutoLoad() && _functions.getDefinedFunctions())
+    if (_option.controlDefinitions() && _functions.getDefinedFunctions())
     {
-        _option.setSystemPrintStatus(false);
+        _option.enableSystemPrints(false);
         _functions.save(_option);
         Sleep(100);
     }
@@ -2387,8 +2381,8 @@ vector<string> NumeReKernel::getPathSettings() const
     vPaths.push_back(_option.getLoadPath()); //2
     vPaths.push_back(_option.getSavePath()); //3
     vPaths.push_back(_option.getScriptPath()); //4
-    vPaths.push_back(_option.getProcsPath()); //5
-    vPaths.push_back(_option.getPlotOutputPath()); //6
+    vPaths.push_back(_option.getProcPath()); //5
+    vPaths.push_back(_option.getPlotPath()); //6
 
     return vPaths;
 }

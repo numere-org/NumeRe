@@ -1587,48 +1587,35 @@ void removeArgSep(string& sToClear)
 }
 
 // --> Eine Datei mit einem externen Programm oeffnen <--
-void openExternally(const string& sFile, const string& sProgramm, const string& sPathToFile)
+void openExternally(const string& sFile)
 {
     /* --> Dies simuliert im Wesentlichen einen cd zur Datei, den Aufruf mit dem anderen
      *     Programm und die Rueckkehr zum alten Pfad (NumeRe-Stammverzeichnis) <--
      */
-    if (!sProgramm.length())
-        return;
-    char* cFile = 0;
+
+    std::string _sFile;
+
     int nErrorCode = 0;
 
     // Add quotation marks if there are none and convert the string to a character pointer
-    if (sFile[0] != '"')
-        cFile = (char*)string("\"" + sFile + "\"").c_str();
+    if (_sFile[0] != '"')
+        _sFile = "\"" + sFile + "\"";
     else
-        cFile = (char*)sFile.c_str();
+        _sFile = sFile;
 
-    // Go through the character array and replace the path separator from UNIX to Windows style
-    for (unsigned int i = 0; i < sFile.length() + 2*(sFile[0] != '"'); i++)
-    {
-        if (cFile[i] == '\0')
-            break;
-        if (cFile[i] == '/')
-            cFile[i] = '\\';
-    }
+    replaceAll(_sFile, "/", "\\");
 
     // Invoke the Windows shell
-    nErrorCode = (int)ShellExecute(NULL, "open", sProgramm.c_str(), cFile, NULL, SW_SHOWNORMAL);
+    nErrorCode = (int)ShellExecute(nullptr, "open", sFile.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 
     // Examine the return value
     if (nErrorCode <= 32)
     {
-        if (nErrorCode == ERROR_FILE_NOT_FOUND || nErrorCode == SE_ERR_FNF)
-        {
-            throw SyntaxError(SyntaxError::EXTERNAL_PROGRAM_NOT_FOUND, "", SyntaxError::invalid_position, sProgramm);
-        }
+        if (nErrorCode == SE_ERR_NOASSOC)
+            throw SyntaxError(SyntaxError::EXTERNAL_PROGRAM_NOT_FOUND, "", SyntaxError::invalid_position, sFile);
         else
-        {
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sFile);
-        }
-
     }
-    return;
 }
 
 // --> Eine Datei von einem Ort zum anderen Ort verschieben; kann auch zum umbenennen verwendet werden <--
@@ -2840,11 +2827,11 @@ static HANDLE initializeFileHandle(string& sDir, WIN32_FIND_DATA* FindFileData, 
         }
         else if (sDir.substr(0, 10) == "<plotpath>")
         {
-            sPath = _option.getPlotOutputPath() + sDir.substr(sDir.find('>') + 1);
+            sPath = _option.getPlotPath() + sDir.substr(sDir.find('>') + 1);
         }
         else if (sDir.substr(0, 10) == "<procpath>")
         {
-            sPath = _option.getProcsPath() + sDir.substr(sDir.find('>') + 1);
+            sPath = _option.getProcPath() + sDir.substr(sDir.find('>') + 1);
         }
         else if (sDir.substr(0, 2) == "<>")
         {
@@ -3614,24 +3601,25 @@ void addArgumentQuotes(string& sToAdd, const string& sParam)
     if (findParameter(sToAdd, sParam, '='))
     {
         // Store the position of the equal sign of the parameter token
-        int nPos = findParameter(sToAdd, sParam, '=') + sParam.length();
-
-        // Jump over following whitespaces
-        while (sToAdd[nPos] == ' ')
-            nPos++;
-
-        // Only if the value doesn't contain strings
-        if (!containsStrings(sToAdd.substr(nPos, sToAdd.find(' ', nPos) - nPos)))
-        {
-            // Add surrounding quotation marks
-            sToAdd = sToAdd.substr(0, nPos)
-                     + "\"" + getArgAtPos(sToAdd, nPos) + "\""
-                     + sToAdd.substr(sToAdd.find(' ', sToAdd.find(getArgAtPos(sToAdd, nPos)) + getArgAtPos(sToAdd, nPos).length()));
-        }
-        else
-            return;
+        addArgumentQuotes(sToAdd, findParameter(sToAdd, sParam, '=') + sParam.length());
     }
-    return;
+}
+
+// This function adds quotation marks around the value of the specified parameter
+void addArgumentQuotes(string& sToAdd, size_t pos)
+{
+    // Jump over following whitespaces
+    while (sToAdd[pos] == ' ')
+        pos++;
+
+    // Only if the value doesn't contain strings
+    if (!containsStrings(sToAdd.substr(pos, sToAdd.find(' ', pos) - pos)))
+    {
+        // Add surrounding quotation marks
+        sToAdd = sToAdd.substr(0, pos)
+                 + "\"" + getArgAtPos(sToAdd, pos) + "\""
+                 + sToAdd.substr(sToAdd.find(' ', sToAdd.find(getArgAtPos(sToAdd, pos)) + getArgAtPos(sToAdd, pos).length()));
+    }
 }
 
 // This function calculates the power of a value with the specialization that

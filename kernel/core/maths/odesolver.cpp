@@ -371,7 +371,7 @@ bool Odesolver::solve(const string& sCmd)
         odeSystem_ly.params = 0;
     }
 
-    if (_odeSettings->getSystemPrintStatus())
+    if (_odeSettings->systemPrints())
         NumeReKernel::printPreFmt(toSystemCodePage("|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ..."));
     if (bAllowCacheClearance || !_idx.row.front())
         _odeData->setHeadLineElement(_idx.col.front(), sTarget, "x");
@@ -398,7 +398,7 @@ bool Odesolver::solve(const string& sCmd)
     // integrieren
     for (size_t i = 0; i < (size_t)nSamples; i++)
     {
-        if (time(0) - tTimeControl > 1 && _odeSettings->getSystemPrintStatus())
+        if (time(0) - tTimeControl > 1 && _odeSettings->systemPrints())
         {
             NumeReKernel::printPreFmt(toSystemCodePage("\r|-> " + _lang.get("ODESOLVER_SOLVE_SYSTEM") + " ... " + toString((int)(i*100.0/(double)nSamples)) + " %"));
         }
@@ -505,7 +505,7 @@ bool Odesolver::solve(const string& sCmd)
     if (y2)
         delete[] y2;
 
-    if (_odeSettings->getSystemPrintStatus())
+    if (_odeSettings->systemPrints())
         NumeReKernel::printPreFmt(" " + _lang.get("COMMON_SUCCESS") + ".\n");
     return true;
 }

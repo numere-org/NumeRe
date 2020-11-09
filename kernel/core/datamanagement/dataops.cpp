@@ -103,7 +103,7 @@ void export_excel(MemoryManager& _data, Settings& _option, const string& sCache,
 	_excel.SaveAs(sFileName.c_str());
 
 	// Inform the user
-	if (_option.getSystemPrintStatus())
+	if (_option.systemPrints())
 		NumeReKernel::print(LineBreak(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString((_data.getLines(sCache) + 1)*_data.getCols(sCache)), sFileName), _option));
 }
 
@@ -218,7 +218,7 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 	// Do only stuff, if data is available
 	if (_data.isValid())		// Sind ueberhaupt Daten vorhanden?
 	{
-		if (_option.getUseExternalViewer() && !bSave)
+		if (_option.useExternalDocWindow() && !bSave)
         {
             NumeReKernel::showTable(_data.extractTable(sCache), sCache.substr(sCache.front() == '*' ? 1 : 0));
 			return;
@@ -250,7 +250,7 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 				if (sFileName.length() > 5 && sFileName.substr(sFileName.length() - 5, 5) == ".labx")
 					sFileName = sFileName.substr(0, sFileName.length() - 5) + ".dat";
 
-				if (_option.getbDebug())
+				if (_option.isDeveloperMode())
 					NumeReKernel::print("DEBUG: sFileName = " + sFileName );
 
                 // Set the file name
@@ -362,7 +362,7 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
 	nHeadlineCount = 1;
 
 	// Deactivate the compact flag, if the user uses the external viewer
-	if (_option.getUseExternalViewer())
+	if (_option.useExternalDocWindow())
 		_out.setCompact(false);
 
     // If the compact flag is not set
@@ -380,7 +380,7 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
 	if (!nCols)
 		throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
 
-	if (_option.getbDebug())
+	if (_option.isDeveloperMode())
 		NumeReKernel::print("DEBUG: nLine = " + toString(nLines) + ", nCol = " + toString(nCols) );
 
     if (nLines == nHeadlineCount)
@@ -533,7 +533,7 @@ void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
 				}
 
 			// Inform the user and return
-			if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
+			if (!_data.isEmpty("data") && _option.systemPrints())
 				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))), _option));
 
 			return;
@@ -555,7 +555,7 @@ void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
             info = _data.openFile(sArgument);
 
 			// Inform the user
-        if (!_data.isEmpty("data") && _option.getSystemPrintStatus())
+        if (!_data.isEmpty("data") && _option.systemPrints())
             NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)), _option));
 
         }
@@ -594,10 +594,10 @@ void remove_data(MemoryManager& _data, Settings& _option, bool bIgnore)
 		    // simply remove the data and inform the user, if the output is allowed
 			_data.removeData();
 
-			if (_option.getSystemPrintStatus())
+			if (_option.systemPrints())
                 NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_SUCCESS"), _option));
 		}
-	else if (_option.getSystemPrintStatus())
+	else if (_option.systemPrints())
 		NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_NO_DATA"), _option));
 	}
 
@@ -646,10 +646,10 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 			remove(sCache_file.c_str());
 
 		// Inform the user, if printing is allowed
-		if (_option.getSystemPrintStatus())
+		if (_option.systemPrints())
 			NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_SUCCESS"), _option));
 	}
-	else if (_option.getSystemPrintStatus())
+	else if (_option.systemPrints())
 		NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_EMPTY"), _option));
 	}
 

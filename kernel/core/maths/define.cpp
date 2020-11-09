@@ -790,7 +790,7 @@ bool FunctionDefinitionManager::undefineFunc(const string& sFunc)
 
     // Update the definition file, if the corresponding setting
     // is active
-    if (NumeReKernel::getInstance() && NumeReKernel::getInstance()->getSettings().getbDefineAutoLoad())
+    if (NumeReKernel::getInstance() && NumeReKernel::getInstance()->getSettings().controlDefinitions())
         save(NumeReKernel::getInstance()->getSettings());
 
     NumeReKernel::getInstance()->refreshFunctionTree();
@@ -1072,7 +1072,7 @@ bool FunctionDefinitionManager::save(const Settings& _option)
     // Do not save anything, if the map is empty
     if (mFunctionsMap.size())
     {
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("DEFINE_SAVING_FUNCTIONS")) + " ... ");
 
         // Open the definition file
@@ -1090,7 +1090,7 @@ bool FunctionDefinitionManager::save(const Settings& _option)
                 ofDefineFile << iter->second.exportFunction() << endl;
             }
 
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
 
             return true;
@@ -1125,7 +1125,7 @@ bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
     // a valid state, aka the file exists
     if (ifDefinedFile.good())
     {
-        if (_option.getSystemPrintStatus() && !bAutoLoad)
+        if (_option.systemPrints() && !bAutoLoad)
             NumeReKernel::printPreFmt("|-> " + toSystemCodePage(_lang.get("DEFINE_LOADING_FUNCTIONS")) + " ... ");
 
         // Read every line of the definition file
@@ -1144,7 +1144,7 @@ bool FunctionDefinitionManager::load(const Settings& _option, bool bAutoLoad)
             mFunctionsMap[definition.sName] = definition;
         }
 
-        if (!bAutoLoad && _option.getSystemPrintStatus())
+        if (!bAutoLoad && _option.systemPrints())
         {
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_SUCCESS")) + ".\n");
             NumeReKernel::print(LineBreak(_lang.get("DEFINE_DONE_LOADING", toString(mFunctionsMap.size())), _option));

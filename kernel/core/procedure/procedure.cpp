@@ -654,7 +654,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         sCallingNameSpace = "main";
         mVarMap.clear();
 
-        if (_option.getUseDebugger())
+        if (_option.useDebugger())
             _debugger.popStackItem();
 
         throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
@@ -669,7 +669,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         sCallingNameSpace = "main";
         mVarMap.clear();
 
-        if (_option.getUseDebugger())
+        if (_option.useDebugger())
             _debugger.popStackItem();
 
         throw SyntaxError(SyntaxError::PROCEDURE_NOT_FOUND, "", SyntaxError::invalid_position, sProc);
@@ -689,7 +689,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         else
             sErrorToken = "\"" + sThisNameSpace + "\" aus dem Namensraum \"" + sCallingNameSpace + "\"";
 
-        if (_option.getUseDebugger())
+        if (_option.useDebugger())
             _debugger.popStackItem();
 
         throw SyntaxError(SyntaxError::PRIVATE_PROCEDURE_CALLED, sProcCommandLine, SyntaxError::invalid_position, sErrorToken);
@@ -697,10 +697,10 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 
     if (nFlags & ProcedureCommandLine::FLAG_MASK)
     {
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
         {
             // if the print status is true, set it to false
-            _option.setSystemPrintStatus(false);
+            _option.enableSystemPrints(false);
             nFlags |= ProcedureCommandLine::FLAG_MASK;
         }
     }
@@ -780,7 +780,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                 // Obtain the current command from the command line
                 sCurrentCommand = findCommand(sProcCommandLine).sString;
 
-                if (_option.getUseDebugger() && _debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine) && sProcCommandLine.substr(0, 2) != "|>")
+                if (_option.useDebugger() && _debugger.getBreakpointManager().isBreakpoint(sCurrentProcedureName, nCurrentLine) && sProcCommandLine.substr(0, 2) != "|>")
                 {
                     sProcCommandLine.insert(0, "|> ");
                 }
@@ -918,7 +918,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         }
 
         // Handle breakpoints
-        if (_option.getUseDebugger()
+        if (_option.useDebugger()
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
         {
             if ((sProcCommandLine.substr(sProcCommandLine.find_first_not_of(' '), 2) == "|>" || nDebuggerCode == NumeReKernel::DEBUGGER_STEP)
@@ -1214,7 +1214,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
     if (nFlags & ProcedureCommandLine::FLAG_MASK)
     {
         // reset the print status
-        _option.setSystemPrintStatus();
+        _option.enableSystemPrints();
     }
 
     // Reset this procedure
@@ -1340,7 +1340,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
         _parser.mVarMapPntr = &mVarMap;
 
         if (nFlags & ProcedureCommandLine::FLAG_MASK)
-            _option.setSystemPrintStatus(false);
+            _option.enableSystemPrints(false);
 
         if (!sLine.length())
             return -2;
@@ -1372,18 +1372,18 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
             Returnvalue _return;
 
             // Call the plugin routines
-            if (!_option.getSystemPrintStatus())
+            if (!_option.systemPrints())
             {
                 _return = _procedure->execute(_procedure->getPluginProcName(), _procedure->getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script, nthRecursion + 1);
 
                 if (nFlags & ProcedureCommandLine::FLAG_MASK)
-                    _option.setSystemPrintStatus(false);
+                    _option.enableSystemPrints(false);
             }
             else
             {
-                _option.setSystemPrintStatus(false);
+                _option.enableSystemPrints(false);
                 _return = _procedure->execute(_procedure->getPluginProcName(), _procedure->getPluginVarList(), _parser, _functions, _data, _option, _out, _pData, _script, nthRecursion + 1);
-                _option.setSystemPrintStatus(true);
+                _option.enableSystemPrints(true);
             }
 
             _parser.mVarMapPntr = &mVarMap;

@@ -425,48 +425,36 @@ string evaluateParameterValues(const string& sCmd)
 /// parameter and evaluates it.
 ///
 /// \param sCmd const string&
-/// \param sParam const string&
+/// \param nPos size_t
 /// \param _parser Parser&
-/// \param nArgument int&
+/// \param nArgument size_t&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool parseCmdArg(const string& sCmd, const string& sParam, Parser& _parser, int& nArgument)
+bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgument)
 {
-	if (!sCmd.length() || !sParam.length())
+	if (!sCmd.length() || !nPos)
 		return false;
 
-	if (findParameter(sCmd, sParam) || findParameter(sCmd, sParam, '='))
-	{
-		unsigned int nPos;
+    while (nPos < sCmd.length() - 1 && sCmd[nPos] == ' ')
+        nPos++;
 
-		if (findParameter(sCmd, sParam))
-			nPos = findParameter(sCmd, sParam) + sParam.length();
-		else
-			nPos = findParameter(sCmd, sParam, '=') + sParam.length();
+    if (sCmd[nPos] == ' ' || nPos >= sCmd.length() - 1)
+        return false;
 
-		while (nPos < sCmd.length() - 1 && sCmd[nPos] == ' ')
-			nPos++;
+    string sArg = sCmd.substr(nPos);
 
-		if (sCmd[nPos] == ' ' || nPos >= sCmd.length() - 1)
-			return false;
+    if (sArg[0] == '(')
+        sArg = sArg.substr(1, getMatchingParenthesis(sArg) - 1);
+    else
+        sArg = sArg.substr(0, sArg.find(' '));
 
-		string sArg = sCmd.substr(nPos);
+    _parser.SetExpr(sArg);
 
-		if (sArg[0] == '(')
-			sArg = sArg.substr(1, getMatchingParenthesis(sArg) - 1);
-		else
-			sArg = sArg.substr(0, sArg.find(' '));
+    if (isnan(_parser.Eval()) || isinf(_parser.Eval()))
+        return false;
 
-		_parser.SetExpr(sArg);
-
-		if (isnan(_parser.Eval()) || isinf(_parser.Eval()))
-			return false;
-
-		nArgument = intCast(_parser.Eval());
-		return true;
-	}
-
-	return false;
+    nArgument = abs(intCast(_parser.Eval()));
+    return true;
 }
 

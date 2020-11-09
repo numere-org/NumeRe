@@ -90,7 +90,7 @@ Dependencies::Dependencies(ProcedureElement* procedureFile)
     sThisFileNameSpacePrefix += "::";
 
     // Get the current default procedure path
-    std::string sProcDefPath = NumeReKernel::getInstance()->getSettings().getProcsPath();
+    std::string sProcDefPath = NumeReKernel::getInstance()->getSettings().getProcPath();
 
     // If the default procedure path is part of the
     // thisfile namespace, remove this part and translate

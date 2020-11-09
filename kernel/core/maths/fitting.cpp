@@ -222,7 +222,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     removeObsoleteParentheses(sFuncDisplay);
     removeObsoleteParentheses(fitData.sFitFunction);
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
         NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FIT_FITTING", sFuncDisplay) + " ", _option, 0));
 
     for (auto iter = paramsMap.begin(); iter != paramsMap.end(); ++iter)
@@ -260,7 +260,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     size_t nSize = ((fitData.vz.size()) ? (fitData.vz.size() * fitData.vz[0].size()) : fitData.vx.size());
 
     // Reduce the file size of the fit log, if necessary
-    if (!bMaskDialog && _option.getSystemPrintStatus())
+    if (!bMaskDialog && _option.systemPrints())
         reduceLogFilesize(sFitLog);
 
     string sFittedFunction = _fControl.getFitFunction();
@@ -300,10 +300,10 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     oFitLog << std::setw(76) << std::setfill('-') << '-' << endl;
 
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
         NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
 
-    if (_option.getSystemPrintStatus() && !bMaskDialog)
+    if (_option.systemPrints() && !bMaskDialog)
     {
         NumeReKernel::toggleTableStatus();
         make_hline();
@@ -350,7 +350,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
         oFitLog << endl;
         oFitLog << constructCovarianceMatrix(fitData, paramsMap.size(), true) << endl;
 
-        if (_option.getSystemPrintStatus() && !bMaskDialog)
+        if (_option.systemPrints() && !bMaskDialog)
         {
             NumeReKernel::printPreFmt("|\n|-> " + toSystemCodePage(_lang.get("PARSERFUNCS_FIT_CORRELMAT_HEAD")) + ":\n|\n");
             NumeReKernel::printPreFmt(constructCovarianceMatrix(fitData, paramsMap.size(), false));
@@ -370,7 +370,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     oFitLog << sFitAnalysis << endl;
     oFitLog.close();
 
-    if (_option.getSystemPrintStatus() && !bMaskDialog)
+    if (_option.systemPrints() && !bMaskDialog)
     {
         NumeReKernel::printPreFmt("|\n|-> " + _lang.get("PARSERFUNCS_FIT_ANALYSIS") + ":\n");
         NumeReKernel::print(sFitAnalysis);
@@ -395,7 +395,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
         return true;
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
@@ -1197,7 +1197,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
                 {
                     if (!_fControl.fit(fitData.vx, fitData.vy, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
                     {
-                        if (_option.getSystemPrintStatus())
+                        if (_option.systemPrints())
                             NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
                         return false;
@@ -1209,7 +1209,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
                 {
                     if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vy_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
                     {
-                        if (_option.getSystemPrintStatus())
+                        if (_option.systemPrints())
                             NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
                         return false;
@@ -1222,7 +1222,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
             {
                 if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
                 {
-                    if (_option.getSystemPrintStatus())
+                    if (_option.systemPrints())
                         NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
                     return false;
@@ -1234,7 +1234,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
             {
                 if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.vz_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
                 {
-                    if (_option.getSystemPrintStatus())
+                    if (_option.systemPrints())
                         NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
                     return false;
@@ -1261,7 +1261,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
         ++iter;
     }
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
     {
         NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
         NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_FIT_CHIMAPLOCATION", fitData.sChiMap), _option));
@@ -1277,7 +1277,7 @@ static bool calculateChiMap(string sFunctionDefString, const string& sFuncDispla
         return true;
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
@@ -1301,7 +1301,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
         {
             if (!_fControl.fit(fitData.vx, fitData.vy, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
                 throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
@@ -1313,7 +1313,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
         {
             if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vy_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
             {
-                if (_option.getSystemPrintStatus())
+                if (_option.systemPrints())
                     NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
                 throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
@@ -1326,7 +1326,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
     {
         if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
             throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);
@@ -1338,7 +1338,7 @@ static string applyFitAlgorithm(Fitcontroller& _fControl, FittingData& fitData, 
     {
         if (!_fControl.fit(fitData.vx, fitData.vy, fitData.vz, fitData.vz_w, fitData.sFitFunction, fitData.sRestrictions, paramsMap, fitData.dPrecision, fitData.nMaxIterations))
         {
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
                 NumeReKernel::printPreFmt(_lang.get("COMMON_FAILURE") + "!\n");
 
             throw SyntaxError(SyntaxError::FUNCTION_CANNOT_BE_FITTED, sFuncDisplay, sFuncDisplay);

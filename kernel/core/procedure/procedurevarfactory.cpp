@@ -548,7 +548,7 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
 
     if (!sArgumentList.length() && sArgumentValues.length())
     {
-        if (_optionRef->getUseDebugger())
+        if (_optionRef->useDebugger())
             _debugger.popStackItem();
 
         throw SyntaxError(SyntaxError::TOO_MANY_ARGS, sArgumentList, SyntaxError::invalid_position);
@@ -606,7 +606,7 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
 
-                    if (_optionRef->getUseDebugger())
+                    if (_optionRef->useDebugger())
                         _debugger.popStackItem();
 
                     throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgumentList, sErrorToken, sErrorToken);
@@ -645,7 +645,7 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
                     delete[] sArgumentMap;
                     nArgumentMapSize = 0;
 
-                    if (_optionRef->getUseDebugger())
+                    if (_optionRef->useDebugger())
                         _debugger.popStackItem();
 
                     throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgumentList, sErrorToken, sErrorToken);

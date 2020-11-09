@@ -602,7 +602,7 @@ vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _pars
                 integrationstep_simpson(x, dx, x1, vResult, vFunctionValues, bReturnFunctionPoints);
 
             // Print a status value, if needed
-            if (_option.getSystemPrintStatus() && bLargeInterval)
+            if (_option.systemPrints() && bLargeInterval)
             {
 				if ((int)((x - x0) / (x1 - x0) * 100) > (int)((x - dx - x0) / (x1 - x0) * 100))
 					NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)((x - x0) / (x1 - x0) * 100)) + " %");
@@ -643,7 +643,7 @@ vector<double> integrate(const string& sCmd, MemoryManager& _data, Parser& _pars
     }
 
     // Display a success message
-    if (_option.getSystemPrintStatus() && bLargeInterval)
+    if (_option.systemPrints() && bLargeInterval)
         NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 100 %: " + _lang.get("COMMON_SUCCESS") + "!\n");
 
     return vResult;
@@ -1074,7 +1074,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
             throw SyntaxError(SyntaxError::INVALID_INTEGRATION_PRECISION, sCmd, SyntaxError::invalid_position);
 
         // --> Kleine Info an den Benutzer, dass der Code arbeitet <--
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 0 %");
 
         // --> Setzen wir "x" und "y" auf ihre Startwerte <--
@@ -1214,7 +1214,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
             }
 
             // Show some progress
-            if (_option.getSystemPrintStatus())
+            if (_option.systemPrints())
             {
                 if (!bLargeArray)
                 {
@@ -1236,7 +1236,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
         }
 
         // Show a success message
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 100 %");
     }
     else if (!bRenewBoundaries)
@@ -1264,7 +1264,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
          *     dafuer aber erfordert, dass die Grenzen des Integrals jedes Mal aktualisiert
          *     werden. <--
          */
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("PARSERFUNCS_INTEGRATE_CONSTANT") + " ... ");
 
         // --> Waehle willkuerliche Praezision von 1e-4 <--
@@ -1356,7 +1356,7 @@ vector<double> integrate2d(const string& sCmd, MemoryManager& _data, Parser& _pa
         vResult[0][i] *= nSign;
 
     // --> FERTIG! Teilen wir dies dem Benutzer mit <--
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
         NumeReKernel::printPreFmt(": " + _lang.get("COMMON_SUCCESS") + "!\n");
 
     // --> Fertig! Zurueck zur aufrufenden Funkton! <--
@@ -3160,7 +3160,7 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
         dDiffValues = 0;
     }
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
         NumeReKernel::print(LineBreak(sTaylor, _option, true, 0, 8));
 
     sTaylor += _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString((int)nth_taylor));
@@ -3173,7 +3173,7 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
         bDefinitionSuccess = _functions.defineFunc(sTaylor);
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus());
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
@@ -3256,7 +3256,7 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, c
     dNyquistFrequency = _table.getLines() / (_table.getValue(_table.getLines() - 1, 0) - _table.getValue(0, 0)) / 2.0;
     dTimeInterval = (_table.getLines() - 1) / (_table.getValue(_table.getLines() - 1, 0));
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
     {
         if (!bInverseTrafo)
             NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(_table.getCols()), toString(dNyquistFrequency, 6)) + " ", _option, 0));
@@ -3372,7 +3372,7 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, c
         _data.setHeadLineElement(_idx.col[2], sTargetTable, "Im(" + _lang.get("COMMON_SIGNAL") + ")");
     }
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
 
     return true;
@@ -3446,7 +3446,7 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, c
     // get the data from the data object
     NumeRe::Table _table = parser_extractData(sCmd, _parser, _data, _option);
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
     {
         string sExplType = "";
 
@@ -3528,7 +3528,7 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, c
             }
         }
 
-        if (_option.getSystemPrintStatus())
+        if (_option.systemPrints())
             NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
 
         return true;
@@ -3561,7 +3561,7 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, c
         _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_SIGNAL"));
     }
 
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
 
     return true;
@@ -4575,7 +4575,7 @@ bool analyzePulse(string& _sCmd, Parser& _parser, MemoryManager& _data, Function
     }
 
     // Ausgabe
-    if (_option.getSystemPrintStatus())
+    if (_option.systemPrints())
     {
         NumeReKernel::toggleTableStatus();
         make_hline();
@@ -4789,7 +4789,7 @@ bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, Funct
             sDefinition += " + ";
     }
 
-    if (_option.getSystemPrintStatus() && !NumeReKernel::bSupressAnswer)
+    if (_option.systemPrints() && !NumeReKernel::bSupressAnswer)
         NumeReKernel::print(sDefinition);
 
     bool bDefinitionSuccess = false;
@@ -4800,7 +4800,7 @@ bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, Funct
         bDefinitionSuccess = _functions.defineFunc(sDefinition);
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.getSystemPrintStatus() && !NumeReKernel::bSupressAnswer);
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints() && !NumeReKernel::bSupressAnswer);
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 

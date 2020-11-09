@@ -386,7 +386,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_splitCommandHistory->SetCharHeigth(m_terminal->getTextHeight());
     _guilang.setTokens("<>="+getProgramFolder().ToStdString()+";");
 
-    if (m_terminal->getKernelSettings().getUseCustomLanguageFiles())
+    if (m_terminal->getKernelSettings().useCustomLangFiles())
         _guilang.loadStrings(true);
     else
         _guilang.loadStrings(false);
@@ -539,13 +539,13 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     Settings _option = m_terminal->getKernelSettings();
     NumeRe::DataBase tipDataBase;
 
-    if (_option.getUseCustomLanguageFiles() && fileExists(_option.ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
+    if (_option.useCustomLangFiles() && fileExists(_option.ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
         tipDataBase.addData("<>/user/docs/hints.ndb");
     else
         tipDataBase.addData("<>/docs/hints.ndb");
 
     tipProvider = new MyTipProvider(tipDataBase.getColumn(0));
-    showTipAtStartup = _option.getbShowHints();
+    showTipAtStartup = _option.showHints();
 }
 
 
@@ -611,9 +611,9 @@ NumeReWindow::~NumeReWindow()
 void NumeReWindow::updateTipAtStartupSetting(bool bTipAtStartup)
 {
     Settings _option = m_terminal->getKernelSettings();
-    if (_option.getbShowHints() == bTipAtStartup)
+    if (_option.showHints() == bTipAtStartup)
         return;
-    _option.setbShowHints(bTipAtStartup);
+    _option.getSetting(SETTING_B_SHOWHINTS).active() = bTipAtStartup;
     m_terminal->setKernelSettings(_option);
 }
 
@@ -1585,11 +1585,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_TOGGLE_DEBUGGER:
         {
             Settings _option = m_terminal->getKernelSettings();
-            _option.setDebbuger(!_option.getUseDebugger());
+            _option.getSetting(SETTING_B_DEBUGGER).active() = !_option.useDebugger();
             m_terminal->setKernelSettings(_option);
             wxToolBar* tb = GetToolBar();
-            tb->ToggleTool(ID_MENU_TOGGLE_DEBUGGER, _option.getUseDebugger());
-            m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(_option.getUseDebugger());
+            tb->ToggleTool(ID_MENU_TOGGLE_DEBUGGER, _option.useDebugger());
+            m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(_option.useDebugger());
             break;
         }
         case ID_MENU_RENAME_SYMBOL:
@@ -2839,7 +2839,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         timestamp = getTimeStamp(false);
 
         // Get the template file contents
-        if (m_terminal->getKernelSettings().getUseCustomLanguageFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
+        if (m_terminal->getKernelSettings().useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
             GetFileContents(getProgramFolder() + "\\user\\lang\\"+dummy, template_file, dummy);
         else
             GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
@@ -2964,7 +2964,7 @@ void NumeReWindow::DefaultPage()
     wxString template_file, dummy;
     dummy = "tmpl_defaultpage.nlng";
 
-    if (m_terminal->getKernelSettings().getUseCustomLanguageFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
+    if (m_terminal->getKernelSettings().useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
         GetFileContents(getProgramFolder() + "\\user\\lang\\"+dummy, template_file, dummy);
     else
         GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
@@ -4441,11 +4441,11 @@ void NumeReWindow::UpdateStatusBar()
     linecol.Printf (_(_guilang.get("GUI_STATUSBAR_LINECOL")), curLine+1, curPos+1);
 
     wxString sDebuggerMode = "";
-    if (m_terminal->getKernelSettings().getUseDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
+    if (m_terminal->getKernelSettings().useDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
          sDebuggerMode = _guilang.get("GUI_STATUSBAR_DEBUGGER_ANALYZER");
-    else if (m_terminal->getKernelSettings().getUseDebugger() && !m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
+    else if (m_terminal->getKernelSettings().useDebugger() && !m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
          sDebuggerMode = _guilang.get("GUI_STATUSBAR_DEBUGGER");
-    else if (!m_terminal->getKernelSettings().getUseDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
+    else if (!m_terminal->getKernelSettings().useDebugger() && m_currentEd->getEditorSetting(NumeReEditor::SETTING_USEANALYZER))
          sDebuggerMode = _guilang.get("GUI_STATUSBAR_ANALYZER");
 
     m_statusBar->SetStatus(NumeReStatusbar::STATUS_PATH, filename);
@@ -4914,7 +4914,7 @@ void NumeReWindow::UpdateMenuBar()
     }
 
     m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW]->Check(m_multiRowState);
-    m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(m_terminal->getKernelSettings().getUseDebugger());
+    m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(m_terminal->getKernelSettings().useDebugger());
 
 }
 
@@ -4993,7 +4993,7 @@ void NumeReWindow::UpdateToolbar()
 
     wxBitmap bmStartDebugger(newcontinue1_xpm);
     t->AddTool(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_TB_DEBUGGER"), bmStartDebugger, _guilang.get("GUI_TB_DEBUGGER_TTP"), wxITEM_CHECK);
-    t->ToggleTool(ID_MENU_TOGGLE_DEBUGGER, m_terminal->getKernelSettings().getUseDebugger());
+    t->ToggleTool(ID_MENU_TOGGLE_DEBUGGER, m_terminal->getKernelSettings().useDebugger());
 
     wxBitmap bmAddBreakpoint(breakpoint_xpm);
     t->AddTool(ID_MENU_ADDEDITORBREAKPOINT, _guilang.get("GUI_TB_ADD"), bmAddBreakpoint,
@@ -5022,7 +5022,7 @@ void NumeReWindow::UpdateToolbar()
     NumeRe::DataBase db("<>/docs/find.ndb");
     Settings _opt = m_terminal->getKernelSettings();
 
-    if (_opt.getUseCustomLanguageFiles() && fileExists(_opt.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
+    if (_opt.useCustomLangFiles() && fileExists(_opt.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
         db.addData("<>/user/docs/find.ndb");
 
     t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, this, m_terminal, _guilang.get("GUI_SEARCH_TELLME"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR_HIGHLIGHT")), wxEmptyString);
@@ -5272,7 +5272,7 @@ void NumeReWindow::setViewerFocus()
 void NumeReWindow::refreshFunctionTree()
 {
     wxWindow* focus = wxWindow::FindFocus();
-    _guilang.loadStrings(m_terminal->getKernelSettings().getUseCustomLanguageFiles());
+    _guilang.loadStrings(m_terminal->getKernelSettings().useCustomLangFiles());
     prepareFunctionTree();
     m_functionTree->Refresh();
 
@@ -5836,7 +5836,7 @@ wxString NumeReWindow::addLinebreaks(const wxString& sLine)
 /////////////////////////////////////////////////
 wxString NumeReWindow::getFileDetails(const wxFileName& filename)
 {
-    if (m_terminal->getKernelSettings().getbShowExtendedFileInfo())
+    if (m_terminal->getKernelSettings().showExtendedFileInfo())
         return "\n" + getFileInfo(filename.GetFullPath().ToStdString());
     else
         return "NOTHING";

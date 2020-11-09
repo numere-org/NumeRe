@@ -2801,8 +2801,10 @@ void NumeReEditor::getMatchingBrace(int nPos)
         // the brace and the room in between
         SetIndicatorCurrent(HIGHLIGHT_MATCHING_BRACE);
         IndicatorClearRange(0, GetLastPosition());
-        IndicatorSetStyle(HIGHLIGHT_MATCHING_BRACE, wxSTC_INDIC_DIAGONAL);
-        IndicatorSetForeground(HIGHLIGHT_MATCHING_BRACE, wxColour(0, 150, 0));
+        //IndicatorSetStyle(HIGHLIGHT_MATCHING_BRACE, wxSTC_INDIC_DIAGONAL);
+        //IndicatorSetForeground(HIGHLIGHT_MATCHING_BRACE, wxColour(0, 150, 0));
+        IndicatorSetStyle(HIGHLIGHT_MATCHING_BRACE, wxSTC_INDIC_ROUNDBOX);
+        IndicatorSetForeground(HIGHLIGHT_MATCHING_BRACE, wxColour(0, 200, 0));
 
         if (nMatch < nPos)
         {
@@ -6077,7 +6079,7 @@ wxString NumeReEditor::getTemplateContent(const wxString& sFileName)
     timestamp = getTimeStamp(false);
 
     // Get the file's contents
-    if (m_terminal->getKernelSettings().getUseCustomLanguageFiles() && wxFileExists(m_mainFrame->getProgramFolder() + "\\user\\lang\\" + template_type))
+    if (m_terminal->getKernelSettings().useCustomLangFiles() && wxFileExists(m_mainFrame->getProgramFolder() + "\\user\\lang\\" + template_type))
         m_mainFrame->GetFileContents(m_mainFrame->getProgramFolder() + "\\user\\lang\\" + template_type, template_file, template_type);
     else
         m_mainFrame->GetFileContents(m_mainFrame->getProgramFolder() + "\\lang\\" + template_type, template_file, template_type);
