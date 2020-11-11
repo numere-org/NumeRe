@@ -336,6 +336,7 @@ string evaluateParameterValues(const string& sCmd)
             || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "totable=")
 			|| (nPos > 5 && sReturn.substr(nPos - 5, 5) == "type=")
             || (nPos > 5 && sReturn.substr(nPos - 5, 5) == "icon=")
+            || (nPos > 7 && sReturn.substr(nPos - 7, 7) == "method=")
             || (nPos > 7 && sReturn.substr(nPos - 7, 7) == "target=")
             || (nPos > 8 && sReturn.substr(nPos - 8, 8) == "buttons="))
 		{
