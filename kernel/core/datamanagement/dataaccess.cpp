@@ -550,8 +550,6 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 /////////////////////////////////////////////////
 static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
-	Indices _idx;
-
 	for (size_t i = 0; i < _parser.HasCachedAccess(); i++)
 	{
 		// Get the current cached data access
@@ -565,6 +563,9 @@ static const string& handleCachedDataAccess(string& sLine, Parser& _parser, Memo
 			_parser.SetVectorVar(_access.sVectorName, MafDataAccess(_data, getMafFromAccessString(_access.sAccessEquation), _access.sCacheName, createMafDataAccessString(_access.sAccessEquation, _parser)));
 			continue;
 		}
+
+		// Create an index
+		Indices _idx;
 
 		// Read the indices
 		getIndices(_access.sAccessEquation, _idx, _parser, _data, _option);
