@@ -1170,12 +1170,12 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 				}
 
 				sFilesize = toString(dFilesize, 3) + " " + sFilesize;
-				sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length(), ' ');
+				sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length() - 1, ' ');
 				sConnect += sFilesize;
 
-				if (sExt == ".ndat" && _option.showExtendedFileInfo())
+				if (sExt == _lang.get("COMMON_FILETYPE_NDAT") && _option.showExtendedFileInfo())
 				{
-					sConnect += "$     ";
+					sConnect += "\n|   ";
 					sConnect += getFileInfo(sFileName);
 				}
 			}
@@ -1218,7 +1218,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 		sFilesize = "";
 
 	string sSummary = "-- " + _lang.get("BUILTIN_LISTFILES_SUMMARY", toString(nCount[0]), toString(nCount[1])) + " --";
-	sSummary.append(_option.getWindow() - sSummary.length() - 4 - sFilesize.length(), ' ');
+	sSummary.append(_option.getWindow() - sSummary.length() - 4 - sFilesize.length() - 1, ' ');
 	sSummary += sFilesize;
 
 	if (bOnlyDir)
@@ -5248,10 +5248,12 @@ static CommandReturnValues cmd_set(string& sCmd)
 
                     _data.setbLoadEmptyCols(mSettings[SETTING_B_LOADEMPTYCOLS].active());
 
-                    if (mSettings[SETTING_B_DEFCONTROL].active()
+                    if (iter->first == SETTING_B_DEFCONTROL && mSettings[SETTING_B_DEFCONTROL].active()
                         && !_functions.getDefinedFunctions()
                         && fileExists(_option.getExePath() + "\\functions.def"))
                         _functions.load(_option);
+                    else if (iter->first == SETTING_B_DEBUGGER)
+                        NumeReKernel::getInstance()->getDebugger().setActive(mSettings[SETTING_B_DEBUGGER].active());
 
                     if (_option.systemPrints())
                         NumeReKernel::print(toUpperCase(iter->first.substr(iter->first.find('.')+1)) + ": " + toString((bool)nArgument));

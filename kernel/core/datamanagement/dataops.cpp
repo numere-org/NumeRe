@@ -1643,7 +1643,7 @@ bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _o
 
             // The actual copy process
             // Calculate the luminosity of the three channels and write it to the table
-			_data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache, imageData[j * 3 * nWidth + iData] * 0.3 + imageData[j * 3 * nWidth + iData + 1] * 0.59 + imageData[j * 3 * nWidth + iData + 2] * 0.11);
+			_data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache, imageData[j * 3 * nWidth + iData] * 0.299 + imageData[j * 3 * nWidth + iData + 1] * 0.587 + imageData[j * 3 * nWidth + iData + 2] * 0.114);
 
 			// Advance the iterator three channels
 			iData += 3;
