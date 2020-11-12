@@ -608,8 +608,6 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     if (!m_parent)
         return NUMERE_ERROR;
 
-    // indices as target for cache writing actions
-    Indices _idx;
 
     string sLine_Temp = "";     // Temporaerer String fuer die Eingabe
     string sCache;         // Zwischenspeicher fuer die Cache-Koordinaten
@@ -908,6 +906,8 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
 
             // --> Wenn die Ergebnisse in den Cache geschrieben werden sollen, bestimme hier die entsprechenden Koordinaten <--
+            Indices _idx;
+
             if (bWriteToCache)
             {
                 // Get the indices from the corresponding function

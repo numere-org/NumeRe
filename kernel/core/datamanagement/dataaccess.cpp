@@ -343,7 +343,6 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
 /////////////////////////////////////////////////
 void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
 {
-	Indices _idx;
 	string sEntityOccurence = "";
 	string sEntityName = sEntity.substr(0, sEntity.length()-1);
 	unsigned int nPos = 0;
@@ -412,6 +411,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 		sEntityStringReplacement.clear();
 
 		// Reading the indices happens in this function
+		Indices _idx;
 		getIndices(sEntityOccurence, _idx, _parser, _data, _option);
 
 		// check the indices, whether they are possible in the current context

@@ -1170,7 +1170,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 				}
 
 				sFilesize = toString(dFilesize, 3) + " " + sFilesize;
-				sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length() - 1, ' ');
+				sConnect.append(_option.getWindow() - sConnect.length() - sFilesize.length(), ' ');
 				sConnect += sFilesize;
 
 				if (sExt == _lang.get("COMMON_FILETYPE_NDAT") && _option.showExtendedFileInfo())
@@ -1218,7 +1218,7 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 		sFilesize = "";
 
 	string sSummary = "-- " + _lang.get("BUILTIN_LISTFILES_SUMMARY", toString(nCount[0]), toString(nCount[1])) + " --";
-	sSummary.append(_option.getWindow() - sSummary.length() - 4 - sFilesize.length() - 1, ' ');
+	sSummary.append(_option.getWindow() - sSummary.length() - 4 - sFilesize.length(), ' ');
 	sSummary += sFilesize;
 
 	if (bOnlyDir)

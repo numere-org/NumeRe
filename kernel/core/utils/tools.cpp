@@ -1952,110 +1952,76 @@ bool isDelimiter(char cChar)
 // --> Ergaenzt fehlende Legenden mit den gegebenen Ausdruecken <--
 bool addLegends(string& sExpr)
 {
-    unsigned int nPos = 0;
-    unsigned int nPos_2 = 0;
-    unsigned int nPos_3 = 0;
-    int nQMark = 0;
-    string sTemp = "";
-    string sLabel = "";
-
     // Validate the number of parentheses
     if (!validateParenthesisNumber(sExpr))
         throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sExpr, '(');
 
-    // --> Ergaenze am Anfang und am Ende von sExpr je ein Anfuehrungszeichen <--
-    sExpr = " " + sExpr + " ";
+    EndlessVector<std::string> args = getAllArguments(sExpr);
 
-    // --> Mach' so lange, wie ein ',' ab dem Positions-Index nPos gefunden wird <--
-    do
+    std::string sTemp;
+
+    for (size_t i = 0; i < args.size(); i++)
     {
-        /* --> So lange nPos_2 != -1 und keine Klammer zwischen nPos_3 und nPos_2 aufgeht oder
-         *     nPos_2 nicht zwischen zwei Anfuehrungszeichen steht <--
-         */
-        for (unsigned int i = nPos; i < sExpr.length(); i++)
-        {
-            if (sExpr[i] == '(' || sExpr[i] == '{')
-                i += getMatchingParenthesis(sExpr.substr(i));
-            else if (isInQuotes(sExpr, i))
-                continue;
-            else if (sExpr[i] == ',')
-            {
-                nPos_2 = i;
-                break;
-            }
-            else if (i == sExpr.length() - 1)
-                nPos_2 = i;
-        }
-
-        // --> Abfangen, dass nPos_2 == -1 sein koennte <--
-        if (nPos_2 == string::npos)
-            nPos_2 = sExpr.length();
-
         /* --> Nun koennte es sein, dass bereits eine Legende angegeben worden ist. Dabei gibt es drei
          *     Moeglichkeiten: entweder durch umschliessende Anfuehrungszeichen, durch eine vorangestellte
          *     Raute '#' oder auch beides. Wir muessen hier diese drei Faelle einzeln behandeln <--
          * --> Ebenfalls ist es natuerlich moeglich, dass gar keine Legende angegeben worden ist. Das behandeln
          *     wir im ELSE-Fall <--
          */
-        if (sExpr.substr(nPos, nPos_2 - nPos).find('"') != string::npos)
+        if (args[i].find('"') != std::string::npos)
         {
             /* --> Hier ist auf jeden Fall '"' vorhanden. Es ist aber nicht gesagt, dass '#' nicht auch
              *     zu finden ist <--
-             * --> Speichern wir zunaechst die Position des '"' in nQMark <--
+             * --> Speichern wir zunaechst die Position des '"' in nPos <--
              */
-            nQMark = sExpr.substr(nPos, nPos_2 - nPos).find('"') + 1;
+            size_t nPos = args[i].find('"') + 1;
 
             // --> Pruefe nun, ob in diesem Stringbereich ein zweites '"' zu finden ist <--
-            if (sExpr.substr(nPos, nPos_2 - nPos).find('"', nQMark) < (unsigned)(nPos_2 - nPos))
+            if (args[i].find('"', nPos) != std::string::npos)
             {
                 // --> Ja? Gibt's denn dann eine Raute? <--
-                if (sExpr.substr(nPos, nPos_2 - nPos).find('#', nQMark) == string::npos)
-                    nPos = nPos_2 + 1; // Nein? Alles Prima, Positionsindex auf nPos_2+1 setzen
-                else
+                if (args[i].find('#', nPos) != std::string::npos)
                 {
                     // --> Ja? Dann muessen wir (zur Vereinfachung an anderer Stelle) noch zwei Anfuehrungszeichen ergaenzen <--
-                    sExpr = sExpr.substr(0, nPos_2) + "+\"\"" + sExpr.substr(nPos_2);
-                    nPos = nPos_2 + 4;
+                    sTemp += args[i] + "+\"\"";
                 }
-                // --> In jedem Fall kann die Funktion mit der naechsten Schleife fortfahren <--
-                continue;
+                else
+                    sTemp += args[i];
             }
             else
                 return false;   // Nein? Dann ist irgendwas ganz Falsch: FALSE zurueckgeben!
         }
-        else if (sExpr.substr(nPos, nPos_2 - nPos).find('#') != string::npos)
+        else if (args[i].find('#') != string::npos)
         {
             /* --> Hier gibt's nur '#' und keine '"' (werden im ersten Fall schon gefangen). Speichern wir
-             *     die Position der Raute in nPos_3 <--
+             *     die Position der Raute in nPos <--
              */
-            nPos_3 = sExpr.substr(nPos, nPos_2 - nPos).find('#') + nPos;
+            size_t nPos = args[i].find('#');
 
-            /* --> Setze sExpr dann aus dem Teil vor nPos_3 und, wenn noch mindestens Komma ab nPos_3 gefunden werden kann,
-             *     dem Teil ab nPos_3 vor dem Komma, dem String '+""' und dem Teil ab dem Komma zusammen, oder, wenn kein
-             *     Komma gefunden werden kann, dem Teil nach nPos_3 und dem String '+""' zusammen <--
+            /* --> Setze sExpr dann aus dem Teil vor nPos und, wenn noch mindestens Komma ab nPos gefunden werden kann,
+             *     dem Teil ab nPos vor dem Komma, dem String '+""' und dem Teil ab dem Komma zusammen, oder, wenn kein
+             *     Komma gefunden werden kann, dem Teil nach nPos und dem String '+""' zusammen <--
              * --> An dieser Stelle bietet sich der Ternary (A ? x : y) tatsaechlich einmal an, da er die ganze Sache,
              *     die sonst eine temporaere Variable benoetigt haette, in einem Befehl erledigen kann <--
              */
-            for (unsigned int i = nPos_3; i < sExpr.length(); i++)
+            for (size_t j = nPos; j < args[i].length(); j++)
             {
-                if (sExpr[i] == '(')
-                    i += getMatchingParenthesis(sExpr.substr(i));
-                if (sExpr[i] == ' ' || sExpr[i] == ',')
+                if (args[i][j] == '(')
+                    j += getMatchingParenthesis(args[i].substr(j));
+
+                if (args[i][j] == ' ')
                 {
-                    sExpr = sExpr.substr(0, i) + "+\"\"" + sExpr.substr(i);
+                    sTemp += args[i].insert(j, "+\"\"");
                     break;
                 }
             }
-            // --> Speichere die Position des naechsten ',' in nPos und fahre mit der naechsten Schleife fort <--
-            nPos = sExpr.find(',', nPos_3) + 1;
-            continue;
         }
         else
         {
             /* --> Hier gibt's weder '"' noch '#'; d.h., wir muessen die Legende selbst ergaenzen <--
              * --> Schneiden wir zunaechst den gesamten Ausdurck zwischen den zwei Kommata heraus <--
              */
-            sLabel = sExpr.substr(nPos, nPos_2 - nPos);
+            std::string sLabel = args[i];
 
             // --> Entfernen wir ueberzaehlige Leerzeichen <--
             StripSpaces(sLabel);
@@ -2063,21 +2029,15 @@ bool addLegends(string& sExpr)
             /* --> Setzen wir den gesamten Ausdruck wieder zusammen, wobei wir den Ausdruck in
              *     Anfuehrungszeichen als Legende einschieben <--
              */
-            sTemp = sExpr.substr(0, nPos_2) + " \"" + sLabel + "\"";
-
-            // --> Schiebe den Positionsindex um die Laenge des temporaeren Strings weiter <--
-            nPos = sTemp.length() + 1;
-
-            // --> Falls nPos_2 != -1 ist, haenge den restlichen String an, sonst nicht <--
-            if (nPos_2 != string::npos)
-                sExpr = sTemp + sExpr.substr(nPos_2);
-            else
-                sExpr = sTemp;
+            sTemp += args[i] + " \"" + sLabel + "\"";
         }
-    }
-    while (sExpr.find(',', nPos - 1) != string::npos);
 
-    // --> Hat alles geklappt: TRUE zurueck geben <--
+        if (i+1 < args.size())
+            sTemp += ", ";
+    }
+
+    sExpr = sTemp;
+
     return true;
 }
 

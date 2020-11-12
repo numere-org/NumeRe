@@ -1778,8 +1778,14 @@ void FlowCtrl::reset()
     {
         for (int i = 0; i < nVarArray; i++)
         {
-            if (mVarMap.find(sVarArray[i]) != mVarMap.end())
-                mVarMap.erase(mVarMap.find(sVarArray[i]));
+            for (auto iter = mVarMap.begin(); iter != mVarMap.end(); ++iter)
+            {
+                if (iter->second == sVarArray[i])
+                {
+                    mVarMap.erase(iter);
+                    break;
+                }
+            }
         }
 
         if (!mVarMap.size())

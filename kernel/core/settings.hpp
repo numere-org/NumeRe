@@ -1034,7 +1034,7 @@ class Settings : public Documentation
         ///
         /////////////////////////////////////////////////
         inline size_t getWindow(int nWindow = 0) const
-            {return nWindow ? m_settings.at(SETTING_V_WINDOW_Y).value() : m_settings.at(SETTING_V_WINDOW_X).value();}
+            {return nWindow ? m_settings.at(SETTING_V_WINDOW_Y).value()-1 : m_settings.at(SETTING_V_WINDOW_X).value()-1;}
 
         /////////////////////////////////////////////////
         /// \brief Returns the current plotting font
