@@ -301,14 +301,14 @@ namespace mu
 		{
 			if (mVectorVars.find(pExpr->substr(nStart, nEnd - nStart)) != mVectorVars.end())
 				return;
-			
+
 			std::vector<double> vVar;
-			
+
 			if (GetVar().find(pExpr->substr(nStart, nEnd - nStart)) != GetVar().end())
 				vVar.push_back(*(GetVar().find(pExpr->substr(nStart, nEnd - nStart))->second));
 			else
 				vVar.push_back(0.0);
-			
+
 			SetVectorVar(pExpr->substr(nStart, nEnd - nStart), vVar);
 		}
 	}
@@ -488,7 +488,7 @@ namespace mu
 		// Now check, whether the pre-evaluated formula was already parsed into the bytecode
 		// -> Return, if that is true
 		// -> Invalidate the bytecode for this formula, if necessary
-		if (bMakeLoopByteCode && !bPauseLoopByteCode && IsAlreadyParsed(a_sExpr))
+		if (bMakeLoopByteCode && !bPauseLoopByteCode && IsAlreadyParsed(a_sExpr) && vValidByteCode[nthLoopElement][nthLoopPartEquation])
 			return;
 		else if (bMakeLoopByteCode && !bPauseLoopByteCode && this->GetExpr().length() && vValidByteCode[nthLoopElement][nthLoopPartEquation])
 			vValidByteCode[nthLoopElement][nthLoopPartEquation] = 0;
@@ -3448,7 +3448,8 @@ namespace mu
         sCurrentEquation.strip();
         sNewEquation.strip();
 
-        if (sCurrentEquation == sNewEquation)
+        if (sCurrentEquation == sNewEquation
+            && (!bMakeLoopByteCode || bPauseLoopByteCode || vValidByteCode[nthLoopElement][nthLoopPartEquation]))
             return true;
 
         return false;

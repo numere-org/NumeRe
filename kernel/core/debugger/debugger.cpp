@@ -499,8 +499,14 @@ void NumeReDebugger::popStackItem()
 /////////////////////////////////////////////////
 void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
 {
-    if (!bDebuggerActive)
+    if (!bDebuggerActive || bAlreadyThrown)
         return;
+
+    if (!_varFactory)
+    {
+        bAlreadyThrown = true;
+        return;
+    }
 
     gatherInformations(_varFactory->sLocalVars, _varFactory->nLocalVarMapSize, _varFactory->dLocalVars, _varFactory->sLocalStrings, _varFactory->nLocalStrMapSize, _varFactory->sLocalTables,
                        _varFactory->nLocalTableSize, _varFactory->sLocalClusters, _varFactory->nLocalClusterSize, _varFactory->sArgumentMap, _varFactory->nArgumentMapSize, _sErraticCommand, _sErraticModule,
