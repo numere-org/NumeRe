@@ -2103,7 +2103,6 @@ void NumeReKernel::CloseSession()
     // Save the function definitions
     if (_option.controlDefinitions() && _functions.getDefinedFunctions())
     {
-        _option.enableSystemPrints(false);
         _functions.save(_option);
         Sleep(100);
     }

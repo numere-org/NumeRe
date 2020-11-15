@@ -5413,11 +5413,15 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
             _defVars.vValue[TCOORD][0] = _pData.gettBoundary();
             vResults = _parser.Eval(nFunctions);
             _defVars.vValue[XCOORD][0] = vResults[3 * k];
+
             if (3 * k + 1 < nFunctions)
                 _defVars.vValue[YCOORD][0] = vResults[3 * k + 1];
+
             if (3 * k + 2 < nFunctions)
                 _defVars.vValue[ZCOORD][0] = vResults[3 + k + 2];
+
             int nRenderSamples = _pInfo.nSamples;
+
             for (int t = 0; t < nRenderSamples; t++)
             {
                 if (t != 0)
@@ -5425,38 +5429,37 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
                     if (_pData.getAnimateSamples())
                     {
                         double dSamples = 1.0;
+
                         if ((t_animate * 100.0) / _pData.getAnimateSamples() <= 25.0)
-                        {
                             dSamples = (double)(_pInfo.nSamples - 1) * 0.25;
-                        }
                         else if ((t_animate * 100.0) / _pData.getAnimateSamples() <= 50.0)
-                        {
                             dSamples = (double)(_pInfo.nSamples - 1) * 0.5;
-                        }
                         else if ((t_animate * 100.0) / _pData.getAnimateSamples() <= 75.0)
-                        {
                             dSamples = (double)(_pInfo.nSamples - 1) * 0.75;
-                        }
                         else
-                        {
                             dSamples = (double)(_pInfo.nSamples - 1);
-                        }
+
                         nRenderSamples = (int)dSamples + 1;
                         _defVars.vValue[TCOORD][0] += (dt_max - _pData.gettBoundary()) / dSamples;
                     }
                     else
                         _defVars.vValue[TCOORD][0] += (_pData.gettBoundary(1) - _pData.gettBoundary()) / (double)(_pInfo.nSamples - 1);
+
                     _defVars.vValue[XCOORD][0] = _pData.getData(t - 1, 0, k);
                     _defVars.vValue[YCOORD][0] = _pData.getData(t - 1, 1, k);
                     _defVars.vValue[ZCOORD][0] = _pData.getData(t - 1, 2, k);
                 }
+
                 // --> Wir werten alle Koordinatenfunktionen zugleich aus und verteilen sie auf die einzelnen Parameterkurven <--
                 vResults = _parser.Eval(nFunctions);
+
                 for (int i = 0; i < 3; i++)
                 {
                     if (i + 3 * k >= nFunctions)
-                        break;
-                    if (isinf(vResults[i + 3 * k]) || isnan(vResults[i + 3 + k]))
+                        _pData.setData(t, i, 0.0, k);
+                        //break;
+
+                    if (isinf(vResults[i + 3 * k]) || isnan(vResults[i + 3 * k]))
                     {
                         if (!t)
                             _pData.setData(t, i, NAN, k);
@@ -5467,12 +5470,14 @@ int Plot::fillData(PlotData& _pData, Parser& _parser, const string& sFunc, value
                         _pData.setData(t, i, (double)vResults[i + 3 * k], k);
                 }
             }
+
             for (int t = nRenderSamples; t < _pInfo.nSamples; t++)
             {
                 for (int i = 0; i < 3; i++)
                     _pData.setData(t, i, NAN, k);
             }
         }
+
         _defVars.vValue[TCOORD][0] = dt_max;
     }
     else if (sFunc != "<<empty>>" && _pInfo.b3DVect)

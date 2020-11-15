@@ -282,6 +282,7 @@ namespace NumeRe
             void removeCluster(const string& sCluster);
             string createTemporaryCluster();
             void removeTemporaryClusters();
+            void clearAllClusters();
             bool updateClusterSizeVariables(StringView sCluster);
 
             const map<string, Cluster>& getClusterMap() const

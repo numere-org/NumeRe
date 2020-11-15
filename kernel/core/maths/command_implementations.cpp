@@ -3163,7 +3163,7 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
     if (_option.systemPrints())
         NumeReKernel::print(LineBreak(sTaylor, _option, true, 0, 8));
 
-    sTaylor += _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString((int)nth_taylor));
+    sTaylor += " " + _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString((int)nth_taylor));
 
     bool bDefinitionSuccess = false;
 

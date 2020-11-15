@@ -682,29 +682,17 @@ bool FunctionDefinitionManager::defineFunc(const string& sExpr, bool bRedefine, 
     {
         // Throw the corresponding error messages
         if (sExpr.find(":=") == string::npos)
-        {
             throw SyntaxError(SyntaxError::CANNOT_FIND_DEFINE_OPRT, sExpr, SyntaxError::invalid_position);
-        }
         else if (sExpr.find('(') == string::npos || sExpr.find('(') > sExpr.find(":="))
-        {
             throw SyntaxError(SyntaxError::CANNOT_FIND_FUNCTION_ARGS, sExpr, SyntaxError::invalid_position);
-        }
         else if (sBuilt_In.find(","+sExpr.substr(0,sExpr.find('(')+1)) != string::npos)
-        {
             throw SyntaxError(SyntaxError::FUNCTION_IS_PREDEFINED, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
-        }
         else if (sTables.length() && sTables.find(";"+sExpr.substr(0,sExpr.find('('))+";") != string::npos)
-        {
             throw SyntaxError(SyntaxError::CACHE_ALREADY_EXISTS, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
-        }
         else if (sCommands.find(","+sExpr.substr(0,sExpr.find('('))+",") != string::npos)
-        {
             throw SyntaxError(SyntaxError::FUNCTION_STRING_IS_COMMAND, sExpr, SyntaxError::invalid_position, sExpr.substr(0,sExpr.find('(')));
-        }
         else
-        {
             throw SyntaxError(SyntaxError::CANNOT_FIND_FUNCTION_ARGS, sExpr, SyntaxError::invalid_position);
-        }
     }
 
     // Check, whether the passed function is not already defined
@@ -790,8 +778,8 @@ bool FunctionDefinitionManager::undefineFunc(const string& sFunc)
 
     // Update the definition file, if the corresponding setting
     // is active
-    if (NumeReKernel::getInstance() && NumeReKernel::getInstance()->getSettings().controlDefinitions())
-        save(NumeReKernel::getInstance()->getSettings());
+    //if (NumeReKernel::getInstance() && NumeReKernel::getInstance()->getSettings().controlDefinitions())
+    //    save(NumeReKernel::getInstance()->getSettings());
 
     NumeReKernel::getInstance()->refreshFunctionTree();
     return true;
@@ -1082,7 +1070,7 @@ bool FunctionDefinitionManager::save(const Settings& _option)
         // valid state
         if (ofDefineFile.good())
         {
-            ofDefineFile << "# This file saves the function definitions. Do not edit unles you know, what you're doing!" << endl;
+            ofDefineFile << "# This file saves the function definitions. Do not edit unless you know, what you're doing!" << endl;
 
             // Save each definition
             for (auto iter = mFunctionsMap.begin(); iter != mFunctionsMap.end(); ++iter)

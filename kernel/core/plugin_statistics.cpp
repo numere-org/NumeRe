@@ -113,7 +113,7 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
             if (!_data.isValidElement(i, j, sTable))
                 continue;
 
-            if (fabs(_data.getElement(i, j, sTable)) <= vStats[STATS_STD][j])
+            if (fabs(_data.getElement(i, j, sTable) - vStats[STATS_AVG][j]) <= vStats[STATS_STD][j])
                 vStats[STATS_CONFINT][j]++;
 
             vStats[STATS_SKEW][j] += intPower(_data.getElement(i, j, sTable) - vStats[STATS_AVG][j], 3);
@@ -275,6 +275,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
     }
 
     // --> Allgemeine Ausgabe-Info-Parameter setzen <--
+    _out.setFileName(sSavePath);
     _out.setPluginName(_lang.get("STATS_OUT_PLGNINFO", PI_MED, _data.getDataFileName(sTable)));
     _out.setPrefix("stats");
 

@@ -1595,6 +1595,12 @@ namespace NumeRe
         }
     }
 
+    // Clear all clusters currently in memory
+    void ClusterManager::clearAllClusters()
+    {
+        mClusterMap.clear();
+    }
+
     // This member function updates the dimension variable
     // reserved for cluster accesses with the size of the
     // current accessed cluster

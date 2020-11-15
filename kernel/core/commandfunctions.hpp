@@ -4646,6 +4646,10 @@ static CommandReturnValues cmd_clear(string& sCmd)
 
         // Clear also the string table
         _data.clearStringElements();
+
+        // Clear also the clusters
+        _data.clearAllClusters();
+        _data.newCluster("ans").setDouble(0, NAN);
     }
     else if (findParameter(sCmd, "string") || sCmd.find(" string()", _mMatch.nPos+_mMatch.sString.length()) != string::npos)
     {
@@ -5875,7 +5879,7 @@ static CommandReturnValues cmd_hist(string& sCmd)
     if (findParameter(sCmd, "data") && !_data.isEmpty("data"))
     {
         // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRACATED"));
+        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
         plugin_histogram(sArgument);
     }
     else if (_data.matchTableAsParameter(sCmd).length())
