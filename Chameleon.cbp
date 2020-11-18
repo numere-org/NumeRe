@@ -189,9 +189,11 @@
 				<Option compiler="tdm-gcc" />
 				<Compiler>
 					<Add option="-Wall" />
-					<Add option="-g" />
 					<Add option="-std=gnu++11" />
+					<Add option="-g" />
 					<Add option="-mthreads" />
+					<Add option="-ggdb3" />
+					<Add option="-fno-omit-frame-pointer" />
 					<Add option="-DDLLVER_MAJOR_MASK" />
 					<Add option="-DwxUSE_REGEX" />
 					<Add option="-DwxDIALOG_MODAL" />
