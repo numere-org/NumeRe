@@ -36,9 +36,6 @@ typedef CommandReturnValues (*CommandFunc)(string&);
 extern mglGraph _fontData;
 
 string removeQuotationMarks(const string& sString);
-static CommandReturnValues cmd_data(string& sCmd) __attribute__ ((deprecated));
-static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCacheCmd) __attribute__ ((deprecated));
-
 
 /////////////////////////////////////////////////
 /// \brief This function returns a list of the
@@ -223,74 +220,6 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 	{
 		nType = 5;
 		addArgumentQuotes(sCmd, "plugin");
-	}
-	else if (findParameter(sCmd, "cache", '='))
-	{
-	    // DEPRECATED: Declared at v1.1.2rc2
-        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
-
-		string sReturnVal = "";
-
-		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-		{
-			if (!extractFirstParameterStringValue(sCmd, sObject))
-				return false;
-		}
-		else
-			sObject = sCmd.substr(findParameter(sCmd, "cache", '=') + 5);
-
-		StripSpaces(sObject);
-
-		if (findParameter(sObject, "free"))
-			eraseToken(sObject, "free", false);
-
-		if (sObject.rfind('-') != string::npos)
-			sObject.erase(sObject.rfind('-'));
-
-		if (!sObject.length() || !getNextArgument(sObject, false).length())
-			return false;
-
-		while (sObject.length() && getNextArgument(sObject, false).length())
-		{
-			if (_data.isTable(getNextArgument(sObject, false)))
-			{
-				if (findParameter(sCmd, "free"))
-				{
-					string sTemp = getNextArgument(sObject, false);
-					sTemp.erase(sTemp.find('('));
-					_data.deleteBulk(sTemp, 0, _data.getLines(sTemp) - 1, 0, _data.getCols(sTemp) - 1);
-
-					if (sReturnVal.length())
-						sReturnVal += ", ";
-
-					sReturnVal += "\"" + getNextArgument(sObject, false) + "\"";
-				}
-
-				getNextArgument(sObject, true);
-				continue;
-			}
-
-			if (_data.addTable(getNextArgument(sObject, false), _option))
-			{
-				if (sReturnVal.length())
-					sReturnVal += ", ";
-
-				sReturnVal += "\"" + getNextArgument(sObject, true) + "\"";
-				continue;
-			}
-			else
-				return false;
-		}
-
-		if (sReturnVal.length() && _option.systemPrints())
-		{
-			if (findParameter(sCmd, "free"))
-				NumeReKernel::print(_lang.get("BUILTIN_NEW_FREE_CACHES", sReturnVal));
-			else
-				NumeReKernel::print(_lang.get("BUILTIN_NEW_CACHES", sReturnVal));
-		}
-
-		return true;
 	}
 	else if (sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 3) != string::npos)
 	{
@@ -840,119 +769,6 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 		openExternally(sObject);
 
 	return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function lists all internal
-/// (kernel) settings.
-///
-/// \param _option Settings&
-/// \return void
-/// \deprecated Will be removed at v1.1.3rc1
-///
-/////////////////////////////////////////////////
-static void listOptions(Settings& _option)
-{
-	make_hline();
-	NumeReKernel::print("NUMERE: " + toUpperCase(_lang.get("BUILTIN_LISTOPT_SETTINGS")) );
-	make_hline();
-	NumeReKernel::print(  toSystemCodePage(_lang.get("BUILTIN_LISTOPT_1")) + "\n|" );
-
-	// List the path settings
-	NumeReKernel::printPreFmt(sectionHeadline(_lang.get("BUILTIN_LISTOPT_2")));
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_3", _option.getSavePath()), _option, true, 0, 25) + "\n" );
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_4", _option.getLoadPath()), _option, true, 0, 25) + "\n" );
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_5", _option.getScriptPath()), _option, true, 0, 25) + "\n" );
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_6", _option.getProcPath()), _option, true, 0, 25) + "\n" );
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_7", _option.getPlotPath()), _option, true, 0, 25) + "\n" );
-	NumeReKernel::printPreFmt("|\n" );
-
-	// List all other settings
-	NumeReKernel::printPreFmt(sectionHeadline(_lang.get("BUILTIN_LISTOPT_10")));
-
-	// Autosaveintervall
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_11", toString(_option.getAutoSaveInterval())), _option) + "\n");
-
-	// Greeting
-	if (_option.showGreeting())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_12", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_12", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	// Buffer
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_13", toString(_option.getBuffer())), _option) + "\n");
-
-	// Draftmode
-	if (_option.isDraftMode())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_15", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_15", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	// Extendedfileinfo
-	if (_option.showExtendedFileInfo())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_16", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_16", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	// ESC in Scripts
-	if (_option.useEscInScripts())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_17", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_17", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	// Defcontrol
-	if (_option.controlDefinitions())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_19", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_19", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	// Compact table view in the terminal
-	if (_option.createCompactTables())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_20", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_20", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	// Loading empty columns
-	if (_option.loadEmptyCols())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_21", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_21", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	// Precision
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_22", toString(_option.getPrecision())), _option) + "\n");
-
-	// Create a logfile of the terminal inputs
-	if (_option.useLogFile())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_23", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_23", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	// Default Plotfont
-	NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_25", _option.getDefaultPlotFont()), _option) + "\n");
-
-	// Display Hints
-	if (_option.showHints())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_26", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	// Use UserLangFiles
-	if (_option.useCustomLangFiles())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_27", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	//  Use the ExternalDocViewer
-	if (_option.useExternalDocWindow())
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_28", toUpperCase(_lang.get("COMMON_ACTIVE"))), _option) + "\n");
-	else
-		NumeReKernel::printPreFmt(LineBreak("|   " + _lang.get("BUILTIN_LISTOPT_28", toUpperCase(_lang.get("COMMON_INACTIVE"))), _option) + "\n");
-
-	NumeReKernel::printPreFmt("|\n" );
-	NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LISTOPT_FOOTNOTE"), _option) );
-	make_hline();
-	return;
 }
 
 
@@ -3330,588 +3146,6 @@ static CommandReturnValues cmd_read(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
-/// "data" command.
-///
-/// \param sCmd string&
-/// \return CommandReturnValues
-/// \deprecated Will be removed with v1.1.3rc1
-///
-/////////////////////////////////////////////////
-static CommandReturnValues cmd_data(string& sCmd)
-{
-    // DEPRECATED: Declared at v1.1.2rc1
-    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Output& _out = NumeReKernel::getInstance()->getOutput();
-
-    string sArgument;
-    int nArgument;
-    size_t nPos;
-    string sCommand = findCommand(sCmd).sString;
-
-    if (findParameter(sCmd, "clear"))
-    {
-        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
-            remove_data(_data, _option, true);
-        else
-            remove_data(_data, _option);
-
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "load") || findParameter(sCmd, "load", '='))
-    {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (findParameter(sCmd, "load", '='))
-            addArgumentQuotes(sCmd, "load");
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
-                _data.setbLoadEmptyColsInNextFile(true);
-            if (findParameter(sCmd, "slices", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slices", '=') + 6) == "xz")
-                nArgument = -1;
-            else if (findParameter(sCmd, "slices", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slices", '=') + 6) == "yz")
-                nArgument = -2;
-            else
-                nArgument = 0;
-            if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
-            {
-                if (_data.isValid())
-                {
-                    if (_option.systemPrints())
-                        _data.removeData(false);
-                    else
-                        _data.removeData(true);
-                }
-                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
-                {
-                    if (sArgument.find('/') == string::npos)
-                        sArgument = "<loadpath>/" + sArgument;
-                    vector<string> vFilelist = getFileList(sArgument, _option);
-                    if (!vFilelist.size())
-                    {
-                        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
-                    }
-                    string sPath = "<loadpath>/";
-                    if (sArgument.find('/') != string::npos)
-                        sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-
-                    for (unsigned int i = 0; i < vFilelist.size(); i++)
-                    {
-                        _data.openFile(sPath + vFilelist[i], false, nArgument);
-                    }
-                    if (_data.isValid())
-                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Alle Daten der " + toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
-                    return COMMAND_PROCESSED;
-                }
-                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-                {
-                    if (findParameter(sCmd, "head", '='))
-                        nArgument = findParameter(sCmd, "head", '=') + 4;
-                    else
-                        nArgument = findParameter(sCmd, "h", '=') + 1;
-                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, false, nArgument);
-                }
-                else
-                {
-                    _data.openFile(sArgument, false, nArgument);
-                }
-                if (_data.isValid() && _option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-                //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
-            }
-            else if (!_data.isValid())
-            {
-                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
-                {
-                    if (sArgument.find('/') == string::npos)
-                        sArgument = "<loadpath>/" + sArgument;
-                    //NumeReKernel::print(sArgument );
-                    vector<string> vFilelist = getFileList(sArgument, _option);
-                    if (!vFilelist.size())
-                    {
-                        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
-                    }
-                    string sPath = "<loadpath>/";
-                    if (sArgument.find('/') != string::npos)
-                        sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-                    for (unsigned int i = 0; i < vFilelist.size(); i++)
-                    {
-                        _data.openFile(sPath + vFilelist[i], false, nArgument);
-                    }
-                    if (_data.isValid())
-                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Alle Daten der " +toString((int)vFilelist.size())+ " Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
-                    return COMMAND_PROCESSED;
-                }
-                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-                {
-                    if (findParameter(sCmd, "head", '='))
-                        nArgument = findParameter(sCmd, "head", '=') + 4;
-                    else
-                        nArgument = findParameter(sCmd, "h", '=') + 1;
-                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, false, nArgument);
-                }
-                else
-                    _data.openFile(sArgument, false, nArgument);
-                if (_data.isValid() && _option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-                //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
-            }
-            else
-                load_data(_data, _option, _parser, sArgument);
-        }
-        else
-            load_data(_data, _option, _parser);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "paste") || findParameter(sCmd, "pasteload"))
-    {
-        PasteHandler _handler;
-        _data.melt(_handler.pasteLoad(_option), "data");
-        if (_data.isValid())
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_PASTE_SUCCESS", toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-        //NumeReKernel::print(LineBreak("|-> Die Daten wurden erfolgreich eingefügt: Der Datensatz besteht nun aus "+toString(_data.getLines("data"))+" Zeile(n) und "+toString(_data.getCols("data"))+" Spalte(n).", _option) );
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "reload") || findParameter(sCmd, "reload", '='))
-    {
-        if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !findParameter(sCmd, "reload", '='))
-            //throw CANNOT_RELOAD_DATA;
-            throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, "", SyntaxError::invalid_position);
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (findParameter(sCmd, "reload", '='))
-            addArgumentQuotes(sCmd, "reload");
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
-                _data.setbLoadEmptyColsInNextFile(true);
-            if (_data.isValid())
-            {
-                _data.removeData(false);
-                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-                {
-                    if (findParameter(sCmd, "head", '='))
-                        nArgument = findParameter(sCmd, "head", '=') + 4;
-                    else
-                        nArgument = findParameter(sCmd, "h", '=') + 1;
-                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, false, nArgument);
-                }
-                else
-                    _data.openFile(sArgument);
-                if (_data.isValid() && _option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) );
-                //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich aktualisiert.", _option) );
-            }
-            else
-                load_data(_data, _option, _parser, sArgument);
-        }
-        else if (_data.isValid())
-        {
-            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
-                _data.setbLoadEmptyColsInNextFile(true);
-            sArgument = _data.getDataFileName("data");
-            _data.removeData(false);
-            _data.openFile(sArgument);
-            if (_data.isValid() && _option.systemPrints())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"), _option) );
-            //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich aktualisiert.", _option) );
-        }
-        else
-            load_data(_data, _option, _parser);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "app") || findParameter(sCmd, "app", '='))
-    {
-        append_data(sCmd, _data, _option);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "showf"))
-    {
-        show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "show"))
-    {
-        _out.setCompact(_option.createCompactTables());
-        show_data(_data, _out, _option, "data", _option.getPrecision(), true, false);
-        return COMMAND_PROCESSED;
-    }
-    else if (sCmd.substr(0, 5) == "data(")
-    {
-        return NO_COMMAND;
-    }
-    else if (findParameter(sCmd, "stats"))
-    {
-        sArgument = evaluateParameterValues(sCmd);
-        if (_data.isValid())
-            plugin_statistics(sArgument, _data);
-        else
-            //throw NO_DATA_AVAILABLE;
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, sArgument, sArgument);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "hist"))
-    {
-        sArgument = evaluateParameterValues(sCmd);
-        if (_data.isValid())
-            plugin_histogram(sArgument);
-        else
-            //throw NO_DATA_AVAILABLE;
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, sArgument, sArgument);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "save") || findParameter(sCmd, "save", '='))
-    {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (findParameter(sCmd, "save", '='))
-            addArgumentQuotes(sCmd, "save");
-        _data.setPrefix("data");
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            if (_data.saveFile("data", sArgument))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) );
-                //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
-            }
-            else
-                //throw CANNOT_SAVE_FILE;
-                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
-            //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
-        }
-        else
-        {
-            sArgument = _data.getDataFileName("data");
-            if (sArgument.find('\\') != string::npos)
-                sArgument = sArgument.substr(sArgument.rfind('\\') + 1);
-            if (sArgument.find('/') != string::npos)
-                sArgument = sArgument.substr(sArgument.rfind('/') + 1);
-            if (sArgument.substr(sArgument.rfind('.')) != ".ndat")
-                sArgument = sArgument.substr(0, sArgument.rfind('.')) + ".ndat";
-            if (_data.saveFile("data", "copy_of_" + sArgument))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) );
-                //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
-            }
-            else
-                //throw CANNOT_SAVE_FILE;
-                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
-            //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
-        }
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "sort", '=') || findParameter(sCmd, "sort"))
-    {
-        _data.sortElements(sCmd);
-        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "export") || findParameter(sCmd, "export", '='))
-    {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (findParameter(sCmd, "export", '='))
-            addArgumentQuotes(sCmd, "export");
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            _out.setFileName(sArgument);
-            show_data(_data, _out, _option, "data", _option.getPrecision(), true, false, true, false);
-        }
-        else
-            show_data(_data, _out, _option, "data", _option.getPrecision(), true, false, true);
-        return COMMAND_PROCESSED;
-    }
-    else if ((findParameter(sCmd, "avg")
-              || findParameter(sCmd, "sum")
-              || findParameter(sCmd, "min")
-              || findParameter(sCmd, "max")
-              || findParameter(sCmd, "norm")
-              || findParameter(sCmd, "std")
-              || findParameter(sCmd, "prd")
-              || findParameter(sCmd, "num")
-              || findParameter(sCmd, "cnt")
-              || findParameter(sCmd, "and")
-              || findParameter(sCmd, "or")
-              || findParameter(sCmd, "xor")
-              || findParameter(sCmd, "med"))
-             && (findParameter(sCmd, "lines") || findParameter(sCmd, "cols")))
-    {
-        if (!_data.isValid())
-            //throw NO_DATA_AVAILABLE;
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
-        string sEvery = "";
-        if (findParameter(sCmd, "every", '='))
-        {
-            value_type* v = 0;
-            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "every", '=') + 5));
-            v = _parser.Eval(nArgument);
-            if (nArgument > 1)
-            {
-                sEvery = "every=" + toString((int)v[0]) + "," + toString((int)v[1]) + " ";
-            }
-            else
-                sEvery = "every=" + toString((int)v[0]) + " ";
-        }
-        nPos = findCommand(sCmd, "data").nPos;
-        sArgument = extractCommandString(sCmd, findCommand(sCmd, "data"));
-        sCommand = sArgument;
-        if (findParameter(sCmd, "grid"))
-            sArgument = "grid";
-        else
-            sArgument.clear();
-        if (findParameter(sCmd, "avg"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[avg_lines]");
-                _parser.SetVectorVar("_~data[avg_lines]", _data.avg("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[avg_cols]");
-                _parser.SetVectorVar("_~data[avg_cols]", _data.avg("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "sum"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[sum_lines]");
-                _parser.SetVectorVar("_~data[sum_lines]", _data.sum("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[sum_cols]");
-                _parser.SetVectorVar("_~data[sum_cols]", _data.sum("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "min"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[min_lines]");
-                _parser.SetVectorVar("_~data[min_lines]", _data.min("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[min_cols]");
-                _parser.SetVectorVar("_~data[min_cols]", _data.min("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "max"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[max_lines]");
-                _parser.SetVectorVar("_~data[max_lines]", _data.max("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[max_cols]");
-                _parser.SetVectorVar("_~data[max_cols]", _data.max("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "norm"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[norm_lines]");
-                _parser.SetVectorVar("_~data[norm_lines]", _data.norm("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[norm_cols]");
-                _parser.SetVectorVar("_~data[norm_cols]", _data.norm("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "std"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[std_lines]");
-                _parser.SetVectorVar("_~data[std_lines]", _data.std("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[std_cols]");
-                _parser.SetVectorVar("_~data[std_cols]", _data.std("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "prd"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[prd_lines]");
-                _parser.SetVectorVar("_~data[prd_lines]", _data.prd("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[prd_cols]");
-                _parser.SetVectorVar("_~data[prd_cols]", _data.prd("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "num"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[num_lines]");
-                _parser.SetVectorVar("_~data[num_lines]", _data.num("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[num_cols]");
-                _parser.SetVectorVar("_~data[num_cols]", _data.num("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "cnt"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[cnt_lines]");
-                _parser.SetVectorVar("_~data[cnt_lines]", _data.cnt("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[cnt_cols]");
-                _parser.SetVectorVar("_~data[cnt_cols]", _data.cnt("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "med"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[med_lines]");
-                _parser.SetVectorVar("_~data[med_lines]", _data.med("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[med_cols]");
-                _parser.SetVectorVar("_~data[med_cols]", _data.med("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "and"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[and_lines]");
-                _parser.SetVectorVar("_~data[and_lines]", _data.and_func("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[and_cols]");
-                _parser.SetVectorVar("_~data[and_cols]", _data.and_func("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "or"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[or_lines]");
-                _parser.SetVectorVar("_~data[or_lines]", _data.or_func("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[or_cols]");
-                _parser.SetVectorVar("_~data[or_cols]", _data.or_func("data", sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "xor"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[xor_lines]");
-                _parser.SetVectorVar("_~data[xor_lines]", _data.xor_func("data", sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~data[xor_cols]");
-                _parser.SetVectorVar("_~data[xor_cols]", _data.xor_func("data", sArgument + "cols" + sEvery));
-            }
-        }
-
-        return COMMAND_HAS_RETURNVALUE;
-    }
-    else if ((findParameter(sCmd, "avg")
-              || findParameter(sCmd, "sum")
-              || findParameter(sCmd, "min")
-              || findParameter(sCmd, "max")
-              || findParameter(sCmd, "norm")
-              || findParameter(sCmd, "std")
-              || findParameter(sCmd, "prd")
-              || findParameter(sCmd, "num")
-              || findParameter(sCmd, "cnt")
-              || findParameter(sCmd, "and")
-              || findParameter(sCmd, "or")
-              || findParameter(sCmd, "xor")
-              || findParameter(sCmd, "med"))
-            )
-    {
-        if (!_data.isValid())
-            //throw NO_DATA_AVAILABLE;
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
-        nPos = findCommand(sCmd, "data").nPos;
-        sArgument = extractCommandString(sCmd, findCommand(sCmd, "data"));
-        sCommand = sArgument;
-        if (findParameter(sCmd, "grid") && _data.getCols("data") < 3)
-            //throw TOO_FEW_COLS;
-            throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, "data", "data");
-        else if (findParameter(sCmd, "grid"))
-            nArgument = 2;
-        else
-            nArgument = 0;
-        if (findParameter(sCmd, "avg"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.avg("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "sum"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.sum("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "min"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.min("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "max"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.max("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "norm"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.norm("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "std"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.std("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "prd"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.prd("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "num"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.num("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "cnt"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "med"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "and"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "or"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-        else if (findParameter(sCmd, "xor"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func("data", 0, _data.getLines("data", false)-1, nArgument, _data.getCols("data")-1)));
-
-        return COMMAND_HAS_RETURNVALUE;
-    }
-    else if (sCommand == "data")
-    {
-        doc_Help("data", _option);
-        return COMMAND_PROCESSED;
-    }
-    else
-        return NO_COMMAND;
-
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
 /// "new" command.
 ///
 /// \param sCmd string&
@@ -4032,24 +3266,6 @@ static CommandReturnValues cmd_quit(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
-/// "firststart" command.
-///
-/// \param sCmd string&
-/// \return CommandReturnValues
-/// \deprecated Will be removed with v1.1.3rc1
-///
-/////////////////////////////////////////////////
-static CommandReturnValues cmd_firststart(string& sCmd)
-{
-    // DEPRECATED: Declared at v1.1.2rc1
-    NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
-    doc_FirstStart(NumeReKernel::getInstance()->getSettings());
-    return COMMAND_PROCESSED;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
 /// "odesolve" command.
 ///
 /// \param sCmd string&
@@ -4072,439 +3288,6 @@ static CommandReturnValues cmd_odesolve(string& sCmd)
         doc_Help("odesolver", _option);
 
     return COMMAND_PROCESSED;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
-/// commands originating from using table names
-/// as commands.
-///
-/// \param sCmd string&
-/// \return CommandReturnValues
-/// \deprecated Will be removed with v1.1.3rc1
-///
-/////////////////////////////////////////////////
-static CommandReturnValues cmd_tableAsCommand(string& sCmd, const string& sCacheCmd)
-{
-    // DEPRECATED: Declared at v1.1.2rc1
-    NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Output& _out = NumeReKernel::getInstance()->getOutput();
-
-    string sArgument;
-    int nArgument;
-    size_t nPos;
-    string sCommand = findCommand(sCmd).sString;
-
-    if (findParameter(sCmd, "showf"))
-    {
-        show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "show"))
-    {
-        _out.setCompact(_option.createCompactTables());
-        show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "clear"))
-    {
-        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
-            clear_cache(_data, _option, true);
-        else
-            clear_cache(_data, _option);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "hist"))
-    {
-        sArgument = evaluateParameterValues(sCmd);
-        if (_data.isValid())
-            plugin_histogram(sArgument);
-        else
-            //throw NO_DATA_AVAILABLE;
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "stats"))
-    {
-        sArgument = evaluateParameterValues(sCmd);
-        if (findParameter(sCmd, "save", '='))
-        {
-            if (sCmd[sCmd.find("save=") + 5] == '"' || sCmd[sCmd.find("save=") + 5] == '#')
-            {
-                if (!extractFirstParameterStringValue(sCmd, sArgument))
-                    sArgument = "";
-            }
-            else
-                sArgument = sCmd.substr(sCmd.find("save=") + 5, sCmd.find(' ', sCmd.find("save=") + 5) - sCmd.find("save=") - 5);
-        }
-
-        if (_data.isValid())
-            plugin_statistics(sArgument, _data);
-        else
-            //throw NO_DATA_AVAILABLE;
-            throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, sCmd, SyntaxError::invalid_position);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "save") || findParameter(sCmd, "save", '='))
-    {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (findParameter(sCmd, "save", '='))
-            addArgumentQuotes(sCmd, "save");
-        _data.setPrefix(sCommand);
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            if (_data.saveFile(sCommand, sArgument))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) );
-                //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
-            }
-            else
-            {
-                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
-                //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
-            }
-        }
-        else
-        {
-            if (_data.saveFile(sCommand, ""))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _data.getOutputFileName()), _option) );
-                //NumeReKernel::print(LineBreak("|-> Daten wurden erfolgreich nach \"" + _data.getOutputFileName() + "\" gespeichert.", _option) );
-            }
-            else
-            {
-                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
-                //NumeReKernel::print(LineBreak("|-> FEHLER: Daten konnten nicht gespeichert werden!", _option) );
-            }
-        }
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "sort") || findParameter(sCmd, "sort", '='))
-    {
-        _data.sortElements(sCmd);
-        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SORT_SUCCESS"), _option) );
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "export") || findParameter(sCmd, "export", '='))
-    {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (findParameter(sCmd, "export", '='))
-            addArgumentQuotes(sCmd, "export");
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            _out.setFileName(sArgument);
-            show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true, true, false);
-        }
-        else
-            show_data(_data, _out, _option, sCommand, _option.getPrecision(), false, true, true);
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "rename", '=')) //CACHE -rename=NEWNAME
-    {
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-            sCmd = evaluateParameterValues(sCmd);
-
-        sArgument = getArgAtPos(sCmd, findParameter(sCmd, "rename", '=') + 6);
-        _data.renameTable(sCommand, sArgument);
-        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RENAME_CACHE", sArgument), _option) );
-        //NumeReKernel::print(LineBreak("|-> Der Cache wurde erfolgreich zu \""+sArgument+"\" umbenannt.", _option) );
-        return COMMAND_PROCESSED;
-    }
-    else if (findParameter(sCmd, "swap", '=')) //CACHE -swap=NEWCACHE
-    {
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-            sCmd = evaluateParameterValues(sCmd);
-
-        sArgument = getArgAtPos(sCmd, findParameter(sCmd, "swap", '=') + 4);
-        _data.swapTables(sCommand, sArgument);
-        if (_option.systemPrints())
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SWAP_CACHE", sCommand, sArgument), _option) );
-        //NumeReKernel::print(LineBreak("|-> Der Inhalt von \""+sCommand+"\" wurde erfolgreich mit dem Inhalt von \""+sArgument+"\" getauscht.", _option) );
-        return COMMAND_PROCESSED;
-    }
-    else if ((findParameter(sCmd, "avg")
-              || findParameter(sCmd, "sum")
-              || findParameter(sCmd, "min")
-              || findParameter(sCmd, "max")
-              || findParameter(sCmd, "norm")
-              || findParameter(sCmd, "std")
-              || findParameter(sCmd, "prd")
-              || findParameter(sCmd, "num")
-              || findParameter(sCmd, "cnt")
-              || findParameter(sCmd, "and")
-              || findParameter(sCmd, "or")
-              || findParameter(sCmd, "xor")
-              || findParameter(sCmd, "med"))
-             && (findParameter(sCmd, "lines") || findParameter(sCmd, "cols")))
-    {
-        if (!_data.isValid() || !_data.getCols(sCacheCmd, false))
-            //throw NO_CACHED_DATA;
-            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sCacheCmd, sCacheCmd);
-        string sEvery = "";
-        if (findParameter(sCmd, "every", '='))
-        {
-            value_type* v = 0;
-            _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "every", '=') + 5));
-            v = _parser.Eval(nArgument);
-            if (nArgument > 1)
-            {
-                sEvery = "every=" + toString((int)v[0]) + "," + toString((int)v[1]) + " ";
-            }
-            else
-                sEvery = "every=" + toString((int)v[0]) + " ";
-        }
-        nPos = findCommand(sCmd, sCacheCmd).nPos;
-        sArgument = extractCommandString(sCmd, findCommand(sCmd, sCacheCmd));
-        sCommand = sArgument;
-        if (findParameter(sCmd, "grid"))
-            sArgument = "grid";
-        else
-            sArgument.clear();
-
-        if (findParameter(sCmd, "avg"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[avg_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[avg_lines]", _data.avg(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[avg_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[avg_cols]", _data.avg(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "sum"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[sum_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[sum_lines]", _data.sum(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[sum_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[sum_cols]", _data.sum(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "min"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[min_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[min_lines]", _data.min(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[min_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[min_cols]", _data.min(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "max"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[max_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[max_lines]", _data.max(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[max_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[max_cols]", _data.max(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "norm"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[norm_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[norm_lines]", _data.norm(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[norm_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[norm_cols]", _data.norm(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "std"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[std_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[std_lines]", _data.std(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[std_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[std_cols]", _data.std(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "prd"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[prd_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[prd_lines]", _data.prd(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[prd_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[prd_cols]", _data.prd(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "num"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[num_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[num_lines]", _data.num(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[num_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[num_cols]", _data.num(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "cnt"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[cnt_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[cnt_lines]", _data.cnt(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[cnt_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[cnt_cols]", _data.cnt(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "med"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[med_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[med_lines]", _data.med(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[med_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[med_cols]", _data.med(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "and"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[and_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[and_lines]", _data.and_func(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[and_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[and_cols]", _data.and_func(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "or"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[or_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[or_lines]", _data.or_func(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[or_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[or_cols]", _data.or_func(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-        else if (findParameter(sCmd, "xor"))
-        {
-            if (findParameter(sCmd, "lines"))
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[xor_lines]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[xor_lines]", _data.med(sCacheCmd, sArgument + "lines" + sEvery));
-            }
-            else
-            {
-                sCmd.replace(nPos, sCommand.length(), "_~" + sCacheCmd + "[xor_cols]");
-                _parser.SetVectorVar("_~" + sCacheCmd + "[xor_cols]", _data.med(sCacheCmd, sArgument + "cols" + sEvery));
-            }
-        }
-
-        return COMMAND_HAS_RETURNVALUE;
-    }
-    else if ((findParameter(sCmd, "avg")
-              || findParameter(sCmd, "sum")
-              || findParameter(sCmd, "min")
-              || findParameter(sCmd, "max")
-              || findParameter(sCmd, "norm")
-              || findParameter(sCmd, "std")
-              || findParameter(sCmd, "prd")
-              || findParameter(sCmd, "num")
-              || findParameter(sCmd, "cnt")
-              || findParameter(sCmd, "and")
-              || findParameter(sCmd, "or")
-              || findParameter(sCmd, "xor")
-              || findParameter(sCmd, "med"))
-            )
-    {
-        if (!_data.isValid() || !_data.getCols(sCacheCmd, false))
-            //throw NO_CACHED_DATA;
-            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sCacheCmd, sCacheCmd);
-        nPos = findCommand(sCmd, sCacheCmd).nPos;
-        sArgument = extractCommandString(sCmd, findCommand(sCmd, sCacheCmd));
-        sCommand = sArgument;
-        if (findParameter(sCmd, "grid") && _data.getCols(sCacheCmd, false) < 3)
-            //throw TOO_FEW_COLS;
-            throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, sCacheCmd, sCacheCmd);
-        else if (findParameter(sCmd, "grid"))
-            nArgument = 2;
-        else
-            nArgument = 0;
-        if (findParameter(sCmd, "avg"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.avg(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "sum"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.sum(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "min"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.min(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "max"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.max(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "norm"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.norm(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "std"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.std(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "prd"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.prd(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "num"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.num(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "cnt"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.cnt(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "med"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.med(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "and"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.and_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "or"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.or_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-        else if (findParameter(sCmd, "xor"))
-            sCmd.replace(nPos, sCommand.length(), toCmdString(_data.xor_func(sCacheCmd, 0, _data.getLines(sCacheCmd, false)-1, nArgument, _data.getCols(sCacheCmd)-1)));
-
-        return COMMAND_HAS_RETURNVALUE;
-    }
-    else if (sCommand == "cache")
-    {
-        doc_Help("cache", _option);
-        return COMMAND_PROCESSED;
-    }
-    else
-        return NO_COMMAND;
 }
 
 
@@ -4845,14 +3628,7 @@ static CommandReturnValues cmd_append(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '='))
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-        sCmd.replace(sCmd.find("data"), 4, "app");
-        append_data(sCmd, _data, _option);
-    }
-    else if (sCmd.length() > findCommand(sCmd, "append").nPos + 7 && sCmd.find_first_not_of(' ', findCommand(sCmd, "append").nPos + 7) != string::npos)
+    if (sCmd.length() > findCommand(sCmd, "append").nPos + 7 && sCmd.find_first_not_of(' ', findCommand(sCmd, "append").nPos + 7) != string::npos)
     {
         NumeReKernel::printPreFmt("\r");
 
@@ -5080,56 +3856,38 @@ static CommandReturnValues cmd_stats(string& sCmd)
     sExpr.replace(_match.nPos, string::npos, "_~load[~_~]");
     sCmd.erase(0, _match.nPos);
 
-
     string sArgument = evaluateParameterValues(sCmd);
 
-    if (findParameter(sCmd, "data") && !_data.isEmpty("data"))
+    DataAccessParser _accessParser(sCmd);
+
+    if (_accessParser.getDataObject().length())
     {
-        // DEPRECATED: Declared at v1.1.2rc2
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-        plugin_statistics(sArgument, _data);
-    }
-    else if (_data.matchTableAsParameter(sCmd).length() && _data.isValid())
-    {
-        // DEPRECATED: Declared at v1.1.2rc2
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-        plugin_statistics(sArgument, _data);
+        MemoryManager _cache;
+
+        copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
+
+        if (_accessParser.getDataObject() != "table")
+            _cache.renameTable("table", _accessParser.getDataObject(), true);
+
+        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
+
+        if (findParameter(sCmd, "export", '='))
+            addArgumentQuotes(sCmd, "export");
+
+        sArgument = "stats -" + _accessParser.getDataObject() + " " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
+        sArgument = evaluateParameterValues(sArgument);
+        std::string sRet = plugin_statistics(sArgument, _cache);
+
+        if (sRet.length())
+        {
+            sExpr.replace(_match.nPos, string::npos, sRet);
+            sCmd = sExpr;
+            return COMMAND_HAS_RETURNVALUE;
+        }
     }
     else
-    {
-        DataAccessParser _accessParser(sCmd);
-
-        if (_accessParser.getDataObject().length())
-        {
-            MemoryManager _cache;
-
-            copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
-
-            if (_accessParser.getDataObject() != "table")
-                _cache.renameTable("table", _accessParser.getDataObject(), true);
-
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-            if (findParameter(sCmd, "export", '='))
-                addArgumentQuotes(sCmd, "export");
-
-            sArgument = "stats -" + _accessParser.getDataObject() + " " + sCmd.substr(getMatchingParenthesis(sCmd.substr(sCmd.find('('))) + 1 + sCmd.find('('));
-            sArgument = evaluateParameterValues(sArgument);
-            std::string sRet = plugin_statistics(sArgument, _cache);
-
-            if (sRet.length())
-            {
-                sExpr.replace(_match.nPos, string::npos, sRet);
-                sCmd = sExpr;
-                return COMMAND_HAS_RETURNVALUE;
-            }
-
-            return COMMAND_PROCESSED;
-        }
-        else
-            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
-    }
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
     return COMMAND_PROCESSED;
 }
@@ -5409,139 +4167,27 @@ static CommandReturnValues cmd_start(string& sCmd)
     if (_script.isOpen())
         throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, "start");
 
-    if (findParameter(sCmd, "script") || findParameter(sCmd, "script", '='))
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
+    if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
+        NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        if (findParameter(sCmd, "install"))
-            _script.setInstallProcedures();
-
-        if (findParameter(sCmd, "script", '='))
-            addArgumentQuotes(sCmd, "script");
-
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-            _script.openScript(sArgument);
-        else
-            _script.openScript();
-    }
+    if (containsStrings(sCmd))
+        extractFirstParameterStringValue(sCmd, sArgument);
     else
+        sArgument = sCmd.substr(findCommand(sCmd).nPos + 6);
+
+    StripSpaces(sArgument);
+
+    if (!sArgument.length())
     {
-        if (!_script.isOpen())
-        {
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-            if (containsStrings(sCmd))
-                extractFirstParameterStringValue(sCmd, sArgument);
-            else
-                sArgument = sCmd.substr(findCommand(sCmd).nPos + 6);
-
-            StripSpaces(sArgument);
-
-            if (!sArgument.length())
-            {
-                if (_script.getScriptFileName().length())
-                    _script.openScript();
-                else
-                    throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sArgument, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
-
-                return COMMAND_PROCESSED;
-            }
-
-            _script.openScript(sArgument);
-        }
-    }
-
-    return COMMAND_PROCESSED;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
-/// "script" command.
-///
-/// \param sCmd string&
-/// \return CommandReturnValues
-/// \deprecated Will be removed with v1.1.3rc1
-///
-/////////////////////////////////////////////////
-static CommandReturnValues cmd_script(string& sCmd)
-{
-    Script& _script = NumeReKernel::getInstance()->getScript();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
-    string sArgument;
-
-    if (findParameter(sCmd, "load") || findParameter(sCmd, "load", '='))
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
-
-        if (!_script.isOpen())
-        {
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-            if (findParameter(sCmd, "load", '='))
-                addArgumentQuotes(sCmd, "load");
-
-            if (!extractFirstParameterStringValue(sCmd, sArgument))
-            {
-                do
-                {
-                    NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_SCRIPTNAME"))) );
-                    NumeReKernel::printPreFmt("|<- ");
-                    NumeReKernel::getline(sArgument);
-                }
-                while (!sArgument.length());
-            }
-
-            _script.setScriptFileName(sArgument);
-
-            if (fileExists(_script.getScriptFileName()))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SCRIPTLOAD_SUCCESS", _script.getScriptFileName()));
-            }
-            else
-            {
-                string sErrorToken = _script.getScriptFileName();
-                sArgument = "";
-                _script.setScriptFileName(sArgument);
-                throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sErrorToken, sErrorToken);
-            }
-        }
-        else
-            throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, "script");
-    }
-    else if (findParameter(sCmd, "start") || findParameter(sCmd, "start", '='))
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
-
-        if (_script.isOpen())
-            throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, "script");
-
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        if (findParameter(sCmd, "install"))
-            _script.setInstallProcedures();
-
-        if (findParameter(sCmd, "start", '='))
-            addArgumentQuotes(sCmd, "start");
-
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-            _script.openScript(sArgument);
-        else
+        if (_script.getScriptFileName().length())
             _script.openScript();
+        else
+            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sArgument, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
+
+        return COMMAND_PROCESSED;
     }
-    else
-        doc_Help("script", _option);
+
+    _script.openScript(sArgument);
 
     return COMMAND_PROCESSED;
 }
@@ -5812,43 +4458,6 @@ static CommandReturnValues cmd_smooth(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
-/// "string" command.
-///
-/// \param sCmd string&
-/// \return CommandReturnValues
-/// \deprecated Will be removed with v1.1.3rc1
-///
-/////////////////////////////////////////////////
-static CommandReturnValues cmd_string(string& sCmd)
-{
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
-    if (findParameter(sCmd, "clear"))
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-
-        if (_data.clearStringElements())
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"));
-        }
-        else
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"));
-        }
-
-        return COMMAND_PROCESSED;
-    }
-
-    return NO_COMMAND;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
 /// "swap" command.
 ///
 /// \param sCmd string&
@@ -5871,26 +4480,9 @@ static CommandReturnValues cmd_swap(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_hist(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
     string sArgument = evaluateParameterValues(sCmd);
-    string sCommand = findCommand(sCmd).sString;
 
-    if (findParameter(sCmd, "data") && !_data.isEmpty("data"))
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-        plugin_histogram(sArgument);
-    }
-    else if (_data.matchTableAsParameter(sCmd).length())
-    {
-        // a cache as object, passed as parameter
-        // DEPRECATED: Declared at v1.1.2rc2
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-        plugin_histogram(sArgument);
-    }
-    else
-        plugin_histogram(sArgument);
+    plugin_histogram(sArgument);
 
     return COMMAND_PROCESSED;
 }
@@ -6552,12 +5144,6 @@ static CommandReturnValues cmd_list(string& sCmd)
         listCommands(_option);
     else if (findParameter(sCmd, "define"))
         listDefinitions(_functions, _option);
-    else if (findParameter(sCmd, "settings"))
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
-        listOptions(_option);
-    }
     else if (findParameter(sCmd, "units"))
         listUnitConversions(_option);
     else if (findParameter(sCmd, "plugins"))
@@ -6583,7 +5169,6 @@ static CommandReturnValues cmd_load(string& sCmd)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-    Script& _script = NumeReKernel::getInstance()->getScript();
 
     string sArgument;
     int nArgument;
@@ -6594,219 +5179,6 @@ static CommandReturnValues cmd_load(string& sCmd)
             _functions.load(_option);
         else
             NumeReKernel::print( _lang.get("BUILTIN_CHECKKEYWORD_DEF_EMPTY") );
-    }
-    else if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '=')) // deprecated
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-        if (findParameter(sCmd, "data", '='))
-            addArgumentQuotes(sCmd, "data");
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            if (findParameter(sCmd, "slice", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slice", '=') + 5) == "xz")
-                nArgument = -1;
-            else if (findParameter(sCmd, "slice", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slice", '=') + 5) == "yz")
-                nArgument = -2;
-            else
-                nArgument = 0;
-            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
-                _data.setbLoadEmptyColsInNextFile(true);
-            if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && !findParameter(sCmd, "all"))
-            {
-                MemoryManager _cache;
-                _cache.setTokens(_option.getTokenPaths());
-                _cache.setPath(_option.getLoadPath(), false, _option.getExePath());
-                _cache.openFile(sArgument, false, nArgument);
-                sArgument = generateCacheName(sArgument, _option);
-                if (!_data.isTable(sArgument + "()"))
-                    _data.addTable(sArgument + "()", _option);
-                nArgument = _data.getCols(sArgument, false);
-                for (long long int i = 0; i < _cache.getLines("data", false); i++)
-                {
-                    for (long long int j = 0; j < _cache.getCols("data", false); j++)
-                    {
-                        if (!i)
-                            _data.setHeadLineElement(j + nArgument, sArgument, _cache.getHeadLineElement(j, "data"));
-                        if (_cache.isValidElement(i, j, "data"))
-                        {
-                            _data.writeToTable(i, j + nArgument, sArgument, _cache.getElement(i, j, "data"));
-                        }
-                    }
-                }
-                if (!_data.isEmpty(sArgument))
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _cache.getDataFileName("data"), toString(_data.getLines(sArgument, false)), toString(_data.getCols(sArgument, false))), _option) );
-                return COMMAND_PROCESSED;
-            }
-            else if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
-            {
-                if (sArgument.find('/') == string::npos)
-                    sArgument = "<loadpath>/" + sArgument;
-                vector<string> vFilelist = getFileList(sArgument, _option);
-                if (!vFilelist.size())
-                    throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
-                string sPath = "<loadpath>/";
-                if (sArgument.find('/') != string::npos)
-                    sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-                string sTarget = generateCacheName(sPath + vFilelist[0], _option);
-                MemoryManager _cache;
-                _cache.setTokens(_option.getTokenPaths());
-                _cache.setPath(_data.getPath(), false, _data.getProgramPath());
-                for (size_t n = 0; n < vFilelist.size(); n++)
-                {
-                    _cache.openFile(sPath + vFilelist[n], false, nArgument);
-                    sTarget = generateCacheName(sPath + vFilelist[n], _option);
-                    if (!_data.isTable(sTarget + "()"))
-                        _data.addTable(sTarget + "()", _option);
-                    nArgument = _data.getCols(sTarget, false);
-                    for (long long int i = 0; i < _cache.getLines("data", false); i++)
-                    {
-                        for (long long int j = 0; j < _cache.getCols("data", false); j++)
-                        {
-                            if (!i)
-                                _data.setHeadLineElement(j + nArgument, sTarget, _cache.getHeadLineElement(j, "data"));
-                            if (_cache.isValidElement(i, j, "data"))
-                            {
-                                _data.writeToTable(i, j + nArgument, sTarget, _cache.getElement(i, j, "data"));
-                            }
-                        }
-                    }
-                    _cache.removeData(false);
-                    nArgument = -1;
-                }
-                if (!_data.isEmpty("data"))
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument), _option) );
-                //NumeReKernel::print(LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
-                return COMMAND_PROCESSED;
-            }
-            if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
-            {
-                if (!_data.isEmpty("data"))
-                {
-                    if (_option.systemPrints())
-                        _data.removeData(false);
-                    else
-                        _data.removeData(true);
-                }
-                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
-                {
-                    if (sArgument.find('/') == string::npos)
-                        sArgument = "<loadpath>/" + sArgument;
-                    vector<string> vFilelist = getFileList(sArgument, _option);
-                    if (!vFilelist.size())
-                        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
-                    string sPath = "<loadpath>/";
-                    if (sArgument.find('/') != string::npos)
-                        sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-
-                    for (unsigned int i = 0; i < vFilelist.size(); i++)
-                    {
-                        _data.openFile(sPath + vFilelist[i], false, nArgument);
-                    }
-                    if (!_data.isEmpty("data"))
-                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
-                    return COMMAND_PROCESSED;
-                }
-
-                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-                {
-                    if (findParameter(sCmd, "head", '='))
-                        nArgument = findParameter(sCmd, "head", '=') + 4;
-                    else
-                        nArgument = findParameter(sCmd, "h", '=') + 1;
-                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, false, nArgument);
-                }
-                else
-                    _data.openFile(sArgument, false, nArgument);
-                if (!_data.isEmpty("data") && _option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-                //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
-
-            }
-            else if (_data.isEmpty("data"))
-            {
-                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
-                {
-                    if (sArgument.find('/') == string::npos)
-                        sArgument = "<loadpath>/" + sArgument;
-                    vector<string> vFilelist = getFileList(sArgument, _option);
-                    if (!vFilelist.size())
-                        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
-                    string sPath = "<loadpath>/";
-                    if (sArgument.find('/') != string::npos)
-                        sPath = sArgument.substr(0, sArgument.rfind('/') + 1);
-
-                    for (unsigned int i = 0; i < vFilelist.size(); i++)
-                    {
-                        _data.openFile(sPath + vFilelist[i], false, nArgument);
-                    }
-                    if (!_data.isEmpty("data"))
-                        NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-                    //NumeReKernel::print(LineBreak("|-> Alle Daten der Dateien \"" + sArgument + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
-                    return COMMAND_PROCESSED;
-                }
-                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-                {
-                    if (findParameter(sCmd, "head", '='))
-                        nArgument = findParameter(sCmd, "head", '=') + 4;
-                    else
-                        nArgument = findParameter(sCmd, "h", '=') + 1;
-                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, false, nArgument);
-                }
-                else
-                    _data.openFile(sArgument, false, nArgument);
-                if (!_data.isEmpty("data") && _option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_LOADDATA_SUCCESS", _data.getDataFileName("data"), toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-                //NumeReKernel::print(LineBreak("|-> Daten aus \"" + _data.getDataFileName("data") + "\" wurden erfolgreich in den Speicher geladen: der Datensatz besteht aus " + toString(_data.getLines("data", true)) + " Zeile(n) und " + toString(_data.getCols("data")) + " Spalte(n).", _option) );
-
-            }
-            else
-                load_data(_data, _option, _parser, sArgument);
-        }
-        else
-            load_data(_data, _option, _parser);
-    }
-    else if (findParameter(sCmd, "script") || findParameter(sCmd, "script", '=')) // deprecated
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
-        if (!_script.isOpen())
-        {
-            if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-                NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-            if (findParameter(sCmd, "script", '='))
-                addArgumentQuotes(sCmd, "script");
-            if (!extractFirstParameterStringValue(sCmd, sArgument))
-            {
-                do
-                {
-                    NumeReKernel::print(toSystemCodePage( _lang.get("BUILTIN_CHECKKEYWORD_SET_ENTER_VALUE", _lang.get("BUILTIN_CHECKKEYWORD_SCRIPTNAME"))) );
-                    //NumeReKernel::print("|-> Dateiname des Scripts angeben:" );
-                    NumeReKernel::printPreFmt("|<- ");
-                    NumeReKernel::getline(sArgument);
-                }
-                while (!sArgument.length());
-            }
-            _script.setScriptFileName(sArgument);
-            if (fileExists(_script.getScriptFileName()))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SCRIPTLOAD_SUCCESS", _script.getScriptFileName()), _option) );
-                //NumeReKernel::print(LineBreak("|-> Script \"" + _script.getScriptFileName() + "\" wurde erfolgreich geladen!", _option) );
-            }
-            else
-            {
-                string sErrorToken = _script.getScriptFileName();
-                sArgument = "";
-                _script.setScriptFileName(sArgument);
-                throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sErrorToken, sErrorToken);
-            }
-        }
-        return COMMAND_PROCESSED;
     }
     else if (sCmd.length() > findCommand(sCmd, "load").nPos + 5 && sCmd.find_first_not_of(' ', findCommand(sCmd, "load").nPos + 5) != string::npos)
     {
@@ -7000,71 +5372,8 @@ static CommandReturnValues cmd_reload(string& sCmd)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
-    int nArgument;
-
-    if (findParameter(sCmd, "data") || findParameter(sCmd, "data", '='))
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_SYNTAX_DEPRECATED"));
-
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        if (findParameter(sCmd, "data", '='))
-            addArgumentQuotes(sCmd, "data");
-
-        if (extractFirstParameterStringValue(sCmd, sArgument))
-        {
-            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
-                _data.setbLoadEmptyColsInNextFile(true);
-
-            if (!_data.isEmpty("data"))
-            {
-                _data.removeData(false);
-
-                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-                {
-                    if (findParameter(sCmd, "head", '='))
-                        nArgument = findParameter(sCmd, "head", '=') + 4;
-                    else
-                        nArgument = findParameter(sCmd, "h", '=') + 1;
-
-                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    _data.openFile(sArgument, false, nArgument);
-                }
-                else
-                    _data.openFile(sArgument);
-
-                if (!_data.isEmpty("data") && _option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RELOAD_FILE_SUCCESS", _data.getDataFileName("data")), _option) );
-            }
-            else
-                load_data(_data, _option, _parser, sArgument);
-        }
-        else if (!_data.isEmpty("data"))
-        {
-            if ((_data.getDataFileName("data") == "Merged Data" || _data.getDataFileName("data") == "Pasted Data") && !findParameter(sCmd, "data", '='))
-                throw SyntaxError(SyntaxError::CANNOT_RELOAD_DATA, sCmd, SyntaxError::invalid_position);
-
-            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
-                _data.setbLoadEmptyColsInNextFile(true);
-
-            sArgument = _data.getDataFileName("data");
-            _data.removeData(false);
-            _data.openFile(sArgument);
-
-            if (!_data.isEmpty("data") && _option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_RELOAD_SUCCESS"));
-        }
-        else
-            load_data(_data, _option, _parser);
-
-        return COMMAND_PROCESSED;
-    }
-
     auto _filenames = getAllSemiColonSeparatedTokens(_data.getDataFileName("data"));
     Match _mMatch = findCommand(sCmd, "reload");
 
@@ -7113,37 +5422,6 @@ static CommandReturnValues cmd_execute(string& sCmd)
 
     executeCommand(sCmd, _parser, _data, _functions, _option);
     return COMMAND_PROCESSED;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
-/// "paste" command.
-///
-/// \param sCmd string&
-/// \return CommandReturnValues
-/// \deprecated Will be removed with v1.1.3rc1
-///
-/////////////////////////////////////////////////
-static CommandReturnValues cmd_paste(string& sCmd)
-{
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-
-    if (findParameter(sCmd, "data"))
-    {
-        // DEPRECATED: Declared at v1.1.2rc1
-        NumeReKernel::issueWarning(_lang.get("COMMON_COMMAND_DEPRECATED"));
-        PasteHandler _handler;
-        _data.melt(_handler.pasteLoad(_option), "data");
-        if (!_data.isEmpty("data"))
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_PASTE_SUCCESS", toString(_data.getLines("data", true)), toString(_data.getCols("data", false))), _option) );
-
-        return COMMAND_PROCESSED;
-
-    }
-
-    return NO_COMMAND;
 }
 
 
@@ -7273,7 +5551,6 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["edit"] = cmd_edit;
     mCommandFuncMap["execute"] = cmd_execute;
     mCommandFuncMap["export"] = saveDataObject;
-    mCommandFuncMap["firststart"] = cmd_firststart;
     mCommandFuncMap["fit"] = cmd_fit;
     mCommandFuncMap["fitw"] = cmd_fit;
     mCommandFuncMap["fft"] = cmd_fft;
@@ -7303,7 +5580,6 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["new"] = cmd_new;
     mCommandFuncMap["odesolve"] = cmd_odesolve;
     mCommandFuncMap["open"] = cmd_edit;
-    mCommandFuncMap["paste"] = cmd_paste;
     mCommandFuncMap["plot"] = cmd_plotting;
     mCommandFuncMap["plot3d"] = cmd_plotting;
     mCommandFuncMap["plotcompose"] = cmd_plotting;
@@ -7320,7 +5596,6 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["retoque"] = cmd_retouch;
     mCommandFuncMap["retouch"] = cmd_retouch;
     mCommandFuncMap["save"] = cmd_save;
-    mCommandFuncMap["script"] = cmd_script;
     mCommandFuncMap["set"] = cmd_set;
     mCommandFuncMap["show"] = cmd_show;
     mCommandFuncMap["showf"] = cmd_show;
@@ -7328,7 +5603,6 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["spline"] = cmd_spline;
     mCommandFuncMap["start"] = cmd_start;
     mCommandFuncMap["stfa"] = cmd_stfa;
-    mCommandFuncMap["string"] = cmd_string;
     mCommandFuncMap["surf"] = cmd_plotting;
     mCommandFuncMap["surf3d"] = cmd_plotting;
     mCommandFuncMap["surface"] = cmd_plotting;

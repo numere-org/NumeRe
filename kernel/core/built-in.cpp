@@ -74,25 +74,8 @@ CommandReturnValues commandHandler(string& sCmd)
     if (iter != mCommands.end())
         return iter->second(sCmd);
 
-    // Try to find "data" in the command string
-    // DECLARED AS DEPRECATED
-    if (findCommand(sCmd, "data").sString == "data")
-        return cmd_data(sCmd);
-
-    // Get a reference to the datafile object
-    const MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-
-    // Try to find any other table in the command
-    // string
-    // DECLARED AS DEPRECATED
-	for (auto tableIter = _data.getTableMap().begin(); tableIter != _data.getTableMap().end(); ++tableIter)
-	{
-		if (findCommand(sCmd, tableIter->first).sString == tableIter->first)
-            return cmd_tableAsCommand(sCmd, tableIter->first);
-	}
-
-	// No command found
-	return NO_COMMAND;
+    // No command found
+    return NO_COMMAND;
 }
 
 
