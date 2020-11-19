@@ -91,6 +91,7 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	// Initialize the terminal member variables
 	m_inUpdateSize = false;
 	m_isActive = false;
+	m_isBusy = false;
 	m_scrollBarWidth = wxSystemSettings::GetMetric(wxSYS_VSCROLL_ARROW_X);
 	m_curDC = nullptr;
 	m_charsInLine = width;
@@ -583,7 +584,7 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 	// Toggle the toolbar tools used for stopping and starting tasks
 	if (done)
 	{
-		m_wxParent->Ready();
+		Ready();
 	}
 
 	// If the kernel asks the application to terminate
@@ -861,7 +862,7 @@ void NumeReTerminal::pass_command(const string& command)
 	// erase the current line
 	erase_line();
 
-	m_wxParent->Busy();
+	Busy();
 
 	// Set the new command to the kernel and log it
 	wxCriticalSectionLocker lock(m_kernelCS);
@@ -998,7 +999,7 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
                 GenericTerminal::lf();
                 GetTM()->ChangeEditableState();
                 Refresh();
-                m_wxParent->Busy();
+                Busy();
                 pipe_command(sCommand);
                 return true;
             }
@@ -1118,8 +1119,10 @@ NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 			{
 			    // Get the selection and store it in the clipboard
 				wxString sSelection = GetSelection();
+
 				if (!sSelection.length())
 					return;
+
 				if (wxTheClipboard->Open())
 				{
 					wxTheClipboard->SetData(new wxTextDataObject(sSelection));
@@ -1131,6 +1134,7 @@ NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 			    // Get the text from the clipboard and process it as new input
 				if (HasSelection())
 					ClearSelection();
+
 				if (wxTheClipboard->Open())
 				{
 					if (wxTheClipboard->IsSupported(wxDF_TEXT))
@@ -1140,12 +1144,19 @@ NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 						NumeReTerminal::ProcessInput(data.GetTextLength(), data.GetText().ToStdString());
 						Refresh();
 					}
+
 					wxTheClipboard->Close();
 				}
 			}
+
 			return;
 		}
 	}
+	else if (event.GetKeyCode() == WXK_ESCAPE)
+    {
+        if (m_isBusy)
+            CancelCalculation();
+    }
 	else
 		event.Skip();
 }
@@ -2022,6 +2033,34 @@ void NumeReTerminal::OnLoseFocus(wxFocusEvent& event)
 {
 	this->set_mode_flag(CURSORINVISIBLE);
 	GenericTerminal::Update();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Inform the GUI that the kernel is
+/// currently busy.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::Busy()
+{
+    m_isBusy = true;
+    m_wxParent->Busy();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Inform the GUI that the kernel is
+/// ready for calculation.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::Ready()
+{
+    m_isBusy = true;
+    m_wxParent->Ready();
 }
 
 

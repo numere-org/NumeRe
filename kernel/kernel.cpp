@@ -3492,7 +3492,7 @@ bool NumeReKernel::GetAsyncCancelState()
     bool bCancel = bCancelSignal;
     bCancelSignal = false;
 
-    if (bCancel || GetAsyncKeyState(VK_ESCAPE))
+    if (bCancel)
         return true;
 
     return false;

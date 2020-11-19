@@ -156,6 +156,9 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		void OnGainFocus(wxFocusEvent& event);
 		void OnLoseFocus(wxFocusEvent& event);
 
+		void Busy();
+		void Ready();
+
 	protected:
 		virtual wxThread::ExitCode Entry();
 		NumeReKernel _kernel;
@@ -164,6 +167,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		bool m_bCommandAvailable;
 		bool m_bTableEditAvailable;
 		bool m_bTableEditCanceled;
+		bool m_isBusy;
 		int m_nDebuggerCode;
 		string m_sCommandLine;
 		string m_sAnswer;

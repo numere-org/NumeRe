@@ -1,2 +1,3 @@
 Removed	Deprecated functions have been removed.
 Fixed	Resolved a crash, which occured, if one pressed a non-navigation key (i.e. a usual character or a function key) if the keyboard focus was in the dependency tree, the revision tree, the variable list tree or the variable list tree in the debugger (library issue).
+Cleaned	The ESC key will now only abort the current calculation, if the terminal has the keyboard focus.
