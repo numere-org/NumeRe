@@ -222,7 +222,7 @@ SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i)
             _style.bold = true;
             break;
         case Styles::NUMBER:
-            _style.foreground = wxColour(255,128,64);
+            _style.foreground = wxColour(176,150,0);
             break;
         case Styles::METHODS:
             _style.foreground = wxColour(0,180,50);

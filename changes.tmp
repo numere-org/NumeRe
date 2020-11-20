@@ -1,3 +1,5 @@
 Removed	Deprecated functions have been removed.
 Fixed	Resolved a crash, which occured, if one pressed a non-navigation key (i.e. a usual character or a function key) if the keyboard focus was in the dependency tree, the revision tree, the variable list tree or the variable list tree in the debugger (library issue).
 Cleaned	The ESC key will now only abort the current calculation, if the terminal has the keyboard focus.
+New	The function "regex()" can be used to apply a regular exprsssion on a string.
+Fixed	Resolved an issue, where such an expression may not be sucessfully detected as string expression (note the similar var names): re2 = re.sub(1,10)

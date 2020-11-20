@@ -20,6 +20,7 @@
 #include "stringdatastructures.hpp"
 #include "../../kernel.hpp"
 #include <boost/tokenizer.hpp>
+#include <regex>
 #define DEFAULT_NUM_ARG INT_MIN
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
@@ -1532,6 +1533,98 @@ static string strfnc_replaceall(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the regex()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_regex(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (!funcArgs.sArg1.length())
+        return "0,0";
+
+    // Ensure that the indices are valid
+    if (funcArgs.nArg1 < 1)
+        funcArgs.nArg1 = 1;
+
+    if ((size_t)funcArgs.nArg1 > funcArgs.sArg2.length())
+        return "0,0";
+
+    if (funcArgs.nArg2 == DEFAULT_NUM_ARG)
+        funcArgs.nArg2 = -1;
+
+    try
+    {
+        std::smatch match;
+        std::regex expr(funcArgs.sArg1);
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.nArg1-1, funcArgs.nArg2);
+
+        if (std::regex_search(funcArgs.sArg2, match, expr))
+        {
+            return toString(match.position(0) + funcArgs.nArg1) + "," + toString(match.length(0));
+        }
+    }
+    catch (std::regex_error& e)
+    {
+        std::string message;
+
+        switch (e.code())
+        {
+            case std::regex_constants::error_collate:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COLLATE");
+                break;
+            case std::regex_constants::error_ctype:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_CTYPE");
+                break;
+            case std::regex_constants::error_escape:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_ESCAPE");
+                break;
+            case std::regex_constants::error_backref:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BACKREF");
+                break;
+            case std::regex_constants::error_brack:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACK");
+                break;
+            case std::regex_constants::error_paren:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_PAREN");
+                break;
+            case std::regex_constants::error_brace:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BRACE");
+                break;
+            case std::regex_constants::error_badbrace:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADBRACE");
+                break;
+            case std::regex_constants::error_range:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_RANGE");
+                break;
+            case std::regex_constants::error_space:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_SPACE");
+                break;
+            case std::regex_constants::error_badrepeat:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_BADREPEAT");
+                break;
+            case std::regex_constants::error_complexity:
+                message =_lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_COMPLEXITY");
+                break;
+            case std::regex_constants::error_stack:
+                message = _lang.get("ERR_NR_"+toString(SyntaxError::INVALID_REGEX)+"_STACK");
+                break;
+        }
+
+        throw SyntaxError(SyntaxError::INVALID_REGEX, funcArgs.sArg1, SyntaxError::invalid_position, message);
+
+    }
+
+    return "0,0";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the cnt()
 /// function.
 ///
@@ -1696,6 +1789,7 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
     mHandleTable["num"]                 = StringFuncHandle(STR, strfnc_num, true);
     mHandleTable["or"]                  = StringFuncHandle(VAL, strfnc_or, true);
+    mHandleTable["regex"]               = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_regex, false);
     mHandleTable["repeat"]              = StringFuncHandle(STR_VAL, strfnc_repeat, false);
     mHandleTable["replace"]             = StringFuncHandle(STR_VAL_VALOPT_STROPT, strfnc_replace, false);
     mHandleTable["replaceall"]          = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_replaceall, false);

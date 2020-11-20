@@ -125,6 +125,7 @@ class SyntaxError
             INVALID_WAVELET_COEFFICIENT,
             INVALID_CLUSTER_NAME,
             INVALID_SETTING,
+            INVALID_REGEX,
             /// INSERT HERE
             LGS_HAS_NO_SOLUTION=2100,
             LGS_HAS_NO_UNIQUE_SOLUTION,

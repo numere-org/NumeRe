@@ -435,13 +435,21 @@ namespace NumeRe
         // Search for the first match of all declared string variables
         for (auto iter = m_mStringVars.begin(); iter != m_mStringVars.end(); ++iter)
         {
-            // Compare the located match to the delimiters and return
-            // true, if the match is delimited on both sides
-            if (sLine.find(iter->first) != string::npos
-                && sLine[sLine.find(iter->first)+(iter->first).length()] != '('
-                && checkStringvarDelimiter(sLine.substr(sLine.find(iter->first)-1, (iter->first).length()+2))
-                )
-                return true;
+            size_t pos = 0;
+
+            // Examine all possible candidates for string variables,
+            // because the first one might be a false-positive
+            while ((pos = sLine.find(iter->first, pos)) != std::string::npos)
+            {
+                // Compare the located match to the delimiters and return
+                // true, if the match is delimited on both sides
+                if (sLine[pos+(iter->first).length()] != '('
+                    && checkStringvarDelimiter(sLine.substr(pos-1, (iter->first).length()+2))
+                    )
+                    return true;
+
+                pos++;
+            }
         }
 
         // No match found
