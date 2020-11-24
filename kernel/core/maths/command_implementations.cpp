@@ -1576,7 +1576,7 @@ vector<double> differentiate(const string& sCmd, Parser& _parser, MemoryManager&
 
         // Validate the indices
         if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _data.getLines(sExpr, false)-1);
@@ -3922,7 +3922,7 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryM
 
         // Check the indices
         if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
         // the indices are vectors
         vector<double> vVector;
@@ -4062,7 +4062,7 @@ static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZ
 
         // Check the indices
         if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
         // The indices are vectors
         if (_idx.col.isOpenEnd())
@@ -4145,7 +4145,7 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
 
         // Check the indices
         if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
         // The indices are vectors
         if (_idx.col.isOpenEnd())
@@ -4169,7 +4169,7 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
             getDataElements(sVectorVals, _parser, _data, _option);
 
         if (sVectorVals.find("{") != string::npos)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, sVectorVals);
 
         // Replace the colon with a comma and parse the vector vals
         sVectorVals.replace(sVectorVals.find(':'), 1, ",");
@@ -4181,7 +4181,7 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
         dResult = _parser.Eval(nNumResults);
 
         if (nNumResults < 2)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, sVectorVals);
 
         // Fill the vector vals with the needed number of samples
         for (unsigned int i = 0; i < nSamples; i++)

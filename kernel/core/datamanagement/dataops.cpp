@@ -1190,7 +1190,7 @@ bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefin
 
 	// Ensure that the indices are reasonable
 	if (!isValidIndexSet(_idx))
-		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back());
+		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
 	// If the current cache equals to "string", leave the function at
 	// this point and redirect the control to the string sorting

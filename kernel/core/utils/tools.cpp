@@ -1911,7 +1911,7 @@ long long int intCast(double number)
     if (fabs(number - rint(number)) < 1e-7)
         return rint(number);
     // otherwise truncate
-    return (long long int)number;
+    return static_cast<int>(number);
 }
 
 // This function is a wrapper for the usual wcstombs function, which can handle wstrings

@@ -151,6 +151,19 @@ string& DataAccessParser::getDataObject()
 
 
 /////////////////////////////////////////////////
+/// \brief This member function returns the index
+/// definitions as a human-readable string.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DataAccessParser::getIndexString()
+{
+    return idx.row.to_string() + ", " + idx.col.to_string();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns a reference to the stored
 /// indices.
 ///
@@ -416,7 +429,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 
 		// check the indices, whether they are possible in the current context
 		if (!isValidIndexSet(_idx))
-			throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
+			throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
 		if (!isCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
 			throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
@@ -572,7 +585,7 @@ static const string& handleCachedDataAccess(string& sLine, Parser& _parser, Memo
 
 		// check the indices
 		if (!isValidIndexSet(_idx))
-			throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position);
+			throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
 		if (!isCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
 			throw SyntaxError(SyntaxError::NO_MATRIX, sLine, SyntaxError::invalid_position);
@@ -1199,7 +1212,7 @@ static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parse
 	if (_idx.row.front() > _data.getLines(sDatatable, false)
             || _idx.col.front() > _data.getCols(sDatatable) - 1)
 	{
-		throw SyntaxError(SyntaxError::INVALID_INDEX, sDataExpression, SyntaxError::invalid_position);
+		throw SyntaxError(SyntaxError::INVALID_INDEX, sDataExpression, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 	}
 
 	/* --> Bestimmen wir die "Dimension" des zu fittenden Datensatzes. Dabei ist es auch
@@ -1254,7 +1267,7 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sExpression, SyntaxError::invalid_position);
 
     if (!isValidIndexSet(_idx))
-        throw SyntaxError(SyntaxError::INVALID_INDEX, sExpression, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sExpression, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
     // Determine the number of passed columns and
     // whether the user left an open end in the column

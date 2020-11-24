@@ -595,7 +595,7 @@ string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget,
 
 		// check the indices
 		if (!isValidIndexSet(_idx))
-			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+			throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
 		// remove the target option and its value from the command line
 		sCmd.erase(sCmd.find(getArgAtPos(sCmd, findParameter(sCmd, "target", '=') + 6), findParameter(sCmd, "target", '=') - 1), getArgAtPos(sCmd, findParameter(sCmd, "target", '=') + 6).length());

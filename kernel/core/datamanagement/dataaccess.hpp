@@ -64,6 +64,7 @@ class DataAccessParser
         DataAccessParser(StringView sCommand);
         void evalIndices();
         std::string& getDataObject();
+        std::string getIndexString();
         Indices& getIndices();
         bool isCluster() const;
 };

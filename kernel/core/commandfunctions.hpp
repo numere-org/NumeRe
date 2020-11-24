@@ -4418,7 +4418,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     if (_access.getDataObject().length())
     {
         if (!isValidIndexSet(_access.getIndices()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getIndexString());
 
         if (_access.getIndices().row.isOpenEnd())
             _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
@@ -4697,7 +4697,7 @@ static CommandReturnValues cmd_resample(string& sCmd)
             nArgument = _data.getLines(_access.getDataObject(), false);
 
         if (!isValidIndexSet(_access.getIndices()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getDataObject());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getIndexString());
 
         if (_access.getIndices().row.isOpenEnd())
             _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
@@ -4913,7 +4913,7 @@ static CommandReturnValues cmd_retouch(string& sCmd)
     if (_access.getDataObject().length())
     {
         if (!isValidIndexSet(_access.getIndices()))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getDataObject());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getIndexString());
 
         if (_access.getIndices().row.isOpenEnd())
             _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
@@ -4985,7 +4985,7 @@ static CommandReturnValues cmd_regularize(string& sCmd)
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     if (!regularizeDataSet(sCmd, _parser, _data, _functions, _option))
-        throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::CANNOT_REGULARIZE_CACHE, sCmd, SyntaxError::invalid_position);
     else if (_option.systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REGULARIZE"));
 

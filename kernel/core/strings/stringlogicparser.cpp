@@ -176,7 +176,7 @@ namespace NumeRe
 
         // This is obviously not a real ternary
         if (!nColonPosition)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, nPos);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sLine, nPos, sTernary);
 
         // Distribute the expression parts of the ternary
         // across the vector components

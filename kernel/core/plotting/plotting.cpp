@@ -4111,7 +4111,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, MemoryManager& _
                     {
                         if (_idx.row.front() >= _data.getCluster(sDataTable).size())
                         {
-                            throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
+                            throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
                         }
                     }
                     else
@@ -4119,7 +4119,7 @@ void Plot::evaluateDataPlots(PlotData& _pData, Parser& _parser, MemoryManager& _
                         if (_idx.row.front() >= _data.getLines(sDataTable, false)
                             || (_idx.col.front() >= _data.getCols(sDataTable) && _pInfo.sCommand != "plot3d"))
                         {
-                            throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position);
+                            throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
                         }
                     }
 

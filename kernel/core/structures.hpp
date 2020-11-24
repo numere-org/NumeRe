@@ -28,6 +28,7 @@
 using namespace std;
 
 long long int intCast(double);
+std::string toString(long long int);
 
 
 /////////////////////////////////////////////////
@@ -759,6 +760,70 @@ class VectorIndex
         {
             if (vStorage.back() == OPEN_END)
                 vStorage.back() = nLast;
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief This member function converts the
+        /// vector indexes contents into a human-readable
+        /// string representation.
+        ///
+        /// \return std::string
+        ///
+        /////////////////////////////////////////////////
+        std::string to_string() const
+        {
+            if (expand)
+            {
+                std::string sVect;
+
+                if (vStorage.front() == INVALID)
+                    sVect += "INVALID";
+                else if (vStorage.front() == STRING)
+                    sVect += "#";
+                else
+                    sVect += toString(vStorage.front()+1);
+
+                // Do not present the second index if
+                // it corresponds to an invalid value
+                if (vStorage.back() == OPEN_END)
+                    sVect += ":inf";
+                else if (vStorage.back() == STRING)
+                    sVect += ":#";
+                else if (vStorage.back() != INVALID)
+                    sVect += ":"+toString(vStorage.back()+1);
+
+                return sVect;
+            }
+            else
+            {
+                std::string sVect = "{";
+
+                for (size_t i = 0; i < size(); i++)
+                {
+                    // Jump over the middle section,
+                    // if the vector length is larger
+                    // than 5
+                    if (size() >= 5u && i == 2)
+                    {
+                        sVect += "...,";
+                        i = size() - 2;
+                    }
+
+                    if (getIndex(i) == INVALID)
+                        sVect += "INVALID";
+                    else if (getIndex(i) == OPEN_END)
+                        sVect += "inf";
+                    else if (getIndex(i) == STRING)
+                        sVect += "#";
+                    else
+                        sVect += toString(getIndex(i)+1);
+
+                    if (i + 1 < size())
+                        sVect += ",";
+                }
+
+                return sVect + "}";
+            }
         }
 };
 

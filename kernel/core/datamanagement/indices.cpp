@@ -278,7 +278,7 @@ static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView s
             // vector
             _vIdx = VectorIndex(v, nResults, 0);
         }
-        else // single index
+        else if (!isnan(v[0]) && intCast(v[0]) > 0) // single index
             _vIdx.front() = intCast(v[0]) - 1;
     }
 }
@@ -327,6 +327,39 @@ static void handleSingleCasualIndex(VectorIndex& _vIdx, vector<StringView>& vInd
 
 
 /////////////////////////////////////////////////
+/// \brief This static function is a simple
+/// helper to convert the numerical results into
+/// a string, representing a parsed index
+/// expression. This function is used in case of
+/// an exception.
+///
+/// \param v value_type*
+/// \param vIndexNumbers const vector<int>
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string convertToString(value_type* v, const vector<int> vIndexNumbers)
+{
+    std::string sIndexExpression;
+
+    for (size_t i = 0; i < vIndexNumbers.size(); i++)
+    {
+        if (i)
+        {
+            if (vIndexNumbers[i-1] > 0 && vIndexNumbers[i] < 0)
+                sIndexExpression += ", ";
+            else
+                sIndexExpression += ':';
+        }
+
+        sIndexExpression += toString(v[i], 5);
+    }
+
+    return sIndexExpression;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function will evaluate all
 /// indices, which are interpreted as casual
 /// indices, at once and store them into the
@@ -364,15 +397,32 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
 
         // check whether the number of the results is matching
         if ((size_t)nResults != vIndexNumbers.size())
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, sIndexExpressions);
 
         // map the results to their assignments
         for (int i = 0; i < nResults; i++)
         {
             if (isinf(v[i])) // infinity => last possible index
                 v[i] = -1; // only -1 because it will be decremented in the following lines
-            else if (isnan(v[i]) || intCast(v[i]) <= 0)
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position);
+            else if (isnan(v[i]) || intCast(v[i]) <= 0LL)
+            {
+                std::string sToken;
+
+                if (vIndexNumbers.front() > 0 && vIndexNumbers.back() < 0)
+                    sToken = convertToString(v, vIndexNumbers);
+                else if (vIndexNumbers.front() > 0)
+                {
+                    sToken = convertToString(v, vIndexNumbers);
+                    sToken += ", " + _idx.col.to_string();
+                }
+                else
+                {
+                    sToken = _idx.row.to_string() + ", ";
+                    sToken += convertToString(v, vIndexNumbers);
+                }
+
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, sToken);
+            }
 
             if (vIndexNumbers[i] > 0)
                 _idx.row.setIndex(vIndexNumbers[i] - 1, intCast(v[i]) - 1);
@@ -410,7 +460,7 @@ static void expandIndexVectors(Indices& _idx, MemoryManager& _data, StringView s
 
     // Ensure that the indices are valid
     if (!_idx.row.isValid() || !_idx.col.isValid())
-        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd.to_string(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
     // Is it the "string" object?
     if (sCache == "string")

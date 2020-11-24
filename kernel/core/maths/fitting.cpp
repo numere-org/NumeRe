@@ -426,10 +426,10 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
             getIndices(fitData.sChiMap, _idx, _parser, _data, _option);
 
             if (!isValidIndexSet(_idx))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
             if (_idx.col.size() < 2)
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
             evaluateIndices(fitData.sChiMap, _idx, _data);
             fitData.sChiMap.erase(fitData.sChiMap.find('('));

@@ -2800,7 +2800,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, "smooth", SyntaxError::invalid_position);
 
     if (!_vLine.isValid() || !_vCol.isValid())
-        throw SyntaxError(SyntaxError::INVALID_INDEX, "smooth", SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::INVALID_INDEX, "smooth", SyntaxError::invalid_position, _vLine.to_string() + ", " + _vCol.to_string());
 
     // Evaluate the indices
     if (_vLine.isOpenEnd())
@@ -2979,7 +2979,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
         throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, "resample", SyntaxError::invalid_position);
 
     if (!_vLine.isValid() || !_vCol.isValid())
-        throw SyntaxError(SyntaxError::INVALID_INDEX, "resample", SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::INVALID_INDEX, "resample", SyntaxError::invalid_position, _vLine.to_string() + ", " + _vCol.to_string());
 
     // Evaluate the indices
     if (_vCol.isOpenEnd())

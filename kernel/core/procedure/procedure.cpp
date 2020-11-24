@@ -434,7 +434,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 bWriteToCluster = true;
 
             if (!isValidIndexSet(_idx))
-                throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "");
+                throw SyntaxError(SyntaxError::INVALID_INDEX, sCache, "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
             if (!bWriteToCluster && _idx.row.isOpenEnd() && _idx.col.isOpenEnd())
                 throw SyntaxError(SyntaxError::NO_MATRIX, sCache, "");

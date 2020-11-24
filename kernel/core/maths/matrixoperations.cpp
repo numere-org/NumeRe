@@ -175,7 +175,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
         getIndices(sTargetName, _idx, _parser, _data, _option);
 
         if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sTargetName, sTargetName);
+            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, sTargetName, _idx.row.to_string() + ", " + _idx.col.to_string());
 
         sCmd.erase(0, sCmd.find('=')+1);
 
@@ -3772,7 +3772,7 @@ static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Pa
         for (unsigned int j = 0; j < _idx.col.size(); j++)
         {
             if (_idx.row[i] >= _mMatrix.size() || _idx.col[j] >= _mMatrix[0].size())
-                throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
+                throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
             _mReturn[i][j] = _mMatrix[_idx.row[i]][_idx.col[j]];
         }
@@ -4226,7 +4226,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
                 _idx.row.setIndex(n, intCast(_parser.Eval())-1);
 
                 if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position, sI[n]);
             }
 
             if (sJ[n] == "<<EMPTY>>")
@@ -4242,7 +4242,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
                 _idx.col.setIndex(n, intCast(_parser.Eval())-1);
 
                 if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
-                    throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position);
+                    throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position, sJ[n]);
             }
         }
     }
