@@ -156,6 +156,17 @@ namespace NumeRe
             /////////////////////////////////////////////////
             void replaceTabSign(std::string& _sToReplace, bool bAddPlaceholders = false)
             {
+                bool bKeepColumns = false;
+
+                // Determine, if columns shall be kept (automatic heuristics)
+                if (!bAddPlaceholders && _sToReplace.find(' ') == std::string::npos)
+                {
+                    bKeepColumns = true;
+
+                    if (_sToReplace[0] == '\t')
+                        _sToReplace.insert(0, "---");
+                }
+
                 for (size_t i = 0; i < _sToReplace.length(); i++)
                 {
                     if (_sToReplace[i] == '\t')
@@ -174,6 +185,10 @@ namespace NumeRe
                             if (i+1 == _sToReplace.length())
                                 _sToReplace += "_";
                         }
+
+                        // Shall empty cells be kept (determined by heuristic)
+                        if (bKeepColumns && (i+1 == _sToReplace.length() || _sToReplace[i+1] == '\t'))
+                            _sToReplace.insert(i + 1, "---");
                     }
                 }
             }

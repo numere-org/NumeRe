@@ -4,3 +4,4 @@ Cleaned	The ESC key will now only abort the current calculation, if the terminal
 New	The function "regex()" can be used to apply a regular exprsssion on a string.
 Fixed	Resolved an issue, where such an expression may not be sucessfully detected as string expression (note the similar var names): re2 = re.sub(1,10)
 Updated	Improved some error messages to contain more relevant information.
+Applied	Pasting or loading of tabular data, which contains only tabulators as separator characters, is now able to correctly determine the column layout even if some of them are not filled completely.

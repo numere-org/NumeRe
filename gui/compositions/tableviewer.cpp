@@ -40,7 +40,19 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_GRID_RANGE_SELECT       (TableViewer::OnCellRangeSelect)
 END_EVENT_TABLE()
 
-// Constructor
+
+/////////////////////////////////////////////////
+/// \brief Constructor.
+///
+/// \param parent wxWindow*
+/// \param id wxWindowID
+/// \param statusbar wxStatusBar*
+/// \param pos const wxPoint&
+/// \param size const wxSize&
+/// \param style long
+/// \param name const wxString&
+///
+/////////////////////////////////////////////////
 TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar, const wxPoint& pos, const wxSize& size, long style, const wxString& name)
             : wxGrid(parent, id, pos, size, style, name), nHeight(600), nWidth(800), nFirstNumRow(1), readOnly(true)
 {
@@ -68,8 +80,15 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
     m_statusBar->SetStatusWidths(3, widths);
 }
 
-// This private member function will layout the initial grid
-// after the data table was set
+
+/////////////////////////////////////////////////
+/// \brief This private member function will
+/// layout the initial grid after the data table
+/// was set.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::layoutGrid()
 {
     BeginBatch();
@@ -121,8 +140,16 @@ void TableViewer::layoutGrid()
     EndBatch();
 }
 
-// This member function tracks the entered keys and
-// processes a keybord navigation.
+
+/////////////////////////////////////////////////
+/// \brief This member function tracks the
+/// entered keys and processes a keybord
+/// navigation.
+///
+/// \param event wxKeyEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnKeyDown(wxKeyEvent& event)
 {
     // connecting the ESC Key with closing the table
@@ -203,9 +230,16 @@ void TableViewer::OnKeyDown(wxKeyEvent& event)
     }
 }
 
-// This member function appends necessary columns or rows,
-// if the user enterd a character in the last column or the
-// last row
+
+/////////////////////////////////////////////////
+/// \brief This member function appends necessary
+/// columns or rows, if the user entered a
+/// character in the last column or the last row.
+///
+/// \param event wxKeyEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnChar(wxKeyEvent& event)
 {
     // Is this the last column?
@@ -225,18 +259,33 @@ void TableViewer::OnChar(wxKeyEvent& event)
     event.Skip();
 }
 
-// This member function is the event handler for entering
-// this window. It will activate the focus and bring it to
-// the front
+
+/////////////////////////////////////////////////
+/// \brief This member function is the event
+/// handler for entering this window. It will
+/// activate the focus and bring it to the front.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnEnter(wxMouseEvent& event)
 {
     this->SetFocus();
     event.Skip();
 }
 
-// This member function processes the values entered in
-// the table and updates the frame after entering (due to
-// a possible created new headline row)
+
+/////////////////////////////////////////////////
+/// \brief This member function processes the
+/// values entered in the table and updates the
+/// frame after entering (due to a possible
+/// created new headline row).
+///
+/// \param event wxGridEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnCellChange(wxGridEvent& event)
 {
     SetCellValue(event.GetRow(), event.GetCol(), event.GetString());
@@ -246,8 +295,16 @@ void TableViewer::OnCellChange(wxGridEvent& event)
     event.Veto();
 }
 
-// This member function will highlight the cursor position
-// in the grid and update the status bar correspondingly
+
+/////////////////////////////////////////////////
+/// \brief This member function will highlight
+/// the cursor position in the grid and update
+/// the status bar correspondingly.
+///
+/// \param event wxGridEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnCellSelect(wxGridEvent& event)
 {
     highlightCursorPosition(event.GetRow(), event.GetCol());
@@ -255,24 +312,47 @@ void TableViewer::OnCellSelect(wxGridEvent& event)
     updateStatusBar(coords, coords, &coords);
 }
 
-// This member function will calculate the simple statistics
-// if the user selected a range of cells in the table
+
+/////////////////////////////////////////////////
+/// \brief This member function will calculate
+/// the simple statistics if the user selected a
+/// range of cells in the table.
+///
+/// \param event wxGridRangeSelectEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
 {
     if (event.Selecting())
         updateStatusBar(event.GetTopLeftCoords(), event.GetBottomRightCoords());
 }
 
-// This member function will autosize the columns, if the
-// user double clicked on their labels
+
+/////////////////////////////////////////////////
+/// \brief This member function will autosize the
+/// columns, if the user double clicked on their
+/// labels.
+///
+/// \param event wxGridEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnLabelDoubleClick(wxGridEvent& event)
 {
     if (event.GetCol() >= 0)
         AutoSizeColumn(event.GetCol());
 }
 
-// This member function will search the last non-empty
-// cell in the selected column
+
+/////////////////////////////////////////////////
+/// \brief This member function will search the
+/// last non-empty cell in the selected column.
+///
+/// \param nCol int
+/// \return int
+///
+/////////////////////////////////////////////////
 int TableViewer::findLastElement(int nCol)
 {
     for (int i = this->GetRows()-1; i >= 0; i--)
@@ -284,8 +364,15 @@ int TableViewer::findLastElement(int nCol)
     return 0;
 }
 
-// This member function is called every time the grid
-// itself changes to draw the frame colours.
+
+/////////////////////////////////////////////////
+/// \brief This member function is called every
+/// time the grid itself changes to draw the
+/// frame colours.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::updateFrame()
 {
     wxFont font = this->GetCellFont(0,0);
@@ -322,8 +409,15 @@ void TableViewer::updateFrame()
     highlightCursorPosition(this->GetCursorRow(), this->GetCursorColumn());
 }
 
-// This member function will delete the contents of
-// the selected cells by setting them to NaN
+
+/////////////////////////////////////////////////
+/// \brief This member function will delete the
+/// contents of the selected cells by setting
+/// them to NaN.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::deleteSelection()
 {
     // Simple case: only one cell
@@ -387,16 +481,32 @@ void TableViewer::deleteSelection()
     }
 }
 
-// This is a simple helper function to determine, whether
-// the entered cell value is a numerical value
+
+/////////////////////////////////////////////////
+/// \brief This is a simple helper function to
+/// determine, whether the entered cell value is
+/// a numerical value.
+///
+/// \param sCell const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TableViewer::isNumerical(const string& sCell)
 {
     static string sNums = "0123456789,.eE+- INFinf";
     return sCell.find_first_not_of(sNums) == string::npos;
 }
 
-// This member function will determine, whether the selected
-// column is completely empty or not
+
+/////////////////////////////////////////////////
+/// \brief This member function will determine,
+/// whether the selected column is completely
+/// empty or not.
+///
+/// \param col int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool TableViewer::isEmptyCol(int col)
 {
     if (col >= this->GetCols() || col < 0)
@@ -411,8 +521,16 @@ bool TableViewer::isEmptyCol(int col)
     return true;
 }
 
-// This member function is a simple helper to replace
-// underscores with whitespaces
+
+/////////////////////////////////////////////////
+/// \brief This member function is a simple
+/// helper to replace underscores with
+/// whitespaces.
+///
+/// \param sStr const wxString&
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString TableViewer::replaceCtrlChars(const wxString& sStr)
 {
     wxString sReturn = sStr;
@@ -423,10 +541,17 @@ wxString TableViewer::replaceCtrlChars(const wxString& sStr)
     return sReturn;
 }
 
-// This member function will copy the contents of the
-// selected cells to the clipboard.
-// Maybe it should consider the language and convert
-// the decimal dots correspondingly?
+
+/////////////////////////////////////////////////
+/// \brief This member function will copy the
+/// contents of the selected cells to the
+/// clipboard.
+///
+/// \return void
+/// \note Maybe it should consider the language
+/// and convert the decimal dots correspondingly?
+///
+/////////////////////////////////////////////////
 void TableViewer::copyContents()
 {
     wxString sSelection;
@@ -521,9 +646,16 @@ void TableViewer::copyContents()
     return;
 }
 
-// This member function handles the case that the
-// user tries to paste text contents, which may be
-// be converted into a table
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the case
+/// that the user tries to paste text contents,
+/// which may be be converted into a table.
+///
+/// \param useCursor bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::pasteContents(bool useCursor)
 {
     vector<wxString> vTableData;
@@ -655,8 +787,17 @@ void TableViewer::pasteContents(bool useCursor)
     this->SelectBlock(topleft, wxGridCellCoords(topleft.GetRow()+nLines-1, topleft.GetCol()+nCols-1));
 }
 
-// This member function draws the coloured columns,
-// which shall indicate the position of the cursor
+
+/////////////////////////////////////////////////
+/// \brief This member function draws the
+/// coloured columns, which shall indicate the
+/// position of the cursor.
+///
+/// \param nRow int
+/// \param nCol int
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::highlightCursorPosition(int nRow, int nCol)
 {
     BeginBatch();
@@ -761,8 +902,19 @@ void TableViewer::highlightCursorPosition(int nRow, int nCol)
     this->Refresh();
 }
 
-// This member function creates the needed space
-// in the grid, which is needed to paste data
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// needed space in the grid, which is needed to
+/// paste data.
+///
+/// \param rows int
+/// \param headrows int
+/// \param cols int
+/// \param useCursor bool
+/// \return wxGridCellCoords
+///
+/////////////////////////////////////////////////
 wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int cols, bool useCursor)
 {
     wxGridCellCoords topLeft(headrows,0);
@@ -773,11 +925,14 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
         // implies overriding existent data)
         topLeft = m_lastRightClick;
 
-        if (this->GetCols()-1 < topLeft.GetCol() + cols)
-            this->AppendCols(topLeft.GetCol()+cols-this->GetCols()+1, true);
+        while (this->GetRowLabelValue(topLeft.GetRow()) == "#")
+            topLeft.SetRow(topLeft.GetRow()+1);
 
-        if (this->GetRows()-1 < topLeft.GetRow() + rows + headrows)
-            this->AppendRows(topLeft.GetRow()+rows + headrows-this->GetRows()+1, true);
+        if (this->GetCols()-1 < topLeft.GetCol() + cols)
+            this->AppendCols(topLeft.GetCol() + cols - this->GetCols()+1, true);
+
+        if (this->GetRows()-1 < topLeft.GetRow() + rows)
+            this->AppendRows(topLeft.GetRow() + rows - this->GetRows()+1, true);
     }
     else
     {
@@ -842,7 +997,15 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
     return topLeft;
 }
 
-// Return the cell value as double
+
+/////////////////////////////////////////////////
+/// \brief Return the cell value as double.
+///
+/// \param row int
+/// \param col int
+/// \return double
+///
+/////////////////////////////////////////////////
 double TableViewer::CellToDouble(int row, int col)
 {
     if (GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT))
@@ -854,8 +1017,16 @@ double TableViewer::CellToDouble(int row, int col)
     return NAN;
 }
 
-// This member function calculates the minimal
-// value of the selected cells
+
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// minimal value of the selected cells.
+///
+/// \param topLeft const wxGridCellCoords&
+/// \param bottomRight const wxGridCellCoords&
+/// \return double
+///
+/////////////////////////////////////////////////
 double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
     double dMin = NAN;
@@ -872,8 +1043,16 @@ double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCe
     return dMin;
 }
 
-// This member function calculates the maximal
-// value of the selected cells
+
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// maximal value of the selected cells.
+///
+/// \param topLeft const wxGridCellCoords&
+/// \param bottomRight const wxGridCellCoords&
+/// \return double
+///
+/////////////////////////////////////////////////
 double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
     double dMax = NAN;
@@ -890,8 +1069,16 @@ double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCe
     return dMax;
 }
 
-// This member function calculates the sum
-// of the selected cells
+
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// sum of the selected cells.
+///
+/// \param topLeft const wxGridCellCoords&
+/// \param bottomRight const wxGridCellCoords&
+/// \return double
+///
+/////////////////////////////////////////////////
 double TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
     double dSum = 0;
@@ -908,8 +1095,16 @@ double TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCe
     return dSum;
 }
 
-// This member function calculates the average
-// of the selected cells
+
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// average of the selected cells.
+///
+/// \param topLeft const wxGridCellCoords&
+/// \param bottomRight const wxGridCellCoords&
+/// \return double
+///
+/////////////////////////////////////////////////
 double TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
     double dSum = 0;
@@ -933,8 +1128,17 @@ double TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCe
     return 0.0;
 }
 
-// This member function updates the status bar of
-// the surrounding ViewerFrame
+
+/////////////////////////////////////////////////
+/// \brief This member function updates the
+/// status bar of the enclosing ViewerFrame.
+///
+/// \param topLeft const wxGridCellCoords&
+/// \param bottomRight const wxGridCellCoords&
+/// \param cursor wxGridCellCoords*
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight, wxGridCellCoords* cursor /*= nullptr*/)
 {
     // Get the dimensions
@@ -960,9 +1164,17 @@ void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridC
     m_statusBar->SetStatusText(statustext, 2);
 }
 
-// This member function returns the contents of
-// the selected cells and replaces whitespaces
-// with underscores on-the-fly
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// contents of the selected cells and replaces
+/// whitespaces with underscores on-the-fly.
+///
+/// \param row int
+/// \param col int
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString TableViewer::copyCell(int row, int col)
 {
     wxString cell = this->GetCellValue(row, col);
@@ -976,9 +1188,16 @@ wxString TableViewer::copyCell(int row, int col)
     return cell;
 }
 
-// This member function replaces the german
-// comma decimal sign with the dot used in
-// anglo-american notation
+
+/////////////////////////////////////////////////
+/// \brief This member function replaces the
+/// german comma decimal sign with the dot used
+/// in anglo-american notation.
+///
+/// \param text wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::replaceDecimalSign(wxString& text)
 {
     for (size_t i = 0; i < text.length(); i++)
@@ -988,20 +1207,53 @@ void TableViewer::replaceDecimalSign(wxString& text)
     }
 }
 
-// This member function replaces the tabulator
-// character with whitespaces
+
+/////////////////////////////////////////////////
+/// \brief This member function replaces the
+/// tabulator character with whitespaces.
+///
+/// \param text wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::replaceTabSign(wxString& text)
 {
-    for (size_t i = 0; i < text.length(); i++)
+    if (!text.length())
+        return;
+
+    bool bKeepColumns = false;
+
+    // Determine, if columns shall be kept
+    if (text.find(' ') == std::string::npos)
     {
-        if (text[i] == '\t')
-            text[i] = ' ';
+        bKeepColumns = true;
+
+        if (text[0] == '\t')
+            text.insert(0, "---");
+    }
+
+    size_t pos = 0;
+
+    // Replace tabulators with whitespace and
+    // an empty cell, if necessary
+    while ((pos = text.find('\t')) != std::string::npos)
+    {
+        text[pos] = ' ';
+
+        if (bKeepColumns && pos+1 < text.length() && text[pos+1] == '\t')
+            text.insert(pos + 1, "---");
     }
 }
 
-// This member function creates a zero-element
-// table to visualize empty tables (or
-// non-existent ones)
+
+/////////////////////////////////////////////////
+/// \brief This member function creates a zero-
+/// element table to visualize empty tables (or
+/// non-existent ones).
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::createZeroElementTable()
 {
     SetTable(new GridNumeReTable(NumeRe::Table(1, 1)), true);
@@ -1013,8 +1265,16 @@ void TableViewer::createZeroElementTable()
     updateStatusBar(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1));
 }
 
-// This member function transformes the data obtained
-// by the clipboard into a table-like layout
+
+/////////////////////////////////////////////////
+/// \brief This member function transformes the
+/// data obtained by the clipboard into a table-
+/// like layout.
+///
+/// \param data const wxString&
+/// \return vector<wxString>
+///
+/////////////////////////////////////////////////
 vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
 {
     vector<wxString> vPaste;
@@ -1102,8 +1362,15 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
     return vPaste;
 }
 
-// This member function is the data setter for string
-// and cluster tables
+
+/////////////////////////////////////////////////
+/// \brief This member function is the data
+/// setter for string and cluster tables.
+///
+/// \param _stringTable NumeRe::Container<string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
 {
     if (!_stringTable.getCols() || !_stringTable.getRows())
@@ -1139,9 +1406,17 @@ void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
     updateStatusBar(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1));
 }
 
-// This member function is the data setter
-// function. It will create an internal GridNumeReTable
-// object, which will provide the data for the grid
+
+/////////////////////////////////////////////////
+/// \brief This member function is the data
+/// setter function. It will create an internal
+/// GridNumeReTable object, which will provide
+/// the data for the grid.
+///
+/// \param _table NumeRe::Table&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::SetData(NumeRe::Table& _table)
 {
     // Create an empty table, if necessary
@@ -1161,9 +1436,17 @@ void TableViewer::SetData(NumeRe::Table& _table)
     updateStatusBar(wxGridCellCoords(0,0), wxGridCellCoords(this->GetRows()-1, this->GetCols()-1));
 }
 
-// This member function declares the table to be
-// read-only and enables the context menu entries,
-// if the table is set to be not read-only
+
+/////////////////////////////////////////////////
+/// \brief This member function declares the
+/// table to be read-only and enables the context
+/// menu entries, if the table is set to be not
+/// read-only.
+///
+/// \param isReadOnly bool
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::SetTableReadOnly(bool isReadOnly)
 {
     readOnly = isReadOnly;
@@ -1183,8 +1466,17 @@ void TableViewer::SetTableReadOnly(bool isReadOnly)
     }
 }
 
-// This member function creates an empty table of some size
-// It's declared as deprecated
+
+/////////////////////////////////////////////////
+/// \brief This member function creates an empty
+/// table of some size.
+///
+/// \param rows size_t
+/// \param cols size_t
+/// \return void
+/// \deprecated It's declared as deprecated
+///
+/////////////////////////////////////////////////
 void TableViewer::SetDefaultSize(size_t rows, size_t cols)
 {
     this->CreateGrid(rows+1,cols+1);
@@ -1215,8 +1507,15 @@ void TableViewer::SetDefaultSize(size_t rows, size_t cols)
     }
 }
 
-// This member function displays the context menu for
-// cells
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// context menu for cells.
+///
+/// \param event wxGridEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnCellRightClick(wxGridEvent& event)
 {
     m_lastRightClick = wxGridCellCoords(event.GetRow(), event.GetCol());
@@ -1232,8 +1531,15 @@ void TableViewer::OnCellRightClick(wxGridEvent& event)
     PopupMenu(&m_popUpMenu, event.GetPosition());
 }
 
-// This member function displays the context menu for
-// labels
+
+/////////////////////////////////////////////////
+/// \brief This member function displays the
+/// context menu for labels.
+///
+/// \param event wxGridEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnLabelRightClick(wxGridEvent& event)
 {
     m_lastRightClick = wxGridCellCoords(event.GetRow(), event.GetCol());
@@ -1265,9 +1571,17 @@ void TableViewer::OnLabelRightClick(wxGridEvent& event)
     PopupMenu(&m_popUpMenu, event.GetPosition());
 }
 
-// This member function is the menu command event handler
-// function. It will redirect the control to the specified
-// functions.
+
+/////////////////////////////////////////////////
+/// \brief This member function is the menu
+/// command event handler function. It will
+/// redirect the control to the specified
+/// functions.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::OnMenu(wxCommandEvent& event)
 {
     switch (event.GetId())
@@ -1295,8 +1609,15 @@ void TableViewer::OnMenu(wxCommandEvent& event)
     }
 }
 
-// This member function processes the insertion of new
-// empty cells, columns or rows
+
+/////////////////////////////////////////////////
+/// \brief This member function processes the
+/// insertion of new empty cells, columns or rows.
+///
+/// \param id int
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::insertElement(int id)
 {
     if (id == ID_MENU_INSERT_ROW)
@@ -1333,8 +1654,15 @@ void TableViewer::insertElement(int id)
     updateFrame();
 }
 
-// This member function processes the removing of cells,
-// columns or rows
+
+/////////////////////////////////////////////////
+/// \brief This member function processes the
+/// removing of cells, columns or rows.
+///
+/// \param id int
+/// \return void
+///
+/////////////////////////////////////////////////
 void TableViewer::removeElement(int id)
 {
     if (id == ID_MENU_REMOVE_ROW)
@@ -1367,10 +1695,17 @@ void TableViewer::removeElement(int id)
     updateFrame();
 }
 
-// This member function returns the internal NumeRe::Table
-// from the data provider object
-// Note: the data provider is most likely not in a valid
-// state after a call to this function
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// internal NumeRe::Table from the data provider
+/// object.
+///
+/// \return NumeRe::Table
+/// \note The data provider is most likely not in
+/// a valid state after a call to this function.
+///
+/////////////////////////////////////////////////
 NumeRe::Table TableViewer::GetData()
 {
     return static_cast<GridNumeReTable*>(GetTable())->getTable();

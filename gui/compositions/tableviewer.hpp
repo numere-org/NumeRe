@@ -33,6 +33,12 @@ using namespace std;
 
 string toString(int);
 
+/////////////////////////////////////////////////
+/// \brief This class is an adaption of the
+/// wxGrid class to present the tabular data in
+/// NumeRe's memory and enabling copy-pasting of
+/// tabular data to an from NumeRe.
+/////////////////////////////////////////////////
 class TableViewer : public wxGrid
 {
     private:

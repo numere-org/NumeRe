@@ -173,7 +173,7 @@ namespace NumeRe
             // Ensure that the number of columns is matching
             // If it does not match, then we did not determine
             // the columns correctly
-            if (vLine.size() != nCols)
+            if (vLine.size() > nCols)
                 throw SyntaxError(SyntaxError::COL_COUNTS_DOESNT_MATCH, sFileName, SyntaxError::invalid_position, sFileName);
 
             // Go through the already tokenized line and store
