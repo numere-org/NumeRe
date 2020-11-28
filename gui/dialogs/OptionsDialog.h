@@ -213,7 +213,6 @@ class OptionsDialog: public wxDialog
         NumeReWindow* m_parentFrame;
         Options* m_options;
         Options m_colorOptions;
-        Settings* _option;
 };
 
 #endif

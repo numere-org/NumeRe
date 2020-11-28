@@ -412,9 +412,6 @@ class NumeReWindow : public wxFrame
         // dialogs
         OptionsDialog*  m_optionsDialog;
 
-        /* Responsible for writing the Chameleon settings to the INI file */
-        wxFileConfig* m_config;
-
         //wxImageList* m_tempImageList;
         /*! Used to initiate UI updates */
         wxTimer* m_updateTimer;

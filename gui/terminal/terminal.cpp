@@ -110,10 +110,6 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	m_bitmap = nullptr;
 	m_wxParent = nullptr;
 
-	// Start the cursor blink rate timer
-	if (m_curBlinkRate)
-		m_timer.Start(m_curBlinkRate);
-
 	/*
 	**  Determine window size from current font
 	*/
@@ -131,6 +127,10 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	m_boldUnderlinedFont.SetUnderlined(true);
 	SetCursor(wxCursor(wxCURSOR_IBEAM));
 
+    // Start the kernel
+	_kernel.StartUp(this, sPath.ToStdString(), getSyntax()->getFunctions());
+	m_options->copySettings(_kernel.getKernelSettings());
+
 	// Update the terminal colors
 	UpdateColors();
 
@@ -145,13 +145,16 @@ NumeReTerminal::NumeReTerminal(wxWindow* parent, wxWindowID id, Options* _option
 	// a default client size to match
 	UpdateSize();
 
+	// Start the cursor blink rate timer
+	if (m_curBlinkRate)
+		m_timer.Start(m_curBlinkRate);
+
 #ifdef DO_LOG
     // Activate logging
 	wxLog::SetActiveTarget(new wxLogWindow(this, "Logger"));
 #endif
 
-    // Start the kernel
-	_kernel.StartUp(this, sPath.ToStdString(), getSyntax()->getFunctions());
+    // Start the kernel thread
 	StartKernelTask();
 
 	// Initialize the kernel-specific veriables
@@ -652,6 +655,7 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 	// This boolean is true, if the user switched a setting directly in the kernel
 	if (changedSettings)
 	{
+	    m_options->copySettings(getKernelSettings());
 		m_wxParent->EvaluateOptions();
 	}
 

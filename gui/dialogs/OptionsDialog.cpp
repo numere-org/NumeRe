@@ -493,12 +493,7 @@ void OptionsDialog::synchronizeColors()
 {
     for (size_t i = 0; i < m_colorOptions.GetStyleIdentifier().size(); i++)
     {
-        m_options->SetStyleForeground(i, m_colorOptions.GetSyntaxStyle(i).foreground);
-        m_options->SetStyleBackground(i, m_colorOptions.GetSyntaxStyle(i).background);
-        m_options->SetStyleDefaultBackground(i, m_colorOptions.GetSyntaxStyle(i).defaultbackground);
-        m_options->SetStyleBold(i, m_colorOptions.GetSyntaxStyle(i).bold);
-        m_options->SetStyleItalics(i, m_colorOptions.GetSyntaxStyle(i).italics);
-        m_options->SetStyleUnderline(i, m_colorOptions.GetSyntaxStyle(i).underline);
+        m_options->SetSyntaxStyle(i, m_colorOptions.GetSyntaxStyle(i));
     }
 }
 
@@ -517,28 +512,33 @@ void OptionsDialog::OnButtonCancelClick(wxCommandEvent& event)
 void OptionsDialog::OnColorPickerChange(wxColourPickerEvent& event)
 {
     size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
+    SyntaxStyles style = m_colorOptions.GetSyntaxStyle(id);
+
     if (event.GetId() == ID_CLRPICKR_FORE)
-        m_colorOptions.SetStyleForeground(id, m_foreColor->GetColour());
+        style.foreground = m_foreColor->GetColour();
     else
-        m_colorOptions.SetStyleBackground(id, m_backColor->GetColour());
+        style.background = m_backColor->GetColour();
+
+    m_colorOptions.SetSyntaxStyle(id, style);
 }
 
 void OptionsDialog::OnColorTypeChange(wxCommandEvent& event)
 {
-    size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
+    SyntaxStyles style = m_colorOptions.GetSyntaxStyle(m_colorOptions.GetIdByIdentifier(m_colorType->GetValue()));
 
-    m_foreColor->SetColour(m_colorOptions.GetSyntaxStyle(id).foreground);
-    m_backColor->SetColour(m_colorOptions.GetSyntaxStyle(id).background);
-    m_defaultBackground->SetValue(m_colorOptions.GetSyntaxStyle(id).defaultbackground);
+    m_foreColor->SetColour(style.foreground);
+    m_backColor->SetColour(style.background);
+    m_defaultBackground->SetValue(style.defaultbackground);
     m_backColor->Enable(!m_defaultBackground->GetValue());
-    m_boldCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).bold);
-    m_italicsCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).italics);
-    m_underlineCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).underline);
+    m_boldCheck->SetValue(style.bold);
+    m_italicsCheck->SetValue(style.italics);
+    m_underlineCheck->SetValue(style.underline);
 }
 
 void OptionsDialog::OnButtonClick(wxCommandEvent& event)
 {
     wxString defaultpath;
+
     switch (event.GetId())
     {
         case ID_BTN_LOADPATH:
@@ -562,33 +562,34 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
         case ID_RESETCOLOR:
         {
             size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
-            m_foreColor->SetColour(m_colorOptions.GetDefaultSyntaxStyle(id).foreground);
-            m_backColor->SetColour(m_colorOptions.GetDefaultSyntaxStyle(id).background);
-            m_defaultBackground->SetValue(m_colorOptions.GetDefaultSyntaxStyle(id).defaultbackground);
-            m_boldCheck->SetValue(m_colorOptions.GetDefaultSyntaxStyle(id).bold);
-            m_italicsCheck->SetValue(m_colorOptions.GetDefaultSyntaxStyle(id).italics);
-            m_underlineCheck->SetValue(m_colorOptions.GetDefaultSyntaxStyle(id).underline);
-            m_colorOptions.SetStyleForeground(id, m_foreColor->GetColour());
-            m_colorOptions.SetStyleBackground(id, m_backColor->GetColour());
-            m_colorOptions.SetStyleDefaultBackground(id, m_defaultBackground->GetValue());
-            m_colorOptions.SetStyleBold(id, m_boldCheck->GetValue());
-            m_colorOptions.SetStyleItalics(id, m_italicsCheck->GetValue());
-            m_colorOptions.SetStyleUnderline(id, m_underlineCheck->GetValue());
+            SyntaxStyles style = m_colorOptions.GetDefaultSyntaxStyle(id);
+            m_foreColor->SetColour(style.foreground);
+            m_backColor->SetColour(style.background);
+            m_defaultBackground->SetValue(style.defaultbackground);
+            m_boldCheck->SetValue(style.bold);
+            m_italicsCheck->SetValue(style.italics);
+            m_underlineCheck->SetValue(style.underline);
+            m_colorOptions.SetSyntaxStyle(id, style);
             m_backColor->Enable(!m_defaultBackground->GetValue());
             return;
         }
         case ID_DEFAULTBACKGROUND:
         {
             size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
-            m_colorOptions.SetStyleDefaultBackground(id, m_defaultBackground->GetValue());
+            SyntaxStyles style = m_colorOptions.GetDefaultSyntaxStyle(id);
+            style.defaultbackground = m_defaultBackground->GetValue();
+            m_colorOptions.SetSyntaxStyle(id, style);
             m_backColor->Enable(!m_defaultBackground->GetValue());
             return;
         }
     }
+
     wxDirDialog dialog(this, _guilang.get("GUI_OPTIONS_CHOOSEPATH"), defaultpath);
     int ret = dialog.ShowModal();
+
     if (ret != wxID_OK)
         return;
+
     switch (event.GetId())
     {
         case ID_BTN_LOADPATH:
@@ -615,18 +616,22 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
 void OptionsDialog::OnStyleButtonClick(wxCommandEvent& event)
 {
     size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
+    SyntaxStyles style = m_colorOptions.GetSyntaxStyle(id);
+
     switch (event.GetId())
     {
         case ID_BOLD:
-            m_colorOptions.SetStyleBold(id, m_boldCheck->GetValue());
+            style.bold = m_boldCheck->GetValue();
             break;
         case ID_ITALICS:
-            m_colorOptions.SetStyleItalics(id, m_italicsCheck->GetValue());
+            style.italics = m_italicsCheck->GetValue();
             break;
         case ID_UNDERLINE:
-            m_colorOptions.SetStyleUnderline(id, m_underlineCheck->GetValue());
+            style.underline = m_underlineCheck->GetValue();
             break;
     }
+
+    m_colorOptions.SetSyntaxStyle(id, style);
 }
 
 
@@ -658,21 +663,21 @@ void OptionsDialog::ExitDialog()
 //////////////////////////////////////////////////////////////////////////////
 bool OptionsDialog::EvaluateOptions()
 {
-    std::map<std::string, SettingsValue>& mSettings = _option->getSettings();
+    std::map<std::string, SettingsValue>& mSettings = m_options->getSettings();
 
-    mSettings[SETTING_B_COMPACT].active() = m_compactTables->GetValue();
-    mSettings[SETTING_B_DEFCONTROL].active() = m_AutoLoadDefines->GetValue();
-    mSettings[SETTING_B_GREETING].active() = m_showGreeting->GetValue();
-    mSettings[SETTING_B_LOADEMPTYCOLS].active() = m_LoadCompactTables->GetValue();
-    mSettings[SETTING_B_EXTENDEDFILEINFO].active() = m_ExtendedInfo->GetValue();
-    mSettings[SETTING_B_SHOWHINTS].active() = m_ShowHints->GetValue();
-    mSettings[SETTING_B_USECUSTOMLANG].active() = m_CustomLanguage->GetValue();
-    mSettings[SETTING_B_USEESCINSCRIPTS].active() = m_ESCinScripts->GetValue();
-    mSettings[SETTING_B_LOGFILE].active() = m_UseLogfile->GetValue();
-    mSettings[SETTING_B_EXTERNALDOCWINDOW].active() = m_UseExternalViewer->GetValue();
-    mSettings[SETTING_B_ENABLEEXECUTE].active() = m_useExecuteCommand->GetValue();
-    mSettings[SETTING_B_MASKDEFAULT].active() = m_useMaskAsDefault->GetValue();
-    mSettings[SETTING_B_DECODEARGUMENTS].active() = m_debuggerDecodeArguments->GetValue();
+    mSettings[SETTING_B_COMPACT].active() = m_compactTables->IsChecked();
+    mSettings[SETTING_B_DEFCONTROL].active() = m_AutoLoadDefines->IsChecked();
+    mSettings[SETTING_B_GREETING].active() = m_showGreeting->IsChecked();
+    mSettings[SETTING_B_LOADEMPTYCOLS].active() = m_LoadCompactTables->IsChecked();
+    mSettings[SETTING_B_EXTENDEDFILEINFO].active() = m_ExtendedInfo->IsChecked();
+    mSettings[SETTING_B_SHOWHINTS].active() = m_ShowHints->IsChecked();
+    mSettings[SETTING_B_USECUSTOMLANG].active() = m_CustomLanguage->IsChecked();
+    mSettings[SETTING_B_USEESCINSCRIPTS].active() = m_ESCinScripts->IsChecked();
+    mSettings[SETTING_B_LOGFILE].active() = m_UseLogfile->IsChecked();
+    mSettings[SETTING_B_EXTERNALDOCWINDOW].active() = m_UseExternalViewer->IsChecked();
+    mSettings[SETTING_B_ENABLEEXECUTE].active() = m_useExecuteCommand->IsChecked();
+    mSettings[SETTING_B_MASKDEFAULT].active() = m_useMaskAsDefault->IsChecked();
+    mSettings[SETTING_B_DECODEARGUMENTS].active() = m_debuggerDecodeArguments->IsChecked();
     mSettings[SETTING_S_LOADPATH].stringval() = m_LoadPath->GetValue().ToStdString();
     mSettings[SETTING_S_SAVEPATH].stringval() = m_SavePath->GetValue().ToStdString();
     mSettings[SETTING_S_SCRIPTPATH].stringval() = m_ScriptPath->GetValue().ToStdString();
@@ -683,38 +688,31 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_V_BUFFERSIZE].value() = m_termHistory->GetValue();
     mSettings[SETTING_V_AUTOSAVE].value() = m_autosaveinterval->GetValue();
 
-    m_options->SetTerminalHistorySize(m_termHistory->GetValue());
-    m_options->SetCaretBlinkTime(m_caretBlinkTime->GetValue());
+    mSettings[SETTING_V_CARETBLINKTIME].value() = m_caretBlinkTime->GetValue();
+    mSettings[SETTING_S_LATEXROOT].stringval() = m_LaTeXRoot->GetValue().ToStdString();
+    mSettings[SETTING_B_TOOLBARTEXT].active() = m_showToolbarText->IsChecked();
+    mSettings[SETTING_B_PATHSONTABS].active() = m_FilePathsInTabs->IsChecked();
+    mSettings[SETTING_B_PRINTLINENUMBERS].active() = m_cbPrintLineNumbers->IsChecked();
+    mSettings[SETTING_B_SAVESESSION].active() = m_saveSession->IsChecked();
+    mSettings[SETTING_B_SAVEBOOKMARKS].active() = m_saveBookmarksInSession->IsChecked();
+    mSettings[SETTING_B_FORMATBEFORESAVING].active() = m_formatBeforeSaving->IsChecked();
+    mSettings[SETTING_B_USEREVISIONS].active() = m_keepBackupFiles->IsChecked();
+    mSettings[SETTING_B_FOLDLOADEDFILE].active() = m_foldDuringLoading->IsChecked();
+    mSettings[SETTING_V_FOCUSEDLINE].value() = m_debuggerFocusLine->GetValue();
+    mSettings[SETTING_B_GLOBALVARS].active() = m_debuggerShowGlobals->IsChecked();
+    mSettings[SETTING_B_LINESINSTACK].active() = m_debuggerShowLineNumbers->IsChecked();
+    mSettings[SETTING_B_MODULESINSTACK].active() = m_debuggerShowModules->IsChecked();
+    mSettings[SETTING_B_PROCEDUREARGS].active() = m_debuggerShowProcedureArguments->IsChecked();
+    mSettings[SETTING_B_HIGHLIGHTLOCALS].active() = m_highlightLocalVariables->IsChecked();
 
     wxString selectedPrintStyleString = m_printStyle->GetValue();
 
-    if(selectedPrintStyleString == _guilang.get("GUI_OPTIONS_PRINT_COLOR"))
-    {
+    if (selectedPrintStyleString == _guilang.get("GUI_OPTIONS_PRINT_COLOR"))
         m_options->SetPrintStyle(wxSTC_PRINT_COLOURONWHITE);
-    }
     else
-    {
         m_options->SetPrintStyle(wxSTC_PRINT_BLACKONWHITE);
-    }
 
-    m_options->SetLaTeXRoot(m_LaTeXRoot->GetValue());
-
-    m_options->SetShowToolbarText(m_showToolbarText->IsChecked());
-    m_options->SetShowPathOnTabs(m_FilePathsInTabs->IsChecked());
-    m_options->SetLineNumberPrinting(m_cbPrintLineNumbers->IsChecked());
-    m_options->SetSaveSession(m_saveSession->IsChecked());
-    m_options->SetSaveBookmarksInSession(m_saveBookmarksInSession->IsChecked());
-    m_options->SetFormatBeforeSaving(m_formatBeforeSaving->IsChecked());
     m_options->SetEditorFont(m_fontPicker->GetSelectedFont());
-    m_options->SetKeepBackupFile(m_keepBackupFiles->IsChecked());
-    m_options->SetFoldDuringLoading(m_foldDuringLoading->IsChecked());
-    m_options->SetDebuggerFocusLine(m_debuggerFocusLine->GetValue());
-    m_options->SetShowGlobalVariables(m_debuggerShowGlobals->GetValue());
-    m_options->SetShowLinesInStackTrace(m_debuggerShowLineNumbers->GetValue());
-    m_options->SetShowModulesInStackTrace(m_debuggerShowModules->GetValue());
-    m_options->SetShowProcedureArguments(m_debuggerShowProcedureArguments->GetValue());
-    m_options->SetHighlightLocalVariables(m_highlightLocalVariables->GetValue());
-
 
     for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
     {
@@ -737,28 +735,23 @@ bool OptionsDialog::EvaluateOptions()
 void OptionsDialog::InitializeDialog()
 {
 	wxString printStyleString;
-	if (m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE)
-	{
-		printStyleString = _guilang.get("GUI_OPTIONS_PRINT_COLOR");
-	}
-	else
-	{
-		printStyleString = _guilang.get("GUI_OPTIONS_PRINT_BW");
-	}
 
-	std::map<std::string, SettingsValue>& mSettings = _option->getSettings();
+	if (m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE)
+		printStyleString = _guilang.get("GUI_OPTIONS_PRINT_COLOR");
+	else
+		printStyleString = _guilang.get("GUI_OPTIONS_PRINT_BW");
+
+	std::map<std::string, SettingsValue>& mSettings = m_options->getSettings();
 
 	m_printStyle->SetValue(printStyleString);
-	m_termHistory->SetValue(mSettings[SETTING_V_BUFFERSIZE].value());//m_options->GetTerminalHistorySize());
-	m_caretBlinkTime->SetValue(m_options->GetCaretBlinkTime());
-
-	m_showToolbarText->SetValue(m_options->GetShowToolbarText());
-	m_FilePathsInTabs->SetValue(m_options->GetShowPathOnTabs());
-	m_cbPrintLineNumbers->SetValue(m_options->GetLineNumberPrinting());
-    m_saveSession->SetValue(m_options->GetSaveSession());
-    m_saveBookmarksInSession->SetValue(m_options->GetSaveBookmarksInSession());
-    m_formatBeforeSaving->SetValue(m_options->GetFormatBeforeSaving());
-
+	m_termHistory->SetValue(mSettings[SETTING_V_BUFFERSIZE].value());
+	m_caretBlinkTime->SetValue(mSettings[SETTING_V_CARETBLINKTIME].value());
+	m_showToolbarText->SetValue(mSettings[SETTING_B_TOOLBARTEXT].active());
+	m_FilePathsInTabs->SetValue(mSettings[SETTING_B_PATHSONTABS].active());
+	m_cbPrintLineNumbers->SetValue(mSettings[SETTING_B_PRINTLINENUMBERS].active());
+    m_saveSession->SetValue(mSettings[SETTING_B_SAVESESSION].active());
+    m_saveBookmarksInSession->SetValue(mSettings[SETTING_B_SAVEBOOKMARKS].active());
+    m_formatBeforeSaving->SetValue(mSettings[SETTING_B_FORMATBEFORESAVING].active());
     m_compactTables->SetValue(mSettings[SETTING_B_COMPACT].active());
     m_AutoLoadDefines->SetValue(mSettings[SETTING_B_DEFCONTROL].active());
     m_showGreeting->SetValue(mSettings[SETTING_B_GREETING].active());
@@ -771,7 +764,6 @@ void OptionsDialog::InitializeDialog()
     m_UseExternalViewer->SetValue(mSettings[SETTING_B_EXTERNALDOCWINDOW].active());
     m_useExecuteCommand->SetValue(mSettings[SETTING_B_ENABLEEXECUTE].active());
     m_useMaskAsDefault->SetValue(mSettings[SETTING_B_MASKDEFAULT].active());
-
     m_LoadPath->SetValue(mSettings[SETTING_S_LOADPATH].stringval());
     m_SavePath->SetValue(mSettings[SETTING_S_SAVEPATH].stringval());
     m_ScriptPath->SetValue(mSettings[SETTING_S_SCRIPTPATH].stringval());
@@ -781,39 +773,35 @@ void OptionsDialog::InitializeDialog()
 
     m_precision->SetValue(mSettings[SETTING_V_PRECISION].value());
     m_autosaveinterval->SetValue(mSettings[SETTING_V_AUTOSAVE].value());
-
+    m_LaTeXRoot->SetValue(mSettings[SETTING_S_LATEXROOT].stringval());
 
     for (size_t i = 0; i < m_options->GetStyleIdentifier().size(); i++)
     {
-        m_colorOptions.SetStyleForeground(i, m_options->GetSyntaxStyle(i).foreground);
-        m_colorOptions.SetStyleBackground(i, m_options->GetSyntaxStyle(i).background);
-        m_colorOptions.SetStyleDefaultBackground(i, m_options->GetSyntaxStyle(i).defaultbackground);
-        m_colorOptions.SetStyleBold(i, m_options->GetSyntaxStyle(i).bold);
-        m_colorOptions.SetStyleItalics(i, m_options->GetSyntaxStyle(i).italics);
-        m_colorOptions.SetStyleUnderline(i, m_options->GetSyntaxStyle(i).underline);
+        m_colorOptions.SetSyntaxStyle(i, m_options->GetSyntaxStyle(i));
     }
 
-    size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
+    SyntaxStyles style = m_colorOptions.GetSyntaxStyle(m_colorOptions.GetIdByIdentifier(m_colorType->GetValue()));
 
-    m_foreColor->SetColour(m_colorOptions.GetSyntaxStyle(id).foreground);
-    m_backColor->SetColour(m_colorOptions.GetSyntaxStyle(id).background);
-    m_boldCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).bold);
-    m_italicsCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).italics);
-    m_underlineCheck->SetValue(m_colorOptions.GetSyntaxStyle(id).underline);
-    m_defaultBackground->SetValue(m_colorOptions.GetSyntaxStyle(id).defaultbackground);
-    m_fontPicker->SetSelectedFont(m_options->GetEditorFont());
+    m_foreColor->SetColour(style.foreground);
+    m_backColor->SetColour(style.background);
+    m_boldCheck->SetValue(style.bold);
+    m_italicsCheck->SetValue(style.italics);
+    m_underlineCheck->SetValue(style.underline);
+    m_defaultBackground->SetValue(style.defaultbackground);
     m_backColor->Enable(!m_defaultBackground->GetValue());
-    m_LaTeXRoot->SetValue(m_options->GetLaTeXRoot());
-    m_keepBackupFiles->SetValue(m_options->GetKeepBackupFile());
-    m_foldDuringLoading->SetValue(m_options->GetFoldDuringLoading());
-    m_highlightLocalVariables->SetValue(m_options->GetHighlightLocalVariables());
 
-    m_debuggerFocusLine->SetValue(m_options->GetDebuggerFocusLine());
-    m_debuggerDecodeArguments->SetValue(_option->decodeArguments());
-    m_debuggerShowGlobals->SetValue(m_options->GetShowGlobalVariables());
-    m_debuggerShowLineNumbers->SetValue(m_options->GetShowLinesInStackTrace());
-    m_debuggerShowModules->SetValue(m_options->GetShowModulesInStackTrace());
-    m_debuggerShowProcedureArguments->SetValue(m_options->GetShowProcedureArguments());
+    m_fontPicker->SetSelectedFont(m_options->GetEditorFont());
+
+    m_keepBackupFiles->SetValue(mSettings[SETTING_B_USEREVISIONS].active());
+    m_foldDuringLoading->SetValue(mSettings[SETTING_B_FOLDLOADEDFILE].active());
+    m_highlightLocalVariables->SetValue(mSettings[SETTING_B_HIGHLIGHTLOCALS].active());
+
+    m_debuggerFocusLine->SetValue(mSettings[SETTING_V_FOCUSEDLINE].value());
+    m_debuggerDecodeArguments->SetValue(mSettings[SETTING_B_DECODEARGUMENTS].active());
+    m_debuggerShowGlobals->SetValue(mSettings[SETTING_B_GLOBALVARS].active());
+    m_debuggerShowLineNumbers->SetValue(mSettings[SETTING_B_LINESINSTACK].active());
+    m_debuggerShowModules->SetValue(mSettings[SETTING_B_MODULESINSTACK].active());
+    m_debuggerShowProcedureArguments->SetValue(mSettings[SETTING_B_PROCEDUREARGS].active());
 
     for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
     {

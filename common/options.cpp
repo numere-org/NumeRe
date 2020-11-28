@@ -9,244 +9,144 @@
 #define new DEBUG_NEW
 #endif
 
-int StrToInt(const string&);
-string toString(int);
-
-Options::Options()
+Options::Options() : Settings()
 {
-	// Set Some Default Values (perhaps these should not be set!)
-	m_terminalSize = 300;
-	m_caretBlinkTime = 500;
-
-	m_debuggerFocusLine = 10;
-    m_showLineNumbersInStackTrace = true;
-    m_showModulesInStackTrace = true;
-    m_showProcedureArguments = true;
-    m_showGlobalVariables = false;
-
-	m_LaTeXRoot = "C:/Program Files";
-
-	// Default to printing with black text, white background
-	m_printStyle = wxSTC_PRINT_BLACKONWHITE;
-
-
-	m_showToolbarText = false;
-	m_showPathsOnTabs = false;
-	m_printLineNumbers = false;
-	m_saveSession = false;
-	m_saveBookmarksInSession = false;
-	m_formatBeforeSaving = false;
-	m_keepBackupFile = true;
-	m_foldDuringLoading = false;
-	m_highlightLocalVariables = false;
-
-	m_editorFont.SetNativeFontInfoUserDesc("Consolas 10");
-	m_editorFont.SetEncoding(wxFONTENCODING_CP1252);
-
-	setDefaultSyntaxStyles();
-
-	for (size_t i = 0; i < AnalyzerOptions::ANALYZER_OPTIONS_END; i++)
-        vAnalyzerOptions.push_back(1);
-
-    vAnalyzerOptions[AnalyzerOptions::ALWAYS_SHOW_METRICS] = 0;
 }
 
 Options::~Options()
 {
 }
 
-void Options::setDefaultSyntaxStyles()
-{
-    for (int i = Styles::STANDARD; i < Styles::STYLE_END; i++)
-    {
-        SyntaxStyles _style = GetDefaultSyntaxStyle(i);
-
-        vSyntaxStyles.push_back(_style);
-    }
-}
-
-wxString Options::convertToString(const SyntaxStyles& _style)
-{
-    wxString sReturn;
-    sReturn = this->toString(_style.foreground);
-    sReturn += this->toString(_style.background);
-    sReturn += _style.bold ? "1" : "0";
-    sReturn += _style.italics ? "1" : "0";
-    sReturn += _style.underline ? "1" : "0";
-    sReturn += _style.defaultbackground ? "1" : "0";
-    return sReturn;
-}
-
-SyntaxStyles Options::convertFromString(const wxString& styleString)
-{
-    SyntaxStyles _style;
-    if (styleString.length() < 21)
-        return _style;
-    _style.foreground = StrToColor(styleString.substr(0,9));
-    _style.background = StrToColor(styleString.substr(9,9));
-    if (styleString[18] == '1')
-        _style.bold = true;
-    if (styleString[19] == '1')
-        _style.italics = true;
-    if (styleString[20] == '1')
-        _style.underline = true;
-    if (styleString.length() > 21)
-    {
-        if (styleString[21] == '0')
-            _style.defaultbackground = false;
-    }
-    else
-        _style.defaultbackground = false;
-    return _style;
-}
-
-wxString Options::toString(const wxColour& color)
-{
-    wxString colstring = "";
-    colstring += ::toString((int)color.Red());
-    if (colstring.length() < 3)
-        colstring.insert(0,3-colstring.length(), '0');
-    colstring += ::toString((int)color.Green());
-    if (colstring.length() < 6)
-        colstring.insert(3,6-colstring.length(), '0');
-    colstring += ::toString((int)color.Blue());
-    if (colstring.length() < 9)
-        colstring.insert(6,9-colstring.length(), '0');
-    return colstring;
-}
-
-wxColour Options::StrToColor(wxString colorstring)
-{
-    unsigned char channel_r = StrToInt(colorstring.substr(0,3).ToStdString());
-    unsigned char channel_g = StrToInt(colorstring.substr(3,3).ToStdString());
-    unsigned char channel_b = StrToInt(colorstring.substr(6,3).ToStdString());
-    return wxColour(channel_r, channel_g, channel_b);
-}
-
-void Options::SetPrintStyle(int style)
-{
-	m_printStyle = style;
-}
-
-void Options::SetShowToolbarText(bool useText)
-{
-	m_showToolbarText = useText;
-}
-
-void Options::SetTerminalHistorySize(int size)
-{
-	m_terminalSize = size;
-}
-
-void Options::SetLineNumberPrinting(bool printLineNumbers)
-{
-	m_printLineNumbers = printLineNumbers;
-}
-
+/////////////////////////////////////////////////
+/// \brief Change a static code analyzer setting.
+///
+/// \param opt AnalyzerOptions
+/// \param nVal int
+/// \return void
+///
+/////////////////////////////////////////////////
 void Options::SetAnalyzerOption(AnalyzerOptions opt, int nVal)
 {
-    if (opt < ANALYZER_OPTIONS_END && vAnalyzerOptions.size())
-        vAnalyzerOptions[opt] = nVal;
+    std::string setting = analyzerOptsToString(opt);
+
+    if (setting.length())
+        m_settings[setting].active() = nVal;
 }
 
-SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i)
+
+/////////////////////////////////////////////////
+/// \brief Return the default syntax style as
+/// defined by the programmers.
+///
+/// \param i size_t
+/// \return SyntaxStyles
+///
+/////////////////////////////////////////////////
+SyntaxStyles Options::GetDefaultSyntaxStyle(size_t i) const
 {
-    SyntaxStyles _style;
     switch (i)
     {
         case Styles::STANDARD:
-            _style.italics = true;
-            _style.defaultbackground = false;
-            break;
+            return SyntaxStyles(DEFAULT_ST_STANDARD);
         case Styles::CONSOLE_STD:
-            _style.foreground = wxColour(0,0,100);
-            _style.defaultbackground = false;
-            break;
+            return SyntaxStyles(DEFAULT_ST_CONSOLESTD);
         case Styles::COMMAND:
-            _style.foreground = wxColour(0,128,255);
-            _style.bold = true;
-            _style.underline = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_COMMAND);
         case Styles::COMMENT:
-            _style.foreground = wxColour(0,128,0);
-            _style.background = wxColour(255,255,183);
-            _style.defaultbackground = false;
-            //_style.bold = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_COMMENT);
         case Styles::DOCCOMMENT:
-            _style.foreground = wxColour(0,128,192);
-            _style.background = wxColour(255,255,183);
-            _style.defaultbackground = false;
-            _style.bold = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_DOCCOMMENT);
         case Styles::DOCKEYWORD:
-            _style.foreground = wxColour(128,0,0);
-            _style.background = wxColour(255,255,183);
-            _style.defaultbackground = false;
-            _style.bold = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_DOCKEYWORD);
         case Styles::OPTION:
-            _style.foreground = wxColour(0,128,100);
-            break;
+            return SyntaxStyles(DEFAULT_ST_OPTION);
         case Styles::FUNCTION:
-            _style.foreground = wxColour(0,0,255);
-            _style.bold = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_FUNCTION);
         case Styles::CUSTOM_FUNCTION:
-            _style.foreground = wxColour(0,0,160);
-            break;
+            return SyntaxStyles(DEFAULT_ST_CUSTOMFUNC);
         case Styles::CLUSTER:
-            _style.foreground = wxColour(96, 96, 96);
-            break;
+            return SyntaxStyles(DEFAULT_ST_CLUSTER);
         case Styles::CONSTANT:
-            _style.foreground = wxColour(255,0,128);
-            _style.bold = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_CONSTANT);
         case Styles::SPECIALVAL: // ans cache ...
-            _style.bold = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_SPECIALVAL);
         case Styles::STRING:
-            _style.foreground = wxColour(128,128,255);
-            break;
+            return SyntaxStyles(DEFAULT_ST_STRING);
         case Styles::STRINGPARSER:
-            _style.foreground = wxColour(0,128,192);
-            _style.bold = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_STRINGPARSER);
         case Styles::OPERATOR:
-            _style.foreground = wxColour(255,0,0);
-            break;
+            return SyntaxStyles(DEFAULT_ST_OPERATOR);
         case Styles::INCLUDES:
+            return SyntaxStyles(DEFAULT_ST_INCLUDES);
         case Styles::PROCEDURE:
+            return SyntaxStyles(DEFAULT_ST_PROCEDURE);
         case Styles::PROCEDURE_COMMAND:
-            _style.foreground = wxColour(128,0,0);
-            _style.bold = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_PROCCOMMAND);
         case Styles::NUMBER:
-            _style.foreground = wxColour(176,150,0);
-            break;
+            return SyntaxStyles(DEFAULT_ST_NUMBER);
         case Styles::METHODS:
-            _style.foreground = wxColour(0,180,50);
-            _style.bold = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_METHODS);
         case Styles::INSTALL:
-            _style.foreground = wxColour(128,128,128);
-            break;
+            return SyntaxStyles(DEFAULT_ST_INSTALL);
         case Styles::DEFAULT_VARS: // x y z t
-            _style.foreground = wxColour(0,0,160);
-            _style.bold = true;
-            _style.italics = true;
-            break;
+            return SyntaxStyles(DEFAULT_ST_DEFVARS);
         case Styles::ACTIVE_LINE:
-            _style.background = wxColour(221,230,255);
-            _style.defaultbackground = false;
-            break;
+            return SyntaxStyles(DEFAULT_ST_ACTIVELINE);
         case Styles::STYLE_END:
             break;
         // missing default intended => will result in warning, if a enum case is not handled in switch
     }
-    return _style;
+
+    return SyntaxStyles();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Return the selected syntax style by
+/// constructing it from the style string.
+///
+/// \param i size_t
+/// \return SyntaxStyles
+///
+/////////////////////////////////////////////////
+SyntaxStyles Options::GetSyntaxStyle(size_t i) const
+{
+    std::string style = syntaxStylesToString((Styles)i);
+
+    if (style.length())
+        return SyntaxStyles(m_settings.at(style).stringval());
+
+    return SyntaxStyles();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Update a selected syntax style by
+/// converting the passed SyntaxStyles object
+/// into a style string and storing it internally.
+///
+/// \param i size_t
+/// \param styles const SyntaxStyles&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Options::SetSyntaxStyle(size_t i, const SyntaxStyles& styles)
+{
+    std::string style = syntaxStylesToString((Styles)i);
+
+    if (style.length())
+        m_settings[style].stringval() = styles.to_string();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Legacy syntax style import function
+/// from file configuration.
+///
+/// \param _config wxFileConfig*
+/// \return void
+///
+/////////////////////////////////////////////////
 void Options::readColoursFromConfig(wxFileConfig* _config)
 {
     if (!_config->HasGroup("Styles"))
@@ -285,46 +185,23 @@ void Options::readColoursFromConfig(wxFileConfig* _config)
     {
         if (_config->Read("Styles/"+KeyValues[i], &val))
         {
-            vSyntaxStyles[i] = convertFromString(val);
+            std::string style = syntaxStylesToString((Styles)i);
+
+            if (style.length())
+                m_settings[style].stringval() = SyntaxStyles(val).to_string();
         }
     }
 }
 
-void Options::writeColoursToConfig(wxFileConfig* _config)
-{
-    static wxString KeyValues[] = {
-        "STANDARD",
-        "CONSOLE_STD",
-        "COMMAND",
-        "COMMENT",
-        "DOCCOMMENT",
-        "DOCKEYWORD",
-        "OPTION",
-        "FUNCTION",
-        "CUSTOM_FUNCTION",
-        "CLUSTER",
-        "CONSTANT",
-        "SPECIALVAL", // ans cache ...
-        "STRING",
-        "STRINGPARSER",
-        "INCLUDES",
-        "OPERATOR",
-        "PROCEDURE",
-        "NUMBER",
-        "PROCEDURE_COMMAND",
-        "METHODS",
-        "INSTALL",
-        "DEFAULT_VARS", // x y z t
-        "ACTIVE_LINE",
-        "STYLE_END"
-    };
 
-    for (size_t i = 0; i < Styles::STYLE_END; i++)
-    {
-        _config->Write("Styles/"+KeyValues[i], convertToString(vSyntaxStyles[i]));
-    }
-}
-
+/////////////////////////////////////////////////
+/// \brief Legacy analyzer import function from
+/// file configuration.
+///
+/// \param _config wxFileConfig*
+/// \return void
+///
+/////////////////////////////////////////////////
 void Options::readAnalyzerOptionsFromConfig(wxFileConfig* _config)
 {
     if (!_config->HasGroup("AnalyzerOptions"))
@@ -361,105 +238,40 @@ void Options::readAnalyzerOptionsFromConfig(wxFileConfig* _config)
     {
         if (_config->Read("AnalyzerOptions/"+KeyValues[i], &val))
         {
-            vAnalyzerOptions[i] = StrToInt(val.ToStdString());
+            SetAnalyzerOption((AnalyzerOptions)i, StrToInt(val.ToStdString()));
         }
     }
 }
 
-void Options::writeAnalyzerOptionsToConfig(wxFileConfig* _config)
+
+/////////////////////////////////////////////////
+/// \brief Return the value of the selected
+/// static code analyzer option.
+///
+/// \param opt AnalyzerOptions
+/// \return int
+///
+/////////////////////////////////////////////////
+int Options::GetAnalyzerOption(AnalyzerOptions opt) const
 {
-    static wxString KeyValues[] = {
-        "USE_NOTES",
-        "USE_WARNINGS",
-        "USE_ERRORS",
-        "COMMENT_DENSITY",
-        "LINES_OF_CODE",
-        "COMPLEXITY",
-        "MAGIC_NUMBERS",
-        "ALWAYS_SHOW_METRICS",
-        "INLINE_IF",
-        "CONSTANT_EXPRESSION",
-        "RESULT_SUPPRESSION",
-        "RESULT_ASSIGNMENT",
-        "TYPE_ORIENTATION",
-        "ARGUMENT_UNDERSCORE",
-        "VARIABLE_LENGTH",
-        "UNUSED_VARIABLES",
-        "PROCEDURE_LENGTH",
-        "THISFILE_NAMESPACE",
-        "PROGRESS_RUNTIME",
-        "SWITCH_FALLTHROUGH",
-        "GLOBAL_VARIABLES",
-        "ANALYZER_OPTIONS_END"
-    };
+    std::string setting = analyzerOptsToString(opt);
 
-    for (size_t i = 0; i < AnalyzerOptions::ANALYZER_OPTIONS_END; i++)
-    {
-        _config->Write("AnalyzerOptions/"+KeyValues[i], ::toString(vAnalyzerOptions[i]).c_str());
-    }
-}
-
-
-
-
-void Options::SetStyleForeground(size_t i, const wxColour& color)
-{
-    if (i < Styles::STYLE_END)
-    {
-        vSyntaxStyles[i].foreground = color;
-    }
-}
-
-void Options::SetStyleBackground(size_t i, const wxColour& color)
-{
-    if (i < Styles::STYLE_END)
-    {
-        vSyntaxStyles[i].background = color;
-    }
-}
-
-void Options::SetStyleDefaultBackground(size_t i, bool defaultbackground)
-{
-    if (i < Styles::STYLE_END)
-    {
-        vSyntaxStyles[i].defaultbackground = defaultbackground;
-    }
-}
-
-void Options::SetStyleBold(size_t i, bool _bold)
-{
-    if (i < Styles::STYLE_END)
-    {
-        vSyntaxStyles[i].bold = _bold;
-    }
-}
-
-void Options::SetStyleItalics(size_t i, bool _italics)
-{
-    if (i < Styles::STYLE_END)
-    {
-        vSyntaxStyles[i].italics = _italics;
-    }
-}
-
-void Options::SetStyleUnderline(size_t i, bool _underline)
-{
-    if (i < Styles::STYLE_END)
-    {
-        vSyntaxStyles[i].underline = _underline;
-    }
-}
-
-int Options::GetAnalyzerOption(AnalyzerOptions opt)
-{
-    if (opt < ANALYZER_OPTIONS_END && vAnalyzerOptions.size())
-        return vAnalyzerOptions[opt];
+    if (setting.length())
+        return m_settings.at(setting).active();
 
     return 0;
 }
 
 
-wxArrayString Options::GetStyleIdentifier()
+/////////////////////////////////////////////////
+/// \brief This member function returns an array
+/// of the style enumeration identifiers
+/// converted to a string.
+///
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
+wxArrayString Options::GetStyleIdentifier() const
 {
     wxArrayString sReturn;
     sReturn.Add("STANDARD");
@@ -490,7 +302,16 @@ wxArrayString Options::GetStyleIdentifier()
 }
 
 
-size_t Options::GetIdByIdentifier(const wxString& identifier)
+/////////////////////////////////////////////////
+/// \brief This member function returns the ID of
+/// a syntax style by passing the style
+/// identifier as a string.
+///
+/// \param identifier const wxString&
+/// \return size_t
+///
+/////////////////////////////////////////////////
+size_t Options::GetIdByIdentifier(const wxString& identifier) const
 {
     wxArrayString identifiers = GetStyleIdentifier();
 
@@ -498,8 +319,133 @@ size_t Options::GetIdByIdentifier(const wxString& identifier)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Convert the static code analyzer
+/// enumeration values into the new settings
+/// strings.
+///
+/// \param opt AnalyzerOptions
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Options::analyzerOptsToString(AnalyzerOptions opt) const
+{
+    switch (opt)
+    {
+        case AnalyzerOptions::USE_NOTES:
+            return SETTING_B_AN_USENOTES;
+        case AnalyzerOptions::USE_WARNINGS:
+            return SETTING_B_AN_USEWARNINGS;
+        case AnalyzerOptions::USE_ERRORS:
+            return SETTING_B_AN_USEERRORS;
+        case AnalyzerOptions::COMMENT_DENSITY:
+            return SETTING_B_AN_COMMENTDENS;
+        case AnalyzerOptions::LINES_OF_CODE:
+            return SETTING_B_AN_LOC;
+        case AnalyzerOptions::COMPLEXITY:
+            return SETTING_B_AN_COMPLEXITY;
+        case AnalyzerOptions::MAGIC_NUMBERS:
+            return SETTING_B_AN_MAGICNUMBERS;
+        case AnalyzerOptions::ALWAYS_SHOW_METRICS:
+            return SETTING_B_AN_ALWAYSMETRICS;
+        case AnalyzerOptions::INLINE_IF:
+            return SETTING_B_AN_INLINEIF;
+        case AnalyzerOptions::CONSTANT_EXPRESSION:
+            return SETTING_B_AN_CONSTANTS;
+        case AnalyzerOptions::RESULT_SUPPRESSION:
+            return SETTING_B_AN_RESULTSUP;
+        case AnalyzerOptions::RESULT_ASSIGNMENT:
+            return SETTING_B_AN_RESULTASS;
+        case AnalyzerOptions::TYPE_ORIENTATION:
+            return SETTING_B_AN_TYPING;
+        case AnalyzerOptions::ARGUMENT_UNDERSCORE:
+            return SETTING_B_AN_UNDERSCOREARGS;
+        case AnalyzerOptions::VARIABLE_LENGTH:
+            return SETTING_B_AN_VARLENGTH;
+        case AnalyzerOptions::UNUSED_VARIABLES:
+            return SETTING_B_AN_UNUSEDVARS;
+        case AnalyzerOptions::PROCEDURE_LENGTH:
+            return SETTING_B_AN_PROCLENGTH;
+        case AnalyzerOptions::THISFILE_NAMESPACE:
+            return SETTING_B_AN_THISFILE;
+        case AnalyzerOptions::PROGRESS_RUNTIME:
+            return SETTING_B_AN_PROGRESS;
+        case AnalyzerOptions::SWITCH_FALLTHROUGH:
+            return SETTING_B_AN_FALLTHROUGH;
+        case AnalyzerOptions::GLOBAL_VARIABLES:
+            return SETTING_B_AN_GLOBALVARS;
+        case AnalyzerOptions::ANALYZER_OPTIONS_END:
+            break;
+    }
+
+    return "";
+}
 
 
+/////////////////////////////////////////////////
+/// \brief Convert the syntax style enumeration
+/// values into the new settings strings.
+///
+/// \param style Styles
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Options::syntaxStylesToString(Styles style) const
+{
+    switch (style)
+    {
+        case Styles::STANDARD:
+            return SETTING_S_ST_STANDARD;
+        case Styles::CONSOLE_STD:
+            return SETTING_S_ST_CONSOLESTD;
+        case Styles::COMMAND:
+            return SETTING_S_ST_COMMAND;
+        case Styles::COMMENT:
+            return SETTING_S_ST_COMMENT;
+        case Styles::DOCCOMMENT:
+            return SETTING_S_ST_DOCCOMMENT;
+        case Styles::DOCKEYWORD:
+            return SETTING_S_ST_DOCKEYWORD;
+        case Styles::OPTION:
+            return SETTING_S_ST_OPTION;
+        case Styles::FUNCTION:
+            return SETTING_S_ST_FUNCTION;
+        case Styles::CUSTOM_FUNCTION:
+            return SETTING_S_ST_CUSTOMFUNC;
+        case Styles::CLUSTER:
+            return SETTING_S_ST_CLUSTER;
+        case Styles::CONSTANT:
+            return SETTING_S_ST_CONSTANT;
+        case Styles::SPECIALVAL:
+            return SETTING_S_ST_SPECIALVAL;
+        case Styles::STRING:
+            return SETTING_S_ST_STRING;
+        case Styles::STRINGPARSER:
+            return SETTING_S_ST_STRINGPARSER;
+        case Styles::INCLUDES:
+            return SETTING_S_ST_INCLUDES;
+        case Styles::OPERATOR:
+            return SETTING_S_ST_OPERATOR;
+        case Styles::PROCEDURE:
+            return SETTING_S_ST_PROCEDURE;
+        case Styles::NUMBER:
+            return SETTING_S_ST_NUMBER;
+        case Styles::PROCEDURE_COMMAND:
+            return SETTING_S_ST_PROCCOMMAND;
+        case Styles::METHODS:
+            return SETTING_S_ST_METHODS;
+        case Styles::INSTALL:
+            return SETTING_S_ST_INSTALL;
+        case Styles::DEFAULT_VARS:
+            return SETTING_S_ST_DEFVARS;
+        case Styles::ACTIVE_LINE:
+            return SETTING_S_ST_ACTIVELINE;
+        case Styles::STYLE_END:
+            break;
+    }
+
+    return "";
+}
 
 
 

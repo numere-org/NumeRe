@@ -2,17 +2,18 @@
 #define OPTIONS_H
 
 #include <wx/wx.h>
-#include <wx/validate.h>
-#include <wx/valgen.h>
-#include <wx/valtext.h>
 #include <wx/fileconf.h>
+#include <wx/tokenzr.h>
 
 #include <vector>
 
 #include "datastructures.h"
+#include "../kernel/core/settings.hpp"
 
 using namespace std;
 
+int StrToInt(const string&);
+string toString(int);
 
 // copied from stc.h
 // PrintColourMode - force black text on white background for printing.
@@ -21,73 +22,263 @@ using namespace std;
 // PrintColourMode - text stays coloured, but all background is forced to be white for printing.
 #define wxSTC_PRINT_COLOURONWHITE 3
 
+/////////////////////////////////////////////////
+/// \brief This structure contains the necessary
+/// data to completely define a style for a
+/// distinctive syntax element.
+/////////////////////////////////////////////////
 struct SyntaxStyles
 {
-    SyntaxStyles() : foreground(*wxBLACK), background(*wxWHITE), bold(false), italics(false), underline(false), defaultbackground(true)
-        {}
     wxColour foreground;
     wxColour background;
     bool bold;
     bool italics;
     bool underline;
     bool defaultbackground;
+
+    /////////////////////////////////////////////////
+    /// \brief Convert a colorstring (r:g:b) into an
+    /// actual color instance.
+    ///
+    /// \param colorstring const wxString&
+    /// \return wxColour
+    ///
+    /////////////////////////////////////////////////
+    wxColour StrToColorNew(const wxString& colorstring) const
+    {
+        wxArrayString channels = wxStringTokenize(colorstring, ":");
+        return wxColour(StrToInt(channels[0].ToStdString()), StrToInt(channels[1].ToStdString()), StrToInt(channels[2].ToStdString()));
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Convert a colorstring of the old
+    /// representation (rrrgggbbb) into an actual
+    /// color instance.
+    ///
+    /// \param colorstring const wxString&
+    /// \return wxColour
+    ///
+    /////////////////////////////////////////////////
+    wxColour StrToColorOld(const wxString& colorstring) const
+    {
+        unsigned char channel_r = StrToInt(colorstring.substr(0,3).ToStdString());
+        unsigned char channel_g = StrToInt(colorstring.substr(3,3).ToStdString());
+        unsigned char channel_b = StrToInt(colorstring.substr(6,3).ToStdString());
+        return wxColour(channel_r, channel_g, channel_b);
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Imports a new syntax style string
+    /// (r:g:b-r:g:b-BIUD) and converts it into
+    /// actual usable variables.
+    ///
+    /// \param styleDef const wxString&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void importNew(const wxString& styleDef)
+    {
+        wxArrayString styles = wxStringTokenize(styleDef, "-");
+
+        foreground = StrToColorNew(styles[0]);
+        background = StrToColorNew(styles[1]);
+
+        bold = styles[2][0] == '1';
+        italics = styles[2][1] == '1';
+        underline = styles[2][2] == '1';
+        defaultbackground = styles[2][3] == '1';
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Imports an old syntax style string
+    /// (rrrgggbbbrrrgggbbbBIUD) and converts it into
+    /// actual usable variables.
+    ///
+    /// \param styleDef const wxString&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void importOld(const wxString& styleDef)
+    {
+        if (styleDef.length() < 21)
+            return;
+
+        foreground = StrToColorOld(styleDef.substr(0,9));
+        background = StrToColorOld(styleDef.substr(9,9));
+
+        if (styleDef[18] == '1')
+            bold = true;
+
+        if (styleDef[19] == '1')
+            italics = true;
+
+        if (styleDef[20] == '1')
+            underline = true;
+
+        if (styleDef.length() > 21)
+        {
+            if (styleDef[21] == '0')
+                defaultbackground = false;
+        }
+        else
+            defaultbackground = false;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Transforms the internal data into a
+    /// string style representation according the
+    /// following scheme: r:g:b-r:g:b-BIUD
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string to_string() const
+    {
+        std::string style;
+
+        style = toString((int)foreground.Red()) + ":" + toString((int)foreground.Green()) + ":" + toString((int)foreground.Blue()) + "-";
+        style += toString((int)background.Red()) + ":" + toString((int)background.Green()) + ":" + toString((int)background.Blue()) + "-";
+        style += bold ? "1" : "0";
+        style += italics ? "1" : "0";
+        style += underline ? "1" : "0";
+        style += defaultbackground ? "1" : "0";
+
+        return style;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Default constructor. Creates a "style-
+    /// less" style.
+    /////////////////////////////////////////////////
+    SyntaxStyles() : foreground(*wxBLACK), background(*wxWHITE), bold(false), italics(false), underline(false), defaultbackground(true) {}
+
+    /////////////////////////////////////////////////
+    /// \brief Generic constructor. Creates an
+    /// instance of this class by importing a style
+    /// string in new or old fashion.
+    ///
+    /// \param styleDef const wxString&
+    ///
+    /////////////////////////////////////////////////
+    SyntaxStyles(const wxString& styleDef) : SyntaxStyles()
+    {
+        if (styleDef.find(':') != std::string::npos)
+            importNew(styleDef);
+        else
+            importOld(styleDef);
+    }
 };
 
-class Options
+
+
+
+
+/////////////////////////////////////////////////
+/// \brief This class implements an interface of
+/// the internal Settings object adapted to be
+/// usable from the GUI.
+/////////////////////////////////////////////////
+class Options : public Settings
 {
 	friend class OptionsDialog;
-	friend class wxValidator;
-	friend class wxTextValidator;
-	friend class wxGenericValidator;
+
 	public:
 		Options();
 		~Options();
 
 		// Modifiers:
-		void SetPrintStyle(int style);
-		void SetShowToolbarText(bool useText);
-		void SetShowPathOnTabs(bool useText) {m_showPathsOnTabs = useText;}
-		void SetShowCompileCommands(bool showCommands);
-		void SetLineNumberPrinting(bool printLineNumbers);
-		void SetSaveSession(bool saveSession) {m_saveSession = saveSession;}
-		void SetSaveBookmarksInSession(bool save) {m_saveBookmarksInSession = save;}
-		void SetFormatBeforeSaving(bool formatBeforeSave) {m_formatBeforeSaving = formatBeforeSave;}
-		void SetTerminalHistorySize(int size);
-		void SetMingwBinPaths(wxArrayString paths);
-		void SetMingwExecutables(StringFilenameHash files);
-		void SetLaTeXRoot(const wxString& root) {m_LaTeXRoot = root;}
-		void SetEditorFont(const wxFont& font) {m_editorFont = font; m_editorFont.SetEncoding(wxFONTENCODING_CP1252); }
-		void SetKeepBackupFile(bool keepFile) {m_keepBackupFile = keepFile;}
-		void SetCaretBlinkTime(int nTime) {m_caretBlinkTime = nTime;}
-		void SetDebuggerFocusLine(int nLine) {m_debuggerFocusLine = nLine;}
-		void SetShowLinesInStackTrace(bool show) {m_showLineNumbersInStackTrace = show;}
-		void SetShowModulesInStackTrace(bool show) {m_showModulesInStackTrace = show;}
-		void SetShowProcedureArguments(bool show) {m_showProcedureArguments = show;}
-		void SetShowGlobalVariables(bool show) {m_showGlobalVariables = show;}
-		void SetFoldDuringLoading(bool fold) {m_foldDuringLoading = fold;}
-		void SetHighlightLocalVariables(bool highlight) {m_highlightLocalVariables = highlight;}
+		void SetEditorFont(wxFont font)
+            {
+                font.SetEncoding(wxFONTENCODING_CP1252);
+                m_settings[SETTING_S_EDITORFONT].stringval() = font.GetNativeFontInfoUserDesc().ToStdString();
+            }
+
+		void SetPrintStyle(int style)
+            {m_settings[SETTING_B_PRINTINCOLOR].active() = (style == wxSTC_PRINT_COLOURONWHITE);}
+		void SetTerminalHistorySize(int size)
+            {m_settings[SETTING_V_BUFFERSIZE].value() = size;}
+		void SetShowToolbarText(bool useText)
+            {m_settings[SETTING_B_TOOLBARTEXT].active() = useText;}
+		void SetShowPathOnTabs(bool useText)
+            {m_settings[SETTING_B_PATHSONTABS].active() = useText;}
+		void SetLineNumberPrinting(bool printLineNumbers)
+            {m_settings[SETTING_B_PRINTLINENUMBERS].active() = printLineNumbers;}
+		void SetSaveSession(bool saveSession)
+            {m_settings[SETTING_B_SAVESESSION].active() = saveSession;}
+		void SetSaveBookmarksInSession(bool save)
+            {m_settings[SETTING_B_SAVEBOOKMARKS].active() = save;}
+		void SetFormatBeforeSaving(bool formatBeforeSave)
+            {m_settings[SETTING_B_FORMATBEFORESAVING].active() = formatBeforeSave;}
+		void SetLaTeXRoot(const wxString& root)
+            {m_settings[SETTING_S_LATEXROOT].stringval() = root.ToStdString();}
+		void SetKeepBackupFile(bool keepFile)
+            {m_settings[SETTING_B_USEREVISIONS].active() = keepFile;}
+		void SetCaretBlinkTime(int nTime)
+            {m_settings[SETTING_V_CARETBLINKTIME].value() = nTime;}
+		void SetDebuggerFocusLine(int nLine)
+            {m_settings[SETTING_V_FOCUSEDLINE].value() = nLine;}
+		void SetShowLinesInStackTrace(bool show)
+            {m_settings[SETTING_B_LINESINSTACK].active() = show;}
+		void SetShowModulesInStackTrace(bool show)
+            {m_settings[SETTING_B_MODULESINSTACK].active() = show;}
+		void SetShowProcedureArguments(bool show)
+            {m_settings[SETTING_B_PROCEDUREARGS].active() = show;}
+		void SetShowGlobalVariables(bool show)
+            {m_settings[SETTING_B_GLOBALVARS].active() = show;}
+		void SetFoldDuringLoading(bool fold)
+            {m_settings[SETTING_B_FOLDLOADEDFILE].active() = fold;}
+		void SetHighlightLocalVariables(bool highlight)
+            {m_settings[SETTING_B_HIGHLIGHTLOCALS].active() = highlight;}
+
 
 		// Accessors:  (inlined)
-		wxString GetLaTeXRoot() const { return m_LaTeXRoot;}
-		int GetPrintStyle() const { return m_printStyle; }
-		bool GetShowToolbarText() const { return m_showToolbarText; }
-		bool GetShowPathOnTabs() const { return m_showPathsOnTabs; }
-		bool GetLineNumberPrinting() const {return m_printLineNumbers; }
-		bool GetSaveSession() const {return m_saveSession;}
-		bool GetSaveBookmarksInSession() const {return m_saveBookmarksInSession;}
-		bool GetFormatBeforeSaving() const {return m_formatBeforeSaving;}
-		bool GetKeepBackupFile() const {return m_keepBackupFile;}
-		int GetTerminalHistorySize() const { return m_terminalSize; }
-		int GetCaretBlinkTime() const {return m_caretBlinkTime;}
-		int GetDebuggerFocusLine() const {return m_debuggerFocusLine;}
-		bool GetShowLinesInStackTrace() const {return m_showLineNumbersInStackTrace;}
-		bool GetShowModulesInStackTrace() const {return m_showModulesInStackTrace;}
-		bool GetShowProcedureArguments() const {return m_showProcedureArguments;}
-		bool GetShowGlobalVariables() const {return m_showGlobalVariables;}
-		bool GetFoldDuringLoading() const {return m_foldDuringLoading;}
-		bool GetHighlightLocalVariables() const {return m_highlightLocalVariables;}
-		wxFont GetEditorFont() const { return m_editorFont; }
+		wxFont GetEditorFont() const
+            {
+                wxFont font;
+                font.SetNativeFontInfoUserDesc(m_settings.at(SETTING_S_EDITORFONT).stringval());
+                return font;
+            }
+		int GetPrintStyle() const
+            {return m_settings.at(SETTING_B_PRINTINCOLOR).active() ? wxSTC_PRINT_COLOURONWHITE : wxSTC_PRINT_BLACKONWHITE;}
+		wxString GetLaTeXRoot() const
+            {return m_settings.at(SETTING_S_LATEXROOT).stringval();}
+		bool GetShowToolbarText() const
+            {return m_settings.at(SETTING_B_TOOLBARTEXT).active();}
+		bool GetShowPathOnTabs() const
+            {return m_settings.at(SETTING_B_PATHSONTABS).active();}
+		bool GetLineNumberPrinting() const
+            {return m_settings.at(SETTING_B_PRINTLINENUMBERS).active();}
+		bool GetSaveSession() const
+            {return m_settings.at(SETTING_B_SAVESESSION).active();}
+		bool GetSaveBookmarksInSession() const
+            {return m_settings.at(SETTING_B_SAVEBOOKMARKS).active();}
+		bool GetFormatBeforeSaving() const
+            {return m_settings.at(SETTING_B_FORMATBEFORESAVING).active();}
+		bool GetKeepBackupFile() const
+            {return m_settings.at(SETTING_B_USEREVISIONS).active();}
+		int GetTerminalHistorySize() const
+            {return m_settings.at(SETTING_V_BUFFERSIZE).value();}
+		int GetCaretBlinkTime() const
+            {return m_settings.at(SETTING_V_CARETBLINKTIME).value();}
+		int GetDebuggerFocusLine() const
+            {return m_settings.at(SETTING_V_FOCUSEDLINE).value();}
+		bool GetShowLinesInStackTrace() const
+            {return m_settings.at(SETTING_B_LINESINSTACK).active();}
+		bool GetShowModulesInStackTrace() const
+            {return m_settings.at(SETTING_B_MODULESINSTACK).active();}
+		bool GetShowProcedureArguments() const
+            {return m_settings.at(SETTING_B_PROCEDUREARGS).active();}
+		bool GetShowGlobalVariables() const
+            {return m_settings.at(SETTING_B_GLOBALVARS).active();}
+		bool GetFoldDuringLoading() const
+            {return m_settings.at(SETTING_B_FOLDLOADEDFILE).active();}
+		bool GetHighlightLocalVariables() const
+            {return m_settings.at(SETTING_B_HIGHLIGHTLOCALS).active();}
 
+        /////////////////////////////////////////////////
+        /// \brief An enumeration of all available syntax
+        /// styles.
+        /////////////////////////////////////////////////
 		enum Styles
 		{
             STANDARD,
@@ -101,7 +292,7 @@ class Options
             CUSTOM_FUNCTION,
             CLUSTER,
             CONSTANT,
-            SPECIALVAL, // ans cache ...
+            SPECIALVAL,
             STRING,
             STRINGPARSER,
             INCLUDES,
@@ -111,11 +302,15 @@ class Options
             PROCEDURE_COMMAND,
             METHODS,
             INSTALL,
-            DEFAULT_VARS, // x y z t
+            DEFAULT_VARS,
             ACTIVE_LINE,
             STYLE_END
 		};
 
+        /////////////////////////////////////////////////
+        /// \brief An enumeration of all available static
+        /// analyzer options.
+        /////////////////////////////////////////////////
 		enum AnalyzerOptions
 		{
 		    USE_NOTES,
@@ -142,65 +337,22 @@ class Options
 		    ANALYZER_OPTIONS_END
 		};
 
-        SyntaxStyles GetDefaultSyntaxStyle(size_t i);
-		inline SyntaxStyles GetSyntaxStyle(size_t i) const
-            {
-                if (vSyntaxStyles.size() > i && i < Styles::STYLE_END)
-                    return vSyntaxStyles[i];
-                return SyntaxStyles();
-            }
+        SyntaxStyles GetDefaultSyntaxStyle(size_t i) const;
+		SyntaxStyles GetSyntaxStyle(size_t i) const;
+		void SetSyntaxStyle(size_t i, const SyntaxStyles& styles);
 
         void SetAnalyzerOption(AnalyzerOptions opt, int nVal);
-        int GetAnalyzerOption(AnalyzerOptions opt);
+        int GetAnalyzerOption(AnalyzerOptions opt) const;
 
         void readColoursFromConfig(wxFileConfig* _config);
-        void writeColoursToConfig(wxFileConfig* _config);
         void readAnalyzerOptionsFromConfig(wxFileConfig* _config);
-        void writeAnalyzerOptionsToConfig(wxFileConfig* _config);
 
-        void SetStyleForeground(size_t i, const wxColour& color);
-        void SetStyleBackground(size_t i, const wxColour& color);
-        void SetStyleDefaultBackground(size_t i, bool defaultbackground = true);
-        void SetStyleBold(size_t i, bool _bold = false);
-        void SetStyleItalics(size_t i, bool _italics = false);
-        void SetStyleUnderline(size_t i, bool _underline = false);
-        wxArrayString GetStyleIdentifier();
-        size_t GetIdByIdentifier(const wxString& identifier);
+        wxArrayString GetStyleIdentifier() const;
+        size_t GetIdByIdentifier(const wxString& identifier) const;
 
 	private:
-		wxString m_LaTeXRoot;
-
-		int m_printStyle;
-		int m_terminalSize;
-		int m_caretBlinkTime;
-
-		// debugger options
-		int m_debuggerFocusLine;
-		bool m_showLineNumbersInStackTrace;
-		bool m_showModulesInStackTrace;
-		bool m_showProcedureArguments;
-		bool m_showGlobalVariables;
-
-		bool m_showToolbarText;
-		bool m_showPathsOnTabs;
-		bool m_printLineNumbers;
-		bool m_saveSession;
-		bool m_saveBookmarksInSession;
-		bool m_formatBeforeSaving;
-		bool m_keepBackupFile;
-		bool m_foldDuringLoading;
-		bool m_highlightLocalVariables;
-
-
-		vector<int> vAnalyzerOptions;
-		vector<SyntaxStyles> vSyntaxStyles;
-		wxFont m_editorFont;
-
-		void setDefaultSyntaxStyles();
-		wxString convertToString(const SyntaxStyles& _style);
-		SyntaxStyles convertFromString(const wxString& styleString);
-		wxString toString(const wxColour& color);
-		wxColour StrToColor(wxString colorstring);
+		std::string analyzerOptsToString(AnalyzerOptions opt) const;
+		std::string syntaxStylesToString(Styles style) const;
 };
 
 

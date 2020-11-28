@@ -68,13 +68,15 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_S_PROCPATH] = SettingsValue("<>/procedures", SettingsValue::SAVE | SettingsValue::PATH);
     m_settings[SETTING_S_WORKPATH] = SettingsValue("<>", SettingsValue::PATH);
     m_settings[SETTING_S_PLOTFONT] = SettingsValue("pagella");
-/*
+
     m_settings[SETTING_S_LATEXROOT] = SettingsValue("C:/Program Files", SettingsValue::SAVE | SettingsValue::PATH);
     m_settings[SETTING_B_PRINTINCOLOR] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_V_CARETBLINKTIME] = SettingsValue(500u, 100u, 2000u, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_V_FOCUSEDLINE] = SettingsValue(10u, 1u, 30u, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_LINESINSTACK] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_MODULESINSTACK] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_GLOBALVARS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_PROCEDUREARGS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_TOOLBARTEXT] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_PATHSONTABS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_PRINTLINENUMBERS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
@@ -85,6 +87,7 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_FOLDLOADEDFILE] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_HIGHLIGHTLOCALS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_S_EDITORFONT] = SettingsValue("consolas 10 windows-1252", SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_AN_START] = SettingsValue(true, SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_USENOTES] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_USEWARNINGS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_USEERRORS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
@@ -106,30 +109,31 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_AN_PROCLENGTH] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_PROGRESS] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_AN_FALLTHROUGH] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_STANDARD] = SettingsValue("0:0:0-255:255:255-0100", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_CONSOLESTD] = SettingsValue("0:0:100-255:255:255-0000", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_COMMAND] = SettingsValue("0:128:255-255:255:255-1011", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_PROCCOMMAND] = SettingsValue("128:0:0-255:255:255-1011", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_COMMENT] = SettingsValue("0:128:0-255:255:183-0000", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_DOCCOMMENT] = SettingsValue("0:128:192-255:255:183-1000", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_DOCKEYWORD] = SettingsValue("128:0:0-255:255:183-1000", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_OPTION] = SettingsValue("0:128:100-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_FUNCTION] = SettingsValue("0:0:255-255:255:255:1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_CUSTOMFUNC] = SettingsValue("0:0:160-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_CLUSTER] = SettingsValue("96:96:96-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_CONSTANT] = SettingsValue("255:0:128-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_SPECIALVAL] = SettingsValue("0:0:0-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_STRING] = SettingsValue("128:128:255-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_STRINGPARSER] = SettingsValue("0:128:192-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_INCLUDES] = SettingsValue("128:0:0-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_OPERATOR] = SettingsValue("255:0:0-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_PROCEDURE] = SettingsValue("128:0:0-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_NUMBER] = SettingsValue("176:150:0-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_METHODS] = SettingsValue("0:180:50-255:255:255-1001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_INSTALL] = SettingsValue("128:128:128-255:255:255-0001", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_DEFVARS] = SettingsValue("0:0:160-255:255:255-1101", SettingsValue::SAVE | SettingsValue::HIDDEN);
-    m_settings[SETTING_S_ST_ACTIVELINE] = SettingsValue("0:0:0-221:230:255-0000", SettingsValue::SAVE | SettingsValue::HIDDEN);
-*/
+    m_settings[SETTING_S_ST_START] = SettingsValue("0:0:0-0:0:0-0000", SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_STANDARD] = SettingsValue(DEFAULT_ST_STANDARD, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_CONSOLESTD] = SettingsValue(DEFAULT_ST_CONSOLESTD, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_COMMAND] = SettingsValue(DEFAULT_ST_COMMAND, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_PROCCOMMAND] = SettingsValue(DEFAULT_ST_PROCCOMMAND, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_COMMENT] = SettingsValue(DEFAULT_ST_COMMENT, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_DOCCOMMENT] = SettingsValue(DEFAULT_ST_DOCCOMMENT, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_DOCKEYWORD] = SettingsValue(DEFAULT_ST_DOCKEYWORD, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_OPTION] = SettingsValue(DEFAULT_ST_OPTION, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_FUNCTION] = SettingsValue(DEFAULT_ST_FUNCTION, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_CUSTOMFUNC] = SettingsValue(DEFAULT_ST_CUSTOMFUNC, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_CLUSTER] = SettingsValue(DEFAULT_ST_CLUSTER, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_CONSTANT] = SettingsValue(DEFAULT_ST_CONSTANT, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_SPECIALVAL] = SettingsValue(DEFAULT_ST_SPECIALVAL, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_STRING] = SettingsValue(DEFAULT_ST_STRING, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_STRINGPARSER] = SettingsValue(DEFAULT_ST_STRINGPARSER, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_INCLUDES] = SettingsValue(DEFAULT_ST_INCLUDES, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_OPERATOR] = SettingsValue(DEFAULT_ST_OPERATOR, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_PROCEDURE] = SettingsValue(DEFAULT_ST_PROCEDURE, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_NUMBER] = SettingsValue(DEFAULT_ST_NUMBER, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_METHODS] = SettingsValue(DEFAULT_ST_METHODS, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_INSTALL] = SettingsValue(DEFAULT_ST_INSTALL, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_DEFVARS] = SettingsValue(DEFAULT_ST_DEFVARS, SettingsValue::SAVE | SettingsValue::HIDDEN);
+    m_settings[SETTING_S_ST_ACTIVELINE] = SettingsValue(DEFAULT_ST_ACTIVELINE, SettingsValue::SAVE | SettingsValue::HIDDEN);
+
 
 	sSettings_ini = "numere.ini";
 }
@@ -701,7 +705,7 @@ void Settings::load(const std::string& _sWhere)
     prepareFilePaths(_sWhere);
 
     Settings::save(_sWhere, true);
-    NumeReKernel::printPreFmt(" -> Configuration loaded successful.");
+    //NumeReKernel::printPreFmt(" -> Configuration loaded successful.");
 }
 
 

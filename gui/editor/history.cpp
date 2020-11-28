@@ -122,7 +122,6 @@ NumeReHistory::NumeReHistory(NumeReWindow* mframe, Options* options, wxWindow* p
 
 NumeReHistory::~NumeReHistory()
 {
-    saveHistory();
 }
 
 

@@ -61,12 +61,14 @@
 #define SETTING_S_WORKPATH            "path.workpath"
 #define SETTING_S_PLOTFONT            "plotting.plotfont"
 
-/* Setting value definitions for the GUI (can be integrated later)
+// Setting value definitions for the GUI
 #define SETTING_S_LATEXROOT           "path.latexpath"
 #define SETTING_V_CARETBLINKTIME      "ui.caretblinktime"
 #define SETTING_V_FOCUSEDLINE         "debugger.focusedline"
 #define SETTING_B_LINESINSTACK        "debugger.linenumbersinstacktrace"
-#define SETTING_B_GLOBALVARS          "debugger.globalvars"
+#define SETTING_B_MODULESINSTACK      "debugger.modulesinstacktrace"
+#define SETTING_B_GLOBALVARS          "debugger.showglobalvars"
+#define SETTING_B_PROCEDUREARGS       "debugger.showarguments"
 #define SETTING_B_TOOLBARTEXT         "ui.showtoolbartext"
 #define SETTING_B_PATHSONTABS         "ui.showpathsontabs"
 #define SETTING_B_PRINTINCOLOR        "print.usecolor"
@@ -78,6 +80,7 @@
 #define SETTING_B_FOLDLOADEDFILE      "editor.foldloadedfile"
 #define SETTING_B_HIGHLIGHTLOCALS     "editor.highlightlocals"
 #define SETTING_S_EDITORFONT          "editor.font"
+#define SETTING_B_AN_START            "editor.analyzer._"
 #define SETTING_B_AN_USENOTES         "editor.analyzer.usenotes"
 #define SETTING_B_AN_USEWARNINGS      "editor.analyzer.usewarnings"
 #define SETTING_B_AN_USEERRORS        "editor.analyzer.useerrors"
@@ -99,6 +102,7 @@
 #define SETTING_B_AN_PROCLENGTH       "editor.analyzer.runtime.procedurelength"
 #define SETTING_B_AN_PROGRESS         "editor.analyzer.runtime.progress"
 #define SETTING_B_AN_FALLTHROUGH      "editor.analyzer.switch.fallthrough"
+#define SETTING_S_ST_START            "editor.style._"
 #define SETTING_S_ST_STANDARD         "editor.style.standard.editor"
 #define SETTING_S_ST_CONSOLESTD       "editor.style.standard.terminal"
 #define SETTING_S_ST_COMMAND          "editor.style.command.default"
@@ -122,7 +126,32 @@
 #define SETTING_S_ST_INSTALL          "editor.style.install"
 #define SETTING_S_ST_DEFVARS          "editor.style.defaultvariables"
 #define SETTING_S_ST_ACTIVELINE       "editor.style.activeline"
-*/
+
+// Default color values
+#define DEFAULT_ST_STANDARD      "0:0:0-255:255:255-0100"
+#define DEFAULT_ST_CONSOLESTD    "0:0:100-255:255:255-0000"
+#define DEFAULT_ST_COMMAND       "0:128:255-255:255:255-1011"
+#define DEFAULT_ST_PROCCOMMAND   "128:0:0-255:255:255-1011"
+#define DEFAULT_ST_COMMENT       "0:128:0-255:255:183-0000"
+#define DEFAULT_ST_DOCCOMMENT    "0:128:192-255:255:183-1000"
+#define DEFAULT_ST_DOCKEYWORD    "128:0:0-255:255:183-1000"
+#define DEFAULT_ST_OPTION        "0:128:100-255:255:255-0001"
+#define DEFAULT_ST_FUNCTION      "0:0:255-255:255:255-1001"
+#define DEFAULT_ST_CUSTOMFUNC    "0:0:160-255:255:255-0001"
+#define DEFAULT_ST_CLUSTER       "96:96:96-255:255:255-0001"
+#define DEFAULT_ST_CONSTANT      "255:0:128-255:255:255-1001"
+#define DEFAULT_ST_SPECIALVAL    "0:0:0-255:255:255-1001"
+#define DEFAULT_ST_STRING        "128:128:255-255:255:255-0001"
+#define DEFAULT_ST_STRINGPARSER  "0:128:192-255:255:255-1001"
+#define DEFAULT_ST_INCLUDES      "128:0:0-255:255:255-1001"
+#define DEFAULT_ST_OPERATOR      "255:0:0-255:255:255-0001"
+#define DEFAULT_ST_PROCEDURE     "128:0:0-255:255:255-1001"
+#define DEFAULT_ST_NUMBER        "176:150:0-255:255:255-0001"
+#define DEFAULT_ST_METHODS       "0:180:50-255:255:255-1001"
+#define DEFAULT_ST_INSTALL       "128:128:128-255:255:255-0001"
+#define DEFAULT_ST_DEFVARS       "0:0:160-255:255:255-1101"
+#define DEFAULT_ST_ACTIVELINE    "0:0:0-221:230:255-0000"
+
 
 
 /*
@@ -599,8 +628,7 @@ class SettingsValue
 class Settings : public Documentation
 {
 	private:
-	    std::map<std::string, SettingsValue> m_settings;
-		std::string sSettings_ini;
+	    std::string sSettings_ini;
 
 		// Imports of different configuration file versions
 		void import_v1x(const std::string& sSettings);
@@ -609,6 +637,9 @@ class Settings : public Documentation
 		// Helper
 		std::string replaceExePath(const std::string& _sPath);
 		void prepareFilePaths(const std::string& _sExePath);
+
+    protected:
+        std::map<std::string, SettingsValue> m_settings;
 
 	public:
 		Settings();

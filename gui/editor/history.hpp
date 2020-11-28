@@ -50,12 +50,12 @@ public:
     void OnRightClick(wxMouseEvent &event);
     void OnMenuEvent(wxCommandEvent& event);
     void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
+    void saveHistory();
 
 private:
     void deleteLine();
     void copyLine();
     void loadHistory();
-    void saveHistory();
     void addHeader();
     void applyFoldPoints();
 

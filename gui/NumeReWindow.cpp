@@ -331,11 +331,9 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     // should be approximately 80x15 for the terminal
     this->SetSize(1024, 768);
     m_optionsDialog = nullptr;
-    m_config = nullptr;
     m_options = nullptr;
-    m_iconManager = nullptr;
+
     m_debugViewer = nullptr;
-    m_watcher = nullptr;
     m_currentEd = nullptr;
     m_currentView = nullptr;
     m_statusBar = nullptr;
@@ -348,7 +346,13 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_UnrecoverableFiles = "";
     m_loadingFilesDuringStartup = false;
     m_appStarting = true;
+    m_updateTimer = nullptr;
+    m_fileEventTimer = nullptr;
 
+    m_watcher = new Filewatcher();
+    m_watcher->SetOwner(this);
+
+    m_iconManager = new IconManager(getProgramFolder());
 
     // Show a log window for all debug messages
 #ifdef _DEBUG
@@ -358,44 +362,49 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     wxString programPath = getProgramFolder();
 
-    m_updateTimer = nullptr;
-    m_fileEventTimer = nullptr;
-
     SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
 
     m_remoteMode = true;
 
-    m_options = new Options();
-
-    InitializeProgramOptions();
-
+    // Create the main frame splitters
     m_splitProjectEditor = new wxSplitterWindow(this, ID_SPLITPROJECTEDITOR, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
     m_splitEditorOutput = new wxProportionalSplitterWindow(m_splitProjectEditor, ID_SPLITEDITOROUTPUT, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
     m_splitCommandHistory = new wxProportionalSplitterWindow(m_splitEditorOutput, wxID_ANY, 0.75, wxDefaultPosition, wxDefaultSize, wxSP_3DSASH);
+
+    // Create the different notebooks
     m_book = new EditorNotebook(m_splitEditorOutput, ID_NOTEBOOK_ED, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
     m_book->SetTopParent(this);
     m_noteTerm = new ViewerBook(m_splitCommandHistory, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
+    m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
 
+    // Prepare the application settings
+    m_options = new Options();
+
+    // Create container and the contained terminal
     m_termContainer = new wxTermContainer(m_splitCommandHistory, ID_CONTAINER_TERM);
-
     m_terminal = new NumeReTerminal(m_termContainer, ID_TERMINAL, m_options, programPath, wxPoint(0, 0));
     m_terminal->set_mode_flag(GenericTerminal::CURSORINVISIBLE);
     m_termContainer->SetTerminal(m_terminal);
     m_terminal->SetParent(this);
+
+    // Get the character height from the terminal
     m_splitEditorOutput->SetCharHeigth(m_terminal->getTextHeight());
     m_splitCommandHistory->SetCharHeigth(m_terminal->getTextHeight());
+
+    // Fetch legacy settings, if available
+    InitializeProgramOptions();
+
     _guilang.setTokens("<>="+getProgramFolder().ToStdString()+";");
 
-    if (m_terminal->getKernelSettings().useCustomLangFiles())
+    if (m_options->useCustomLangFiles())
         _guilang.loadStrings(true);
     else
         _guilang.loadStrings(false);
 
+    // Prepare the options dialog
     m_optionsDialog = new OptionsDialog(this, m_options, ID_OPTIONSDIALOG, _guilang.get("GUI_DLG_OPTIONS"));
 
-    // project setup
-    m_treeBook = new ViewerBook(m_splitProjectEditor, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
-
+    // Create the contents of file and symbols tree
     m_filePanel = new TreePanel(m_treeBook, wxID_ANY);
     m_fileTree = new FileTree(m_filePanel, ID_PROJECTTREE, wxDefaultPosition, wxDefaultSize, wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT);
     TreeSearchCtrl* fileSearchCtrl = new TreeSearchCtrl(m_filePanel, wxID_ANY, _guilang.get("GUI_SEARCH_FILES"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_fileTree);
@@ -408,15 +417,8 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_functionPanel->AddWindows(functionSearchCtrl, m_functionTree);
     m_treeBook->AddPage(m_functionPanel, _guilang.get("GUI_FUNCTIONTREE"));
     m_treeBook->Hide();
-
-
-    m_watcher = new Filewatcher();
-    m_watcher->SetOwner(this);
-
-
-    m_iconManager = new IconManager(getProgramFolder());
-
     wxImageList* fileIcons = m_iconManager->GetImageList();
+
     // Sets the list, but doesn't take control of it away
     m_fileTree->SetImageList(fileIcons);
     m_functionTree->SetImageList(fileIcons);
@@ -437,13 +439,11 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_terminal->SetDropTarget(new NumeReDropTarget(this, m_terminal, NumeReDropTarget::CONSOLE));
 #endif //wxUSE_DRAG_AND_DROP
 
-
     m_currentPage = 0;
     m_fileNum = 0;
 
     m_appClosing = false;
     m_setSelection = false;
-
 
     m_statusBar = new NumeReStatusbar(this);
     SetStatusBar(m_statusBar);
@@ -536,16 +536,15 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
 
     ///Msgbox
-    Settings _option = m_terminal->getKernelSettings();
     NumeRe::DataBase tipDataBase;
 
-    if (_option.useCustomLangFiles() && fileExists(_option.ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
+    if (m_options->useCustomLangFiles() && fileExists(m_options->ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
         tipDataBase.addData("<>/user/docs/hints.ndb");
     else
         tipDataBase.addData("<>/docs/hints.ndb");
 
     tipProvider = new MyTipProvider(tipDataBase.getColumn(0));
-    showTipAtStartup = _option.showHints();
+    showTipAtStartup = m_options->showHints();
 }
 
 
@@ -559,9 +558,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 //////////////////////////////////////////////////////////////////////////////
 NumeReWindow::~NumeReWindow()
 {
-    // make sure the config file got written to disk
-    m_config->Flush();
-
     delete g_printData;
     delete g_pageSetupData;
 
@@ -585,9 +581,6 @@ NumeReWindow::~NumeReWindow()
     if (m_optionsDialog)
         delete m_optionsDialog;
 
-    if (m_config)
-        delete m_config;
-
     if (m_options)
         delete m_options;
 
@@ -610,11 +603,8 @@ NumeReWindow::~NumeReWindow()
 /////////////////////////////////////////////////
 void NumeReWindow::updateTipAtStartupSetting(bool bTipAtStartup)
 {
-    Settings _option = m_terminal->getKernelSettings();
-    if (_option.showHints() == bTipAtStartup)
-        return;
-    _option.getSetting(SETTING_B_SHOWHINTS).active() = bTipAtStartup;
-    m_terminal->setKernelSettings(_option);
+    m_options->getSetting(SETTING_B_SHOWHINTS).active() = bTipAtStartup;
+    m_terminal->setKernelSettings(*m_options);
 }
 
 
@@ -794,52 +784,55 @@ void NumeReWindow::InitializeProgramOptions()
     wxFileName configName(path.substr(0, path.rfind('\\')+1), "numeregui.ini");
 
     // Prepare the configuration file
-    m_config = new wxFileConfig("numeregui", wxEmptyString, configName.GetFullPath());
+    wxFileConfig m_config("numeregui", wxEmptyString, configName.GetFullPath());
 
     // Depending on whether the file exists, load the contents
     // or use the default values
     if (configName.FileExists())
     {
-        bool printInColor = (m_config->Read("Miscellaneous/PrintInColor", "true") == "true");
+        bool printInColor = (m_config.Read("Miscellaneous/PrintInColor", "true") == "true");
         int printStyle = printInColor ? wxSTC_PRINT_COLOURONWHITE : wxSTC_PRINT_BLACKONWHITE;
         m_options->SetPrintStyle(printStyle);
 
-        bool showToolbarText = (m_config->Read("Interface/ShowToolbarText", "false") == "true");
-        m_options->SetShowToolbarText(showToolbarText);
+        std::map<std::string, SettingsValue>& mSettings = m_options->getSettings();
 
-        bool showPathsOnTabs = (m_config->Read("Interface/ShowPathsOnTabs", "false") == "true");
-        m_options->SetShowPathOnTabs(showPathsOnTabs);
+        mSettings[SETTING_B_TOOLBARTEXT].active() = (m_config.Read("Interface/ShowToolbarText", "false") == "true");
+        mSettings[SETTING_B_PATHSONTABS].active() = (m_config.Read("Interface/ShowPathsOnTabs", "false") == "true");
+        mSettings[SETTING_B_PRINTLINENUMBERS].active() = (m_config.Read("Miscellaneous/PrintLineNumbers", "false") == "true");
+        mSettings[SETTING_B_SAVESESSION].active() = (m_config.Read("Miscellaneous/SaveSession", "false") == "true");
+        mSettings[SETTING_B_SAVEBOOKMARKS].active() = (m_config.Read("Miscellaneous/SaveBookmarksInSession", "false") == "true");
+        mSettings[SETTING_B_FORMATBEFORESAVING].active() = (m_config.Read("Miscellaneous/FormatBeforeSaving", "false") == "true");
+        mSettings[SETTING_B_USEREVISIONS].active() = (m_config.Read("Miscellaneous/KeepBackups", "true") == "true");
+        mSettings[SETTING_B_FOLDLOADEDFILE].active() = (m_config.Read("Interface/FoldDuringLoading", "false") == "true");
+        mSettings[SETTING_B_HIGHLIGHTLOCALS].active() = (m_config.Read("Styles/HighlightLocalVariables", "false") == "true");
+        mSettings[SETTING_B_LINESINSTACK].active() = (m_config.Read("Debugger/ShowLineNumbersInStackTrace", "true") == "true");
+        mSettings[SETTING_B_MODULESINSTACK].active() = (m_config.Read("Debugger/ShowModulesInStackTrace", "true") == "true");
+        mSettings[SETTING_B_PROCEDUREARGS].active() = (m_config.Read("Debugger/ShowProcedureArguments", "true") == "true");
+        mSettings[SETTING_B_GLOBALVARS].active() = (m_config.Read("Debugger/ShowGlobalVariables", "false") == "true");
 
-        bool printLineNumbers = (m_config->Read("Miscellaneous/PrintLineNumbers", "false") == "true");
-        m_options->SetLineNumberPrinting(printLineNumbers);
+        int debuggerFocusLine = 10;
+        m_config.Read("Debugger/FocusLine", &debuggerFocusLine, 10);
+        m_options->SetDebuggerFocusLine(debuggerFocusLine);
 
-        bool saveSession = (m_config->Read("Miscellaneous/SaveSession", "false") == "true");
-        m_options->SetSaveSession(saveSession);
+        wxFont font;
+        wxString nativeInfo;
+        m_config.Read("Styles/EditorFont", &nativeInfo, "Consolas 10");
+        font.SetNativeFontInfoUserDesc(nativeInfo);
+        m_options->SetEditorFont(font);
 
-        bool saveBookmarksInSession = (m_config->Read("Miscellaneous/SaveBookmarksInSession", "false") == "true");
-        m_options->SetSaveBookmarksInSession(saveBookmarksInSession);
-
-        bool formatBeforeSaving = (m_config->Read("Miscellaneous/FormatBeforeSaving", "false") == "true");
-        m_options->SetFormatBeforeSaving(formatBeforeSaving);
-
-        bool keepBackups = (m_config->Read("Miscellaneous/KeepBackups", "true") == "true");
-        m_options->SetKeepBackupFile(keepBackups);
-
-        bool foldDuringLoading = (m_config->Read("Interface/FoldDuringLoading", "false") == "true");
-        m_options->SetFoldDuringLoading(foldDuringLoading);
-
-        bool highlightVariables = (m_config->Read("Styles/HighlightLocalVariables", "false") == "true");
-        m_options->SetHighlightLocalVariables(highlightVariables);
+        wxString latexroot;
+        m_config.Read("Miscellaneous/LaTeXRoot", &latexroot, "C:/Program Files");
+        m_options->SetLaTeXRoot(latexroot);
 
         int terminalHistory = 300;
-        m_config->Read("Miscellaneous/TerminalHistory", &terminalHistory, 300);
+        m_config.Read("Miscellaneous/TerminalHistory", &terminalHistory, 300);
         if (terminalHistory >= 100 && terminalHistory <= 1000)
             m_options->SetTerminalHistorySize(terminalHistory);
         else
             m_options->SetTerminalHistorySize(300);
 
         int caretBlinkTime = 500;
-        m_config->Read("Interface/CaretBlinkTime", &caretBlinkTime, 500);
+        m_config.Read("Interface/CaretBlinkTime", &caretBlinkTime, 500);
         if (caretBlinkTime >= 100 && caretBlinkTime <= 1000)
             m_options->SetCaretBlinkTime(caretBlinkTime);
         else
@@ -847,65 +840,17 @@ void NumeReWindow::InitializeProgramOptions()
 
         // Read the color codes from the configuration file,
         // if they exist
-        m_options->readColoursFromConfig(m_config);
+        m_options->readColoursFromConfig(&m_config);
 
         // Read the analyzer config from the configuration file,
         // if it exists
-        m_options->readAnalyzerOptionsFromConfig(m_config);
+        m_options->readAnalyzerOptionsFromConfig(&m_config);
 
-        // Read the debugger options from the configuration file
-        int debuggerFocusLine = 10;
-        m_config->Read("Debugger/FocusLine", &debuggerFocusLine, 10);
-        m_options->SetDebuggerFocusLine(debuggerFocusLine);
+        // Inform the kernel about updated settings
+        m_terminal->setKernelSettings(*m_options);
 
-        bool bDebuggerOption = (m_config->Read("Debugger/ShowLineNumbersInStackTrace", "true") == "true");
-        m_options->SetShowLinesInStackTrace(bDebuggerOption);
-
-        bDebuggerOption = (m_config->Read("Debugger/ShowModulesInStackTrace", "true") == "true");
-        m_options->SetShowModulesInStackTrace(bDebuggerOption);
-
-        bDebuggerOption = (m_config->Read("Debugger/ShowProcedureArguments", "true") == "true");
-        m_options->SetShowProcedureArguments(bDebuggerOption);
-
-        bDebuggerOption = (m_config->Read("Debugger/ShowGlobalVariables", "false") == "true");
-        m_options->SetShowGlobalVariables(bDebuggerOption);
-
-        wxFont font;
-        wxString nativeInfo;
-        m_config->Read("Styles/EditorFont", &nativeInfo, "Consolas 10");
-        font.SetNativeFontInfoUserDesc(nativeInfo);
-        m_options->SetEditorFont(font);
-
-        wxString latexroot;
-        m_config->Read("Miscellaneous/LaTeXRoot", &latexroot, "C:/Program Files");
-        m_options->SetLaTeXRoot(latexroot);
-    }
-    else
-    {
-        // Use the default configuration set
-#ifdef DO_LOG
-        wxLogDebug("Failed to locate config file, loading default permissions");
-#endif
-        m_config->Write("Miscellaneous/TerminalHistory", m_options->GetTerminalHistorySize());
-        m_config->Write("Interface/CaretBlinkTime", m_options->GetCaretBlinkTime());
-        m_config->Write("Interface/ShowPathsOnTabs", m_options->GetShowPathOnTabs());
-        m_config->Write("Interface/FoldDuringLoading", m_options->GetFoldDuringLoading() ? "true" : "false");
-        m_config->Write("Styles/HighlightLocalVariables", m_options->GetHighlightLocalVariables() ? "true" : "false");
-        m_config->Write("Miscellaneous/LaTeXRoot", m_options->GetLaTeXRoot());
-        m_config->Write("Miscellaneous/PrintInColor", m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE ? "true" : "false");
-        m_config->Write("Miscellaneous/PrintLineNumbers", m_options->GetLineNumberPrinting() ? "true" : "false");
-        m_config->Write("Miscellaneous/SaveSession", m_options->GetSaveSession() ? "true" : "false");
-        m_config->Write("Miscellaneous/SaveBookmarksInSession", m_options->GetSaveBookmarksInSession() ? "true" : "false");
-        m_config->Write("Miscellaneous/FormatBeforeSaving", m_options->GetFormatBeforeSaving() ? "true" : "false");
-        m_config->Write("Miscellaneous/KeepBackups", m_options->GetKeepBackupFile() ? "true" : "false");
-        m_options->writeColoursToConfig(m_config);
-        m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
-        m_options->writeAnalyzerOptionsToConfig(m_config);
-        m_config->Write("Debugger/FocusLine", m_options->GetDebuggerFocusLine());
-        m_config->Write("Debugger/ShowLineNumbersInStackTrace", m_options->GetShowLinesInStackTrace() ? "true" : "false");
-        m_config->Write("Debugger/ShowModulesInStackTrace", m_options->GetShowModulesInStackTrace() ? "true" : "false");
-        m_config->Write("Debugger/ShowProcedureArguments", m_options->GetShowProcedureArguments() ? "true" : "false");
-        m_config->Write("Debugger/ShowGlobalVariables", m_options->GetShowGlobalVariables() ? "true" : "false");
+        // TODO: Remove this ini file
+        m_config.DeleteAll();
     }
 }
 
@@ -1119,6 +1064,8 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     if (m_debugViewer != nullptr)
         m_debugViewer->Destroy();
 
+    if (m_history)
+        m_history->saveHistory();
 
     Destroy();
 }
@@ -1586,6 +1533,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         {
             Settings _option = m_terminal->getKernelSettings();
             _option.getSetting(SETTING_B_DEBUGGER).active() = !_option.useDebugger();
+            m_options->getSetting(SETTING_B_DEBUGGER).active() = _option.useDebugger();
             m_terminal->setKernelSettings(_option);
             wxToolBar* tb = GetToolBar();
             tb->ToggleTool(ID_MENU_TOGGLE_DEBUGGER, _option.useDebugger());
@@ -2839,7 +2787,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         timestamp = getTimeStamp(false);
 
         // Get the template file contents
-        if (m_terminal->getKernelSettings().useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
+        if (m_options->useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
             GetFileContents(getProgramFolder() + "\\user\\lang\\"+dummy, template_file, dummy);
         else
             GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
@@ -2964,7 +2912,7 @@ void NumeReWindow::DefaultPage()
     wxString template_file, dummy;
     dummy = "tmpl_defaultpage.nlng";
 
-    if (m_terminal->getKernelSettings().useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
+    if (m_options->useCustomLangFiles() && wxFileExists(getProgramFolder() + "\\user\\lang\\"+dummy))
         GetFileContents(getProgramFolder() + "\\user\\lang\\"+dummy, template_file, dummy);
     else
         GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
@@ -4654,9 +4602,7 @@ void NumeReWindow::EvaluateOptions()
 
         // Activate the file system watcher
         if (m_watcher)
-        {
             m_watcher->SetDefaultPaths(vPaths);
-        }
     }
 
     // Update the syntax highlighting in every
@@ -4670,9 +4616,7 @@ void NumeReWindow::EvaluateOptions()
     }
 
     if (m_debugViewer)
-    {
         m_debugViewer->updateSettings();
-    }
 
     m_book->SetShowPathsOnTabs(m_options->GetShowPathOnTabs());
 
@@ -4681,53 +4625,8 @@ void NumeReWindow::EvaluateOptions()
 
     // Copy the settings in the options object
     // into the configuration object
-    int newMaxTermSize = m_options->GetTerminalHistorySize();
-    m_termContainer->SetTerminalHistory(newMaxTermSize);
-    m_config->Write("Miscellaneous/TerminalHistory", newMaxTermSize);
-
-    int newCaretBlinkTime = m_options->GetCaretBlinkTime();
-    m_termContainer->SetCaretBlinkTime(newCaretBlinkTime);
-    m_config->Write("Interface/CaretBlinkTime", newCaretBlinkTime);
-    m_config->Write("Interface/ShowPathsOnTabs", m_options->GetShowPathOnTabs() ? "true" : "false");
-
-    bool foldDuringLoading = m_options->GetFoldDuringLoading();
-    m_config->Write("Interface/FoldDuringLoading", foldDuringLoading ? "true" : "false");
-
-    bool highlightVariables = m_options->GetHighlightLocalVariables();
-    m_config->Write("Styles/HighlightLocalVariables", highlightVariables ? "true" : "false");
-
-    bool printInColor = (m_options->GetPrintStyle() == wxSTC_PRINT_COLOURONWHITE);
-    m_config->Write("Miscellaneous/PrintInColor", printInColor ? "true" : "false");
-
-    bool printLineNumbers = m_options->GetLineNumberPrinting();
-    m_config->Write("Miscellaneous/PrintLineNumbers", printLineNumbers ? "true" : "false");
-
-    bool saveSession = m_options->GetSaveSession();
-    m_config->Write("Miscellaneous/SaveSession", saveSession ? "true" : "false");
-
-    bool saveBookmarksInSession = m_options->GetSaveBookmarksInSession();
-    m_config->Write("Miscellaneous/SaveBookmarksInSession", saveBookmarksInSession ? "true" : "false");
-
-    bool formatBeforeSaving = m_options->GetFormatBeforeSaving();
-    m_config->Write("Miscellaneous/FormatBeforeSaving", formatBeforeSaving ? "true" : "false");
-
-    m_options->writeColoursToConfig(m_config);
-    m_config->Write("Styles/EditorFont", m_options->GetEditorFont().GetNativeFontInfoUserDesc());
-
-    m_options->writeAnalyzerOptionsToConfig(m_config);
-
-    m_config->Write("Miscellaneous/LateXRoot", m_options->GetLaTeXRoot());
-
-    m_config->Write("Miscellaneous/KeepBackups", m_options->GetKeepBackupFile() ? "true" : "false");
-
-    m_config->Write("Debugger/FocusLine", m_options->GetDebuggerFocusLine());
-    m_config->Write("Debugger/ShowLineNumbersInStackTrace", m_options->GetShowLinesInStackTrace() ? "true" : "false");
-    m_config->Write("Debugger/ShowModulesInStackTrace", m_options->GetShowModulesInStackTrace() ? "true" : "false");
-    m_config->Write("Debugger/ShowProcedureArguments", m_options->GetShowProcedureArguments() ? "true" : "false");
-    m_config->Write("Debugger/ShowGlobalVariables", m_options->GetShowGlobalVariables() ? "true" : "false");
-
-    // Write the configuration to its file
-    m_config->Flush();
+    m_termContainer->SetTerminalHistory(m_options->GetTerminalHistorySize());
+    m_termContainer->SetCaretBlinkTime(m_options->GetCaretBlinkTime());
 }
 
 
@@ -4943,7 +4842,6 @@ void NumeReWindow::UpdateToolbar()
     wxToolBar* t = GetToolBar();
     delete t;
     SetToolBar(nullptr);
-    m_config->Write("Interface/ShowToolbarText", showText ? "true" : "false");
     t = CreateToolBar(style);//new wxToolBar(this, -1, wxDefaultPosition, wxDefaultSize, style);
 
     t->AddTool(ID_MENU_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
@@ -5020,9 +4918,8 @@ void NumeReWindow::UpdateToolbar()
 
     t->AddSeparator();
     NumeRe::DataBase db("<>/docs/find.ndb");
-    Settings _opt = m_terminal->getKernelSettings();
 
-    if (_opt.useCustomLangFiles() && fileExists(_opt.ValidFileName("<>/user/docs/find.ndb", ".ndb")))
+    if (m_options->useCustomLangFiles() && fileExists(m_options->ValidFileName("<>/user/docs/find.ndb", ".ndb")))
         db.addData("<>/user/docs/find.ndb");
 
     t->AddControl(new ToolBarSearchCtrl(t, wxID_ANY, db, this, m_terminal, _guilang.get("GUI_SEARCH_TELLME"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR"), _guilang.get("GUI_SEARCH_CALLTIP_TOOLBAR_HIGHLIGHT")), wxEmptyString);
@@ -5030,9 +4927,6 @@ void NumeReWindow::UpdateToolbar()
     t->Realize();
 
     ToolbarStatusUpdate();
-
-
-    m_config->Write("Interface/ShowToolbarText", showText ? "true" : "false");
 }
 
 
@@ -5272,7 +5166,7 @@ void NumeReWindow::setViewerFocus()
 void NumeReWindow::refreshFunctionTree()
 {
     wxWindow* focus = wxWindow::FindFocus();
-    _guilang.loadStrings(m_terminal->getKernelSettings().useCustomLangFiles());
+    _guilang.loadStrings(m_options->useCustomLangFiles());
     prepareFunctionTree();
     m_functionTree->Refresh();
 
@@ -5836,7 +5730,7 @@ wxString NumeReWindow::addLinebreaks(const wxString& sLine)
 /////////////////////////////////////////////////
 wxString NumeReWindow::getFileDetails(const wxFileName& filename)
 {
-    if (m_terminal->getKernelSettings().showExtendedFileInfo())
+    if (m_options->showExtendedFileInfo())
         return "\n" + getFileInfo(filename.GetFullPath().ToStdString());
     else
         return "NOTHING";
@@ -6408,16 +6302,14 @@ void NumeReWindow::OnFindReplace(int id)
 /////////////////////////////////////////////////
 void NumeReWindow::OnOptions()
 {
-    Settings _option = m_terminal->getKernelSettings();
-    m_optionsDialog->_option = &_option;
-
+    m_options->copySettings(m_terminal->getKernelSettings());
     m_optionsDialog->InitializeDialog();
+
     int result = m_optionsDialog->ShowModal();
-    m_optionsDialog->_option = nullptr;
 
     if (result == wxID_OK)
     {
-        m_terminal->setKernelSettings(_option);
+        m_terminal->setKernelSettings(*m_options);
         EvaluateOptions();
         m_history->UpdateSyntaxHighlighting();
         m_terminal->UpdateColors();
