@@ -1545,6 +1545,7 @@ bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _o
 	string sInput;
 	string sParams;
 	string sTargetCache = "image";
+	string sChannels = "grey";
 	Indices _idx;
 	vector<double> vIndices;
 
@@ -1567,6 +1568,9 @@ bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _o
 
 	// Get the file name from the command line or the parameter list
 	sFileName = getFilenameFromCommandString(sCmd, sParams, ".bmp", _parser, _data, _option);
+
+	if (findParameter(sParams, "channels", '='))
+        sChannels = getArgAtPos(sParams, findParameter(sParams, "channels", '=')+8);
 
 	// Ensure that a filename is present
 	if (!sFileName.length())
@@ -1594,8 +1598,10 @@ bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _o
 	if (_idx.row.isOpenEnd())
 		_idx.row.setRange(0, _idx.row.front() + nWidth-1);
 
-	if (_idx.col.isOpenEnd())
+	if (_idx.col.isOpenEnd() && sChannels == "grey")
 		_idx.col.setRange(0, _idx.col.front() + 2 + nHeight-1);
+    else if (_idx.col.isOpenEnd())
+        _idx.col.setRange(0, _idx.col.front() + 2 + sChannels.length()*nHeight - 1);
 
     vIndices.push_back(_idx.row.min()+1);
     vIndices.push_back(_idx.row.max()+1);
@@ -1634,7 +1640,13 @@ bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _o
 		if (_idx.col[j+2] == VectorIndex::INVALID)
 			break;
 
-        _data.setHeadLineElement(_idx.col[2+j], sTargetCache, "z(x(:),y(" + toString(j) + "))");
+        if (sChannels == "grey")
+            _data.setHeadLineElement(_idx.col[2+j], sTargetCache, "z(x(:),y(" + toString(j) + "))");
+        else
+        {
+            for (size_t n = 0; n < sChannels.length(); n++)
+                _data.setHeadLineElement(_idx.col[2+j + n*nHeight], sTargetCache, "z(x(:),y(" + toString(j) + "))_"+sChannels[n]);
+        }
 
 		for (int i = 0; i < nWidth; i++)
 		{
@@ -1642,8 +1654,31 @@ bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _o
 				break;
 
             // The actual copy process
-            // Calculate the luminosity of the three channels and write it to the table
-			_data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache, imageData[j * 3 * nWidth + iData] * 0.299 + imageData[j * 3 * nWidth + iData + 1] * 0.587 + imageData[j * 3 * nWidth + iData + 2] * 0.114);
+            if (sChannels == "grey")
+            {
+                // Calculate the luminosity of the three channels and write it to the table
+                _data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1)], sTargetCache,
+                                   imageData[j * 3 * nWidth + iData] * 0.299 + imageData[j * 3 * nWidth + iData + 1] * 0.587 + imageData[j * 3 * nWidth + iData + 2] * 0.114);
+            }
+            else
+            {
+                for (size_t n = 0; n < sChannels.length(); n++)
+                {
+                    // Store the selected channel
+                    switch (sChannels[n])
+                    {
+                        case 'r':
+                            _data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1) + n*nHeight], sTargetCache, imageData[j * 3 * nWidth + iData]);
+                            break;
+                        case 'g':
+                            _data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1) + n*nHeight], sTargetCache, imageData[j * 3 * nWidth + iData + 1]);
+                            break;
+                        case 'b':
+                            _data.writeToTable(_idx.row[i], _idx.col[2 + (nHeight - j - 1) + n*nHeight], sTargetCache, imageData[j * 3 * nWidth + iData + 2]);
+                            break;
+                    }
+                }
+            }
 
 			// Advance the iterator three channels
 			iData += 3;
