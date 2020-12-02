@@ -649,6 +649,9 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
             case NumeReKernel::NUMERE_REFRESH_FUNCTIONTREE:
                 refreshFunctionTree = true;
                 break;
+            case NumeReKernel::NUMERE_CLOSE_WINDOWS:
+                m_wxParent->closeWindows((WindowType)task.nLine);
+                break;
         }
     }
 

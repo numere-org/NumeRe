@@ -3398,6 +3398,39 @@ void NumeReKernel::refreshFunctionTree()
 
 
 /////////////////////////////////////////////////
+/// \brief This member function informs the GUI
+/// to close all windows of the selected type.
+/// Use 0 or WT_ALL to close all closable windows
+/// at once.
+///
+/// \param type int
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::closeWindows(int type)
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+
+        // create the task
+        NumeReTask task;
+        task.taskType = NUMERE_CLOSE_WINDOWS;
+        task.nLine = type;
+
+        taskQueue.push(task);
+
+        m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
+    }
+
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(KERNEL_PRINT_SLEEP);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function is an implementation
 /// replacing the std::getline() function.
 ///

@@ -1067,6 +1067,9 @@ void NumeReWindow::OnClose(wxCloseEvent &event)
     if (m_history)
         m_history->saveHistory();
 
+    // Close all windows to avoid calls to the map afterwards
+    closeWindows(WT_ALL);
+
     Destroy();
 }
 
@@ -1735,6 +1738,7 @@ void NumeReWindow::openImage(wxFileName filename)
     wxString programPath = getProgramFolder();
 
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe-ImageViewer: " + filename.GetName());
+    registerWindow(frame, WT_IMAGEVIEWER);
     wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
 
     ImagePanel* _panel = nullptr;
@@ -1823,6 +1827,7 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
 void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
+    registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable);
@@ -1845,6 +1850,7 @@ void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const strin
 void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
 {
     ViewerFrame* frame = new ViewerFrame(this, "NumeRe: " + sTableName);
+    registerWindow(frame, WT_TABLEVIEWER);
     frame->SetSize(800,600);
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_table);
@@ -1980,6 +1986,7 @@ void NumeReWindow::showWindow(NumeRe::Window& window)
 void NumeReWindow::showGraph(NumeRe::Window& window)
 {
     GraphViewer* viewer = new GraphViewer(this, "NumeRe: " + window.getGraph()->getTitle(), window.getGraph(), m_terminal);
+    registerWindow(viewer, WT_GRAPH);
 
     viewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
     viewer->Show();
@@ -5989,7 +5996,7 @@ int NumeReWindow::ReplaceAllStrings(const wxString &findString, const wxString &
 ///
 ///  @author Mark Erikson @date 04-22-2004
 //////////////////////////////////////////////////////////////////////////////
-wxRect NumeReWindow::DeterminePrintSize ()
+wxRect NumeReWindow::DeterminePrintSize()
 {
     wxSize scr = wxGetDisplaySize();
 
@@ -6043,6 +6050,66 @@ void NumeReWindow::UpdateLocationIfOpen(const wxFileName& fname, const wxFileNam
         m_book->SetTabText(num, edit->GetFileNameAndPath());
         m_book->Refresh();
         UpdateWindowTitle(m_book->GetPageText(m_book->GetSelection()));
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Registers a new window in the internal
+/// map.
+///
+/// \param window wxWindow*
+/// \param type WindowType
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::registerWindow(wxWindow* window, WindowType type)
+{
+    if (m_openedWindows.find(window) == m_openedWindows.end())
+        m_openedWindows[window] = type;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Removes the passed window form the
+/// internal window list (only if it exists).
+///
+/// \param window wxWindow*
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::unregisterWindow(wxWindow* window)
+{
+    if (m_openedWindows.find(window) != m_openedWindows.end())
+        m_openedWindows.erase(window);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Close all windows of the selected
+/// WindowType or simply use WT_ALL to close all
+/// terminal-closable floating windows at once.
+///
+/// \param type WindowType
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::closeWindows(WindowType type)
+{
+    auto iter = m_openedWindows.begin();
+
+    while (iter != m_openedWindows.end())
+    {
+        if (type == WT_ALL || type == iter->second)
+        {
+            // Copy pointer to avoid issues with
+            // iterator invalidation
+            wxWindow* w = iter->first;
+            iter = m_openedWindows.erase(iter);
+            w->Destroy();
+        }
+        else
+            ++iter;
     }
 }
 
@@ -6435,6 +6502,7 @@ void NumeReWindow::OnHelp()
 bool NumeReWindow::ShowHelp(const wxString& sDocId)
 {
     DocumentationBrowser* browser = new DocumentationBrowser(this, _guilang.get("DOC_HELP_HEADLINE", "%s"), this);
+    registerWindow(browser, WT_DOCVIEWER);
     return browser->SetStartPage(sDocId);
 }
 

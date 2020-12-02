@@ -21,6 +21,12 @@
 #ifndef VIEWERFRAME_HPP
 #define VIEWERFRAME_HPP
 
+/////////////////////////////////////////////////
+/// \brief This class generalizes a set of basic
+/// floating window functionalities like being
+/// closable by pressing ESC or to get the
+/// keyboard focus automatically.
+/////////////////////////////////////////////////
 class ViewerFrame : public wxFrame
 {
     public:

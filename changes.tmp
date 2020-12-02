@@ -7,3 +7,4 @@ Updated	Improved some error messages to contain more relevant information.
 Applied	Pasting or loading of tabular data, which contains only tabulators as separator characters, is now able to correctly determine the column layout even if some of them are not filled completely.
 Cleaned	The two configuration files were merged into numere.ini.
 Applied	It's now possible to extract single or multiple channels from image files by using the new "channels=CHANNELS" option.
+New	The command "close" may be used to close many floating windows at once.

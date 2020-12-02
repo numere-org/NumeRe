@@ -327,21 +327,20 @@ enum WindowID
 	ID_PKGDLG_AUTODETECT
 };
 
-// IMPORTANT!!!  Any changes to this enum need to be reflected in the
-//				 PermStrings array in p.cpp.
-enum modules
+
+/////////////////////////////////////////////////
+/// \brief This enumeration defines all terminal-
+/// closable window types.
+/////////////////////////////////////////////////
+enum WindowType
 {
-	PERM_FIRST = 0,
-	PERM_SYNTAXHIGHLIGHT = PERM_FIRST,
-	PERM_AUTOINDENT,
-	PERM_DEBUG,
-	PERM_TERMINAL,
-	PERM_LOCALMODE,
-	PERM_PROJECTS,
-	PERM_COMPILE,
-	//PERM_ADVANCEDCOMPILE,
-	PERM_LAST
+    WT_ALL,
+    WT_GRAPH,
+    WT_TABLEVIEWER,
+    WT_IMAGEVIEWER,
+    WT_DOCVIEWER
 };
+
 
 // This enum should match the order of items in the wxImageList
 // used for the project tree, as created in RemoteFileDialog's constructor

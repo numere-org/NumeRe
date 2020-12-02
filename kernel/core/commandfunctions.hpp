@@ -31,6 +31,16 @@
 using namespace std;
 using namespace mu;
 
+enum WindowType
+{
+    WT_ALL,
+    WT_GRAPH,
+    WT_TABLEVIEWER,
+    WT_IMAGEVIEWER,
+    WT_DOCVIEWER
+};
+
+
 typedef CommandReturnValues (*CommandFunc)(string&);
 
 extern mglGraph _fontData;
@@ -2049,6 +2059,16 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function is used to detect
+/// a setting option independent on a leading
+/// dash character in front of the option value.
+///
+/// \param sCmd const std::string&
+/// \param sOption const std::string&
+/// \return size_t
+///
+/////////////////////////////////////////////////
 static size_t findSettingOption(const std::string& sCmd, const std::string& sOption)
 {
     size_t pos = findParameter(sCmd, sOption);
@@ -3451,6 +3471,33 @@ static CommandReturnValues cmd_clear(string& sCmd)
     }
     else
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
+
+    return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// "close" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_close(string& sCmd)
+{
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
+    if (findParameter(sCmd, "all"))
+        instance->closeWindows(WT_ALL);
+    else if (findParameter(sCmd, "graphs"))
+        instance->closeWindows(WT_GRAPH);
+    else if (findParameter(sCmd, "tables"))
+        instance->closeWindows(WT_TABLEVIEWER);
+    else if (findParameter(sCmd, "images"))
+        instance->closeWindows(WT_IMAGEVIEWER);
+    else if (findParameter(sCmd, "docs"))
+        instance->closeWindows(WT_DOCVIEWER);
 
     return COMMAND_PROCESSED;
 }
@@ -5532,6 +5579,7 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["about"] = cmd_credits;
     mCommandFuncMap["audio"] = cmd_audio;
     mCommandFuncMap["clear"] = cmd_clear;
+    mCommandFuncMap["close"] = cmd_close;
     mCommandFuncMap["cont"] = cmd_plotting;
     mCommandFuncMap["cont3d"] = cmd_plotting;
     mCommandFuncMap["contour"] = cmd_plotting;

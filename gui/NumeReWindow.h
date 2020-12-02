@@ -250,6 +250,10 @@ class NumeReWindow : public wxFrame
 
         void UpdateLocationIfOpen(const wxFileName& fname, const wxFileName& newFName);
 
+        void registerWindow(wxWindow* window, WindowType type);
+        void unregisterWindow(wxWindow* window);
+        void closeWindows(WindowType type = WT_ALL);
+
 
     private:
         void InitializeProgramOptions();
@@ -459,8 +463,9 @@ class NumeReWindow : public wxFrame
         bool m_currentlyDebugging;
         bool m_multiRowState;
         bool m_loadingFilesDuringStartup;
-        map<int, wxMenuItem*> m_menuItems;
-        vector<pair<int, wxString> > m_modifiedFiles;
+        std::map<int, wxMenuItem*> m_menuItems;
+        std::vector<std::pair<int, wxString> > m_modifiedFiles;
+        std::map<wxWindow*, WindowType> m_openedWindows;
 
 
         wxString m_filterNSCRFiles;

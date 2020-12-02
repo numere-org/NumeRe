@@ -124,7 +124,8 @@ class NumeReKernel
             NUMERE_DEBUG_EVENT,
             NUMERE_ANSWER_READ,
             NUMERE_SHOW_WINDOW,
-            NUMERE_REFRESH_FUNCTIONTREE
+            NUMERE_REFRESH_FUNCTIONTREE,
+            NUMERE_CLOSE_WINDOWS
         };
 
         enum DebuggerCodes
@@ -245,6 +246,7 @@ class NumeReKernel
         static int evalDebuggerBreakPoint(const string& sCurrentCommand = "");
         static void addToLog(const string& sLogMessage);
         void refreshFunctionTree();
+        void closeWindows(int type);
 
         // Public member functions
         // Main loop function
@@ -330,7 +332,7 @@ class NumeReKernel
         vector<string> getDocIndex();
         NumeReVariables getVariableList();
         bool SettingsModified();
-        int getAutosaveInterval() const 
+        int getAutosaveInterval() const
 		{
 			return _option.getAutoSaveInterval();
 		}
