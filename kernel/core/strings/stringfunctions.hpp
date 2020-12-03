@@ -1533,6 +1533,48 @@ static string strfnc_replaceall(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the strip()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_strip(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    funcArgs.sArg3 = removeMaskedStrings(funcArgs.sArg3);
+
+    if (!funcArgs.sArg1.length())
+        return "\"\"";
+
+    while (funcArgs.sArg2.length()
+           && funcArgs.sArg1.length() >= funcArgs.sArg2.length()
+           && funcArgs.sArg1.substr(0, funcArgs.sArg2.length()) == funcArgs.sArg2)
+    {
+        funcArgs.sArg1.erase(0, funcArgs.sArg2.length());
+
+        if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+            break;
+    }
+
+    while (funcArgs.sArg3.length()
+           && funcArgs.sArg1.length() >= funcArgs.sArg3.length()
+           && funcArgs.sArg1.substr(funcArgs.sArg1.length() - funcArgs.sArg3.length()) == funcArgs.sArg3)
+    {
+        funcArgs.sArg1.erase(funcArgs.sArg1.length() - funcArgs.sArg3.length());
+
+        if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+            break;
+    }
+
+    return "\"" + funcArgs.sArg1 + "\"";
+
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the regex()
 /// function.
 ///
@@ -1796,6 +1838,7 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["split"]               = StringFuncHandle(STR_STR, strfnc_split, false);
     mHandleTable["str_not_match"]       = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_match, false);
     mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
+    mHandleTable["strip"]               = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_strip, false);
     mHandleTable["strfnd"]              = StringFuncHandle(STR_STR_VALOPT, strfnc_strfnd, false);
     mHandleTable["strlen"]              = StringFuncHandle(STR, strfnc_strlen, false);
     mHandleTable["strmatch"]            = StringFuncHandle(STR_STR_VALOPT, strfnc_strmatch, false);
