@@ -2062,6 +2062,24 @@ class StringView : public StringViewBase
             return StringView();
         }
 
+        /////////////////////////////////////////////////
+        /// \brief This member function returns a
+        /// MutableStringView instance with the data of
+        /// this instance.
+        ///
+        /// \return MutableStringView
+        /// \warning Only use this method, if you know,
+        /// what you're doing.
+        ///
+        /////////////////////////////////////////////////
+        MutableStringView make_mutable() const
+        {
+            if (m_data)
+                return MutableStringView(const_cast<std::string*>(m_data), m_start, m_len);
+
+            return MutableStringView();
+        }
+
 };
 
 

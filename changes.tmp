@@ -8,3 +8,4 @@ Applied	Pasting or loading of tabular data, which contains only tabulators as se
 Cleaned	The two configuration files were merged into numere.ini.
 Applied	It's now possible to extract single or multiple channels from image files by using the new "channels=CHANNELS" option.
 New	The command "close" may be used to close many floating windows at once.
+Added	Multiple expansions and vectors may now be combined into a single vector: {a,b,c:d,e,...}

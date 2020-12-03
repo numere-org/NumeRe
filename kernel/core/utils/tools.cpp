@@ -2394,8 +2394,29 @@ StringView getNextViewedIndex(StringView& sView)
     return getNextCommandLineToken(sView, ':');
 }
 
+
 /////////////////////////////////////////////////
-/// \brief Splits up the complete argument list and returns them as an EndlessVector
+/// \brief Splits up the complete argument list
+/// and returns them as an EndlessVector.
+///
+/// \param sArgList StringView
+/// \return EndlessVector<StringView>
+///
+/////////////////////////////////////////////////
+EndlessVector<StringView> getAllArguments(StringView sArgList)
+{
+    EndlessVector<StringView> vArgs;
+
+    while (sArgList.length())
+        vArgs.push_back(getNextViewedArgument(sArgList));
+
+    return vArgs;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Splits up the complete argument list
+/// and returns them as an EndlessVector.
 ///
 /// \param sArgList string
 /// \return EndlessVector<string>
@@ -2412,7 +2433,8 @@ EndlessVector<string> getAllArguments(string sArgList)
 }
 
 /////////////////////////////////////////////////
-/// \brief Splits up the complete index list and returns them as an EndlessVector
+/// \brief Splits up the complete index list
+/// and returns them as an EndlessVector.
 ///
 /// \param sArgList string
 /// \return EndlessVector<string>
@@ -2429,7 +2451,8 @@ EndlessVector<string> getAllIndices(string sArgList)
 }
 
 /////////////////////////////////////////////////
-/// \brief Splits up the complete index list and returns them as an EndlessVector
+/// \brief Splits up the complete index list
+/// and returns them as an EndlessVector.
 ///
 /// \param sArgList string
 /// \return EndlessVector<string>

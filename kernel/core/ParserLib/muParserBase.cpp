@@ -637,57 +637,78 @@ namespace mu
 	{
 		int nResults = 0;
 		value_type* v = nullptr;
-		int isExpansion = -1;
 
-		// Replace the colons with commas. But ensure that this is not a conditional statement
-		for (size_t i = 0; i < sSubExpr.length(); i++)
-		{
-			if (sSubExpr[i] == '(' || sSubExpr[i] == '[' || sSubExpr[i] == '{')
-				i += getMatchingParenthesis(sSubExpr.subview(i));
+		EndlessVector<StringView> args = getAllArguments(sSubExpr);
+		std::string singletons;
 
-			if (sSubExpr[i] == ':')
-			{
-				if (isExpansion == -1)
-					isExpansion = 1;
+		for (size_t n = 0; n < args.size(); n++)
+        {
+            if (args[n].find(':') == std::string::npos)
+            {
+                if (singletons.length())
+                    singletons += ",";
+
+                singletons += args[n].to_string();
+                continue;
+            }
+            else if (singletons.length())
+            {
+                SetExpr(singletons);
+                v = Eval(nResults);
+                vResults.insert(vResults.end(), v, v+nResults);
+                singletons.clear();
+            }
+
+            int isExpansion = -1;
+            MutableStringView sExpansion = args[n].make_mutable();
+
+            // Replace the colons with commas. But ensure that this is not a conditional statement
+            for (size_t i = 0; i < sExpansion.length(); i++)
+            {
+                if (sExpansion[i] == '(' || sExpansion[i] == '[' || sExpansion[i] == '{')
+                    i += getMatchingParenthesis(sSubExpr.subview(i));
+
+                if (sExpansion[i] == ':')
+                {
+                    if (isExpansion == -1)
+                        isExpansion = 1;
+
+                    // This is a conditional operator
+                    if (isExpansion == 0)
+                        continue;
+
+                    sExpansion[i] = ',';
+                }
 
                 // This is a conditional operator
-				if (isExpansion == 0)
-					continue;
+                if (sExpansion[i] == '?')
+                {
+                    if (isExpansion == -1)
+                        isExpansion = 0;
 
-				sSubExpr[i] = ',';
-			}
+                    if (isExpansion == 1)
+                        throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sExpansion.to_string(), i);
+                }
+            }
 
-			// This is a conditional operator
-			if (sSubExpr[i] == '?')
-			{
-				if (isExpansion == -1)
-					isExpansion = 0;
+            // set and evaluate the modified expression
+            SetExpr(sExpansion);
+            v = Eval(nResults);
 
-				if (isExpansion == 1)
-					throw ParserError(ecUNEXPECTED_CONDITIONAL, "?", sSubExpr.to_string(), i);
-			}
-		}
-
-		// set and evaluate the modified expression
-		SetExpr(sSubExpr);
-		v = Eval(nResults);
-
-		if (isExpansion == 1)
-		{
-		    // This is an expansion. There are two possible cases
-			if (nResults == 2)
-				expandVector(v[0], v[1], (v[0] < v[1] ? 1.0 : -1.0), vResults);
-			else if (nResults == 3)
-				expandVector(v[0], v[2], v[1], vResults);
-		}
-		else
-		{
-		    // This is no expansion. Simply store the results
-			for (int n = 0; n < nResults; n++)
-			{
-				vResults.push_back(v[n]);
-			}
-		}
+            if (isExpansion == 1)
+            {
+                // This is an expansion. There are two possible cases
+                if (nResults == 2)
+                    expandVector(v[0], v[1], (v[0] < v[1] ? 1.0 : -1.0), vResults);
+                else if (nResults == 3)
+                    expandVector(v[0], v[2], v[1], vResults);
+            }
+            else
+            {
+                // This is no expansion. Simply store the results
+                vResults.insert(vResults.end(), v, v+nResults);
+            }
+        }
 	}
 
 

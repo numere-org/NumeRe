@@ -223,6 +223,7 @@ string getNextIndex(string& sArgList, bool bCut = true);
 string getNextSemiColonSeparatedToken(string& sArgList, bool bCut = true);
 StringView getNextViewedArgument(StringView& sView);
 StringView getNextViewedIndex(StringView& sView);
+EndlessVector<StringView> getAllArguments(StringView sArgList);
 EndlessVector<string> getAllArguments(string sArgList);
 EndlessVector<string> getAllIndices(string sArgList);
 EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList);
