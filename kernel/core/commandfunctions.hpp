@@ -46,6 +46,7 @@ typedef CommandReturnValues (*CommandFunc)(string&);
 extern mglGraph _fontData;
 
 string removeQuotationMarks(const string& sString);
+static size_t findSettingOption(const std::string& sCmd, const std::string& sOption);
 
 /////////////////////////////////////////////////
 /// \brief This function returns a list of the
@@ -809,17 +810,17 @@ static bool listDirectory(const string& sDir, const string& sParams, const Setti
 	unsigned int nFirstColLength = _option.getWindow() / 2 - 6;
 	bool bOnlyDir = false;
 
-	if (findParameter(sParams, "dir"))
+	if (findSettingOption(sParams, "dir"))
 		bOnlyDir = true;
 
-	if (findParameter(sParams, "pattern", '=') || findParameter(sParams, "p", '='))
+	if (findSettingOption(sParams, "pattern") || findSettingOption(sParams, "p"))
 	{
 		int nPos = 0;
 
-		if (findParameter(sParams, "pattern", '='))
-			nPos = findParameter(sParams, "pattern", '=') + 7;
+		if (findSettingOption(sParams, "pattern"))
+			nPos = findSettingOption(sParams, "pattern");
 		else
-			nPos = findParameter(sParams, "p", '=') + 1;
+			nPos = findSettingOption(sParams, "p");
 
 		sPattern = getArgAtPos(sParams, nPos);
 		StripSpaces(sPattern);
@@ -1115,14 +1116,14 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 	bool bFreePath = false;
 
 	// Extract a search pattern
-	if (findParameter(__sCmd, "pattern", '=') || findParameter(__sCmd, "p", '='))
+	if (findSettingOption(__sCmd, "pattern") || findSettingOption(__sCmd, "p"))
 	{
 		int nPos = 0;
 
-		if (findParameter(__sCmd, "pattern", '='))
-			nPos = findParameter(__sCmd, "pattern", '=') + 7;
+		if (findSettingOption(__sCmd, "pattern"))
+			nPos = findSettingOption(__sCmd, "pattern");
 		else
-			nPos = findParameter(__sCmd, "p", '=') + 1;
+			nPos = findSettingOption(__sCmd, "p");
 
 		sPattern = getArgAtPos(__sCmd, nPos);
 		StripSpaces(sPattern);
@@ -1130,6 +1131,8 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 		if (sPattern.length())
 			sPattern = _lang.get("BUILTIN_LISTFILES_FILTEREDFOR", sPattern);
 	}
+
+	NumeReKernel::toggleTableStatus();
 
 	// Write the headline
 	make_hline();
@@ -1144,9 +1147,10 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 	make_hline();
 
 	// Find the specified folder
-	if (findParameter(__sCmd, "files", '='))
+	size_t nPos = findSettingOption(__sCmd, "files");
+
+	if (nPos && sCmd[nPos-1] == '=')
 	{
-		int nPos = findParameter(__sCmd, "files", '=') + 5;
 		sSpecified = getArgAtPos(__sCmd, nPos);
 		StripSpaces(sSpecified);
 
@@ -1239,6 +1243,8 @@ static bool listFiles(const string& sCmd, const Settings& _option)
 	}
 
 	make_hline();
+
+	NumeReKernel::toggleTableStatus();
 	return true;
 }
 
@@ -2071,15 +2077,15 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
 /////////////////////////////////////////////////
 static size_t findSettingOption(const std::string& sCmd, const std::string& sOption)
 {
-    size_t pos = findParameter(sCmd, sOption);
+    size_t pos = findParameter(sCmd, sOption, '=');
 
     if (pos)
-        return pos-1+sOption.length();
+        return pos+sOption.length();
 
-    pos = findParameter(sCmd, sOption, '=');
+    pos = findParameter(sCmd, sOption);
 
     if (pos)
-        return pos + sOption.length();
+        return pos-1 + sOption.length();
 
     pos = sCmd.find(sOption);
 
@@ -5136,18 +5142,15 @@ static CommandReturnValues cmd_list(string& sCmd)
 
     string sArgument;
 
-    if (findParameter(sCmd, "files") || (findParameter(sCmd, "files", '=')))
+    if (findSettingOption(sCmd, "files"))
         listFiles(sCmd, _option);
-    else if (findParameter(sCmd, "var"))
+    else if (findSettingOption(sCmd, "var"))
         listDeclaredVariables(_parser, _option, _data);
-    else if (findParameter(sCmd, "const"))
+    else if (findSettingOption(sCmd, "const"))
         listConstants(_parser, _option);
-    else if ((findParameter(sCmd, "func") || findParameter(sCmd, "func", '=')))
+    else if (findSettingOption(sCmd, "func"))
     {
-        if (findParameter(sCmd, "func", '='))
-            sArgument = getArgAtPos(sCmd, findParameter(sCmd, "func", '=') + 4);
-        else
-            listFunctions(_option, "all");
+        sArgument = getArgAtPos(sCmd, findSettingOption(sCmd, "func"));
 
         if (sArgument == "num" || sArgument == "numerical")
             listFunctions(_option, "num");
@@ -5185,18 +5188,16 @@ static CommandReturnValues cmd_list(string& sCmd)
             listFunctions(_option, "all");
 
     }
-    else if (findParameter(sCmd, "logic"))
+    else if (findSettingOption(sCmd, "logic"))
         listLogicalOperators(_option);
-    else if (findParameter(sCmd, "cmd"))
+    else if (findSettingOption(sCmd, "cmd"))
         listCommands(_option);
-    else if (findParameter(sCmd, "define"))
+    else if (findSettingOption(sCmd, "define"))
         listDefinitions(_functions, _option);
-    else if (findParameter(sCmd, "units"))
+    else if (findSettingOption(sCmd, "units"))
         listUnitConversions(_option);
-    else if (findParameter(sCmd, "plugins"))
+    else if (findSettingOption(sCmd, "plugins"))
         listInstalledPlugins(_parser, _data, _option);
-    else
-        doc_Help("list", _option);
 
     return COMMAND_PROCESSED;
 }

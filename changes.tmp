@@ -10,3 +10,4 @@ Applied	It's now possible to extract single or multiple channels from image file
 New	The command "close" may be used to close many floating windows at once.
 Added	Multiple expansions and vectors may now be combined into a single vector: {a,b,c:d,e,...}
 New	The function "strip()" may be used to remove pre- and suffixes from strings.
+Cleaned	The "list" command may now be used also without the "parameter-dash"
