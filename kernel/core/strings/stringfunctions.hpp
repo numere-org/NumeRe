@@ -21,6 +21,7 @@
 #include "../../kernel.hpp"
 #include <boost/tokenizer.hpp>
 #include <regex>
+#include <sstream>
 #define DEFAULT_NUM_ARG INT_MIN
 // define the "End of transmission block" as string separator
 #define NEWSTRING (char)23
@@ -1787,6 +1788,92 @@ static string strfnc_sum(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the dectobase()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_dectobase(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    std::stringstream stream;
+
+    if (funcArgs.sArg1 == "hex")
+        stream.setf(std::ios::hex, std::ios::basefield);
+    else if (funcArgs.sArg1 == "oct")
+        stream.setf(std::ios::oct, std::ios::basefield);
+    else if (funcArgs.sArg1 == "bin")
+    {
+        int i = 0;
+        std::string ret;
+
+        while ((1 << i) <= funcArgs.nArg1)
+        {
+            if (funcArgs.nArg1 & (1 << i))
+                ret.insert(0, "1");
+            else
+                ret.insert(0, "0");
+
+            i++;
+        }
+
+        if (!ret.length())
+            ret = "0";
+
+        return "\"" + ret + "\"";
+    }
+
+    stream.setf(std::ios::showbase);
+    stream << funcArgs.nArg1;
+    std::string ret;
+    stream >> ret;
+
+    return "\"" + ret + "\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation if the basetodec()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_basetodec(StringFuncArgs& funcArgs)
+{
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    std::stringstream stream;
+
+    if (funcArgs.sArg1 == "hex")
+        stream.setf(std::ios::hex, std::ios::basefield);
+    else if (funcArgs.sArg1 == "oct")
+        stream.setf(std::ios::oct, std::ios::basefield);
+    else if (funcArgs.sArg1 == "bin")
+    {
+        int ret = 0;
+
+        for (int i = funcArgs.sArg2.length() - 1; i >= 0; i--)
+        {
+            if (funcArgs.sArg2[i] == '1')
+                ret += intPower(2, funcArgs.sArg2.length()-1 - i);
+        }
+
+        return toString(ret);
+    }
+
+    stream << funcArgs.sArg2;
+    int ret;
+    stream >> ret;
+
+    return toString(ret);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function is used to construct
 /// the string map.
 ///
@@ -1802,8 +1889,10 @@ static map<string, StringFuncHandle> getStringFuncHandles()
 
     mHandleTable["and"]                 = StringFuncHandle(VAL, strfnc_and, true);
     mHandleTable["ascii"]               = StringFuncHandle(STR, strfnc_ascii, false);
+    mHandleTable["basetodec"]           = StringFuncHandle(STR_STR, strfnc_basetodec, false);
     mHandleTable["char"]                = StringFuncHandle(STR_VAL, strfnc_char, false);
     mHandleTable["cnt"]                 = StringFuncHandle(STR, strfnc_cnt, true);
+    mHandleTable["dectobase"]           = StringFuncHandle(STR_VAL, strfnc_dectobase, false);
     mHandleTable["findfile"]            = StringFuncHandle(STR_STROPT, strfnc_findfile, false);
     mHandleTable["findparam"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findparam, false);
     mHandleTable["findtoken"]           = StringFuncHandle(STR_STR_STROPT, strfnc_findtoken, false);

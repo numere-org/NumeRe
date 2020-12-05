@@ -11,3 +11,5 @@ New	The command "close" may be used to close many floating windows at once.
 Added	Multiple expansions and vectors may now be combined into a single vector: {a,b,c:d,e,...}
 New	The function "strip()" may be used to remove pre- and suffixes from strings.
 Cleaned	The "list" command may now be used also without the "parameter-dash"
+New	The function "dectobase()" may be used to convert integer values in the decimal base to the hexadecimal, octal or binary base.
+New	The function "basetodec()" may be used to convert values in either the hexadecimal, the octal or the binary base into integer values in the decimal base.
