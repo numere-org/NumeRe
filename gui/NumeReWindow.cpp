@@ -4625,6 +4625,7 @@ void NumeReWindow::EvaluateOptions()
         edit->UpdateSyntaxHighlighting();
         edit->SetCaretPeriod(m_options->GetCaretBlinkTime());
         edit->AnalyseCode();
+        edit->SetUseTabs(m_options->isEnabled(SETTING_B_USETABS));
     }
 
     if (m_debugViewer)

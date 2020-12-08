@@ -221,6 +221,7 @@ void OptionsDialog::CreateConfigPage()
     m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
     m_showToolbarText = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
     m_FilePathsInTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_FILEPATHS"));
+    m_useTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_USE_TABS"));
     m_caretBlinkTime = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
 
     // Create a group
@@ -704,6 +705,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_MODULESINSTACK].active() = m_debuggerShowModules->IsChecked();
     mSettings[SETTING_B_PROCEDUREARGS].active() = m_debuggerShowProcedureArguments->IsChecked();
     mSettings[SETTING_B_HIGHLIGHTLOCALS].active() = m_highlightLocalVariables->IsChecked();
+    mSettings[SETTING_B_USETABS].active() = m_useTabs->IsChecked();
 
     wxString selectedPrintStyleString = m_printStyle->GetValue();
 
@@ -795,6 +797,7 @@ void OptionsDialog::InitializeDialog()
     m_keepBackupFiles->SetValue(mSettings[SETTING_B_USEREVISIONS].active());
     m_foldDuringLoading->SetValue(mSettings[SETTING_B_FOLDLOADEDFILE].active());
     m_highlightLocalVariables->SetValue(mSettings[SETTING_B_HIGHLIGHTLOCALS].active());
+    m_useTabs->SetValue(mSettings[SETTING_B_USETABS].active());
 
     m_debuggerFocusLine->SetValue(mSettings[SETTING_V_FOCUSEDLINE].value());
     m_debuggerDecodeArguments->SetValue(mSettings[SETTING_B_DECODEARGUMENTS].active());
