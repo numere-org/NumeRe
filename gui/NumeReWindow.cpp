@@ -1568,6 +1568,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_currentEd->AddProcedureDocumentation();
             break;
         }
+        case ID_MENU_EXPORT_AS_HTML:
+        {
+            m_currentEd->OnExtractAsHTML();
+            break;
+        }
 
         case ID_MENU_PRINT_PAGE:
         {
@@ -4787,6 +4792,7 @@ void NumeReWindow::UpdateMenuBar()
 
     menuTools->Append(ID_MENU_CREATE_DOCUMENTATION, _guilang.get("GUI_MENU_CREATE_DOCUMENTATION"), _guilang.get("GUI_MENU_CREATE_DOCUMENTATION_TTP"));
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
+    menuTools->Append(ID_MENU_EXPORT_AS_HTML, _guilang.get("GUI_MENU_EXPORT_AS_HTML"), _guilang.get("GUI_MENU_EXPORT_AS_HTML_TTP"));
     menuTools->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
     menuTools->AppendSeparator();
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_ANALYSIS"), menuAnalyzer);

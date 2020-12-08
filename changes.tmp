@@ -13,3 +13,4 @@ New	The function "strip()" may be used to remove pre- and suffixes from strings.
 Cleaned	The "list" command may now be used also without the "parameter-dash"
 New	The function "dectobase()" may be used to convert integer values in the decimal base to the hexadecimal, octal or binary base.
 New	The function "basetodec()" may be used to convert values in either the hexadecimal, the octal or the binary base into integer values in the decimal base.
+New	It is now possible to extract styled text from the editor converted to preformatted HTML and copied directly to the clipboard.

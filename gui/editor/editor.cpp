@@ -35,6 +35,7 @@
 #include <wx/datetime.h>
 #include <wx/stdpaths.h>
 #include <wx/tokenzr.h>
+#include <wx/clipbrd.h>
 #include <vector>
 #include <string>
 #include <set>
@@ -6475,6 +6476,32 @@ void NumeReEditor::OnTranspose()
 
 
 /////////////////////////////////////////////////
+/// \brief On MenuEvent handler for the extract
+/// as HTML functionality of the editor.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::OnExtractAsHTML()
+{
+    int nFirstLine = 0;
+    int nLastLine = -1;
+
+    if (HasSelection())
+    {
+        nFirstLine = LineFromPosition(GetSelectionStart());
+        nLastLine = LineFromPosition(GetSelectionEnd());
+
+        // Decrement, if first position is selected
+        if (GetSelectionEnd() == PositionFromLine(nLastLine))
+            nLastLine--;
+    }
+
+    ExtractAsHTML(nFirstLine, nLastLine);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Displays the duplicated code dialog.
 ///
 /// \return bool
@@ -7885,6 +7912,71 @@ void NumeReEditor::Transpose(int nFirstLine, int nLastLine)
     // Replace the original section with the
     // transposed table
     Replace(nFirstPos, nLastPos, finalLayout);
+}
+
+
+void NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
+{
+    wxString sHtml = "<pre style=\"display: block; overflow-x: auto; padding: 0.5em; background-color: rgb(244, 244, 244); color: rgb(0, 0, 0); font-family: consolas, monospace;\">";
+
+    if (nFirstLine < 0)
+		nFirstLine = 0;
+
+	if (nLastLine <= 0 || nLastLine > GetLineCount())
+		nLastLine = GetLineCount()-1;
+
+    int nFirstPos = PositionFromLine(nFirstLine);
+    int nLastPos = GetLineEndPosition(nLastLine);
+    int nLastStatePosition = nFirstPos;
+    wxTextAttr textAttr;
+
+    for (int i = nFirstPos; i < nLastPos; i++)
+    {
+        if (GetStyleAt(i) != GetStyleAt(nLastStatePosition) || i+1 == nLastPos)
+        {
+            int style = GetStyleAt(nLastStatePosition);
+            wxString textRange;
+
+            if (i+1 == nLastPos)
+                textRange = GetTextRange(nLastStatePosition, i+1);
+            else
+                textRange = GetTextRange(nLastStatePosition, i);
+
+            if (textRange.find_first_not_of(" \r\t\n") == std::string::npos)
+            {
+                sHtml += textRange;
+                nLastStatePosition = i;
+                continue;
+            }
+
+            sHtml += "<span style=\"color: rgb(" + toString(StyleGetForeground(style).Red()) + ", " + toString(StyleGetForeground(style).Green()) + ", " + toString(StyleGetForeground(style).Blue()) + ");";
+
+            if (StyleGetBackground(style) != *wxWHITE)
+                sHtml += " background-color: rgb(" + toString(StyleGetBackground(style).Red()) + ", " + toString(StyleGetBackground(style).Green()) + ", " + toString(StyleGetBackground(style).Blue()) + ");";
+
+            if (StyleGetItalic(style))
+                sHtml += " font-style: italic;";
+
+            if (StyleGetBold(style))
+                sHtml += " font-weight: bold;";
+
+            if (StyleGetUnderline(style))
+                sHtml += " text-decoration: underline;";
+
+            sHtml += "\">" + textRange + "</span>";
+            nLastStatePosition = i;
+        }
+    }
+
+    sHtml += "</pre>";
+
+    sHtml.Replace("\t", "    ");
+
+    if (wxTheClipboard->Open())
+    {
+        wxTheClipboard->SetData(new wxTextDataObject(sHtml));
+        wxTheClipboard->Close();
+    }
 }
 
 

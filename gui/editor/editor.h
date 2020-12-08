@@ -211,6 +211,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnAbstrahizeSection(wxCommandEvent& event);
 		void OnAbstrahizeSectionFromMenu();
 		void OnTranspose();
+		void OnExtractAsHTML();
 
 		void OnAnalyzerTimer(wxTimerEvent& event);
 		bool InitDuplicateCode();
@@ -246,6 +247,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void ApplyAutoIndentation(int nFirstLine = 0, int nLastLine = -1);
 		void ApplyAutoFormat(int nFirstLine = 0, int nLastLine = -1);
 		void Transpose(int nFirstLine = 0, int nLastLine = -1);
+		void ExtractAsHTML(int nFirstLine = 0, int nLastLine = -1);
 
 		void ToggleSettings(int _setting);
 		bool getEditorSetting(EditorSettings _setting);
