@@ -262,6 +262,7 @@ class NumeReWindow : public wxFrame
         int CopyEditorSettings(FileFilterType _fileType);
 
         void OnMenuEvent(wxCommandEvent &event);
+        void OnAskForNewFile();
         void OnHelp();
         void OnAbout();
         void OnPrintPreview();

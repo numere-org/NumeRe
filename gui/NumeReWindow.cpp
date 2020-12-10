@@ -1354,6 +1354,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             compileLaTeX();
             break;
         }
+        case ID_MENU_NEW_ASK:
+        {
+            OnAskForNewFile();
+            break;
+        }
         case ID_MENU_NEW_EMPTY:
         {
             NewFile();
@@ -4858,14 +4863,14 @@ void NumeReWindow::UpdateToolbar()
     SetToolBar(nullptr);
     t = CreateToolBar(style);//new wxToolBar(this, -1, wxDefaultPosition, wxDefaultSize, style);
 
-    t->AddTool(ID_MENU_NEW_EMPTY, _guilang.get("GUI_TB_NEW"), wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
+    t->AddTool(ID_MENU_NEW_ASK, _guilang.get("GUI_TB_NEW"), wxArtProvider::GetBitmap(wxART_NEW, wxART_TOOLBAR), _guilang.get("GUI_TB_NEW_TTP"), wxITEM_DROPDOWN);
     wxMenu* menuNewFile = new wxMenu();
     menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
     menuNewFile->AppendSeparator();
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
-    t->SetDropdownMenu(ID_MENU_NEW_EMPTY, menuNewFile);
+    t->SetDropdownMenu(ID_MENU_NEW_ASK, menuNewFile);
 
     t->AddTool(ID_MENU_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR), _guilang.get("GUI_TB_OPEN_TTP"));
 
@@ -6482,6 +6487,58 @@ void NumeReWindow::OnPrintSetup()
     pageSetupDialog.ShowModal();
     (*g_printData) = pageSetupDialog.GetPageSetupData().GetPrintData();
     (*g_pageSetupData) = pageSetupDialog.GetPageSetupData();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function catches the new
+/// file toolbar button and asks the user for a
+/// specific file type.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnAskForNewFile()
+{
+    // Create a list of possible file types
+    wxArrayString choices;
+    choices.Add(_guilang.get("GUI_MENU_NEW_EMPTYFILE"));
+    choices.Add(_guilang.get("GUI_MENU_NEW_NSCR"));
+    choices.Add(_guilang.get("GUI_MENU_NEW_NPRC"));
+    choices.Add(_guilang.get("GUI_MENU_NEW_PLUGIN"));
+
+    // Remove obsolete menu string items
+    for (size_t i = 0; i < choices.size(); i++)
+    {
+        if (choices[i].find('\t') != std::string::npos)
+            choices[i].erase(choices[i].find('\t'));
+
+        if (choices[i].find('&') != std::string::npos)
+            choices[i].erase(choices[i].find('&'), 1);
+    }
+
+    wxSingleChoiceDialog dialog(this, _guilang.get("GUI_TB_NEW_SELECT"), "NumeRe: " + _guilang.get("GUI_TB_NEW"), choices);
+    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    int ret = dialog.ShowModal();
+
+    if (ret != wxID_CANCEL)
+    {
+        switch (dialog.GetSelection())
+        {
+        case 0:
+            NewFile();
+            break;
+        case 1:
+            NewFile(FILE_NSCR);
+            break;
+        case 2:
+            NewFile(FILE_NPRC);
+            break;
+        case 3:
+            NewFile(FILE_PLUGIN);
+            break;
+        }
+    }
 }
 
 

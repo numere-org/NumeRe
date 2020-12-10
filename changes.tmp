@@ -15,3 +15,4 @@ New	The function "dectobase()" may be used to convert integer values in the deci
 New	The function "basetodec()" may be used to convert values in either the hexadecimal, the octal or the binary base into integer values in the decimal base.
 New	It is now possible to extract styled text from the editor converted to preformatted HTML and copied directly to the clipboard.
 Applied	The user may now select to use whitespaces instead of tabs for indentiation.
+Cleaned	Clicking on the "New file" icon on the toolbar will now prompt a selection dialog instead of opening an empty new file to avoid confusion of new users expecting syntax highlighting.
