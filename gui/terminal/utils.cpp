@@ -3,11 +3,21 @@
 #include "gterm.hpp"
 #include <wx/log.h>
 
-// Returns the encoded color bitlist
+
+/////////////////////////////////////////////////
+/// \brief Returns the encoded color bitlist.
+///
+/// \param fg int
+/// \param bg int
+/// \param flags int
+/// \return int
+///
+/////////////////////////////////////////////////
 int GenericTerminal::calc_color( int fg, int bg, int flags )
 {
 	return (flags & 15) | (fg << 4) | (bg << 8);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private update_changes
@@ -84,6 +94,7 @@ void GenericTerminal::update_changes ()
 	doing_update = 0;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private clear_area
 ///  Clears out a given area on the screen
@@ -101,6 +112,7 @@ void GenericTerminal::clear_area( int start_x, int start_y, int end_x, int end_y
 {
     tm.clearRange(ViewCursor(start_x, start_y), ViewCursor(end_x, end_y));
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private move_cursor
@@ -124,14 +136,31 @@ void GenericTerminal::move_cursor( int x, int y )
         termCursor = tm.getCurrentViewPos();
 }
 
-// Moves the cursor to a location, if this location is editable
+
+/////////////////////////////////////////////////
+/// \brief Moves the cursor to a location, if
+/// this location is editable.
+///
+/// \param x int
+/// \param y int
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::move_cursor_editable_area( int x, int y )
 {
 	if (tm.IsEditable(y, x))
 		move_cursor(x, y);
 }
 
-// Sets a mode flag (only used to make the cursor invisble)
+
+/////////////////////////////////////////////////
+/// \brief Sets a mode flag (only used to make
+/// the cursor invisble).
+///
+/// \param flag int
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::set_mode_flag( int flag )
 {
 	mode_flags |= flag;
@@ -139,7 +168,15 @@ void GenericTerminal::set_mode_flag( int flag )
 	ModeChange(mode_flags);
 }
 
-// Clears a mode flag (mainly used to make the cursor visible again)
+
+/////////////////////////////////////////////////
+/// \brief Clears a mode flag (mainly used to
+/// make the cursor visible again).
+///
+/// \param flag int
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::clear_mode_flag( int flag )
 {
 	mode_flags &= ~flag;

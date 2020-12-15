@@ -43,11 +43,14 @@ void GenericTerminal::normal_input()
         termCursor = tm.getCurrentViewPos();
 }
 
-/** \brief This member function is for printing the kernel's output to the console
- *
- * \return void
- *
- */
+
+/////////////////////////////////////////////////
+/// \brief This member function is for printing
+/// the kernel's output to the console.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::normal_output()
 {
     // Get the output data
@@ -101,7 +104,14 @@ void GenericTerminal::normal_output()
 	sInput_Data.clear();
 }
 
-// Reset the current autocompletion list and the corresponding variables
+
+/////////////////////////////////////////////////
+/// \brief Reset the current autocompletion list
+/// and the corresponding variables.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::resetAutoComp()
 {
 	if (nTabStartPos == -1)
@@ -111,8 +121,16 @@ void GenericTerminal::resetAutoComp()
 	sAutoCompWordStart.clear();
 }
 
-// This member function evalutes the procedure signature and returns its namespace
-// Will only be called from GTerm::tab()
+
+/////////////////////////////////////////////////
+/// \brief This member function evalutes the
+/// procedure signature and returns its
+/// namespace. Will only be called from
+/// GTerm::tab().
+///
+/// \return string
+///
+/////////////////////////////////////////////////
 string GenericTerminal::getProcNameSpace()
 {
 	string sNameSpace;
@@ -137,13 +155,25 @@ string GenericTerminal::getProcNameSpace()
 	return sNameSpace;
 }
 
-// Carriage return
+
+/////////////////////////////////////////////////
+/// \brief Insert a carriage return.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::cr()
 {
 	move_cursor(0, termCursor.y);
 }
 
-// Line feed
+
+/////////////////////////////////////////////////
+/// \brief Insert a line feed.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::lf()
 {
 	tm.newLine();
@@ -154,7 +184,13 @@ void GenericTerminal::lf()
 	}
 }
 
-// Form feed (not used)
+
+/////////////////////////////////////////////////
+/// \brief Insert a form feed (not used).
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::ff()
 {
 	clear_area(0, scroll_top, width - 1, scroll_bot);
@@ -162,7 +198,15 @@ void GenericTerminal::ff()
 	move_cursor(0, scroll_top);
 }
 
-// Evalute the tab key -> Try to autocomplete the current input
+
+/////////////////////////////////////////////////
+/// \brief Evaluate the tab key (do not insert a
+/// tab character but try to autocomplete the
+/// current input).
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::tab()
 {
     // Determine, whether this is the first tab key press (in this case
@@ -219,7 +263,13 @@ void GenericTerminal::tab()
 	normal_input();
 }
 
-// backspace
+
+/////////////////////////////////////////////////
+/// \brief Perform a backspace operation.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::bs()
 {
     // Convert the current view cursor to a logical cursor
@@ -248,7 +298,13 @@ bool GenericTerminal::bs()
 	return true;
 }
 
-// Delete
+
+/////////////////////////////////////////////////
+/// \brief Perform a delete key operation.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::del()
 {
     // Convert the current view cursor to a logical cursor
@@ -271,13 +327,60 @@ bool GenericTerminal::del()
 	return true;
 }
 
-// bell sound (not used)
+
+/////////////////////////////////////////////////
+/// \brief Delete a selected block.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool GenericTerminal::delSelected()
+{
+    if (!tm.IsEditable(termCursor.y, termCursor.x) || !tm.isSelected(termCursor))
+        return false;
+
+    LogicalCursor curStart = tm.toLogicalCursor(termCursor);
+    LogicalCursor curEnd = tm.toLogicalCursor(termCursor);
+
+    // Reverse the starting point (if selected left of
+    // the current cursor)
+    while (tm.IsEditableLogical(curStart) && tm.isSelectedLogical(curStart) && curStart.pos)
+        curStart--;
+
+    curStart++;
+
+    // Advance the ending point (if selected right of
+    // the current cursor)
+    while (tm.IsEditableLogical(curEnd) && tm.isSelectedLogical(curEnd) && curEnd < tm.getCurrentLogicalPos())
+        curEnd++;
+
+    tm.clearRange(tm.toViewCursor(curStart), tm.toViewCursor(curEnd));
+
+    termCursor = tm.toViewCursor(curStart);
+    update_changes();
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Perform a bell sound (not used).
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::bell()
 {
 	Bell();
 }
 
-// Resets the terminal so that it starts with an empty buffer
+
+/////////////////////////////////////////////////
+/// \brief Resets the terminal, so that it starts
+/// with an empty buffer.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::reset()
 {
 	bg_color = 0;
@@ -294,7 +397,13 @@ void GenericTerminal::reset()
 	tm.Reset();
 }
 
-// Moves the cursor to the left
+
+/////////////////////////////////////////////////
+/// \brief Moves the cursor to the left.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::cursor_left()
 {
     LogicalCursor cursor = tm.toLogicalCursor(termCursor);
@@ -310,7 +419,13 @@ bool GenericTerminal::cursor_left()
     return true;
 }
 
-// Moves the cursor to the right
+
+/////////////////////////////////////////////////
+/// \brief Moves the cursor to the right.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::cursor_right()
 {
     LogicalCursor cursor = tm.toLogicalCursor(termCursor);
@@ -325,7 +440,14 @@ bool GenericTerminal::cursor_right()
     return true;
 }
 
-// Either moves the cursor up or performs a history jump
+
+/////////////////////////////////////////////////
+/// \brief Either moves the cursor up or performs
+/// a history jump.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::cursor_up()
 {
 	if (!tm.IsEditable(termCursor.y - 1, termCursor.x))
@@ -360,7 +482,14 @@ bool GenericTerminal::cursor_up()
 	return true;
 }
 
-// Either moves the cursor down or performs a history jump
+
+/////////////////////////////////////////////////
+/// \brief Either moves the cursor down or
+/// performs a history jump.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::cursor_down()
 {
 	if (!tm.IsEditable(termCursor.y + 1, termCursor.x))
@@ -395,7 +524,13 @@ bool GenericTerminal::cursor_down()
 	return true;
 }
 
-// Moves the cursor one word to the left
+
+/////////////////////////////////////////////////
+/// \brief Moves the cursor one word to the left.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::ctrl_left()
 {
     LogicalCursor cursor = tm.toLogicalCursor(termCursor);
@@ -425,7 +560,14 @@ bool GenericTerminal::ctrl_left()
     return true;
 }
 
-// Moves the cursor one word to the right
+
+/////////////////////////////////////////////////
+/// \brief Moves the cursor one word to the
+/// right.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::ctrl_right()
 {
     LogicalCursor cursor = tm.toLogicalCursor(termCursor);
@@ -447,7 +589,14 @@ bool GenericTerminal::ctrl_right()
     return true;
 }
 
-// Moves the cursor to the left most position in the current line
+
+/////////////////////////////////////////////////
+/// \brief Moves the cursor to the leftmost
+/// position in the current line.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::home()
 {
 	int n = termCursor.x;
@@ -465,7 +614,14 @@ bool GenericTerminal::home()
 	return true;
 }
 
-// Moves the cursor to the rightmost position in the current line
+
+/////////////////////////////////////////////////
+/// \brief Moves the cursor to the rightmost
+/// position in the current line.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::end()
 {
 	size_t n = termCursor.x;
@@ -483,7 +639,14 @@ bool GenericTerminal::end()
 	return true;
 }
 
-// Moves the cursor to the left most position in the whole input
+
+/////////////////////////////////////////////////
+/// \brief Moves the cursor to the leftmost
+/// position in the whole input.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::front()
 {
     LogicalCursor cursor = tm.toLogicalCursor(termCursor);
@@ -507,7 +670,14 @@ bool GenericTerminal::front()
 	return true;
 }
 
-// Moves the cursor to the rightmost position in the whole input
+
+/////////////////////////////////////////////////
+/// \brief Moves the cursor to the rightmost
+/// position in the whole input.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GenericTerminal::back()
 {
     LogicalCursor cursor = tm.toLogicalCursor(termCursor);
@@ -531,13 +701,27 @@ bool GenericTerminal::back()
 	return true;
 }
 
-// Erases the current line in the internal buffer
+
+/////////////////////////////////////////////////
+/// \brief Erases the current line in the
+/// internal buffer.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::erase_line()
 {
     tm.eraseLine();
 }
 
-// Erases alle user-written contents from the current line
+
+/////////////////////////////////////////////////
+/// \brief Erases alle user-written contents from
+/// the current line.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GenericTerminal::erase_usercontent_line()
 {
     // Go to the very last position first

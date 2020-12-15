@@ -28,9 +28,14 @@ using namespace std;
 
 class GenericTerminal;
 
-// Cursor, which is used in the TextManager to identify the
-// actual line and position in the m_text variable. The TextManager
-// is able to convert this cursor into a ViewCursor
+
+/////////////////////////////////////////////////
+/// \brief Cursor, which is used in the
+/// TextManager to identify the actual line and
+/// position in the m_text variable. The
+/// TextManager is able to convert this cursor
+/// into a ViewCursor.
+/////////////////////////////////////////////////
 struct LogicalCursor
 {
 	size_t pos;
@@ -110,8 +115,13 @@ struct LogicalCursor
 	}
 };
 
-// Cursor, which is used in the terminal. The TextManager
-// is able to convert this cursor into a LogicalCursor
+
+
+/////////////////////////////////////////////////
+/// \brief Cursor, which is used in the terminal.
+/// The TextManager is able to convert this
+/// cursor into a LogicalCursor.
+/////////////////////////////////////////////////
 struct ViewCursor
 {
 	size_t x;
@@ -179,8 +189,12 @@ struct ViewCursor
 	}
 };
 
-// This structure combines the rendered line with its
-// colors and its coordinates
+
+
+/////////////////////////////////////////////////
+/// \brief This structure combines the rendered
+/// line with its colors and its coordinates.
+/////////////////////////////////////////////////
 struct RenderedLine
 {
 	string sLine;
@@ -188,9 +202,14 @@ struct RenderedLine
 	vector<LogicalCursor> coords;
 };
 
-// This structure combines the character information
-// needed in the terminal: the character itself, the
-// associated colour and the editable flag
+
+
+/////////////////////////////////////////////////
+/// \brief This structure combines the character
+/// information needed in the terminal: the
+/// character itself, the associated colour and
+/// the editable flag.
+/////////////////////////////////////////////////
 struct Character
 {
     char m_char;
@@ -291,8 +310,13 @@ struct Character
     }
 };
 
-// This class resembles an extended string class,
-// which contains the extended character class.
+
+
+/////////////////////////////////////////////////
+/// \brief This class resembles an extended
+/// string class, which contains the extended
+/// character class.
+/////////////////////////////////////////////////
 class CharacterVector : public vector<Character>
 {
     private:
@@ -451,9 +475,15 @@ class CharacterVector : public vector<Character>
         }
 };
 
-// This class manages the actual text by storing it in an internal buffer.
-// During an update the TextManager will render the text in the internal
-// buffer into the text block in screen coordinates
+
+
+/////////////////////////////////////////////////
+/// \brief This class manages the actual text by
+/// storing it in an internal buffer. During an
+/// update the TextManager will render the text
+/// in the internal buffer into the text block in
+/// screen coordinates.
+/////////////////////////////////////////////////
 class TextManager
 {
 	public:
@@ -480,6 +510,7 @@ class TextManager
 		void selectText(const ViewCursor& viewCursor, bool bSelect = true);
 		void unselectAll();
 		bool isSelected(const ViewCursor& viewCursor) const;
+		bool isSelectedLogical(const LogicalCursor& cursor) const;
 		string getSelectedText() const;
 		string getCurrentInputLine() const;
 
@@ -553,3 +584,4 @@ class TextManager
 
 
 #endif
+

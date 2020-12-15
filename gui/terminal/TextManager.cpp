@@ -298,7 +298,9 @@ vector<unsigned short> TextManager::getRenderedColors(size_t viewLine) const
     // Copy, whether there is a part of the current line is selected
     for (size_t i = 0; i < m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].coords.size(); i++)
     {
-        if (m_managedText[m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].coords[i].line][m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].coords[i].pos].isSelected())
+        LogicalCursor coords = m_renderedBlock[m_topLine - m_numLinesScrolledUp + viewLine].coords[i];
+
+        if (m_managedText[coords.line].size() > coords.pos && m_managedText[coords.line][coords.pos].isSelected())
             colors[i] |= GenericTerminal::SELECTED;
     }
 
@@ -814,9 +816,22 @@ void TextManager::unselectAll()
 /////////////////////////////////////////////////
 bool TextManager::isSelected(const ViewCursor& viewCursor) const
 {
-    // Convert the view cursor into a logical cursor
-    LogicalCursor cursor = toLogicalCursor(viewCursor);
+    // Convert the view cursor into a logical cursor and
+    // check for selection
+    return isSelectedLogical(toLogicalCursor(viewCursor));
+}
 
+
+/////////////////////////////////////////////////
+/// \brief Determines, whether the pointed
+/// character is selected.
+///
+/// \param cursor const LogicalCursor&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool TextManager::isSelectedLogical(const LogicalCursor& cursor) const
+{
     // Ensure that the cursor is valid
     if (!cursor)
         return false;

@@ -34,7 +34,11 @@ class GenericTerminal;
 typedef void (GenericTerminal::*StateFunc)();
 
 
-// The generic terminal
+/////////////////////////////////////////////////
+/// \brief An implementation of a generic
+/// terminal, which has to be specialized in the
+/// child classes.
+/////////////////////////////////////////////////
 class GenericTerminal
 {
     public:
@@ -105,6 +109,7 @@ class GenericTerminal
         // non-printing characters
         void cr(), lf(), ff(), bell(), tab();
         bool bs(), del();
+        bool delSelected();
 
         // escape sequence actions
         void reset();

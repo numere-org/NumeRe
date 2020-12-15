@@ -949,36 +949,37 @@ NumeReTerminal::OnChar(wxKeyEvent& event)
 		int keyCode = (int)event.GetKeyCode();
 		int len = 1;
 
-		// char buffer has to be initialized. Otherwise it might contain unnecessary characters
-		char buf[] = {"\0\0\0\0\0\0\0\0\0\0"};
-
-		buf[0] = (char)keyCode;
-
 		// Clear selection mode
 		// can probably be modified to clear the selected input line
 		if (HasSelection())
+        {
+            if (keyCode == WXK_DELETE || keyCode == WXK_BACK)
+            {
+                delSelected();
+                ClearSelection();
+                return;
+            }
+            else if (keyCode < WXK_START)
+                delSelected();
+
 			ClearSelection();
+        }
 
         // Filter special keycodes
         if (filterKeyCodes(keyCode, event.ControlDown()))
             return;
 
-		GenericTerminal::resetAutoComp();
+		std::string buf = " ";
+		buf[0] = (char)keyCode;
 
-		// Unclear if this is needed
-        //if ((GetMode() & NEWLINE) && !(GetMode() & PC) && (buf[len - 1] == 10))
-        //{
-        //    buf[len - 1] = 13;
-        //    buf[len] = 10;
-        //    len++;
-        //}
+		GenericTerminal::resetAutoComp();
 
         wxClientDC dc(this);
 
         m_curDC = &dc;
 
         // Process the input line
-        GenericTerminal::ProcessInput(len, string((char*)buf));
+        GenericTerminal::ProcessInput(len, buf);
 
         m_curDC = nullptr;
 	}
@@ -1013,9 +1014,8 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
         case WXK_BACK:
             GenericTerminal::resetAutoComp();
             if (GenericTerminal::bs())
-            {
                 Refresh();
-            }
+
             return true;
         case WXK_TAB:
             GenericTerminal::tab();
@@ -1066,9 +1066,8 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
         case WXK_DELETE:
             GenericTerminal::resetAutoComp();
             if (GenericTerminal::del())
-            {
                 Refresh();
-            }
+
             return true;
     }
 
@@ -1139,9 +1138,6 @@ NumeReTerminal::OnKeyDown(wxKeyEvent& event)
 			else if (event.GetKeyCode() == 'V')
 			{
 			    // Get the text from the clipboard and process it as new input
-				if (HasSelection())
-					ClearSelection();
-
 				if (wxTheClipboard->Open())
 				{
 					if (wxTheClipboard->IsSupported(wxDF_TEXT))
@@ -1964,6 +1960,15 @@ NumeReTerminal::ResizeTerminal(int width, int height)
 void NumeReTerminal::ProcessInput(int len, const string& sData)
 {
 	scrollToInput();
+
+	// Delete selected characters and/or remove
+	// the selection
+    if (HasSelection())
+    {
+        delSelected();
+        ClearSelection();
+    }
+
 
 	wxClientDC
 	dc(this);

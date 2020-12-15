@@ -21,6 +21,7 @@ void GenericTerminal::Update()
 	update_changes();
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual ProcessInput
 ///  Processes the input of the GenericTerminal and hands it over to the internal buffer
@@ -82,6 +83,7 @@ void GenericTerminal::Reset()
 {
 	reset();
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public virtual ResizeTerminal
