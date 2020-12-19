@@ -46,6 +46,7 @@ bool writeAudioFile(string& sCmd, Parser& _parser, MemoryManager& _data, Functio
 bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool analyzePulse(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 
 #endif // COMMAND_IMPLEMENTATIONS_HPP

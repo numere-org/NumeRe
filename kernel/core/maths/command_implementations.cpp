@@ -4641,7 +4641,7 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
             nSamples = 0;
     }
 
-    sTargetCache = evaluateTargetOptionInCommand(sCmd, "stdfat", _target, _parser, _data, _option);
+    sTargetCache = evaluateTargetOptionInCommand(sCmd, "stfdat", _target, _parser, _data, _option);
 
     // Indices lesen
     getIndices(sCmd, _idx, _parser, _data, _option);
@@ -4717,6 +4717,175 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
     }
 
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function is a helper for
+/// boneDetection to map/interpolate the
+/// calculated values to the final grid.
+///
+/// \param vAxis const std::vector<double>&
+/// \param dInterpolVal double
+/// \return double
+///
+/////////////////////////////////////////////////
+static double interpolateToGrid(const std::vector<double>& vAxis, double dInterpolVal)
+{
+    if (isnan(dInterpolVal))
+        return dInterpolVal;
+
+    int nBaseVal = (int)dInterpolVal;
+
+    if (nBaseVal >= 0 && nBaseVal+1 < vAxis.size())
+        return vAxis[nBaseVal] + (vAxis[nBaseVal+1] - vAxis[nBaseVal]) * (dInterpolVal - nBaseVal);
+    else if (nBaseVal > 0 && nBaseVal < vAxis.size()) // Repeat last distance
+        return vAxis[nBaseVal] + (vAxis[nBaseVal] - vAxis[nBaseVal-1]) * (dInterpolVal - nBaseVal);
+
+    // nBaseVal below zero or not in the grid
+    return NAN;
+}
+
+/////////////////////////////////////////////////
+/// \brief This function is the implementation of
+/// the detect command.
+///
+/// \param sCmd string&
+/// \param _parser Parser&
+/// \param _data MemoryManager&
+/// \param _functions FunctionDefinitionManager&
+/// \param _option const Settings&
+/// \return void
+///
+/////////////////////////////////////////////////
+void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+{
+    string sDataset = "";
+    std::string sTargetCache;
+    Indices _idx, _target;
+    mglData _mData;
+    double dLevel = NAN, dAttrX = 0.0, dAttrY = 1.0, dMinLen = 0.0;
+
+    sCmd.erase(0, findCommand(sCmd).nPos + 6);
+
+    // Strings parsen
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
+    {
+        string sDummy = "";
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
+    }
+
+    // Funktionen aufrufen
+    if (!_functions.call(sCmd))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
+
+    // detect TABLE() -set minval=LVL attract={x,y} minlen=MIN target=TARGET()
+    if (findParameter(sCmd, "minval", '='))
+    {
+        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "minval", '=') + 6));
+        dLevel = _parser.Eval();
+    }
+
+    if (findParameter(sCmd, "attract", '='))
+    {
+        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "attract", '=') + 7));
+        value_type* v;
+        int nRes;
+        v = _parser.Eval(nRes);
+
+        if (nRes > 1)
+        {
+            dAttrX = fabs(v[0]);
+            dAttrY = fabs(v[1]);
+        }
+        else if (nRes == 1)
+            dAttrY = fabs(v[0]);
+    }
+
+    if (findParameter(sCmd, "minlen", '='))
+    {
+        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "minlen", '=') + 6));
+        dMinLen = fabs(_parser.Eval());
+    }
+
+    sTargetCache = evaluateTargetOptionInCommand(sCmd, "detectdat", _target, _parser, _data, _option);
+
+    // Indices lesen
+    getIndices(sCmd, _idx, _parser, _data, _option);
+    sDataset = sCmd.substr(0, sCmd.find('('));
+    StripSpaces(sDataset);
+
+    if (_idx.row.isOpenEnd())
+        _idx.row.setRange(0, _data.getLines(sDataset)-1);
+
+    if (_idx.col.isOpenEnd())
+        _idx.col.setRange(0, _idx.col.front() + _data.getLines(sDataset, true) - _data.getAppendedZeroes(_idx.col[1], sDataset) + 1);
+
+    // Get x and y axis for the final scaling
+    std::vector<double> vX = _data.getElement(_idx.row, _idx.col.subidx(0, 1), sDataset);
+    std::vector<double> vY = _data.getElement(_idx.row, _idx.col.subidx(1, 1), sDataset);
+
+    _idx.col = _idx.col.subidx(2);
+
+    // Get the data
+    MemoryManager _cache;
+    getData(sDataset, _idx, _data, _cache, 100, false);
+
+    long long int nLines = _cache.getLines("table", false);
+    long long int nCols = _cache.getCols("table", false);
+
+    // Restrict the attraction to not exceed the axis range
+    dAttrX = min(dAttrX, (double)nLines);
+    dAttrY = min(dAttrY, (double)nCols);
+
+    // Use minimal data value if level is NaN
+    if (isnan(dLevel))
+        dLevel = _cache.min("table", "all").front();
+
+    _mData.Create(nLines, nCols);
+
+    // Copy the data to the mglData object
+    for (long long int i = 0; i < nLines; i++)
+    {
+        for (long long int j = 0; j < nCols; j++)
+        {
+            _mData.a[i+j*nLines] = _cache.getElement(i, j, "table");
+        }
+    }
+
+    // Perform the actual bone detection
+    mglData _res = _mData.Detect(dLevel, dAttrY, dAttrX, dMinLen);
+
+    if (_target.row.isOpenEnd())
+        _target.row.setOpenEndIndex(_res.GetNy() + _target.row.front());
+
+    if (_target.col.isOpenEnd())
+        _target.col.setOpenEndIndex(_res.GetNx() + _target.col.front());
+
+    // Copy the results to the target table
+    for (int i = 0; i < _res.GetNy(); i++)
+    {
+        if (_target.row.size() <= i)
+            break;
+
+        for (int j = 0; j < _res.GetNx(); j++)
+        {
+            if (_target.col.size() <= j)
+                break;
+
+            if (!j)
+                _data.writeToTable(_target.row[i], _target.col[j], sTargetCache, interpolateToGrid(vX, _res.a[j+i*_res.GetNx()]));
+            else
+                _data.writeToTable(_target.row[i], _target.col[j], sTargetCache, interpolateToGrid(vY, _res.a[j+i*_res.GetNx()]));
+        }
+    }
+
+    // Write axis labels
+    _data.setHeadLineElement(_target.col[0], sTargetCache, "Structure_x");
+    _data.setHeadLineElement(_target.col[1], sTargetCache, "Structure_y");
+
+    if (_option.systemPrints())
+        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DETECT_SUCCESS", sTargetCache));
 }
 
 

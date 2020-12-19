@@ -5127,6 +5127,26 @@ static CommandReturnValues cmd_datagrid(string& sCmd)
 
 /////////////////////////////////////////////////
 /// \brief This static function implements the
+/// "detect" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_detect(string& sCmd)
+{
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    boneDetection(sCmd, _parser, _data, _functions, _option);
+
+    return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
 /// "list" command.
 ///
 /// \param sCmd string&
@@ -5597,6 +5617,7 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["draw"] = cmd_plotting;
     mCommandFuncMap["draw3d"] = cmd_plotting;
     mCommandFuncMap["define"] = cmd_define;
+    mCommandFuncMap["detect"] = cmd_detect;
     mCommandFuncMap["edit"] = cmd_edit;
     mCommandFuncMap["execute"] = cmd_execute;
     mCommandFuncMap["export"] = saveDataObject;
