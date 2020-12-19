@@ -111,6 +111,9 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
     EVT_MENU            (ID_RENAME_SYMBOLS, NumeReEditor::OnRenameSymbols)
     EVT_MENU            (ID_ABSTRAHIZE_SECTION, NumeReEditor::OnAbstrahizeSection)
+    EVT_MENU            (ID_MENU_COPY, NumeReEditor::OnMenuEvent)
+    EVT_MENU            (ID_MENU_CUT, NumeReEditor::OnMenuEvent)
+    EVT_MENU            (ID_MENU_PASTE, NumeReEditor::OnMenuEvent)
     EVT_IDLE            (NumeReEditor::OnIdle)
     EVT_TIMER           (ID_ANALYZERTIMER, NumeReEditor::OnAnalyzerTimer)
 END_EVENT_TABLE()
@@ -6446,6 +6449,30 @@ void NumeReEditor::OnAbstrahizeSectionFromMenu()
 {
     if (HasSelection())
         this->AbstrahizeSection();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief OnMenu event handler.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::OnMenuEvent(wxCommandEvent& event)
+{
+    switch (event.GetId())
+    {
+        case ID_MENU_COPY:
+            Copy();
+            break;
+        case ID_MENU_CUT:
+            Cut();
+            break;
+        case ID_MENU_PASTE:
+            Paste();
+            break;
+    }
 }
 
 

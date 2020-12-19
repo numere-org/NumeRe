@@ -210,6 +210,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnRenameSymbolsFromMenu();
 		void OnAbstrahizeSection(wxCommandEvent& event);
 		void OnAbstrahizeSectionFromMenu();
+		void OnMenuEvent(wxCommandEvent& event);
 		void OnTranspose();
 		void OnExtractAsHTML();
 
