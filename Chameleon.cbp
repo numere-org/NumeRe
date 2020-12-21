@@ -247,6 +247,7 @@
 			<Add option="-static-libstdc++" />
 			<Add option="-lmgl" />
 			<Add option="-lgsl" />
+			<Add option="-lnoise" />
 			<Add option="-lgslcblas" />
 			<Add option="-Wl,--stack,8388608" />
 			<Add option="-fopenmp" />

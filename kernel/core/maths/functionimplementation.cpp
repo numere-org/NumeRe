@@ -22,6 +22,7 @@
  */
 
 #include "functionimplementation.hpp"
+#include <noise/noise.h>
 
 int nErrorIndices[2] = {-1,-1};
 string sErrorToken = "";
@@ -954,6 +955,46 @@ value_type parser_polynomial(const value_type* vElements, int nElements)
         dResult += vElements[i] * intPower(vElements[0], i-1);
 
     return dResult;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function implements the perlin
+/// noise function.
+///
+/// \param vElements const value_type*
+/// \param nElements int
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_perlin(const value_type* vElements, int nElements)
+{
+    // perlin(x,y,z,seed,freq,oct,pers)
+    if (!nElements)
+        return NAN;
+
+    noise::module::Perlin perlinNoise;
+
+    switch (nElements)
+    {
+        case 1:
+            return perlinNoise.GetValue(vElements[0], 0, 0);
+        case 2:
+            return perlinNoise.GetValue(vElements[0], vElements[1], 0);
+        case 3:
+            return perlinNoise.GetValue(vElements[0], vElements[1], vElements[2]);
+        case 7: // fallthrough intended
+            perlinNoise.SetPersistence(vElements[6]);
+        case 6: // fallthrough intended
+            perlinNoise.SetOctaveCount(intCast(vElements[5]));
+        case 5: // fallthrough intended
+            perlinNoise.SetFrequency(vElements[4]);
+        case 4:
+            perlinNoise.SetSeed(intCast(vElements[3]));
+            return perlinNoise.GetValue(vElements[0], vElements[1], vElements[2]);
+    }
+
+    return NAN;
 }
 
 
