@@ -406,7 +406,7 @@ void NumeReHistory::OnMouseDblClk(wxMouseEvent& event)
     while (line[line.length()-1] == '\r' || line[line.length()-1] == '\n')
         line.erase(line.length()-1);
     if (line.length())
-        m_terminal->pass_command(line.ToStdString());
+        m_terminal->pass_command(line.ToStdString(), false);
 }
 
 void NumeReHistory::OnMouseDn(wxMouseEvent& event)

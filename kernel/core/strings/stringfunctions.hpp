@@ -72,6 +72,7 @@ string removeQuotationMarks(const string& sString)
 {
     if (sString.find('"') == string::npos || sString.front() != '"' || sString.back() != '"')
         return sString;
+
     return sString.substr(1, sString.length() - 2);
 }
 
@@ -90,6 +91,29 @@ string addQuotationMarks(const string& sString)
         return sString;
     else
         return "\"" + sString + "\"";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function evaluates,
+/// whether a string is a valid numerical value.
+///
+/// \param sString const string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isNumericValue(const string& sString)
+{
+    if (sString.find_first_not_of("0123456789.eE+-(){}, ") != string::npos)
+        return false;
+
+    if (sString.find_first_of("1234567890") == string::npos)
+        return false;
+
+    if (tolower(sString.front()) == 'e' || tolower(sString.back()) == 'e')
+        return false;
+
+    return true;
 }
 
 
@@ -1443,7 +1467,12 @@ static string strfnc_getkeyval(StringFuncArgs& funcArgs)
         StripSpaces(funcArgs.sMultiArg[i]);
 
         if (funcArgs.sMultiArg[i] == funcArgs.sArg2)
-            sValues += funcArgs.sMultiArg[i+1] + ",";
+        {
+            if (!isNumericValue(funcArgs.sMultiArg[i+1]))
+                sValues += "\"" + funcArgs.sMultiArg[i+1] + "\",";
+            else
+                sValues += funcArgs.sMultiArg[i+1] + ",";
+        }
     }
 
     // Pop the trailing comma, if the string has a length.
@@ -1456,7 +1485,7 @@ static string strfnc_getkeyval(StringFuncArgs& funcArgs)
         if (funcArgs.nArg1)
             NumeReKernel::issueWarning(_lang.get("PARSERFUNCS_LISTFUNC_GETKEYVAL_WARNING", "\"" + funcArgs.sArg2 + "\""));
 
-        if (funcArgs.sArg3.find_first_not_of("0123456789.eE+-(){},") != string::npos && funcArgs.sArg3.front() != '"')
+        if (!isNumericValue(funcArgs.sArg3) && funcArgs.sArg3.front() != '"')
             sValues = "\"" + funcArgs.sArg3 + "\"";
         else
             sValues = funcArgs.sArg3;

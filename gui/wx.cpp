@@ -123,13 +123,14 @@ END_EVENT_TABLE()
 //		class wxMathGL
 //
 //-----------------------------------------------------------------------------
-wxMGL::wxMGL(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name) : wxWindow(parent, id, pos, size, style, name)
+wxMGL::wxMGL(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, bool frameless, const wxString& name) : wxWindow(parent, id, pos, size, style, name)
 {
     AutoResize = true;
     draw_par = nullptr;
     draw_func = 0;
     gr = nullptr;
     popup = nullptr;
+    draw_cl = nullptr;
     dAzimutalViewPoint = dPolarViewPoint = dPerspective = 0.0;
     x1 = y1 = 0;
     x2 = y2 = 1;
@@ -142,30 +143,35 @@ wxMGL::wxMGL(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& 
     nFrameCounter = 0;
     nFramesToSkip = 2;
     timer = new wxTimer(this, TIMER_ID);
-    m_parentFrame = static_cast<wxFrame*>(parent);
     animation = false;
 
     SetOwnBackgroundColour(*wxWHITE);
 
-    // Initialize the toolbar
-    InitializeToolbar();
+    if (!frameless)
+    {
+        m_parentFrame = static_cast<wxFrame*>(parent);
+        // Initialize the toolbar
+        InitializeToolbar();
 
-    m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_EXPORT);
-    m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_COPY);
-    m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_ROTATE);
-    m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_ZOOM);
-    m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_RESET);
-    m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_NEXT);
-    m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_PREVIOUS);
-    m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_RUN);
-    m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_STOP);
+        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_EXPORT);
+        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_COPY);
+        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_ROTATE);
+        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_ZOOM);
+        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_RESET);
+        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_NEXT);
+        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_PREVIOUS);
+        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_RUN);
+        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, ID_GRAPH_STOP);
 
-    for (int i = ID_GRAPH_DRAW_FIRST+1; i < ID_GRAPH_DRAW_LAST; i++)
-        m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, i);
+        for (int i = ID_GRAPH_DRAW_FIRST+1; i < ID_GRAPH_DRAW_LAST; i++)
+            m_parentFrame->Bind(wxEVT_MENU, &wxMGL::OnMenuEvent, this, i);
 
-    statusbar = m_parentFrame->CreateStatusBar(3);
-    int nWidths[] = {-2,-1,-1};
-    statusbar->SetFieldsCount(3, nWidths);
+        statusbar = m_parentFrame->CreateStatusBar(3);
+        int nWidths[] = {-2,-1,-1};
+        statusbar->SetFieldsCount(3, nWidths);
+    }
+    else
+        m_parentFrame = nullptr;
 }
 
 // Destructor: stops the timer, if it is running
@@ -184,6 +190,9 @@ wxMGL::~wxMGL()
 // depending on whether an animation is available
 void wxMGL::UpdateTools()
 {
+    if (!m_parentFrame)
+        return;
+
     if (gr->GetNumFrame() <= 1)
     {
         toptoolbar->EnableTool(ID_GRAPH_NEXT, false);
@@ -210,6 +219,9 @@ double wxMGL::GetRatio()
 // GraphViewer Window
 void wxMGL::InitializeToolbar()
 {
+    if (!m_parentFrame)
+        return;
+
     toptoolbar = m_parentFrame->CreateToolBar(wxTB_HORIZONTAL | wxTB_FLAT);
     toptoolbar->AddTool(ID_GRAPH_EXPORT, _guilang.get("GUI_GRAPH_EXPORT"), wxArtProvider::GetBitmap(wxART_FILE_SAVE, wxART_TOOLBAR), _guilang.get("GUI_GRAPH_EXPORT"));
     toptoolbar->AddTool(ID_GRAPH_COPY, _guilang.get("GUI_GRAPH_COPY"), wxArtProvider::GetBitmap(wxART_COPY, wxART_TOOLBAR), _guilang.get("GUI_GRAPH_COPY"));
@@ -250,6 +262,9 @@ void wxMGL::InitializeToolbar()
 // exporting the current image displayed in the window
 void wxMGL::OnExport()
 {
+    if (!m_parentFrame)
+        return;
+
     static const wxString fileFilter = "PNG (*.png)|*.png|JPG (*.jpg)|*.jpg;*.jpeg|EPS (*.eps)|*.eps|SVG (*.svg)|*.svg";
 
     wxFileName fileName;
@@ -280,6 +295,13 @@ void wxMGL::OnExport()
 void wxMGL::OnPaint(wxPaintEvent& event)
 {
     wxPaintDC dc(this);
+
+    if (!gr && !draw_cl)
+    {
+        dc.SetBackground(wxBrush(*wxWHITE));
+        dc.Clear();
+        return;
+    }
 
     if (!pic.IsOk())
         Update();
@@ -329,7 +351,11 @@ void wxMGL::OnSize(wxSizeEvent& event)
 
     // Do nothing, if the graph does not exist
     if (!gr)
+    {
+        wxWindow::SetSize(ev);
+        Refresh();
         return;
+    }
 
     // Do nothing if the size did not change
     if (mgl_get_width(gr->Self()) == ev.GetWidth() && mgl_get_height(gr->Self()) == ev.GetHeight())
@@ -620,6 +646,9 @@ void wxMGL::ZoomOut()
 // mglGraph object to draw its contents
 void wxMGL::Update()
 {
+    if (!draw_cl && !gr)
+        return;
+
     if (draw_func || draw_cl)
     {
         if (!vAnimationBuffer.size() || vAnimationBuffer.size() < (size_t)gr->GetNumFrame())
@@ -673,6 +702,9 @@ wxImage wxMGL::ConvertFromGraph()
 // in advance
 void wxMGL::Repaint()
 {
+    if (!draw_cl && !gr)
+        return;
+
     if (bRotatingMode && (skiprotate % nFramesToSkip))
         return;
 
@@ -723,6 +755,13 @@ void wxMGL::OnMouseLeftDown(wxMouseEvent &ev)
     xe = x0 = x;
     ye = y0 = y;
     ev.Skip();
+
+    // Forward the mouse event to the custom window
+    if (!m_parentFrame)
+    {
+        wxMouseEvent event(ev);
+        m_parent->GetEventHandler()->ProcessEvent(event);
+    }
 }
 
 // This member function is the event handling function
@@ -808,6 +847,9 @@ void wxMGL::OnMouseRightUp(wxMouseEvent &ev)
 // applied, when the user moves the mouse
 void wxMGL::OnMouseMove(wxMouseEvent &ev)
 {
+    if (!m_parentFrame)
+        return;
+
     long w = GetSize().GetWidth(), h = GetSize().GetHeight();
     xe = ev.GetX();
     ye = ev.GetY();
@@ -897,7 +939,9 @@ void wxMGL::OnMouseMove(wxMouseEvent &ev)
 // applied, when the user moves the mouse in the window
 void wxMGL::OnEnter(wxMouseEvent& event)
 {
-    this->SetFocus();
+    if (m_parentFrame)
+        this->SetFocus();
+
     event.Skip();
 }
 
@@ -905,6 +949,11 @@ void wxMGL::OnEnter(wxMouseEvent& event)
 // applied, when the user presses a key
 void wxMGL::OnKeyDown(wxKeyEvent& event)
 {
+    if (!m_parentFrame)
+    {
+        event.Skip();
+        return;
+    }
     // connecting the ESC Key with closing the viewer
     if (event.GetKeyCode() == WXK_ESCAPE)
         m_parent->Close();
@@ -931,6 +980,12 @@ void wxMGL::OnKeyDown(wxKeyEvent& event)
 // applied, when the user presses a navigation key
 void wxMGL::OnNavigationKey(wxNavigationKeyEvent& event)
 {
+    if (!m_parentFrame)
+    {
+        event.Skip();
+        return;
+    }
+
     // connect the navigation keys with next and previous image
     if (event.GetDirection())
         NextSlide();
@@ -1239,4 +1294,17 @@ void wxMGL::Animation(bool st)
         }
     }
 }
+
+
+wxString wxMGL::getClickedCoords()
+{
+    if (gr)
+    {
+        mglPoint p = gr->CalcXYZ(x0, y0);
+        return wxString::Format("{%.4g,%.4g}", p.x, p.y);
+    }
+
+    return "{nan,nan}";
+}
+
 

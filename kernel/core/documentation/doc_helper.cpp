@@ -18,6 +18,7 @@
 
 #include "doc_helper.hpp"
 #include "../version.h"
+#include "../utils/tools.hpp"
 #include <list>
 
 bool fileExists(const string&);
@@ -411,6 +412,81 @@ vector<string> Documentation::loadDocumentationArticle(const string& sFileName, 
         vReturn.push_back("NO_ENTRY_FOUND");
 
     return vReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static member is a fallback for
+/// the XML-parsing logic-stuff.
+///
+/// \param sCmd const string&
+/// \param nPos unsigned int
+/// \return string
+///
+/////////////////////////////////////////////////
+string Documentation::getArgAtPos(const string& sCmd, unsigned int nPos)
+{
+    string sArgument = "";
+
+    // If the position is greater than the string length
+    // return an empty string
+    if (nPos >= sCmd.length())
+        return "";
+
+    // Jump over whitespaces
+    while (nPos < sCmd.length() && sCmd[nPos] == ' ')
+        nPos++;
+
+    // Ensure that the position is smaller than the length of the string
+    if (nPos >= sCmd.length())
+        return "";
+
+    // Extract the option value
+    // Determine the delimiter first
+    if (sCmd[nPos] == '"')
+    {
+        // This option value is surrounded with quotation marks
+        // Go through the string and find the next quotation
+        // mark, which is not escaped by a backslash
+        for (unsigned int i = nPos + 1; i < sCmd.length(); i++)
+        {
+            if (sCmd[i] == '"' && sCmd[i - 1] != '\\')
+            {
+                sArgument = sCmd.substr(nPos+1, i - nPos - 1);
+                break;
+            }
+        }
+    }
+    else
+    {
+        // This option value is not surrounded with quotation marks
+        // Go through the string and find the next whitespace
+        for (unsigned int i = nPos; i < sCmd.length(); i++)
+        {
+            // Jump over parentheses, if you find one
+            if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
+                i += getMatchingParenthesis(sCmd.substr(i));
+
+            // Whitespace. Stop the loop here
+            if (sCmd[i] == ' ')
+            {
+                sArgument = sCmd.substr(nPos, i - nPos);
+                StripSpaces(sArgument);
+                break;
+            }
+        }
+
+        // Special case: obviously there's no whitespace any more
+        // simply use the remaining string completely
+        if (!sArgument.length())
+        {
+            sArgument = sCmd.substr(nPos);
+            StripSpaces(sArgument);
+        }
+    }
+
+    // return the found option value
+    return sArgument;
 }
 
 

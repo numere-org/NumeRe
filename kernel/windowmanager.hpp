@@ -22,25 +22,40 @@
 
 #include <map>
 #include <string>
-#include "core/plotting/graph_helper.hpp"
+#include <vector>
 
+#include "core/datamanagement/table.hpp"
 using namespace std;
+
+// Global forward declarations
+class CustomWindow;
+class GraphHelper;
+
+namespace tinyxml2
+{
+    class XMLDocument;
+}
 
 namespace NumeRe
 {
-    // Enumeration for the window type
+    /////////////////////////////////////////////////
+    /// \brief Enumeration for the window type
+    /////////////////////////////////////////////////
     enum WindowType
     {
         WINDOW_NONE,
         WINDOW_NON_MODAL,
         WINDOW_MODAL,
         WINDOW_GRAPH,
+        WINDOW_CUSTOM,
         WINDOW_LAST
     };
 
 
-    // Enumeration for the contained
-    // window controlss
+    /////////////////////////////////////////////////
+    /// \brief Enumeration for the contained window
+    /// controls.
+    /////////////////////////////////////////////////
     enum WindowControls
     {
         CTRL_NONE = 0x0,
@@ -63,8 +78,10 @@ namespace NumeRe
     };
 
 
-    // Enumeration for the status of
-    // a displayed dialog
+    /////////////////////////////////////////////////
+    /// \brief Enumeration for the status of a
+    /// displayed dialog.
+    /////////////////////////////////////////////////
     enum WindowStatus
     {
         STATUS_RUNNING = 0x0,
@@ -73,8 +90,10 @@ namespace NumeRe
     };
 
 
-    // This class contains the window information
-    // to create the dialog in the GUI
+    /////////////////////////////////////////////////
+    /// \brief This class contains the window
+    /// information to create the dialog in the GUI.
+    /////////////////////////////////////////////////
     struct WindowSettings
     {
         int nControls;
@@ -87,12 +106,26 @@ namespace NumeRe
     };
 
 
+    /////////////////////////////////////////////////
+    /// \brief Kernel representation of the
+    /// WindowItemValue structure of the CustomWindow
+    /// class.
+    /////////////////////////////////////////////////
+    struct WinItemValue
+    {
+        std::string type;
+        std::string stringValue;
+        Table tableValue;
+    };
+
     // Forward declaration of the window manager class
     class WindowManager;
 
 
-    // This class represents an abstract window handled
-    // by the window manager
+    /////////////////////////////////////////////////
+    /// \brief This class represents an abstract
+    /// window handled by the window manager.
+    /////////////////////////////////////////////////
     class Window
     {
         private:
@@ -100,7 +133,9 @@ namespace NumeRe
             WindowType nType;
             GraphHelper* m_graph;
             WindowManager* m_manager;
+            CustomWindow* m_customWindow;
             WindowSettings m_settings;
+            mutable tinyxml2::XMLDocument* m_layout;
             size_t nWindowID;
 
             void registerWindow();
@@ -113,6 +148,7 @@ namespace NumeRe
             Window(const Window& window);
             Window(WindowType type, WindowManager* manager, const WindowSettings& settings);
             Window(WindowType type, WindowManager* manager, GraphHelper* graph);
+            Window(WindowType type, WindowManager* manager, tinyxml2::XMLDocument* layoutString);
             ~Window();
 
             Window& operator=(const Window& window);
@@ -137,13 +173,41 @@ namespace NumeRe
                     return nWindowID;
                 }
 
+            const tinyxml2::XMLDocument* getLayout() const
+                {
+                    return m_layout;
+                }
+
+            void connect(CustomWindow* _window)
+                {
+                    m_customWindow = _window;
+                }
+
+            bool creationFinished()
+                {
+                    return m_customWindow != nullptr;
+                }
+
             void updateWindowInformation(int status, const string& _return);
+            std::vector<int> getWindowItems(const std::string& _selection) const;
+            bool closeWindow();
+            WinItemValue getItemValue(int windowItemID) const;
+            std::string getItemLabel(int windowItemID) const;
+            std::string getItemState(int windowItemID) const;
+            std::string getItemColor(int windowItemID) const;
+            bool setItemValue(const WinItemValue& _value, int windowItemID);
+            bool setItemLabel(const std::string& _label, int windowItemID);
+            bool setItemState(const std::string& _state, int windowItemID);
+            bool setItemColor(const std::string& _color, int windowItemID);
+            bool setItemGraph(GraphHelper* _helper, int windowItemID);
     };
 
 
-    // This class is used by the window manager to handle
-    // the information of an opened window and to store
-    // its return value
+    /////////////////////////////////////////////////
+    /// \brief This class is used by the window
+    /// manager to handle the information of an
+    /// opened window and to store its return value.
+    /////////////////////////////////////////////////
     struct WindowInformation
     {
         size_t nWindowID;
@@ -156,9 +220,11 @@ namespace NumeRe
     };
 
 
-    // This is the window manager of the kernel. All
-    // windows opened by the kernel will be registered
-    // here.
+    /////////////////////////////////////////////////
+    /// \brief This is the window manager of the
+    /// kernel. All windows opened by the kernel will
+    /// be registered here.
+    /////////////////////////////////////////////////
     class WindowManager
     {
         private:
@@ -177,6 +243,7 @@ namespace NumeRe
 
             size_t createWindow(GraphHelper* graph);
             size_t createWindow(WindowType type, const WindowSettings& settings);
+            size_t createWindow(tinyxml2::XMLDocument* layoutString);
 
             WindowInformation getWindowInformation(size_t windowId);
             WindowInformation getWindowInformationModal(size_t windowId);

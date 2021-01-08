@@ -74,6 +74,7 @@ class StyledTextFile
 
         std::string getTextRange(int pos1, int pos2) const;
         std::string getLine(size_t line) const;
+        std::string getStrippedLine(size_t line) const;
         int getLastPosition() const;
         int getLinesCount() const;
         int PositionFromLine(size_t line) const;

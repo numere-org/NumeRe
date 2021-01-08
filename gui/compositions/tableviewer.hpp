@@ -99,6 +99,7 @@ class TableViewer : public wxGrid
         void SetData(NumeRe::Container<string>& _stringTable);
         void SetData(NumeRe::Table& _table);
         NumeRe::Table GetData();
+        NumeRe::Table GetDataCopy();
 
         void SetTableReadOnly(bool isReadOnly = true);
         void SetDefaultSize(size_t rows = 1, size_t cols = 1) __attribute__ ((deprecated));
@@ -107,6 +108,8 @@ class TableViewer : public wxGrid
         void OnMenu(wxCommandEvent& event);
         void insertElement(int id);
         void removeElement(int id);
+
+        wxString getSelectedValues();
 
 
         size_t GetHeight() {return nHeight;}

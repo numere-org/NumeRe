@@ -165,7 +165,15 @@ void openExternally(const string&);
 void moveFile(const string&, const string&);
 void writeTeXMain(const string&);
 string addControlSymbols(const string&);
-string getArgAtPos(const string& sCmd, unsigned int nPos);
+
+enum ArgExtraction
+{
+    ARGEXTRACT_NONE,
+    ARGEXTRACT_STRIPPED,
+    ARGEXTRACT_PARSED
+};
+
+string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction = ARGEXTRACT_STRIPPED);
 bool isInQuotes(StringView sExpr, unsigned int nPos, bool bIgnoreVarParser = false);
 bool isToStringArg(const string& sExpr, unsigned int nPos);
 bool isDelimiter(char cChar);

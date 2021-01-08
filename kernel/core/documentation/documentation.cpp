@@ -106,14 +106,14 @@ void doc_Help(const string& __sTopic, Settings& _option)
             if (vDocArticle[i].find("<example ") != string::npos) // Beispiel-Tags
             {
                 bool bVerb = false;
-                if (vDocArticle[i].find("type=") && getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
+                if (vDocArticle[i].find("type=") && Documentation::getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
                     bVerb = true;
 
                 doc_ReplaceTokens(vDocArticle[i], _option);
-                if (getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5).find('~') == string::npos)
-                    NumeReKernel::print(LineBreak(_lang.get("DOC_HELP_EXAMPLE", getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5)), _option));
+                if (Documentation::getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5).find('~') == string::npos)
+                    NumeReKernel::print(LineBreak(_lang.get("DOC_HELP_EXAMPLE", Documentation::getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5)), _option));
                 else
-                    NumeReKernel::print(LineBreak(_lang.get("DOC_HELP_EXAMPLE", getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5)), _option, false));
+                    NumeReKernel::print(LineBreak(_lang.get("DOC_HELP_EXAMPLE", Documentation::getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5)), _option, false));
                 NumeReKernel::printPreFmt("|\n");
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
@@ -263,11 +263,11 @@ void doc_Help(const string& __sTopic, Settings& _option)
                         for (unsigned int k = i+1; k < j; k++)
                         {
                             nIndent = 0;
-                            sNode = getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5);
-                            sRemainingLine = vDocArticle[k].substr(vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2)+1, vDocArticle[k].find("</item>")-1-vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2));
+                            sNode = Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5);
+                            sRemainingLine = vDocArticle[k].substr(vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2)+1, vDocArticle[k].find("</item>")-1-vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2));
                             sFinalLine = "";
 
-                            if (vDocArticle[k].find("type=") != string::npos && getArgAtPos(vDocArticle[k], vDocArticle[k].find("type=")+5) == "verbatim")
+                            if (vDocArticle[k].find("type=") != string::npos && Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("type=")+5) == "verbatim")
                             {
                                 NumeReKernel::printPreFmt("|     " + sNode);
                                 nIndent = sNode.length()+6;
@@ -330,7 +330,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     {
                         doc_ReplaceTokens(vDocArticle[j], _option);
 
-                        string sNode = getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5);
+                        string sNode = Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5);
                         for (unsigned int k = 0; k < sNode.length(); k++)
                         {
                             if (sNode[k] == '$' && k && sNode[k-1] != '\\')
@@ -349,7 +349,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
             else if (vDocArticle[i].find("<list") != string::npos && vDocArticle[i].find("type=") != string::npos) // Modified-LIST-Tags
             {
                 map<string,string> mListitems;
-                string sType = getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5);
+                string sType = Documentation::getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5);
                 unsigned int nLengthMax = 0;
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
@@ -362,21 +362,21 @@ void doc_Help(const string& __sTopic, Settings& _option)
                             for (unsigned int k = i+1; k < j; k++)
                             {
                                 nIndent = 0;
-                                if (vDocArticle[k].find("type=") != string::npos && getArgAtPos(vDocArticle[k], vDocArticle[k].find("type=")+5) == "verbatim")
+                                if (vDocArticle[k].find("type=") != string::npos && Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("type=")+5) == "verbatim")
                                 {
                                     if (sType == "udesc")
-                                        NumeReKernel::printPreFmt("|     " + toUpperCase(getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5)));
+                                        NumeReKernel::printPreFmt("|     " + toUpperCase(Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5)));
                                     else
-                                        NumeReKernel::printPreFmt("|     " + getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5));
+                                        NumeReKernel::printPreFmt("|     " + Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5));
                                 }
                                 else
                                 {
                                     if (sType == "udesc")
-                                        sLine = "|     " + toUpperCase(getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5));
+                                        sLine = "|     " + toUpperCase(Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5));
                                     else
-                                        sLine = "|     " + getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5);
+                                        sLine = "|     " + Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5);
                                 }
-                                sLine += ":  " + vDocArticle[k].substr(vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2)+1, vDocArticle[k].find("</item>")-1-vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2));
+                                sLine += ":  " + vDocArticle[k].substr(vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2)+1, vDocArticle[k].find("</item>")-1-vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2));
                                 if (sLine.find('~') == string::npos && sLine.find('%') == string::npos)
                                     NumeReKernel::printPreFmt(LineBreak(sLine, _option, true, nIndent, 10)+"\n");
                                 else
@@ -389,20 +389,20 @@ void doc_Help(const string& __sTopic, Settings& _option)
                         {
                             for (unsigned int k = i+1; k < j; k++)
                             {
-                                if (vDocArticle[k].find("type=") != string::npos && getArgAtPos(vDocArticle[k], vDocArticle[k].find("type=")+5) == "verbatim")
+                                if (vDocArticle[k].find("type=") != string::npos && Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("type=")+5) == "verbatim")
                                 {
-                                    NumeReKernel::printPreFmt("|     " + getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5));
-                                    nIndent = getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+6;
+                                    NumeReKernel::printPreFmt("|     " + Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5));
+                                    nIndent = Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+6;
                                     sLine.append(nLengthMax+9-nIndent, ' ');
                                 }
                                 else
                                 {
-                                    sLine = "|     " + getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5);
+                                    sLine = "|     " + Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5);
                                     sLine.append(nLengthMax+9-sLine.length()+countEscapeSymbols(sLine), ' ');
                                 }
                                 sLine += "- [...]";
                                 NumeReKernel::printPreFmt(LineBreak(sLine, _option, false, nIndent, nLengthMax+11)+"\n");
-                                mListitems[getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5)] = vDocArticle[k].substr(vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2)+1, vDocArticle[k].find("</item>")-1-vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2));
+                                mListitems[Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5)] = vDocArticle[k].substr(vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2)+1, vDocArticle[k].find("</item>")-1-vDocArticle[k].find('>', vDocArticle[k].find("node=")+5+Documentation::getArgAtPos(vDocArticle[k], vDocArticle[k].find("node=")+5).length()+2));
                             }
                             NumeReKernel::print(LineBreak("GEFALTETE LISTE: Stichpunkt eingeben, um Beschreibung anzuzeigen. \"0\" eingeben, um die Liste zu verlassen:", _option));
                             while (true)
@@ -435,8 +435,8 @@ void doc_Help(const string& __sTopic, Settings& _option)
                     {
                         doc_ReplaceTokens(vDocArticle[j], _option);
 
-                        if (nLengthMax < getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()-countEscapeSymbols(getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)))
-                            nLengthMax = getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()-countEscapeSymbols(getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5));
+                        if (nLengthMax < Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()-countEscapeSymbols(Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)))
+                            nLengthMax = Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()-countEscapeSymbols(Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5));
                     }
                 }
             }
@@ -575,10 +575,10 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
             sHTML += "<h4>"+ _lang.get("DOC_HELP_EXAMPLE_HEADLINE") +"</h4>\n";
             bool bVerb = false;
 
-            if (vDocArticle[i].find("type=") && getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
+            if (vDocArticle[i].find("type=") && Documentation::getArgAtPos(vDocArticle[i], vDocArticle[i].find("type=")+5) == "verbatim")
                 bVerb = true;
 
-            string sDescription = getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5);
+            string sDescription = Documentation::getArgAtPos(vDocArticle[i], vDocArticle[i].find("desc=")+5);
 
             doc_ReplaceTokensForHTML(sDescription, generateFile, _option);
 
@@ -782,10 +782,10 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                     {
                         sHTML += "    <tr>\n";
                         sHTML += "      <td style=\"width:200px;height:19px\"><code><span style=\"color:#00008B;\">"
-                             + (getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5))
+                             + (Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5))
                              + "</span></code></td>\n"
                              + "      <td style=\"width:400px;height:19px\">"
-                             + (vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)))
+                             + (vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)))
                              + "</td>\n";
                         sHTML += "    </tr>\n";
                     }
@@ -793,18 +793,18 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                     {
                         if (isIndex)
                         {
-                            sHTML += "    <tr>\n      <td width=\"200\"><a href=\"nhlp://"+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)+"?frame=self\"><code><span style=\"color:#00008B;\">"
-                                  + getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)
+                            sHTML += "    <tr>\n      <td width=\"200\"><a href=\"nhlp://"+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)+"?frame=self\"><code><span style=\"color:#00008B;\">"
+                                  + Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)
                                   + "</span></code></a></td>\n      <td>"
-                                  + vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2))
+                                  + vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2))
                                   + "</td>\n    </tr>\n";
                         }
                         else
                         {
                             sHTML += "    <tr>\n      <td width=\"200\"><code><span style=\"color:#00008B;\">"
-                                  + getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)
+                                  + Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5)
                                   + "</span></code></td>\n      <td>"
-                                  + vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2))
+                                  + vDocArticle[j].substr(vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2)+1, vDocArticle[j].find("</item>")-1-vDocArticle[j].find('>', vDocArticle[j].find("node=")+5+Documentation::getArgAtPos(vDocArticle[j], vDocArticle[j].find("node=")+5).length()+2))
                                   + "</td>\n    </tr>\n";
                         }
                     }
@@ -990,7 +990,7 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, bool generateFile, Settings
             string sImg = sDocParagraph.substr(k, sDocParagraph.find("/>", k+5)+2-k);
             if (sImg.find("src") != string::npos)
             {
-                string sImgSrc = getArgAtPos(sImg, sImg.find('=', sImg.find("src"))+1);
+                string sImgSrc = Documentation::getArgAtPos(sImg, sImg.find('=', sImg.find("src"))+1);
                 sImgSrc = _fSys.ValidFileName(sImgSrc, ".png");
                 sImg = "<img src=\"" + sImgSrc + "\" />";
                 sImg = "<div align=\"center\">" + sImg + "</div>";

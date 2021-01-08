@@ -27,6 +27,7 @@
 #include "maths/matrixoperations.hpp"
 #include "plotting/plotting.hpp"
 #include "../kernel.hpp"
+#include "ui/winlayout.hpp"
 
 using namespace std;
 using namespace mu;
@@ -37,7 +38,8 @@ enum WindowType
     WT_GRAPH,
     WT_TABLEVIEWER,
     WT_IMAGEVIEWER,
-    WT_DOCVIEWER
+    WT_DOCVIEWER,
+    WT_CUSTOM
 };
 
 
@@ -753,6 +755,7 @@ static bool editObject(string& sCmd, Parser& _parser, MemoryManager& _data, Sett
 			|| sObject.substr(sObject.rfind('.')) == ".nscr"
 			|| sObject.substr(sObject.rfind('.')) == ".nprc"
 			|| sObject.substr(sObject.rfind('.')) == ".nhlp"
+			|| sObject.substr(sObject.rfind('.')) == ".nlyt"
 			|| sObject.substr(sObject.rfind('.')) == ".png"
 			|| sObject.substr(sObject.rfind('.')) == ".gif"
 			|| sObject.substr(sObject.rfind('.')) == ".m"
@@ -2613,135 +2616,7 @@ static CommandReturnValues cmd_sort(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_dialog(string& sCmd)
 {
-    size_t position = findCommand(sCmd, "dialog").nPos;
-    string sDialogSettings = sCmd.substr(position+7);
-    string sMessage;
-    string sTitle = "NumeRe: Window";
-    string sExpression;
-    int nControls = NumeRe::CTRL_NONE;
-    NumeReKernel* kernel = NumeReKernel::getInstance();
-
-    // If the current command line contains strings in the option values
-    // handle them here
-    if (kernel->getStringParser().isStringExpression(sDialogSettings))
-        sDialogSettings = evaluateParameterValues(sDialogSettings);
-
-    // Extract the message for the user
-    if (findParameter(sDialogSettings, "msg", '='))
-        sMessage = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "msg", '=')+3);
-
-    // Extract the window title
-    if (findParameter(sDialogSettings, "title", '='))
-        sTitle = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "title", '=')+5);
-
-    // Extract the selected dialog type if available, otherwise
-    // use the message box as default value
-    if (findParameter(sDialogSettings, "type", '='))
-    {
-        string sType = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "type", '=')+4);
-
-        if (sType == "filedialog")
-            nControls = NumeRe::CTRL_FILEDIALOG;
-        else if (sType == "dirdialog")
-            nControls = NumeRe::CTRL_FOLDERDIALOG;
-        else if (sType == "listdialog")
-            nControls = NumeRe::CTRL_LISTDIALOG;
-        else if (sType == "selectiondialog")
-            nControls = NumeRe::CTRL_SELECTIONDIALOG;
-        else if (sType == "messagebox")
-            nControls = NumeRe::CTRL_MESSAGEBOX;
-        else if (sType == "textentry")
-            nControls = NumeRe::CTRL_TEXTENTRY;
-    }
-    else
-        nControls = NumeRe::CTRL_MESSAGEBOX;
-
-    // Extract the button information. The default values are
-    // created by wxWidgets. We don't have to do that here
-    if (findParameter(sDialogSettings, "buttons", '='))
-    {
-        string sButtons = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "buttons", '=')+7);
-
-        if (sButtons == "ok")
-            nControls |= NumeRe::CTRL_OKBUTTON;
-        else if (sButtons == "okcancel")
-            nControls |= NumeRe::CTRL_OKBUTTON | NumeRe::CTRL_CANCELBUTTON;
-        else if (sButtons == "yesno")
-            nControls |= NumeRe::CTRL_YESNOBUTTON;
-    }
-
-    // Extract the icon information. The default values are
-    // created by wxWidgets. We don't have to do that here
-    if (findParameter(sDialogSettings, "icon", '='))
-    {
-        string sIcon = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "icon", '=')+4);
-
-        if (sIcon == "erroricon")
-            nControls |= NumeRe::CTRL_ICONERROR;
-        else if (sIcon == "warnicon")
-            nControls |= NumeRe::CTRL_ICONWARNING;
-        else if (sIcon == "infoicon")
-            nControls |= NumeRe::CTRL_ICONINFORMATION;
-        else if (sIcon == "questionicon")
-            nControls |= NumeRe::CTRL_ICONQUESTION;
-    }
-
-    // Extract the default values for the dialog. First,
-    // erase the appended parameter list
-    if (sDialogSettings.find("-set") != string::npos)
-        sDialogSettings.erase(sDialogSettings.find("-set"));
-    else if (sDialogSettings.find("--") != string::npos)
-        sDialogSettings.erase(sDialogSettings.find("--"));
-
-    // Strip spaces and assign the value
-    StripSpaces(sDialogSettings);
-    sExpression = sDialogSettings;
-
-    // Handle strings in the default value
-    // expression. This will include also possible path
-    // tokens
-    if (kernel->getStringParser().isStringExpression(sExpression))
-    {
-        string sDummy;
-        kernel->getStringParser().evalAndFormat(sExpression, sDummy, true);
-    }
-
-    // Ensure that default values are available, if the user
-    // selected either a list or a selection dialog
-    if ((nControls & NumeRe::CTRL_LISTDIALOG || nControls & NumeRe::CTRL_SELECTIONDIALOG) && (!sExpression.length() || sExpression == "\"\""))
-    {
-        throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, sCmd, "dialog");
-    }
-
-    // Use the default expression as message for the message
-    // box as a fallback solution
-    if (nControls & NumeRe::CTRL_MESSAGEBOX && (!sMessage.length() || sMessage == "\"\""))
-        sMessage = getNextArgument(sExpression, false);
-
-    // Ensure that the message box has at least a message,
-    // because the message box is the default value
-    if (nControls & NumeRe::CTRL_MESSAGEBOX && (!sMessage.length() || sMessage == "\"\""))
-    {
-        throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, sCmd, "dialog");
-    }
-
-    // Ensure that the path for the file and the directory
-    // dialog is a valid path and replace all placeholders
-    if ((nControls & NumeRe::CTRL_FILEDIALOG || nControls & NumeRe::CTRL_FOLDERDIALOG) && sExpression.length() && sExpression != "\"\"")
-    {
-        sExpression = kernel->getMemoryManager().ValidFolderName(removeQuotationMarks(sExpression));
-    }
-
-    // Get the window manager, create the modal window and
-    // wait until the user interacted with the dialog
-    NumeRe::WindowManager& manager = kernel->getWindowManager();
-    size_t winid = manager.createWindow(NumeRe::WINDOW_MODAL, NumeRe::WindowSettings(nControls, true, sMessage, sTitle, sExpression));
-    NumeRe::WindowInformation wininfo = manager.getWindowInformationModal(winid);
-
-    // Insert the return value as a string into the command
-    // line and inform the command handler, that a value
-    // has to be evaluated
-    sCmd = sCmd.substr(0, position) + "\"" + replacePathSeparator(wininfo.sReturn) + "\"";
+    dialogCommand(sCmd);
 
     return COMMAND_HAS_RETURNVALUE;
 }
@@ -3165,6 +3040,33 @@ static CommandReturnValues cmd_read(string& sCmd)
     }
     else
         doc_Help("read", _option);
+
+    return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// "window" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_window(string& sCmd)
+{
+    size_t nPos = findCommand(sCmd, "window").nPos;
+    string sArgument = extractCommandString(sCmd, findCommand(sCmd, "window"));
+    string sCommand = sArgument;
+
+    if (sArgument.length() > 7)
+    {
+        windowCommand(sArgument);
+        sCmd.replace(nPos, sCommand.length(), sArgument);
+        return COMMAND_HAS_RETURNVALUE;
+    }
+    else
+        doc_Help("window", NumeReKernel::getInstance()->getSettings());
 
     return COMMAND_PROCESSED;
 }
@@ -5711,7 +5613,6 @@ static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["diff"] = cmd_diff;
     mCommandFuncMap["eval"] = cmd_eval;
     mCommandFuncMap["extrema"] = cmd_extrema;
-    mCommandFuncMap["get"] = cmd_get;
     mCommandFuncMap["imread"] = cmd_imread;
     mCommandFuncMap["integrate"] = cmd_integrate;
     mCommandFuncMap["integrate2d"] = cmd_integrate;
@@ -5722,6 +5623,7 @@ static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["reload"] = cmd_reload;
     mCommandFuncMap["sort"] = cmd_sort;
     mCommandFuncMap["stats"] = cmd_stats;
+    mCommandFuncMap["window"] = cmd_window;
     mCommandFuncMap["zeroes"] = cmd_zeroes;
 
     return mCommandFuncMap;

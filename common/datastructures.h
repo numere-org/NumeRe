@@ -340,7 +340,8 @@ enum WindowType
     WT_GRAPH,
     WT_TABLEVIEWER,
     WT_IMAGEVIEWER,
-    WT_DOCVIEWER
+    WT_DOCVIEWER,
+    WT_CUSTOM
 };
 
 

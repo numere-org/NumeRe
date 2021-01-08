@@ -32,7 +32,6 @@
 using namespace std;
 
 void StripSpaces(string&);
-string getArgAtPos(const string&, unsigned int);
 string toUpperCase(const string&);
 string toString(int);
 
@@ -67,6 +66,7 @@ class Documentation : public FileSystem
         string getHelpIdxKey(const string& sTopic);
         string getHelpArtclID(const string& sTopic);
         string getHelpArticleTitle(const string& _sIdxKey);
+        static string getArgAtPos(const string& sCmd, unsigned int pos);
 };
 
 #endif

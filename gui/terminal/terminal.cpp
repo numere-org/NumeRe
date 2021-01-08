@@ -674,6 +674,10 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
 	// scroll to the input location and process the kernel
 	// message
 	scrollToInput();
+
+	if (sAnswer == "|\n|<- " && GetTM()->getPreviousLine() == "|")
+        sAnswer = "|<- ";
+
 	ProcessOutput(sAnswer.length(), sAnswer);
 	Refresh();
 }
@@ -827,15 +831,18 @@ NumeReTerminal::SetCursorBlinkRate(int rate)
 }
 
 
-/** \brief Pass the entered command line to the kernel
- *
- * This is called when the user hits "Enter". It will get the current input line
- * from the internal buffer and sent it to the kernel
- *
- * \param sCommand const string&
- * \return void
- *
- */
+/////////////////////////////////////////////////
+/// \brief Pass the entered command line to the
+/// kernel.
+///
+/// This is called when the user hits "Enter". It
+/// will get the current input line from the
+/// internal buffer and sent it to the kernel.
+///
+/// \param sCommand const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReTerminal::pipe_command(const string& sCommand)
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
@@ -851,17 +858,25 @@ void NumeReTerminal::pipe_command(const string& sCommand)
 }
 
 
-/** \brief Pass the external command to the kernel without printing it to the console
- *
- * \param command const string&
- * \return void
- *
- */
-void NumeReTerminal::pass_command(const string& command)
+/////////////////////////////////////////////////
+/// \brief  Pass the external command to the
+/// kernel without printing it to the console.
+///
+/// \param command const string&
+/// \param isEvent bool Do not add to the history
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReTerminal::pass_command(const string& command, bool isEvent)
 {
     // Don't do anything if the command is emoty
 	if (!command.length())
 		return;
+
+#ifdef DO_LOG
+    if (isEvent)
+        wxLogDebug("Event: '%s'", command);
+#endif
 
     // scroll to the input location
 	scrollToInput();
@@ -873,8 +888,11 @@ void NumeReTerminal::pass_command(const string& command)
 
 	// Set the new command to the kernel and log it
 	wxCriticalSectionLocker lock(m_kernelCS);
-	m_wxParent->AddToHistory(command);
-	m_sCommandLine = command;
+
+	if (!isEvent)
+        m_wxParent->AddToHistory(command);
+
+    m_sCommandLine = command;
 	m_bCommandAvailable = true;
 }
 

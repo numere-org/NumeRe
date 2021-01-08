@@ -513,6 +513,7 @@ class TextManager
 		bool isSelectedLogical(const LogicalCursor& cursor) const;
 		string getSelectedText() const;
 		string getCurrentInputLine() const;
+		string getPreviousLine() const;
 
 		int GetSize() const;
 		int GetMaxSize() const;

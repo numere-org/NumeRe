@@ -19,10 +19,89 @@
 #include <wx/wx.h>
 #include <wx/spinctrl.h>
 #include <wx/listctrl.h>
+#include <wx/collpane.h>
 
 #ifndef GROUPPANEL_HPP
 #define GROUPPANEL_HPP
 
+class SpinBut : public wxSpinCtrl
+{
+    public:
+        wxStaticText* m_label;
+
+        SpinBut(wxWindow* parent, wxWindowID id, const wxSize& size, int nMin, int nMax, int nInitial) : wxSpinCtrl(parent, id, wxEmptyString, wxDefaultPosition, size, wxSP_ARROW_KEYS, nMin, nMax, nInitial), m_label(nullptr)
+        {}
+
+        void SetLabel(const wxString& label)
+        {
+            if (m_label)
+                m_label->SetLabel(label);
+        }
+        wxString GetLabel()
+        {
+            if (m_label)
+                return m_label->GetLabel();
+
+            return "";
+        }
+        virtual bool Show(bool show)
+        {
+            if (m_label)
+                m_label->Show(show);
+
+            return wxSpinCtrl::Show(show);
+        }
+        virtual bool Enable(bool enable)
+        {
+            if (m_label)
+                m_label->Enable(enable);
+
+            return wxSpinCtrl::Enable(enable);
+        }
+};
+
+class TextField : public wxTextCtrl
+{
+    public:
+        wxStaticText* m_label;
+
+        TextField(wxWindow* parent, wxWindowID id, const wxString& sDefault,const wxSize& size, int nStyle) : wxTextCtrl(parent, id, sDefault, wxDefaultPosition, size, nStyle), m_label(nullptr)
+        {}
+
+        void SetLabel(const wxString& label)
+        {
+            if (m_label)
+                m_label->SetLabel(label);
+        }
+        wxString GetLabel()
+        {
+            if (m_label)
+                return m_label->GetLabel();
+
+            return "";
+        }
+        virtual bool Show(bool show)
+        {
+            if (m_label)
+                m_label->Show(show);
+
+            return wxTextCtrl::Show(show);
+        }
+        virtual bool Enable(bool enable)
+        {
+            if (m_label)
+                m_label->Enable(enable);
+
+            return wxTextCtrl::Enable(enable);
+        }
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This class simplifies the creation of
+/// simple windows and creates a common layout
+/// among all windows.
+/////////////////////////////////////////////////
 class GroupPanel : public wxScrolledWindow
 {
     private:
@@ -34,16 +113,26 @@ class GroupPanel : public wxScrolledWindow
 
         wxBoxSizer* getVerticalSizer();
         wxBoxSizer* getHorizontalSizer();
-        void AddSpacer(int nSize = 10);
+        void AddSpacer(int nSize = 10, wxSizer* sizer = nullptr);
+        wxStaticText* AddStaticText(wxWindow* parent, wxSizer* sizer, const wxString& text, int id = wxID_STATIC);
 
-        wxStaticBoxSizer* createGroup(const wxString& sGroupName, int orient = wxVERTICAL);
+        wxStaticBoxSizer* createGroup(const wxString& sGroupName, int orient = wxVERTICAL, wxWindow* parent = nullptr, wxSizer* sizer = nullptr);
+        wxBoxSizer* createGroup(int orient = wxVERTICAL, wxSizer* sizer = nullptr);
 
-        wxTextCtrl* CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID);
-        wxTextCtrl* CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString, int nStyle = 0);
-        wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description);
-        wxSpinCtrl* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial);
-        wxListView* CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle = wxLC_REPORT, wxSize size = wxDefaultSize);
+        wxCollapsiblePane* createCollapsibleGroup(const wxString& label, wxWindow* parent = nullptr, wxSizer* sizer = nullptr);
+        wxTextCtrl* CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID, int id = wxID_ANY);
+        TextField* CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString, int nStyle = 0, int id = wxID_ANY);
+        wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY);
+        SpinBut* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial, int id = wxID_ANY);
+        wxListView* CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle = wxLC_REPORT, wxSize size = wxDefaultSize, int id = wxID_ANY);
+        wxButton* CreateButton(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY);
+        wxRadioBox* CreateRadioBox(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxArrayString& choices, int style = wxHORIZONTAL, int id = wxID_ANY);
+        wxChoice* CreateChoices(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY);
+        wxGauge* CreateGauge(wxWindow* parent, wxSizer* sizer, int style, int id = wxID_ANY);
+        wxStaticBitmap* CreateBitmap(wxWindow* parent, wxSizer* sizer, const wxString& filename, int id = wxID_ANY);
 
+        //void OnMouseEvent(wxMouseEvent& event);
+        //wxDECLARE_EVENT_TABLE();
 };
 
 

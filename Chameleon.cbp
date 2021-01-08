@@ -247,6 +247,7 @@
 			<Add option="-static-libstdc++" />
 			<Add option="-lmgl" />
 			<Add option="-lgsl" />
+			<Add option="-lnoise" />
 			<Add option="-lgslcblas" />
 			<Add option="-Wl,--stack,8388608" />
 			<Add option="-fopenmp" />
@@ -286,6 +287,8 @@
 		<Unit filename="gui/NumeReStatusbar.hpp" />
 		<Unit filename="gui/NumeReWindow.cpp" />
 		<Unit filename="gui/NumeReWindow.h" />
+		<Unit filename="gui/compositions/customwindow.cpp" />
+		<Unit filename="gui/compositions/customwindow.hpp" />
 		<Unit filename="gui/compositions/debugviewer.cpp" />
 		<Unit filename="gui/compositions/debugviewer.hpp" />
 		<Unit filename="gui/compositions/filetree.cpp" />
@@ -513,6 +516,8 @@
 		<Unit filename="kernel/core/ui/error.hpp" />
 		<Unit filename="kernel/core/ui/language.cpp" />
 		<Unit filename="kernel/core/ui/language.hpp" />
+		<Unit filename="kernel/core/ui/winlayout.cpp" />
+		<Unit filename="kernel/core/ui/winlayout.hpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.cpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.hpp" />
 		<Unit filename="kernel/core/utils/timer.hpp">

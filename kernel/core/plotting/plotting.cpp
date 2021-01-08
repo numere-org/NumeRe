@@ -58,7 +58,27 @@ void createPlot(string& sCmd, MemoryManager& _data, Parser& _parser, Settings& _
     if (_pData.getOpenImage() && !_pData.getSilentMode())
     {
         GraphHelper* _graphHelper = graph.createGraphHelper(_pData);
-        NumeReKernel::getInstance()->getWindowManager().createWindow(_graphHelper);
+
+        if (_pData.getTargetGUI()[0] != -1)
+        {
+            NumeRe::WindowInformation window = NumeReKernel::getInstance()->getWindowManager().getWindowInformation(_pData.getTargetGUI()[0]);
+
+            if (!window.window && window.nStatus != NumeRe::STATUS_RUNNING)
+            {
+                delete _graphHelper;
+                _pData.deleteData(true);
+                throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, sCmd, "streamto");
+            }
+
+            if (!window.window->setItemGraph(_graphHelper, _pData.getTargetGUI()[1]))
+            {
+                delete _graphHelper;
+                _pData.deleteData(true);
+                throw SyntaxError(SyntaxError::INVALID_WINDOW_ITEM_ID, sCmd, "streamto");
+            }
+        }
+        else
+            NumeReKernel::getInstance()->getWindowManager().createWindow(_graphHelper);
     }
     // --> Speicher wieder freigeben <--
     _pData.deleteData(true);

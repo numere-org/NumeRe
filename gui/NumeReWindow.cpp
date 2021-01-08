@@ -72,6 +72,7 @@
 #include "compositions/tableeditpanel.hpp"
 #include "compositions/wxTermContainer.h"
 #include "compositions/debugviewer.hpp"
+#include "compositions/customwindow.hpp"
 
 #include "editor/editor.h"
 #include "editor/history.hpp"
@@ -496,7 +497,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_filterNSCRFiles = _guilang.get("GUI_FILTER_SCRIPTS") + " (*.nscr)|*.nscr";//"NumeRe scripts (*.nscr)|*.nscr";
     m_filterNPRCFiles = _guilang.get("GUI_FILTER_PROCEDURES") + " (*.nprc)|*.nprc";//"NumeRe procedures (*.nprc)|*.nprc";
     m_filterExecutableFiles = _guilang.get("GUI_FILTER_EXECUTABLES") + " (*.nscr, *.nprc)|*.nscr;*.nprc";
-    m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";//"NumeRe files (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";
+    m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc, *.nlyt)|*.ndat;*.nscr;*.nprc;*.nlyt";//"NumeRe files (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";
     m_filterDataFiles = _guilang.get("GUI_FILTER_DATAFILES");// + " (*.dat, *.txt, *.csv, *.jdx, *.dx, *.jcm)|*.dat;*.txt;*.csv;*.jdx;*.dx;*.jcm";
     m_filterImageFiles = _guilang.get("GUI_FILTER_IMAGEFILES") + " (*.png, *.jpeg, *.eps, *.svg, *.gif, *.tiff)|*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.tif;*.tiff";
     m_filterTeXSource = _guilang.get("GUI_FILTER_TEXSOURCE") + " (*.tex)|*.tex";
@@ -1982,6 +1983,12 @@ void NumeReWindow::showWindow(NumeRe::Window& window)
             showSelectionDialog(window);
         }
     }
+    else if (window.getType() == NumeRe::WINDOW_CUSTOM)
+    {
+        CustomWindow* win = new CustomWindow(this, window);
+        registerWindow(win, WT_CUSTOM);
+        win->Show();
+    }
 }
 
 
@@ -2206,9 +2213,9 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::pass_command(const wxString& command)
+void NumeReWindow::pass_command(const wxString& command, bool isEvent)
 {
-    m_terminal->pass_command(command.ToStdString());
+    m_terminal->pass_command(command.ToStdString(), isEvent);
 }
 
 
@@ -2603,7 +2610,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
         {
             if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
             {
-                m_terminal->pass_command("start \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"");
+                m_terminal->pass_command("start \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"", false);
                 i++;
             }
             else
@@ -2615,7 +2622,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
         {
             if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
             {
-                m_terminal->pass_command("$'" + replacePathSeparator(wxArgV[i].substr(0, wxArgV[i].rfind('.')).ToStdString()) + "'()");
+                m_terminal->pass_command("$'" + replacePathSeparator(wxArgV[i].substr(0, wxArgV[i].rfind('.')).ToStdString()) + "'()", false);
                 i++;
             }
             else
@@ -2639,7 +2646,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
             || ext == ".xlsx"
             || ext == ".labx"
             || ext == ".ndat")
-            m_terminal->pass_command("append \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"");
+            m_terminal->pass_command("append \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"", false);
     }
 
     if (filestoopen.size())
@@ -3471,6 +3478,9 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
 {
     if (filename.GetExt() == "nscr"
         || filename.GetExt() == "nprc"
+        || filename.GetExt() == "nhlp"
+        || filename.GetExt() == "nlng"
+        || filename.GetExt() == "nlyt"
         || filename.GetExt() == "txt"
         || filename.GetExt() == "dat"
         || filename.GetExt() == "log"
@@ -3505,7 +3515,7 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
     {
         wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
         showConsole();
-        m_terminal->pass_command(path.ToStdString());
+        m_terminal->pass_command(path.ToStdString(), false);
     }
 }
 
@@ -6235,13 +6245,28 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
 
         command = "start " + command;
     }
+    else if (command.rfind(".nlyt") != string::npos)
+    {
+        command.erase(command.rfind(".nlyt"));
+
+        if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
+            command.erase(0, vPaths[SCRIPTPATH].length());
+
+        while (command.front() == '/')
+            command.erase(0, 1);
+
+        if (command.find(' ') != string::npos)
+            command = "\"" + command + "\"";
+
+        command = "window " + command;
+    }
     else if (id == ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE)
         command = "load \"" + command + "\" -totable";
     else
         command = "load \"" + command + "\" -app -ignore";
 
     showConsole();
-    m_terminal->pass_command(command);
+    m_terminal->pass_command(command, false);
 }
 
 

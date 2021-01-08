@@ -252,6 +252,33 @@ std::string StyledTextFile::getLine(size_t line) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the selected line (without the
+/// line termination characters and without any
+/// comments).
+///
+/// \param line size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string StyledTextFile::getStrippedLine(size_t line) const
+{
+    if (line < vFileContents.size())
+    {
+        std::string sLine;
+
+        for (size_t i = 0; i < vFileContents[line].second.length(); i++)
+        {
+            if (vStyles[line][i] == StyledTextFile::DEFAULT || vStyles[line][i] == StyledTextFile::STRING)
+                sLine.push_back(vFileContents[line].second[i]);
+        }
+
+        return sLine;
+    }
+
+    return "";
+}
+
+/////////////////////////////////////////////////
 /// \brief Returns the last printable character
 /// position in the currently loaded file.
 ///

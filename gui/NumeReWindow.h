@@ -200,7 +200,7 @@ class NumeReWindow : public wxFrame
         void editTable(NumeRe::Table _table, const string& sTableName);
         void showTable(const wxString& tableName, const wxString& tableDisplayName);
         void showWindow(NumeRe::Window& window);
-        void pass_command(const wxString& command);
+        void pass_command(const wxString& command, bool isEvent = false);
         void evaluateDebugInfo(const vector<string>& vDebugInfo);
         void createLaTeXFile();
         void runLaTeX();

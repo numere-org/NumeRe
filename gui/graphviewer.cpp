@@ -33,8 +33,8 @@ GraphViewer::GraphViewer(wxWindow* parent, const wxString& title, GraphHelper* _
     wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
     _grapherWindow = new wxMGL(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME);
 
-    _grapherWindow->SetGraph(_helper->setGrapher());
     _grapherWindow->SetDraw(_helper);
+    _grapherWindow->SetGraph(_helper->setGrapher());
 
     _grapherWindow->SetAlpha(_helper->getAlpha());
     _grapherWindow->SetLight(_helper->getLighting());

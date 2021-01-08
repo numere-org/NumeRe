@@ -251,24 +251,24 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
 		// TABLE EXTRACTOR AND IMPORTER METHODS
-        inline NumeRe::Table extractTable(const std::string& _sTable)
+        inline NumeRe::Table extractTable(const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
 		{
-			return vMemory[mCachesMap.at(_sTable)]->extractTable(_sTable);
+			return vMemory[mCachesMap.at(_sTable)]->extractTable(_sTable, lines, cols);
 		}
 
-		inline NumeRe::Table extractTable(long long int _nLayer, const std::string& _sTable = "")
+		inline NumeRe::Table extractTable(long long int _nLayer, const std::string& _sTable = "", const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
 		{
-			return vMemory[_nLayer]->extractTable(_sTable);
+			return vMemory[_nLayer]->extractTable(_sTable, lines, cols);
 		}
 
-		inline void importTable(NumeRe::Table _table, const std::string& _sTable)
+		inline void importTable(NumeRe::Table _table, const std::string& _sTable, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
 		{
-			return vMemory[mCachesMap.at(_sTable)]->importTable(_table);
+			return vMemory[mCachesMap.at(_sTable)]->importTable(_table, lines, cols);
 		}
 
-		inline void importTable(NumeRe::Table _table, long long int _nLayer)
+		inline void importTable(NumeRe::Table _table, long long int _nLayer, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
 		{
-			return vMemory[_nLayer]->importTable(_table);
+			return vMemory[_nLayer]->importTable(_table, lines, cols);
 		}
 
 
