@@ -5943,7 +5943,7 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
     // Set a reasonable window size and
     // display it to the user
     copyFrame->SetSize(800, 600);
-    copyFrame->SetIcon(wxIcon(m_mainFrame->getProgramFolder() + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    copyFrame->SetIcon(m_mainFrame->getStandardIcon());
     copyFrame->Show();
     copyFrame->SetFocus();
 }
@@ -6603,7 +6603,7 @@ bool NumeReEditor::InitDuplicateCode()
     if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
     {
         m_duplicateCode = new DuplicateCodeDialog(this, "NumeRe: " + _guilang.get("GUI_DUPCODE_TITLE") + " [" + this->GetFilenameString() + "]");
-        m_duplicateCode->SetIcon(wxIcon(m_mainFrame->getProgramFolder() + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+        m_duplicateCode->SetIcon(m_mainFrame->getStandardIcon());
         m_duplicateCode->Show();
         m_duplicateCode->SetFocus();
         m_duplicateCode->Refresh();

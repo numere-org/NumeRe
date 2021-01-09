@@ -25,19 +25,38 @@ double StrToDb(const string& sString);
 
 namespace NumeRe
 {
-    // Default constructor
+    /////////////////////////////////////////////////
+    /// \brief Default constructor
+    /////////////////////////////////////////////////
     Table::Table()
     {
         sTableName.clear();
     }
 
-    // Size constructor
+
+    /////////////////////////////////////////////////
+    /// \brief Size constructor
+    ///
+    /// \param nLines int
+    /// \param nCols int
+    ///
+    /////////////////////////////////////////////////
     Table::Table(int nLines, int nCols) : Table()
     {
         setMinSize(nLines, nCols);
     }
 
-    // Fill constructor
+
+    /////////////////////////////////////////////////
+    /// \brief Fill constructor
+    ///
+    /// \param dData double** const
+    /// \param sHeadings string* const
+    /// \param nLines long longint
+    /// \param nCols long longint
+    /// \param sName const string&
+    ///
+    /////////////////////////////////////////////////
     Table::Table(double** const dData, string* const sHeadings, long long int nLines, long long int nCols, const string& sName)
     {
         // Empty table with predefined headlines
@@ -63,12 +82,24 @@ namespace NumeRe
         sTableName = sName;
     }
 
-    // Copy constructor
+
+    /////////////////////////////////////////////////
+    /// \brief Copy constructor
+    ///
+    /// \param _table const Table&
+    ///
+    /////////////////////////////////////////////////
     Table::Table(const Table& _table) : vTableData(_table.vTableData), vTableHeadings(_table.vTableHeadings), sTableName(_table.sTableName)
     {
     }
 
-    // Move constructor
+
+    /////////////////////////////////////////////////
+    /// \brief Move constructor
+    ///
+    /// \param _table Table&&
+    ///
+    /////////////////////////////////////////////////
     Table::Table(Table&& _table) : sTableName(_table.sTableName)
     {
         // We move by using the std::swap() functions
@@ -76,14 +107,24 @@ namespace NumeRe
         std::swap(vTableHeadings, _table.vTableHeadings);
     }
 
-    // Destructor
+
+    /////////////////////////////////////////////////
+    /// \brief Destructor
+    /////////////////////////////////////////////////
     Table::~Table()
     {
         vTableData.clear();
         vTableHeadings.clear();
     }
 
-    // Move assignment operator
+
+    /////////////////////////////////////////////////
+    /// \brief Move assignment operator
+    ///
+    /// \param _table Table
+    /// \return Table&
+    ///
+    /////////////////////////////////////////////////
     Table& Table::operator=(Table _table)
     {
         // We move by using the std::swap() functions
@@ -94,8 +135,17 @@ namespace NumeRe
         return *this;
     }
 
-    // This member function prepares a table with
-    // the minimal size of the selected lines and columns
+
+    /////////////////////////////////////////////////
+    /// \brief This member function prepares a table
+    /// with the minimal size of the selected lines
+    /// and columns.
+    ///
+    /// \param i size_t
+    /// \param j size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Table::setMinSize(size_t i, size_t j)
     {
         if (!vTableData.size())
@@ -124,16 +174,31 @@ namespace NumeRe
             vTableHeadings.push_back("Spalte_" + toString(vTableHeadings.size()+1));
     }
 
-    // This member function is a simple helper function
-    // to determine, whether a passed value may be parsed
-    // into a numerical value
+
+    /////////////////////////////////////////////////
+    /// \brief This member function is a simple
+    /// helper function to determine, whether a
+    /// passed value may be parsed into a numerical
+    /// value.
+    ///
+    /// \param sValue const string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Table::isNumerical(const string& sValue)
     {
         static string sValidNumericalCharacters = "0123456789,.eE+- INFAinfa";
         return sValue.find_first_not_of(sValidNumericalCharacters) == string::npos;
     }
 
-    // This member function cleares the contents of this table
+
+    /////////////////////////////////////////////////
+    /// \brief This member function cleares the
+    /// contents of this table.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Table::Clear()
     {
         vTableData.clear();
@@ -141,21 +206,45 @@ namespace NumeRe
         sTableName.clear();
     }
 
-    // This member function simply redirects the control to
-    // setMinSize()
+
+    /////////////////////////////////////////////////
+    /// \brief This member function simply redirects
+    /// the control to setMinSize().
+    ///
+    /// \param i size_t
+    /// \param j size_t
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Table::setSize(size_t i, size_t j)
     {
         this->setMinSize(i, j);
     }
 
-    // Setter function for the table name
+
+    /////////////////////////////////////////////////
+    /// \brief Setter function for the table name.
+    ///
+    /// \param _sName const string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Table::setName(const string& _sName)
     {
         sTableName = _sName;
     }
 
-    // Setter function for the selected column headline.
-    // Will create missing headlines automatically
+
+    /////////////////////////////////////////////////
+    /// \brief Setter function for the selected
+    /// column headline. Will create missing
+    /// headlines automatically.
+    ///
+    /// \param i size_t
+    /// \param _sHead const string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Table::setHead(size_t i, const string& _sHead)
     {
         while (vTableHeadings.size() <= i)
@@ -164,10 +253,20 @@ namespace NumeRe
         vTableHeadings[i] = _sHead;
     }
 
-    // Setter function for the selected column headline
-    // and the selected part of the headline (split using
-    // linebreak characters). Will create the missing
-    // headlines automatically.
+
+    /////////////////////////////////////////////////
+    /// \brief Setter function for the selected
+    /// column headline and the selected part of the
+    /// headline (split using linebreak characters).
+    /// Will create the missing headlines
+    /// automatically.
+    ///
+    /// \param i size_t
+    /// \param part size_t
+    /// \param _sHead const string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Table::setHeadPart(size_t i, size_t part, const string& _sHead)
     {
         while (vTableHeadings.size() <= i)
@@ -190,18 +289,37 @@ namespace NumeRe
         vTableHeadings[i] = head;
     }
 
-    // This member function sets the data to the table.
-    // It will resize the table automatically, if needed.
+
+    /////////////////////////////////////////////////
+    /// \brief This member function sets the data to
+    /// the table. It will resize the table
+    /// automatically, if needed.
+    ///
+    /// \param i size_t
+    /// \param j size_t
+    /// \param _dValue double
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Table::setValue(size_t i, size_t j, double _dValue)
     {
         this->setMinSize(i+1, j+1);
         vTableData[i][j] = _dValue;
     }
 
-    // This member function sets the data, which is passed
-    // as a string, to the table. If the data is not a numerical
-    // value, the data is assigned to the corresponding
-    // column head.
+
+    /////////////////////////////////////////////////
+    /// \brief This member function sets the data,
+    /// which is passed as a string, to the table. If
+    /// the data is not a numerical value, the data
+    /// is assigned to the corresponding column head.
+    ///
+    /// \param i size_t
+    /// \param j size_t
+    /// \param _sValue const string&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
     void Table::setValueAsString(size_t i, size_t j, const string& _sValue)
     {
         // Is it a numerical value?
@@ -240,15 +358,28 @@ namespace NumeRe
         vTableData[i][j] = _dValue;
     }
 
-    // Getter function for the table headline
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the table
+    /// headline.
+    ///
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string Table::getName() const
     {
         return sTableName;
     }
 
-    // Getter function for the needed number of headlines
-    // (depending on the number of linebreaks found in the
-    // headlines)
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the needed number
+    /// of headlines (depending on the number of
+    /// linebreaks found in the headlines).
+    ///
+    /// \return int
+    ///
+    /////////////////////////////////////////////////
     int Table::getHeadCount()
     {
         int nHeadlineCount = 1;
@@ -276,7 +407,15 @@ namespace NumeRe
         return nHeadlineCount;
     }
 
-    // Getter function for the selected column's headline
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the selected
+    /// column's headline.
+    ///
+    /// \param i size_t
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string Table::getHead(size_t i) const
     {
         if (vTableHeadings.size() > i)
@@ -285,8 +424,16 @@ namespace NumeRe
         return "";
     }
 
-    // Getter function for the selected column's headline.
-    // Underscores and masked headlines are replaced on-the-fly
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the selected
+    /// column's headline. Underscores and masked
+    /// headlines are replaced on-the-fly.
+    ///
+    /// \param i size_t
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string Table::getCleanHead(size_t i) const
     {
         if (vTableHeadings.size() > i)
@@ -300,9 +447,18 @@ namespace NumeRe
         return "";
     }
 
-    // Getter function for the selected part of the selected
-    // column's headline.
-    // Underscores and masked headlines are replaced on-the-fly
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the selected part
+    /// of the selected column's headline.
+    /// Underscores and masked headlines are replaced
+    /// on-the-fly.
+    ///
+    /// \param i size_t
+    /// \param part size_t
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string Table::getCleanHeadPart(size_t i, size_t part)
     {
         if (vTableHeadings.size() > i || part >= (size_t)getHeadCount())
@@ -344,7 +500,16 @@ namespace NumeRe
         return "";
     }
 
-    // Getter function for the value of the selected cell
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the value of the
+    /// selected cell.
+    ///
+    /// \param i size_t
+    /// \param j size_t
+    /// \return double
+    ///
+    /////////////////////////////////////////////////
     double Table::getValue(size_t i, size_t j)
     {
         if (vTableData.size() > i && vTableData[i].size() > j)
@@ -353,8 +518,17 @@ namespace NumeRe
         return NAN;
     }
 
-    // Getter function for the value of the selected cell.
-    // The value is converted into a string.
+
+    /////////////////////////////////////////////////
+    /// \brief Getter function for the value of the
+    /// selected cell. The value is converted into a
+    /// string.
+    ///
+    /// \param i size_t
+    /// \param j size_t
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
     string Table::getValueAsString(size_t i, size_t j)
     {
         char cBuffer[50];
@@ -379,25 +553,52 @@ namespace NumeRe
         return "---";
     }
 
-    // Get the number of lines
+
+    /////////////////////////////////////////////////
+    /// \brief Get the number of lines.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t Table::getLines() const
     {
         return vTableData.size();
     }
 
-    // Get the number of columns
+
+    /////////////////////////////////////////////////
+    /// \brief Get the number of columns.
+    ///
+    /// \return size_t
+    ///
+    /////////////////////////////////////////////////
     size_t Table::getCols()
     {
         return vTableData[0].size();
     }
 
-    // Return, whether the table is empty
+
+    /////////////////////////////////////////////////
+    /// \brief Return, whether the table is empty.
+    ///
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Table::isEmpty() const
     {
         return vTableData.empty();
     }
 
-    // This member function inserts lines at the desired position
+
+    /////////////////////////////////////////////////
+    /// \brief This member function inserts lines at
+    /// the desired position.
+    ///
+    /// \param nPos size_t
+    /// \param nNum size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Table::insertLines(size_t nPos, size_t nNum)
     {
         nPos -= getHeadCount();
@@ -408,7 +609,14 @@ namespace NumeRe
         return true;
     }
 
-    // This member function appends lines
+
+    /////////////////////////////////////////////////
+    /// \brief This member function appends lines.
+    ///
+    /// \param nNum size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Table::appendLines(size_t nNum)
     {
         for (size_t i = 0; i < nNum; i++)
@@ -417,7 +625,16 @@ namespace NumeRe
         return true;
     }
 
-    // This member function deletes lines at the desired position
+
+    /////////////////////////////////////////////////
+    /// \brief This member function deletes lines at
+    /// the desired position.
+    ///
+    /// \param nPos size_t
+    /// \param nNum size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Table::deleteLines(size_t nPos, size_t nNum)
     {
         nPos -= getHeadCount();
@@ -426,7 +643,16 @@ namespace NumeRe
         return true;
     }
 
-    // This member function inserts columns at the desired position
+
+    /////////////////////////////////////////////////
+    /// \brief This member function inserts columns
+    /// at the desired position.
+    ///
+    /// \param nPos size_t
+    /// \param nNum size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Table::insertCols(size_t nPos, size_t nNum)
     {
         for (size_t i = 0; i < vTableData.size(); i++)
@@ -436,7 +662,14 @@ namespace NumeRe
         return true;
     }
 
-    // This member function appends columns
+
+    /////////////////////////////////////////////////
+    /// \brief This member function appends columns.
+    ///
+    /// \param nNum size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Table::appendCols(size_t nNum)
     {
         for (size_t i = 0; i < vTableData.size(); i++)
@@ -446,7 +679,16 @@ namespace NumeRe
         return true;
     }
 
-    // This member function delets columns at the desired position
+
+    /////////////////////////////////////////////////
+    /// \brief This member function delets columns at
+    /// the desired position.
+    ///
+    /// \param nPos size_t
+    /// \param nNum size_t
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Table::deleteCols(size_t nPos, size_t nNum)
     {
         for (size_t i = 0; i < vTableData.size(); i++)

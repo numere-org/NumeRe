@@ -363,7 +363,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     wxString programPath = getProgramFolder();
 
-    SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    SetIcon(getStandardIcon());
 
     m_remoteMode = true;
 
@@ -1777,7 +1777,7 @@ void NumeReWindow::openImage(wxFileName filename)
     _panel->SetSize(_panel->getRelation()*600,600);
     frame->SetSizer(sizer);
     frame->SetClientSize(_panel->GetSize());
-    frame->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     m_currentView = frame;
     frame->Show();
     frame->SetFocus();
@@ -1820,7 +1820,7 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
     html->SetRelatedStatusBar(0);
     html->SetPage(HTMLcontent);
     frame->SetSize(1000,600);
-    frame->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -1843,7 +1843,7 @@ void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const strin
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable);
     frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
-    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -1866,7 +1866,7 @@ void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_table);
     frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
-    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -1891,7 +1891,7 @@ void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const strin
     panel->grid->SetTableReadOnly(false);
     panel->grid->SetData(_stringTable);
     frame->SetSize(min(800u, panel->grid->GetWidth()), min(600u, panel->grid->GetHeight()+30));
-    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -1916,7 +1916,7 @@ void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
     panel->grid->SetTableReadOnly(false);
     panel->grid->SetData(_table);
     frame->SetSize(min(800u, panel->grid->GetWidth()), min(600u, panel->grid->GetHeight()+30));
-    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -2005,7 +2005,7 @@ void NumeReWindow::showGraph(NumeRe::Window& window)
     GraphViewer* viewer = new GraphViewer(this, "NumeRe: " + window.getGraph()->getTitle(), window.getGraph(), m_terminal);
     registerWindow(viewer, WT_GRAPH);
 
-    viewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    viewer->SetIcon(getStandardIcon());
     viewer->Show();
     viewer->SetFocus();
 }
@@ -2023,7 +2023,7 @@ void NumeReWindow::showFileDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
     wxFileDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2047,7 +2047,7 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
     wxDirDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2071,7 +2071,7 @@ void NumeReWindow::showTextEntry(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
     wxTextEntryDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2149,7 +2149,7 @@ void NumeReWindow::showListDialog(NumeRe::Window& window)
     }
 
     wxSingleChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, choices);
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2180,7 +2180,7 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
     }
 
     wxMultiChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, choices);
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2243,7 +2243,7 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
     {
         m_debugViewer = new DebugViewer(this, m_options, sTitle);
         m_debugViewer->SetSize(800, 700);
-        m_debugViewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+        m_debugViewer->SetIcon(getStandardIcon());
         m_debugViewer->setTerminal(m_terminal);
     }
 
@@ -6136,6 +6136,19 @@ void NumeReWindow::closeWindows(WindowType type)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This public member function returns
+/// the default icon usable by different windows.
+///
+/// \return wxIcon
+///
+/////////////////////////////////////////////////
+wxIcon NumeReWindow::getStandardIcon()
+{
+    return wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnSplitterDoubleClick
 ///  Cancels the ability to "close" a split window by double-clicking the splitter bar
@@ -6543,7 +6556,7 @@ void NumeReWindow::OnAskForNewFile()
     }
 
     wxSingleChoiceDialog dialog(this, _guilang.get("GUI_TB_NEW_SELECT"), "NumeRe: " + _guilang.get("GUI_TB_NEW"), choices);
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret != wxID_CANCEL)

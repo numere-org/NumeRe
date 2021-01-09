@@ -24,6 +24,12 @@
 #ifndef GROUPPANEL_HPP
 #define GROUPPANEL_HPP
 
+
+/////////////////////////////////////////////////
+/// \brief This class is a extension to the
+/// standard wxSpinCtrl to combine it with a
+/// read- and changeable label.
+/////////////////////////////////////////////////
 class SpinBut : public wxSpinCtrl
 {
     public:
@@ -32,11 +38,25 @@ class SpinBut : public wxSpinCtrl
         SpinBut(wxWindow* parent, wxWindowID id, const wxSize& size, int nMin, int nMax, int nInitial) : wxSpinCtrl(parent, id, wxEmptyString, wxDefaultPosition, size, wxSP_ARROW_KEYS, nMin, nMax, nInitial), m_label(nullptr)
         {}
 
+        /////////////////////////////////////////////////
+        /// \brief Set a new label
+        ///
+        /// \param label const wxString&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         void SetLabel(const wxString& label)
         {
             if (m_label)
                 m_label->SetLabel(label);
         }
+
+        /////////////////////////////////////////////////
+        /// \brief Get the current label
+        ///
+        /// \return wxString
+        ///
+        /////////////////////////////////////////////////
         wxString GetLabel()
         {
             if (m_label)
@@ -44,6 +64,15 @@ class SpinBut : public wxSpinCtrl
 
             return "";
         }
+
+        /////////////////////////////////////////////////
+        /// \brief Show or hide the label and the
+        /// control.
+        ///
+        /// \param show bool
+        /// \return virtual bool
+        ///
+        /////////////////////////////////////////////////
         virtual bool Show(bool show)
         {
             if (m_label)
@@ -51,6 +80,15 @@ class SpinBut : public wxSpinCtrl
 
             return wxSpinCtrl::Show(show);
         }
+
+        /////////////////////////////////////////////////
+        /// \brief Enable or disable the label and the
+        /// control.
+        ///
+        /// \param enable bool
+        /// \return virtual bool
+        ///
+        /////////////////////////////////////////////////
         virtual bool Enable(bool enable)
         {
             if (m_label)
@@ -60,6 +98,13 @@ class SpinBut : public wxSpinCtrl
         }
 };
 
+
+
+/////////////////////////////////////////////////
+/// \brief This class is a extension to the
+/// standard wxTextCtrl to combine it with a
+/// read- and changeable label.
+/////////////////////////////////////////////////
 class TextField : public wxTextCtrl
 {
     public:
@@ -68,11 +113,25 @@ class TextField : public wxTextCtrl
         TextField(wxWindow* parent, wxWindowID id, const wxString& sDefault,const wxSize& size, int nStyle) : wxTextCtrl(parent, id, sDefault, wxDefaultPosition, size, nStyle), m_label(nullptr)
         {}
 
+        /////////////////////////////////////////////////
+        /// \brief Set a new label
+        ///
+        /// \param label const wxString&
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         void SetLabel(const wxString& label)
         {
             if (m_label)
                 m_label->SetLabel(label);
         }
+
+        /////////////////////////////////////////////////
+        /// \brief Get the current label
+        ///
+        /// \return wxString
+        ///
+        /////////////////////////////////////////////////
         wxString GetLabel()
         {
             if (m_label)
@@ -80,6 +139,15 @@ class TextField : public wxTextCtrl
 
             return "";
         }
+
+        /////////////////////////////////////////////////
+        /// \brief Show or hide the label and the
+        /// control.
+        ///
+        /// \param show bool
+        /// \return virtual bool
+        ///
+        /////////////////////////////////////////////////
         virtual bool Show(bool show)
         {
             if (m_label)
@@ -87,6 +155,15 @@ class TextField : public wxTextCtrl
 
             return wxTextCtrl::Show(show);
         }
+
+        /////////////////////////////////////////////////
+        /// \brief Enable or disable the label and the
+        /// control.
+        ///
+        /// \param enable bool
+        /// \return virtual bool
+        ///
+        /////////////////////////////////////////////////
         virtual bool Enable(bool enable)
         {
             if (m_label)
@@ -95,6 +172,7 @@ class TextField : public wxTextCtrl
             return wxTextCtrl::Enable(enable);
         }
 };
+
 
 
 /////////////////////////////////////////////////
@@ -130,9 +208,6 @@ class GroupPanel : public wxScrolledWindow
         wxChoice* CreateChoices(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY);
         wxGauge* CreateGauge(wxWindow* parent, wxSizer* sizer, int style, int id = wxID_ANY);
         wxStaticBitmap* CreateBitmap(wxWindow* parent, wxSizer* sizer, const wxString& filename, int id = wxID_ANY);
-
-        //void OnMouseEvent(wxMouseEvent& event);
-        //wxDECLARE_EVENT_TABLE();
 };
 
 

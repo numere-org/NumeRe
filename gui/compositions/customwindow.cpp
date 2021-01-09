@@ -27,12 +27,28 @@
 
 std::string toString(size_t);
 
+/////////////////////////////////////////////////
+/// \brief This static function converts colors
+/// to wxStrings.
+///
+/// \param c const wxColor&
+/// \return wxString
+///
+/////////////////////////////////////////////////
 static wxString toWxString(const wxColor& c)
 {
     return wxString::Format("{%d,%d,%d}", c.Red(), c.Green(), c.Blue());
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function converts
+/// wxStrings to colors.
+///
+/// \param s const wxString&
+/// \return wxColour
+///
+/////////////////////////////////////////////////
 static wxColour toWxColour(const wxString& s)
 {
     wxColour c;
@@ -42,11 +58,34 @@ static wxColour toWxColour(const wxString& s)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function conversts usual
+/// strings into "Kernel strings" (i.e. usual
+/// NumeRe code strings).
+///
+/// \param s wxString
+/// \return wxString
+///
+/////////////////////////////////////////////////
 static wxString convertToCodeString(wxString s)
 {
     s.Replace("\"", "\\\"");
     return "\"" + s + "\"";
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Enumeration to define possible states
+/// of window items.
+/////////////////////////////////////////////////
+enum WindowState
+{
+    ENABLED,
+    DISABLED,
+    HIDDEN
+};
+
+
 
 
 BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
@@ -62,14 +101,19 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_LEFT_DOWN(CustomWindow::OnMouseLeftDown)
 END_EVENT_TABLE()
 
-enum WindowState
-{
-    ENABLED,
-    DISABLED,
-    HIDDEN
-};
 
 
+
+
+/////////////////////////////////////////////////
+/// \brief CustomWindow constructor. Connects
+/// this window with the NumeRe::Window instance
+/// and triggers the layouting algorithm.
+///
+/// \param parent wxWindow*
+/// \param windowRef const NumeRe::Window&
+///
+/////////////////////////////////////////////////
 CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef) : wxFrame(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxFRAME_FLOAT_ON_PARENT | wxRESIZE_BORDER | wxCAPTION | wxCLOSE_BOX | wxMAXIMIZE_BOX | wxMINIMIZE_BOX), m_windowRef(windowRef)
 {
     m_windowRef.connect(this);
@@ -78,10 +122,20 @@ CustomWindow::CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef) : 
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function evaluates the
+/// layout supplied by the user via a
+/// tinyxml2::XMLDocument instance.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::layout()
 {
+    // Get the layout group from the layout script
     const tinyxml2::XMLElement* layoutGroup = m_windowRef.getLayout()->FirstChild()->ToElement();
 
+    // Evaluate possible background color information
     if (layoutGroup->Attribute("color"))
     {
         wxString sColor = layoutGroup->Attribute("color");
@@ -92,25 +146,35 @@ void CustomWindow::layout()
         SetBackgroundColour(background);
     }
 
+    // Evaluate the title information
     if (layoutGroup->Attribute("title"))
         SetTitle(layoutGroup->Attribute("title"));
     else
-        SetTitle("Custom Window");
+        SetTitle("NumeRe: Custom Window");
 
+    // Evaluate the user-supplied icon or use
+    // the standard icon
     if (layoutGroup->Attribute("icon"))
         SetIcon(wxIcon(layoutGroup->Attribute("icon"), wxICON_DEFAULT_TYPE));
     else
-        SetIcon(wxIcon(static_cast<NumeReWindow*>(m_parent)->getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+        SetIcon(static_cast<NumeReWindow*>(m_parent)->getStandardIcon());
 
+    // Create the GroupPanel instance and bind the mouse event handler
+    // the frame's event handler
     GroupPanel* _groupPanel = new GroupPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_STATIC);
     _groupPanel->Bind(wxEVT_LEFT_DOWN, &CustomWindow::OnMouseLeftDown, this);
 
+    // Recursively layout the child elements of the current XMLElement
+    // object
     layoutChild(layoutGroup->FirstChildElement(), _groupPanel, _groupPanel->getVerticalSizer(), _groupPanel);
 
+    // Define the scrollbars
     _groupPanel->SetScrollbars(20, 20, 200, 200);
 
+    // Create a status bar
     CreateStatusBar();
 
+    // Evaluate the size information
     if (layoutGroup->Attribute("size"))
     {
         wxString sSize = layoutGroup->Attribute("size");
@@ -122,6 +186,8 @@ void CustomWindow::layout()
     }
     else
         SetClientSize(wxSize(800,600));
+
+
     //wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
     //vsizer->Add(_groupPanel, 1, wxEXPAND, 0);
     //SetSizer(vsizer);
@@ -129,21 +195,38 @@ void CustomWindow::layout()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function can be called
+/// recursively and creates the layout for the
+/// current XMLElement's children.
+///
+/// \param currentChild const tinyxml2::XMLElement*
+/// \param currParent wxWindow*
+/// \param currSizer wxSizer*
+/// \param _groupPanel GroupPanel*
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindow* currParent, wxSizer* currSizer, GroupPanel* _groupPanel)
 {
+    // As long as another child (i.e. sibling) can be found
     while (currentChild)
     {
+        // Evaluate the id attribute
         int id = currentChild->Attribute("id") ?
                     currentChild->DoubleAttribute("id") : m_windowItems.size() + 1000;
 
+        // Get the text used by some controls
         wxString text = currentChild->GetText() ? currentChild->GetText() : "";
 
         wxFont font = GetFont();
         WindowState state = ENABLED;
 
+        // Evaluate the state attribute
         if (currentChild->Attribute("state"))
             state = currentChild->Attribute("state", "disabled") ? DISABLED : (currentChild->Attribute("state", "hidden") ? HIDDEN : ENABLED);
 
+        // evaluat the font attribute
         if (currentChild->Attribute("font"))
         {
             wxString sFont = currentChild->Attribute("font");
@@ -155,8 +238,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 font.MakeBold();
         }
 
-
-        // Add an element
+        // Now check for the current XMLElement's
+        // value (i.e. the XML-Tag name) and create
+        // a corresponding control (if available)
         if (string(currentChild->Value()) == "button")
         {
             // Add a button
@@ -344,9 +428,21 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         {
             // Add a grapher object
             wxMGL* mgl = new wxMGL(currParent, id, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME, true);
-            mgl->SetMinClientSize(wxSize(640,480));
-            currSizer->Add(mgl, 1, wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
             m_windowItems[id] = std::make_pair(CustomWindow::GRAPHER, mgl);
+
+            if (currentChild->Attribute("size"))
+            {
+                wxString sSize = currentChild->Attribute("size");
+                long int x,y;
+                sSize.substr(0, sSize.find(',')).ToLong(&x);
+                sSize.substr(sSize.find(',')+1).ToLong(&y);
+
+                mgl->SetMinClientSize(wxSize(x,y));
+            }
+            else
+                mgl->SetMinClientSize(wxSize(640,480));
+
+            currSizer->Add(mgl, 1, wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
 
             if (currentChild->Attribute("onclick"))
                 m_eventTable[id] = currentChild->Attribute("onclick");
@@ -379,7 +475,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         }
         else if (string(currentChild->Value()) == "group")
         {
-            // Add a group
+            // Add a group. A group is a recursive control,
+            // which contains further controls (including further groups).
+            // Will call this function recursively.
             wxString label;
             int style = wxHORIZONTAL;
             bool isCollapsible = false;
@@ -393,6 +491,9 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("style"))
                 isCollapsible = currentChild->Attribute("style", "collapse");
 
+            // A collapsible group is currently very buggy (if used
+            // with the current GroupPanel).
+            // TODO: Fix this
             if (label.length() && isCollapsible)
             {
                 wxCollapsiblePane* pane = _groupPanel->createCollapsibleGroup(label, currParent, currSizer);
@@ -416,6 +517,8 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
         }
 
+        // Find the next sibling from the current
+        // child element
         if (currentChild->NextSibling())
             currentChild = currentChild->NextSibling()->ToElement();
         else
@@ -424,26 +527,46 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function is the central
+/// kernel interaction event handler. Will be
+/// called from the wxWidgets' event handler and
+/// all the registered procedures (if any).
+///
+/// \param event wxEvent&
+/// \param sEventType const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType)
 {
+    // FIXME: Ignore the onclose event for now
     if (sEventType == "onclose")
         return;
 
+    // Try to find a defined event handler for
+    // the current window item element
     auto iter = m_eventTable.find(event.GetId());
 
     if (iter != m_eventTable.end())
     {
         if (iter->second == "close")
             closeWindow();
-        else if (iter->second[0] == '$')
+        else if (iter->second[0] == '$' && iter->second.length() > 1 && (wxIsalnum(iter->second[1]) || iter->second[1] == '_'))
         {
+            // If the event handler starts with an
+            // dollar, it must be a procedure
             NumeReWindow* mainWindow = static_cast<NumeReWindow*>(m_parent);
             WindowItemParams params;
 
+            // Get the parameters for the selected
+            // window item
             getItemParameters(event.GetId(), params);
 
             wxString kvl_event;
 
+            // Create the corresponding key-value-list
+            // syntax
             if (event.GetEventType() == wxEVT_GRID_SELECT_CELL)
             {
                 kvl_event = "{\"event\",\"onclick\",\"object\",\"" + params.type
@@ -458,6 +581,7 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType)
                             + ",\"state\",\"" + params.state + "\"}";
             }
 
+            // Call the procedure with the following syntax:
             // $PROCEDURE(winid, objectid, event{})
             mainWindow->pass_command(iter->second + "(" + toString(m_windowRef.getId()) + ","
                                                         + toString(event.GetId()) + ","
@@ -467,6 +591,13 @@ void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the parameters of this window.
+///
+/// \param params WindowItemParams&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CustomWindow::getWindowParameters(WindowItemParams& params) const
 {
     params.type = "window";
@@ -479,8 +610,18 @@ bool CustomWindow::getWindowParameters(WindowItemParams& params) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the parameters of the selected
+/// window item.
+///
+/// \param windowItemID int
+/// \param params WindowItemParams&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params) const
 {
+    // If the ID equals -1, return the window parameters instead
     if (windowItemID == -1)
         return getWindowParameters(params);
 
@@ -579,6 +720,14 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief A simple tokenizer to separate a list
+/// of strings into multiple strings.
+///
+/// \param choices wxString&
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
 wxArrayString CustomWindow::getChoices(wxString& choices)
 {
     wxArrayString choicesArray;
@@ -604,6 +753,14 @@ wxArrayString CustomWindow::getChoices(wxString& choices)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Private member function to convert a
+/// kernel string into a usual string.
+///
+/// \param sString wxString
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString CustomWindow::removeQuotationMarks(wxString sString)
 {
     sString.Trim(false);
@@ -618,6 +775,15 @@ wxString CustomWindow::removeQuotationMarks(wxString sString)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns a list of all window item IDs,
+/// which correspond to the selected
+/// WindowItemType.
+///
+/// \param _type CustomWindow::WindowItemType
+/// \return std::vector<int>
+///
+/////////////////////////////////////////////////
 std::vector<int> CustomWindow::getWindowItems(CustomWindow::WindowItemType _type) const
 {
     std::vector<int> vIDs;
@@ -632,12 +798,25 @@ std::vector<int> CustomWindow::getWindowItems(CustomWindow::WindowItemType _type
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Close this window.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CustomWindow::closeWindow()
 {
     return Close();
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get the value of the selected item.
+///
+/// \param windowItemID int
+/// \return WindowItemValue
+///
+/////////////////////////////////////////////////
 WindowItemValue CustomWindow::getItemValue(int windowItemID) const
 {
     WindowItemParams params;
@@ -655,6 +834,13 @@ WindowItemValue CustomWindow::getItemValue(int windowItemID) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get the label of the selected item.
+///
+/// \param windowItemID int
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString CustomWindow::getItemLabel(int windowItemID) const
 {
     WindowItemParams params;
@@ -666,6 +852,13 @@ wxString CustomWindow::getItemLabel(int windowItemID) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get the state of the selected item.
+///
+/// \param windowItemID int
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString CustomWindow::getItemState(int windowItemID) const
 {
     WindowItemParams params;
@@ -677,6 +870,13 @@ wxString CustomWindow::getItemState(int windowItemID) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Get the color of the selected item.
+///
+/// \param windowItemID int
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString CustomWindow::getItemColor(int windowItemID) const
 {
     WindowItemParams params;
@@ -688,6 +888,14 @@ wxString CustomWindow::getItemColor(int windowItemID) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Change the value of the selected item.
+///
+/// \param _value WindowItemValue&
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
 {
     if (windowItemID == -1)
@@ -782,6 +990,14 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Change the label of the selected item.
+///
+/// \param _label const wxString&
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
 {
     if (windowItemID == -1)
@@ -825,6 +1041,14 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Change the state of the selected item.
+///
+/// \param _state const wxString&
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CustomWindow::setItemState(const wxString& _state, int windowItemID)
 {
     if (windowItemID == -1)
@@ -854,6 +1078,14 @@ bool CustomWindow::setItemState(const wxString& _state, int windowItemID)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Change the color of the selected item.
+///
+/// \param _color const wxString&
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
 {
     wxColour color = toWxColour(_color);
@@ -906,6 +1138,14 @@ bool CustomWindow::setItemColor(const wxString& _color, int windowItemID)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Updates the selected grapher item.
+///
+/// \param _helper GraphHelper*
+/// \param windowItemID int
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
 {
     auto iter = m_windowItems.find(windowItemID);
@@ -914,14 +1154,15 @@ bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
         return false;
 
     wxMGL* mgl = static_cast<wxMGL*>(iter->second.second);
+    wxSize s = mgl->GetMinClientSize();
 
     mgl->SetDraw(_helper);
     mgl->SetGraph(_helper->setGrapher());
 
-    double dHeight = sqrt(640.0*480.0 / _helper->getAspect());
+    double dHeight = sqrt((double)(s.x*s.y) / _helper->getAspect());
 
     if (_helper->getHires())
-        dHeight = sqrt(1280.0*960.0 / _helper->getAspect());
+        dHeight = sqrt((double)(s.x*s.y)*4.0 / _helper->getAspect());
 
     mgl->SetSize((int)lrint(_helper->getAspect()*dHeight), (int)lrint(dHeight));
 
@@ -931,12 +1172,26 @@ bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Button click event handler.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::OnClick(wxCommandEvent& event)
 {
     handleEvent(event, "onclick");
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Generic onchange event handler.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::OnChange(wxCommandEvent& event)
 {
     auto iter = m_windowItems.find(event.GetId());
@@ -946,12 +1201,26 @@ void CustomWindow::OnChange(wxCommandEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief wxSpinCtrl event handler.
+///
+/// \param event wxSpinEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::OnSpin(wxSpinEvent& event)
 {
     handleEvent(event, "onchange");
 }
 
 
+/////////////////////////////////////////////////
+/// \brief wxGrid event handler.
+///
+/// \param event wxGridEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::OnCellSelect(wxGridEvent& event)
 {
     TableViewer* table = static_cast<TableViewer*>(m_windowItems[event.GetId()].second);
@@ -959,6 +1228,13 @@ void CustomWindow::OnCellSelect(wxGridEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief OnClose event handler.
+///
+/// \param event wxCloseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::OnClose(wxCloseEvent& event)
 {
     handleEvent(event, "onclose");
@@ -968,6 +1244,13 @@ void CustomWindow::OnClose(wxCloseEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Mouse event handler.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::OnMouseLeftDown(wxMouseEvent& event)
 {
     event.GetPosition();

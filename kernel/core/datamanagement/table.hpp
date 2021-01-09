@@ -26,6 +26,11 @@ using namespace std;
 
 namespace NumeRe
 {
+    /////////////////////////////////////////////////
+    /// \brief This data container is a copy-
+    /// efficient table to interchange data between
+    /// Kernel and GUI.
+    /////////////////////////////////////////////////
     class Table
     {
         private:

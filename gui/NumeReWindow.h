@@ -253,6 +253,7 @@ class NumeReWindow : public wxFrame
         void registerWindow(wxWindow* window, WindowType type);
         void unregisterWindow(wxWindow* window);
         void closeWindows(WindowType type = WT_ALL);
+        wxIcon getStandardIcon();
 
 
     private:
