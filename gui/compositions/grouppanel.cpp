@@ -312,7 +312,7 @@ SpinBut* GroupPanel::CreateSpinControl(wxWindow* parent, wxSizer* sizer, const w
     // Create a horizontal sizer for the
     // spin control and its assigned text
     wxBoxSizer* spinCtrlSizer = new wxBoxSizer(wxHORIZONTAL);
-    sizer->Add(spinCtrlSizer, 0, wxALIGN_LEFT | wxALL, ELEMENT_BORDER);
+    sizer->Add(spinCtrlSizer, 0, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxALL, ELEMENT_BORDER);
 
     // Create the spin control
     SpinBut* spinCtrl = new SpinBut(parent, id, wxSize(60, -1), nMin, nMax, nInitial);
@@ -353,6 +353,28 @@ wxListView* GroupPanel::CreateListView(wxWindow* parent, wxSizer* sizer, int nSt
 
 /////////////////////////////////////////////////
 /// \brief This member function creates the
+/// layout for a treelist control.
+///
+/// \param parent wxWindow*
+/// \param sizer wxSizer*
+/// \param nStyle int
+/// \param size wxSize
+/// \param id int
+/// \return wxTreeListCtrl*
+///
+/////////////////////////////////////////////////
+wxTreeListCtrl* GroupPanel::CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle, wxSize size, int id)
+{
+    // Create the listview and assign it to the passed sizer
+    wxTreeListCtrl* listCtrl = new wxTreeListCtrl(parent, id, wxDefaultPosition, size, nStyle);
+    sizer->Add(listCtrl, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxEXPAND | wxFIXED_MINSIZE, ELEMENT_BORDER);
+
+    return listCtrl;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
 /// layout for a button.
 ///
 /// \param parent wxWindow*
@@ -367,9 +389,9 @@ wxButton* GroupPanel::CreateButton(wxWindow* parent, wxSizer* sizer, const wxStr
     wxButton* button = new wxButton(parent, id, description);
 
     if (sizer == verticalSizer)
-        sizer->Add(button, 0, wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+        sizer->Add(button, 0, wxALIGN_CENTER_VERTICAL | wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
     else
-        sizer->Add(button, 1, wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+        sizer->Add(button, 1, wxALIGN_CENTER_VERTICAL | wxALL | wxFIXED_MINSIZE | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
 
     return button;
 }

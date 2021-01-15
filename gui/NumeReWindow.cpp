@@ -1380,6 +1380,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             NewFile(FILE_PLUGIN);
             break;
         }
+        case ID_MENU_NEW_LAYOUT:
+        {
+            NewFile(FILE_NLYT);
+            break;
+        }
 
         case ID_MENU_OPEN_SOURCE_LOCAL:
         case ID_MENU_OPEN_SOURCE_REMOTE:
@@ -2617,6 +2622,18 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
                 filestoopen.Add(wxArgV[i]);
         }
 
+        // Window-Layouts: run or open?
+        if (ext == ".nlyt")
+        {
+            if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
+            {
+                m_terminal->pass_command("window \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"", false);
+                i++;
+            }
+            else
+                filestoopen.Add(wxArgV[i]);
+        }
+
         // Procedures: run or open?
         if (ext == ".nprc")
         {
@@ -2730,6 +2747,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         {
             if (_filetype == FILE_NSCR)
                 textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNSCR_QUESTION"), _guilang.get("GUI_DLG_NEWNSCR"), _guilang.get("GUI_DLG_NEWNSCR_DFLT"));
+            else if (_filetype == FILE_NLYT)
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNLYT_QUESTION"), _guilang.get("GUI_DLG_NEWNLYT"), _guilang.get("GUI_DLG_NEWNLYT_DFLT"));
             else if (_filetype == FILE_NPRC)
                 textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNPRC_QUESTION"), _guilang.get("GUI_DLG_NEWNPRC"), _guilang.get("GUI_DLG_NEWNPRC_DFLT"));
             else
@@ -2803,6 +2822,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Search the correct filename
         if (_filetype == FILE_NSCR)
             dummy = "tmpl_script.nlng";
+        else if (_filetype == FILE_NLYT)
+            dummy = "tmpl_layout.nlng";
         else if (_filetype == FILE_PLUGIN)
             dummy = "tmpl_plugin.nlng";
         else
@@ -2826,6 +2847,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Determine the file extension
         if (_filetype == FILE_NSCR)
             filename += ".nscr";
+        else if (_filetype == FILE_NLYT)
+            filename += ".nlyt";
         else if (_filetype == FILE_PLUGIN)
             filename = "plgn_" + filename + ".nscr";
         else if (_filetype == FILE_NPRC)
@@ -2844,7 +2867,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_currentEd = edit;
 
         // Set the corresponding full file name
-        if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN)
+        if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN || _filetype == FILE_NLYT)
             m_currentEd->SetFilename(wxFileName(vPaths[SCRIPTPATH] + folder, filename), false);
         else if (_filetype == FILE_NPRC)
             m_currentEd->SetFilename(wxFileName(vPaths[PROCPATH] + folder, filename), false);
@@ -4689,6 +4712,7 @@ void NumeReWindow::UpdateMenuBar()
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
 
     wxMenu* menuFile = new wxMenu();
 
@@ -4880,6 +4904,7 @@ void NumeReWindow::UpdateToolbar()
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
     t->SetDropdownMenu(ID_MENU_NEW_ASK, menuNewFile);
 
     t->AddTool(ID_MENU_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR), _guilang.get("GUI_TB_OPEN_TTP"));
@@ -6544,6 +6569,7 @@ void NumeReWindow::OnAskForNewFile()
     choices.Add(_guilang.get("GUI_MENU_NEW_NSCR"));
     choices.Add(_guilang.get("GUI_MENU_NEW_NPRC"));
     choices.Add(_guilang.get("GUI_MENU_NEW_PLUGIN"));
+    choices.Add(_guilang.get("GUI_MENU_NEW_LAYOUT"));
 
     // Remove obsolete menu string items
     for (size_t i = 0; i < choices.size(); i++)
@@ -6574,6 +6600,9 @@ void NumeReWindow::OnAskForNewFile()
             break;
         case 3:
             NewFile(FILE_PLUGIN);
+            break;
+        case 4:
+            NewFile(FILE_NLYT);
             break;
         }
     }

@@ -256,6 +256,8 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::TEXT);
             else if (_selection == "grapher")
                 return m_customWindow->getWindowItems(CustomWindow::GRAPHER);
+            else if (_selection == "treelist")
+                return m_customWindow->getWindowItems(CustomWindow::TREELIST);
         }
 
         return std::vector<int>();

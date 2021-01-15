@@ -21,6 +21,7 @@
 #include "../../kernel/core/utils/tinyxml2.h"
 #include "grouppanel.hpp"
 #include <wx/tokenzr.h>
+#include <wx/dataview.h>
 #include "../wx.h"
 
 #include <string>
@@ -75,6 +76,159 @@ static wxString convertToCodeString(wxString s)
 
 
 /////////////////////////////////////////////////
+/// \brief Separates the different item values.
+///
+/// \param sItem wxString&
+/// \return wxString
+///
+/////////////////////////////////////////////////
+static wxString nextItemValue(wxString& sItem)
+{
+    wxString sValue = sItem.substr(0, sItem.find('\t'));
+
+    if (sItem.find('\t') != std::string::npos)
+        sItem.erase(0, sItem.find('\t')+1);
+    else
+        sItem.clear();
+
+    return sValue;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function converts the list
+/// of values into items for the passed tree list
+/// control and populates it.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \param values const wxArrayString&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& values)
+{
+    if (!values.size())
+        return;
+
+    bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
+    size_t nColumns = 1;
+    size_t pos = 0;
+
+    while ((pos = values[0].find('\t', pos)) != std::string::npos)
+    {
+        nColumns++;
+        pos++;
+    }
+
+    if (useCheckBoxes)
+        nColumns--;
+
+    listCtrl->DeleteAllItems();
+
+    while (listCtrl->GetColumnCount() < nColumns)
+        listCtrl->AppendColumn("");
+
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        wxString sItem = values[i];
+        size_t currCol = 1u;
+        bool check = false;
+
+        if (useCheckBoxes)
+            check = nextItemValue(sItem) == "1";
+
+        wxTreeListItem item = listCtrl->AppendItem(listCtrl->GetRootItem(), nextItemValue(sItem));
+
+        if (check && useCheckBoxes)
+            listCtrl->CheckItem(item);
+
+        while (sItem.length() && currCol < nColumns)
+        {
+            listCtrl->SetItemText(item, currCol, nextItemValue(sItem));
+            currCol++;
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function returns the
+/// current value of the passed tree list
+/// control, whereas the value is either the
+/// current selection or a vector of the current
+/// checkbox states.
+///
+/// \param listCtrl wxTreeListCtrl*
+/// \return wxString
+///
+/////////////////////////////////////////////////
+static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
+{
+    wxString values;
+    bool useCheckBoxes = listCtrl->HasFlag(wxTL_CHECKBOX);
+    wxTreeListItems items;
+
+    // Get selections if any and no checkboxes are used
+    if (!useCheckBoxes && listCtrl->GetSelections(items))
+    {
+        for (size_t i = 0; i < items.size(); i++)
+        {
+            if (values.length())
+                values += ", ";
+
+            wxString sItem;
+
+            for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
+            {
+                sItem += listCtrl->GetItemText(items[i], j);
+
+                if (j+1 < listCtrl->GetColumnCount())
+                    sItem += "\t";
+            }
+
+            values += convertToCodeString(sItem);
+        }
+
+        return convertToCodeString(values);
+
+    }
+
+    // Get the complete list or the states of the checkboxes
+    for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
+    {
+        if (values.length())
+            values += ", ";
+
+        if (useCheckBoxes)
+        {
+            values += listCtrl->GetCheckedState(item) == wxCHK_CHECKED ? "1" : "0";
+            continue;
+        }
+
+        wxString sItem;
+
+        if (useCheckBoxes)
+            sItem += listCtrl->GetCheckedState(item) == wxCHK_CHECKED ? "1\t" : "0\t";
+
+        for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
+        {
+            sItem += listCtrl->GetItemText(item, i);
+
+            if (i+1 < listCtrl->GetColumnCount())
+                sItem += "\t";
+        }
+
+        values += convertToCodeString(sItem);
+    }
+
+    if (useCheckBoxes)
+        return "\"{" + values + "}\"";
+    else
+        return convertToCodeString(values);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Enumeration to define possible states
 /// of window items.
 /////////////////////////////////////////////////
@@ -99,6 +253,8 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_CLOSE(CustomWindow::OnClose)
     EVT_GRID_SELECT_CELL(CustomWindow::OnCellSelect)
     EVT_LEFT_DOWN(CustomWindow::OnMouseLeftDown)
+    EVT_TREELIST_ITEM_CHECKED(-1, CustomWindow::OnTreeListEvent)
+    EVT_TREELIST_SELECTION_CHANGED(-1, CustomWindow::OnTreeListEvent)
 END_EVENT_TABLE()
 
 
@@ -473,6 +629,75 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("onclick"))
                 m_eventTable[id] = currentChild->Attribute("onclick");
         }
+        else if (string(currentChild->Value()) == "treelist")
+        {
+            // Add a treelist control
+            int style = wxTL_SINGLE;
+
+            if (currentChild->Attribute("type"))
+                style |= currentChild->Attribute("type", "checkmark") ? wxTL_CHECKBOX : wxTL_MULTIPLE;
+
+            wxArrayString labels;
+            wxArrayString values;
+
+            wxTreeListCtrl* listCtrl = _groupPanel->CreateTreeListCtrl(currParent, currSizer, style, wxDefaultSize, id);
+            m_windowItems[id] = std::make_pair(CustomWindow::TREELIST, listCtrl);
+
+            if (currentChild->Attribute("label"))
+            {
+                wxString label = currentChild->Attribute("label");
+                labels = getChoices(label);
+            }
+
+            if (currentChild->Attribute("value"))
+            {
+                wxString value = currentChild->Attribute("value");
+                values = getChoices(value);
+            }
+
+            if (values.size())
+            {
+                if (labels.size())
+                {
+                    for (size_t j = 0; j < labels.size(); j++)
+                    {
+                        listCtrl->AppendColumn(labels[j]);
+                    }
+                }
+
+                populateTreeListCtrl(listCtrl, values);
+            }
+            else if (currentChild->Attribute("size"))
+            {
+                wxString sSize = currentChild->Attribute("size");
+                long int row,col;
+                sSize.substr(0, sSize.find(',')).ToLong(&row);
+                sSize.substr(sSize.find(',')+1).ToLong(&col);
+
+                for (size_t j = 0; j < (size_t)col; j++)
+                {
+                    if (labels.size() > j)
+                        listCtrl->AppendColumn(labels[j]);
+                    else
+                        listCtrl->AppendColumn("");
+                }
+
+                for (int i = 0; i < row; i++)
+                {
+                    listCtrl->AppendItem(listCtrl->GetRootItem(), "ITEM " + wxString::Format("%d", i+1));
+                }
+            }
+            else if (labels.size())
+            {
+                for (size_t j = 0; j < labels.size(); j++)
+                {
+                    listCtrl->AppendColumn(labels[j]);
+                }
+            }
+
+            if (currentChild->Attribute("onclick"))
+                m_eventTable[id] = currentChild->Attribute("onclick");
+        }
         else if (string(currentChild->Value()) == "group")
         {
             // Add a group. A group is a recursive control,
@@ -709,9 +934,20 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.value = convertToCodeString(grapher->getClickedCoords());
             params.type = "grapher";
         }
+        case CustomWindow::TREELIST:
+        {
+            wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
 
+            for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
+            {
+                if (params.label.length())
+                    params.label += ", ";
 
-    //LISTVIEW
+                params.label += convertToCodeString(listCtrl->GetDataView()->GetColumn(i)->GetTitle());
+            }
+            params.value = getTreeListCtrlValue(listCtrl);
+            params.type = "treelist";
+        }
     }
 
     params.state = !object.second->IsShown() ? "hidden" : object.second->IsEnabled() ? "enabled" : "disabled";
@@ -982,8 +1218,12 @@ bool CustomWindow::setItemValue(WindowItemValue& _value, int windowItemID)
             table->SetData(_value.tableValue);
             break;
         }
-
-    //LISTVIEW,
+        case CustomWindow::TREELIST:
+        {
+            wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
+            populateTreeListCtrl(listCtrl, getChoices(_value.stringValue));
+            break;
+        }
     }
 
     return true;
@@ -1033,8 +1273,20 @@ bool CustomWindow::setItemLabel(const wxString& _label, int windowItemID)
         case CustomWindow::RADIOGROUP:
             static_cast<wxRadioBox*>(object.second)->SetLabel(removeQuotationMarks(_label));
             break;
+        case CustomWindow::TREELIST:
+        {
+            wxString lab = _label;
+            wxArrayString labels = getChoices(lab);
+            wxTreeListCtrl* listCtrl = static_cast<wxTreeListCtrl*>(object.second);
 
-    //LISTVIEW,
+            for (size_t i = 0; i < labels.size(); i++)
+            {
+                if (listCtrl->GetColumnCount() <= i)
+                    listCtrl->AppendColumn(labels[i]);
+                else
+                    listCtrl->GetDataView()->GetColumn(i)->SetTitle(labels[i]);
+            }
+        }
     }
 
     return true;
@@ -1154,18 +1406,11 @@ bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
         return false;
 
     wxMGL* mgl = static_cast<wxMGL*>(iter->second.second);
-    wxSize s = mgl->GetMinClientSize();
+    wxSize s = mgl->GetSize();
 
     mgl->SetDraw(_helper);
     mgl->SetGraph(_helper->setGrapher());
-
-    double dHeight = sqrt((double)(s.x*s.y) / _helper->getAspect());
-
-    if (_helper->getHires())
-        dHeight = sqrt((double)(s.x*s.y)*4.0 / _helper->getAspect());
-
-    mgl->SetSize((int)lrint(_helper->getAspect()*dHeight), (int)lrint(dHeight));
-
+    mgl->SetSize(s.x, s.y);
     mgl->Refresh();
 
     return true;
@@ -1253,9 +1498,24 @@ void CustomWindow::OnClose(wxCloseEvent& event)
 /////////////////////////////////////////////////
 void CustomWindow::OnMouseLeftDown(wxMouseEvent& event)
 {
-    event.GetPosition();
     handleEvent(event, "onclick");
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Tree list control event handler.
+///
+/// \param event wxTreeListEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::OnTreeListEvent(wxTreeListEvent& event)
+{
+    if (static_cast<wxTreeListCtrl*>(m_windowItems[event.GetId()].second)->HasFlag(wxTL_CHECKBOX)
+        && event.GetEventType() == wxEVT_TREELIST_SELECTION_CHANGED)
+        return;
+
+    handleEvent(event, "onclick");
+}
 
 

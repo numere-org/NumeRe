@@ -88,7 +88,15 @@ static std::string parseNumOpt(const std::string& sCmd, size_t pos)
 /////////////////////////////////////////////////
 static std::string parseStringOpt(const std::string& sCmd, size_t pos)
 {
-    return getArgAtPos(sCmd, pos, ARGEXTRACT_PARSED | ARGEXTRACT_STRIPPED);
+    std::string arg = getArgAtPos(sCmd, pos, ARGEXTRACT_PARSED);
+    StripSpaces(arg);
+
+    if (arg.find(",") != std::string::npos && arg.find("\"") != std::string::npos)
+        return arg;
+    else if (arg.front() == '"' && arg.back() == '"')
+        return arg.substr(1, arg.length()-2);
+
+    return arg;
     /*std::string option = getArgAtPos(sCmd, pos);
     NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
@@ -131,6 +139,48 @@ static std::string parseEventOpt(const std::string& sCmd, size_t pos)
 }
 
 
+static void evaluateExpression(std::string& sExpr)
+{
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
+    if (sExpr.find_first_not_of(' ') == std::string::npos)
+        return;
+
+    // Call functions
+    if (!instance->getDefinitions().call(sExpr))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, "");
+
+    // Evaluate strings
+    if (instance->getStringParser().isStringExpression(sExpr))
+    {
+        std::string dummy;
+        NumeRe::StringParser::StringParserRetVal _ret = instance->getStringParser().evalAndFormat(sExpr, dummy, true);
+
+        if (_ret == NumeRe::StringParser::STRING_SUCCESS)
+            return;
+    }
+
+    if (instance->getMemoryManager().containsTablesOrClusters(sExpr))
+        getDataElements(sExpr, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+
+    // Numerical evaluation
+    instance->getParser().SetExpr(sExpr);
+
+    int results;
+    value_type* v = instance->getParser().Eval(results);
+
+    sExpr.clear();
+
+    for (int i = 0; i < results; i++)
+    {
+        if (sExpr.length())
+            sExpr += ",";
+
+        sExpr += toString(v[i], 7);
+    }
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This static function parses a single
 /// layout command into a usable XML element.
@@ -143,6 +193,9 @@ static std::string parseEventOpt(const std::string& sCmd, size_t pos)
 static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLElement* layoutElement)
 {
     std::string sExpr = sLayoutCommand.substr(0, std::min(sLayoutCommand.find("-set"), sLayoutCommand.find("--")));
+
+    evaluateExpression(sExpr);
+
     StripSpaces(sExpr);
 
     layoutElement->SetText(sExpr.c_str());
@@ -216,6 +269,8 @@ static void parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument*
     {
         // Get the current line without comments
         std::string line = layoutScript.getStrippedLine(i);
+
+        StripSpaces(line);
 
         if (line.length())
         {
@@ -374,7 +429,7 @@ static void setParametersInWindow(std::string& sCmd, const std::string& sExpr)
             value.stringValue = _access.getDataObject() + "()";
         }
         else
-            value.stringValue = parseNumOpt(sCmd, findParameter(sCmd, "value", '=')+5);
+            value.stringValue = parseStringOpt(sCmd, findParameter(sCmd, "value", '=')+5);
 
         sCmd = toString(winInfo.window->setItemValue(value, itemID));
     }

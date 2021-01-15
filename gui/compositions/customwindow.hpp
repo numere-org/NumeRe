@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <wx/treelist.h>
 
 #include "../../kernel/windowmanager.hpp"
 #include "../../kernel/core/datamanagement/table.hpp"
@@ -75,7 +76,7 @@ class CustomWindow : public wxFrame
             CHECKBOX,   // OK
             TEXT,       // OK
             TEXTCTRL,   // OK
-            LISTVIEW,
+            TREELIST,
             SPINCTRL,   // OK
             BUTTON,     // OK
             RADIOGROUP, // OK
@@ -120,6 +121,7 @@ class CustomWindow : public wxFrame
         void OnCellSelect(wxGridEvent& event);
         void OnClose(wxCloseEvent& event);
         void OnMouseLeftDown(wxMouseEvent& event);
+        void OnTreeListEvent(wxTreeListEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

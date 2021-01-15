@@ -452,7 +452,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 nSlices[i] = 1;
         }
     }
-    if (findParameter(sCmd, "streamto", '=') && (nType == ALL || nType & LOCAL))
+    if (findParameter(sCmd, "streamto", '=') && (nType == ALL || nType & SUPERGLOBAL))
     {
         int nPos = findParameter(sCmd, "streamto", '=')+8;
         string sTemp = getArgAtPos(__sCmd, nPos);

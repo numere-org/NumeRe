@@ -33,7 +33,12 @@ namespace NumeRe
     bool StringVarFactory::isNumericCandidate(const string& sComponent)
     {
         if (sComponent.front() != '"' && sComponent.find_first_of("+-*/^!&|<>=% ?:,") != string::npos)
+        {
+            if ((sComponent.front() == '(' || sComponent.front() == '{') && getMatchingParenthesis(sComponent) == sComponent.length()-1)
+                return false;
+
             return true;
+        }
 
         return false;
     }
@@ -57,6 +62,9 @@ namespace NumeRe
 
         // Does it already exist?
         if (m_mStringVectorVars.find(strVectName) != m_mStringVectorVars.end())
+            throw SyntaxError(SyntaxError::STRING_ERROR, strVectName, SyntaxError::invalid_position);
+
+        if (vStringVector.size() == 1 && vStringVector.front().find(strVectName) != std::string::npos)
             throw SyntaxError(SyntaxError::STRING_ERROR, strVectName, SyntaxError::invalid_position);
 
         // save the vector

@@ -19,6 +19,7 @@
 #include <wx/wx.h>
 #include <wx/spinctrl.h>
 #include <wx/listctrl.h>
+#include <wx/treelist.h>
 #include <wx/collpane.h>
 
 #ifndef GROUPPANEL_HPP
@@ -203,6 +204,7 @@ class GroupPanel : public wxScrolledWindow
         wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY);
         SpinBut* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial, int id = wxID_ANY);
         wxListView* CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle = wxLC_REPORT, wxSize size = wxDefaultSize, int id = wxID_ANY);
+        wxTreeListCtrl* CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle = wxTL_SINGLE, wxSize size = wxDefaultSize, int id = wxID_ANY);
         wxButton* CreateButton(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY);
         wxRadioBox* CreateRadioBox(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxArrayString& choices, int style = wxHORIZONTAL, int id = wxID_ANY);
         wxChoice* CreateChoices(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY);

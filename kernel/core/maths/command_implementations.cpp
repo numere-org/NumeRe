@@ -3801,8 +3801,6 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryM
     vector<double> vYVals;
     vector<vector<double> > vZVals;
 
-    if (_data.containsTablesOrClusters(sCmd) && !_data.isValid())
-        throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, SyntaxError::invalid_position);
 
     // Extract the z expression from the command line
     if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
@@ -3822,6 +3820,9 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryM
 
         StripSpaces(sZVals);
     }
+
+    if (_data.containsTablesOrClusters(sZVals) && !_data.isValid())
+        throw SyntaxError(SyntaxError::NO_CACHED_DATA, sZVals, SyntaxError::invalid_position);
 
     // Get the intervals
     if (sCmd.find('[') != string::npos && sCmd.find(']', sCmd.find('[')) != string::npos)
@@ -4142,6 +4143,9 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
                 }
             }
         }
+
+        if (!_data.isValid())
+            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sDatatable);
 
         // Check the indices
         if (!isValidIndexSet(_idx))
