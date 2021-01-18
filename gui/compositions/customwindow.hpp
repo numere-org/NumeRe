@@ -99,6 +99,7 @@ class CustomWindow : public wxFrame
         bool getItemParameters(int windowItemID, WindowItemParams& params) const;
         wxArrayString getChoices(wxString& choices);
         wxString removeQuotationMarks(wxString sString);
+        void Refresh();
 
     public:
         CustomWindow(wxWindow* parent, const NumeRe::Window& windowRef);
@@ -122,6 +123,7 @@ class CustomWindow : public wxFrame
         void OnClose(wxCloseEvent& event);
         void OnMouseLeftDown(wxMouseEvent& event);
         void OnTreeListEvent(wxTreeListEvent& event);
+        void OnSizeEvent(wxSizeEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

@@ -169,62 +169,47 @@ static wxString getTreeListCtrlValue(wxTreeListCtrl* listCtrl)
     wxTreeListItems items;
 
     // Get selections if any and no checkboxes are used
-    if (!useCheckBoxes && listCtrl->GetSelections(items))
+    if (!useCheckBoxes)
     {
-        for (size_t i = 0; i < items.size(); i++)
+        if (listCtrl->GetSelections(items))
         {
-            if (values.length())
-                values += ", ";
-
-            wxString sItem;
-
-            for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
+            for (size_t i = 0; i < items.size(); i++)
             {
-                sItem += listCtrl->GetItemText(items[i], j);
+                if (values.length())
+                    values += ", ";
 
-                if (j+1 < listCtrl->GetColumnCount())
-                    sItem += "\t";
+                wxString sItem;
+
+                for (size_t j = 0; j < listCtrl->GetColumnCount(); j++)
+                {
+                    sItem += listCtrl->GetItemText(items[i], j);
+
+                    if (j+1 < listCtrl->GetColumnCount())
+                        sItem += "\t";
+                }
+
+                values += convertToCodeString(sItem);
             }
 
-            values += convertToCodeString(sItem);
+            if (listCtrl->GetColumnCount() > 1)
+                return convertToCodeString(values);
         }
+        else
+            values = "\"\"";
 
-        return convertToCodeString(values);
-
+        return values;
     }
 
     // Get the complete list or the states of the checkboxes
     for (wxTreeListItem item = listCtrl->GetFirstItem(); item.IsOk(); item = listCtrl->GetNextItem(item))
     {
         if (values.length())
-            values += ", ";
+            values += ",";
 
-        if (useCheckBoxes)
-        {
-            values += listCtrl->GetCheckedState(item) == wxCHK_CHECKED ? "1" : "0";
-            continue;
-        }
-
-        wxString sItem;
-
-        if (useCheckBoxes)
-            sItem += listCtrl->GetCheckedState(item) == wxCHK_CHECKED ? "1\t" : "0\t";
-
-        for (size_t i = 0; i < listCtrl->GetColumnCount(); i++)
-        {
-            sItem += listCtrl->GetItemText(item, i);
-
-            if (i+1 < listCtrl->GetColumnCount())
-                sItem += "\t";
-        }
-
-        values += convertToCodeString(sItem);
+        values += listCtrl->GetCheckedState(item) == wxCHK_CHECKED ? "1" : "0";
     }
 
-    if (useCheckBoxes)
-        return "\"{" + values + "}\"";
-    else
-        return convertToCodeString(values);
+    return "\"{" + values + "}\"";
 }
 
 
@@ -255,6 +240,7 @@ BEGIN_EVENT_TABLE(CustomWindow, wxFrame)
     EVT_LEFT_DOWN(CustomWindow::OnMouseLeftDown)
     EVT_TREELIST_ITEM_CHECKED(-1, CustomWindow::OnTreeListEvent)
     EVT_TREELIST_SELECTION_CHANGED(-1, CustomWindow::OnTreeListEvent)
+    EVT_SIZE(CustomWindow::OnSizeEvent)
 END_EVENT_TABLE()
 
 
@@ -322,7 +308,7 @@ void CustomWindow::layout()
 
     // Recursively layout the child elements of the current XMLElement
     // object
-    layoutChild(layoutGroup->FirstChildElement(), _groupPanel, _groupPanel->getVerticalSizer(), _groupPanel);
+    layoutChild(layoutGroup->FirstChildElement(), _groupPanel, _groupPanel->getMainSizer(), _groupPanel);
 
     // Define the scrollbars
     _groupPanel->SetScrollbars(20, 20, 200, 200);
@@ -365,6 +351,8 @@ void CustomWindow::layout()
 /////////////////////////////////////////////////
 void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindow* currParent, wxSizer* currSizer, GroupPanel* _groupPanel)
 {
+    wxNotebook* noteBook = nullptr;
+
     // As long as another child (i.e. sibling) can be found
     while (currentChild)
     {
@@ -377,6 +365,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
         wxFont font = GetFont();
         WindowState state = ENABLED;
+        int alignment = wxALIGN_CENTER_VERTICAL;
 
         // Evaluate the state attribute
         if (currentChild->Attribute("state"))
@@ -394,13 +383,40 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 font.MakeBold();
         }
 
+        // Get the alignment of the elements
+        if (currentChild->Attribute("align"))
+        {
+            wxString sAlign = currentChild->Attribute("align");
+            alignment = 0;
+
+            // LRCTB
+            if (sAlign.find_first_of("TB") == std::string::npos)
+                alignment |= wxALIGN_CENTER_VERTICAL;
+
+            if (sAlign.find_first_of("LR") == std::string::npos)
+                alignment |= wxALIGN_CENTER_HORIZONTAL;
+
+            if (sAlign.find("L") != std::string::npos)
+                alignment |= wxALIGN_LEFT;
+
+            if (sAlign.find("R") != std::string::npos)
+                alignment |= wxALIGN_RIGHT;
+
+            if (sAlign.find("T") != std::string::npos)
+                alignment |= wxALIGN_TOP;
+
+            if (sAlign.find("B") != std::string::npos)
+                alignment |= wxALIGN_BOTTOM;
+
+        }
+
         // Now check for the current XMLElement's
         // value (i.e. the XML-Tag name) and create
         // a corresponding control (if available)
         if (string(currentChild->Value()) == "button")
         {
             // Add a button
-            wxButton* button = _groupPanel->CreateButton(currParent, currSizer, removeQuotationMarks(text), id);
+            wxButton* button = _groupPanel->CreateButton(currParent, currSizer, removeQuotationMarks(text), id, alignment);
             button->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::BUTTON, button);
 
@@ -418,7 +434,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (string(currentChild->Value()) == "checkbox")
         {
             // Add a checkbox
-            wxCheckBox* checkbox = _groupPanel->CreateCheckBox(currParent, currSizer, removeQuotationMarks(text), id);
+            wxCheckBox* checkbox = _groupPanel->CreateCheckBox(currParent, currSizer, removeQuotationMarks(text), id, alignment);
             checkbox->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::CHECKBOX, checkbox);
 
@@ -448,7 +464,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("type"))
                 style = currentChild->Attribute("type", "horizontal") ? wxHORIZONTAL : wxVERTICAL;
 
-            wxRadioBox* radiobox = _groupPanel->CreateRadioBox(currParent, currSizer, label, getChoices(text), style, id);
+            wxRadioBox* radiobox = _groupPanel->CreateRadioBox(currParent, currSizer, label, getChoices(text), style, id, alignment);
             radiobox->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::RADIOGROUP, radiobox);
 
@@ -481,7 +497,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("value"))
                 nValue = currentChild->DoubleAttribute("value");
 
-            SpinBut* spinctrl = _groupPanel->CreateSpinControl(currParent, currSizer, label, nMin, nMax, nValue, id);
+            SpinBut* spinctrl = _groupPanel->CreateSpinControl(currParent, currSizer, label, nMin, nMax, nValue, id, alignment);
             spinctrl->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::SPINCTRL, spinctrl);
 
@@ -505,7 +521,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("type"))
                 style = currentChild->Attribute("type", "horizontal") ? wxGA_HORIZONTAL | wxGA_SMOOTH : wxGA_VERTICAL | wxGA_SMOOTH;
 
-            wxGauge* gauge = _groupPanel->CreateGauge(currParent, currSizer, style, id);
+            wxGauge* gauge = _groupPanel->CreateGauge(currParent, currSizer, style, id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::GAUGE, gauge);
 
             if (currentChild->Attribute("value"))
@@ -519,7 +535,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (string(currentChild->Value()) == "dropdown")
         {
             // Add a dropdown
-            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, getChoices(text), id);
+            wxChoice* choice = _groupPanel->CreateChoices(currParent, currSizer, getChoices(text), id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::DROPDOWN, choice);
 
             if (currentChild->Attribute("value"))
@@ -540,6 +556,18 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         {
             // Add a textctrl
             int style = wxTE_PROCESS_ENTER;
+            wxSize size(310,-1);
+
+            if (currentChild->Attribute("size"))
+            {
+                wxString sSize = currentChild->Attribute("size");
+                long int x,y;
+                sSize.substr(0, sSize.find(',')).ToLong(&x);
+                sSize.substr(sSize.find(',')+1).ToLong(&y);
+
+                size.x = x;
+                size.y = y;
+            }
 
             if (currentChild->Attribute("type"))
                 style = currentChild->Attribute("type", "multiline") ? wxTE_MULTILINE | wxTE_BESTWRAP : wxTE_PROCESS_ENTER;
@@ -549,7 +577,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("label"))
                 label = currentChild->Attribute("label");
 
-            TextField* textctrl = _groupPanel->CreateTextInput(currParent, currSizer, label, removeQuotationMarks(text), style, id);
+            TextField* textctrl = _groupPanel->CreateTextInput(currParent, currSizer, label, removeQuotationMarks(text), style, id, size, alignment);
             textctrl->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::TEXTCTRL, textctrl);
 
@@ -567,7 +595,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (string(currentChild->Value()) == "text")
         {
             // Add a static test
-            wxStaticText* statictext = _groupPanel->AddStaticText(currParent, currSizer, removeQuotationMarks(text), id);
+            wxStaticText* statictext = _groupPanel->AddStaticText(currParent, currSizer, removeQuotationMarks(text), id, alignment);
             statictext->SetFont(font);
             m_windowItems[id] = std::make_pair(CustomWindow::TEXT, statictext);
 
@@ -577,7 +605,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         else if (string(currentChild->Value()) == "image")
         {
             // Add an image
-            wxStaticBitmap* bitmap = _groupPanel->CreateBitmap(currParent, currSizer, removeQuotationMarks(text), id);
+            wxStaticBitmap* bitmap = _groupPanel->CreateBitmap(currParent, currSizer, removeQuotationMarks(text), id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::IMAGE, bitmap);
         }
         else if (string(currentChild->Value()) == "grapher")
@@ -598,7 +626,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else
                 mgl->SetMinClientSize(wxSize(640,480));
 
-            currSizer->Add(mgl, 1, wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
+            currSizer->Add(mgl, 1, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
 
             if (currentChild->Attribute("onclick"))
                 m_eventTable[id] = currentChild->Attribute("onclick");
@@ -607,7 +635,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
         {
             // Add a table grid
             TableViewer* table = new TableViewer(currParent, id, nullptr, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_THEME);
-            currSizer->Add(table, 1, wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
+            currSizer->Add(table, 1, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 5);
             m_windowItems[id] = std::make_pair(CustomWindow::TABLE, table);
             table->SetTableReadOnly(false);
 
@@ -640,7 +668,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             wxArrayString labels;
             wxArrayString values;
 
-            wxTreeListCtrl* listCtrl = _groupPanel->CreateTreeListCtrl(currParent, currSizer, style, wxDefaultSize, id);
+            wxTreeListCtrl* listCtrl = _groupPanel->CreateTreeListCtrl(currParent, currSizer, style, wxDefaultSize, id, alignment);
             m_windowItems[id] = std::make_pair(CustomWindow::TREELIST, listCtrl);
 
             if (currentChild->Attribute("label"))
@@ -706,6 +734,8 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             wxString label;
             int style = wxHORIZONTAL;
             bool isCollapsible = false;
+            bool isNotebook = false;
+            int expand = 0;
 
             if (currentChild->Attribute("label"))
                 label = currentChild->Attribute("label");
@@ -714,7 +744,13 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 style = currentChild->Attribute("type", "horizontal") ? wxHORIZONTAL : wxVERTICAL;
 
             if (currentChild->Attribute("style"))
+            {
                 isCollapsible = currentChild->Attribute("style", "collapse");
+                isNotebook = currentChild->Attribute("style", "tabs");
+            }
+
+            if (currentChild->Attribute("expand"))
+                expand = currentChild->Attribute("expand", "true") ? 1 : 0;
 
             // A collapsible group is currently very buggy (if used
             // with the current GroupPanel).
@@ -729,14 +765,28 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 pane->GetPane()->SetSizer(sizer);
                 sizer->SetSizeHints(pane->GetPane());
             }
+            else if (label.length() && isNotebook)
+            {
+                if (!noteBook)
+                {
+                    noteBook = new wxNotebook(currParent, wxID_ANY);
+                    currSizer->Add(noteBook, 1, wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN | wxALL, 5);
+                }
+
+                GroupPanel* _newPanel = new GroupPanel(noteBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, style == wxHORIZONTAL ? false : true);
+
+                layoutChild(currentChild->FirstChildElement(), _newPanel, _newPanel->getMainSizer(), _newPanel);
+
+                noteBook->AddPage(_newPanel, label);
+            }
             else if (label.length())
             {
-                wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, currSizer);
+                wxStaticBoxSizer* sizer = _groupPanel->createGroup(label, style, currParent, currSizer, expand);
                 layoutChild(currentChild->FirstChildElement(), sizer->GetStaticBox(), sizer, _groupPanel);
             }
             else
             {
-                wxBoxSizer* sizer = _groupPanel->createGroup(style, currSizer);
+                wxBoxSizer* sizer = _groupPanel->createGroup(style, currSizer, expand);
                 layoutChild(currentChild->FirstChildElement(), currParent, sizer, _groupPanel);
             }
 
@@ -1012,6 +1062,19 @@ wxString CustomWindow::removeQuotationMarks(wxString sString)
 
 
 /////////////////////////////////////////////////
+/// \brief Wrapper for wxWindow::Refresh to use
+/// it together with CallAfter().
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::Refresh()
+{
+    wxWindow::Refresh();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns a list of all window item IDs,
 /// which correspond to the selected
 /// WindowItemType.
@@ -1060,6 +1123,9 @@ WindowItemValue CustomWindow::getItemValue(int windowItemID) const
 
     if (getItemParameters(windowItemID, params))
     {
+        if (params.value.substr(0, 2) == "\"{" && params.value.substr(params.value.length()-2) == "}\"")
+            params.value = params.value.substr(1, params.value.length()-2);
+
         value.stringValue = params.value;
         value.tableValue = params.table;
         value.type = params.type;
@@ -1082,7 +1148,12 @@ wxString CustomWindow::getItemLabel(int windowItemID) const
     WindowItemParams params;
 
     if (getItemParameters(windowItemID, params))
+    {
+        if (params.label.substr(0, 2) == "\"{" && params.label.substr(params.label.length()-2) == "}\"")
+            params.label = params.label.substr(1, params.label.length()-2);
+
         return params.label;
+    }
 
     return "";
 }
@@ -1518,4 +1589,19 @@ void CustomWindow::OnTreeListEvent(wxTreeListEvent& event)
     handleEvent(event, "onclick");
 }
 
+
+/////////////////////////////////////////////////
+/// \brief On size event handler.
+///
+/// \param event wxSizeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void CustomWindow::OnSizeEvent(wxSizeEvent& event)
+{
+    // Inform the window to refresh its contents
+    // asynchronously
+    CallAfter(&CustomWindow::Refresh);
+    event.Skip();
+}
 

@@ -78,7 +78,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
 
             break;
         case FILE_NPRC:
-            if (filename.length() < 6 || extension != "nprc")
+            if (filename.length() < 6 || (extension != "nprc" && extension != "nlyt"))
                 return wxDIR_CONTINUE;
 
             break;

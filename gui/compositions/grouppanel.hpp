@@ -186,30 +186,32 @@ class GroupPanel : public wxScrolledWindow
     private:
         wxBoxSizer* verticalSizer;
         wxBoxSizer* horizontalSizer;
+        wxBoxSizer* mainSizer;
 
     public:
-        GroupPanel(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL);
+        GroupPanel(wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, bool useVerticalSizer = true);
 
         wxBoxSizer* getVerticalSizer();
         wxBoxSizer* getHorizontalSizer();
+        wxBoxSizer* getMainSizer();
         void AddSpacer(int nSize = 10, wxSizer* sizer = nullptr);
-        wxStaticText* AddStaticText(wxWindow* parent, wxSizer* sizer, const wxString& text, int id = wxID_STATIC);
+        wxStaticText* AddStaticText(wxWindow* parent, wxSizer* sizer, const wxString& text, int id = wxID_STATIC, int alignment = wxALIGN_CENTER_VERTICAL);
 
-        wxStaticBoxSizer* createGroup(const wxString& sGroupName, int orient = wxVERTICAL, wxWindow* parent = nullptr, wxSizer* sizer = nullptr);
-        wxBoxSizer* createGroup(int orient = wxVERTICAL, wxSizer* sizer = nullptr);
+        wxStaticBoxSizer* createGroup(const wxString& sGroupName, int orient = wxVERTICAL, wxWindow* parent = nullptr, wxSizer* sizer = nullptr, int expand = 0);
+        wxBoxSizer* createGroup(int orient = wxVERTICAL, wxSizer* sizer = nullptr, int expand = 0);
 
         wxCollapsiblePane* createCollapsibleGroup(const wxString& label, wxWindow* parent = nullptr, wxSizer* sizer = nullptr);
         wxTextCtrl* CreatePathInput(wxWindow* parent, wxSizer* sizer, const wxString& description, int buttonID, int id = wxID_ANY);
-        TextField* CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString, int nStyle = 0, int id = wxID_ANY);
-        wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY);
-        SpinBut* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial, int id = wxID_ANY);
+        TextField* CreateTextInput(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxString& sDefault = wxEmptyString, int nStyle = 0, int id = wxID_ANY, const wxSize& size = wxSize(310,-1), int alignment = wxALIGN_CENTER_VERTICAL);
+        wxCheckBox* CreateCheckBox(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        SpinBut* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxListView* CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle = wxLC_REPORT, wxSize size = wxDefaultSize, int id = wxID_ANY);
-        wxTreeListCtrl* CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle = wxTL_SINGLE, wxSize size = wxDefaultSize, int id = wxID_ANY);
-        wxButton* CreateButton(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY);
-        wxRadioBox* CreateRadioBox(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxArrayString& choices, int style = wxHORIZONTAL, int id = wxID_ANY);
-        wxChoice* CreateChoices(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY);
-        wxGauge* CreateGauge(wxWindow* parent, wxSizer* sizer, int style, int id = wxID_ANY);
-        wxStaticBitmap* CreateBitmap(wxWindow* parent, wxSizer* sizer, const wxString& filename, int id = wxID_ANY);
+        wxTreeListCtrl* CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle = wxTL_SINGLE, wxSize size = wxDefaultSize, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        wxButton* CreateButton(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        wxRadioBox* CreateRadioBox(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxArrayString& choices, int style = wxHORIZONTAL, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        wxChoice* CreateChoices(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        wxGauge* CreateGauge(wxWindow* parent, wxSizer* sizer, int style, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        wxStaticBitmap* CreateBitmap(wxWindow* parent, wxSizer* sizer, const wxString& filename, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
 };
 
 

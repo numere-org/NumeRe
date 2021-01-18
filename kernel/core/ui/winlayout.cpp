@@ -221,6 +221,9 @@ static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLE
     if (findParameter(sLayoutCommand, "font", '='))
         layoutElement->SetAttribute("font", parseStringOpt(sLayoutCommand, findParameter(sLayoutCommand, "font", '=')+4).c_str());
 
+    if (findParameter(sLayoutCommand, "align", '='))
+        layoutElement->SetAttribute("align", parseStringOpt(sLayoutCommand, findParameter(sLayoutCommand, "align", '=')+5).c_str());
+
     if (findParameter(sLayoutCommand, "type", '='))
         layoutElement->SetAttribute("type", getArgAtPos(sLayoutCommand, findParameter(sLayoutCommand, "type", '=')+4).c_str());
 
@@ -313,6 +316,9 @@ static void parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument*
                 if (findParameter(line, "style", '='))
                     newgroup->SetAttribute("style", getArgAtPos(line, findParameter(line, "style", '=')+5).c_str());
 
+                if (findParameter(line, "expand"))
+                    newgroup->SetAttribute("expand", "true");
+
             }
             else if (_mMatch.sString == "endgroup")
             {
@@ -350,6 +356,12 @@ static int getItemId(const std::string& sCmd)
     if (findParameter(sCmd, "item", '='))
     {
         std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "item", '=')+4);
+        NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
+        return intCast(NumeReKernel::getInstance()->getParser().Eval());
+    }
+    else if (findParameter(sCmd, "id", '='))
+    {
+        std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "id", '=')+2);
         NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
         return intCast(NumeReKernel::getInstance()->getParser().Eval());
     }
@@ -422,7 +434,7 @@ static void setParametersInWindow(std::string& sCmd, const std::string& sExpr)
         MemoryManager& _memManager = NumeReKernel::getInstance()->getMemoryManager();
         NumeRe::WinItemValue value;
 
-        if (_memManager.containsTablesOrClusters(sValue))
+        if (_memManager.containsTables(sValue))
         {
             DataAccessParser _access(sValue);
             value.tableValue = _memManager.extractTable(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col);
