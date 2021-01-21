@@ -76,7 +76,7 @@ class CustomWindow : public wxFrame
             CHECKBOX,   // OK
             TEXT,       // OK
             TEXTCTRL,   // OK
-            TREELIST,
+            TREELIST,   // OK
             SPINCTRL,   // OK
             BUTTON,     // OK
             RADIOGROUP, // OK
@@ -84,21 +84,25 @@ class CustomWindow : public wxFrame
             GAUGE,      // OK
             IMAGE,      // OK
             TABLE,      // OK
-            GRAPHER     // OK
+            GRAPHER,    // OK
+            SLIDER,
+            MENUITEM
         };
 
     private:
-        std::map<int, std::pair<WindowItemType,wxWindow*>> m_windowItems;
+        std::map<int, std::pair<WindowItemType,wxObject*>> m_windowItems;
         std::map<int, wxString> m_eventTable;
         NumeRe::Window m_windowRef;
 
         void layout();
         void layoutChild(const tinyxml2::XMLElement* currentChild, wxWindow* currParent, wxSizer* currSizer, GroupPanel* _groupPanel);
+        void layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* currMenu);
         void handleEvent(wxEvent& event, const wxString& sEventType);
         bool getWindowParameters(WindowItemParams& params) const;
         bool getItemParameters(int windowItemID, WindowItemParams& params) const;
-        wxArrayString getChoices(wxString& choices);
-        wxString removeQuotationMarks(wxString sString);
+        wxArrayString getChoices(wxString& choices) const;
+        wxArrayString decodeEventHandlerFunction(const wxString& sEventHandler) const;
+        wxString removeQuotationMarks(wxString sString) const;
         void Refresh();
 
     public:
@@ -116,6 +120,7 @@ class CustomWindow : public wxFrame
         bool setItemColor(const wxString& _color, int windowItemID);
         bool setItemGraph(GraphHelper* _helper, int windowItemID);
 
+        void OnMenuEvent(wxCommandEvent& event);
         void OnClick(wxCommandEvent& event);
         void OnChange(wxCommandEvent& event);
         void OnSpin(wxSpinEvent& event);

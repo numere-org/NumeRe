@@ -1198,10 +1198,10 @@ void wxMGL::NextSlide()
         {
             gr->GetFrame(nFrameCounter);
 
-            if (animation)
+            if (animation && m_parentFrame)
                 statusbar->SetStatusText(_guilang.get("GUI_GRAPH_RENDERING"), 1);
         }
-        else if (animation)
+        else if (animation && m_parentFrame)
             statusbar->SetStatusText(_guilang.get("GUI_GRAPH_RENDERING_DONE"), 1);
 
         nFrameCounter++;
@@ -1209,9 +1209,13 @@ void wxMGL::NextSlide()
         if (nFrameCounter >= gr->GetNumFrame())
             nFrameCounter = 0;
 
-        wxString slidescount;
-        slidescount.Printf("%d / %d", nFrameCounter+1, gr->GetNumFrame());
-        statusbar->SetStatusText(slidescount, 2);
+        if (m_parentFrame)
+        {
+            wxString slidescount;
+            slidescount.Printf("%d / %d", nFrameCounter+1, gr->GetNumFrame());
+            statusbar->SetStatusText(slidescount, 2);
+        }
+
         Update();
     }
 }
@@ -1227,9 +1231,14 @@ void wxMGL::PrevSlide()
             nFrameCounter = gr->GetNumFrame()-1;
 
         gr->GetFrame(nFrameCounter);
-        wxString slidescount;
-        slidescount.Printf("%d / %d", nFrameCounter+1, gr->GetNumFrame());
-        statusbar->SetStatusText(slidescount, 2);
+
+        if (m_parentFrame)
+        {
+            wxString slidescount;
+            slidescount.Printf("%d / %d", nFrameCounter+1, gr->GetNumFrame());
+            statusbar->SetStatusText(slidescount, 2);
+        }
+
         Update();
     }
 }
@@ -1239,27 +1248,30 @@ void wxMGL::PrevSlide()
 // the toolbar
 void wxMGL::Animation(bool st)
 {
-    if (gr->GetNumFrame() <= 1)
+    if (!gr || gr->GetNumFrame() <= 1)
         return;
 
     if (st)
     {
-        bZoomingMode = zoomactive = bRotatingMode = false;
-        skiprotate = 0;
-        SetDrawMode(DM_NONE);
-        toptoolbar->EnableTool(ID_GRAPH_EXPORT, false);
-        toptoolbar->EnableTool(ID_GRAPH_COPY, false);
-        toptoolbar->EnableTool(ID_GRAPH_ROTATE, false);
-        toptoolbar->EnableTool(ID_GRAPH_ZOOM, false);
-        toptoolbar->EnableTool(ID_GRAPH_RESET, false);
+        if (m_parentFrame)
+        {
+            bZoomingMode = zoomactive = bRotatingMode = false;
+            skiprotate = 0;
+            SetDrawMode(DM_NONE);
+            toptoolbar->EnableTool(ID_GRAPH_EXPORT, false);
+            toptoolbar->EnableTool(ID_GRAPH_COPY, false);
+            toptoolbar->EnableTool(ID_GRAPH_ROTATE, false);
+            toptoolbar->EnableTool(ID_GRAPH_ZOOM, false);
+            toptoolbar->EnableTool(ID_GRAPH_RESET, false);
 
-        toptoolbar->EnableTool(ID_GRAPH_NEXT, false);
-        toptoolbar->EnableTool(ID_GRAPH_PREVIOUS, false);
-        toptoolbar->EnableTool(ID_GRAPH_RUN, false);
-        toptoolbar->EnableTool(ID_GRAPH_STOP, true);
+            toptoolbar->EnableTool(ID_GRAPH_NEXT, false);
+            toptoolbar->EnableTool(ID_GRAPH_PREVIOUS, false);
+            toptoolbar->EnableTool(ID_GRAPH_RUN, false);
+            toptoolbar->EnableTool(ID_GRAPH_STOP, true);
 
-        for (int i = ID_GRAPH_DRAW_FIRST+1; i < ID_GRAPH_DRAW_LAST; i++)
-            toptoolbar->EnableTool(i, false);
+            for (int i = ID_GRAPH_DRAW_FIRST+1; i < ID_GRAPH_DRAW_LAST; i++)
+                toptoolbar->EnableTool(i, false);
+        }
 
         nFrameCounter = 0;
         animation = true;
@@ -1269,23 +1281,27 @@ void wxMGL::Animation(bool st)
     else
     {
         timer->Stop();
-        toptoolbar->EnableTool(ID_GRAPH_EXPORT, true);
-        toptoolbar->EnableTool(ID_GRAPH_COPY, true);
-        toptoolbar->EnableTool(ID_GRAPH_ROTATE, true);
-        toptoolbar->EnableTool(ID_GRAPH_ZOOM, true);
-        toptoolbar->EnableTool(ID_GRAPH_RESET, true);
 
-        toptoolbar->EnableTool(ID_GRAPH_NEXT, true);
-        toptoolbar->EnableTool(ID_GRAPH_PREVIOUS, true);
-        toptoolbar->EnableTool(ID_GRAPH_RUN, true);
-        toptoolbar->EnableTool(ID_GRAPH_STOP, false);
+        if (m_parentFrame)
+        {
+            toptoolbar->EnableTool(ID_GRAPH_EXPORT, true);
+            toptoolbar->EnableTool(ID_GRAPH_COPY, true);
+            toptoolbar->EnableTool(ID_GRAPH_ROTATE, true);
+            toptoolbar->EnableTool(ID_GRAPH_ZOOM, true);
+            toptoolbar->EnableTool(ID_GRAPH_RESET, true);
 
-        for (int i = ID_GRAPH_DRAW_FIRST+1; i < ID_GRAPH_DRAW_LAST; i++)
-            toptoolbar->EnableTool(i, true);
+            toptoolbar->EnableTool(ID_GRAPH_NEXT, true);
+            toptoolbar->EnableTool(ID_GRAPH_PREVIOUS, true);
+            toptoolbar->EnableTool(ID_GRAPH_RUN, true);
+            toptoolbar->EnableTool(ID_GRAPH_STOP, false);
+
+            for (int i = ID_GRAPH_DRAW_FIRST+1; i < ID_GRAPH_DRAW_LAST; i++)
+                toptoolbar->EnableTool(i, true);
+
+            statusbar->SetStatusText("", 1);
+        }
 
         animation = false;
-
-        statusbar->SetStatusText("", 1);
 
         if (vAnimationBuffer.size())
         {

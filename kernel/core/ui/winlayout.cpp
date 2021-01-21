@@ -125,20 +125,48 @@ static std::string parseStringOpt(const std::string& sCmd, size_t pos)
 ///
 /// \param sCmd const std::string&
 /// \param pos size_t
+/// \param sFolderName const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-static std::string parseEventOpt(const std::string& sCmd, size_t pos)
+static std::string parseEventOpt(const std::string& sCmd, size_t pos, const std::string& sFolderName)
 {
     std::string option = getArgAtPos(sCmd, pos);
+    std::string sProcBase = NumeReKernel::getInstance()->getSettings().getProcPath();
+
+    if (sFolderName.substr(0, sProcBase.length()) == sProcBase)
+    {
+        sProcBase = sFolderName.substr(sProcBase.length());
+        replaceAll(sProcBase, "/", "~");
+
+        while (sProcBase.front() == '~')
+            sProcBase.erase(0, 1);
+
+        if (sProcBase.length() && sProcBase.back() != '~')
+            sProcBase += "~";
+    }
+    else
+        sProcBase.clear();
 
     if (option.front() == '$' && option.substr(option.length()-2) == "()")
         option.erase(option.length()-2);
+
+    if (option.substr(0, 6) == "$this~")
+        option = "$" + sProcBase + option.substr(6);
 
     return option;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function evaluates the
+/// expression part of each window layout
+/// command.
+///
+/// \param sExpr std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void evaluateExpression(std::string& sExpr)
 {
     NumeReKernel* instance = NumeReKernel::getInstance();
@@ -187,12 +215,15 @@ static void evaluateExpression(std::string& sExpr)
 ///
 /// \param sLayoutCommand const std::string&
 /// \param layoutElement tinyxml2::XMLElement*
+/// \param sFolderName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLElement* layoutElement)
+static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLElement* layoutElement, const std::string& sFolderName)
 {
     std::string sExpr = sLayoutCommand.substr(0, std::min(sLayoutCommand.find("-set"), sLayoutCommand.find("--")));
+
+    replaceAll(sExpr, "<this>", sFolderName.c_str());
 
     evaluateExpression(sExpr);
 
@@ -234,24 +265,25 @@ static void parseLayoutCommand(const std::string& sLayoutCommand, tinyxml2::XMLE
         layoutElement->SetAttribute("state", getArgAtPos(sLayoutCommand, findParameter(sLayoutCommand, "state", '=')+5).c_str());
 
     if (findParameter(sLayoutCommand, "onchange", '='))
-        layoutElement->SetAttribute("onchange", parseEventOpt(sLayoutCommand, findParameter(sLayoutCommand, "onchange", '=')+8).c_str());
+        layoutElement->SetAttribute("onchange", parseEventOpt(sLayoutCommand, findParameter(sLayoutCommand, "onchange", '=')+8, sFolderName).c_str());
 
     if (findParameter(sLayoutCommand, "onclick", '='))
-        layoutElement->SetAttribute("onclick", parseEventOpt(sLayoutCommand, findParameter(sLayoutCommand, "onclick", '=')+7).c_str());
+        layoutElement->SetAttribute("onclick", parseEventOpt(sLayoutCommand, findParameter(sLayoutCommand, "onclick", '=')+7, sFolderName).c_str());
 }
 
 
 /////////////////////////////////////////////////
 /// \brief This static function parses a layout
 /// script into a xml data container usable by
-/// the GUI.
+/// the GUI. Returns the name of the onopen event
+/// handler, if any.
 ///
 /// \param sLayoutScript std::string&
 /// \param layout tinyxml2::XMLDocument*
-/// \return void
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-static void parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument* layout)
+static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument* layout)
 {
     // Ensure that the file name of the layout
     // script is valid
@@ -259,6 +291,9 @@ static void parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument*
 
     // Load the layoutscript as a StyledTextFile
     StyledTextFile layoutScript(sLayoutScript);
+
+    std::string sFolderName = sLayoutScript.substr(0, sLayoutScript.rfind('/'));
+    std::string sOnOpenEvent;
 
     // Nothing read?
     if (!layoutScript.getLinesCount())
@@ -297,6 +332,9 @@ static void parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument*
 
                 if (findParameter(line, "color", '='))
                     currentGroup.top()->SetAttribute("color", parseNumOpt(line, findParameter(line, "color", '=')+5).c_str());
+
+                if (findParameter(line, "onopen", '='))
+                    sOnOpenEvent = parseEventOpt(line, findParameter(line, "onopen", '=')+6, sFolderName);
             }
             else if (_mMatch.sString == "endlayout")
                 break;
@@ -340,7 +378,7 @@ static void parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument*
                 // Parse the parameters and the
                 // command expression and insert
                 // it
-                parseLayoutCommand(line.substr(_mMatch.nPos+_mMatch.sString.length()), currentChild);
+                parseLayoutCommand(line.substr(_mMatch.nPos+_mMatch.sString.length()), currentChild, sFolderName);
             }
         }
     }
@@ -348,9 +386,21 @@ static void parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDocument*
     // Nothing usable?
     if (!layout->FirstChild())
         throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sLayoutScript);
+
+    return sOnOpenEvent;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function returns the item
+/// id from the user command string. It is also
+/// handled if the user erroneously uses "id"
+/// instead "item".
+///
+/// \param sCmd const std::string&
+/// \return int
+///
+/////////////////////////////////////////////////
 static int getItemId(const std::string& sCmd)
 {
     if (findParameter(sCmd, "item", '='))
@@ -370,6 +420,15 @@ static int getItemId(const std::string& sCmd)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function returns the
+/// window information describing the window with
+/// the selected ID.
+///
+/// \param sExpr const std::string&
+/// \return NumeRe::WindowInformation
+///
+/////////////////////////////////////////////////
 static NumeRe::WindowInformation getWindow(const std::string& sExpr)
 {
     NumeReKernel::getInstance()->getParser().SetExpr(sExpr);
@@ -379,6 +438,15 @@ static NumeRe::WindowInformation getWindow(const std::string& sExpr)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function handles property
+/// reads from windows.
+///
+/// \param sCmd std::string&
+/// \param sExpr const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void getParametersFromWindow(std::string& sCmd, const std::string& sExpr)
 {
     // Get value of window item
@@ -415,6 +483,15 @@ static void getParametersFromWindow(std::string& sCmd, const std::string& sExpr)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function handles property
+/// writes in windows.
+///
+/// \param sCmd std::string&
+/// \param sExpr const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
 static void setParametersInWindow(std::string& sCmd, const std::string& sExpr)
 {
     // Change value of window item
@@ -554,11 +631,12 @@ void windowCommand(std::string& sCmd)
     {
         // Create new window
         tinyxml2::XMLDocument* layout = new tinyxml2::XMLDocument;
+        std::string sOnOpenEvent;
 
         // parse layout
         try
         {
-            parseLayoutScript(sExpr, layout);
+            sOnOpenEvent = parseLayoutScript(sExpr, layout);
         }
         catch (...)
         {
@@ -581,6 +659,10 @@ void windowCommand(std::string& sCmd)
         }
 
         sCmd = toString(id);
+
+        // Create the string for the onopen event
+        if (sOnOpenEvent.length())
+            sCmd += " " + sOnOpenEvent + "(" + toString(id) + ", -1, {\"event\",\"onopen\",\"object\",\"window\",\"value\",nan,\"state\",\"enabled\"})";
     }
 }
 

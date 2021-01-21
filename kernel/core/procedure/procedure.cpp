@@ -296,6 +296,11 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
             // place
             if (sLine.find("??") != string::npos)
                 sLine = promptForUserInput(sLine);
+
+            // It may also be possible that some procedure occures at this
+            // position. Handle them here
+            if (sLine.find('$') != std::string::npos)
+                procedureInterface(sLine, _parser, _functions, _data, _out, _pData, _script, _option, nthRecursion, 0);
         }
 
     }

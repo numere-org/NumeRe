@@ -258,6 +258,10 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::GRAPHER);
             else if (_selection == "treelist")
                 return m_customWindow->getWindowItems(CustomWindow::TREELIST);
+            else if (_selection == "slider")
+                return m_customWindow->getWindowItems(CustomWindow::SLIDER);
+            else if (_selection == "menuitem")
+                return m_customWindow->getWindowItems(CustomWindow::MENUITEM);
         }
 
         return std::vector<int>();

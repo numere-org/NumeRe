@@ -112,9 +112,20 @@ public:
 	void ExportSVG(wxString fname = L"");	///< export to SVG file
 
 	void Adjust();		///< Adjust plot size to fill entire window
+	int getNumFrames()
+	{
+	    if (gr)
+            return gr->GetNumFrame();
+
+        return 0;
+	}
 	void NextSlide();	///< Show next slide
 	void PrevSlide();	///< Show previous slide
 	void Animation(bool st=true);	///< Start animation
+	void AnimateAsynch()
+	{
+	    CallAfter(&Animation, true);
+	}
 
 	enum CurrentDrawMode
 	{

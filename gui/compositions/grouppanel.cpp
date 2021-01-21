@@ -223,7 +223,7 @@ wxCollapsiblePane* GroupPanel::createCollapsibleGroup(const wxString& label, wxW
     wxCollapsiblePane* collpane = new wxCollapsiblePane(parent, wxID_ANY, label, wxDefaultPosition, wxDefaultSize, wxCP_NO_TLW_RESIZE | wxCP_DEFAULT_STYLE);
 
     // add the pane with a zero proportion value to the sizer which contains it
-    sizer->Add(collpane, 0, wxEXPAND | wxALL, 1);
+    sizer->Add(collpane, 1, wxEXPAND | wxALL | wxRESERVE_SPACE_EVEN_IF_HIDDEN, 1);
 
     return collpane;
 }
@@ -522,5 +522,26 @@ wxStaticBitmap* GroupPanel::CreateBitmap(wxWindow* parent, wxSizer* sizer, const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function creates the
+/// layout for a slider.
+///
+/// \param parent wxWindow*
+/// \param sizer wxSizer*
+/// \param nMin int
+/// \param nMax int
+/// \param nInitial int
+/// \param style int
+/// \param id int
+/// \param alignment int
+/// \return wxSlider*
+///
+/////////////////////////////////////////////////
+wxSlider* GroupPanel::CreateSlider(wxWindow* parent, wxSizer* sizer, int nMin, int nMax, int nInitial, int style, int id, int alignment)
+{
+    wxSlider* slider = new wxSlider(parent, id, nInitial, nMin, nMax, wxDefaultPosition, wxDefaultSize, style);
+    sizer->Add(slider, 0, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
 
+    return slider;
+}
 
