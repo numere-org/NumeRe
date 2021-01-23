@@ -636,6 +636,24 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             if (currentChild->Attribute("color"))
                 statictext->SetForegroundColour(toWxColour(currentChild->Attribute("color")));
         }
+        else if (string(currentChild->Value()) == "prop")
+        {
+            // Create internal variables
+            wxArrayString varList = getChoices(text);
+
+            for (size_t i = 0; i < varList.size(); i++)
+            {
+                if (varList[i].find('=') != std::string::npos)
+                {
+                    wxString name = varList[i].substr(0, varList[i].find('='));
+                    wxString value = varList[i].substr(varList[i].find('=')+1);
+
+                    m_varTable[name.Trim()] = value.Trim(false);
+                }
+                else
+                    m_varTable[varList[i]] = "0";
+            }
+        }
         else if (string(currentChild->Value()) == "image")
         {
             // Add an image
@@ -1260,12 +1278,14 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.label = convertToCodeString(item->GetItemLabel());
 
             if (item->IsCheckable())
-                params.value = item->IsCheck() ? "true" : "false";
+                params.value = item->IsChecked() ? "true" : "false";
             else
-                params.value = params.value;
+                params.value = convertToCodeString(item->GetLabelText(item->GetItemLabel()));
 
             params.color = toWxString(item->GetTextColour());
             params.state = item->IsEnabled() ? "enabled" : "disabled";
+
+            break;
         }
         case CustomWindow::IMAGE:
             break;
@@ -1484,6 +1504,36 @@ wxString CustomWindow::getItemColor(int windowItemID) const
         return params.color;
 
     return "";
+}
+
+
+wxString CustomWindow::getPropValue(const wxString& varName) const
+{
+    auto iter = m_varTable.find(varName);
+
+    if (iter != m_varTable.end())
+        return iter->second;
+
+    return "nan";
+}
+
+
+wxString CustomWindow::getProperties() const
+{
+    wxString sProperties;
+
+    for (auto iter : m_varTable)
+    {
+        if (sProperties.length())
+            sProperties += ",";
+
+        sProperties += "\"" + iter.first + "\"";
+    }
+
+    if (!sProperties.length())
+        return "\"\"";
+
+    return sProperties;
 }
 
 
@@ -1834,6 +1884,20 @@ bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
 }
 
 
+bool CustomWindow::setPropValue(const wxString& _value, const wxString& varName)
+{
+    auto iter = m_varTable.find(varName);
+
+    if (iter != m_varTable.end())
+    {
+        iter->second = _value;
+        return true;
+    }
+
+    return false;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief Menu event handler.
 ///
@@ -1843,7 +1907,7 @@ bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
 /////////////////////////////////////////////////
 void CustomWindow::OnMenuEvent(wxCommandEvent& event)
 {
-    handleEvent(event, "onmenu");
+    handleEvent(event, "onclick");
 }
 
 

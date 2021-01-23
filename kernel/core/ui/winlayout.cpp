@@ -38,42 +38,6 @@ std::string removeQuotationMarks(const std::string& sString);
 static std::string parseNumOpt(const std::string& sCmd, size_t pos)
 {
     return getArgAtPos(sCmd, pos, ARGEXTRACT_PARSED | ARGEXTRACT_STRIPPED);
-    /*std::string option = getArgAtPos(sCmd, pos);
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-
-    // Call functions
-    if (!_functions.call(option))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, option, "");
-
-    // Evaluate strings
-    if (_stringParser.isStringExpression(option))
-    {
-        std::string dummy;
-        NumeRe::StringParser::StringParserRetVal _res = _stringParser.evalAndFormat(option, dummy, true);
-
-        if (_res == NumeRe::StringParser::STRING_SUCCESS)
-            return option;
-    }
-
-    // Numerical evaluation
-    _parser.SetExpr(option);
-
-    int results;
-    value_type* v = _parser.Eval(results);
-
-    option.clear();
-
-    for (int i = 0; i < results; i++)
-    {
-        if (option.length())
-            option += ",";
-
-        option += toString(v[i], 7);
-    }
-
-    return option;*/
 }
 
 
@@ -97,25 +61,6 @@ static std::string parseStringOpt(const std::string& sCmd, size_t pos)
         return arg.substr(1, arg.length()-2);
 
     return arg;
-    /*std::string option = getArgAtPos(sCmd, pos);
-    NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-
-    // Call functions
-    if (!_functions.call(option))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, option, "");
-
-    // Evaluate strings
-    if (_stringParser.isStringExpression(option))
-    {
-        std::string dummy;
-        NumeRe::StringParser::StringParserRetVal _res = _stringParser.evalAndFormat(option, dummy, true);
-
-        if (_res == NumeRe::StringParser::STRING_SUCCESS)
-            return option;
-    }
-
-    return option;*/
 }
 
 
@@ -365,6 +310,20 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
                 if (currentGroup.empty())
                     throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sLayoutScript);
             }
+            else if (_mMatch.sString == "prop" || _mMatch.sString == "var" || _mMatch.sString == "str")
+            {
+                if (currentGroup.empty())
+                    throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sLayoutScript, "");
+
+                // Create a the var element
+                currentChild = layout->NewElement("prop");
+                currentGroup.top()->InsertEndChild(currentChild);
+                std::string sLayoutCommand = line.substr(_mMatch.nPos+_mMatch.sString.length());
+                std::string sExpr = sLayoutCommand.substr(0, std::min(sLayoutCommand.find("-set"), sLayoutCommand.find("--")));
+                replaceAll(sExpr, "<this>", sFolderName.c_str());
+                StripSpaces(sExpr);
+                currentChild->SetText(sExpr.c_str());
+            }
             else
             {
                 // All other commands
@@ -460,18 +419,26 @@ static void getParametersFromWindow(std::string& sCmd, const std::string& sExpr)
 
     if (findParameter(sCmd, "value"))
     {
-        NumeRe::WinItemValue val = winInfo.window->getItemValue(itemID);
-
-        if (val.type != "tablegrid" && val.stringValue.length())
-            sCmd = val.stringValue;
+        if (findParameter(sCmd, "prop", '='))
+        {
+            std::string varname = getArgAtPos(sCmd, findParameter(sCmd, "prop", '=')+4);
+            sCmd = winInfo.window->getPropValue(varname);
+        }
         else
         {
-            MemoryManager& _memManager = NumeReKernel::getInstance()->getMemoryManager();
-            Indices _idx;
-            std::string sTarget = evaluateTargetOptionInCommand(sCmd, "valtable", _idx, NumeReKernel::getInstance()->getParser(), _memManager, NumeReKernel::getInstance()->getSettings());
+            NumeRe::WinItemValue val = winInfo.window->getItemValue(itemID);
 
-            sCmd = "\"" + sTarget + "()\"";
-            _memManager.importTable(val.tableValue, sTarget, _idx.row, _idx.col);
+            if (val.type != "tablegrid")
+                sCmd = val.stringValue;
+            else
+            {
+                MemoryManager& _memManager = NumeReKernel::getInstance()->getMemoryManager();
+                Indices _idx;
+                std::string sTarget = evaluateTargetOptionInCommand(sCmd, "valtable", _idx, NumeReKernel::getInstance()->getParser(), _memManager, NumeReKernel::getInstance()->getSettings());
+
+                sCmd = "\"" + sTarget + "()\"";
+                _memManager.importTable(val.tableValue, sTarget, _idx.row, _idx.col);
+            }
         }
     }
     else if (findParameter(sCmd, "label"))
@@ -504,23 +471,30 @@ static void setParametersInWindow(std::string& sCmd, const std::string& sExpr)
         throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, sCmd, sExpr);
 
     // Get the new value
-    // TODO: Actual parsing of the value
     if (findParameter(sCmd, "value", '='))
     {
-        std::string sValue = getArgAtPos(sCmd, findParameter(sCmd, "value", '=')+5);
-        MemoryManager& _memManager = NumeReKernel::getInstance()->getMemoryManager();
-        NumeRe::WinItemValue value;
-
-        if (_memManager.containsTables(sValue))
+        if (findParameter(sCmd, "prop", '='))
         {
-            DataAccessParser _access(sValue);
-            value.tableValue = _memManager.extractTable(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col);
-            value.stringValue = _access.getDataObject() + "()";
+            std::string varname = getArgAtPos(sCmd, findParameter(sCmd, "prop", '=')+4);
+            sCmd = toString(winInfo.window->setPropValue(getArgAtPos(sCmd, findParameter(sCmd, "value", '=')+5, ARGEXTRACT_PARSED), varname));
         }
         else
-            value.stringValue = parseStringOpt(sCmd, findParameter(sCmd, "value", '=')+5);
+        {
+            std::string sValue = getArgAtPos(sCmd, findParameter(sCmd, "value", '=')+5);
+            MemoryManager& _memManager = NumeReKernel::getInstance()->getMemoryManager();
+            NumeRe::WinItemValue value;
 
-        sCmd = toString(winInfo.window->setItemValue(value, itemID));
+            if (_memManager.containsTables(sValue))
+            {
+                DataAccessParser _access(sValue);
+                value.tableValue = _memManager.extractTable(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col);
+                value.stringValue = _access.getDataObject() + "()";
+            }
+            else
+                value.stringValue = parseStringOpt(sCmd, findParameter(sCmd, "value", '=')+5);
+
+            sCmd = toString(winInfo.window->setItemValue(value, itemID));
+        }
     }
     else if (findParameter(sCmd, "label", '='))
     {
@@ -593,19 +567,26 @@ void windowCommand(std::string& sCmd)
         // is a nullptr type
         if (winInfo.window && winInfo.nStatus == NumeRe::STATUS_RUNNING)
         {
-            std::vector<int> vItems = winInfo.window->getWindowItems(sItemType);
-
-            if (!vItems.size())
-                sCmd = "nan";
+            if (sItemType == "prop")
+            {
+                sCmd = winInfo.window->getProperties();
+            }
             else
             {
-                std::vector<double> vRes;
+                std::vector<int> vItems = winInfo.window->getWindowItems(sItemType);
 
-                // Convert the ints to doubles
-                for (auto items : vItems)
-                    vRes.push_back(items);
+                if (!vItems.size())
+                    sCmd = "nan";
+                else
+                {
+                    std::vector<double> vRes;
 
-                sCmd = _parser.CreateTempVectorVar(vRes);
+                    // Convert the ints to doubles
+                    for (auto items : vItems)
+                        vRes.push_back(items);
+
+                    sCmd = _parser.CreateTempVectorVar(vRes);
+                }
             }
         }
         else

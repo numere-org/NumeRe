@@ -195,11 +195,15 @@ namespace NumeRe
             std::string getItemLabel(int windowItemID) const;
             std::string getItemState(int windowItemID) const;
             std::string getItemColor(int windowItemID) const;
+            std::string getPropValue(const std::string& varName) const;
+            std::string getProperties() const;
+
             bool setItemValue(const WinItemValue& _value, int windowItemID);
             bool setItemLabel(const std::string& _label, int windowItemID);
             bool setItemState(const std::string& _state, int windowItemID);
             bool setItemColor(const std::string& _color, int windowItemID);
             bool setItemGraph(GraphHelper* _helper, int windowItemID);
+            bool setPropValue(const std::string& _value, const std::string& varName);
     };
 
 

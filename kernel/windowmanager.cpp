@@ -344,6 +344,24 @@ namespace NumeRe
     }
 
 
+    std::string Window::getPropValue(const std::string& varName) const
+    {
+        if (m_customWindow)
+            return m_customWindow->getPropValue(varName).ToStdString();
+
+        return "nan";
+    }
+
+
+    std::string Window::getProperties() const
+    {
+        if (m_customWindow)
+            return m_customWindow->getProperties().ToStdString();
+
+        return "\"\"";
+    }
+
+
     /////////////////////////////////////////////////
     /// \brief Enables changing the value of the
     /// selected window item to the passed value.
@@ -435,6 +453,15 @@ namespace NumeRe
     {
         if (m_customWindow)
             return m_customWindow->setItemGraph(_helper, windowItemID);
+
+        return false;
+    }
+
+
+    bool Window::setPropValue(const std::string& _value, const std::string& varName)
+    {
+        if (m_customWindow)
+            return m_customWindow->setPropValue(_value, varName);
 
         return false;
     }

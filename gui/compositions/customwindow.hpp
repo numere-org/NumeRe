@@ -92,6 +92,8 @@ class CustomWindow : public wxFrame
     private:
         std::map<int, std::pair<WindowItemType,wxObject*>> m_windowItems;
         std::map<int, wxString> m_eventTable;
+        std::map<wxString, wxString> m_varTable;
+
         NumeRe::Window m_windowRef;
 
         void layout();
@@ -114,11 +116,15 @@ class CustomWindow : public wxFrame
         wxString getItemLabel(int windowItemID) const;
         wxString getItemState(int windowItemID) const;
         wxString getItemColor(int windowItemID) const;
+        wxString getPropValue(const wxString& varName) const;
+        wxString getProperties() const;
+
         bool setItemValue(WindowItemValue& _value, int windowItemID);
         bool setItemLabel(const wxString& _label, int windowItemID);
         bool setItemState(const wxString& _state, int windowItemID);
         bool setItemColor(const wxString& _color, int windowItemID);
         bool setItemGraph(GraphHelper* _helper, int windowItemID);
+        bool setPropValue(const wxString& _value, const wxString& varName);
 
         void OnMenuEvent(wxCommandEvent& event);
         void OnClick(wxCommandEvent& event);
