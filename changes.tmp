@@ -20,3 +20,4 @@ Added	The user may now select and delete a whole block of text in the current in
 New	NumeRe can now detect structures in 2D datagrids using the command "detect".
 Fixed	The context menu in the Refactorer is now working as expected.
 New	The function "perlin(x,y,z,seed,freq,oct,pers)" will create Perlin noise for the selected coordinates.
+Fixed	The horizontal scrollbar now tracks the needed width of the lines currently visible.

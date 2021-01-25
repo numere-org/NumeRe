@@ -304,6 +304,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
                     | wxSTC_PERFORMED_REDO;
 
     this->SetModEventMask(modmask);
+    SetScrollWidthTracking(true);
 }
 
 
