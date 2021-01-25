@@ -1507,6 +1507,14 @@ wxString CustomWindow::getItemColor(int windowItemID) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the value of the selected
+/// window property.
+///
+/// \param varName const wxString&
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString CustomWindow::getPropValue(const wxString& varName) const
 {
     auto iter = m_varTable.find(varName);
@@ -1518,6 +1526,13 @@ wxString CustomWindow::getPropValue(const wxString& varName) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns a list of all available window
+/// properties.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString CustomWindow::getProperties() const
 {
     wxString sProperties;
@@ -1884,6 +1899,15 @@ bool CustomWindow::setItemGraph(GraphHelper* _helper, int windowItemID)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Sets the value of the selected window
+/// property.
+///
+/// \param _value const wxString&
+/// \param varName const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool CustomWindow::setPropValue(const wxString& _value, const wxString& varName)
 {
     auto iter = m_varTable.find(varName);

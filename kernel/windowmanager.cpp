@@ -344,6 +344,14 @@ namespace NumeRe
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Returns the value of the selected
+    /// property as a string.
+    ///
+    /// \param varName const std::string&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Window::getPropValue(const std::string& varName) const
     {
         if (m_customWindow)
@@ -353,6 +361,13 @@ namespace NumeRe
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief Returns a list of all available window
+    /// properties (comp. \c prop) in this window.
+    ///
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
     std::string Window::getProperties() const
     {
         if (m_customWindow)
@@ -458,6 +473,15 @@ namespace NumeRe
     }
 
 
+    /////////////////////////////////////////////////
+    /// \brief This function sets the value of the
+    /// selected window property.
+    ///
+    /// \param _value const std::string&
+    /// \param varName const std::string&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
     bool Window::setPropValue(const std::string& _value, const std::string& varName)
     {
         if (m_customWindow)
