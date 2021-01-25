@@ -4226,6 +4226,11 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                 continue;
 
             NumeReEditor* edit;
+            wxString fileContents;
+            wxString fileNameNoPath;
+
+            if (!GetFileContents(modifiedFiles[i].second, fileContents, fileNameNoPath))
+                continue;
 
             // Search the file in the list of currently
             // opened files
@@ -4249,9 +4254,8 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                         if (answer == wxYES)
                         {
                             int pos = m_currentEd->GetCurrentPos();
-                            m_currentEd->LoadFile(modifiedFiles[i].second);
+                            m_currentEd->LoadFileText(fileContents);
                             m_currentEd->MarkerDeleteAll(MARKER_SAVED);
-                            m_currentEd->UpdateSyntaxHighlighting(true);
                             m_currentEd->GotoPos(pos);
                             m_currentSavedFile = toString((int)time(0))+"|"+modifiedFiles[i].second;
                         }
@@ -4259,9 +4263,8 @@ void NumeReWindow::OnFileEventTimer(wxTimerEvent& event)
                     else
                     {
                         int pos = edit->GetCurrentPos();
-                        edit->LoadFile(modifiedFiles[i].second);
+                        edit->LoadFileText(fileContents);
                         edit->MarkerDeleteAll(MARKER_SAVED);
-                        edit->UpdateSyntaxHighlighting(true);
                         edit->GotoPos(pos);
                         m_currentSavedFile = toString((int)time(0))+"|"+modifiedFiles[i].second;
                     }

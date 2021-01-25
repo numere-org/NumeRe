@@ -21,3 +21,4 @@ New	NumeRe can now detect structures in 2D datagrids using the command "detect".
 Fixed	The context menu in the Refactorer is now working as expected.
 New	The function "perlin(x,y,z,seed,freq,oct,pers)" will create Perlin noise for the selected coordinates.
 Fixed	The horizontal scrollbar now tracks the needed width of the lines currently visible.
+Applied	Replaced "wxStyledTextCtrl::LoadFile()" with "NumeReEditor::LoadFileText()" to resolve issue #558. Because the issue is not reproducable, it's unclear, whether this replacement fixes the issue.
