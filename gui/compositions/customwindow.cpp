@@ -1250,12 +1250,16 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             params.table = table->GetDataCopy();
             params.value = convertToCodeString(table->getSelectedValues());
             params.type = "tablegrid";
+
+            break;
         }
         case CustomWindow::GRAPHER:
         {
             wxMGL* grapher = static_cast<wxMGL*>(object.second);
             params.value = convertToCodeString(grapher->getClickedCoords());
             params.type = "grapher";
+
+            break;
         }
         case CustomWindow::TREELIST:
         {
@@ -1270,6 +1274,8 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
             }
             params.value = getTreeListCtrlValue(listCtrl);
             params.type = "treelist";
+
+            break;
         }
         case CustomWindow::MENUITEM:
         {
