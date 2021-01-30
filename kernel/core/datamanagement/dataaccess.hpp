@@ -27,25 +27,6 @@
 #include "../settings.hpp"
 #include "../structures.hpp"
 
-bool parser_CheckMultArgFunc(const std::string&, const std::string&);
-
-std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs = true);
-void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, const Settings&, bool);
-bool getData(const std::string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols = 2, bool bSort = true);
-NumeRe::Table parser_extractData(const std::string& sDataExpression, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool isNotEmptyExpression(const std::string&);
-bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut = true);
-double getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
-Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
-
-Indices getIndices(StringView sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option) __attribute__ ((deprecated));
-void getIndices(StringView sCmd, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
-
-inline bool isValidIndexSet(const Indices& _idx)
-{
-    return _idx.row.isValid() && _idx.col.isValid();
-}
-
 
 /////////////////////////////////////////////////
 /// \brief This class is defined to abstrahize
@@ -61,13 +42,37 @@ class DataAccessParser
         bool bIsCluster;
 
     public:
+        DataAccessParser();
         DataAccessParser(StringView sCommand);
+        DataAccessParser(const DataAccessParser& _accessParser);
         void evalIndices();
         std::string& getDataObject();
         std::string getIndexString();
         Indices& getIndices();
         bool isCluster() const;
 };
+
+
+
+bool parser_CheckMultArgFunc(const std::string&, const std::string&);
+
+std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs = true);
+void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, const Settings&, bool);
+bool getData(const std::string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols = 2, bool bSort = true);
+NumeRe::Table parser_extractData(const std::string& sDataExpression, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
+bool isNotEmptyExpression(const std::string&);
+bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut = true);
+double getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
+DataAccessParser getAccessParserForPlotAndFit(StringView sExpression);
+Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
+
+Indices getIndices(StringView sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option) __attribute__ ((deprecated));
+void getIndices(StringView sCmd, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
+
+inline bool isValidIndexSet(const Indices& _idx)
+{
+    return _idx.row.isValid() && _idx.col.isValid();
+}
 
 
 #endif // DATAACCESS_HPP

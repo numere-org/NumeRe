@@ -26,6 +26,15 @@ using namespace mu;
 
 
 /////////////////////////////////////////////////
+/// \brief DataAccessParser default constructor.
+/////////////////////////////////////////////////
+DataAccessParser::DataAccessParser()
+{
+    //
+}
+
+
+/////////////////////////////////////////////////
 /// \brief DataAccessParser constructor. This
 /// function will parse the passed command string
 /// into the first found data access and
@@ -105,6 +114,20 @@ DataAccessParser::DataAccessParser(StringView sCommand)
         }
     }
 
+}
+
+
+/////////////////////////////////////////////////
+/// \brief DataAccessParser copy constructor.
+///
+/// \param _accessParser const DataAccessParser&
+///
+/////////////////////////////////////////////////
+DataAccessParser::DataAccessParser(const DataAccessParser& _accessParser)
+{
+    sDataObject = _accessParser.sDataObject;
+    idx = _accessParser.idx;
+    bIsCluster = _accessParser.bIsCluster;
 }
 
 
@@ -1234,6 +1257,31 @@ static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parse
 
 
 /////////////////////////////////////////////////
+/// \brief This function will return the access
+/// parser instance for the current expression
+/// validate, whether the expression is actual
+/// resolveable.
+///
+/// \param sExpression StringView
+/// \return DataAccessParser
+///
+/////////////////////////////////////////////////
+DataAccessParser getAccessParserForPlotAndFit(StringView sExpression)
+{
+    // Search for tables and clusters
+    DataAccessParser _accessParser(sExpression);
+
+    if (!_accessParser.getDataObject().length())
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sExpression.to_string(), SyntaxError::invalid_position);
+
+    if (!isValidIndexSet(_accessParser.getIndices()))
+        throw SyntaxError(SyntaxError::INVALID_INDEX, sExpression.to_string(), SyntaxError::invalid_position, _accessParser.getIndices().row.to_string() + ", " + _accessParser.getIndices().col.to_string());
+
+    return _accessParser;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function will calculate the
 /// indices from the passed data expression and
 /// return them optimized for the plotting and
@@ -1255,19 +1303,11 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
     sDataTable = "data";
 
     // Search for tables and clusters
-    DataAccessParser _accessParser(sExpression);
+    DataAccessParser _accessParser = getAccessParserForPlotAndFit(sExpression);
 
-    if (_accessParser.getDataObject().length())
-    {
-        sDataTable = _accessParser.getDataObject();
-        _idx = _accessParser.getIndices();
-        isCluster = _accessParser.isCluster();
-    }
-    else
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sExpression, SyntaxError::invalid_position);
-
-    if (!isValidIndexSet(_idx))
-        throw SyntaxError(SyntaxError::INVALID_INDEX, sExpression, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+    sDataTable = _accessParser.getDataObject();
+    _idx = _accessParser.getIndices();
+    isCluster = _accessParser.isCluster();
 
     // Determine the number of passed columns and
     // whether the user left an open end in the column

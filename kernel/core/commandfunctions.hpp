@@ -2232,7 +2232,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
         // Try to extract the file name, if it was passed
         if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(findParameter(sCmd, "file", '=')), sArgument))
         {
-            sArgument = _cache.ValidFileName(sArgument);
+            sArgument = _cache.ValidFileName(sArgument, ".ndat");
 
             if (_cache.saveFile(_access.getDataObject(), sArgument, nPrecision))
             {
