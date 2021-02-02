@@ -103,7 +103,9 @@ class Memory : public Sorter
 
         // READ ACCESS METHODS
 		double readMem(long long int _nLine, long long int _nCol) const;
+		double readMemInterpolated(double _dLine, double _dCol) const;
 		std::vector<double> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		Memory* extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		void copyElementsInto(std::vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		std::string getHeadLineElement(long long int _i) const;
 		std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol) const;

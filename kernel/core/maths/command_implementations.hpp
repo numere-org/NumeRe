@@ -48,6 +48,7 @@ bool analyzePulse(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionD
 bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+void rotateTable(std::string& sCmd);
 
 #endif // COMMAND_IMPLEMENTATIONS_HPP
 

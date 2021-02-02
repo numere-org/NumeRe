@@ -400,6 +400,50 @@ double Memory::readMem(long long int _nLine, long long int _nCol) const
 
 
 /////////////////////////////////////////////////
+/// \brief This member function returns a
+/// (bilinearily) interpolated element at the
+/// selected \c double positions.
+///
+/// \param _dLine double
+/// \param _dCol double
+/// \return double
+///
+/////////////////////////////////////////////////
+double Memory::readMemInterpolated(double _dLine, double _dCol) const
+{
+    if (isnan(_dLine) || isnan(_dCol))
+        return NAN;
+
+    // Find the base index
+    int nBaseLine = intCast(_dLine) + (_dLine < 0 ? -1 : 0);
+    int nBaseCol = intCast(_dCol) + (_dCol < 0 ? -1 : 0);
+
+    // Get the decimal part of the double indices
+    double x = _dLine - nBaseLine;
+    double y = _dCol - nBaseCol;
+
+    // Find the surrounding four entries
+    double f00 = readMem(nBaseLine, nBaseCol);
+    double f10 = readMem(nBaseLine+1, nBaseCol);
+    double f01 = readMem(nBaseLine, nBaseCol+1);
+    double f11 = readMem(nBaseLine+1, nBaseCol+1);
+
+    // If all are NAN, return NAN
+    if (isnan(f00) && isnan(f01) && isnan(f10) && isnan(f11))
+        return NAN;
+
+    // Otherwise set NAN to zero
+    f00 = isnan(f00) ? 0.0 : f00;
+    f10 = isnan(f10) ? 0.0 : f10;
+    f01 = isnan(f01) ? 0.0 : f01;
+    f11 = isnan(f11) ? 0.0 : f11;
+
+    //     f(0,0) (1-x) (1-y) + f(1,0) x (1-y) + f(0,1) (1-x) y + f(1,1) x y
+    return f00*(1-x)*(1-y)    + f10*x*(1-y)    + f01*(1-x)*y    + f11*x*y;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function returns the
 /// elements stored at the selected positions.
 ///
@@ -434,6 +478,38 @@ vector<double> Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vC
     }
 
     return vReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function extracts a range
+/// of this table and returns it as a new Memory
+/// instance.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return Memory*
+///
+/// \remark The caller gets ownership of the
+/// returned Memory instance.
+///
+/////////////////////////////////////////////////
+Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+{
+    Memory* _memCopy = new Memory();
+
+    _vLine.setOpenEndIndex(getLines(false)-1);
+    _vCol.setOpenEndIndex(getCols(false)-1);
+
+    for (size_t i = 0; i < _vLine.size(); i++)
+    {
+        for (size_t j = 0; j < _vCol.size(); j++)
+        {
+            _memCopy->writeData(i, j, dMemTable[_vLine[i]][_vCol[j]]);
+        }
+    }
+
+    return _memCopy;
 }
 
 

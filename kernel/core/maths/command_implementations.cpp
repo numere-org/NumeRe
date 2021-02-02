@@ -18,6 +18,7 @@
 
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sort.h>
+#include <algorithm>
 
 #include "command_implementations.hpp"
 #include "parser_functions.hpp"
@@ -4727,20 +4728,35 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 ///
 /// \param vAxis const std::vector<double>&
 /// \param dInterpolVal double
+/// \param bExtent bool
 /// \return double
 ///
 /////////////////////////////////////////////////
-static double interpolateToGrid(const std::vector<double>& vAxis, double dInterpolVal)
+static double interpolateToGrid(const std::vector<double>& vAxis, double dInterpolVal, bool bExtent = false)
 {
     if (isnan(dInterpolVal))
         return dInterpolVal;
 
-    int nBaseVal = (int)dInterpolVal;
+    // Find the base index
+    int nBaseVal = intCast(dInterpolVal) + (dInterpolVal < 0 ? -1 : 0);
 
-    if (nBaseVal >= 0 && nBaseVal+1 < vAxis.size())
-        return vAxis[nBaseVal] + (vAxis[nBaseVal+1] - vAxis[nBaseVal]) * (dInterpolVal - nBaseVal);
-    else if (nBaseVal > 0 && nBaseVal < vAxis.size()) // Repeat last distance
-        return vAxis[nBaseVal] + (vAxis[nBaseVal] - vAxis[nBaseVal-1]) * (dInterpolVal - nBaseVal);
+    // Get the decimal part
+    double x = dInterpolVal - nBaseVal;
+
+    if (nBaseVal >= 0 && nBaseVal+1 < (int)vAxis.size())
+        return vAxis[nBaseVal] + (vAxis[nBaseVal+1] - vAxis[nBaseVal]) * x;
+    else if (nBaseVal > 0 && nBaseVal < (int)vAxis.size()) // Repeat last distance
+        return vAxis[nBaseVal] + (vAxis[nBaseVal] - vAxis[nBaseVal-1]) * x;
+    else if (nBaseVal == -1 && nBaseVal+1 < (int)vAxis.size()) // Repeat first distance
+        return vAxis.front() + (-1 + x) * (vAxis[1] - vAxis.front());
+
+    if (bExtent)
+    {
+        if (nBaseVal >= (int)vAxis.size())
+            return vAxis.back() + (nBaseVal - vAxis.size() + 1 + x) * (vAxis.back() - vAxis[vAxis.size()-2]);
+        else if (nBaseVal < -1)
+            return vAxis.front() + (nBaseVal + x) * (vAxis[1] - vAxis.front());
+    }
 
     // nBaseVal below zero or not in the grid
     return NAN;
@@ -4976,4 +4992,208 @@ bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, Funct
     return true;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This is a static helper function to
+/// round a value to a single decimal.
+///
+/// \param d double
+/// \return double
+///
+/////////////////////////////////////////////////
+static double rotRound(double d)
+{
+    return rint(d*10.0) / 10.0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function rotates a table, an
+/// image or a datagrid around a specified angle.
+///
+/// \param sCmd std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void rotateTable(std::string& sCmd)
+{
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    StringView _sTable(sCmd);
+    Match _mMatch = findCommand(sCmd);
+    DataAccessParser _accessParser(_sTable.subview(_mMatch.nPos + _mMatch.sString.length()));
+
+    std::string sTargetTable = "rotdata";
+    Indices _idx;
+    double dAlpha = 0.0; // radians
+
+    std::vector<double> source_x;
+    std::vector<double> source_y;
+
+    // Find the target of this operation
+    sTargetTable = evaluateTargetOptionInCommand(sCmd, sTargetTable, _idx, _parser, _data, NumeReKernel::getInstance()->getSettings());
+
+    if (findParameter(sCmd, "alpha", '='))
+    {
+        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "alpha", '=') + 5));
+        dAlpha = _parser.Eval() / 180.0 * M_PI; // deg2rad
+    }
+
+    _accessParser.getIndices().row.setOpenEndIndex(_data.getLines(_accessParser.getDataObject())-1);
+    _accessParser.getIndices().col.setOpenEndIndex(_data.getCols(_accessParser.getDataObject())-1);
+
+    // Handle the image and datagrid cases
+    if (_mMatch.sString == "imrot" || _mMatch.sString == "gridrot")
+    {
+        if (_mMatch.sString == "gridrot")
+        {
+            source_x = _data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(0, 1), _accessParser.getDataObject());
+            source_y = _data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(1, 1), _accessParser.getDataObject());
+
+            // Remove trailing NANs
+            while (isnan(source_x.back()))
+                source_x.pop_back();
+
+            while (isnan(source_y.back()))
+                source_y.pop_back();
+
+            // Determine the interval range of both axes
+            // and calculate the relations between size and
+            // interval ranges
+            auto source_x_minmax = std::minmax_element(source_x.begin(), source_x.end());
+            auto source_y_minmax = std::minmax_element(source_y.begin(), source_y.end());
+            double dSizeRelation = source_x.size() / (double)source_y.size();
+            double dRangeRelation = fabs(*source_x_minmax.second - *source_x_minmax.first) / fabs(*source_y_minmax.second - *source_y_minmax.first);
+
+            // Warn, if the relations are too different
+            if (fabs(dSizeRelation - dRangeRelation) > 1e-3)
+                NumeReKernel::issueWarning(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_WARN_AXES_NOT_PRESERVED"));
+        }
+
+        _accessParser.getIndices().col = _accessParser.getIndices().col.subidx(2);
+    }
+
+    // Extract the range (will pass the ownership)
+    Memory* _source = _data.getTable(_accessParser.getDataObject())->extractRange(_accessParser.getIndices().row, _accessParser.getIndices().col);
+
+    // Get the edges
+    Point topLeft(0, 0);
+    Point topRight(_source->getCols(false)-1, 0);
+    Point bottomLeft(0, _source->getLines(false)-1);
+    Point bottomRight(_source->getCols(false)-1, _source->getLines(false)-1);
+
+    // get the rotation origin
+    Point origin = (bottomRight + topLeft) / 2.0;
+
+    // Calculate their final positions
+    topLeft.rotate(dAlpha, origin);
+    topRight.rotate(dAlpha, origin);
+    bottomLeft.rotate(dAlpha, origin);
+    bottomRight.rotate(dAlpha, origin);
+
+    // Calculate the final image extent
+    double top   = std::min(topLeft.y, std::min(topRight.y, std::min(bottomLeft.y, bottomRight.y)));
+    double bot   = std::max(topLeft.y, std::max(topRight.y, std::max(bottomLeft.y, bottomRight.y)));
+    double left  = std::min(topLeft.x, std::min(topRight.x, std::min(bottomLeft.x, bottomRight.x)));
+    double right = std::max(topLeft.x, std::max(topRight.x, std::max(bottomLeft.x, bottomRight.x)));
+
+    int rows = ceil(rotRound(bot) - rotRound(top)) + 1;
+    int cols = ceil(rotRound(right) - rotRound(left)) + 1;
+
+    // Compensate for ceil()
+    top -= (ceil(rotRound(bot) - rotRound(top)) - (bot - top)) / 2.0;
+    left -= (ceil(rotRound(right) - rotRound(left))- (right - left)) / 2.0;
+
+    // Insert the axes, if necessary
+    if (_mMatch.sString == "imrot")
+    {
+        // Write the x axis
+        for (int i = 0; i < rows; i++)
+        {
+            if (_idx.row.size() <= i)
+                break;
+
+            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, i+1);
+        }
+
+        // Write the y axis
+        for (int i = 0; i < cols; i++)
+        {
+            if (_idx.row.size() <= i)
+                break;
+
+            _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, i+1);
+        }
+
+        _idx.col = _idx.col.subidx(2);
+    }
+    else if (_mMatch.sString == "gridrot")
+    {
+        Point origin_axis(interpolateToGrid(source_x, origin.x, true), interpolateToGrid(source_y, origin.y, true));
+
+        // Rotate "cell" coordinates to old coord sys,
+        // interpolate values and rotate back to obtain
+        // the values of the new coordinates
+        for (int i = 0; i < rows; i++)
+        {
+            if (_idx.row.size() <= i)
+                break;
+
+            Point p(i+top, origin.y);
+            p.rotate(-dAlpha, origin);
+
+            p.x = interpolateToGrid(source_x, p.x, true);
+            p.y = interpolateToGrid(source_y, p.y, true);
+
+            p.rotate(dAlpha, origin_axis);
+
+            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, p.x);
+        }
+
+        for (int j = 0; j < cols; j++)
+        {
+            if (_idx.row.size() <= j)
+                break;
+
+            Point p(origin.x, j+left);
+            p.rotate(-dAlpha, origin);
+
+            p.x = interpolateToGrid(source_x, p.x, true);
+            p.y = interpolateToGrid(source_y, p.y, true);
+
+            p.rotate(dAlpha, origin_axis);
+
+            _data.writeToTable(_idx.row[j], _idx.col[1], sTargetTable, p.y);
+        }
+
+        _idx.col = _idx.col.subidx(2);
+    }
+
+    // Calculate the rotated grid
+    for (int i = 0; i < rows; i++)
+    {
+        if (_idx.row.size() <= i)
+            break;
+
+        for (int j = 0; j < cols; j++)
+        {
+            if (_idx.col.size() <= j)
+                break;
+
+            // Create a point in rotated source coordinates
+            // and rotate it backwards
+            Point p(i + top, j + left);
+            p.rotate(-dAlpha, origin);
+
+            // Store the interpolated value in target coordinates
+            _data.writeToTable(_idx.row[i], _idx.col[j], sTargetTable, _source->readMemInterpolated(p.x, p.y));
+        }
+    }
+
+    // clear the memory instance
+    delete _source;
+
+    if (NumeReKernel::getInstance()->getSettings().systemPrints())
+        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_SUCCESS", sTargetTable));
+}
 

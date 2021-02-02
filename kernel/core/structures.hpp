@@ -2130,6 +2130,47 @@ struct Match
 
 
 /////////////////////////////////////////////////
+/// \brief This represents a point in 2D space.
+/////////////////////////////////////////////////
+struct Point
+{
+    double x;
+    double y;
+
+    Point(double _x, double _y) : x(_x), y(_y) {}
+
+    void rotate(double dAlpha, const Point& origin = Point(0, 0))
+    {
+        double x1 = (x - origin.x) * cos(dAlpha) - (y - origin.y) * sin(dAlpha) + origin.x;
+        double y1 = (x - origin.x) * sin(dAlpha) + (y - origin.y) * cos(dAlpha) + origin.y;
+
+        x = x1;
+        y = y1;
+    }
+
+    Point operator+(const Point& a) const
+    {
+        return Point(x + a.x, y + a.y);
+    }
+
+    Point operator-(const Point& a) const
+    {
+        return Point(x - a.x, y - a.y);
+    }
+
+    Point operator*(double a) const
+    {
+        return Point(x*a, y*a);
+    }
+
+    Point operator/(double a) const
+    {
+        return Point(x/a, y/a);
+    }
+};
+
+
+/////////////////////////////////////////////////
 /// \brief Structure for the horizontal and
 /// vertical lines in plots.
 /////////////////////////////////////////////////

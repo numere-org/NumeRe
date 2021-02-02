@@ -5586,6 +5586,22 @@ static CommandReturnValues cmd_print(string& sCmd)
 
 
 /////////////////////////////////////////////////
+/// \brief This static function implements all
+/// "*rot" commands.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_rotate(string& sCmd)
+{
+    rotateTable(sCmd);
+
+    return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function returns a map of
 /// commands linked to their function
 /// implementation.
@@ -5678,6 +5694,9 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["surface"] = cmd_plotting;
     mCommandFuncMap["surface3d"] = cmd_plotting;
     mCommandFuncMap["swap"] = cmd_swap;
+    mCommandFuncMap["tabrot"] = cmd_rotate;
+    mCommandFuncMap["imrot"] = cmd_rotate;
+    mCommandFuncMap["gridrot"] = cmd_rotate;
     mCommandFuncMap["taylor"] = cmd_taylor;
     mCommandFuncMap["undef"] = cmd_undefine;
     mCommandFuncMap["undefine"] = cmd_undefine;
