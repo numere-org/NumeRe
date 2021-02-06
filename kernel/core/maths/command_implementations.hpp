@@ -49,6 +49,7 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
 void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 void rotateTable(std::string& sCmd);
+void particleSwarmOptimizer(std::string& sCmd);
 
 #endif // COMMAND_IMPLEMENTATIONS_HPP
 

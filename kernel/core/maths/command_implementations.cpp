@@ -5197,3 +5197,199 @@ void rotateTable(std::string& sCmd)
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_SUCCESS", sTargetTable));
 }
 
+
+// Forward declaration to make this function usable by the
+// particle swarm optimizer (needs randomness)
+value_type parser_Random(value_type vRandMin, value_type vRandMax);
+
+
+/////////////////////////////////////////////////
+/// \brief This function implements a particle
+/// swarm optimizer in up to four dimensions
+/// (depending on the number of intervals
+/// defined). The optimizer has an adaptive
+/// velocity part, reducing the overall position
+/// variation of the particles over time.
+///
+/// \param sCmd std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void particleSwarmOptimizer(std::string& sCmd)
+{
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    FunctionDefinitionManager& _define = NumeReKernel::getInstance()->getDefinitions();
+
+    size_t nGlobalBest = 0;
+    size_t nNumParticles = 100;
+    size_t nMaxIterations = 100;
+    size_t nDims = 1;
+
+    // TODO
+    // Find the expression
+    Match _mMatch = findCommand(sCmd);
+
+    size_t pos = std::min(sCmd.find("-set", _mMatch.nPos), sCmd.find("--", _mMatch.nPos));
+    std::string sParams;
+    std::string sExpr;
+
+    if (pos != std::string::npos)
+    {
+        sParams = sCmd.substr(pos);
+        sExpr = sCmd.substr(_mMatch.nPos + _mMatch.sString.length(), pos - _mMatch.nPos - _mMatch.sString.length());
+    }
+    else
+        sExpr = sCmd.substr(_mMatch.nPos + _mMatch.sString.length());
+
+    // Extract the interval information
+    std::vector<double> vInterval = readAndParseIntervals(sParams, _parser, _data, _define, NumeReKernel::getInstance()->getSettings(), false);
+
+    // Handle parameters
+    if (sParams.length())
+    {
+        if (findParameter(sParams, "particles", '='))
+        {
+            _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "particles", '=') + 9));
+            nNumParticles = intCast(_parser.Eval());
+        }
+
+        if (findParameter(sParams, "iter", '='))
+        {
+            _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "iter", '=') + 4));
+            nMaxIterations = intCast(_parser.Eval());
+        }
+    }
+
+    // Call functions
+    if (!_define.call(sExpr))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, sExpr);
+
+    // Get data elements, if necessary
+    if (_data.containsTablesOrClusters(sExpr))
+        getDataElements(sExpr, _parser, _data, NumeReKernel::getInstance()->getSettings());
+
+    // Set the expression
+    _parser.SetExpr(sExpr);
+
+    // Determine intervals and dimensionality
+    if (vInterval.size() < 2)
+    {
+        vInterval.push_back(-10.0);
+        vInterval.push_back(10.0);
+    }
+
+    if (vInterval.size() > 2 * nDims)
+        nDims = vInterval.size() / 2;
+
+    // Restrict to 4 dimensions, because there are
+    // only 4 default variables
+    nDims = std::min(4u, nDims);
+
+    // Determine the random range for the velocity vector
+    double minRange = fabs(vInterval[1] - vInterval[0]);
+
+    for (size_t i = 1; i < nDims; i++)
+    {
+        if (fabs(vInterval[2*i+1] - vInterval[2*i]) < minRange)
+            minRange = fabs(vInterval[2*i+1] - vInterval[2*i]);
+    }
+
+    // The random range is a 10th of the smallest interval
+    // range to avoid too large jumps in the particle velocity
+    // compared to the interval range.
+    double fRandRange = minRange / 10.0;
+
+    std::vector<std::vector<double>> vPos;
+    std::vector<std::vector<double>> vBest;
+    std::vector<std::vector<double>> vVel;
+    std::vector<double> vFunctionValues;
+    std::vector<double> vBestValues;
+
+    vPos.resize(nDims);
+    vBest.resize(nDims);
+    vVel.resize(nDims);
+
+    // Prepare initial vectors
+    for (size_t i = 0; i < nNumParticles; i++)
+    {
+        for (size_t j = 0; j < nDims; j++)
+        {
+            vPos[j].push_back(parser_Random(vInterval[2*j], vInterval[2*j+1]));
+            vVel[j].push_back(parser_Random(vInterval[2*j], vInterval[2*j+1])/5.0);
+
+            _defVars.vValue[j][0] = vPos[j].back();
+        }
+
+        vFunctionValues.push_back(_parser.Eval());
+    }
+
+    for (size_t j = 0; j < nDims; j++)
+    {
+        vBest[j] = vPos[j];
+    }
+
+    vBestValues = vFunctionValues;
+
+    // Find global best
+    nGlobalBest = std::min_element(vBestValues.begin(), vBestValues.end()) - vBestValues.begin();
+
+    // Iterate
+    for (size_t i = 0; i < nMaxIterations; i++)
+    {
+        // Create an adaptive factor to reduce
+        // particle position variation over time
+        double fAdaptiveVelFactor = (nMaxIterations - i) / (double)nMaxIterations;
+
+        for (size_t j = 0; j < nNumParticles; j++)
+        {
+            for (size_t n = 0; n < nDims; n++)
+            {
+                // Update velocities
+                vVel[n][j] += parser_Random(0, fRandRange) * (vBest[n][j] - vPos[n][j]) + parser_Random(0, fRandRange) * (vBest[n][nGlobalBest] - vPos[n][j]);
+
+                // Update positions
+                vPos[n][j] += fAdaptiveVelFactor * vVel[n][j];
+
+                // Restrict to interval boundaries
+                vPos[n][j] = std::max(vInterval[2*n], std::min(vPos[n][j], vInterval[2*n+1]));
+
+                // Update the corresponding default variable
+                _defVars.vValue[n][0] = vPos[n][j];
+            }
+
+            // Recalculate the function value
+            vFunctionValues[j] = _parser.Eval();
+
+            // Update the best positions
+            if (vFunctionValues[j] < vBestValues[j])
+            {
+                vBestValues[j] = vFunctionValues[j];
+
+                for (size_t n = 0; n < nDims; n++)
+                {
+                    vBest[n][j] = vPos[n][j];
+                }
+            }
+        }
+
+        // Update best global position
+        nGlobalBest = std::min_element(vBestValues.begin(), vBestValues.end()) - vBestValues.begin();
+    }
+
+    // Create return value
+    sCmd.clear();
+
+    std::vector<double> vRes;
+
+    for (size_t j = 0; j < nDims; j++)
+    {
+        vRes.push_back(vBest[j][nGlobalBest]);
+    }
+
+    // Create a temporary vector variable
+    sCmd = _parser.CreateTempVectorVar(vRes);
+}
+
+
+

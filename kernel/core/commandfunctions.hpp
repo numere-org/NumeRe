@@ -2748,6 +2748,28 @@ static CommandReturnValues cmd_dialog(string& sCmd)
 
 
 /////////////////////////////////////////////////
+/// \brief This static function implements the
+/// interface to the particle swarm optimizer.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_pso(string& sCmd)
+{
+    size_t pos = findCommand(sCmd).nPos;
+    std::string sPso = sCmd.substr(pos);
+
+    // Call the optimizer
+    particleSwarmOptimizer(sPso);
+
+    sCmd.replace(pos, std::string::npos, sPso);
+
+    return COMMAND_HAS_RETURNVALUE;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function implements all
 /// plotting commands.
 ///
@@ -5735,6 +5757,7 @@ static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["integrate"] = cmd_integrate;
     mCommandFuncMap["integrate2d"] = cmd_integrate;
     mCommandFuncMap["load"] = cmd_load;
+    mCommandFuncMap["pso"] = cmd_pso;
     mCommandFuncMap["pulse"] = cmd_pulse;
     mCommandFuncMap["read"] = cmd_read;
     mCommandFuncMap["readline"] = cmd_readline;
