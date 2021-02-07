@@ -74,6 +74,10 @@ CommandReturnValues commandHandler(string& sCmd)
     if (iter != mCommands.end())
         return iter->second(sCmd);
 
+    // Now chek for the too generic "get"
+    if (findCommand(sCmd, "get").sString == "get")
+        return cmd_get(sCmd);
+
     // No command found
     return NO_COMMAND;
 }

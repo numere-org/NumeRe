@@ -871,7 +871,9 @@ DocumentationGenerator::DocumentationGenerator(NumeReSyntax* _syntax, const std:
 /////////////////////////////////////////////////
 std::string DocumentationGenerator::createDocumentation(const std::string& sFileName) const
 {
-    if (sFileName.find(".nscr") == std::string::npos && sFileName.find(".nprc") == std::string::npos)
+    if (sFileName.find(".nscr") == std::string::npos
+        && sFileName.find(".nlyt") == std::string::npos
+        && sFileName.find(".nprc") == std::string::npos)
         return "";
 
     return convertToLaTeX(replacePathSeparator(sFileName));
@@ -890,7 +892,9 @@ std::string DocumentationGenerator::createDocumentation(const std::string& sFile
 /////////////////////////////////////////////////
 std::string DocumentationGenerator::createFullDocumentation(const std::string& sFileName) const
 {
-    if (sFileName.find(".nscr") == std::string::npos && sFileName.find(".nprc") == std::string::npos)
+    if (sFileName.find(".nscr") == std::string::npos
+        && sFileName.find(".nlyt") == std::string::npos
+        && sFileName.find(".nprc") == std::string::npos)
         return "";
 
     std::set<std::string> fileSet;

@@ -57,7 +57,7 @@ void GenericTerminal::normal_output()
 	string sInput = sInput_Data;
 
 #ifdef DO_LOG
-	wxLogDebug(sInput.c_str());
+	wxLogDebug("%s", sInput.c_str());
 #endif
 
 	// As long as the output data has a length

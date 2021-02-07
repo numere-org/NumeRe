@@ -62,7 +62,7 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
 
     // Set a reasonable window size and the window icon
     this->SetSize(1050, 800);
-    this->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    this->SetIcon(mainwindow->getStandardIcon());
 
     // Split the view using the tree and the viewer
     splitter->SplitVertically(treePanel, m_viewer, 150);

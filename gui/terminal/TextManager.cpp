@@ -906,6 +906,24 @@ string TextManager::getCurrentInputLine() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// contents of the line before the current input
+/// line.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
+string TextManager::getPreviousLine() const
+{
+    // Ensure that the buffer is available and that there's user text
+    if (m_managedText.size() < 2)
+        return "";
+
+    return m_managedText[m_managedText.size()-2].toString();
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  public Reset
 ///  Clears out the text and resets everything

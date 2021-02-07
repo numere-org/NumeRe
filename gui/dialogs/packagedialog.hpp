@@ -26,6 +26,12 @@
 #include <set>
 #include <string>
 
+
+
+/////////////////////////////////////////////////
+/// \brief This class represents a dialog for
+/// creating a package from a set of procedures.
+/////////////////////////////////////////////////
 class PackageDialog : public wxDialog
 {
     private:

@@ -125,8 +125,8 @@ class Memory : public Sorter
         std::vector<int> sortElements(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const std::string& sSortingExpression = "");
         void deleteEntry(long long int _nLine, long long int _nCol);
         void deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol);
-        NumeRe::Table extractTable(const std::string& _sTable = "");
-        void importTable(NumeRe::Table _table);
+        NumeRe::Table extractTable(const std::string& _sTable, const VectorIndex& lines, const VectorIndex& cols);
+        void importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols);
 
         // MAFIMPLEMENTATIONS
         double std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;

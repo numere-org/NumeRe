@@ -72,6 +72,7 @@
 #include "compositions/tableeditpanel.hpp"
 #include "compositions/wxTermContainer.h"
 #include "compositions/debugviewer.hpp"
+#include "compositions/customwindow.hpp"
 
 #include "editor/editor.h"
 #include "editor/history.hpp"
@@ -362,7 +363,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     wxString programPath = getProgramFolder();
 
-    SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    SetIcon(getStandardIcon());
 
     m_remoteMode = true;
 
@@ -496,7 +497,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_filterNSCRFiles = _guilang.get("GUI_FILTER_SCRIPTS") + " (*.nscr)|*.nscr";//"NumeRe scripts (*.nscr)|*.nscr";
     m_filterNPRCFiles = _guilang.get("GUI_FILTER_PROCEDURES") + " (*.nprc)|*.nprc";//"NumeRe procedures (*.nprc)|*.nprc";
     m_filterExecutableFiles = _guilang.get("GUI_FILTER_EXECUTABLES") + " (*.nscr, *.nprc)|*.nscr;*.nprc";
-    m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";//"NumeRe files (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";
+    m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc, *.nlyt)|*.ndat;*.nscr;*.nprc;*.nlyt";//"NumeRe files (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";
     m_filterDataFiles = _guilang.get("GUI_FILTER_DATAFILES");// + " (*.dat, *.txt, *.csv, *.jdx, *.dx, *.jcm)|*.dat;*.txt;*.csv;*.jdx;*.dx;*.jcm";
     m_filterImageFiles = _guilang.get("GUI_FILTER_IMAGEFILES") + " (*.png, *.jpeg, *.eps, *.svg, *.gif, *.tiff)|*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.tif;*.tiff";
     m_filterTeXSource = _guilang.get("GUI_FILTER_TEXSOURCE") + " (*.tex)|*.tex";
@@ -1379,6 +1380,11 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             NewFile(FILE_PLUGIN);
             break;
         }
+        case ID_MENU_NEW_LAYOUT:
+        {
+            NewFile(FILE_NLYT);
+            break;
+        }
 
         case ID_MENU_OPEN_SOURCE_LOCAL:
         case ID_MENU_OPEN_SOURCE_REMOTE:
@@ -1776,7 +1782,7 @@ void NumeReWindow::openImage(wxFileName filename)
     _panel->SetSize(_panel->getRelation()*600,600);
     frame->SetSizer(sizer);
     frame->SetClientSize(_panel->GetSize());
-    frame->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     m_currentView = frame;
     frame->Show();
     frame->SetFocus();
@@ -1819,7 +1825,7 @@ void NumeReWindow::openHTML(wxString HTMLcontent)
     html->SetRelatedStatusBar(0);
     html->SetPage(HTMLcontent);
     frame->SetSize(1000,600);
-    frame->SetIcon(wxIcon(programPath + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -1842,7 +1848,7 @@ void NumeReWindow::openTable(NumeRe::Container<string> _stringTable, const strin
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_stringTable);
     frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
-    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -1865,7 +1871,7 @@ void NumeReWindow::openTable(NumeRe::Table _table, const string& sTableName)
     TableViewer* grid = new TableViewer(frame, wxID_ANY, frame->CreateStatusBar(3), wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS | wxBORDER_STATIC);
     grid->SetData(_table);
     frame->SetSize(min(800u, grid->GetWidth()), min(600u, grid->GetHeight()+30));
-    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -1890,7 +1896,7 @@ void NumeReWindow::editTable(NumeRe::Container<string> _stringTable, const strin
     panel->grid->SetTableReadOnly(false);
     panel->grid->SetData(_stringTable);
     frame->SetSize(min(800u, panel->grid->GetWidth()), min(600u, panel->grid->GetHeight()+30));
-    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -1915,7 +1921,7 @@ void NumeReWindow::editTable(NumeRe::Table _table, const string& sTableName)
     panel->grid->SetTableReadOnly(false);
     panel->grid->SetData(_table);
     frame->SetSize(min(800u, panel->grid->GetWidth()), min(600u, panel->grid->GetHeight()+30));
-    frame->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    frame->SetIcon(getStandardIcon());
     frame->Show();
     frame->SetFocus();
 }
@@ -1982,6 +1988,12 @@ void NumeReWindow::showWindow(NumeRe::Window& window)
             showSelectionDialog(window);
         }
     }
+    else if (window.getType() == NumeRe::WINDOW_CUSTOM)
+    {
+        CustomWindow* win = new CustomWindow(this, window);
+        registerWindow(win, WT_CUSTOM);
+        win->Show();
+    }
 }
 
 
@@ -1998,7 +2010,7 @@ void NumeReWindow::showGraph(NumeRe::Window& window)
     GraphViewer* viewer = new GraphViewer(this, "NumeRe: " + window.getGraph()->getTitle(), window.getGraph(), m_terminal);
     registerWindow(viewer, WT_GRAPH);
 
-    viewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    viewer->SetIcon(getStandardIcon());
     viewer->Show();
     viewer->SetFocus();
 }
@@ -2016,7 +2028,7 @@ void NumeReWindow::showFileDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
     wxFileDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2040,7 +2052,7 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
     wxDirDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2064,7 +2076,7 @@ void NumeReWindow::showTextEntry(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
     wxTextEntryDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2142,7 +2154,7 @@ void NumeReWindow::showListDialog(NumeRe::Window& window)
     }
 
     wxSingleChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, choices);
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2173,7 +2185,7 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
     }
 
     wxMultiChoiceDialog dialog(this, prepareStringsForDialog(window.getWindowSettings().sMessage), window.getWindowSettings().sTitle, choices);
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
@@ -2206,9 +2218,9 @@ void NumeReWindow::showSelectionDialog(NumeRe::Window& window)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::pass_command(const wxString& command)
+void NumeReWindow::pass_command(const wxString& command, bool isEvent)
 {
-    m_terminal->pass_command(command.ToStdString());
+    m_terminal->pass_command(command.ToStdString(), isEvent);
 }
 
 
@@ -2236,7 +2248,7 @@ void NumeReWindow::evaluateDebugInfo(const vector<string>& vDebugInfo)
     {
         m_debugViewer = new DebugViewer(this, m_options, sTitle);
         m_debugViewer->SetSize(800, 700);
-        m_debugViewer->SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+        m_debugViewer->SetIcon(getStandardIcon());
         m_debugViewer->setTerminal(m_terminal);
     }
 
@@ -2603,7 +2615,19 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
         {
             if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
             {
-                m_terminal->pass_command("start \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"");
+                m_terminal->pass_command("start \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"", false);
+                i++;
+            }
+            else
+                filestoopen.Add(wxArgV[i]);
+        }
+
+        // Window-Layouts: run or open?
+        if (ext == ".nlyt")
+        {
+            if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
+            {
+                m_terminal->pass_command("window \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"", false);
                 i++;
             }
             else
@@ -2615,7 +2639,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
         {
             if (i+1 < wxArgV.size() && wxArgV[i+1] == "-e")
             {
-                m_terminal->pass_command("$'" + replacePathSeparator(wxArgV[i].substr(0, wxArgV[i].rfind('.')).ToStdString()) + "'()");
+                m_terminal->pass_command("$'" + replacePathSeparator(wxArgV[i].substr(0, wxArgV[i].rfind('.')).ToStdString()) + "'()", false);
                 i++;
             }
             else
@@ -2639,7 +2663,7 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
             || ext == ".xlsx"
             || ext == ".labx"
             || ext == ".ndat")
-            m_terminal->pass_command("append \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"");
+            m_terminal->pass_command("append \"" + replacePathSeparator(wxArgV[i].ToStdString()) + "\"", false);
     }
 
     if (filestoopen.size())
@@ -2723,6 +2747,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         {
             if (_filetype == FILE_NSCR)
                 textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNSCR_QUESTION"), _guilang.get("GUI_DLG_NEWNSCR"), _guilang.get("GUI_DLG_NEWNSCR_DFLT"));
+            else if (_filetype == FILE_NLYT)
+                textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNLYT_QUESTION"), _guilang.get("GUI_DLG_NEWNLYT"), _guilang.get("GUI_DLG_NEWNLYT_DFLT"));
             else if (_filetype == FILE_NPRC)
                 textentry = new wxTextEntryDialog(this, _guilang.get("GUI_DLG_NEWNPRC_QUESTION"), _guilang.get("GUI_DLG_NEWNPRC"), _guilang.get("GUI_DLG_NEWNPRC_DFLT"));
             else
@@ -2796,6 +2822,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Search the correct filename
         if (_filetype == FILE_NSCR)
             dummy = "tmpl_script.nlng";
+        else if (_filetype == FILE_NLYT)
+            dummy = "tmpl_layout.nlng";
         else if (_filetype == FILE_PLUGIN)
             dummy = "tmpl_plugin.nlng";
         else
@@ -2819,6 +2847,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         // Determine the file extension
         if (_filetype == FILE_NSCR)
             filename += ".nscr";
+        else if (_filetype == FILE_NLYT)
+            filename += ".nlyt";
         else if (_filetype == FILE_PLUGIN)
             filename = "plgn_" + filename + ".nscr";
         else if (_filetype == FILE_NPRC)
@@ -2837,7 +2867,7 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         m_currentEd = edit;
 
         // Set the corresponding full file name
-        if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN)
+        if (_filetype == FILE_NSCR || _filetype == FILE_PLUGIN || _filetype == FILE_NLYT)
             m_currentEd->SetFilename(wxFileName(vPaths[SCRIPTPATH] + folder, filename), false);
         else if (_filetype == FILE_NPRC)
             m_currentEd->SetFilename(wxFileName(vPaths[PROCPATH] + folder, filename), false);
@@ -3471,6 +3501,9 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
 {
     if (filename.GetExt() == "nscr"
         || filename.GetExt() == "nprc"
+        || filename.GetExt() == "nhlp"
+        || filename.GetExt() == "nlng"
+        || filename.GetExt() == "nlyt"
         || filename.GetExt() == "txt"
         || filename.GetExt() == "dat"
         || filename.GetExt() == "log"
@@ -3505,7 +3538,7 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
     {
         wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
         showConsole();
-        m_terminal->pass_command(path.ToStdString());
+        m_terminal->pass_command(path.ToStdString(), false);
     }
 }
 
@@ -3569,17 +3602,9 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
             }
             else
             {
-                if (!(nOpenFileFlag & OPENFILE_BLACKLIST_ADD))
+                // Reload if required (or simply do nothing)
+                if (nOpenFileFlag & (OPENFILE_FORCE | OPENFILE_BLACKLIST_REMOVE))
                 {
-                    if (!(nOpenFileFlag & OPENFILE_FORCE))
-                    {
-                        int modifiedFileResult = HandleModifiedFile(pageNr, MODIFIEDFILE_RELOAD);
-
-                        // user canceled the open request, skip the reload
-                        if (modifiedFileResult == wxCANCEL)
-                            continue;
-                    }
-
                     m_setSelection = true;
                     m_book->SetSelection (pageNr);
                     m_setSelection = false;
@@ -3587,10 +3612,11 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
 
                     m_currentEd = static_cast< NumeReEditor* > (m_book->GetPage (m_currentPage));
                     m_currentEd->LoadFileText(fileContents);
+                    m_currentEd->UpdateSyntaxHighlighting();
                 }
+                else
+                    PageHasChanged(pageNr);
             }
-
-            m_currentEd->UpdateSyntaxHighlighting();
         }
         else
         {
@@ -4682,6 +4708,7 @@ void NumeReWindow::UpdateMenuBar()
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
 
     wxMenu* menuFile = new wxMenu();
 
@@ -4873,6 +4900,7 @@ void NumeReWindow::UpdateToolbar()
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
     t->SetDropdownMenu(ID_MENU_NEW_ASK, menuNewFile);
 
     t->AddTool(ID_MENU_OPEN_SOURCE_LOCAL, _guilang.get("GUI_TB_OPEN"), wxArtProvider::GetBitmap(wxART_FILE_OPEN, wxART_TOOLBAR), _guilang.get("GUI_TB_OPEN_TTP"));
@@ -5778,45 +5806,6 @@ void NumeReWindow::LoadFilesToTree(wxString fromPath, FileFilterType fileType, w
 
 
 //////////////////////////////////////////////////////////////////////////////
-///  public FocusOnLine
-///  Moves the cursor to a given file and line, with an optional line marker
-///
-///  @param  filename     wxString  The filename to look for
-///  @param  linenumber   int       The line number to go to
-///  @param  showMarker   bool      [=true] Whether or not to show a marker to highlight the line
-///
-///  @return void
-///
-///  @remarks The line contents idea isn't implemented, but could be used to ensure
-///  @remarks that the right file was selected if two open files had the same name
-///
-///  @author Mark Erikson @date 04-23-2004
-//////////////////////////////////////////////////////////////////////////////
-void NumeReWindow::FocusOnLine(wxString filename, int linenumber, bool showMarker)
-{
-    wxFileName fn(filename);
-
-    int tabNum = GetPageNum(fn, false);
-
-    if (tabNum == -1)
-    {
-        wxArrayString filesToOpen;
-        filesToOpen.Add(filename);
-        OpenSourceFile(filesToOpen);
-        tabNum = GetPageNum(fn, false);
-    }
-
-    if (tabNum != -1)
-    {
-        PageHasChanged(tabNum);
-
-        // Adjust for Scintilla's zero-based line numbers
-        m_currentEd->FocusOnLine(linenumber-1, showMarker);
-    }
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
 ///  private OnFindEvent
 ///  Handles find/replace events
 ///
@@ -6129,6 +6118,19 @@ void NumeReWindow::closeWindows(WindowType type)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This public member function returns
+/// the default icon usable by different windows.
+///
+/// \return wxIcon
+///
+/////////////////////////////////////////////////
+wxIcon NumeReWindow::getStandardIcon()
+{
+    return wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnSplitterDoubleClick
 ///  Cancels the ability to "close" a split window by double-clicking the splitter bar
@@ -6238,13 +6240,28 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
 
         command = "start " + command;
     }
+    else if (command.rfind(".nlyt") != string::npos)
+    {
+        command.erase(command.rfind(".nlyt"));
+
+        if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
+            command.erase(0, vPaths[SCRIPTPATH].length());
+
+        while (command.front() == '/')
+            command.erase(0, 1);
+
+        if (command.find(' ') != string::npos)
+            command = "\"" + command + "\"";
+
+        command = "window " + command;
+    }
     else if (id == ID_MENU_OPEN_FILE_FROM_TREE_TO_TABLE)
         command = "load \"" + command + "\" -totable";
     else
         command = "load \"" + command + "\" -app -ignore";
 
     showConsole();
-    m_terminal->pass_command(command);
+    m_terminal->pass_command(command, false);
 }
 
 
@@ -6509,6 +6526,7 @@ void NumeReWindow::OnAskForNewFile()
     choices.Add(_guilang.get("GUI_MENU_NEW_NSCR"));
     choices.Add(_guilang.get("GUI_MENU_NEW_NPRC"));
     choices.Add(_guilang.get("GUI_MENU_NEW_PLUGIN"));
+    choices.Add(_guilang.get("GUI_MENU_NEW_LAYOUT"));
 
     // Remove obsolete menu string items
     for (size_t i = 0; i < choices.size(); i++)
@@ -6521,7 +6539,7 @@ void NumeReWindow::OnAskForNewFile()
     }
 
     wxSingleChoiceDialog dialog(this, _guilang.get("GUI_TB_NEW_SELECT"), "NumeRe: " + _guilang.get("GUI_TB_NEW"), choices);
-    dialog.SetIcon(wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret != wxID_CANCEL)
@@ -6539,6 +6557,9 @@ void NumeReWindow::OnAskForNewFile()
             break;
         case 3:
             NewFile(FILE_PLUGIN);
+            break;
+        case 4:
+            NewFile(FILE_NLYT);
             break;
         }
     }

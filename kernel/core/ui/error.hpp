@@ -126,6 +126,8 @@ class SyntaxError
             INVALID_CLUSTER_NAME,
             INVALID_SETTING,
             INVALID_REGEX,
+            INVALID_WINDOW_ID,
+            INVALID_WINDOW_ITEM_ID,
             /// INSERT HERE
             LGS_HAS_NO_SOLUTION=2100,
             LGS_HAS_NO_UNIQUE_SOLUTION,

@@ -40,6 +40,8 @@ class GridNumeReTable : public wxGridTableBase
             return _table;
         }
 
+        NumeRe::Table getTableCopy();
+
         virtual int GetNumberRows();
         virtual int GetNumberCols();
 

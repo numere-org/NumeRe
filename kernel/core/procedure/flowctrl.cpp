@@ -2402,6 +2402,11 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             }
 
             NumeReKernel::bSupressAnswer = bSupressAnswer_back;
+
+            // It may be possible that some procedure occures at this
+            // position. Handle them here
+            if (sLine.find('$') != std::string::npos)
+                procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop + nWhile + nIf, nthCmd);
         }
 
         if (!bLockedPauseMode && bUseLoopParsingMode)

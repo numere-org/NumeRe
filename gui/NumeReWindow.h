@@ -182,8 +182,6 @@ class NumeReWindow : public wxFrame
         void SetIntVar(int variableName, int value);
         int GetIntVar(int variableName);
 
-        void FocusOnLine(wxString filename, int linenumber, bool showMarker = true);
-
         void NewFile(FileFilterType _filetype = FILE_NONSOURCE, const wxString& defaultfilename = "");
         void ShowRevision(const wxString& revisionName, const wxString& revisionContent);
         void DefaultPage();
@@ -200,7 +198,7 @@ class NumeReWindow : public wxFrame
         void editTable(NumeRe::Table _table, const string& sTableName);
         void showTable(const wxString& tableName, const wxString& tableDisplayName);
         void showWindow(NumeRe::Window& window);
-        void pass_command(const wxString& command);
+        void pass_command(const wxString& command, bool isEvent = false);
         void evaluateDebugInfo(const vector<string>& vDebugInfo);
         void createLaTeXFile();
         void runLaTeX();
@@ -253,6 +251,7 @@ class NumeReWindow : public wxFrame
         void registerWindow(wxWindow* window, WindowType type);
         void unregisterWindow(wxWindow* window);
         void closeWindows(WindowType type = WT_ALL);
+        wxIcon getStandardIcon();
 
 
     private:

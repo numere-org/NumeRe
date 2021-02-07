@@ -577,79 +577,37 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
 
             // Fill in the value of the argument by either
             // using the default value or the passed value
-            if (i < nArgumentMapSize-1 && sArgumentValues.length() && sArgumentValues.find(',') != string::npos)
+            sArgumentMap[i][1] = getNextArgument(sArgumentValues);
+            StripSpaces(sArgumentMap[i][1]);
+
+            checkKeywordsInArgument(sArgumentMap[i][1], sArgumentList, i);
+
+            if (sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') != string::npos)
             {
-                sArgumentMap[i][1] = getNextArgument(sArgumentValues);
-                StripSpaces(sArgumentMap[i][1]);
-
-                checkKeywordsInArgument(sArgumentMap[i][1], sArgumentList, i);
-
-                if (sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') != string::npos)
-                {
-                    sArgumentMap[i][0].erase(sArgumentMap[i][0].find('='));
-                    StripSpaces(sArgumentMap[i][0]);
-                }
-                else if (!sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') != string::npos)
-                {
-                    sArgumentMap[i][1] = sArgumentMap[i][0].substr(sArgumentMap[i][0].find('=')+1);
-                    sArgumentMap[i][0].erase(sArgumentMap[i][0].find('='));
-                    StripSpaces(sArgumentMap[i][0]);
-                    StripSpaces(sArgumentMap[i][1]);
-                }
-                else if (!sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') == string::npos)
-                {
-                    string sErrorToken = sArgumentMap[i][0];
-
-                    for (unsigned int j = 0; j <= i; j++)
-                        delete[] sArgumentMap[j];
-
-                    delete[] sArgumentMap;
-                    nArgumentMapSize = 0;
-
-                    if (_optionRef->useDebugger())
-                        _debugger.popStackItem();
-
-                    throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgumentList, sErrorToken, sErrorToken);
-                }
+                sArgumentMap[i][0].erase(sArgumentMap[i][0].find('='));
+                StripSpaces(sArgumentMap[i][0]);
             }
-            else if (sArgumentValues.length())
+            else if (!sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') != string::npos)
             {
-                sArgumentMap[i][1] = sArgumentValues;
-                sArgumentValues = "";
+                sArgumentMap[i][1] = sArgumentMap[i][0].substr(sArgumentMap[i][0].find('=')+1);
+                sArgumentMap[i][0].erase(sArgumentMap[i][0].find('='));
+                StripSpaces(sArgumentMap[i][0]);
                 StripSpaces(sArgumentMap[i][1]);
-
-                checkKeywordsInArgument(sArgumentMap[i][1], sArgumentList, i);
-
-                if (sArgumentMap[i][0].find('=') != string::npos)
-                {
-                    sArgumentMap[i][0] = sArgumentMap[i][0].substr(0,sArgumentMap[i][0].find('='));
-                    StripSpaces(sArgumentMap[i][0]);
-                }
             }
-            else if (!sArgumentValues.length())
+            else if (!sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') == string::npos)
             {
-                if (sArgumentMap[i][0].find('=') != string::npos)
-                {
-                    sArgumentMap[i][1] = sArgumentMap[i][0].substr(sArgumentMap[i][0].find('=')+1);
-                    sArgumentMap[i][0].erase(sArgumentMap[i][0].find('='));
-                    StripSpaces(sArgumentMap[i][0]);
-                    StripSpaces(sArgumentMap[i][1]);
-                }
-                else
-                {
-                    string sErrorToken = sArgumentMap[i][0];
+                string sErrorToken = sArgumentMap[i][0];
 
-                    for (unsigned int j = 0; j <= i; j++)
-                        delete[] sArgumentMap[j];
+                for (unsigned int j = 0; j <= i; j++)
+                    delete[] sArgumentMap[j];
 
-                    delete[] sArgumentMap;
-                    nArgumentMapSize = 0;
+                delete[] sArgumentMap;
+                nArgumentMapSize = 0;
 
-                    if (_optionRef->useDebugger())
-                        _debugger.popStackItem();
+                if (_optionRef->useDebugger())
+                    _debugger.popStackItem();
 
-                    throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgumentList, sErrorToken, sErrorToken);
-                }
+                throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgumentList, sErrorToken, sErrorToken);
             }
 
             if (containsFreeOperators(sArgumentMap[i][1]))

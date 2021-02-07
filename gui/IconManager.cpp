@@ -67,6 +67,11 @@ IconManager::IconManager(const wxString& programPath)
 	m_iconExtensionMapping[".ndat"] = m_images->GetImageCount();
 	m_images->Add(NDAT);
 
+	wxIcon NLYT(programPath + "\\icons\\nlyt.ico", wxBITMAP_TYPE_ICO);
+	m_iconExtensionMapping["nlyt"] = m_images->GetImageCount();
+	m_iconExtensionMapping[".nlyt"] = m_images->GetImageCount();
+	m_images->Add(NLYT);
+
 	wxIcon DAT(programPath + "\\icons\\dat.ico", wxBITMAP_TYPE_ICO);
 	m_iconExtensionMapping["dat"] = m_images->GetImageCount();
 	m_iconExtensionMapping[".dat"] = m_images->GetImageCount();

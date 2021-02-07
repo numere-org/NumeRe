@@ -34,7 +34,7 @@ string toLowerCase(const string&);
 
 
 int findParameter(const string& sCmd, const string& sParam, const char cFollowing);
-string getArgAtPos(const string& sCmd, unsigned int nPos);
+string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction);
 void StripSpaces(string& sToStrip);
 string getClipboardText();
 string utf8parser(const string& sString);

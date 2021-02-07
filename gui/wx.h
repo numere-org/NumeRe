@@ -41,7 +41,7 @@ public:
 	wxString appName;	///< Application name for message boxes
 	bool AutoResize; 	///< Allow auto resizing (default is false)
 
-	wxMGL(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = 0, const wxString& name = wxPanelNameStr);
+	wxMGL(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = 0, bool frameless = false, const wxString& name = wxPanelNameStr);
 	virtual ~wxMGL();
 	double GetRatio();
 	void SetPopup(wxMenu *p)	{	popup = p;	};	///< Set popup menu pointer
@@ -60,7 +60,15 @@ public:
 	inline void SetDraw(int (*func)(mglBase *gr, void *par), void *par=0)
 	{	draw_func = func;	draw_par = par;	}
 	inline void SetDraw(mglDraw *dr)
-	{	draw_cl = dr;	}
+	{
+	    if (draw_cl)
+        {
+            delete draw_cl;
+            gr = nullptr;
+        }
+
+	    draw_cl = dr;
+    }
 	inline void SetDraw(int (*draw)(mglGraph *gr))
 	{	SetDraw(draw?mgl_draw_graph:0,(void*)draw);	}
 	inline void ZoomRegion(mreal xx1,mreal xx2,mreal yy1, mreal yy2)
@@ -104,9 +112,20 @@ public:
 	void ExportSVG(wxString fname = L"");	///< export to SVG file
 
 	void Adjust();		///< Adjust plot size to fill entire window
+	int getNumFrames()
+	{
+	    if (gr)
+            return gr->GetNumFrame();
+
+        return 0;
+	}
 	void NextSlide();	///< Show next slide
 	void PrevSlide();	///< Show previous slide
 	void Animation(bool st=true);	///< Start animation
+	void AnimateAsynch()
+	{
+	    CallAfter(&Animation, true);
+	}
 
 	enum CurrentDrawMode
 	{
@@ -116,6 +135,8 @@ public:
         DM_CIRCLE,
         DM_TEXT
 	};
+
+	wxString getClickedCoords();
 
 protected:
     void InitializeToolbar();

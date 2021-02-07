@@ -933,6 +933,10 @@ void NumeReEditor::MakeBlockCheck()
             || currentWord == "endwhile"
             || currentWord == "compose"
             || currentWord == "endcompose"
+            || currentWord == "layout"
+            || currentWord == "endlayout"
+            || currentWord == "group"
+            || currentWord == "endgroup"
             || currentWord == "procedure"
             || currentWord == "endprocedure"
             || currentWord == "endswitch"
@@ -1881,7 +1885,37 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 
             sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDCOMPOSE_*"));
             this->AdvCallTipShow(startPosition, sBlock);
-            this->CallTipSetHighlight(nLength, 13 + nLength);
+            this->CallTipSetHighlight(nLength, 10 + nLength);
+        }
+        else if (selection == "layout" || selection == "endlayout")
+        {
+            size_t nLength = 0;
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_LAYOUT_*"), lastpos)) + "\n  [...]\n";
+
+            if (selection != "layout")
+                nLength = sBlock.length() + countUmlauts(sBlock);
+
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDLAYOUT_*"));
+            this->AdvCallTipShow(startPosition, sBlock);
+            if (nLength)
+                this->CallTipSetHighlight(nLength, 9 + nLength);
+            else
+                this->CallTipSetHighlight(nLength, lastpos + nLength);
+        }
+        else if (selection == "group" || selection == "endgroup")
+        {
+            size_t nLength = 0;
+            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_GROUP_*"), lastpos)) + "\n  [...]\n";
+
+            if (selection != "group")
+                nLength = sBlock.length() + countUmlauts(sBlock);
+
+            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDGROUP_*"));
+            this->AdvCallTipShow(startPosition, sBlock);
+            if (nLength)
+                this->CallTipSetHighlight(nLength, 8 + nLength);
+            else
+                this->CallTipSetHighlight(nLength, lastpos + nLength);
         }
         else
         {
@@ -2922,6 +2956,8 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
     int nCompose = 0;
     int nProcedure = 0;
     int nSwitch = 0;
+    int nLayout = 0;
+    int nGroup = 0;
     int nStartPos = WordStartPosition(nPos, true);
     vector<int> vPos;
     wxString startblock;
@@ -2977,6 +3013,14 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
                     nCompose--;
                 else if (currentWord == "endcompose")
                     nCompose++;
+                else if (currentWord == "layout")
+                    nLayout--;
+                else if (currentWord == "endlayout")
+                    nLayout++;
+                else if (currentWord == "group")
+                    nGroup--;
+                else if (currentWord == "endgroup")
+                    nGroup++;
                 else if (currentWord == "procedure")
                     nProcedure--;
                 else if (currentWord == "endprocedure")
@@ -2986,7 +3030,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
                 else if (currentWord == "endswitch")
                     nSwitch++;
 
-                if (currentWord == "if" && !nFor && !nIf && !nWhile && !nCompose && !nProcedure && !nSwitch)
+                if (currentWord == "if" && !nFor && !nIf && !nWhile && !nCompose && !nLayout && !nGroup && !nProcedure && !nSwitch)
                 {
                     nStartPos = WordStartPosition(i, true);
                     break;
@@ -2995,7 +3039,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
                 i -= currentWord.length();
             }
 
-            if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0 || nProcedure < 0 || nSwitch < 0)
+            if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0  || nLayout < 0  || nGroup < 0 || nProcedure < 0 || nSwitch < 0)
             {
                 // There's no matching partner
                 // set the first to invalid but do not return
@@ -3004,7 +3048,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
             }
         }
 
-        if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nProcedure > 0 || nSwitch > 0)
+        if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nLayout > 0 || nGroup > 0 || nProcedure > 0 || nSwitch > 0)
         {
             // There's no matching partner
             // set the first to invalid but do not return
@@ -3017,6 +3061,8 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
         nFor = 0;
         nWhile = 0;
         nCompose = 0;
+        nLayout = 0;
+        nGroup = 0;
         nProcedure = 0;
         nSwitch = 0;
 
@@ -3051,6 +3097,14 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
                     nCompose--;
                 else if (currentWord == "endcompose")
                     nCompose++;
+                else if (currentWord == "layout")
+                    nLayout--;
+                else if (currentWord == "endlayout")
+                    nLayout++;
+                else if (currentWord == "group")
+                    nGroup--;
+                else if (currentWord == "endgroup")
+                    nGroup++;
                 else if (currentWord == "procedure")
                     nProcedure--;
                 else if (currentWord == "endprocedure")
@@ -3060,7 +3114,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
                 else if (currentWord == "endswitch")
                     nSwitch++;
 
-                if (currentWord == "switch" && !nFor && !nIf && !nWhile && !nCompose && !nProcedure && !nSwitch)
+                if (currentWord == "switch" && !nFor && !nIf && !nWhile && !nCompose && !nLayout && !nGroup && !nProcedure && !nSwitch)
                 {
                     nStartPos = WordStartPosition(i, true);
                     break;
@@ -3069,7 +3123,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
                 i -= currentWord.length();
             }
 
-            if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0 || nProcedure < 0 || nSwitch < 0)
+            if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0 || nLayout < 0 || nGroup < 0 || nProcedure < 0 || nSwitch < 0)
             {
                 // There's no matching partner
                 // set the first to invalid but do not return
@@ -3078,7 +3132,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
             }
         }
 
-        if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nProcedure > 0 || nSwitch > 0)
+        if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nLayout > 0 || nGroup > 0 || nProcedure > 0 || nSwitch > 0)
         {
             // There's no matching partner
             // set the first to invalid but do not return
@@ -3091,13 +3145,15 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
         nFor = 0;
         nWhile = 0;
         nCompose = 0;
+        nLayout = 0;
+        nGroup = 0;
         nProcedure = 0;
         nSwitch = 0;
 
         bSearchForSwitch = true;
         endblock = "endswitch";
     }
-    else if (startblock == "if" || startblock == "for" || startblock == "while" || startblock == "compose" || startblock == "procedure" || startblock == "switch")
+    else if (startblock == "if" || startblock == "for" || startblock == "while" || startblock == "compose" || startblock == "procedure" || startblock == "switch" || startblock == "layout" || startblock == "group")
         endblock = "end" + startblock;
     else
     {
@@ -3145,16 +3201,24 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
                 nSwitch += nSearchDir;
             else if (currentWord == "endswitch")
                 nSwitch -= nSearchDir;
+            else if (currentWord == "layout")
+                nLayout += nSearchDir;
+            else if (currentWord == "endlayout")
+                nLayout -= nSearchDir;
+            else if (currentWord == "group")
+                nGroup += nSearchDir;
+            else if (currentWord == "endgroup")
+                nGroup -= nSearchDir;
 
-            if (bSearchForIf && nIf == 1 && !nFor && !nWhile && !nProcedure && !nCompose && !nSwitch // only in the current if block
+            if (bSearchForIf && nIf == 1 && !nFor && !nWhile && !nProcedure && !nCompose && !nSwitch && !nLayout && !nGroup // only in the current if block
                     && (currentWord == "else" || currentWord == "elseif"))
                 vPos.push_back(WordStartPosition(i, true));
 
-            if (bSearchForSwitch && nSwitch == 1 && !nFor && !nWhile && !nProcedure && !nCompose && !nIf // only in the current if block
+            if (bSearchForSwitch && nSwitch == 1 && !nFor && !nWhile && !nProcedure && !nCompose && !nIf && !nLayout && !nGroup // only in the current if block
                     && (currentWord == "case" || currentWord == "default"))
                 vPos.push_back(WordStartPosition(i, true));
 
-            if (currentWord == endblock && !nFor && !nIf && !nWhile && !nProcedure && !nCompose && !nSwitch)
+            if (currentWord == endblock && !nFor && !nIf && !nWhile && !nProcedure && !nCompose && !nSwitch && !nLayout && !nGroup)
             {
                 vPos.push_back(WordStartPosition(i, true));
                 break;
@@ -3163,7 +3227,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
             i += nSearchDir * currentWord.length();
         }
 
-        if (nFor < 0 || nWhile < 0 || nIf < 0 || nProcedure < 0 || nCompose < 0 || nSwitch < 0)
+        if (nFor < 0 || nWhile < 0 || nIf < 0 || nProcedure < 0 || nCompose < 0 || nSwitch < 0 || nLayout < 0 || nGroup < 0)
         {
             // There's no matching partner
             vPos.push_back(wxSTC_INVALID_POSITION);
@@ -3172,7 +3236,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
     }
 
     if (!vPos.size()
-            || (nFor > 0 || nWhile > 0 || nIf > 0 || nProcedure > 0 || nCompose > 0 || nSwitch > 0))
+            || (nFor > 0 || nWhile > 0 || nIf > 0 || nProcedure > 0 || nCompose > 0 || nSwitch > 0 || nLayout > 0 || nGroup > 0))
         vPos.push_back(wxSTC_INVALID_POSITION);
 
     return vPos;
@@ -4171,7 +4235,7 @@ FileFilterType NumeReEditor::GetFileType(const wxString& filename)
 
 	if (extension == "nprc")
 		fileType = FILE_NPRC;
-	else if (extension == "nscr")
+	else if (extension == "nscr" || extension == "nlyt")
 		fileType = FILE_NSCR;
 	else if (extension == "ndat" || extension == "dat" || extension == "csv" || extension == "jdx" || extension == "dx" || extension == "jcm")
 		fileType = FILE_DATAFILES;
@@ -5880,7 +5944,7 @@ void NumeReEditor::CreateProcedureFromSection(int nStartPos, int nEndPos, const 
     // Set a reasonable window size and
     // display it to the user
     copyFrame->SetSize(800, 600);
-    copyFrame->SetIcon(wxIcon(m_mainFrame->getProgramFolder() + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+    copyFrame->SetIcon(m_mainFrame->getStandardIcon());
     copyFrame->Show();
     copyFrame->SetFocus();
 }
@@ -6540,7 +6604,7 @@ bool NumeReEditor::InitDuplicateCode()
     if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC || m_fileType == FILE_MATLAB || m_fileType == FILE_CPP)
     {
         m_duplicateCode = new DuplicateCodeDialog(this, "NumeRe: " + _guilang.get("GUI_DUPCODE_TITLE") + " [" + this->GetFilenameString() + "]");
-        m_duplicateCode->SetIcon(wxIcon(m_mainFrame->getProgramFolder() + "\\icons\\icon.ico", wxBITMAP_TYPE_ICO));
+        m_duplicateCode->SetIcon(m_mainFrame->getStandardIcon());
         m_duplicateCode->Show();
         m_duplicateCode->SetFocus();
         m_duplicateCode->Refresh();

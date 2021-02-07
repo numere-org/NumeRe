@@ -183,7 +183,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		virtual ~NumeReTerminal();
 
 		// Kernel communication functions
-		void pass_command(const string& command);
+		void pass_command(const string& command, bool isEvent);
 		NumeRe::Table getTable(const string& sTableName);
 		NumeRe::Container<string> getStringTable(const string& sStringTableName);
 		Settings getKernelSettings();

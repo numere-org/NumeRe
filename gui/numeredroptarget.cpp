@@ -231,11 +231,11 @@ wxDragResult NumeReDropTarget::OnData(wxCoord x, wxCoord y, wxDragResult default
 
                 // Load the files here
                 if (sLoadables.length())
-                    top->getTerminal()->pass_command(sLoadables);
+                    top->getTerminal()->pass_command(sLoadables, false);
 
                 // Execute the executable files here
                 if (sExecutables.length())
-                    top->getTerminal()->pass_command(sExecutables);
+                    top->getTerminal()->pass_command(sExecutables, false);
             }
             else if (m_type == FILETREE)
             {
@@ -404,7 +404,7 @@ NumeReDropTarget::fileType NumeReDropTarget::getFileType(const wxString& filenam
 
     // Declare the categories containing the
     // corresponding file extensions
-    static wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;nhlp;ndb;nlng;def;ini;hlpidx;m;cpp;hpp;c;h;cxx;hxx";
+    static wxString textExtensions = ";txt;dat;log;tex;csv;jdx;jcm;dx;nhlp;nlyt;ndb;nlng;def;ini;hlpidx;m;cpp;hpp;c;h;cxx;hxx";
     static wxString binaryExtensions = ";ndat;xls;xlsx;ods;labx;ibw;";
     static wxString imageExtensions = ";png;gif;jpg;jpeg;bmp;eps;svg;";
     static wxString execExtensions = ";nscr;nprc;";

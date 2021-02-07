@@ -40,10 +40,17 @@ GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable)
 
 // This member function will return the number of headlines
 // available in the internal buffer
-GridNumeReTable::getNumHeadlines()
+int GridNumeReTable::getNumHeadlines()
 {
     return _table.getHeadCount();
 }
+
+NumeRe::Table GridNumeReTable::getTableCopy()
+{
+    NumeRe::Table tableCopy(_table);
+    return tableCopy;
+}
+
 
 // This member function will return the number of lines
 // including the headlines handled by this data provider

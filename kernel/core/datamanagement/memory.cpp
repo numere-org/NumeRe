@@ -1249,9 +1249,27 @@ bool Memory::isValue(int line, int col)
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
-NumeRe::Table Memory::extractTable(const string& _sTable)
+NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lines, const VectorIndex& cols)
 {
-    return NumeRe::Table(dMemTable, sHeadLine, getLines(false), getCols(false), _sTable);
+    lines.setOpenEndIndex(getLines(false)-1);
+    cols.setOpenEndIndex(getCols(false)-1);
+
+    NumeRe::Table table(lines.size(), cols.size());
+
+    table.setName(_sTable);
+
+    for (size_t i = 0; i < lines.size(); i++)
+    {
+        for (size_t j = 0; j < cols.size(); j++)
+        {
+            if (!i)
+                table.setHead(j, getHeadLineElement(cols[j]));
+
+            table.setValue(i, j, readMem(lines[i], cols[j]));
+        }
+    }
+
+    return table;
 }
 
 
@@ -1265,18 +1283,28 @@ NumeRe::Table Memory::extractTable(const string& _sTable)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::importTable(NumeRe::Table _table)
+void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols)
 {
-    deleteBulk(VectorIndex(0, -2), VectorIndex(0, -2));
-    resizeMemory(_table.getLines(), _table.getCols());
+    deleteBulk(lines, cols);
+
+    lines.setOpenEndIndex(lines.front() + _table.getLines()-1);
+    cols.setOpenEndIndex(cols.front() + _table.getCols()-1);
+
+    resizeMemory(lines.max(), cols.max());
 
     for (size_t i = 0; i < _table.getLines(); i++)
     {
+        if (i >= lines.size())
+            break;
+
         for (size_t j = 0; j < _table.getCols(); j++)
         {
+            if (j >= cols.size())
+                break;
+
             // Use writeData() to automatically set all
             // other parameters
-            writeData(i, j, _table.getValue(i, j));
+            writeData(lines[i], cols[j], _table.getValue(i, j));
         }
     }
 
@@ -1284,8 +1312,11 @@ void Memory::importTable(NumeRe::Table _table)
     // a non-zero length
     for (size_t j = 0; j < _table.getCols(); j++)
     {
+        if (j >= cols.size())
+                break;
+
         if (_table.getHead(j).length())
-            sHeadLine[j] = _table.getHead(j);
+            sHeadLine[cols[j]] = _table.getHead(j);
     }
 }
 

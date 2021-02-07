@@ -76,8 +76,12 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
 
     // prepare the status bar
     m_statusBar = statusbar;
-    int widths[3] = {-1, -1, -3};
-    m_statusBar->SetStatusWidths(3, widths);
+
+    if (m_statusBar)
+    {
+        int widths[3] = {-1, -1, -3};
+        m_statusBar->SetStatusWidths(3, widths);
+    }
 }
 
 
@@ -310,6 +314,7 @@ void TableViewer::OnCellSelect(wxGridEvent& event)
     highlightCursorPosition(event.GetRow(), event.GetCol());
     wxGridCellCoords coords(event.GetRow(), event.GetCol());
     updateStatusBar(coords, coords, &coords);
+    event.Skip();
 }
 
 
@@ -1141,6 +1146,9 @@ double TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCe
 /////////////////////////////////////////////////
 void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight, wxGridCellCoords* cursor /*= nullptr*/)
 {
+    if (!m_statusBar)
+        return;
+
     // Get the dimensions
     wxString dim = "Dim: ";
     dim << this->GetRowLabelValue(this->GetRows()-2) << "x" << this->GetCols()-1;
@@ -1697,6 +1705,84 @@ void TableViewer::removeElement(int id)
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the values of all selected
+/// cells as a string list.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString TableViewer::getSelectedValues()
+{
+    // Simple case: only one cell
+    if (!(GetSelectedCells().size()
+        || GetSelectedCols().size()
+        || GetSelectedRows().size()
+        || GetSelectionBlockTopLeft().size()
+        || GetSelectionBlockBottomRight().size()))
+        return this->GetCellValue(this->GetCursorRow(), this->GetCursorColumn());
+
+    wxString values;
+
+    // More difficult: multiple selections
+    if (GetSelectedCells().size())
+    {
+        // not a block layout
+        wxGridCellCoordsArray cellarray = GetSelectedCells();
+
+        for (size_t i = 0; i < cellarray.size(); i++)
+        {
+            values += this->GetCellValue(cellarray[i]) + ",";
+        }
+    }
+    else if (GetSelectionBlockTopLeft().size() && GetSelectionBlockBottomRight().size())
+    {
+        // block layout
+        wxGridCellCoordsArray topleftarray = GetSelectionBlockTopLeft();
+        wxGridCellCoordsArray bottomrightarray = GetSelectionBlockBottomRight();
+
+        for (int i = topleftarray[0].GetRow(); i <= bottomrightarray[0].GetRow(); i++)
+        {
+            for (int j = topleftarray[0].GetCol(); j <= bottomrightarray[0].GetCol(); j++)
+            {
+                values += GetCellValue(i, j) + ",";
+            }
+        }
+    }
+    else if (GetSelectedCols().size())
+    {
+        // multiple selected columns
+        wxArrayInt colarray = GetSelectedCols();
+
+        for (int i = 0; i < GetRows(); i++)
+        {
+            for (size_t j = 0; j < colarray.size(); j++)
+            {
+                values += this->GetCellValue(i, colarray[j]) + ",";
+            }
+        }
+    }
+    else
+    {
+        // multiple selected rows
+        wxArrayInt rowarray = GetSelectedRows();
+
+        for (size_t i = 0; i < rowarray.size(); i++)
+        {
+            for (int j = 0; j < GetCols(); j++)
+            {
+                values += this->GetCellValue(rowarray[i], j) + ",";
+            }
+        }
+    }
+
+    if (values.length())
+        return values.substr(0, values.length()-1);
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function returns the
 /// internal NumeRe::Table from the data provider
 /// object.
@@ -1709,5 +1795,18 @@ void TableViewer::removeElement(int id)
 NumeRe::Table TableViewer::GetData()
 {
     return static_cast<GridNumeReTable*>(GetTable())->getTable();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a safe
+/// copy of the internal NumeRe::Table.
+///
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
+NumeRe::Table TableViewer::GetDataCopy()
+{
+    return static_cast<GridNumeReTable*>(GetTable())->getTableCopy();
 }
 

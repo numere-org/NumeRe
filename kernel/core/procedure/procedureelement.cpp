@@ -218,6 +218,9 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
                 if (sFlags.find("mask") != std::string::npos || sFlags.find("silent") != std::string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_MASK;
 
+                if (sFlags.find("event") != std::string::npos)
+                    nFlags |= ProcedureCommandLine::FLAG_MASK | ProcedureCommandLine::FLAG_EVENT;
+
                 if (sFlags.find("template") != std::string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_TEMPLATE;
             }

@@ -90,7 +90,7 @@ void SearchCtrlPopup::OnKeyEvent(wxKeyEvent& event)
 {
     wxChar chr = event.GetUnicodeKey();
 
-    wxLogDebug("Key: %d", chr);
+    //wxLogDebug("Key: %d", chr);
 
     // Uppercase
     if (chr != WXK_NONE)

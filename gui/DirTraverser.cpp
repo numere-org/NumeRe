@@ -73,12 +73,12 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
     switch (fileSpec)
     {
         case FILE_NSCR:
-            if (filename.length() < 6 || extension != "nscr")
+            if (filename.length() < 6 || (extension != "nscr" && extension != "nlyt"))
                 return wxDIR_CONTINUE;
 
             break;
         case FILE_NPRC:
-            if (filename.length() < 6 || extension != "nprc")
+            if (filename.length() < 6 || (extension != "nprc" && extension != "nlyt"))
                 return wxDIR_CONTINUE;
 
             break;
@@ -86,7 +86,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
             if (filename.length() < 6)
                 return wxDIR_CONTINUE;
 
-            filespec = "*.nscr;*.nprc;*.ndat;";
+            filespec = "*.nscr;*.nprc;*.nlyt;*.ndat;";
 
             if (filespec.find("*."+extension+";") == string::npos)
                 return wxDIR_CONTINUE;

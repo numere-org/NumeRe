@@ -36,7 +36,15 @@ BEGIN_EVENT_TABLE(PackageDialog, wxDialog)
     EVT_BUTTON(ID_PKGDLG_AUTODETECT, PackageDialog::OnAutoDetect)
 END_EVENT_TABLE()
 
-// Constructor
+
+/////////////////////////////////////////////////
+/// \brief Constructor.
+///
+/// \param parent wxWindow*
+/// \param terminal NumeReTerminal*
+/// \param icons IconManager*
+///
+/////////////////////////////////////////////////
 PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : wxDialog(parent, wxID_ANY, _guilang.get("GUI_PKGDLG_HEAD"), wxDefaultPosition, wxSize(600, 570), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
     m_packageProperties = nullptr;
@@ -120,7 +128,15 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     SetSizer(vsizer);
 }
 
-// This is the event handler for the autodetect button
+
+/////////////////////////////////////////////////
+/// \brief This is the event handler for the
+/// autodetect button.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void PackageDialog::OnAutoDetect(wxCommandEvent& event)
 {
     try
@@ -134,7 +150,15 @@ void PackageDialog::OnAutoDetect(wxCommandEvent& event)
     }
 }
 
-// This is the event handler for the add files button
+
+/////////////////////////////////////////////////
+/// \brief This is the event handler for the add
+/// files button.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void PackageDialog::OnAddItems(wxCommandEvent& event)
 {
     // Create a file dialog focused on procedure files. The user may
@@ -156,7 +180,15 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
     }
 }
 
-// This is the event handler for the remove files button
+
+/////////////////////////////////////////////////
+/// \brief This is the event handler for the
+/// remove files button.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void PackageDialog::OnRemoveItems(wxCommandEvent& event)
 {
     long selected = m_fileList->GetFirstSelected();
@@ -169,9 +201,17 @@ void PackageDialog::OnRemoveItems(wxCommandEvent& event)
     }
 }
 
-// This function autodetects the dependencies of the passed
-// files by calling the PackageDialog::followBranch() function
-// recursively
+
+/////////////////////////////////////////////////
+/// \brief This function autodetects the
+/// dependencies of the passed files by calling
+/// the PackageDialog::followBranch() function
+/// recursively.
+///
+/// \param mainfiles const wxArrayString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void PackageDialog::autoDetect(const wxArrayString& mainfiles)
 {
     // Create a set (forces unique names)
@@ -190,8 +230,17 @@ void PackageDialog::autoDetect(const wxArrayString& mainfiles)
     }
 }
 
-// This function will recursively call itself to detect a whole
-// branch of file dependencies
+
+/////////////////////////////////////////////////
+/// \brief This function will recursively call
+/// itself to detect a whole branch of file
+/// dependencies.
+///
+/// \param sFile const string&
+/// \param fileSet set<string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void PackageDialog::followBranch(const string& sFile, set<string>& fileSet)
 {
     // Add the current file to the set
@@ -215,16 +264,32 @@ void PackageDialog::followBranch(const string& sFile, set<string>& fileSet)
     }
 }
 
-// This function can be used to insert the current mainfile to the
-// dialog. Used by the main window, if the user clicks on "Create package"
+
+/////////////////////////////////////////////////
+/// \brief This function can be used to insert
+/// the current mainfile to the dialog. Used by
+/// the main window, if the user clicks on
+/// "Create package".
+///
+/// \param mainfile const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void PackageDialog::setMainFile(const wxString& mainfile)
 {
     m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(mainfile.ToStdString()), m_icons->GetIconIndex(".nprc"));
 }
 
-// This member function will create a string array containing
-// the procedure files, which are currently part of the list
-// view, and return them
+
+/////////////////////////////////////////////////
+/// \brief This member function will create a
+/// string array containing the procedure files,
+/// which are currently part of the list view,
+/// and return them.
+///
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
 wxArrayString PackageDialog::getProcedures()
 {
     wxArrayString stringArray;
@@ -237,8 +302,15 @@ wxArrayString PackageDialog::getProcedures()
     return stringArray;
 }
 
-// This member function will create the install information
-// section of the package based upon the setted properties
+
+/////////////////////////////////////////////////
+/// \brief This member function will create the
+/// install information section of the package
+/// based upon the setted properties.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString PackageDialog::getInstallInfo()
 {
     wxString installInfo = "\t<info>\n";
@@ -273,8 +345,14 @@ wxString PackageDialog::getInstallInfo()
     return installInfo;
 }
 
-// This member function returns the name of the package, as
-// been set by the user
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the name
+/// of the package, as been set by the user.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString PackageDialog::getPackageName()
 {
     wxString name = m_packageProperties->GetPropertyByName("-name")->GetValueAsString();
@@ -286,9 +364,16 @@ wxString PackageDialog::getPackageName()
     return name;
 }
 
-// This member function returns the package identifier,
-// which is constructed from the name and only contains
-// lowercase alphanumeric characters and the underscore
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// package identifier, which is constructed from
+/// the name and only contains lowercase
+/// alphanumeric characters and the underscore.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString PackageDialog::getPackageIdentifier()
 {
     // Get the name and transform it to lower case letters
@@ -305,15 +390,28 @@ wxString PackageDialog::getPackageIdentifier()
     return identifier;
 }
 
-// This member function returns whether the user selected the
-// "include docs" property
+
+/////////////////////////////////////////////////
+/// \brief This member function returns whether
+/// the user selected the "include docs" property.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool PackageDialog::includeDocs()
 {
     return m_packageProperties->GetPropertyByName(INCLUDEDOCS)->GetValue().GetBool();
 }
 
-// This member function returns, whether the user selected a
-// plugin type as install type
+
+/////////////////////////////////////////////////
+/// \brief This member function returns, whether
+/// the user selected a plugin type as install
+/// type.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool PackageDialog::isPlugin()
 {
     return m_packageProperties->GetPropertyByName("-type")->GetValueAsString().find("TYPE_PLUGIN") != std::string::npos;

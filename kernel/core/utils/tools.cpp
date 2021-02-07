@@ -1723,8 +1723,103 @@ string addControlSymbols(const string& sString)
     return sReturn;
 }
 
-// --> Extrahiert ein Optionswert an der Stelle nPos <--
-string getArgAtPos(const string& sCmd, unsigned int nPos)
+
+/////////////////////////////////////////////////
+/// \brief This static function detects, whether
+/// the current string expression is continued.
+///
+/// \param sCmd const std::string&
+/// \param pos size_t
+/// \return size_t
+///
+/////////////////////////////////////////////////
+static size_t isStringContinuation(const std::string& sCmd, size_t pos)
+{
+    if (sCmd.substr(pos, 2) == "  ")
+        return std::string::npos;
+
+    size_t nextChar = sCmd.find_first_not_of(' ', pos+1);
+
+    if (nextChar == std::string::npos || sCmd[nextChar] != '+')
+        return std::string::npos;
+
+    nextChar++;
+
+    if (sCmd.length() > nextChar && sCmd[nextChar] != ' ')
+        return nextChar;
+
+    nextChar++;
+
+    if (sCmd.length() > nextChar && sCmd[nextChar] != ' ')
+        return nextChar;
+
+    return std::string::npos;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function is a helper for
+/// getArgAtPos to parse the expressions in the
+/// string.
+///
+/// \param sArg std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void parseArg(std::string& sArg)
+{
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
+    // Function call
+    if (!instance->getDefinitions().call(sArg))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sArg, "");
+
+    // String evaluation
+    if (instance->getStringParser().isStringExpression(sArg))
+    {
+        std::string dummy;
+
+        NumeRe::StringParser::StringParserRetVal _ret = instance->getStringParser().evalAndFormat(sArg, dummy, true);
+
+        if (_ret == NumeRe::StringParser::STRING_SUCCESS)
+            return;
+    }
+
+    // Read data
+    if (instance->getMemoryManager().containsTablesOrClusters(sArg))
+        getDataElements(sArg, instance->getParser(), instance->getMemoryManager(), instance->getSettings());
+
+    // Numerical evaluation
+    instance->getParser().SetExpr(sArg);
+
+    int results;
+    int nPrec = instance->getSettings().getPrecision();
+    value_type* v = instance->getParser().Eval(results);
+
+    sArg.clear();
+
+    for (int i = 0; i < results; i++)
+    {
+        if (sArg.length())
+            sArg += ",";
+
+        sArg += toString(v[i], nPrec);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Extracts a options value at the
+/// selected position and applies automatic
+/// parsing, if necessary.
+///
+/// \param sCmd const string&
+/// \param nPos unsigned int
+/// \param extraction int
+/// \return string
+///
+/////////////////////////////////////////////////
+string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction)
 {
     string sArgument = "";
 
@@ -1741,48 +1836,46 @@ string getArgAtPos(const string& sCmd, unsigned int nPos)
     if (nPos >= sCmd.length())
         return "";
 
-    // Extract the option value
-    // Determine the delimiter first
-    if (sCmd[nPos] == '"')
+    size_t nQuotes = 0;
+
+    for (size_t i = nPos; i < sCmd.length(); i++)
     {
-        // This option value is surrounded with quotation marks
-        // Go through the string and find the next quotation
-        // mark, which is not escaped by a backslash
-        for (unsigned int i = nPos + 1; i < sCmd.length(); i++)
+        if (sCmd[i] == '"' && (!i || sCmd[i - 1] != '\\'))
+            nQuotes++;
+
+        if (nQuotes % 2)
+            continue;
+
+        if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
+            i += getMatchingParenthesis(sCmd.substr(i));
+
+        if (sCmd[i] == ' ')
         {
-            if (sCmd[i] == '"' && sCmd[i - 1] != '\\')
+            size_t cont = isStringContinuation(sCmd, i);
+
+            if (cont < sCmd.length() && NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd.substr(nPos, i-nPos)))
+                i = cont-1;
+            else
             {
-                sArgument = sCmd.substr(nPos + 1, i - nPos - 1);
+                sArgument = sCmd.substr(nPos, i-nPos);
                 break;
             }
         }
-    }
-    else
-    {
-        // This option value is not surrounded with quotation marks
-        // Go through the string and find the next whitespace
-        for (unsigned int i = nPos; i < sCmd.length(); i++)
-        {
-            // Jump over parentheses, if you find one
-            if (sCmd[i] == '(' || sCmd[i] == '[' || sCmd[i] == '{')
-                i += getMatchingParenthesis(sCmd.substr(i));
-
-            // Whitespace. Stop the loop here
-            if (sCmd[i] == ' ')
-            {
-                sArgument = sCmd.substr(nPos, i - nPos);
-                StripSpaces(sArgument);
-                break;
-            }
-        }
-
-        // Special case: obviously there's no whitespace any more
-        // simply use the remaining string completely
-        if (!sArgument.length())
-        {
+        else if (i+1 == sCmd.length())
             sArgument = sCmd.substr(nPos);
-            StripSpaces(sArgument);
-        }
+    }
+
+    // Parse the argument, if necessary
+    if (extraction & ARGEXTRACT_PARSED)
+        parseArg(sArgument);
+
+    // Strip the argument, if necessary
+    if (extraction & ARGEXTRACT_STRIPPED)
+    {
+        StripSpaces(sArgument);
+
+        if (sArgument.front() == '"' && sArgument.back() == '"')
+            sArgument = sArgument.substr(1, sArgument.length()-2);
     }
 
     // return the found option value

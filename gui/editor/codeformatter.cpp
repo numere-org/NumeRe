@@ -168,9 +168,9 @@ int CodeFormatter::determineIndentationLevelNSCR(int nLine, int& singleLineInden
 		{
 			wxString word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 1, true));
 
-			if (word == "endif" || word == "endfor" || word == "endwhile" || word == "endcompose" || word == "endprocedure" || word == "endswitch")
+			if (word == "endif" || word == "endfor" || word == "endwhile" || word == "endcompose" || word == "endlayout" || word == "endgroup" || word == "endprocedure" || word == "endswitch")
 				nIndentCount--;
-			else if (word == "if" || word == "for" || word == "while" || word == "compose" || word == "procedure" || word == "switch")
+			else if (word == "if" || word == "for" || word == "while" || word == "compose" || word == "layout" || word == "group" || word == "procedure" || word == "switch")
 				nIndentCount++;
 			else if (word == "else" || word == "elseif" || word == "case" || word == "default")
 				singleLineIndent = -1;
@@ -602,7 +602,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nF
 				}
 			}
 
-			if (command == "if" || command == "for" || command == "while" || command == "compose" || command == "procedure" || command == "switch")
+			if (command == "if" || command == "for" || command == "while" || command == "compose" || command == "procedure" || command == "switch" || command == "layout" || command == "group")
 			{
 				if (nIndentationLevel <= 0)
 				{
@@ -626,7 +626,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nF
 				nIndentationLevel++;
 			}
 
-			if (command == "endif" || command == "endfor" || command == "endwhile" || command == "endcompose" || command == "endprocedure" || command == "endswitch")
+			if (command == "endif" || command == "endfor" || command == "endwhile" || command == "endcompose" || command == "endprocedure" || command == "endswitch" || command == "endlayout" || command == "endgroup")
 			{
 				nIndentationLevel--;
 

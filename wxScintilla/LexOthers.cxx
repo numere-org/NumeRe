@@ -2204,6 +2204,8 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 				|| styler.Match(i, "endwhile")
 				|| styler.Match(i, "endprocedure")
 				|| styler.Match(i, "endcompose")
+				|| styler.Match(i, "endlayout")
+				|| styler.Match(i, "endgroup")
 				|| styler.Match(i, "endswitch"))
 				|| styler.Match(i, "<endinstall>")
 				|| styler.Match(i, "<endinfo>")
@@ -2227,7 +2229,8 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 					|| styler.Match(i, "for ") || styler.Match(i, "for(")
 					|| styler.Match(i, "while ") || styler.Match(i, "while(")
 					|| styler.Match(i, "switch ") || styler.Match(i, "switch(")
-					|| styler.Match(i, "procedure ") || styler.Match(i, "compose"))
+					|| styler.Match(i, "procedure ") || styler.Match(i, "compose")
+					|| styler.Match(i, "layout") || styler.Match(i, "group"))
 					|| styler.Match(i, "<install>")
 					|| styler.Match(i, "<info>")
 					|| styler.Match(i, "<helpindex>")
@@ -2830,6 +2833,8 @@ void SCI_METHOD LexerNPRC::Fold(unsigned int startPos, int length, int initStyle
 				|| styler.Match(i, "endwhile")
 				|| styler.Match(i, "endprocedure")
 				|| styler.Match(i, "endswitch")
+				|| styler.Match(i, "endlayout")
+				|| styler.Match(i, "endgroup")
 				|| styler.Match(i, "endcompose"))
 			{
 				levelNext--;
@@ -2841,7 +2846,8 @@ void SCI_METHOD LexerNPRC::Fold(unsigned int startPos, int length, int initStyle
 					|| styler.Match(i, "for ") || styler.Match(i, "for(")
 					|| styler.Match(i, "while ") || styler.Match(i, "while(")
 					|| styler.Match(i, "switch ") || styler.Match(i, "switch(")
-					|| styler.Match(i, "procedure ") || styler.Match(i, "compose")))
+					|| styler.Match(i, "procedure ") || styler.Match(i, "compose") 
+					|| styler.Match(i, "layout") || styler.Match(i, "group")))
 			{
 				// Measure the minimum before a '{' to allow
 				// folding on "} else {"

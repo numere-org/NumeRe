@@ -139,6 +139,7 @@ class PlotData : public FileSystem  // CHILD von Filesystem
         TimeAxis _timeAxes[4];
         int nRequestedLayers;
         int nLegendPosition;
+        int nTargetGUI[2];
 
         PlotData(const PlotData&) = delete;
         PlotData& operator=(const PlotData&) = delete;
@@ -498,6 +499,10 @@ class PlotData : public FileSystem  // CHILD von Filesystem
                     return _timeAxes[i];
 
                 return axis;
+            }
+        inline const int* getTargetGUI() const
+            {
+                return nTargetGUI;
             }
 
         // --> Lesen der einzelnen Achsenbeschriftungen <--

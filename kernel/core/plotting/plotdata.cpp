@@ -452,6 +452,23 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 nSlices[i] = 1;
         }
     }
+    if (findParameter(sCmd, "streamto", '=') && (nType == ALL || nType & SUPERGLOBAL))
+    {
+        int nPos = findParameter(sCmd, "streamto", '=')+8;
+        string sTemp = getArgAtPos(__sCmd, nPos);
+        if (sTemp.find(',') != string::npos && sTemp.length() > 1)
+        {
+            _parser.SetExpr(sTemp);
+            int nResults = 0;
+            double* dTemp = _parser.Eval(nResults);
+
+            if (nResults >= 2)
+            {
+                nTargetGUI[0] = intCast(dTemp[0]);
+                nTargetGUI[1] = intCast(dTemp[1]);
+            }
+        }
+    }
     if (findParameter(sCmd, "connect") && (nType == ALL || nType & LOCAL))
         bConnectPoints = true;
     if (findParameter(sCmd, "noconnect") && (nType == ALL || nType & LOCAL))
@@ -1815,6 +1832,8 @@ void PlotData::reset()
     dRotateAngles[1] = 115;
     dColorRange[0] = NAN;
     dColorRange[1] = NAN;
+    nTargetGUI[0] = -1;
+    nTargetGUI[1] = -1;
     nLines = 100;
     nRows = 1;
     nLayers = 1;
@@ -1965,6 +1984,8 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     sBackground = "";
     dColorRange[0] = NAN;
     dColorRange[1] = NAN;
+    nTargetGUI[0] = -1;
+    nTargetGUI[1] = -1;
 
     for (int i = 0; i < 2; i++)
     {
