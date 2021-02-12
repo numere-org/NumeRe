@@ -696,6 +696,107 @@ void Script::writeDocumentationArticle(string& sScriptCommand)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function writes the
+/// embedded window layout to the target file.
+///
+/// \param sScriptCommand std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Script::writeLayout(std::string& sScriptCommand)
+{
+    // create a valid file name
+    std::string sLayoutFileName = getArgAtPos(sScriptCommand, sScriptCommand.find_first_not_of(' ', 6));
+    sLayoutFileName = FileSystem::ValidFileName(sLayoutFileName, ".nlyt");
+    ofstream fLayoutFile(sLayoutFileName.c_str());
+
+    // Remove the file name
+    size_t nQuotes = 0;
+
+    for (size_t i = sScriptCommand.find_first_not_of(' ', 6); i < sScriptCommand.length(); i++)
+    {
+        if (sScriptCommand[i] == '"' && sScriptCommand[i-1] != '\\')
+            nQuotes++;
+
+        if (!(nQuotes % 2) && sScriptCommand[i] == ' ')
+        {
+            sScriptCommand = "layout " + sScriptCommand.substr(i);
+            break;
+        }
+        else if (i+1 == sScriptCommand.length())
+            sScriptCommand = "layout";
+    }
+
+    // Depending on whether the whole file was written in
+    // one line or multiple script lines
+    if (sScriptCommand.find("endlayout") != string::npos)
+    {
+        sScriptCommand.erase(sScriptCommand.find("endlayout")+9);
+
+        // Write the contents to the documentation article file
+        if (!fLayoutFile.fail())
+            fLayoutFile << sScriptCommand << endl;
+        else
+        {
+            fLayoutFile.close();
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sLayoutFileName);
+        }
+
+        fLayoutFile.close();
+    }
+    else
+    {
+        // Write the contents linewise to the documentation article file
+        if (!fLayoutFile.fail())
+        {
+            fLayoutFile << sScriptCommand << endl;
+
+            string sTemp;
+            size_t nIndent = 1;
+
+            // Read the contents linewise from the script
+            while (!fScript.eof())
+            {
+                getline(fScript, sTemp);
+                nLine++;
+                StripSpaces(sTemp);
+
+                if (sTemp.substr(0, 8) == "endgroup" || sTemp.substr(0, 9) == "endlayout")
+                    nIndent--;
+
+                sTemp.insert(0, nIndent, '\t');
+
+                // Try to find the end of the current documentation article
+                if (sTemp.find("endlayout") == string::npos)
+                {
+                    // Write the current line
+                    fLayoutFile << sTemp << endl;
+                }
+                else
+                {
+                    // Write the last line
+                    fLayoutFile << sTemp.substr(0, sTemp.find("endlayout")+9) << endl;
+                    break;
+                }
+
+                if (sTemp.substr(nIndent, 5) == "group")
+                    nIndent++;
+            }
+        }
+        else
+        {
+            fLayoutFile.close();
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sLayoutFileName);
+        }
+
+        fLayoutFile.close();
+    }
+
+    sScriptCommand.clear();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function evaluates the
 /// flags from the installation information
 /// string and also removes unnecessary comments.
@@ -889,6 +990,13 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         if (sScriptCommand.substr(0,10) == "<helpfile>" && bInstallProcedures)
         {
             writeDocumentationArticle(sScriptCommand);
+            continue;
+        }
+
+        // Write window layouts
+        if (sScriptCommand.substr(0, 7) == "layout ")
+        {
+            writeLayout(sScriptCommand);
             continue;
         }
 

@@ -20,8 +20,10 @@
 #define WINLAYOUT_HPP
 
 #include <string>
+#include <vector>
 
 void windowCommand(std::string& sCmd);
+std::vector<std::string> getEventProcedures(const std::string& sLayoutFile);
 void dialogCommand(std::string& sCmd);
 
 

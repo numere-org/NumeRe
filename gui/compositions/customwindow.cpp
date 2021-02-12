@@ -654,7 +654,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                     m_varTable[varList[i]] = "0";
             }
         }
-        else if (string(currentChild->Value()) == "image")
+        else if (string(currentChild->Value()) == "bitmap")
         {
             // Add an image
             wxStaticBitmap* bitmap = _groupPanel->CreateBitmap(currParent, currSizer, removeQuotationMarks(text), id, alignment);
@@ -901,6 +901,16 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function can be called
+/// recursively and creates menus and submenus
+/// for the current window layout.
+///
+/// \param currentChild const tinyxml2::XMLElement*
+/// \param currMenu wxMenu*
+/// \return void
+///
+/////////////////////////////////////////////////
 void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* currMenu)
 {
     while (currentChild)
@@ -1337,6 +1347,15 @@ wxArrayString CustomWindow::getChoices(wxString& choices) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This member function decodes the
+/// arguments of a event handler function and
+/// returns them as a wxArrayString.
+///
+/// \param sEventHandler const wxString&
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
 wxArrayString CustomWindow::decodeEventHandlerFunction(const wxString& sEventHandler) const
 {
     wxArrayString funcDef;

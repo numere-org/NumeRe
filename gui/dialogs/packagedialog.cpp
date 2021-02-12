@@ -19,6 +19,7 @@
 #include "packagedialog.hpp"
 #include "../compositions/grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/ui/winlayout.hpp"
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../kernel/core/procedure/dependency.hpp"
 #include "../../common/datastructures.h"
@@ -163,7 +164,7 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
 {
     // Create a file dialog focused on procedure files. The user may
     // select multiple files
-    wxFileDialog dlg(this, _guilang.get("GUI_PKGDLG_SELECT_FILES"), m_terminal->getPathSettings()[PROCPATH], wxEmptyString, _guilang.get("COMMON_FILETYPE_NPRC") + " (*.nprc)|*.nprc", wxFD_MULTIPLE);
+    wxFileDialog dlg(this, _guilang.get("GUI_PKGDLG_SELECT_FILES"), m_terminal->getPathSettings()[PROCPATH], wxEmptyString, _guilang.get("GUI_FILTER_INSTALLABLES") + " (*.nprc, *.nlyt)|*.nprc;*.nlyt|" + _guilang.get("COMMON_FILETYPE_NPRC") + " (*.nprc)|*.nprc|" + _guilang.get("COMMON_FILETYPE_NLYT") + " (*.nlyt)|*.nlyt", wxFD_MULTIPLE);
 
     if (dlg.ShowModal() == wxID_OK)
     {
@@ -175,7 +176,12 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
         for (size_t i = 0; i < files.size(); i++)
         {
             if (m_fileList->FindItem(-1, replacePathSeparator(files[i].ToStdString()), false) == -1)
-                m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(".nprc"));
+            {
+                if (files[i].rfind(".nlyt") == std::string::npos)
+                    m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(".nprc"));
+                else
+                    m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(".nlyt"));
+            }
         }
     }
 }
@@ -218,9 +224,14 @@ void PackageDialog::autoDetect(const wxArrayString& mainfiles)
     std::set<std::string> fileSet;
 
     // Call followBranch() for every file name in the array
-    // of strings
+    // of strings (except of layout files)
     for (size_t i = 0; i < mainfiles.size(); i++)
-        followBranch(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
+    {
+        if (mainfiles[i].rfind(".nlyt") == std::string::npos)
+            followBranch(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
+        else
+            findLayoutDependencies(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
+    }
 
     // Insert only unique file names into the list view
     for (auto iter = fileSet.begin(); iter != fileSet.end(); ++iter)
@@ -266,6 +277,31 @@ void PackageDialog::followBranch(const string& sFile, set<string>& fileSet)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function uses the event
+/// procedures of a window layout file to create
+/// a dependency tree for this layout.
+///
+/// \param sFile const std::string&
+/// \param fileSet std::set<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::findLayoutDependencies(const std::string& sFile, std::set<std::string>& fileSet)
+{
+    // Get a list of all event procedures
+    std::vector<std::string> vProcs = getEventProcedures(sFile);
+
+    // Get the tree for every not already examined
+    // procedure
+    for (size_t i = 0; i < vProcs.size(); i++)
+    {
+        if (fileSet.find(vProcs[i]) == fileSet.end())
+            followBranch(vProcs[i], fileSet);
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function can be used to insert
 /// the current mainfile to the dialog. Used by
 /// the main window, if the user clicks on
@@ -277,7 +313,10 @@ void PackageDialog::followBranch(const string& sFile, set<string>& fileSet)
 /////////////////////////////////////////////////
 void PackageDialog::setMainFile(const wxString& mainfile)
 {
-    m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(mainfile.ToStdString()), m_icons->GetIconIndex(".nprc"));
+    if (mainfile.rfind(".nlyt") == std::string::npos)
+        m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(mainfile.ToStdString()), m_icons->GetIconIndex(".nprc"));
+    else
+        m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(mainfile.ToStdString()), m_icons->GetIconIndex(".nlyt"));
 }
 
 
@@ -332,6 +371,11 @@ wxString PackageDialog::getInstallInfo()
         }
         else if ((prop->GetName().substr(0, 7) == "-plugin" && !isplugin) || prop->GetName()[0] != '-')
             continue;
+        else if (prop->GetName() == "-name")
+        {
+            installInfo += "\t\t-name=\"" + getPackageName() + "\"\n";
+            continue;
+        }
 
         // Add the current property to the set
         installInfo += "\t\t" + prop->GetName() + "=\"" + prop->GetValueAsString() + "\"\n";

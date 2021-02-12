@@ -244,7 +244,7 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::DROPDOWN);
             else if (_selection == "radio")
                 return m_customWindow->getWindowItems(CustomWindow::RADIOGROUP);
-            else if (_selection == "image")
+            else if (_selection == "bitmap")
                 return m_customWindow->getWindowItems(CustomWindow::IMAGE);
             else if (_selection == "tablegrid")
                 return m_customWindow->getWindowItems(CustomWindow::TABLE);

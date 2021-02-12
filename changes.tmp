@@ -28,3 +28,4 @@ Applied	Replaced "wxStyledTextCtrl::LoadFile()" with "NumeReEditor::LoadFileText
 New	It is now possible to create animations from data points.
 New	NumeRe now has commands for rotatingtables (tabrot), images (imrot) and datagrids (gridrot).
 New	NumeRe now features a particle swarm optimizier for up to four-dimensional functions (pso).
+Applied	Window layouts are now installable and the package creator can detect their dependencies.

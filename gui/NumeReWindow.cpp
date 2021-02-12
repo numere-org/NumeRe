@@ -1627,16 +1627,15 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_MENU_EXECUTE:
         {
-            if(!m_currentEd->HasBeenSaved() || m_currentEd->Modified())
+            if (!m_currentEd->HasBeenSaved() || m_currentEd->Modified())
             {
                 int tabNum = m_book->FindPagePosition(m_currentEd);
                 int result = HandleModifiedFile(tabNum, MODIFIEDFILE_COMPILE);
 
                 if (result == wxCANCEL)
-                {
                     return;
-                }
             }
+
             string command = replacePathSeparator((m_currentEd->GetFileName()).GetFullPath().ToStdString());
             OnExecuteFile(command, id);
             break;
@@ -3968,21 +3967,21 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 /// them to be used by an installer script (i.e.
 /// prepending the target namespace).
 ///
-/// \param sProcFileName const string&
-/// \param sDefaultPath const string&
-/// \return vector<string>
+/// \param sProcFileName const std::string&
+/// \param sDefaultPath const std::string&
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFileName, const string& sDefaultPath)
+std::vector<std::string> NumeReWindow::getProcedureFileForInstaller(const std::string& sProcFileName, const std::string& sDefaultPath)
 {
-    ifstream fProc;
-    string sNameSpace;
-    string sLine;
-    vector<string> vProc;
+    std::ifstream fProc;
+    std::string sNameSpace;
+    std::string sLine;
+    std::vector<std::string> vProc;
     bool foundMainProcedure = false;
 
     // Decode the procedure file name
-    if (sProcFileName.find(sDefaultPath) != string::npos)
+    if (sProcFileName.find(sDefaultPath) != std::string::npos)
     {
         sNameSpace = sProcFileName.substr(0, sProcFileName.rfind('/')+1);
         sNameSpace.erase(sNameSpace.find(sDefaultPath), sDefaultPath.length());
@@ -3990,7 +3989,7 @@ vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFil
         while (sNameSpace.front() == '/')
             sNameSpace.erase(0, 1);
 
-        while (sNameSpace.find('/') != string::npos)
+        while (sNameSpace.find('/') != std::string::npos)
             sNameSpace[sNameSpace.find('/')] = '~';
     }
 
@@ -4003,12 +4002,12 @@ vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFil
     // Read the contents of the procedure file
     while (!fProc.eof())
     {
-        getline(fProc, sLine);
+        std::getline(fProc, sLine);
 
         // Transform procedure heads
-        if (sLine.find_first_not_of(" \t") != string::npos && sLine.substr(sLine.find_first_not_of(" \t"), 10) == "procedure ")
+        if (sLine.find_first_not_of(" \t") != std::string::npos && sLine.substr(sLine.find_first_not_of(" \t"), 10) == "procedure ")
         {
-            string sProcName = sLine.substr(sLine.find('$'), sLine.find('(') - sLine.find('$'));
+            std::string sProcName = sLine.substr(sLine.find('$'), sLine.find('(') - sLine.find('$'));
 
             // Insert namespaces
             if ("$" + sProcFileName.substr(sProcFileName.rfind('/')+1) == sProcName + ".nprc")
@@ -4033,6 +4032,51 @@ vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFil
 
     return vProc;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This member funciton obtains the
+/// contents of a window layout file and
+/// transforms it to be used by an installer
+/// script.
+///
+/// \param sLayoutFileName const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> NumeReWindow::getLayoutFileForInstaller(const std::string& sLayoutFileName)
+{
+    std::ifstream layout(sLayoutFileName.c_str());
+    std::string sTargetFileName = sLayoutFileName;
+
+    std::vector<std::string> vPaths = m_terminal->getPathSettings();
+    std::vector<std::string> vLayout;
+
+    if (sTargetFileName.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
+        sTargetFileName = " \"<scriptpath>" + sTargetFileName.substr(vPaths[SCRIPTPATH].length()) + "\"";
+
+    if (sTargetFileName.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+        sTargetFileName = " \"<procpath>" + sTargetFileName.substr(vPaths[PROCPATH].length()) + "\"";
+
+    if (!layout.good())
+        return vLayout;
+
+    std::string currLine;
+
+    while (!layout.eof())
+    {
+        std::getline(layout, currLine);
+
+        // Transform layout definitions
+        if (currLine.find_first_not_of(" \t") != string::npos && currLine.substr(currLine.find_first_not_of(" \t"), 6) == "layout")
+            currLine.insert(6, sTargetFileName);
+
+        vLayout.push_back(currLine);
+    }
+
+    return vLayout;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  private ConstructFilterString
@@ -6247,6 +6291,9 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
         if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
             command.erase(0, vPaths[SCRIPTPATH].length());
 
+        if (command.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+            command = "<procpath>" + command.substr(vPaths[PROCPATH].length());
+
         while (command.front() == '/')
             command.erase(0, 1);
 
@@ -6306,7 +6353,8 @@ void NumeReWindow::OnCreatePackage()
     {
         PackageDialog dlg(this, m_terminal, m_iconManager);
 
-        if (m_currentEd->getFileType() == FILE_NPRC)
+        if (m_currentEd->getFileType() == FILE_NPRC
+            || (m_currentEd->getFileType() == FILE_NSCR && m_currentEd->GetFileName().GetExt() == "nlyt"))
             dlg.setMainFile(m_currentEd->GetFileNameAndPath());
 
         if (dlg.ShowModal() == wxID_OK)
@@ -6327,12 +6375,19 @@ void NumeReWindow::OnCreatePackage()
 
             for (size_t i = 0; i < procedures.size(); i++)
             {
-                vector<string> procContents = getProcedureFileForInstaller(procedures[i].ToStdString(), sProcPath);
+                std::vector<std::string> contents;
 
-                for (size_t j = 0; j < procContents.size(); j++)
+                // Get the file's contents
+                if (procedures[i].rfind(".nlyt") == std::string::npos)
+                    contents = getProcedureFileForInstaller(procedures[i].ToStdString(), sProcPath);
+                else
+                    contents = getLayoutFileForInstaller(procedures[i].ToStdString());
+
+                // Insert the prepared contents
+                for (size_t j = 0; j < contents.size(); j++)
                 {
-                    if (procContents[j].length() && procContents[j].find_first_not_of(" \t") != string::npos)
-                        m_currentEd->AddText("\t" + procContents[j] + "\n");
+                    if (contents[j].length() && contents[j].find_first_not_of(" \t") != string::npos)
+                        m_currentEd->AddText("\t" + contents[j] + "\n");
                 }
 
                 m_currentEd->AddText("\n");
@@ -6347,6 +6402,7 @@ void NumeReWindow::OnCreatePackage()
 
             m_currentEd->AddText("\treturn;\n<endinstall>\n");
             m_currentEd->AddText("\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\n");
+            m_currentEd->UpdateSyntaxHighlighting(true);
         }
     }
     catch (SyntaxError& e)

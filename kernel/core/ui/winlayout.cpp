@@ -649,6 +649,96 @@ void windowCommand(std::string& sCmd)
 
 
 /////////////////////////////////////////////////
+/// \brief Converts a full-qualified procedure
+/// name into the corresponding file name.
+///
+/// \param sProc std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string getProcedureFileName(std::string sProc)
+{
+    // Create a valid file name from the procedure name
+    sProc = NumeReKernel::getInstance()->getProcedureInterpreter().ValidFileName(sProc, ".nprc");
+
+    // Replace tilde characters with path separators
+    if (sProc.find('~') != std::string::npos)
+    {
+        size_t nPos = sProc.rfind('/');
+
+        // Find the last path separator
+        if (nPos < sProc.rfind('\\') && sProc.rfind('\\') != std::string::npos)
+            nPos = sProc.rfind('\\');
+
+        // Replace all tilde characters in the current path
+        // string. Consider the special namespace "main", which
+        // is a reference to the toplevel procedure folder
+        for (size_t i = nPos; i < sProc.length(); i++)
+        {
+            if (sProc[i] == '~')
+            {
+                if (sProc.length() > 5 && i >= 4 && sProc.substr(i - 4, 5) == "main~")
+                    sProc = sProc.substr(0, i - 4) + sProc.substr(i + 1);
+                else
+                    sProc[i] = '/';
+            }
+        }
+    }
+
+    return sProc;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Examines a window layout file and
+/// searches for all event handler procedures.
+/// Returns their corresponding filenames as a
+/// vector. Might contain duplicates.
+///
+/// \param sLayoutFile const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> getEventProcedures(const std::string& sLayoutFile)
+{
+    StyledTextFile layoutFile(sLayoutFile);
+    std::string sFolderName = sLayoutFile.substr(0, sLayoutFile.rfind('/'));
+    std::vector<std::string> vProcedures;
+
+    for (size_t i = 0; i < layoutFile.getLinesCount(); i++)
+    {
+        std::string sLine = layoutFile.getStrippedLine(i);
+
+        if (findParameter(sLine, "onopen", '='))
+        {
+            std::string sEvent = parseEventOpt(sLine, findParameter(sLine, "onopen", '=')+6, sFolderName);
+
+            if (sEvent.front() == '$')
+                vProcedures.push_back(getProcedureFileName(sEvent.substr(1)));
+        }
+
+        if (findParameter(sLine, "onclick", '='))
+        {
+            std::string sEvent = parseEventOpt(sLine, findParameter(sLine, "onclick", '=')+7, sFolderName);
+
+            if (sEvent.front() == '$')
+                vProcedures.push_back(getProcedureFileName(sEvent.substr(1)));
+        }
+
+        if (findParameter(sLine, "onchange", '='))
+        {
+            std::string sEvent = parseEventOpt(sLine, findParameter(sLine, "onchange", '=')+8, sFolderName);
+
+            if (sEvent.front() == '$')
+                vProcedures.push_back(getProcedureFileName(sEvent.substr(1)));
+        }
+    }
+
+    return vProcedures;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function is the actual
 /// implementation of the \c dialog command.
 ///

@@ -46,6 +46,7 @@ class PackageDialog : public wxDialog
 
         void autoDetect(const wxArrayString& mainfiles);
         void followBranch(const std::string& sFile, std::set<std::string>& fileSet);
+        void findLayoutDependencies(const std::string& sFile, std::set<std::string>& fileSet);
 
     public:
         PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons);
