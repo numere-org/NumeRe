@@ -48,6 +48,7 @@ class DocumentationGenerator : public FileSystem
         std::string getStrippedRange(const StyledTextFile& file, int pos1, int pos2, bool encode = true) const;
         std::string parseDocumentation(const StyledTextFile& file, const std::string& sMainProc, int pos1, int pos2) const;
         std::string createParametersTable(const std::vector<std::string>& vParams) const;
+        std::string createReturnsTable(const std::vector<std::string>& vParams) const;
         size_t findListItem(const std::string& sTextRange, size_t& nLength) const;
 
         std::string createMainProcedure(std::string sFileName) const;

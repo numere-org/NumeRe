@@ -21,6 +21,8 @@
 #include "../../kernel.hpp"
 #include "../utils/tools.hpp"
 #include "../procedure/dependency.hpp"
+#include "../ui/winlayout.hpp"
+
 
 /////////////////////////////////////////////////
 /// \brief This member function finds all
@@ -40,7 +42,23 @@ void DocumentationGenerator::followBranch(const std::string& sFile, std::set<std
     fileSet.insert(sFile);
     vFiles.push_back(sFile);
 
-    if (sFile.find(".nprc") == std::string::npos)
+    // Is the current file a window layout?
+    if (sFile.find(".nlyt") != std::string::npos)
+    {
+        // Get all event procedures
+        std::vector<std::string> vEventProcs = getEventProcedures(sFile);
+
+        // Get the dependencies for each event procedure
+        for (size_t i = 0; i < vEventProcs.size(); i++)
+        {
+            if (fileSet.find(vEventProcs[i]) == fileSet.end())
+                followBranch(vEventProcs[i], fileSet, vFiles);
+        }
+
+        // Return. Nothing more to be done
+        return;
+    }
+    else if (sFile.find(".nprc") == std::string::npos)
         return;
 
     // Get a reference to the procedure library
@@ -374,6 +392,22 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
         sTextRange[nPosStart-1] = '{';
     }
 
+    // Handle layout names
+    if (sTextRange.find("\\layout ") != std::string::npos)
+    {
+        // Find start and end of layout name
+        size_t nPosStart = sTextRange.find("\\layout ")+7;
+        nPosStart = sTextRange.find_first_not_of(' ', nPosStart);
+        size_t nPosEnd = sTextRange.find_first_not_of(" \r\n", nPosStart);
+        nPosEnd = sTextRange.find_first_of(" \r\n", nPosEnd);
+
+        std::string sLayout = sTextRange.substr(nPosStart, nPosEnd-nPosStart);
+        replaceAll(sLayout, "_", "\\_");
+
+        // Insert braces around the layout name
+        sTextRange.replace(nPosStart-1, nPosEnd-nPosStart+1, "{" + sLayout + "}");
+    }
+
     // Handle unordered lists
     if (sTextRange.find("- ") != std::string::npos) // thats a unordered list
     {
@@ -431,6 +465,37 @@ std::string DocumentationGenerator::parseDocumentation(const StyledTextFile& fil
                 {
                     vParameters.push_back(sTextRange.substr(nLastParam, i - nLastParam+1));
                     sTextRange.replace(nItemizeStart, i+1 - nItemizeStart, "\\parameters\n\\noindent\n" + createParametersTable(vParameters));
+
+                    break;
+                }
+            }
+        }
+    }
+
+    // Handle return value lists
+    if (sTextRange.find("\\return ") != std::string::npos)
+    {
+        while (sTextRange.find("\\return ") != std::string::npos)
+        {
+            size_t nItemizeStart = sTextRange.find("\\return ");
+            size_t nLastParam = nItemizeStart;
+            std::vector<std::string> vReturns;
+
+            for (size_t i = nItemizeStart+1; i < sTextRange.length(); i++)
+            {
+                if (sTextRange.substr(i, 8) == "\\return ")
+                {
+                    vReturns.push_back(sTextRange.substr(nLastParam, i - nLastParam));
+                    nLastParam = i;
+                    continue;
+                }
+
+                if (i + 1 == sTextRange.length()
+                    || (sTextRange[i] == '\n' && sTextRange[i+1] == '\n')
+                    || (sTextRange[i+1] == '\\' && sTextRange.substr(i+1, 8) != "\\return "))
+                {
+                    vReturns.push_back(sTextRange.substr(nLastParam, i - nLastParam+1));
+                    sTextRange.replace(nItemizeStart, i+1 - nItemizeStart, "\\returns\n\\noindent\n" + createReturnsTable(vReturns));
 
                     break;
                 }
@@ -532,6 +597,40 @@ std::string DocumentationGenerator::createParametersTable(const std::vector<std:
             sTable += "& ";
 
         sTable += sParameter.substr(nDescPos) + "\\\\\n";
+    }
+
+    // Append the table foot and return
+    return sTable + "\t\\bottomrule\n\\end{tabular}\n";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function creates a table
+/// out of the declared return values in the
+/// documentation comments.
+///
+/// \param vReturns const std::vector<std::string>&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string DocumentationGenerator::createReturnsTable(const std::vector<std::string>& vReturns) const
+{
+    // Table heads
+    std::string sTable = "\\begin{tabular}{p{0.22\\textwidth}p{0.725\\textwidth}}\n\t\\toprule\n\tReturn type & Description\\\\\n\t\\midrule\n";
+    std::string sReturnValue;
+
+    size_t nDescPos;
+
+    // Write every single parameter line
+    for (size_t i = 0; i < vReturns.size(); i++)
+    {
+        sReturnValue = vReturns[i];
+        replaceAll(sReturnValue, "\n", " ");
+
+        nDescPos = sReturnValue.find_first_not_of(' ', sReturnValue.find(' ', 9));
+
+        sTable += "\t!!" + sReturnValue.substr(8, sReturnValue.find(' ', 9) - 8) + "!! & ";
+        sTable += sReturnValue.substr(nDescPos) + "\\\\\n";
     }
 
     // Append the table foot and return
@@ -814,6 +913,8 @@ std::string DocumentationGenerator::createMainFile(const std::string& sFileName,
     fMain << "\\input{" << getPath() << "/numereheader}" << endl << endl;
     fMain << "\\ohead{" << prepareFileNameForLaTeX(sFileName) << "}" << endl;
     fMain << "\\ihead{Documentation}" << endl;
+    fMain << "\\ifoot{NumeRe: Free numerical software}" << endl;
+    fMain << "\\ofoot{Get it at: www.numere.org}" << endl;
     fMain << "\\pagestyle{scrheadings}" << endl;
     fMain << "\\subject{Documentation}" << endl;
     fMain << "\\title{" << prepareFileNameForLaTeX(sFileName) << "}" << endl;

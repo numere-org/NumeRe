@@ -1949,6 +1949,11 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
             flags = procdef.substr(procdef.find("::"));
             procdef.erase(procdef.find("::"));
         }
+        else if (procdef.find(" -> ") != string::npos)
+        {
+            flags = procdef.substr(procdef.find(" -> "));
+            procdef.erase(procdef.find(" -> "));
+        }
         else if (procdef.find('\n') != string::npos)
         {
             flags = procdef.substr(procdef.find('\n'));

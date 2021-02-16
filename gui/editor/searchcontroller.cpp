@@ -474,7 +474,8 @@ wxString SearchController::FindProcedureDefinition()
 /// appends the documentation to the definition, so that
 /// it might be shown in the tooltip
 /////////////////////////////////////////////////
-wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& procedurename)
+wxString SearchController::FindProcedureDefinitionInLocalFile(const
+                                                               wxString& procedurename)
 {
     wxString procedureline;
 
@@ -593,7 +594,12 @@ wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& pr
 
             // Append the documentation if it is present
             if (sDocumentation.length())
-                sProcDef += "\n" + sDocumentation.ToStdString();
+            {
+                if (sDocumentation.substr(0, 3) == "-> ")
+                    sProcDef += " " + sDocumentation.ToStdString();
+                else
+                    sProcDef += "\n" + sDocumentation.ToStdString();
+            }
 
             return sProcDef;
         }
@@ -792,7 +798,13 @@ wxString SearchController::FindProcedureDefinitionInOtherFile(const wxString& pa
 
 				// if the documentation has a length, append it here
 				if (sDocumentation.length())
-                    sProcDef += "\n" + sDocumentation.ToStdString();
+                {
+                    if (sDocumentation.substr(0, 3) == "-> ")
+                        sProcDef += " " + sDocumentation.ToStdString();
+                    else
+                        sProcDef += "\n" + sDocumentation.ToStdString();
+                }
+
 				return sProcDef;
 			}
 		}
@@ -891,6 +903,7 @@ void SearchController::AppendToDocumentation(wxString& sDocumentation, const wxS
 string SearchController::CleanDocumentation(const wxString& __sDoc)
 {
     string sDocumentation = __sDoc.ToStdString();
+    std::string sReturns;
 
     if (sDocumentation.find_first_not_of(" \n") != string::npos)
     {
@@ -921,6 +934,28 @@ string SearchController::CleanDocumentation(const wxString& __sDoc)
             }
         }
 
+        // Extract \return
+        while ((nPos = sDocumentation.find("\\return ")) != string::npos)
+        {
+            // Find the next \return or \remark alternatively
+            // This is a candidate for issues with new keywords
+            size_t newReturn = std::min(sDocumentation.find("\\return ", nPos+1), sDocumentation.find("\\remark ", nPos+1));
+
+            // Extract the current return statement and
+            // remove the corresponding part from the
+            // documentation
+            std::string sCurrReturn = sDocumentation.substr(nPos+8, newReturn-nPos-8);
+            sDocumentation.erase(nPos, newReturn-nPos);
+
+            while (sDocumentation.front() == ' ')
+                sDocumentation.erase(0, 1);
+
+            if (sReturns.length())
+                sReturns += ",";
+
+            sReturns += sCurrReturn.substr(0, sCurrReturn.find(' '));
+        }
+
         // Replace \remark
         while ((nPos = sDocumentation.find("\\remark ")) != string::npos)
             sDocumentation.replace(nPos, 7, toUpperCase(_guilang.get("GUI_EDITOR_CALLTIP_PROC_REMARK"))+":");
@@ -947,8 +982,19 @@ string SearchController::CleanDocumentation(const wxString& __sDoc)
             sDocumentation.erase(nMatch, sDocumentation.find('}', nMatch) + 1 - nMatch + 1);
         }
 
-        // Check the length of the line
+        // Check the length of the line (will insert
+        // an additional indentation at the beginning
+        // of the documentation string)
         sDocumentation = m_editor->addLinebreaks(sDocumentation, true);
+
+        // Insert returns
+        if (sReturns.length())
+        {
+            if (sReturns.find(',') == std::string::npos)
+                sDocumentation.insert(0, "-> " + sReturns + "\n");
+            else
+                sDocumentation.insert(0, "-> {" + sReturns + "}\n");
+        }
     }
     else
         sDocumentation.clear();
