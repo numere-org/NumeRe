@@ -30,7 +30,7 @@
 /////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
-Plugin::Plugin() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("TYPE_UNSPECIFIED"), sName("Plugin"), sVersion("<AUTO>"), sAuthor("User"), sDescription("Description"), sDocumentationIndexID("")
+Plugin::Plugin() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("TYPE_UNSPECIFIED"), sLicense(""), sName("Plugin"), sVersion("<AUTO>"), sAuthor("User"), sDescription("Description"), sDocumentationIndexID("")
 { }
 
 
@@ -39,16 +39,17 @@ Plugin::Plugin() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("T
 /// internal attributes using the passed install
 /// information string.
 ///
-/// \param sInstallInfoString const string&
+/// \param sInstallInfoString const std::string&
 ///
 /////////////////////////////////////////////////
-Plugin::Plugin(const string& sInstallInfoString) : Plugin()
+Plugin::Plugin(const std::string& sInstallInfoString) : Plugin()
 {
     // Get the options values from the string
     sCommand = getOptionValue(sInstallInfoString, "plugincommand", "");
     sMainProcedure = getOptionValue(sInstallInfoString, "pluginmain", "");
     sArgumentList = getOptionValue(sInstallInfoString, "pluginmain", "");
     sType = getOptionValue(sInstallInfoString, "type", "TYPE_UNSPECIFIED");
+    sLicense = getOptionValue(sInstallInfoString, "license", "");
     sName = getOptionValue(sInstallInfoString, "name", "Plugin");
     sVersion = getOptionValue(sInstallInfoString, "version", "<AUTO>");
     sAuthor = getOptionValue(sInstallInfoString, "author", "User");
@@ -74,13 +75,13 @@ Plugin::Plugin(const string& sInstallInfoString) : Plugin()
 /// replaces it by its default value, if it does
 /// not exist.
 ///
-/// \param sInstallInfoString const string&
-/// \param sOption const string&
-/// \param sDefault const string&
-/// \return string
+/// \param sInstallInfoString const std::string&
+/// \param sOption const std::string&
+/// \param sDefault const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string Plugin::getOptionValue(const string& sInstallInfoString, const string& sOption, const string& sDefault)
+std::string Plugin::getOptionValue(const std::string& sInstallInfoString, const std::string& sOption, const std::string& sDefault)
 {
     // Option is available? If no,
     // return the default value
@@ -118,7 +119,7 @@ string Plugin::getOptionValue(const string& sInstallInfoString, const string& sO
 /////////////////////////////////////////////////
 string Plugin::exportDefinition() const
 {
-    return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + ",";
+    return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + "," + sLicense + ",";
 }
 
 
@@ -127,14 +128,14 @@ string Plugin::exportDefinition() const
 /// plugin definition from the passed definition
 /// string.
 ///
-/// \param sDefinitionString string
+/// \param sDefinitionString std::string
 /// \return void
 ///
 /// \remark A default constructed Plugin object
 /// is assumed by this member function.
 ///
 /////////////////////////////////////////////////
-void Plugin::importDefinition(string sDefinitionString)
+void Plugin::importDefinition(std::string sDefinitionString)
 {
     sCommand = getNextArgument(sDefinitionString, true);
     sMainProcedure = getNextArgument(sDefinitionString, true);
@@ -161,6 +162,11 @@ void Plugin::importDefinition(string sDefinitionString)
         return;
 
     sDocumentationIndexID = getNextArgument(sDefinitionString, true);
+
+    if (!sDefinitionString.length())
+        return;
+
+    sLicense = getNextArgument(sDefinitionString, true);
 }
 
 
@@ -210,6 +216,7 @@ void Plugin::update(const Plugin& _plugin)
     sName = _plugin.sName;
     sAuthor = _plugin.sAuthor;
     sDescription = _plugin.sDescription;
+    sLicense = _plugin.sLicense;
 
     // Do we need to increment the current
     // plugin version?

@@ -46,24 +46,25 @@ using namespace std;
 class Plugin
 {
     private:
-        string getOptionValue(const string& sInstallInfoString, const string& sOption, const string& sDefault);
+        std::string getOptionValue(const std::string& sInstallInfoString, const std::string& sOption, const std::string& sDefault);
 
     public:
-        string sCommand;
-        string sMainProcedure;
-        string sArgumentList;
-        string sType;
-        string sName;
-        string sVersion;
-        string sAuthor;
-        string sDescription;
-        string sDocumentationIndexID;
+        std::string sCommand;
+        std::string sMainProcedure;
+        std::string sArgumentList;
+        std::string sType;
+        std::string sLicense;
+        std::string sName;
+        std::string sVersion;
+        std::string sAuthor;
+        std::string sDescription;
+        std::string sDocumentationIndexID;
 
         Plugin();
-        Plugin(const string& sInstallInfoString);
+        Plugin(const std::string& sInstallInfoString);
 
-        string exportDefinition() const;
-        void importDefinition(string sDefinitionString);
+        std::string exportDefinition() const;
+        void importDefinition(std::string sDefinitionString);
 
         bool operator==(const Plugin& _plugin) const;
         bool operator!=(const Plugin& _plugin) const;
@@ -249,6 +250,22 @@ class PluginManager : public FileSystem
         {
             if (i < vPluginInfo.size())
                 return stripParentheses(vPluginInfo[i].sDescription);
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the license information of the
+        /// ith plugin.
+        ///
+        /// \param unsigned int i = 0
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        inline string getPluginLicense(unsigned int i = 0) const
+        {
+            if (i < vPluginInfo.size())
+                return stripParentheses(vPluginInfo[i].sLicense);
 
             return "";
         }

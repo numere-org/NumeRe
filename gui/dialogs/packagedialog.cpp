@@ -46,7 +46,7 @@ END_EVENT_TABLE()
 /// \param icons IconManager*
 ///
 /////////////////////////////////////////////////
-PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : wxDialog(parent, wxID_ANY, _guilang.get("GUI_PKGDLG_HEAD"), wxDefaultPosition, wxSize(600, 570), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : wxDialog(parent, wxID_ANY, _guilang.get("GUI_PKGDLG_HEAD"), wxDefaultPosition, wxSize(600, 600), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
     m_packageProperties = nullptr;
     m_fileList = nullptr;
@@ -79,6 +79,28 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     type.Add("TYPE_PLUGIN");
     type.Add("TYPE_PLUGIN_WITH_RETURN_VALUE");
     m_packageProperties->Append(new wxEnumProperty(_guilang.get("GUI_PKGDLG_TYPE"), "-type", type));
+
+    // Add a license field
+    wxArrayString license;
+    license.Add("Apache-2.0");
+    license.Add("BSD-2-Clause");
+    license.Add("BSD-3-Clause");
+    license.Add("CC-BY-4.0");
+    license.Add("CC-BY-ND-4.0");
+    license.Add("CC-BY-SA-4.0");
+    license.Add("CC-BY-SA-ND-4.0");
+    license.Add("EPL-2.0");
+    license.Add("GPL-2.0-only");
+    license.Add("GPL-2.0-or-later");
+    license.Add("GPL-3.0-only");
+    license.Add("GPL-3.0-or-later");
+    license.Add("LGPL-2.0-only");
+    license.Add("LGPL-2.0-or-later");
+    license.Add("LGPL-3.0-only");
+    license.Add("LGPL-3.0-or-later");
+    license.Add("MIT");
+    license.Add("MPL-2.0");
+    m_packageProperties->Append(new wxEditEnumProperty(_guilang.get("GUI_PKGDLG_LICENSE"), "-license", license, wxArrayInt(), license[0]));
 
     // Add a validator to the package command to enssure that the user
     // only uses alphanumeric characters as command string

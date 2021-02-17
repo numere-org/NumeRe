@@ -525,6 +525,24 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
     if (nRequiredVersion > nNumereVersion)
         throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sScriptCommand, SyntaxError::invalid_position, toString(nRequiredVersion));
 
+    // Examine the license information
+    if (sInstallInfoString.find("license=") != std::string::npos)
+    {
+        std::string sLicense = getArgAtPos(sInstallInfoString, sInstallInfoString.find("license=")+8);
+        NumeReKernel::print(LineBreak(_lang.get("SCRIPT_INSTALL_LICENSE_AGREEMENT", sInstallID, sLicense), NumeReKernel::getInstance()->getSettings()));
+        NumeReKernel::printPreFmt("|<- ");
+
+        std::string sAnswer;
+        NumeReKernel::getline(sAnswer);
+
+        if (sAnswer.substr(0, 1) != _lang.YES())
+        {
+            NumeReKernel::print(_lang.get("SCRIPT_INSTALL_ABORT"));
+            close();
+            return false;
+        }
+    }
+
     if (!sScriptCommand.length())
         return false;
     return true;
@@ -573,7 +591,7 @@ string Script::extractDocumentationIndex(string& sScriptCommand)
     }
 
     // Extract the article ID
-    sHelpID = getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3);
+    sHelpID = Documentation::getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3);
     StripSpaces(sHelpID);
 
     // Ensure that the article ID start with the plugin prefix

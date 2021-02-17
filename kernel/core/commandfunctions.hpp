@@ -1784,6 +1784,9 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 			// Print basic information about the plugin
 			sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _procedure.getPluginName(i), _procedure.getPluginVersion(i), _procedure.getPluginAuthor(i));
 
+            if (_procedure.getPluginLicense(i).length())
+                sLine += " | " + _procedure.getPluginLicense(i);
+
 			// Print the description
 			if (_procedure.getPluginDesc(i).length())
 				sLine += "$" + _procedure.getPluginDesc(i);
