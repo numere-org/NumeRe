@@ -1254,6 +1254,7 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 	bool bAppend = false;
 	bool bTrunc = true;
 	bool bNoQuotes = false;
+	bool bKeepEmptyLines = false;
 	FileSystem _fSys;
 
 	// Set default tokens and default path
@@ -1280,20 +1281,22 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 		{
 			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))
 				NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
+
 			addArgumentQuotes(sParams, "file");
 			extractFirstParameterStringValue(sParams, sFileName);
 			StripSpaces(sFileName);
+
 			if (!sFileName.length())
 				return false;
+
 			string sExt = "";
+
 			if (sFileName.find('.') != string::npos)
 				sExt = sFileName.substr(sFileName.rfind('.'));
 
 			// Some file extensions are protected
 			if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
-			{
 				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sExt);
-			}
 
 			// Declare the current file extension as valid for the current process
 			_fSys.declareFileType(sExt);
@@ -1307,12 +1310,14 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 			if (sFileName.substr(sFileName.rfind('.')) == ".nprc" || sFileName.substr(sFileName.rfind('.')) == ".nscr" || sFileName.substr(sFileName.rfind('.')) == ".ndat")
 			{
 				string sErrorToken;
+
 				if (sFileName.substr(sFileName.rfind('.')) == ".nprc")
 					sErrorToken = "NumeRe-Prozedur";
 				else if (sFileName.substr(sFileName.rfind('.')) == ".nscr")
 					sErrorToken = "NumeRe-Script";
 				else if (sFileName.substr(sFileName.rfind('.')) == ".ndat")
 					sErrorToken = "NumeRe-Datenfile";
+
 				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sErrorToken);
 			}
 		}
@@ -1320,6 +1325,9 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 		// Avoid quotation marks
 		if (findParameter(sParams, "noquotes") || findParameter(sParams, "nq"))
 			bNoQuotes = true;
+
+        if (findParameter(sParams, "keepdim") || findParameter(sParams, "k"))
+            bKeepEmptyLines = true;
 
         // Get the file open mode
 		if (findParameter(sParams, "mode", '='))
@@ -1366,17 +1374,16 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 	{
 		if (!fileExists(sFileName))
 			ofstream fTemp(sFileName.c_str());
+
 		fFile.open(sFileName.c_str());
 	}
 
 	// Ensure that the file is read- and writable
 	if (fFile.fail())
-	{
 		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position, sFileName);
-	}
 
 	// Ensure that the expression has a length and is not only an empty quotation marks pair
-	if (!sExpression.length() || sExpression == "\"\"")
+	if ((!sExpression.length() || sExpression == "\"\"") && !bKeepEmptyLines)
 		throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, sCmd, SyntaxError::invalid_position);
 
     // Write the expression linewise
@@ -1392,7 +1399,7 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 			sArgument = sArgument.substr(1, sArgument.length() - 2);
 
         // Write only strings, which are not empty
-		if (!sArgument.length() || sArgument == "\"\"")
+		if ((!sArgument.length() || sArgument == "\"\"") && !bKeepEmptyLines)
 			continue;
 
         // Remove escaped characters
@@ -1438,6 +1445,8 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
 	string sParams = "";
 	ifstream fFile;
 
+	bool bKeepEmptyLines = false;
+
 	// Get the parameter list
 	if (sCmd.rfind('-') != string::npos && !isInQuotes(sCmd, sCmd.rfind('-')))
 	{
@@ -1455,6 +1464,10 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
 			sCommentEscapeSequence.replace(sCommentEscapeSequence.find("\\t"), 2, "\t");
 	}
 
+	// Determine, whether empty lines shall be kept
+	if (findParameter(sParams, "keepdim") || findParameter(sParams, "k"))
+        bKeepEmptyLines = true;
+
 	// Get the source file name from the command string or the parameter list
 	sFileName = getFilenameFromCommandString(sCmd, sParams, ".txt", _parser, _data, _option);
 
@@ -1467,10 +1480,9 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
 
 	// Open the file and ensure that it is readable
 	fFile.open(sFileName.c_str());
+
 	if (fFile.fail())
-	{
 		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sFileName);
-	}
 
 	// create a new vector for the file's contents
 	vector<string> vFileContents;
@@ -1482,21 +1494,34 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
 
 		// Omit empty lines
 		if (!sInput.length() || sInput == "\"\"" || sInput == "\"")
+        {
+            if (bKeepEmptyLines && !fFile.eof())
+                vFileContents.push_back("\"\"");
+
 			continue;
+        }
 
         // Remove comments from the read lines (only line comments are supported)
 		if (sCommentEscapeSequence.length() && sInput.find(sCommentEscapeSequence) != string::npos)
 		{
 			sInput.erase(sInput.find(sCommentEscapeSequence));
+
 			if (!sInput.length() || sInput == "\"\"" || sInput == "\"")
+            {
+                if (bKeepEmptyLines && !fFile.eof())
+                    vFileContents.push_back("\"\"");
+
 				continue;
+            }
 		}
 
 		// Add the missing quotation marks
 		if (sInput.front() != '"')
 			sInput = '"' + sInput;
+
 		if (sInput.back() == '\\')
 			sInput += ' ';
+
 		if (sInput.back() != '"')
 			sInput += '"';
 
@@ -1505,6 +1530,7 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
 		{
 			if (sInput[i] == '\\')
 				sInput.insert(i + 1, 1, ' ');
+
 			if (sInput[i] == '"' && sInput[i - 1] != '\\')
 				sInput.insert(i, 1, '\\');
 		}
