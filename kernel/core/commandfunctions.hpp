@@ -5150,6 +5150,22 @@ static CommandReturnValues cmd_list(string& sCmd)
 }
 
 
+static std::string getTargetTable(const std::string& sCmd)
+{
+    std::string sTargetTable;
+
+    if (findParameter(sCmd, "totable", '='))
+        sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "totable", '=')+7);
+    else if (findParameter(sCmd, "tocache", '='))
+        sTargetTable = getArgAtPos(sCmd, findParameter(sCmd, "tocache", '=')+7);
+
+    if (sTargetTable.find('(') != std::string::npos)
+        return sTargetTable.substr(0, sTargetTable.find('('));
+
+    return sTargetTable;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This static function implements the
 /// "load" command.
@@ -5247,7 +5263,7 @@ static CommandReturnValues cmd_load(string& sCmd)
             if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && !findParameter(sCmd, "all"))
             {
                 // Single file directly to cache
-                NumeRe::FileHeaderInfo info = _data.openFile(sArgument, true, nArgument);
+                NumeRe::FileHeaderInfo info = _data.openFile(sArgument, true, nArgument, getTargetTable(sCmd));
 
                 if (!_data.isEmpty(info.sTableName))
                 {
@@ -5273,7 +5289,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
 
                 for (size_t i = 0; i < vFilelist.size(); i++)
-                    _data.openFile(vFilelist[i], true, nArgument);
+                    vFilelist[i] = _data.openFile(vFilelist[i], true, nArgument, getTargetTable(sCmd)).sTableName;
 
                 if (!_data.isEmpty(vFilelist.front()))
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument));

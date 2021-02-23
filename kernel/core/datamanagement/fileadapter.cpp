@@ -174,10 +174,11 @@ namespace NumeRe
     /// \param _sFile std::string
     /// \param loadToCache bool
     /// \param _nHeadline int
+    /// \param sTargetTable const std::string&
     /// \return FileHeaderInfo
     ///
     /////////////////////////////////////////////////
-    FileHeaderInfo FileAdapter::openFile(std::string _sFile, bool loadToCache, int _nHeadline)
+    FileHeaderInfo FileAdapter::openFile(std::string _sFile, bool loadToCache, int _nHeadline, const std::string& sTargetTable)
     {
         FileHeaderInfo info;
 
@@ -249,7 +250,15 @@ namespace NumeRe
             // melt() member function is responsible
             // for freeing the passed memory.
             if (loadToCache)
-                melt(_mem, info.sTableName);
+            {
+                if (sTargetTable.length())
+                {
+                    melt(_mem, sTargetTable);
+                    info.sTableName = sTargetTable;
+                }
+                else
+                    melt(_mem, info.sTableName);
+            }
             else
                 melt(_mem, "data");
         }

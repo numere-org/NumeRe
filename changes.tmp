@@ -32,3 +32,4 @@ Applied	Window layouts are now installable and the package creator can detect th
 New	The documentation keyword '\return' may now be used to declare return values of procedures.
 Added	It's now possible to define a license for a package or a plugin, which has to be accepted during installation.
 Added	"read " and "write" are now capable of keeping empty lines, if the option "keepdim" is appended to them.
+Applied	The loading option "totable" will now accept a target table "totable=TARGET()" used for loading.

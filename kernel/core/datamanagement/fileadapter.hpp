@@ -53,7 +53,7 @@ namespace NumeRe
             FileAdapter();
             virtual ~FileAdapter() {}
 
-            FileHeaderInfo openFile(std::string _sFile, bool loadToCache = false, int _nHeadline = 0);
+            FileHeaderInfo openFile(std::string _sFile, bool loadToCache = false, int _nHeadline = 0, const std::string& sTargetTable = "");
             bool saveFile(const std::string& sTable, std::string _sFileName, unsigned short nPrecision = 7);
             std::string getDataFileName(const std::string& sTable) const;
             std::string getDataFileNameShort() const;
