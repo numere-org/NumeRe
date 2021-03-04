@@ -61,7 +61,7 @@ class NumeReDebugger
         int showEvent(const string& sTitle);
         void resetBP();
         void formatMessage();
-        string decodeType(string& sArgumentValue);
+        string decodeType(string& sArgumentValue, const std::string& sArgumentName = "");
 
     public:
         NumeReDebugger();

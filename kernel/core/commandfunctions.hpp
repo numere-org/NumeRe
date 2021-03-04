@@ -5150,6 +5150,13 @@ static CommandReturnValues cmd_list(string& sCmd)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Simple handler function for cmd_load.
+///
+/// \param sCmd const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
 static std::string getTargetTable(const std::string& sCmd)
 {
     std::string sTargetTable;

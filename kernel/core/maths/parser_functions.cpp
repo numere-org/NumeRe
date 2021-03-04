@@ -80,6 +80,7 @@ size_t findVariableInExpression(const string& sExpr, const string& sVarName)
         {
             return nMatch;
         }
+
         nMatch++;
     }
 

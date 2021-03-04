@@ -53,7 +53,8 @@ class ProcedureCommandLine
             FLAG_MASK = 0x4,
             FLAG_PRIVATE = 0x8,
             FLAG_TEMPLATE = 0x10,
-            FLAG_EVENT = 0x20
+            FLAG_EVENT = 0x20,
+            FLAG_MACRO = 0x40
         };
 
         enum ByteCodes

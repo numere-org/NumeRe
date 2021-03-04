@@ -6840,6 +6840,8 @@ void NumeReEditor::AddBreakpoint( int linenum )
         // Check the current character
         if (!isStyleType(STYLE_COMMENT_LINE, i)
             && !isStyleType(STYLE_COMMENT_BLOCK, i)
+            && !isStyleType(STYLE_COMMENT_SECTION_LINE, i)
+            && !isStyleType(STYLE_COMMENT_SECTION_BLOCK, i)
             && GetCharAt(i) != '\r'
             && GetCharAt(i) != '\n'
             && GetCharAt(i) != ' '

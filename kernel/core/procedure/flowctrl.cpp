@@ -1624,6 +1624,7 @@ void FlowCtrl::eval()
     // expanded form.
     try
     {
+        prepareLocalVarsAndReplace(sVars);
         checkParsingModeAndExpandDefinitions();
     }
     catch (...)
@@ -1664,7 +1665,7 @@ void FlowCtrl::eval()
     // current loop, this one is used. All others
     // are create locally and therefore get
     // special names
-    prepareLocalVarsAndReplace(sVars);
+    // prepareLocalVarsAndReplace(sVars);
 
     // Activate the loop mode, if it is not locked
     if (bUseLoopParsingMode && !bLockedPauseMode)
@@ -2960,7 +2961,6 @@ void FlowCtrl::fillJumpTableAndExpandRecursives()
             StripSpaces(vCmdArray[i].sCommand);
         }
     }
-
 }
 
 
@@ -3204,7 +3204,6 @@ void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
 
                 StripSpaces(vCmdArray[i].sCommand);
             }
-
         }
     }
 }

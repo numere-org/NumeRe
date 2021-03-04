@@ -980,30 +980,30 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
              */
             if (e.GetExpr().length() > 63 && nErrorPos > 31 && nErrorPos < e.GetExpr().length() - 32)
             {
-                printPreFmt("|   Position:  \"..." + e.GetExpr().substr(nErrorPos - 29, 57) + "...\"\n");
+                printPreFmt("|   Position:  '..." + e.GetExpr().substr(nErrorPos - 29, 57) + "...'\n");
                 printPreFmt(pointToError(32));
             }
             else if (nErrorPos < 32)
             {
-                string sErrorExpr = "|   Position:  \"";
+                string sErrorExpr = "|   Position:  '";
                 if (e.GetExpr().length() > 63)
-                    sErrorExpr += e.GetExpr().substr(0, 60) + "...\"";
+                    sErrorExpr += e.GetExpr().substr(0, 60) + "...'";
                 else
-                    sErrorExpr += e.GetExpr() + "\"";
+                    sErrorExpr += e.GetExpr() + "'";
                 printPreFmt(sErrorExpr + "\n");
                 printPreFmt(pointToError(nErrorPos + 1));
             }
             else if (nErrorPos > e.GetExpr().length() - 32)
             {
-                string sErrorExpr = "|   Position:  \"";
+                string sErrorExpr = "|   Position:  '";
                 if (e.GetExpr().length() > 63)
                 {
-                    printPreFmt(sErrorExpr + "..." + e.GetExpr().substr(e.GetExpr().length() - 60) + "\"\n");
+                    printPreFmt(sErrorExpr + "..." + e.GetExpr().substr(e.GetExpr().length() - 60) + "'\n");
                     printPreFmt(pointToError(65 - (e.GetExpr().length() - nErrorPos) - 2));
                 }
                 else
                 {
-                    printPreFmt(sErrorExpr + e.GetExpr() + "\"\n");
+                    printPreFmt(sErrorExpr + e.GetExpr() + "*\n");
                     printPreFmt(pointToError(nErrorPos));
                 }
             }
@@ -1113,30 +1113,30 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                              */
                             if (e.getExpr().length() > 63 && e.getPosition() > 31 && e.getPosition() < e.getExpr().length() - 32)
                             {
-                                printPreFmt("|   Position:  \"..." + e.getExpr().substr(e.getPosition() - 29, 57) + "...\"\n");
+                                printPreFmt("|   Position:  '..." + e.getExpr().substr(e.getPosition() - 29, 57) + "...'\n");
                                 printPreFmt(pointToError(32));
                             }
                             else if (e.getPosition() < 32)
                             {
-                                string sErrorExpr = "|   Position:  \"";
+                                string sErrorExpr = "|   Position:  '";
                                 if (e.getExpr().length() > 63)
-                                    sErrorExpr += e.getExpr().substr(0, 60) + "...\"";
+                                    sErrorExpr += e.getExpr().substr(0, 60) + "...'";
                                 else
-                                    sErrorExpr += e.getExpr() + "\"";
+                                    sErrorExpr += e.getExpr() + "'";
                                 printPreFmt(sErrorExpr + "\n");
                                 printPreFmt(pointToError(e.getPosition() + 1));
                             }
                             else if (e.getPosition() > e.getExpr().length() - 32)
                             {
-                                string sErrorExpr = "|   Position:  \"";
+                                string sErrorExpr = "|   Position:  '";
                                 if (e.getExpr().length() > 63)
                                 {
-                                    printPreFmt(sErrorExpr + "..." + e.getExpr().substr(e.getExpr().length() - 60) + "\"\n");
+                                    printPreFmt(sErrorExpr + "..." + e.getExpr().substr(e.getExpr().length() - 60) + "'\n");
                                     printPreFmt(pointToError(65 - (e.getExpr().length() - e.getPosition()) - 2));
                                 }
                                 else
                                 {
-                                    printPreFmt(sErrorExpr + e.getExpr() + "\"\n");
+                                    printPreFmt(sErrorExpr + e.getExpr() + "'\n");
                                     printPreFmt(pointToError(e.getPosition()));
                                 }
                             }
