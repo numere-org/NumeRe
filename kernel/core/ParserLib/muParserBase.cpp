@@ -649,6 +649,17 @@ namespace mu
                     singletons += ",";
 
                 singletons += args[n].to_string();
+
+                // Is it the last one, then evaluate
+                // the singleton directly
+                if (n+1 == args.size())
+                {
+                    SetExpr(singletons);
+                    v = Eval(nResults);
+                    vResults.insert(vResults.end(), v, v+nResults);
+                    break;
+                }
+
                 continue;
             }
             else if (singletons.length())
