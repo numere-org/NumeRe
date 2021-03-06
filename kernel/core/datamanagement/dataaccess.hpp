@@ -53,7 +53,7 @@ class DataAccessParser
 };
 
 
-
+size_t findAssignmentOperator(StringView sCmd);
 bool parser_CheckMultArgFunc(const std::string&, const std::string&);
 
 std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs = true);
