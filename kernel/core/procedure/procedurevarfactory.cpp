@@ -1424,7 +1424,7 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
                 continue;
             }
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, nArgumentBaseLength+2))
+            if (checkDelimiter(sProcedureCommandLine.substr(nPos-1, nArgumentBaseLength+2), true)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true)
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
