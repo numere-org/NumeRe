@@ -364,15 +364,17 @@ static int getItemId(const std::string& sCmd)
 {
     if (findParameter(sCmd, "item", '='))
     {
-        std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "item", '=')+4);
-        NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
-        return intCast(NumeReKernel::getInstance()->getParser().Eval());
+        //std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "item", '=')+4);
+        //NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
+        //return intCast(NumeReKernel::getInstance()->getParser().Eval());
+        return StrToInt(parseNumOpt(sCmd, findParameter(sCmd, "item", '=')+4));
     }
     else if (findParameter(sCmd, "id", '='))
     {
-        std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "id", '=')+2);
-        NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
-        return intCast(NumeReKernel::getInstance()->getParser().Eval());
+        //std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "id", '=')+2);
+        //NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
+        //return intCast(NumeReKernel::getInstance()->getParser().Eval());
+        return StrToInt(parseNumOpt(sCmd, findParameter(sCmd, "id", '=')+2));
     }
 
     return -1;
