@@ -2238,7 +2238,10 @@ static CommandReturnValues saveDataObject(string& sCmd)
         // Try to extract the file name, if it was passed
         if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(findParameter(sCmd, "file", '=')), sArgument))
         {
-            sArgument = _cache.ValidFileName(sArgument, ".ndat");
+            if (findCommand(sCmd).sString == "export")
+                sArgument = _cache.ValidFileName(sArgument, ".dat");
+            else
+                sArgument = _cache.ValidFileName(sArgument, ".ndat");
 
             if (_cache.saveFile(_access.getDataObject(), sArgument, nPrecision))
             {

@@ -392,7 +392,12 @@ static int getItemId(const std::string& sCmd)
 /////////////////////////////////////////////////
 static NumeRe::WindowInformation getWindow(const std::string& sExpr)
 {
-    NumeReKernel::getInstance()->getParser().SetExpr(sExpr);
+    std::string sCurExpr = sExpr;
+
+    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sCurExpr))
+        getDataElements(sCurExpr, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
+    NumeReKernel::getInstance()->getParser().SetExpr(sCurExpr);
     int windowID = intCast(NumeReKernel::getInstance()->getParser().Eval());
 
     return NumeReKernel::getInstance()->getWindowManager().getWindowInformation(windowID);
