@@ -168,9 +168,10 @@ string addControlSymbols(const string&);
 
 enum ArgExtraction
 {
-    ARGEXTRACT_NONE,
-    ARGEXTRACT_STRIPPED,
-    ARGEXTRACT_PARSED
+    ARGEXTRACT_NONE = 0x0,
+    ARGEXTRACT_STRIPPED = 0x1,
+    ARGEXTRACT_PARSED = 0x2,
+    ARGEXTRACT_ASINT = 0x4
 };
 
 string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction = ARGEXTRACT_STRIPPED);

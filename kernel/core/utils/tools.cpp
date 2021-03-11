@@ -1766,7 +1766,7 @@ static size_t isStringContinuation(const std::string& sCmd, size_t pos)
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void parseArg(std::string& sArg)
+static void parseArg(std::string& sArg, bool bAsInt)
 {
     NumeReKernel* instance = NumeReKernel::getInstance();
 
@@ -1803,7 +1803,10 @@ static void parseArg(std::string& sArg)
         if (sArg.length())
             sArg += ",";
 
-        sArg += toString(v[i], nPrec);
+        if (bAsInt)
+            sArg += toString(intCast(v[i]));
+        else
+            sArg += toString(v[i], nPrec);
     }
 }
 
@@ -1867,7 +1870,7 @@ string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction)
 
     // Parse the argument, if necessary
     if (extraction & ARGEXTRACT_PARSED)
-        parseArg(sArgument);
+        parseArg(sArgument, (extraction & ARGEXTRACT_ASINT));
 
     // Strip the argument, if necessary
     if (extraction & ARGEXTRACT_STRIPPED)

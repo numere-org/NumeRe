@@ -363,19 +363,9 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
 static int getItemId(const std::string& sCmd)
 {
     if (findParameter(sCmd, "item", '='))
-    {
-        //std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "item", '=')+4);
-        //NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
-        //return intCast(NumeReKernel::getInstance()->getParser().Eval());
-        return StrToInt(parseNumOpt(sCmd, findParameter(sCmd, "item", '=')+4));
-    }
+        return StrToInt(getArgAtPos(sCmd, findParameter(sCmd, "item", '=')+4, ARGEXTRACT_PARSED | ARGEXTRACT_ASINT | ARGEXTRACT_STRIPPED));
     else if (findParameter(sCmd, "id", '='))
-    {
-        //std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "id", '=')+2);
-        //NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
-        //return intCast(NumeReKernel::getInstance()->getParser().Eval());
-        return StrToInt(parseNumOpt(sCmd, findParameter(sCmd, "id", '=')+2));
-    }
+        return StrToInt(getArgAtPos(sCmd, findParameter(sCmd, "id", '=')+2, ARGEXTRACT_PARSED | ARGEXTRACT_ASINT | ARGEXTRACT_STRIPPED));
 
     return -1;
 }
