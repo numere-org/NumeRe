@@ -1792,7 +1792,7 @@ namespace NumeRe
 
                             continue;
                         }
-                        else if (sVectorTemp.find('"') == string::npos)
+                        else if (sVectorTemp.find('"') == string::npos && !containsStringVectorVars(sVectorTemp))
                             continue;
                     }
 
@@ -1898,6 +1898,10 @@ namespace NumeRe
         // Clear the internal string vector variables, because they're
         // all evaluated and processed now
         removeStringVectorVars();
+
+        // Check the results, if the assertion handler is active
+        // and the results are not logical only
+        _assertionHandler.checkAssertion(StrRes);
 
         // The result of the string parser core has to be parsed, so that
         // it is readable in the terminal. This is done here in this

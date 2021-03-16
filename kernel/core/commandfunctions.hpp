@@ -3895,7 +3895,7 @@ static CommandReturnValues cmd_stfa(string& sCmd)
 
     if (!shortTimeFourierAnalysis(sCmd, sArgument, _parser, _data, _functions, _option))
         doc_Help("stfa", _option);
-    else
+    else if (_option.systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_STFA_SUCCESS", sArgument));
 
     return COMMAND_PROCESSED;
@@ -5277,7 +5277,9 @@ static CommandReturnValues cmd_load(string& sCmd)
 
                 if (!_data.isEmpty(info.sTableName))
                 {
-                    NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
+                    if (_option.systemPrints())
+                        NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
+
                     sCmd = sExpr;
 
                     _parser.SetVectorVar("_~load[~_~]", {1, info.nRows, _data.getCols(info.sTableName)-info.nCols+1, _data.getCols(info.sTableName)});
@@ -5301,7 +5303,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                 for (size_t i = 0; i < vFilelist.size(); i++)
                     vFilelist[i] = _data.openFile(vFilelist[i], true, nArgument, getTargetTable(sCmd)).sTableName;
 
-                if (!_data.isEmpty(vFilelist.front()))
+                if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints())
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument));
 
                 // Returning of indices not possible due to multiple
@@ -5332,7 +5334,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                         _data.openFile(vFilelist[i], false, nArgument);
                     }
 
-                    if (!_data.isEmpty("data"))
+                    if (!_data.isEmpty("data") && _option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
                     _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", false), 1, _data.getCols("data", false)});

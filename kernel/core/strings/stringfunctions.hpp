@@ -1756,11 +1756,11 @@ static string strfnc_min(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sMultiArg.size())
         return "\"\"";
-    string sMin = funcArgs.sMultiArg[0];
+    string sMin = removeMaskedStrings(funcArgs.sMultiArg[0]);
     for (size_t i = 1; i < funcArgs.sMultiArg.size(); i++)
     {
-        if (sMin > funcArgs.sMultiArg[i])
-            sMin = funcArgs.sMultiArg[i];
+        if (sMin > removeMaskedStrings(funcArgs.sMultiArg[i]))
+            sMin = removeMaskedStrings(funcArgs.sMultiArg[i]);
     }
     return "\"" + sMin + "\"";
 }
@@ -1778,11 +1778,11 @@ static string strfnc_max(StringFuncArgs& funcArgs)
 {
     if (!funcArgs.sMultiArg.size())
         return "\"\"";
-    string sMax = funcArgs.sMultiArg[0];
+    string sMax = removeMaskedStrings(funcArgs.sMultiArg[0]);
     for (size_t i = 1; i < funcArgs.sMultiArg.size(); i++)
     {
-        if (sMax < funcArgs.sMultiArg[i])
-            sMax = funcArgs.sMultiArg[i];
+        if (sMax < removeMaskedStrings(funcArgs.sMultiArg[i]))
+            sMax = removeMaskedStrings(funcArgs.sMultiArg[i]);
     }
     return "\"" + sMax + "\"";
 }
@@ -1802,7 +1802,7 @@ static string strfnc_sum(StringFuncArgs& funcArgs)
     {
         string sRet = "";
         for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
-            sRet += funcArgs.sMultiArg[i];
+            sRet += removeMaskedStrings(funcArgs.sMultiArg[i]);
         return "\"" + sRet + "\"";
     }
     else if (funcArgs.nMultiArg.size())

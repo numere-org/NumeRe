@@ -566,7 +566,7 @@ void windowCommand(std::string& sCmd)
         {
             if (sItemType == "prop")
             {
-                sCmd = winInfo.window->getProperties();
+                sCmd = "{" + winInfo.window->getProperties() + "}";
             }
             else
             {

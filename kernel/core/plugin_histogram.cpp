@@ -809,7 +809,8 @@ static void createPlotForHist1D(HistogramParameters& _histParams, mglData& _mAxi
         _graphHelper->setAspect(dAspect);
         NumeReKernel::getInstance()->getWindowManager().createWindow(_graphHelper);
         _histGraph = nullptr;
-        NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
+        if (_option.systemPrints())
+            NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
     }
     else
     {
@@ -1499,7 +1500,9 @@ static void createPlotsForHist2D(const std::string& sCmd, HistogramParameters& _
         _graphHelper->setAspect(dAspect);
         NumeReKernel::getInstance()->getWindowManager().createWindow(_graphHelper);
         _histGraph = nullptr;
-        NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
+
+        if (_option.systemPrints())
+            NumeReKernel::printPreFmt(_lang.get("COMMON_SUCCESS") + ".\n");
     }
     else
     {
