@@ -229,6 +229,7 @@ class NumeReKernel
         static string formatResultOutput(int nNum, value_type* v);
         static string formatResultOutput(const vector<string>& vStringResults);
         static void issueWarning(string sWarningMessage);
+        static void failMessage(string sFailMessage);
         static int numberOfNumbersPerLine();
         static void progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
         static void getline(string& sLine);

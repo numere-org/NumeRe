@@ -104,7 +104,7 @@ void NumeReDebugger::showError(exception_ptr e_ptr)
     }
     catch (...)
     {
-        return;
+        return ;
     }
 }
 
@@ -127,7 +127,7 @@ void NumeReDebugger::showError(const string& sTitle)
 
     bExceptionHandled = true;
     showEvent(sTitle);
-    reset();
+    resetBP();
 }
 
 

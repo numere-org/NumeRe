@@ -198,6 +198,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
     // Matrixmultiplikationen / Transpositionen / Invertierungen?
     // -> Submatrixoperationen ausfuehren
     Matrix _mResult = parser_subMatrixOperations(sCmd, _parser, _data, _functions, _option);
+    _assertionHandler.checkAssertion(_mResult);
 
     // Target in Zielmatrix speichern
     if (!isCluster)

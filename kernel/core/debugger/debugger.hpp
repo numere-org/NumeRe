@@ -72,6 +72,11 @@ class NumeReDebugger
                 bExceptionHandled = false;
                 reset();
             }
+        inline void finalizeTest()
+            {
+                bExceptionHandled = false;
+                resetBP();
+            }
         inline bool validDebuggingInformations() const
             {
                 return bAlreadyThrown;
@@ -83,6 +88,10 @@ class NumeReDebugger
         inline string getErrorModule() const
             {
                 return sErraticModule;
+            }
+        inline string getErrorMessage() const
+            {
+                return sErrorMessage;
             }
         inline size_t getStackSize() const
             {

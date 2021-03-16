@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include <string>
+#include <vector>
 #include "language.hpp"
 
 #ifndef ERROR_HPP
@@ -24,6 +25,10 @@
 
 using namespace std;
 
+/////////////////////////////////////////////////
+/// \brief Common exception class for all
+/// exceptions thrown in NumeRe.
+/////////////////////////////////////////////////
 class SyntaxError
 {
     private:
@@ -42,6 +47,7 @@ class SyntaxError
             CACHE_CANNOT_BE_RENAMED,
             CACHE_DOESNT_EXIST,
             CLUSTER_DOESNT_EXIST,
+            ASSERTION_ERROR,
             /// INSERT HERE
             CANNOT_BE_A_FITTING_PARAM=100,
             CANNOT_CALL_SCRIPT_RECURSIVELY,
@@ -211,10 +217,15 @@ class SyntaxError
             /// INSERT HERE
             ZEROES_VAR_NOT_FOUND=4200,
         };
+
         ErrorCode errorcode;
         static size_t invalid_position;
         static int invalid_index;
 
+        /////////////////////////////////////////////////
+        /// \brief Default constructor to create an
+        /// invalid exception.
+        /////////////////////////////////////////////////
         SyntaxError() : nErrorPosition(invalid_position), errorcode(EMPTY_ERROR_MESSAGE)
 			{
                 nErrorIndices[0] = -1;
@@ -222,12 +233,34 @@ class SyntaxError
                 nErrorIndices[2] = -1;
                 nErrorIndices[3] = -1;
             }
+
+        /////////////////////////////////////////////////
+        /// \brief Creates an exception based from an
+        /// expression and position.
+        ///
+        /// \param _err ErrorCode
+        /// \param sExpr const string&
+        /// \param n_pos size_t
+        ///
+        /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos) : SyntaxError()
             {
                 sFailingExpression = sExpr;
                 nErrorPosition = n_pos;
                 errorcode = _err;
             }
+
+        /////////////////////////////////////////////////
+        /// \brief Creates an exception based from an
+        /// expression and position and provides the
+        /// possibility to define an additional token.
+        ///
+        /// \param _err ErrorCode
+        /// \param sExpr const string&
+        /// \param n_pos size_t
+        /// \param sToken const string&
+        ///
+        /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos, const string& sToken) : SyntaxError()
             {
                 sFailingExpression = sExpr;
@@ -235,6 +268,21 @@ class SyntaxError
                 nErrorPosition = n_pos;
                 errorcode = _err;
             }
+
+        /////////////////////////////////////////////////
+        /// \brief Creates an exception based from an
+        /// expression and position and provides the
+        /// possibility to set additional error indices.
+        ///
+        /// \param _err ErrorCode
+        /// \param sExpr const string&
+        /// \param n_pos size_t
+        /// \param nInd1 int
+        /// \param nInd2 int
+        /// \param nInd3 int
+        /// \param nInd4 int
+        ///
+        /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), nErrorPosition(n_pos), errorcode(_err)
             {
                 nErrorIndices[0] = nInd1;
@@ -242,6 +290,23 @@ class SyntaxError
                 nErrorIndices[2] = nInd3;
                 nErrorIndices[3] = nInd4;
             }
+
+        /////////////////////////////////////////////////
+        /// \brief Creates an exception based from an
+        /// expression and position and provides the
+        /// possibility to set an additional token and
+        /// the error indices.
+        ///
+        /// \param _err ErrorCode
+        /// \param sExpr const string&
+        /// \param n_pos size_t
+        /// \param sToken const string&
+        /// \param nInd1 int
+        /// \param nInd2 int
+        /// \param nInd3 int
+        /// \param nInd4 int
+        ///
+        /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const string& sExpr, size_t n_pos, const string& sToken, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), sErrorToken(sToken), nErrorPosition(n_pos), errorcode(_err)
             {
                 nErrorIndices[0] = nInd1;
@@ -250,12 +315,37 @@ class SyntaxError
                 nErrorIndices[3] = nInd4;
             }
 
+        /////////////////////////////////////////////////
+        /// \brief Creates an exception based from an
+        /// expression and an error token, which is used
+        /// to locate the position of the error in the
+        /// expression.
+        ///
+        /// \param _err ErrorCode
+        /// \param sExpr const string&
+        /// \param sErrTok const string&
+        ///
+        /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok) : SyntaxError()
             {
                 sFailingExpression = sExpr;
                 errorcode = _err;
                 nErrorPosition = sFailingExpression.find(sErrTok);
             }
+
+        /////////////////////////////////////////////////
+        /// \brief Creates an exception based from an
+        /// expression and an error token, which is used
+        /// to locate the position of the error in the
+        /// expression. Additionally, one can add a token
+        /// with further information.
+        ///
+        /// \param _err ErrorCode
+        /// \param sExpr const string&
+        /// \param sErrTok const string&
+        /// \param sToken const string&
+        ///
+        /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok, const string& sToken) : SyntaxError()
             {
                 sFailingExpression = sExpr;
@@ -263,6 +353,23 @@ class SyntaxError
                 errorcode = _err;
                 nErrorPosition = sFailingExpression.find(sErrTok);
             }
+
+        /////////////////////////////////////////////////
+        /// \brief Creates an exception based from an
+        /// expression and an error token, which is used
+        /// to locate the position of the error in the
+        /// expression. Additionally, one can add a set
+        /// of error indices.
+        ///
+        /// \param _err ErrorCode
+        /// \param sExpr const string&
+        /// \param sErrTok const string&
+        /// \param nInd1 int
+        /// \param nInd2 int
+        /// \param nInd3 int
+        /// \param nInd4 int
+        ///
+        /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), errorcode(_err)
             {
                 nErrorPosition = sFailingExpression.find(sErrTok);
@@ -271,6 +378,25 @@ class SyntaxError
                 nErrorIndices[2] = nInd3;
                 nErrorIndices[3] = nInd4;
             }
+
+        /////////////////////////////////////////////////
+        /// \brief Creates an exception based from an
+        /// expression and an error token, which is used
+        /// to locate the position of the error in the
+        /// expression. Additionally, one can add a token
+        /// and a set of error indices bearing more
+        /// information about the issue.
+        ///
+        /// \param _err ErrorCode
+        /// \param sExpr const string&
+        /// \param sErrTok const string&
+        /// \param sToken const string&
+        /// \param nInd1 int
+        /// \param nInd2 int
+        /// \param nInd3 int
+        /// \param nInd4 int
+        ///
+        /////////////////////////////////////////////////
         SyntaxError(ErrorCode _err, const string& sExpr, const string& sErrTok, const string& sToken, int nInd1, int nInd2 = invalid_index, int nInd3 = invalid_index, int nInd4 = invalid_index) : sFailingExpression(sExpr), sErrorToken(sToken), errorcode(_err)
             {
                 nErrorPosition = sFailingExpression.find(sErrTok);
@@ -280,18 +406,77 @@ class SyntaxError
                 nErrorIndices[3] = nInd4;
             }
 
+        /////////////////////////////////////////////////
+        /// \brief Returns the erroneous expression.
+        ///
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         string getExpr() const
             {return sFailingExpression;}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the error token containing
+        /// additional information about the error.
+        ///
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
         string getToken() const
             {return sErrorToken;}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the position of the error in
+        /// the erroneous expression.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
         size_t getPosition() const
             {return nErrorPosition;}
+
+        /////////////////////////////////////////////////
+        /// \brief Returns a pointer to the internal
+        /// array of 4 error indices.
+        ///
+        /// \return const int*
+        ///
+        /////////////////////////////////////////////////
         const int* getIndices() const
             {return nErrorIndices;}
 
 };
 
 
-#endif // ERROR_HPP
+// Forward declaration for the Assertion class
+struct StringResult;
+
+/////////////////////////////////////////////////
+/// \brief This class handles assertions and
+/// throws the corresponding exception, if the
+/// assertion fails. It is currently used as
+/// global singleton, but is not restricted to
+/// this pattern.
+/////////////////////////////////////////////////
+class Assertion
+{
+    private:
+        std::string sAssertedExpression;
+        bool assertionMode;
+        void assertionFail();
+
+    public:
+        Assertion() : sAssertedExpression(), assertionMode(false) {}
+        void reset();
+        void enable(const std::string& sExpr);
+        void checkAssertion(double* v, int nNum);
+        void checkAssertion(const std::vector<std::vector<double>>& _mMatrix);
+        void checkAssertion(const StringResult& strRes);
+};
+
 
 extern Language _lang;
+extern Assertion _assertionHandler;
+
+#endif // ERROR_HPP
+

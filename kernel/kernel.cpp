@@ -667,6 +667,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     {
         bSupressAnswer = false;
         sCache.clear();
+        _assertionHandler.reset();
 
         // Reset the parser variable map pointer
         if (_parser.mVarMapPntr)
@@ -678,6 +679,14 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             // Handle command line sources and validate the input
             if (!handleCommandLineSource(sLine, sCmdCache, sKeep))
                 continue;
+
+            // Search for the "assert" command decoration
+            if (findCommand(sLine, "assert").sString == "assert" && !_procedure.getLoop())
+            {
+                _assertionHandler.enable(sLine);
+                sLine.erase(findCommand(sLine, "assert").nPos, 6);
+                StripSpaces(sLine);
+            }
 
             // Get the current command
             sCurrentCommand = findCommand(sLine).sString;
@@ -935,6 +944,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
             // --> Jetzt weiss der Parser, wie viele Ergebnisse er berechnen muss <--
             v = _parser.Eval(nNum);
+            _assertionHandler.checkAssertion(v, nNum);
 
             // Create the answer of the calculation and print it
             // to the command line, if not suppressed
@@ -1003,7 +1013,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                 }
                 else
                 {
-                    printPreFmt(sErrorExpr + e.GetExpr() + "*\n");
+                    printPreFmt(sErrorExpr + e.GetExpr() + "'\n");
                     printPreFmt(pointToError(nErrorPos));
                 }
             }
@@ -2667,6 +2677,38 @@ void NumeReKernel::issueWarning(string sWarningMessage)
         replaceAll(sWarningMessage, "\n", "\n|!> ");
 
         m_parent->m_sAnswer += "\r|!> " + _lang.get("COMMON_WARNING") + ": " + sWarningMessage + "\n";
+
+        if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
+            m_parent->m_KernelStatus = NumeReKernel::NUMERE_ISSUE_WARNING;
+
+    }
+
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(10*KERNEL_PRINT_SLEEP);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function may be used to
+/// print a test failure message in the terminal.
+///
+/// \param sFailMessage string
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::failMessage(string sFailMessage)
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+
+        // Insert warning symbols, if linebreaks are contained in this message
+        replaceAll(sFailMessage, "\n", "\n|!> ");
+        replaceAll(sFailMessage, "$", " ");
+
+        m_parent->m_sAnswer += "\r|!> " + sFailMessage + "\n";
 
         if (m_parent->m_KernelStatus < NumeReKernel::NUMERE_STATUSBAR_UPDATE || m_parent->m_KernelStatus == NumeReKernel::NUMERE_ANSWER_READ)
             m_parent->m_KernelStatus = NumeReKernel::NUMERE_ISSUE_WARNING;

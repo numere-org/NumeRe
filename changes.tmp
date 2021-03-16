@@ -35,3 +35,5 @@ Added	"read " and "write" are now capable of keeping empty lines, if the option 
 Applied	The loading option "totable" will now accept a target table "totable=TARGET()" used for loading.
 Cleaned	Procedure arguments are now real variables. If one wants to use referencing logics, he or she has to use an additional ampersand in the arguments declaration to mark it as such.
 Fixed	Resolved an issue, where clusters used in a comparison like 'c{} == ""' were overwritten in the process with the result of the first comparison.
+New	The command "assert" can be used to check the trueness of expressions comfortably. It is intended for usage as part of software tests.
+Added	The procedure flag "test" marks the procedure as a software test. Errors are catched in this procedure and displayed as warnings instead; the code execution is continued afterwards. However, severe internal errors won't be catched.

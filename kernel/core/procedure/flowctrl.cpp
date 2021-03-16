@@ -294,8 +294,8 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
                 }
 
                 NumeReKernel::getInstance()->getDebugger().showError(current_exception());
-
-                throw;
+                nCalcType[__j] = CALCTYPE_NONE;
+                catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
             }
         }
 
@@ -479,7 +479,8 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
                 }
 
                 NumeReKernel::getInstance()->getDebugger().showError(current_exception());
-                throw;
+                nCalcType[__j] = CALCTYPE_NONE;
+                catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
             }
         }
 
@@ -635,7 +636,8 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
                     }
 
                     NumeReKernel::getInstance()->getDebugger().showError(current_exception());
-                    throw;
+                    nCalcType[__i] = CALCTYPE_NONE;
+                    catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
                 }
             }
 
@@ -746,7 +748,8 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
             }
 
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
-            throw;
+            nCalcType[__i] = CALCTYPE_NONE;
+            catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
         }
     }
 
@@ -896,7 +899,8 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
             }
 
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
-            throw;
+            nCalcType[__i] = CALCTYPE_NONE;
+            catchExceptionForTest(current_exception(), NumeReKernel::bSupressAnswer, getCurrentLineNumber());
         }
     }
 
@@ -1917,9 +1921,24 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     bool bCompiling = false;
     bool bWriteToCache = false;
     bool bWriteToCluster = false;
+    _assertionHandler.reset();
 
     // Get the current bytecode for this command
     int nCurrentCalcType = nCalcType[nthCmd];
+
+    // Eval the assertion command
+    if (nCurrentCalcType & CALCTYPE_ASSERT || !nCurrentCalcType)
+    {
+        if (findCommand(sLine, "assert").sString == "assert")
+        {
+            if (!nCurrentCalcType)
+                nCalcType[nthCmd] |= CALCTYPE_ASSERT;
+
+            _assertionHandler.enable(sLine);
+            sLine.erase(findCommand(sLine, "assert").nPos, 6);
+            StripSpaces(sLine);
+        }
+    }
 
     // Eval the debugger breakpoint first
     if (nCurrentCalcType & CALCTYPE_DEBUGBREAKPOINT || nDebuggerCode == NumeReKernel::DEBUGGER_STEP || !nCurrentCalcType)
@@ -2074,6 +2093,8 @@ int FlowCtrl::calc(string sLine, int nthCmd)
                 nCalcType[nthCmd] |= CALCTYPE_NUMERICAL;
 
             v = _parserRef->Eval(nNum);
+            _assertionHandler.checkAssertion(v, nNum);
+
             vAns = v[0];
             NumeReKernel::getInstance()->getAns().clear();
             NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
@@ -2557,6 +2578,8 @@ int FlowCtrl::calc(string sLine, int nthCmd)
 
     // Calculate the result
     v = _parserRef->Eval(nNum);
+    _assertionHandler.checkAssertion(v, nNum);
+
     vAns = v[0];
     NumeReKernel::getInstance()->getAns().clear();
     NumeReKernel::getInstance()->getAns().setDoubleArray(nNum, v);
@@ -3328,5 +3351,20 @@ int FlowCtrl::getErrorInformationForDebugger()
 vector<string> FlowCtrl::expandInlineProcedures(string& sLine)
 {
     return vector<string>();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Dummy implementation.
+///
+/// \param e_ptr exception_ptr
+/// \param bSupressAnswer_back bool
+/// \param nLine int
+/// \return int
+///
+/////////////////////////////////////////////////
+int FlowCtrl::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine)
+{
+    return 0;
 }
 

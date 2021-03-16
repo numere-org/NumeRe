@@ -68,25 +68,26 @@ class FlowCtrl
     protected:
         enum CalculationType
         {
-            CALCTYPE_NONE = 0,
-            CALCTYPE_COMMAND = 1,
-            CALCTYPE_NUMERICAL = 2,
-            CALCTYPE_STRING = 4,
-            CALCTYPE_DATAACCESS = 8,
-            CALCTYPE_PROGRESS = 16,
-            CALCTYPE_COMPOSE = 32,
-            CALCTYPE_DEFINITION = 64,
-            CALCTYPE_RETURNCOMMAND = 128,
-            CALCTYPE_THROWCOMMAND = 256,
-            CALCTYPE_DEBUGBREAKPOINT = 512,
-            CALCTYPE_EXPLICIT = 1024,
-            CALCTYPE_TOCOMMAND = 2048,
-            CALCTYPE_PROCEDURECMDINTERFACE = 4096,
-            CALCTYPE_CONTINUECMD = 8192,
-            CALCTYPE_BREAKCMD = 16384,
-            CALCTYPE_PROMPT = 32768,
-            CALCTYPE_RECURSIVEEXPRESSION = 65536,
-            CALCTYPE_SUPPRESSANSWER = 131072
+            CALCTYPE_NONE = 0x0,
+            CALCTYPE_COMMAND = 0x1,
+            CALCTYPE_NUMERICAL = 0x2,
+            CALCTYPE_STRING = 0x4,
+            CALCTYPE_DATAACCESS = 0x8,
+            CALCTYPE_PROGRESS = 0x10,
+            CALCTYPE_COMPOSE = 0x20,
+            CALCTYPE_DEFINITION = 0x40,
+            CALCTYPE_RETURNCOMMAND = 0x80,
+            CALCTYPE_THROWCOMMAND = 0x100,
+            CALCTYPE_DEBUGBREAKPOINT = 0x200,
+            CALCTYPE_EXPLICIT = 0x400,
+            CALCTYPE_TOCOMMAND = 0x800,
+            CALCTYPE_PROCEDURECMDINTERFACE = 0x1000,
+            CALCTYPE_CONTINUECMD = 0x2000,
+            CALCTYPE_BREAKCMD = 0x4000,
+            CALCTYPE_PROMPT = 0x8000,
+            CALCTYPE_RECURSIVEEXPRESSION = 0x10000,
+            CALCTYPE_SUPPRESSANSWER = 0x20000,
+            CALCTYPE_ASSERT = 0x40000
         };
         vector<FlowCtrlCommand> vCmdArray;
         value_type** vVarArray;
@@ -144,6 +145,7 @@ class FlowCtrl
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
         virtual int getErrorInformationForDebugger();
         virtual vector<string> expandInlineProcedures(string& sLine);
+        virtual int catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine);
 
     public:
         FlowCtrl();

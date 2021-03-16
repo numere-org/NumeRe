@@ -135,6 +135,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     int nNum = 0;
     int nCurrentByteCode = nByteCode;
     value_type* v = nullptr;
+    _assertionHandler.reset();
 
     // Do not clear the vector variables, if we are currently part of a
     // loop, because the loop uses the cached vector variables for
@@ -156,6 +157,22 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     {
         thisReturnVal.vNumVal.push_back(NAN);
         return thisReturnVal;
+    }
+
+    // Check for the "assert" command
+    if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
+        || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_ASSERT
+            && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
+    {
+        if (findCommand(sLine, "assert").sString == "assert")
+        {
+            _assertionHandler.enable(sLine);
+            sLine.erase(findCommand(sLine, "assert").nPos, 6);
+            StripSpaces(sLine);
+
+            if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
+                nByteCode |= ProcedureCommandLine::BYTECODE_ASSERT;
+        }
     }
 
     // Handle the "to_cmd()" function, which is quite slow
@@ -455,6 +472,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         _parser.SetExpr(sLine);
 
     v = _parser.Eval(nNum);
+    _assertionHandler.checkAssertion(v, nNum);
 
     // Copy the return values
     if (nNum > 1)
@@ -1081,8 +1099,14 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                 _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
                 _debugger.showError(current_exception());
 
-                resetProcedure(_parser, bSupressAnswer_back);
-                throw;
+                nCurrentByteCode = 0;
+                catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+
+                // If the error is converted, we have to skip
+                // the remaining code, otherwise the procedure
+                // is called again in ProcCalc(). If it's not
+                // converted, this line won't be reached.
+                continue;
             }
         }
 
@@ -1172,8 +1196,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                     _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
                     _debugger.showError(current_exception());
 
-                    resetProcedure(_parser, bSupressAnswer_back);
-                    throw;
+                    nCurrentByteCode = 0;
+                    catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
                 }
             }
         }
@@ -1195,8 +1219,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
             _debugger.showError(current_exception());
 
-            resetProcedure(_parser, bSupressAnswer_back);
-            throw;
+            nCurrentByteCode = 0;
+            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
         }
 
         sProcCommandLine.clear();
@@ -1219,9 +1243,6 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             throw;
         }
     }
-
-    // Remove the current procedure from the call stack
-    NumeReKernel::getInstance()->getDebugger().popStackItem();
 
     if (nFlags & ProcedureCommandLine::FLAG_MASK)
     {
@@ -2384,6 +2405,80 @@ int Procedure::getErrorInformationForDebugger()
 
 
 /////////////////////////////////////////////////
+/// \brief This virtual member function is
+/// inserted in some automatically catchable
+/// locations to convert an error into a warning
+/// to avoid that the calculation is aborted.
+/// This will only get active, if the
+/// corresponding procedure is flagged as "test".
+///
+/// \param e_ptr exception_ptr
+/// \param bSupressAnswer_back bool
+/// \param nLine int
+/// \return int
+///
+/////////////////////////////////////////////////
+int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine)
+{
+    // Assure that the procedure is flagges as "test"
+    if (nFlags & ProcedureCommandLine::FLAG_TEST)
+    {
+        try
+        {
+            // Rethrow to determine the exception type
+            rethrow_exception(e_ptr);
+        }
+        catch (mu::Parser::exception_type& e)
+        {
+            // Catch and convert parser errors
+            NumeReKernel::getInstance()->getDebugger().finalizeTest();
+            NumeReKernel::failMessage("@" + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.GetExpr() + "'");
+        }
+        catch (SyntaxError& e)
+        {
+            // Catch and convert syntax errors with the exception
+            // of a user abort request
+            if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
+            {
+                // Rethrow the abort request
+                resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+                throw;
+            }
+            else if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
+            {
+                // Display custom errors with their message
+                NumeReKernel::getInstance()->getDebugger().finalizeTest();
+                NumeReKernel::failMessage("@" + toString(nLine+1) + " | ERROR CAUGHT: " + e.getToken());
+            }
+            else
+            {
+                // Mark default errors only with the failing expression
+                NumeReKernel::getInstance()->getDebugger().finalizeTest();
+                NumeReKernel::failMessage("@" + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.getExpr() + "'");
+            }
+        }
+        catch (...)
+        {
+            // All other exceptions are not catchable, because they refer
+            // to internal issues, for which it might not possible to
+            // handle them here
+            resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+            throw;
+        }
+    }
+    else
+    {
+        // If not a test, then simply reset the current procedure
+        // and rethrow the error
+        resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+        rethrow_exception(e_ptr);
+    }
+
+    return 0;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function will return the
 /// current line number depending on whether a
 /// flow control statement is evaluated or not.
@@ -2476,6 +2571,9 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
 /////////////////////////////////////////////////
 void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 {
+    // Remove the current procedure from the call stack
+    NumeReKernel::getInstance()->getDebugger().popStackItem();
+
     sCallingNameSpace = "main";
     sNameSpace.clear();
     sThisNameSpace.clear();
