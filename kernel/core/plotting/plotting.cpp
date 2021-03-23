@@ -4009,16 +4009,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
         bool openEnd = _idx.col.isOpenEnd();
 
         // fill the open end indices
-        if (_idx.row.isOpenEnd())
-        {
-            if (!_accessParser.isCluster())
-                _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
-            else
-                _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
-        }
-
-        if (!_accessParser.isCluster() && _idx.col.isOpenEnd())
-            _idx.col.setRange(0, _data.getCols(sDataTable, false)-1);
+        _accessParser.evalIndices();
 
         if (!_accessParser.isCluster())
         {
@@ -4188,8 +4179,11 @@ void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, const st
 
         long long int nDataCols = _data.getCols(_accessParser.getDataObject());
 
+        size_t nNum = 0;
+
         // Needed for data grids
-        size_t nNum = _data.num(_accessParser.getDataObject(), _idx.row, VectorIndex(_idx.col.front()+1));
+        if (!_accessParser.isCluster())
+            nNum = _data.num(_accessParser.getDataObject(), _idx.row, VectorIndex(_idx.col.front()+1));
 
         // Fill the mglData objects using the single indices
         // and the referenced data object
