@@ -608,10 +608,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalVars[i][0] != sLocalVars[i][1])
-        {
-            while (sErraticCommand.find(sLocalVars[i][1]) != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalVars[i][1]), sLocalVars[i][1].length(), sLocalVars[i][0]);
-        }
+            replaceAll(sErraticCommand, sLocalVars[i][1].c_str(), sLocalVars[i][0].c_str());
 
         mLocalVars[sLocalVars[i][0] + "\t" + sLocalVars[i][1]] = dLocalVars[i];
     }
@@ -622,10 +619,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalStrings[i][0] != sLocalStrings[i][1])
-        {
-            while (sErraticCommand.find(sLocalStrings[i][1]) != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalStrings[i][1]), sLocalStrings[i][1].length(), sLocalStrings[i][0]);
-        }
+            replaceAll(sErraticCommand, sLocalStrings[i][1].c_str(), sLocalStrings[i][0].c_str());
 
         mLocalStrings[sLocalStrings[i][0] + "\t" + sLocalStrings[i][1]] = replaceControlCharacters(instance->getStringParser().getStringVars().at(sLocalStrings[i][1]));
     }
@@ -636,10 +630,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalTables[i][0] != sLocalTables[i][1])
-        {
-            while (sErraticCommand.find(sLocalTables[i][1] + "(") != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalTables[i][1] + "("), sLocalTables[i][1].length(), sLocalTables[i][0]);
-        }
+            replaceAll(sErraticCommand, (sLocalTables[i][1] + "(").c_str(), sLocalTables[i][0].c_str());
 
         string sTableData;
 
@@ -665,10 +656,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalClusters[i][0] != sLocalClusters[i][1])
-        {
-            while (sErraticCommand.find(sLocalClusters[i][1] + "{") != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalClusters[i][1] + "{"), sLocalClusters[i][1].length(), sLocalClusters[i][0]);
-        }
+            replaceAll(sErraticCommand, (sLocalClusters[i][1] + "{").c_str(), sLocalClusters[i][0].c_str());
 
         string sTableData;
 
@@ -690,10 +678,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         {
             // Replace the occurences
             if (!isMacro && sArgumentMap[i][0] != sArgumentMap[i][1])
-            {
-                while (sErraticCommand.find(sArgumentMap[i][1] + "(") != string::npos)
-                    sErraticCommand.replace(sErraticCommand.find(sArgumentMap[i][1] + "("), sArgumentMap[i][1].length()+1, sArgumentMap[i][0]);
-            }
+                replaceAll(sErraticCommand, (sArgumentMap[i][1] + "(").c_str(), sArgumentMap[i][0].c_str());
 
             mArguments[sArgumentMap[i][0] + ")\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
         }
@@ -701,10 +686,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         {
             // Replace the occurences
             if (!isMacro && sArgumentMap[i][0] != sArgumentMap[i][1])
-            {
-                while (sErraticCommand.find(sArgumentMap[i][1] + "{") != string::npos)
-                    sErraticCommand.replace(sErraticCommand.find(sArgumentMap[i][1] + "{"), sArgumentMap[i][1].length()+1, sArgumentMap[i][0]);
-            }
+                replaceAll(sErraticCommand, (sArgumentMap[i][1] + "{").c_str(), sArgumentMap[i][0].c_str());
 
             mArguments[sArgumentMap[i][0] + "}\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
         }
@@ -712,10 +694,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         {
             // Replace the occurences
             if (!isMacro && sArgumentMap[i][0] != sArgumentMap[i][1])
-            {
-                while (sErraticCommand.find(sArgumentMap[i][1]) != string::npos)
-                    sErraticCommand.replace(sErraticCommand.find(sArgumentMap[i][1]), sArgumentMap[i][1].length(), sArgumentMap[i][0]);
-            }
+                replaceAll(sErraticCommand, sArgumentMap[i][1].c_str(), sArgumentMap[i][0].c_str());
 
             mArguments[sArgumentMap[i][0] + "\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
         }

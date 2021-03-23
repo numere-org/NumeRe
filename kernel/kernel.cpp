@@ -550,6 +550,8 @@ void NumeReKernel::defineFunctions()
     // they can be use a column of data sets as their argument list.
     // If not, then they have to be excluded in the multi-argument
     // function search in the parser.
+    // Multi-args with a limited number of args (like perlin) have to be
+    // excluded always.
     /////////////////////////////////////////////////////////////////////
 }
 

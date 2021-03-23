@@ -858,7 +858,7 @@ namespace mu
 				std::string sFunc = sExpr.subview(nSep, i - nSep).to_string();
 
 				// Exclude the following functions
-				if (sFunc == "polynomial")
+				if (sFunc == "polynomial" || sFunc == "perlin")
                     continue;
 
 				// Compare the function with the set of known multi-argument functions
