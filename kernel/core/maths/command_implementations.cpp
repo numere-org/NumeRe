@@ -5040,7 +5040,7 @@ void rotateTable(std::string& sCmd)
     if (findParameter(sCmd, "alpha", '='))
     {
         _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "alpha", '=') + 5));
-        dAlpha = _parser.Eval() / 180.0 * M_PI; // deg2rad
+        dAlpha = -_parser.Eval() / 180.0 * M_PI; // deg2rad and change orientation for mathematical positive rotation
     }
 
     _accessParser.getIndices().row.setOpenEndIndex(_data.getLines(_accessParser.getDataObject())-1);
@@ -5082,9 +5082,9 @@ void rotateTable(std::string& sCmd)
 
     // Get the edges
     Point topLeft(0, 0);
-    Point topRight(_source->getCols(false)-1, 0);
-    Point bottomLeft(0, _source->getLines(false)-1);
-    Point bottomRight(_source->getCols(false)-1, _source->getLines(false)-1);
+    Point topRight(_source->getCols(false), 0);
+    Point bottomLeft(0, _source->getLines(false));
+    Point bottomRight(_source->getCols(false), _source->getLines(false));
 
     // get the rotation origin
     Point origin = (bottomRight + topLeft) / 2.0;
@@ -5186,11 +5186,11 @@ void rotateTable(std::string& sCmd)
 
             // Create a point in rotated source coordinates
             // and rotate it backwards
-            Point p(i + top, j + left);
+            Point p(j + left, i + top);
             p.rotate(-dAlpha, origin);
 
             // Store the interpolated value in target coordinates
-            _data.writeToTable(_idx.row[i], _idx.col[j], sTargetTable, _source->readMemInterpolated(p.x, p.y));
+            _data.writeToTable(_idx.row[i], _idx.col[j], sTargetTable, _source->readMemInterpolated(p.y, p.x));
         }
     }
 
