@@ -4073,7 +4073,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
 
                 break;
             default:
-                if (!(_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) || _pInfo.b2D)
+                if (!(_pData.getBoxplot() || _pData.getBars() || _pData.getHBars() || _pInfo.b2D))
                 {
                     // This section was commented to allow arrays of curves
                     // to be displayed in the plot
@@ -4088,6 +4088,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
                         _idx.col = vector<long long int>(vJ.begin() + 6, vJ.end());
                     }*/
                 }
+                else if (_pInfo.b2D)
+                    v_mDataPlots[i].resize(3);
                 else
                 {
                     if (_pData.getBars() || _pData.getHBars())
@@ -4125,7 +4127,7 @@ void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, const st
 {
     Indices& _idx = _accessParser.getIndices();
 
-    if (_idx.col.numberOfNodes() > 2)
+    if (_idx.col.numberOfNodes() > 2 && !_pInfo.b2D)
     {
         // A vector index was used. Insert a column index
         // if the current plot is a boxplot
@@ -4242,7 +4244,7 @@ void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, const st
                     throw SyntaxError(SyntaxError::TOO_FEW_COLS, _accessParser.getDataObject(), SyntaxError::invalid_position);
                 }
             }
-            else if (!_accessParser.isCluster() && v_mDataPlots[i].size() >= 3 && _idx.col.numberOfNodes() == 2)
+            else if (!_accessParser.isCluster() && v_mDataPlots[i].size() >= 3 && (_idx.col.numberOfNodes() == 2 || _pInfo.b2D))
             {
                 // These are xyz data values
                 // These columns are in correct order
@@ -4573,13 +4575,16 @@ void Plot::createDataLegends()
 /// \brief This member function is used to
 /// construct special legend elements.
 ///
-/// \param sColumnIndices const string&
+/// \param sColumnIndices string&
 /// \param sTableName const string&
 /// \return string
 ///
 /////////////////////////////////////////////////
-string Plot::constructDataLegendElement(const string& sColumnIndices, const string& sTableName)
+string Plot::constructDataLegendElement(string& sColumnIndices, const string& sTableName)
 {
+    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sColumnIndices))
+        getDataElements(sColumnIndices, _parser, NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
     value_type* v = nullptr;
     int nResults = 0;
 
