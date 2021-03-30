@@ -825,7 +825,8 @@ static string strfnc_to_time(StringFuncArgs& funcArgs)
     if (sTime.length() != sPattern.length())
         return "nan";
     time_t timeVal = time(nullptr);
-    tm* timeStruct = localtime(&timeVal);
+    tm timeStruct = *localtime(&timeVal);
+    timeStruct.tm_isdst = 0;
     TIME_ZONE_INFORMATION timezone;
     GetTimeZoneInformation(&timezone);
     char cCurrentChar = sPattern.front();
@@ -839,31 +840,31 @@ static string strfnc_to_time(StringFuncArgs& funcArgs)
                 case 'y':
                 case 'Y': // year is either four or two chars long. The structure expects the time to start at the year 1900
                     if (sCurrentElement.length() > 2)
-                        timeStruct->tm_year = StrToInt(sCurrentElement) - 1900;
+                        timeStruct.tm_year = StrToInt(sCurrentElement) - 1900;
                     else
-                        timeStruct->tm_year = StrToInt(sCurrentElement) + (100 * (timeStruct->tm_year / 100));
+                        timeStruct.tm_year = StrToInt(sCurrentElement) + (100 * (timeStruct.tm_year / 100));
                     break;
                 case 'M':
-                    timeStruct->tm_mon = StrToInt(sCurrentElement) - 1;
+                    timeStruct.tm_mon = StrToInt(sCurrentElement) - 1;
                     break;
                 case 'D':
-                    timeStruct->tm_mday = StrToInt(sCurrentElement);
+                    timeStruct.tm_mday = StrToInt(sCurrentElement);
                     break;
                 case 'H':
-                    timeStruct->tm_hour = StrToInt(sCurrentElement);
+                    timeStruct.tm_hour = StrToInt(sCurrentElement);
                     break;
                 case 'h':
-                    timeStruct->tm_hour = StrToInt(sCurrentElement) - timezone.Bias / 60;
-                    if (timeStruct->tm_hour < 0)
-                        timeStruct->tm_hour += 24;
-                    else if (timeStruct->tm_hour >= 24)
-                        timeStruct->tm_hour -= 24;
+                    timeStruct.tm_hour = StrToInt(sCurrentElement) - timezone.Bias / 60;
+                    if (timeStruct.tm_hour < 0)
+                        timeStruct.tm_hour += 24;
+                    else if (timeStruct.tm_hour >= 24)
+                        timeStruct.tm_hour -= 24;
                     break;
                 case 'm':
-                    timeStruct->tm_min = StrToInt(sCurrentElement);
+                    timeStruct.tm_min = StrToInt(sCurrentElement);
                     break;
                 case 's':
-                    timeStruct->tm_sec = StrToInt(sCurrentElement);
+                    timeStruct.tm_sec = StrToInt(sCurrentElement);
                     break;
             }
             cCurrentChar = sPattern[i];
@@ -872,7 +873,19 @@ static string strfnc_to_time(StringFuncArgs& funcArgs)
         sCurrentElement += sTime[i];
     }
 
-    timeVal = mktime(timeStruct);
+    // Store hour val
+    int h = timeStruct.tm_hour;
+
+    // Adapts daylight saving time and hour
+    timeVal = mktime(&timeStruct);
+
+    // Reset hour and recalculate if necessary
+    if (timeStruct.tm_hour != h)
+    {
+        timeStruct.tm_hour = h;
+        timeVal = mktime(&timeStruct);
+    }
+
     return toString((size_t)timeVal);
 }
 

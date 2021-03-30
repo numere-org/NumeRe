@@ -38,3 +38,4 @@ Fixed	Resolved an issue, where clusters used in a comparison like 'c{} == ""' we
 New	The command "assert" can be used to check the trueness of expressions comfortably. It is intended for usage as part of software tests.
 Added	The procedure flag "test" marks the procedure as a software test. Errors are catched in this procedure and displayed as warnings instead; the code execution is continued afterwards. However, severe internal errors won't be catched.
 Fixed	Cluster can now be used as plotting source, which might be disabled by the introduction of data plot animations.
+Fixed	A small issue with daylight saving time within the function "to_time()" has been resolved.
