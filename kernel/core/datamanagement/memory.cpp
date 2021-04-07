@@ -2818,10 +2818,6 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
 {
     auto sizes = _filter->getWindowSize();
 
-    // Update the boundaries for the weighted linear filter
-    if (_filter->getType() == NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR)
-        static_cast<NumeRe::WeightedLinearFilter*>(_filter)->setBoundaries(readMem(_vLine.subidx(i-1*(!smoothLines),0), _vCol.subidx(j-1*smoothLines, 0)), readMem(_vLine.subidx(i+(sizes.first+1)*(!smoothLines),0), _vCol.subidx(j+(sizes.first+1)*smoothLines,0)));
-
     double sum = 0.0;
 
     // Apply the filter to the data
@@ -2836,6 +2832,28 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
     // If the filter is a convolution, store the new value here
     if (_filter->isConvolution())
         writeData(_vLine[i + sizes.first/2*(!smoothLines)], _vCol[j + sizes.first/2*smoothLines], sum);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function t return a
+/// column from the buffer deque.
+///
+/// \param currentWindowElements const std::deque<std::vector>&
+/// \param col size_t
+/// \return std::vector<double>
+///
+/////////////////////////////////////////////////
+static std::vector<double> getColumnFromDeque(const std::deque<std::vector<double>>& currentWindowElements, size_t col)
+{
+    std::vector<double> vCol;
+
+    for (size_t i = 0; i < currentWindowElements.size(); i++)
+    {
+        vCol.push_back(currentWindowElements.at(i).at(col));
+    }
+
+    return vCol;
 }
 
 
@@ -2855,15 +2873,6 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
 void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter)
 {
     auto sizes = _filter->getWindowSize();
-
-    // Update the boundaries for the weighted linear filter
-    if (_filter->getType() == NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR)
-    {
-        static_cast<NumeRe::WeightedLinearFilter*>(_filter)->setBoundaries(readMem(_vLine.subidx(i-1, sizes.first+2), _vCol.subidx(j-1, 0)),
-                                                                           readMem(_vLine.subidx(i-1, sizes.first+2), _vCol.subidx(j+sizes.second+1, 0)),
-                                                                           readMem(_vLine.subidx(i-1, 0), _vCol.subidx(j-1, sizes.second+2)),
-                                                                           readMem(_vLine.subidx(i+sizes.first+1, 0), _vCol.subidx(j-1, sizes.second+2)));
-    }
 
     double sum = 0.0;
 
@@ -2968,10 +2977,10 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         // Retouch everything
         Memory::retouch(_vLine, _vCol, ALL);
 
-        Memory::smooth(_vLine, VectorIndex(_vCol.front()), _settings, COLS);
-        Memory::smooth(_vLine, VectorIndex(_vCol.last()), _settings, COLS);
-        Memory::smooth(VectorIndex(_vLine.front()), _vCol, _settings, LINES);
-        Memory::smooth(VectorIndex(_vLine.last()), _vCol, _settings, LINES);
+        //Memory::smooth(_vLine, VectorIndex(_vCol.front()), _settings, COLS);
+        //Memory::smooth(_vLine, VectorIndex(_vCol.last()), _settings, COLS);
+        //Memory::smooth(VectorIndex(_vLine.front()), _vCol, _settings, LINES);
+        //Memory::smooth(VectorIndex(_vLine.last()), _vCol, _settings, LINES);
 
         if (_settings.row == 1u && _settings.col != 1u)
             _settings.row = _settings.col;
@@ -2990,17 +2999,22 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
     // Apply the actual smoothing of the data
     if (Direction == LINES)
     {
+        // Create a filter from the filter settings
+        std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
+
+        // Update the sizes, because they might be
+        // altered by the filter constructor
+        auto sizes = _filterPtr.get()->getWindowSize();
+        _settings.row = sizes.first;
+
         // Pad the beginning and the of the vector with multiple copies
         _vCol.prepend(vector<long long int>(_settings.row/2+1, _vCol.front()));
         _vCol.append(vector<long long int>(_settings.row/2+1, _vCol.last()));
 
-        // Create a filter from the filter settings
-        std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
-
         // Smooth the lines
         for (size_t i = 0; i < _vLine.size(); i++)
         {
-            for (size_t j = 1; j < _vCol.size() - _filterPtr.get()->getWindowSize().first-1; j++)
+            for (size_t j = 1; j < _vCol.size() - _settings.row-1; j++)
             {
                 smoothingWindow1D(_vLine, _vCol, i, j, _filterPtr.get(), true);
             }
@@ -3008,17 +3022,22 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
     }
     else if (Direction == COLS)
     {
+        // Create a filter from the settings
+        std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
+
+        // Update the sizes, because they might be
+        // altered by the filter constructor
+        auto sizes = _filterPtr.get()->getWindowSize();
+        _settings.row = sizes.first;
+
         // Pad the beginning and end of the vector with multiple copies
         _vLine.prepend(vector<long long int>(_settings.row/2+1, _vLine.front()));
         _vLine.append(vector<long long int>(_settings.row/2+1, _vLine.last()));
 
-        // Create a filter from the settings
-        std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
-
         // Smooth the columns
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            for (size_t i = 1; i < _vLine.size() - _filterPtr.get()->getWindowSize().first-1; i++)
+            for (size_t i = 1; i < _vLine.size() - _settings.row-1; i++)
             {
                 smoothingWindow1D(_vLine, _vCol, i, j, _filterPtr.get(), false);
             }
@@ -3026,20 +3045,34 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
     }
     else if ((Direction == ALL || Direction == GRID) && _vLine.size() > 2 && _vCol.size() > 2)
     {
-        // Pad the beginning and end of both vectors with multiple copies
-        _vLine.prepend(vector<long long int>(_settings.row/2+1, _vLine.front()));
-        _vLine.append(vector<long long int>(_settings.row/2+1, _vLine.last()));
-        _vCol.prepend(vector<long long int>(_settings.col/2+1, _vCol.front()));
-        _vCol.append(vector<long long int>(_settings.col/2+1, _vCol.last()));
-
         // Create a filter from the settings
         std::unique_ptr<NumeRe::Filter> _filterPtr(NumeRe::createFilter(_settings));
 
+        // Update the sizes, because they might be
+        // altered by the filter constructor
+        auto sizes = _filterPtr.get()->getWindowSize();
+        _settings.row = sizes.first;
+        _settings.col = sizes.second;
+
+        // Pad the beginning and end of both vectors
+        // with a mirrored copy of themselves
+        std::vector<long long int> vMirror = _vLine.subidx(1, _settings.row/2+1).getVector();
+        _vLine.prepend(vector<long long int>(vMirror.rbegin(), vMirror.rend()));
+
+        vMirror = _vLine.subidx(_vLine.size() - _settings.row/2-2, _settings.row/2+1).getVector();
+        _vLine.append(vector<long long int>(vMirror.rbegin(), vMirror.rend()));
+
+        vMirror = _vCol.subidx(1, _settings.col/2+1).getVector();
+        _vCol.prepend(vector<long long int>(vMirror.rbegin(), vMirror.rend()));
+
+        vMirror = _vCol.subidx(_vCol.size() - _settings.col/2-2, _settings.row/2+1).getVector();
+        _vCol.append(vector<long long int>(vMirror.rbegin(), vMirror.rend()));
+
         // Smooth the data in two dimensions, if that is reasonable
         // Go through every point
-        for (size_t j = 1; j < _vCol.size() - _filterPtr.get()->getWindowSize().second-1; j++)
+        for (size_t i = 1; i < _vLine.size() - _settings.row-1; i++)
         {
-            for (size_t i = 1; i < _vLine.size() - _filterPtr.get()->getWindowSize().first-1; i++)
+            for (size_t j = 1; j < _vCol.size() - _settings.col-1; j++)
             {
                 smoothingWindow2D(_vLine, _vCol, i, j, _filterPtr.get());
             }

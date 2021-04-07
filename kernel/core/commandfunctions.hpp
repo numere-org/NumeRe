@@ -4352,6 +4352,9 @@ static CommandReturnValues cmd_smooth(string& sCmd)
         nWindowSize = intCast(_parser.Eval());
     }
 
+    // Ensure that the windowsize is odd (we don't need even window sizes)
+    nWindowSize = 2 * nWindowSize + 1;
+
     // Find the window shape (used for type=gaussian)
     if (findParameter(sCmd, "alpha", '='))
     {
