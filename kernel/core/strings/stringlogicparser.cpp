@@ -120,6 +120,32 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
+    /// \brief Removes masked strings, strips spaces
+    /// and removes surrounding quotation marks and
+    /// concatenates the values, if necessary.
+    ///
+    /// \param _sLine const std::string&
+    /// \return string
+    ///
+    /////////////////////////////////////////////////
+    string StringLogicParser::prepareComparisonValues(const std::string& _sLine)
+    {
+        bool bReturningLogicals = false;
+
+        string sLine = removeMaskedStrings(evalStringLogic(_sLine, bReturningLogicals));
+        StripSpaces(sLine);
+
+        if (sLine.front() == '"' && sLine.back() == '"')
+        {
+            concatenateStrings(sLine);
+            sLine = sLine.substr(1, sLine.length() - 2);
+        }
+
+        return sLine;
+    }
+
+
+    /////////////////////////////////////////////////
     /// \brief This member function is a helper for
     /// StringLogicParser::evalStringLogic().
     ///
@@ -308,16 +334,8 @@ namespace NumeRe
 
                 if (!isInQuotes(sLine, nPos - 2))
                 {
-                    string sLeft = removeMaskedStrings(evalStringLogic(sLine.substr(0, nPos - 2), bReturningLogicals));
-                    string sRight = removeMaskedStrings(evalStringLogic(sLine.substr(nPos), bReturningLogicals));
-                    StripSpaces(sLeft);
-                    StripSpaces(sRight);
-
-                    if (sLeft[0] == '"' && sLeft[sLeft.length() - 1] == '"')
-                        sLeft = sLeft.substr(1, sLeft.length() - 2);
-
-                    if (sRight[0] == '"' && sRight[sRight.length() - 1] == '"')
-                        sRight = sRight.substr(1, sRight.length() - 2);
+                    string sLeft = prepareComparisonValues(sLine.substr(0, nPos-2));
+                    string sRight = prepareComparisonValues(sLine.substr(nPos));
 
                     bReturningLogicals = true;
 
@@ -345,16 +363,8 @@ namespace NumeRe
 
                 if (!isInQuotes(sLine, nPos - 3))
                 {
-                    string sLeft = removeMaskedStrings(evalStringLogic(sLine.substr(0, nPos - 3),  bReturningLogicals));
-                    string sRight = removeMaskedStrings(evalStringLogic(sLine.substr(nPos), bReturningLogicals));
-                    StripSpaces(sLeft);
-                    StripSpaces(sRight);
-
-                    if (sLeft[0] == '"' && sLeft[sLeft.length() - 1] == '"')
-                        sLeft = sLeft.substr(1, sLeft.length() - 2);
-
-                    if (sRight[0] == '"' && sRight[sRight.length() - 1] == '"')
-                        sRight = sRight.substr(1, sRight.length() - 2);
+                    string sLeft = prepareComparisonValues(sLine.substr(0, nPos-3));
+                    string sRight = prepareComparisonValues(sLine.substr(nPos));
 
                     bReturningLogicals = true;
 
@@ -382,16 +392,8 @@ namespace NumeRe
 
                 if (!isInQuotes(sLine, nPos - 2))
                 {
-                    string sLeft = removeMaskedStrings(evalStringLogic(sLine.substr(0, nPos - 2), bReturningLogicals));
-                    string sRight = removeMaskedStrings(evalStringLogic(sLine.substr(nPos), bReturningLogicals));
-                    StripSpaces(sLeft);
-                    StripSpaces(sRight);
-
-                    if (sLeft[0] == '"' && sLeft[sLeft.length() - 1] == '"')
-                        sLeft = sLeft.substr(1, sLeft.length() - 2);
-
-                    if (sRight[0] == '"' && sRight[sRight.length() - 1] == '"')
-                        sRight = sRight.substr(1, sRight.length() - 2);
+                    string sLeft = prepareComparisonValues(sLine.substr(0, nPos-2));
+                    string sRight = prepareComparisonValues(sLine.substr(nPos));
 
                     bReturningLogicals = true;
 
@@ -420,16 +422,8 @@ namespace NumeRe
             {
                 if (sLine.substr(i, 2) == "==")
                 {
-                    string sLeft = removeMaskedStrings(sLine.substr(0, i));
-                    string sRight = removeMaskedStrings(sLine.substr(i + 2));
-                    StripSpaces(sLeft);
-                    StripSpaces(sRight);
-
-                    if (sLeft[0] == '"' && sLeft[sLeft.length() - 1] == '"')
-                        sLeft = sLeft.substr(1, sLeft.length() - 2);
-
-                    if (sRight[0] == '"' && sRight[sRight.length() - 1] == '"')
-                        sRight = sRight.substr(1, sRight.length() - 2);
+                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
+                    string sRight = prepareComparisonValues(sLine.substr(i + 2));
 
                     bReturningLogicals = true;
 
@@ -440,16 +434,8 @@ namespace NumeRe
                 }
                 else if (sLine.substr(i, 2) == "!=")
                 {
-                    string sLeft = removeMaskedStrings(sLine.substr(0, i));
-                    string sRight = removeMaskedStrings(sLine.substr(i + 2));
-                    StripSpaces(sLeft);
-                    StripSpaces(sRight);
-
-                    if (sLeft[0] == '"' && sLeft[sLeft.length() - 1] == '"')
-                        sLeft = sLeft.substr(1, sLeft.length() - 2);
-
-                    if (sRight[0] == '"' && sRight[sRight.length() - 1] == '"')
-                        sRight = sRight.substr(1, sRight.length() - 2);
+                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
+                    string sRight = prepareComparisonValues(sLine.substr(i + 2));
 
                     bReturningLogicals = true;
 
@@ -460,16 +446,8 @@ namespace NumeRe
                 }
                 else if (sLine.substr(i, 2) == "<=")
                 {
-                    string sLeft = removeMaskedStrings(sLine.substr(0, i));
-                    string sRight = removeMaskedStrings(sLine.substr(i + 2));
-                    StripSpaces(sLeft);
-                    StripSpaces(sRight);
-
-                    if (sLeft[0] == '"' && sLeft[sLeft.length() - 1] == '"')
-                        sLeft = sLeft.substr(1, sLeft.length() - 2);
-
-                    if (sRight[0] == '"' && sRight[sRight.length() - 1] == '"')
-                        sRight = sRight.substr(1, sRight.length() - 2);
+                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
+                    string sRight = prepareComparisonValues(sLine.substr(i + 2));
 
                     bReturningLogicals = true;
 
@@ -480,16 +458,8 @@ namespace NumeRe
                 }
                 else if (sLine.substr(i, 2) == ">=")
                 {
-                    string sLeft = removeMaskedStrings(sLine.substr(0, i));
-                    string sRight = removeMaskedStrings(sLine.substr(i + 2));
-                    StripSpaces(sLeft);
-                    StripSpaces(sRight);
-
-                    if (sLeft[0] == '"' && sLeft[sLeft.length() - 1] == '"')
-                        sLeft = sLeft.substr(1, sLeft.length() - 2);
-
-                    if (sRight[0] == '"' && sRight[sRight.length() - 1] == '"')
-                        sRight = sRight.substr(1, sRight.length() - 2);
+                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
+                    string sRight = prepareComparisonValues(sLine.substr(i + 2));
 
                     bReturningLogicals = true;
 
@@ -500,16 +470,8 @@ namespace NumeRe
                 }
                 else if (sLine[i] == '<')
                 {
-                    string sLeft = removeMaskedStrings(sLine.substr(0, i));
-                    string sRight = removeMaskedStrings(sLine.substr(i + 1));
-                    StripSpaces(sLeft);
-                    StripSpaces(sRight);
-
-                    if (sLeft[0] == '"' && sLeft[sLeft.length() - 1] == '"')
-                        sLeft = sLeft.substr(1, sLeft.length() - 2);
-
-                    if (sRight[0] == '"' && sRight[sRight.length() - 1] == '"')
-                        sRight = sRight.substr(1, sRight.length() - 2);
+                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
+                    string sRight = prepareComparisonValues(sLine.substr(i + 1));
 
                     bReturningLogicals = true;
 
@@ -520,16 +482,8 @@ namespace NumeRe
                 }
                 else if (sLine[i] == '>')
                 {
-                    string sLeft = removeMaskedStrings(sLine.substr(0, i));
-                    string sRight = removeMaskedStrings(sLine.substr(i + 1));
-                    StripSpaces(sLeft);
-                    StripSpaces(sRight);
-
-                    if (sLeft[0] == '"' && sLeft[sLeft.length() - 1] == '"')
-                        sLeft = sLeft.substr(1, sLeft.length() - 2);
-
-                    if (sRight[0] == '"' && sRight[sRight.length() - 1] == '"')
-                        sRight = sRight.substr(1, sRight.length() - 2);
+                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
+                    string sRight = prepareComparisonValues(sLine.substr(i + 1));
 
                     bReturningLogicals = true;
 
@@ -546,5 +500,64 @@ namespace NumeRe
         return sLine;
     }
 
+
+    /////////////////////////////////////////////////
+    /// \brief This member function performs the
+    /// actual string concatenation of the passed
+    /// string expression.
+    ///
+    /// \param sExpr string&
+    /// \return void
+    ///
+    /// This member is called by
+    /// StringParser::applyElementaryStringOperations()
+    /// for the concatenation.
+    /////////////////////////////////////////////////
+    void StringLogicParser::concatenateStrings(string& sExpr)
+    {
+        size_t nQuotes = 0;
+
+        for (unsigned int i = 0; i < sExpr.length(); i++)
+        {
+            if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
+                nQuotes++;
+
+            // Search for the concatenation operator (aka "+")
+            if (!(nQuotes % 2) && sExpr[i] == '+')
+            {
+                string sLeft = sExpr.substr(0, i);
+                string sRight = sExpr.substr(i+1);
+
+                StripSpaces(sLeft);
+                StripSpaces(sRight);
+
+                // Determine the correct concatenation process
+                if (sLeft == "\"\"" && sRight != "\"\"")
+                {
+                    sExpr = " " + sRight;
+                    i = 0;
+                }
+                else if (sLeft != "\"\"" && sRight == "\"\"")
+                {
+                    sExpr = sLeft;
+                    break;
+                }
+                else if (sLeft.back() == '"' && sRight.front() == '"')
+                {
+                    sExpr = sLeft.substr(0, sLeft.length()-1) + sRight.substr(1);
+
+                    // We removed some characters
+                    i = sLeft.length()-2;
+
+                    // We're now part of a string
+                    nQuotes++;
+                }
+
+                // Everything not catched here is a strange mixture
+            }
+        }
+
+        StripSpaces(sExpr);
+    }
 }
 

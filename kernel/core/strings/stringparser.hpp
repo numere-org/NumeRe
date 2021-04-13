@@ -58,7 +58,6 @@ namespace NumeRe
             string createStringOutput(StringResult& strRes, string& sLine, int parserFlags, bool bSilent);
             string createTerminalOutput(StringResult& strRes, int parserFlags);
             vector<bool> applyElementaryStringOperations(vector<string>& vFinal, bool& bReturningLogicals);
-            void concatenateStrings(string& sExpr);
             void storeStringToDataObjects(StringResult& strRes, string& sObject, size_t& nCurrentComponent, size_t nStrings);
             void storeStringToStringObject(const vector<string>& vFinal, string& sObject, size_t& nCurrentComponent, size_t nStrings);
             int decodeStringParams(string& sLine);

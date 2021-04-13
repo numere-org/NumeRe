@@ -36,10 +36,12 @@ namespace NumeRe
             string evalStringTernary(string sLine);
             vector<string> getStringTernaryExpression(string& sLine, size_t& nPos);
             size_t detectPathTokens(const string& sString, size_t nPos);
+            string prepareComparisonValues(const std::string& _sLine);
 
         protected:
             bool detectStringLogicals(const string& sString);
             string evalStringLogic(string sLine, bool& bReturningLogicals);
+            void concatenateStrings(string& sExpr);
     };
 }
 

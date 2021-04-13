@@ -1414,66 +1414,6 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function performs the
-    /// actual string concatenation of the passed
-    /// string expression.
-    ///
-    /// \param sExpr string&
-    /// \return void
-    ///
-    /// This member is called by
-    /// StringParser::applyElementaryStringOperations()
-    /// for the concatenation.
-    /////////////////////////////////////////////////
-    void StringParser::concatenateStrings(string& sExpr)
-    {
-        size_t nQuotes = 0;
-
-        for (unsigned int i = 0; i < sExpr.length(); i++)
-        {
-            if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
-                nQuotes++;
-
-            // Search for the concatenation operator (aka "+")
-            if (!(nQuotes % 2) && sExpr[i] == '+')
-            {
-                string sLeft = sExpr.substr(0, i);
-                string sRight = sExpr.substr(i+1);
-
-                StripSpaces(sLeft);
-                StripSpaces(sRight);
-
-                // Determine the correct concatenation process
-                if (sLeft == "\"\"" && sRight != "\"\"")
-                {
-                    sExpr = " " + sRight;
-                    i = 0;
-                }
-                else if (sLeft != "\"\"" && sRight == "\"\"")
-                {
-                    sExpr = sLeft;
-                    break;
-                }
-                else if (sLeft.back() == '"' && sRight.front() == '"')
-                {
-                    sExpr = sLeft.substr(0, sLeft.length()-1) + sRight.substr(1);
-
-                    // We removed some characters
-                    i = sLeft.length()-2;
-
-                    // We're now part of a string
-                    nQuotes++;
-                }
-
-                // Everything not catched here is a strange mixture
-            }
-        }
-
-        StripSpaces(sExpr);
-    }
-
-
-    /////////////////////////////////////////////////
     /// \brief This public member function provides
     /// the string parser core functionality and is
     /// the function, which is called recursively.

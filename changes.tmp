@@ -1,2 +1,3 @@
 Fixed	The smearing of the weightedlinear filter was removed and the filter was converted into a convolution filter.
 Cleaned	Smoothing orders will now be converted internally into a windowsize of 2 x order + 1 to ensure odd numbers.
+Fixed	The wrong string operator precedence was fixed.
