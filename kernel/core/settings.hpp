@@ -80,6 +80,7 @@
 #define SETTING_B_FOLDLOADEDFILE      "editor.foldloadedfile"
 #define SETTING_B_HIGHLIGHTLOCALS     "editor.highlightlocals"
 #define SETTING_B_USETABS             "editor.usetabs"
+#define SETTING_B_HOMEENDCANCELS      "editor.autocomp.homeendcancels"
 #define SETTING_S_EDITORFONT          "editor.font"
 #define SETTING_B_AN_START            "editor.analyzer._"
 #define SETTING_B_AN_USENOTES         "editor.analyzer.usenotes"

@@ -1456,6 +1456,12 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
         }
     }
 
+    // If the autocompletion dialog is open, we want the HOME and END
+    // keys to automatically close it. Otherwise they are used
+    // to navigate in the autocompletion list
+    if (AutoCompActive() && m_options->isEnabled(SETTING_B_HOMEENDCANCELS) && (event.GetKeyCode() == WXK_END || event.GetKeyCode() == WXK_HOME))
+        AutoCompCancel();
+
     // Pass the control to the internal OnKeyDown event
     // handler, which will insert the correct character
     OnKeyDown(event);
