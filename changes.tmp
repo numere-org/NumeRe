@@ -5,3 +5,4 @@ Fixed	HOME and END will now close the autocompletion list and jump to their corr
 Fixed	The matop function "diag()" will now accept matrices as input.
 Cleaned	Refactored the matop function evaluation algorithm.
 Cleaned	Commented the internal fitting algorithm.
+Added	Created function"log_b(b,x)" to calculate a logarithm of x with the respect to the arbitrary base b.

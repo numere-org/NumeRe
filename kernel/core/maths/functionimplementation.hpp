@@ -20,49 +20,22 @@
 /*
  * Deklarationen saemtlicher Parser-Funktionen
  */
-#define _USE_MATH_DEFINES
-
-#include <cstdlib>
-#include <cmath>
-#include <fstream>
-#include <string>
-#include <iostream>
-#include <locale>
-#include <limits>
-#include <ios>
-#include <iomanip>
-#include <numeric>
-#include <ctime>
-#include <random>
-#include <csignal>
-#include <boost/math/common_factor.hpp>
-
-#include <gsl/gsl_sf.h>
-#include <boost/math/distributions/students_t.hpp>
-
-#include "../datamanagement/memorymanager.hpp"
-#include "../utils/tools.hpp"
-#include "../version.h"
-
-#include "../ParserLib/muParser.h"
-
-using namespace std;
-using namespace mu;
-
 #ifndef FUNCTIONIMPLEMENTATION_HPP
 #define FUNCTIONIMPLEMENTATION_HPP
 
+#include "../ParserLib/muParser.h"
 
-// Operator callback functions
+using namespace mu;
+
+// Scaling operator callback functions
 value_type parser_Mega(value_type);
 value_type parser_Giga(value_type);
 value_type parser_Kilo(value_type);
 value_type parser_Milli(value_type);
 value_type parser_Micro(value_type);
 value_type parser_Nano(value_type);
-value_type parser_Not(value_type);
-value_type parser_Ignore(value_type);
 
+// Unit conversion callback functions
 value_type parser_ElectronVolt(value_type);
 value_type parser_Fermi(value_type);
 value_type parser_Angstroem(value_type);
@@ -88,7 +61,7 @@ value_type parser_Gauss(value_type);
 value_type parser_Poise(value_type);
 value_type parser_mol(value_type);
 
-
+// Actual math functions
 value_type parser_Faculty(value_type);
 value_type parser_doubleFaculty(value_type);
 value_type parser_Binom(value_type, value_type);
@@ -156,11 +129,6 @@ value_type parser_ivl(value_type, value_type, value_type, value_type, value_type
 value_type parser_studentFactor(value_type, value_type);
 value_type parser_gcd(value_type, value_type);
 value_type parser_lcm(value_type, value_type);
-
-value_type parser_Mod(value_type, value_type);
-value_type parser_XOR(value_type, value_type);
-value_type parser_BinOR(value_type, value_type);
-value_type parser_BinAND(value_type, value_type);
 value_type parser_is_string(value_type);
 value_type parser_time();
 value_type parser_clock();
@@ -170,14 +138,19 @@ value_type parser_interval(value_type, value_type, value_type);
 value_type parser_numereversion();
 value_type parser_cot(value_type);
 value_type parser_sleep(value_type);
+value_type parser_log_b(value_type, value_type);
 
+// Operator functions
+value_type parser_Not(value_type);
+value_type parser_Ignore(value_type);
+value_type parser_Mod(value_type, value_type);
+value_type parser_XOR(value_type, value_type);
+value_type parser_BinOR(value_type, value_type);
+value_type parser_BinAND(value_type, value_type);
 
-
-//value_type parser_SelfTest(Parser&);
-//int parser_Calc(Datafile&, Output&, Parser&, Settings&, Define&, PlotData&, Script&, Procedure&, ofstream&);
+// Numerical variable factory
 value_type* parser_AddVariable(const char_type*, void*);
-//void parser_Help(const Settings& _option);
-//void parser_FirstStart(const Settings& _option);
 
 
 #endif
+

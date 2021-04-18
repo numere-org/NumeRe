@@ -543,6 +543,7 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("psi", parser_digamma, true);                             // psi(x)
     _parser.DefineFun("psi_n", parser_polygamma, true);                         // psi_n(n,x)
     _parser.DefineFun("Li2", parser_dilogarithm, true);                         // Li2(x)
+    _parser.DefineFun("log_b", parser_log_b, true);                             // log_b(b,x)
 
     /////////////////////////////////////////////////////////////////////
     // NOTE:
