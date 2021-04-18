@@ -836,7 +836,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 nDim = 3;
 
-                if (_idx.col.size() < _idx.row.size() + 2)
+                if (_idx.col.size() < _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)) + 2)
                     throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
         }
@@ -853,7 +853,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 nDim = 5;
 
-                if (_idx.col.size() < 3 * _idx.row.size() + 2)
+                if (_idx.col.size() < 3 * _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)) + 2)
                     throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
         }

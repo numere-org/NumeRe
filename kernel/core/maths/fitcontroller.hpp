@@ -39,16 +39,37 @@
 using namespace std;
 using namespace mu;
 
+/////////////////////////////////////////////////
+/// \brief Typedef for readability.
+/////////////////////////////////////////////////
+typedef std::vector<double> FitVector;
+
+/////////////////////////////////////////////////
+/// \brief Typedef for readability.
+/////////////////////////////////////////////////
+typedef std::vector<std::vector<double>> FitMatrix;
+
+
+/////////////////////////////////////////////////
+/// \brief Defines the datapoints, which shall
+/// be fitted.
+/////////////////////////////////////////////////
 struct FitData
 {
-    vector<double> vx;
-    vector<double> vy;
-    vector<double> vy_w;
-    vector<vector<double> > vz;
-    vector<vector<double> > vz_w;
+    FitVector vx;
+    FitVector vy;
+    FitVector vy_w;
+    FitMatrix vz;
+    FitMatrix vz_w;
     double dPrecision;
 };
 
+
+/////////////////////////////////////////////////
+/// \brief This class contains the internal fit
+/// logic and the interface to the GSL fitting
+/// module.
+/////////////////////////////////////////////////
 class Fitcontroller
 {
     private:
@@ -62,7 +83,7 @@ class Fitcontroller
         int nIterations;
         double dChiSqr;
         string sExpr;
-        vector<vector<double> > vCovarianceMatrix;
+        FitMatrix vCovarianceMatrix;
         static double* xvar;
         static double* yvar;
         static double* zvar;
@@ -80,6 +101,13 @@ class Fitcontroller
         Fitcontroller(Parser* _parser);
         ~Fitcontroller();
 
+        /////////////////////////////////////////////////
+        /// \brief Register the parser.
+        ///
+        /// \param _parser Parser*
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
         inline void setParser(Parser* _parser)
             {
                 _fitParser = _parser;
@@ -89,26 +117,72 @@ class Fitcontroller
                 zvar = mVars["z"];
                 return;
             }
-        inline bool fit(vector<double>& vx, vector<double>& vy, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
+
+        /////////////////////////////////////////////////
+        /// \brief Calculate an unweighted 1D-fit.
+        ///
+        /// \param vx FitVector&
+        /// \param vy FitVector&
+        /// \param __sExpr const string&
+        /// \param __sRestrictions const string&
+        /// \param mParamsMap mu::varmap_type&
+        /// \param __dPrecision double
+        /// \param nMaxIterations int
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool fit(FitVector& vx, FitVector& vy, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
             {
-                vector<double> vy_w(vy.size(), 0.0);
+                FitVector vy_w(vy.size(), 0.0);
                 return fit(vx,vy, vy_w, __sExpr, __sRestrictions, mParamsMap, __dPrecision, nMaxIterations);
             }
-        bool fit(vector<double>& vx, vector<double>& vy, vector<double>& vy_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
-        inline bool fit(vector<double>& vx, vector<double>& vy, vector<vector<double> >& vz, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
+
+        bool fit(FitVector& vx, FitVector& vy, FitVector& vy_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
+
+        /////////////////////////////////////////////////
+        /// \brief Calculate an unweighted 2D-fit.
+        ///
+        /// \param vx FitVector&
+        /// \param vy FitVector&
+        /// \param vz FitMatrix&
+        /// \param __sExpr const string&
+        /// \param __sRestrictions const string&
+        /// \param mParamsMap mu::varmap_type&
+        /// \param __dPrecision double
+        /// \param nMaxIterations int
+        /// \return bool
+        ///
+        /////////////////////////////////////////////////
+        inline bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500)
             {
-                vector<vector<double> > vz_w(vz.size(), vector<double>(vz[0].size(), 0.0));
+                FitMatrix vz_w(vz.size(), vector<double>(vz[0].size(), 0.0));
                 return fit(vx, vy, vz, vz_w, __sExpr, __sRestrictions, mParamsMap, __dPrecision, nMaxIterations);
             }
-        bool fit(vector<double>& vx, vector<double>& vy, vector<vector<double> >& vz, vector<vector<double> >& vz_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
 
+        bool fit(FitVector& vx, FitVector& vy, FitMatrix& vz, FitMatrix& vz_w, const string& __sExpr, const string& __sRestrictions, mu::varmap_type& mParamsMap, double __dPrecision = 1e-4, int nMaxIterations = 500);
+
+        /////////////////////////////////////////////////
+        /// \brief Return the weighted sum of the
+        /// residuals.
+        ///
+        /// \return double
+        ///
+        /////////////////////////////////////////////////
         inline double getFitChi() const
             {return dChiSqr;}
+
+        /////////////////////////////////////////////////
+        /// \brief Return the number of needed
+        /// iterations.
+        ///
+        /// \return int
+        ///
+        /////////////////////////////////////////////////
         inline int getIterations() const
             {return nIterations;}
 
         string getFitFunction();
-        vector<vector<double> > getCovarianceMatrix() const;
+        FitMatrix getCovarianceMatrix() const;
 };
 
 

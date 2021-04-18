@@ -459,6 +459,8 @@
 		<Unit filename="kernel/core/maths/fitting.cpp" />
 		<Unit filename="kernel/core/maths/functionimplementation.cpp" />
 		<Unit filename="kernel/core/maths/functionimplementation.hpp" />
+		<Unit filename="kernel/core/maths/matdatastructures.hpp" />
+		<Unit filename="kernel/core/maths/matfuncs.hpp" />
 		<Unit filename="kernel/core/maths/matrixoperations.cpp" />
 		<Unit filename="kernel/core/maths/matrixoperations.hpp" />
 		<Unit filename="kernel/core/maths/odesolver.cpp" />
