@@ -29,6 +29,7 @@
 #include "matdatastructures.hpp"
 #include "../ui/error.hpp"
 #include "../../kernel.hpp"
+#include "functionimplementation.hpp"
 
 
 /////////////////////////////////////////////////
@@ -2240,6 +2241,193 @@ static Matrix diagonalMatrix(const MatFuncData& funcData, const MatFuncErrorInfo
 
 
 /////////////////////////////////////////////////
+/// \brief Converts cartesian to cylindrical
+/// coordinates.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix cartToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+
+    Matrix _mReturn = funcData.mat1;
+
+    for (size_t i = 0; i < _mReturn.size(); i++)
+    {
+        _mReturn[i][0] = parser_Norm(&funcData.mat1[i][0], 2);
+        _mReturn[i][1] = parser_phi(funcData.mat1[i][0], funcData.mat1[i][1]);
+    }
+
+    return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts cartesian to polar
+/// coordinates.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix cartToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+
+    if (funcData.mat1[0].size() == 2)
+        return cartToCyl(funcData, errorInfo);
+
+    Matrix _mReturn = funcData.mat1;
+
+    for (size_t i = 0; i < _mReturn.size(); i++)
+    {
+        _mReturn[i][0] = parser_Norm(&funcData.mat1[i][0], 3);
+        _mReturn[i][1] = parser_phi(funcData.mat1[i][0], funcData.mat1[i][1]);
+        _mReturn[i][2] = parser_theta(funcData.mat1[i][0], funcData.mat1[i][1], funcData.mat1[i][2]);
+    }
+
+    return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts cylindrical to cartesian
+/// coordinates.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix cylToCart(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+
+    Matrix _mReturn = funcData.mat1;
+
+    for (size_t i = 0; i < _mReturn.size(); i++)
+    {
+        _mReturn[i][0] = funcData.mat1[i][0] * cos(funcData.mat1[i][1]);
+        _mReturn[i][1] = funcData.mat1[i][0] * sin(funcData.mat1[i][1]);
+    }
+
+    return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts cylindrical to polar
+/// coordinates.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix cylToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+
+    if (funcData.mat1[0].size() == 2)
+        return funcData.mat1;
+
+    Matrix _mReturn = funcData.mat1;
+
+    for (size_t i = 0; i < _mReturn.size(); i++)
+    {
+        _mReturn[i][0] = sqrt(funcData.mat1[i][0] * funcData.mat1[i][0] + funcData.mat1[i][2] * funcData.mat1[i][2]);
+        _mReturn[i][2] = parser_theta(funcData.mat1[i][0] * cos(funcData.mat1[i][1]), funcData.mat1[i][0] * sin(funcData.mat1[i][1]), funcData.mat1[i][2]);
+    }
+
+    return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts polar to cartesian
+/// coordinates.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix polarToCart(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+
+    if (funcData.mat1[0].size() == 2)
+        return cylToCart(funcData, errorInfo);
+
+    Matrix _mReturn = funcData.mat1;
+
+    for (size_t i = 0; i < _mReturn.size(); i++)
+    {
+        _mReturn[i][0] = funcData.mat1[i][0] * cos(funcData.mat1[i][1]) * sin(funcData.mat1[i][2]);
+        _mReturn[i][1] = funcData.mat1[i][0] * sin(funcData.mat1[i][1]) * sin(funcData.mat1[i][2]);
+        _mReturn[i][2] = funcData.mat1[i][0] * cos(funcData.mat1[i][2]);
+    }
+
+    return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts polar to cylindrical
+/// coordinates.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix polarToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.mat1[0].size() > 3 || funcData.mat1[0].size() < 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x3");
+
+    Matrix _mReturn = funcData.mat1;
+
+    for (size_t i = 0; i < _mReturn.size(); i++)
+    {
+        _mReturn[i][0] = funcData.mat1[i][0] * sin(funcData.mat1[i][2]);
+
+        if (funcData.mat1[0].size() == 3)
+            _mReturn[i][2] = funcData.mat1[i][0] * cos(funcData.mat1[i][2]);
+    }
+
+    return _mReturn;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Static invalid matrix function, which
 /// will always throw an error.
 ///
@@ -2306,6 +2494,12 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["unique"] = MatFuncDef(MATSIG_MAT_NOPT, matrixUnique);
     mFunctions["solve"] = MatFuncDef(MATSIG_MAT, solveLGS);
     mFunctions["diag"] = MatFuncDef(MATSIG_MAT, diagonalMatrix);
+    mFunctions["carttocyl"] = MatFuncDef(MATSIG_MAT, cartToCyl);
+    mFunctions["carttopol"] = MatFuncDef(MATSIG_MAT, cartToPolar);
+    mFunctions["cyltocart"] = MatFuncDef(MATSIG_MAT, cylToCart);
+    mFunctions["cyltopol"] = MatFuncDef(MATSIG_MAT, cylToPolar);
+    mFunctions["poltocart"] = MatFuncDef(MATSIG_MAT, polarToCart);
+    mFunctions["poltocyl"] = MatFuncDef(MATSIG_MAT, polarToCyl);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);
