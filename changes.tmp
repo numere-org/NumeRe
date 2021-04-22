@@ -7,3 +7,4 @@ Cleaned	Refactored the matop function evaluation algorithm.
 Cleaned	Commented the internal fitting algorithm.
 Added	Created function"log_b(b,x)" to calculate a logarithm of x with the respect to the arbitrary base b.
 Added	Created six matop functions for coordinate conversions: carttocyl(), carttopol(), cyltocart(), cyltopol(), poltocart() and poltocyl()
+Added	Createt two matop functions for coordinate to grid conversions and bilinearly interpolation.

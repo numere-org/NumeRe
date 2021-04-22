@@ -2428,6 +2428,181 @@ static Matrix polarToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& er
 
 
 /////////////////////////////////////////////////
+/// \brief This static function finds the nearest
+/// lower grid axis value.
+///
+/// \param gaxes const Matrix&
+/// \param axis size_t
+/// \param axisval double
+/// \return size_t
+///
+/////////////////////////////////////////////////
+static size_t findNearestLowerGridAxisValue(const Matrix& gaxes, size_t axis, double axisval)
+{
+    int sign = gaxes.front()[axis] > gaxes.back()[axis] ? -1 : 1;
+
+    for (size_t i = 0; i < gaxes.size(); i++)
+    {
+        if (sign * gaxes[i][axis] >= sign * axisval)
+        {
+            if (i)
+                return i-1;
+
+            return 0u;
+        }
+    }
+
+    return gaxes.size()-1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function converts floating
+/// point coordinates to grid coordinates by
+/// using the grid axes as reference values.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.mat1[0].size() > 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat1.size()) + "x2");
+
+    if (funcData.mat2[0].size() > 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat2.size()) + "x" + toString(funcData.mat2[0].size()) + " vs. "+ toString(funcData.mat2.size()) + "x2");
+
+    if (funcData.mat2[0].size() == 2 && funcData.mat1[0].size() < 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat2.size()) + "x2");
+
+    Matrix gcoords = funcData.mat2;
+
+    for (size_t i = 0; i < gcoords.size(); i++)
+    {
+        for (size_t j = 0; j < gcoords[i].size(); j++)
+        {
+            size_t pos = findNearestLowerGridAxisValue(funcData.mat1, j, gcoords[i][j]); // find the lower grid axis value assuming sorted axis
+            double off = gcoords[i][j] - funcData.mat1[pos][j]; // should be smaller than grid interval, but might be negative
+            double interval = pos+1 < funcData.mat1.size() ? funcData.mat1[pos+1][j] - funcData.mat1[pos][j] : funcData.mat1[pos][j] - funcData.mat1[pos-1][j]; // the grid interval. Might also be negative
+
+            gcoords[i][j] = pos + 1 + off / interval; // if off == interval, then pos+1, else pos + (<1) and +1 due to zero-based coords
+        }
+    }
+
+    return gcoords;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Static helper function for
+/// bilinearInterpolation().
+///
+/// \param mat const Matrix&
+/// \param row int
+/// \param col int
+/// \return double
+///
+/////////////////////////////////////////////////
+static double readMat(const Matrix& mat, int row, int col)
+{
+    if (row < (int)mat.size() && col < (int)mat[0].size() && row >= 0 && col >= 0)
+        return mat[row][col];
+    else
+        return NAN;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Performs the bilinear interpolation of
+/// the matrix value at the selected coordinates.
+///
+/// \param mat const Matrix&
+/// \param row double
+/// \param col double
+/// \return double
+///
+/////////////////////////////////////////////////
+static double bilinearInterpolation(const Matrix& mat, double row, double col)
+{
+    if (std::isnan(row) || std::isnan(col))
+        return NAN;
+
+    // Find the base index
+    int nBaseLine = intCast(row) + (row < 0 ? -1 : 0);
+    int nBaseCol = intCast(col) + (col < 0 ? -1 : 0);
+
+    // Get the decimal part of the double indices
+    double x = row - nBaseLine;
+    double y = col - nBaseCol;
+
+    // Find the surrounding four entries
+    double f00 = readMat(mat, nBaseLine, nBaseCol);
+    double f10 = readMat(mat, nBaseLine+1, nBaseCol);
+    double f01 = readMat(mat, nBaseLine, nBaseCol+1);
+    double f11 = readMat(mat, nBaseLine+1, nBaseCol+1);
+
+    // If all are NAN, return NAN
+    if (std::isnan(f00) && std::isnan(f01) && std::isnan(f10) && std::isnan(f11))
+        return NAN;
+
+    // Otherwise set NAN to zero
+    f00 = std::isnan(f00) ? 0.0 : f00;
+    f10 = std::isnan(f10) ? 0.0 : f10;
+    f01 = std::isnan(f01) ? 0.0 : f01;
+    f11 = std::isnan(f11) ? 0.0 : f11;
+
+    //     f(0,0) (1-x) (1-y) + f(1,0) x (1-y) + f(0,1) (1-x) y + f(1,1) x y
+    return f00*(1-x)*(1-y)    + f10*x*(1-y)    + f01*(1-x)*y    + f11*x*y;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function wraps the
+/// bilinear interpolation algorithm for
+/// interpolating the values of the first matrix
+/// in the coordinates of the second matrix.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix interpolate(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    if (funcData.mat2[0].size() >= 2 && funcData.mat1[0].size() <= 2)
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat1.size()) + "x" + toString(funcData.mat1[0].size()) + " vs. "+ toString(funcData.mat2.size()) + "x"+ toString(funcData.mat2[0].size()));
+
+    Matrix interp = createFilledMatrix(funcData.mat2.size(), funcData.mat2[0].size()-1, 0.0);
+
+    // Interpolate all values in the matrix mat2. First
+    // column contains the row values, all remaining contain
+    // the corresponding col values
+    for (size_t i = 0; i < funcData.mat2.size(); i++)
+    {
+        if (funcData.mat2[i].size() >= 2)
+        {
+            for (size_t j = 1; j < funcData.mat2[i].size(); j++)
+            {
+                interp[i][j-1] = bilinearInterpolation(funcData.mat1, funcData.mat2[i][0]-1.0, funcData.mat2[i][j]-1.0);
+            }
+        }
+        else
+            interp[i][0] = bilinearInterpolation(funcData.mat1, funcData.mat2[i][0]-1.0, 0.0);
+    }
+
+    return interp;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Static invalid matrix function, which
 /// will always throw an error.
 ///
@@ -2500,6 +2675,8 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["cyltopol"] = MatFuncDef(MATSIG_MAT, cylToPolar);
     mFunctions["poltocart"] = MatFuncDef(MATSIG_MAT, polarToCart);
     mFunctions["poltocyl"] = MatFuncDef(MATSIG_MAT, polarToCyl);
+    mFunctions["coordstogrid"] = MatFuncDef(MATSIG_MAT_MAT, coordsToGrid);
+    mFunctions["interpolate"] = MatFuncDef(MATSIG_MAT_MAT, interpolate);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);
