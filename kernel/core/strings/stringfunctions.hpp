@@ -910,7 +910,115 @@ static string strfnc_strfnd(StringFuncArgs& funcArgs)
 
     if (funcArgs.sArg2.front() == '"')
         funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
+
     return toString((int)funcArgs.sArg2.find(funcArgs.sArg1, funcArgs.nArg1 - 1) + 1);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the strfndall()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_strfndall(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg2.length())
+        return "0";
+
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = 1;
+
+    if (funcArgs.nArg2 == DEFAULT_NUM_ARG || funcArgs.nArg2 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg2)
+        funcArgs.nArg2 = funcArgs.sArg2.length();
+
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
+
+    std::string positions;
+    size_t pos_start = funcArgs.nArg1 - 1;
+    size_t pos_last = funcArgs.nArg2 - funcArgs.sArg1.length();
+
+    while (pos_start <= pos_last)
+    {
+        pos_start = funcArgs.sArg2.find(funcArgs.sArg1, pos_start);
+
+        if (pos_start <= pos_last)
+        {
+            pos_start++;
+
+            if (positions.length())
+                positions += ",";
+
+            positions += toString(pos_start);
+        }
+        else
+        {
+            if (positions.length())
+                return positions;
+
+            return "0";
+        }
+    }
+
+    if (!positions.length())
+        return "0";
+
+    return positions;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Implementation of the strmatchall()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_strmatchall(StringFuncArgs& funcArgs)
+{
+    if (!funcArgs.sArg2.length())
+        return "0";
+
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG || funcArgs.nArg1 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg1)
+        funcArgs.nArg1 = 1;
+
+    if (funcArgs.nArg2 == DEFAULT_NUM_ARG || funcArgs.nArg2 <= 0 || funcArgs.sArg2.length() < (size_t)funcArgs.nArg2)
+        funcArgs.nArg2 = funcArgs.sArg2.length();
+
+    funcArgs.sArg1 = removeMaskedStrings(funcArgs.sArg1);
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    if (funcArgs.sArg2.front() == '"')
+        funcArgs.sArg2 = funcArgs.sArg2.substr(funcArgs.sArg2.find('"') + 1, funcArgs.sArg2.rfind('"') - funcArgs.sArg2.find('"') - 1);
+
+    std::string positions;
+    size_t pos_start = funcArgs.nArg1 - 1;
+    size_t pos_last = funcArgs.nArg2 - 1;
+
+    for (size_t i = 0; i < funcArgs.sArg1.length(); i++)
+    {
+        size_t match = funcArgs.sArg2.find(funcArgs.sArg1[i], pos_start);
+
+        if (positions.length())
+            positions += ",";
+
+        if (match <= pos_last)
+            positions += toString(match+1);
+        else
+            positions += "0";
+    }
+
+    if (!positions.length())
+        return "0";
+
+    return positions;
 }
 
 
@@ -1971,8 +2079,10 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["str_not_rmatch"]      = StringFuncHandle(STR_STR_VALOPT, strfnc_str_not_rmatch, false);
     mHandleTable["strip"]               = StringFuncHandle(STR_STR_STR_VALOPT_VALOPT, strfnc_strip, false);
     mHandleTable["strfnd"]              = StringFuncHandle(STR_STR_VALOPT, strfnc_strfnd, false);
+    mHandleTable["strfndall"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_strfndall, false);
     mHandleTable["strlen"]              = StringFuncHandle(STR, strfnc_strlen, false);
     mHandleTable["strmatch"]            = StringFuncHandle(STR_STR_VALOPT, strfnc_strmatch, false);
+    mHandleTable["strmatchall"]         = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_strmatchall, false);
     mHandleTable["strrfnd"]             = StringFuncHandle(STR_STR_VALOPT, strfnc_strrfnd, false);
     mHandleTable["strrmatch"]           = StringFuncHandle(STR_STR_VALOPT, strfnc_strrmatch, false);
     mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
