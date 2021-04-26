@@ -107,10 +107,17 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnMouseDwell(wxStyledTextEvent& event);
 		void OnSavePointReached(wxStyledTextEvent& event);
 		void OnSavePointLeft(wxStyledTextEvent& event);
+		void OnAutoCompletion(wxStyledTextEvent& event);
+		void OnIdle(wxIdleEvent& event);
+
+		bool isBlockStart(const wxString& sWord, bool allowIntermediate = false);
+		bool isBlockEnd(const wxString& sWord);
+		wxString getBlockAutoCompletion(const wxString& sWord);
+		wxString getBlockEnd(const wxString& sWord);
+		wxString getBlockStart(const wxString& sWord);
 		void ClearDblClkIndicator();
 		void MakeBraceCheck();
 		void MakeBlockCheck();
-		void OnIdle(wxIdleEvent& event);
 
 		// asynch update calls
 		void HandleFunctionCallTip();
@@ -124,48 +131,13 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void AdvCallTipShow(int pos, const wxString& definition);
 		void AdvCallTipCancel();
 
-		/** \brief Finds the matching brace to the brace at the position nPos
-		 *
-		 * \param nPos int
-		 * \return void
-		 *
-		 */
 		void getMatchingBrace(int nPos);
-		/** \brief Finds the matching flow control element to the one at the position nPos
-		 *
-		 * \param nPos int
-		 * \return void
-		 *
-		 */
 		void getMatchingBlock(int nPos);
-		/** \brief Searches for flow control elements
-		 *
-		 * Returnes a vector. If first element is invalid, the word is no command. If the last
-		 * one is invalid, there's no matching partner. It returnes more than two elements for
-		 * "if" blocks. If there's no first "if", if one currently focussing on an "else...",
-		 * the first element may be invalid, but more can be returned.
-		 *
-		 * \param nPos int
-		 * \return vector<int>
-		 *
-		 */
 		vector<int> BlockMatch(int nPos);
 		vector<int> BlockMatchNSCR(int nPos);
 		vector<int> BlockMatchMATLAB(int nPos);
-		/** \brief Applies the syntax hinghlighting depending on the loaded file type
-		 *
-		 * \param forceUpdate bool
-		 * \return void
-		 *
-		 */
 		void UpdateSyntaxHighlighting(bool forceUpdate = false);
-		/** \brief Jumps the cursor to the named line and displays an indicator if desired
-		 *
-		 * \param linenumber int
-		 * \param showMarker bool
-		 * \return void
-		 *
-		 */
+		void UpdateIndicators();
 		void FocusOnLine(int linenumber, bool showMarker = true);
 
 		FileFilterType GetFileType(const wxString& filename);
@@ -459,6 +431,8 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		bool m_PopUpActive;
 		bool m_dragging;
 		bool m_modificationHappened;
+		bool m_braceIndicatorActive;
+		bool m_blockIndicatorActive;
 
 		int m_nEditorSetting;
 		FileFilterType m_fileType;

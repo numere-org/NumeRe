@@ -94,6 +94,7 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_STC_DRAG_OVER   (-1, NumeReEditor::OnDragOver)
     EVT_STC_SAVEPOINTREACHED (-1, NumeReEditor::OnSavePointReached)
     EVT_STC_SAVEPOINTLEFT (-1, NumeReEditor::OnSavePointLeft)
+    EVT_STC_AUTOCOMP_SELECTION (-1, NumeReEditor::OnAutoCompletion)
     EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
     EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
     EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
@@ -156,6 +157,8 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_nCallTipStart = 0;
     m_modificationHappened = false;
     m_nDuplicateCodeLines = 6;
+    m_braceIndicatorActive = false;
+    m_blockIndicatorActive = false;
 
     m_watchedString = "";
     m_dblclkString = "";
@@ -184,80 +187,80 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
 
     Bind(wxEVT_THREAD, &NumeReEditor::OnThreadUpdate, this);
 
-    this->SetTabWidth(4);
-    this->SetIndent(4);
-    this->SetUseTabs(true);
+    SetTabWidth(4);
+    SetIndent(4);
+    SetUseTabs(true);
 
-    this->SetMultipleSelection(true);
-    this->SetVirtualSpaceOptions(wxSTC_SCVS_RECTANGULARSELECTION);
-    this->SetAdditionalSelectionTyping(true);
-    this->SetMultiPaste(wxSTC_MULTIPASTE_EACH);
+    SetMultipleSelection(true);
+    SetVirtualSpaceOptions(wxSTC_SCVS_RECTANGULARSELECTION);
+    SetAdditionalSelectionTyping(true);
+    SetMultiPaste(wxSTC_MULTIPASTE_EACH);
 
-    this->SetMarginWidth(0, 40);
-    this->SetMarginType(0, wxSTC_MARGIN_NUMBER);
+    SetMarginWidth(0, 40);
+    SetMarginType(0, wxSTC_MARGIN_NUMBER);
 
-    this->SetMarginWidth(1, 20);
-    this->SetMarginType(1, wxSTC_MARGIN_SYMBOL);
+    SetMarginWidth(1, 20);
+    SetMarginType(1, wxSTC_MARGIN_SYMBOL);
 
-    this->SetYCaretPolicy(wxSTC_CARET_SLOP | wxSTC_CARET_STRICT | wxSTC_CARET_EVEN, 1);
+    SetYCaretPolicy(wxSTC_CARET_SLOP | wxSTC_CARET_STRICT | wxSTC_CARET_EVEN, 1);
 
     wxFileName f(wxStandardPaths::Get().GetExecutablePath());
     //wxInitAllImageHandlers();
-    this->RegisterImage(NumeReSyntax::SYNTAX_COMMAND, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cmd.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_FUNCTION, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\fnc.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_OPTION, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opt.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_CONSTANT, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cnst.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_SPECIALVAL, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\spv.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_OPERATOR, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opr.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_METHODS, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\mthd.png", wxBITMAP_TYPE_PNG));
-    this->RegisterImage(NumeReSyntax::SYNTAX_PROCEDURE, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\prc.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_COMMAND, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cmd.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_FUNCTION, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\fnc.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_OPTION, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opt.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_CONSTANT, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\cnst.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_SPECIALVAL, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\spv.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_OPERATOR, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\opr.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_METHODS, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\mthd.png", wxBITMAP_TYPE_PNG));
+    RegisterImage(NumeReSyntax::SYNTAX_PROCEDURE, wxBitmap(f.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "icons\\prc.png", wxBITMAP_TYPE_PNG));
 
     wxFont font = m_options->GetEditorFont();
-    this->StyleSetFont(wxSTC_STYLE_DEFAULT, font);
+    StyleSetFont(wxSTC_STYLE_DEFAULT, font);
 
     // Add the characters for procedures to the word char list
     // this->SetWordChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$~");
 
-    this->StyleClearAll();
+    StyleClearAll();
 
-    this->SetMouseDwellTime(500);
+    SetMouseDwellTime(500);
 
-    this->EmptyUndoBuffer();
+    EmptyUndoBuffer();
     m_bSetUnsaved = false;
     m_bNewFile = true;
     UpdateSyntaxHighlighting();
     m_bNewFile = false;
 
-    this->MarkerDefine(MARKER_BREAKPOINT, wxSTC_MARK_CIRCLE);
-    this->MarkerSetBackground(MARKER_BREAKPOINT, wxColour("red"));
+    MarkerDefine(MARKER_BREAKPOINT, wxSTC_MARK_CIRCLE);
+    MarkerSetBackground(MARKER_BREAKPOINT, wxColour("red"));
 
-    this->MarkerDefine(MARKER_BOOKMARK, wxSTC_MARK_SMALLRECT);
-    this->MarkerSetBackground(MARKER_BOOKMARK, wxColour(192, 0, 64));
+    MarkerDefine(MARKER_BOOKMARK, wxSTC_MARK_SMALLRECT);
+    MarkerSetBackground(MARKER_BOOKMARK, wxColour(192, 0, 64));
 
-    this->MarkerDefine(MARKER_FOCUSEDLINE, wxSTC_MARK_SHORTARROW);
-    this->MarkerSetBackground(MARKER_FOCUSEDLINE, wxColour("yellow"));
+    MarkerDefine(MARKER_FOCUSEDLINE, wxSTC_MARK_SHORTARROW);
+    MarkerSetBackground(MARKER_FOCUSEDLINE, wxColour("yellow"));
 
-    this->MarkerDefine(MARKER_MODIFIED, wxSTC_MARK_LEFTRECT);
-    this->MarkerSetBackground(MARKER_MODIFIED, wxColour(255, 220, 0));
+    MarkerDefine(MARKER_MODIFIED, wxSTC_MARK_LEFTRECT);
+    MarkerSetBackground(MARKER_MODIFIED, wxColour(255, 220, 0));
 
-    this->MarkerDefine(MARKER_SAVED, wxSTC_MARK_LEFTRECT);
-    this->MarkerSetBackground(MARKER_SAVED, wxColour("green"));
+    MarkerDefine(MARKER_SAVED, wxSTC_MARK_LEFTRECT);
+    MarkerSetBackground(MARKER_SAVED, wxColour("green"));
 
-    this->MarkerDefine(MARKER_SECTION, wxSTC_MARK_ARROWDOWN);
-    //this->MarkerSetBackground(MARKER_SECTION, wxColor(192,192,192));
-    //this->MarkerSetBackground(MARKER_SECTION, wxColor(255,192,192));
-    this->MarkerSetBackground(MARKER_SECTION, m_options->GetSyntaxStyle(Options::COMMENT).foreground);
+    MarkerDefine(MARKER_SECTION, wxSTC_MARK_ARROWDOWN);
+    MarkerSetBackground(MARKER_SECTION, m_options->GetSyntaxStyle(Options::COMMENT).foreground);
 
-    this->MarkerDefine(MARKER_HIDDEN, wxSTC_MARK_UNDERLINE);
-    this->MarkerSetBackground(MARKER_HIDDEN, wxColour(128, 128, 128));
-    this->MarkerDefine(MARKER_HIDDEN_MARGIN, wxSTC_MARK_DOTDOTDOT);
-    this->MarkerSetBackground(MARKER_HIDDEN_MARGIN, wxColour(128, 128, 128));
+    MarkerDefine(MARKER_HIDDEN, wxSTC_MARK_UNDERLINE);
+    MarkerSetBackground(MARKER_HIDDEN, wxColour(128, 128, 128));
+    MarkerDefine(MARKER_HIDDEN_MARGIN, wxSTC_MARK_DOTDOTDOT);
+    MarkerSetBackground(MARKER_HIDDEN_MARGIN, wxColour(128, 128, 128));
 
-    this->SetMarginSensitive(1, true);
+    SetMarginSensitive(1, true);
 
-    this->UsePopUp(false);
+    UsePopUp(false);
 
-    this->SetCaretPeriod(m_options->GetCaretBlinkTime());
+    UpdateIndicators();
+
+    SetCaretPeriod(m_options->GetCaretBlinkTime());
 
     m_refactoringMenu = new wxMenu();
     m_refactoringMenu->Append(ID_RENAME_SYMBOLS, _guilang.get("GUI_MENU_EDITOR_RENAME_SYMBOLS"));
@@ -862,31 +865,33 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
 /////////////////////////////////////////////////
 void NumeReEditor::MakeBraceCheck()
 {
-    char CurrentChar = this->GetCharAt(this->GetCurrentPos());
+    int curPos = GetCurrentPos();
+    char CurrentChar = GetCharAt(curPos);
     char PrevChar = 0;
 
     // Find the previous character, if available
-    if (this->GetCurrentPos())
-        PrevChar = this->GetCharAt(this->GetCurrentPos() - 1);
+    if (curPos)
+        PrevChar = GetCharAt(curPos - 1);
 
     // Find the matching brace
     if (CurrentChar == ')' || CurrentChar == ']' || CurrentChar == '}')
-        getMatchingBrace(this->GetCurrentPos());
+        getMatchingBrace(curPos);
     else if (PrevChar == '(' || PrevChar == '[' || PrevChar == '{')
-        getMatchingBrace(this->GetCurrentPos() - 1);
+        getMatchingBrace(curPos - 1);
     else if (CurrentChar == '(' || CurrentChar == '[' || CurrentChar == '{')
-        getMatchingBrace(this->GetCurrentPos());
+        getMatchingBrace(curPos);
     else if (PrevChar == ')' || PrevChar == ']' || PrevChar == '}')
-        getMatchingBrace(this->GetCurrentPos() - 1);
-    else
+        getMatchingBrace(curPos - 1);
+    else if (m_braceIndicatorActive)
     {
-        // Deactivate all indicators, if the no brace is at cursor's
+        // Deactivate all indicators, if there's no brace is at cursor's
         // position
         this->SetIndicatorCurrent(HIGHLIGHT_MATCHING_BRACE);
-        long int maxpos = this->GetLastPosition();
-        this->IndicatorClearRange(0, maxpos);
+        this->IndicatorClearRange(0, GetLastPosition());
         this->BraceBadLight(wxSTC_INVALID_POSITION);
         this->BraceHighlight(wxSTC_INVALID_POSITION, wxSTC_INVALID_POSITION);
+
+        m_braceIndicatorActive = false;
     }
 
     applyStrikeThrough();
@@ -909,10 +914,15 @@ void NumeReEditor::MakeBlockCheck()
         return;
 
     // clear all indicators first
-    this->SetIndicatorCurrent(HIGHLIGHT_MATCHING_BLOCK);
-    this->IndicatorClearRange(0, GetLastPosition());
-    this->SetIndicatorCurrent(HIGHLIGHT_NOT_MATCHING_BLOCK);
-    this->IndicatorClearRange(0, GetLastPosition());
+    if (m_blockIndicatorActive)
+    {
+        SetIndicatorCurrent(HIGHLIGHT_MATCHING_BLOCK);
+        IndicatorClearRange(0, GetLastPosition());
+        SetIndicatorCurrent(HIGHLIGHT_NOT_MATCHING_BLOCK);
+        IndicatorClearRange(0, GetLastPosition());
+
+        m_blockIndicatorActive = false;
+    }
 
     // Ensure that we have a command below the cursor
     if (!isStyleType(STYLE_COMMAND, GetCurrentPos()) && !isStyleType(STYLE_COMMAND, GetCurrentPos()-1))
@@ -923,34 +933,7 @@ void NumeReEditor::MakeBlockCheck()
 
     // If the word is a flow control statement
     // find the matching block
-    if (currentWord == "if"
-            || currentWord == "else"
-            || currentWord == "elseif"
-            || currentWord == "endif"
-            || currentWord == "for"
-            || currentWord == "endfor"
-            || currentWord == "while"
-            || currentWord == "endwhile"
-            || currentWord == "compose"
-            || currentWord == "endcompose"
-            || currentWord == "layout"
-            || currentWord == "endlayout"
-            || currentWord == "group"
-            || currentWord == "endgroup"
-            || currentWord == "procedure"
-            || currentWord == "endprocedure"
-            || currentWord == "endswitch"
-            || currentWord == "end"
-            || currentWord == "function"
-            || currentWord == "classdef"
-            || currentWord == "properties"
-            || currentWord == "methods"
-            || currentWord == "switch"
-            || currentWord == "case"
-            || currentWord == "otherwise"
-            || currentWord == "default"
-            || currentWord == "try"
-            || currentWord == "catch")
+    if (isBlockStart(currentWord, true) || isBlockEnd(currentWord))
         getMatchingBlock(GetCurrentPos());
 }
 
@@ -1339,119 +1322,122 @@ void NumeReEditor::OnKeyDn(wxKeyEvent& event)
 {
     // Check the parentheses in the case of selections
     // and matching partners
-    if (this->HasSelection()
-            && event.GetKeyCode() != WXK_SHIFT
-            && event.GetKeyCode() != WXK_CAPITAL
-            && event.GetKeyCode() != WXK_END
-            && event.GetKeyCode() != WXK_HOME)
+    if (event.GetKeyCode() != WXK_SHIFT
+        && event.GetKeyCode() != WXK_CAPITAL
+        && event.GetKeyCode() != WXK_END
+        && event.GetKeyCode() != WXK_HOME
+        && event.GetKeyCode() != WXK_LEFT
+        && event.GetKeyCode() != WXK_RIGHT
+        && event.GetKeyCode() != WXK_UP
+        && event.GetKeyCode() != WXK_DOWN)
     {
-        // Selection case: extract the position of the
-        // end of the selection and insert the parenthesis
-        // characters around the selection
-        char chr = event.GetKeyCode();
-        if (event.ShiftDown() && (chr == '8' || chr == '9'))
+        if (this->HasSelection())
         {
-            this->BeginUndoAction();
-            int selStart = this->GetSelectionStart();
-            int selEnd = this->GetSelectionEnd() + 1;
-            this->InsertText(selStart, "(");
-            this->InsertText(selEnd, ")");
-            if (chr == '8')
-                this->GotoPos(selStart);
-            else
-                this->GotoPos(selEnd + 1);
-            this->EndUndoAction();
-            MakeBraceCheck();
-            MakeBlockCheck();
-            return;
-        }
-        else if (event.ShiftDown() && chr == '2')
-        {
-            this->BeginUndoAction();
-            int selStart = this->GetSelectionStart();
-            int selEnd = this->GetSelectionEnd() + 1;
-            this->InsertText(selStart, "\"");
-            this->InsertText(selEnd, "\"");
-            this->GotoPos(selEnd + 1);
-            this->EndUndoAction();
-            MakeBraceCheck();
-            MakeBlockCheck();
-            return;
-        }
-        else if (event.ControlDown() && event.AltDown() && (chr == '8' || chr == '9')) // Alt Gr means CTRL+ALT
-        {
-            this->BeginUndoAction();
-            int selStart = this->GetSelectionStart();
-            int selEnd = this->GetSelectionEnd() + 1;
-            this->InsertText(selStart, "[");
-            this->InsertText(selEnd, "]");
-            if (chr == '8')
-                this->GotoPos(selStart);
-            else
-                this->GotoPos(selEnd + 1);
-            this->EndUndoAction();
-            MakeBraceCheck();
-            MakeBlockCheck();
-            return;
-        }
-        else if (event.ControlDown() && event.AltDown() && (chr == '7' || chr == '0'))
-        {
-            this->BeginUndoAction();
-            int selStart = this->GetSelectionStart();
-            int selEnd = this->GetSelectionEnd() + 1;
-            this->InsertText(selStart, "{");
-            this->InsertText(selEnd, "}");
-            if (chr == '7')
-                this->GotoPos(selStart);
-            else
-                this->GotoPos(selEnd + 1);
-            this->EndUndoAction();
-            MakeBraceCheck();
-            MakeBlockCheck();
-            return;
-        }
-    }
-    else if (event.GetKeyCode() != WXK_SHIFT
-            && event.GetKeyCode() != WXK_CAPITAL
-            && event.GetKeyCode() != WXK_END
-            && event.GetKeyCode() != WXK_HOME)
-    {
-        // Matching partner case: if the matching partner
-        // is right to the current input position, simply
-        // jump one position to the right. Note that this
-        // algorithm will not work in strings, because
-        // parenthesis matching in strings is not necessary
-        char chr = event.GetKeyCode();
-        if (event.ShiftDown() && chr == '9')
-        {
-            if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == ')' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+            // Selection case: extract the position of the
+            // end of the selection and insert the parenthesis
+            // characters around the selection
+            char chr = event.GetKeyCode();
+            if (event.ShiftDown() && (chr == '8' || chr == '9'))
             {
-                GotoPos(GetCurrentPos()+1);
+                this->BeginUndoAction();
+                int selStart = this->GetSelectionStart();
+                int selEnd = this->GetSelectionEnd() + 1;
+                this->InsertText(selStart, "(");
+                this->InsertText(selEnd, ")");
+                if (chr == '8')
+                    this->GotoPos(selStart);
+                else
+                    this->GotoPos(selEnd + 1);
+                this->EndUndoAction();
+                MakeBraceCheck();
+                MakeBlockCheck();
+                return;
+            }
+            else if (event.ShiftDown() && chr == '2')
+            {
+                this->BeginUndoAction();
+                int selStart = this->GetSelectionStart();
+                int selEnd = this->GetSelectionEnd() + 1;
+                this->InsertText(selStart, "\"");
+                this->InsertText(selEnd, "\"");
+                this->GotoPos(selEnd + 1);
+                this->EndUndoAction();
+                MakeBraceCheck();
+                MakeBlockCheck();
+                return;
+            }
+            else if (event.ControlDown() && event.AltDown() && (chr == '8' || chr == '9')) // Alt Gr means CTRL+ALT
+            {
+                this->BeginUndoAction();
+                int selStart = this->GetSelectionStart();
+                int selEnd = this->GetSelectionEnd() + 1;
+                this->InsertText(selStart, "[");
+                this->InsertText(selEnd, "]");
+                if (chr == '8')
+                    this->GotoPos(selStart);
+                else
+                    this->GotoPos(selEnd + 1);
+                this->EndUndoAction();
+                MakeBraceCheck();
+                MakeBlockCheck();
+                return;
+            }
+            else if (event.ControlDown() && event.AltDown() && (chr == '7' || chr == '0'))
+            {
+                this->BeginUndoAction();
+                int selStart = this->GetSelectionStart();
+                int selEnd = this->GetSelectionEnd() + 1;
+                this->InsertText(selStart, "{");
+                this->InsertText(selEnd, "}");
+                if (chr == '7')
+                    this->GotoPos(selStart);
+                else
+                    this->GotoPos(selEnd + 1);
+                this->EndUndoAction();
+                MakeBraceCheck();
+                MakeBlockCheck();
                 return;
             }
         }
-        else if (event.ShiftDown() && chr == '2')
+        else
         {
-            if (isStyleType(STYLE_STRING, GetCurrentPos()-1) && GetCharAt(GetCurrentPos()) == '"' && GetCharAt(GetCurrentPos()-1) != '\\')
+            // Matching partner case: if the matching partner
+            // is right to the current input position, simply
+            // jump one position to the right. Note that this
+            // algorithm will not work in strings, because
+            // parenthesis matching in strings is not necessary
+            char chr = event.GetKeyCode();
+            if (event.ShiftDown() && chr == '9')
             {
-                GotoPos(GetCurrentPos()+1);
-                return;
+                if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == ')' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+                {
+                    GotoPos(GetCurrentPos()+1);
+                    return;
+                }
             }
-        }
-        else if (event.ControlDown() && event.AltDown() && chr == '9') // Alt Gr means CTRL+ALT
-        {
-            if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == ']' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+            else if (event.ShiftDown() && chr == '2')
             {
-                GotoPos(GetCurrentPos()+1);
-                return;
+                if (isStyleType(STYLE_STRING, GetCurrentPos()-1) && GetCharAt(GetCurrentPos()) == '"' && GetCharAt(GetCurrentPos()-1) != '\\')
+                {
+                    GotoPos(GetCurrentPos()+1);
+                    return;
+                }
             }
-        }
-        else if (event.ControlDown() && event.AltDown() && chr == '0')
-        {
-            if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == '}' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+            else if (event.ControlDown() && event.AltDown() && chr == '9') // Alt Gr means CTRL+ALT
             {
-                GotoPos(GetCurrentPos()+1);
-                return;
+                if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == ']' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+                {
+                    GotoPos(GetCurrentPos()+1);
+                    return;
+                }
+            }
+            else if (event.ControlDown() && event.AltDown() && chr == '0')
+            {
+                if (!isStyleType(STYLE_STRING, GetCurrentPos()) && GetCharAt(GetCurrentPos()) == '}' && BraceMatch(GetCurrentPos()) != wxSTC_INVALID_POSITION)
+                {
+                    GotoPos(GetCurrentPos()+1);
+                    return;
+                }
             }
         }
     }
@@ -1579,9 +1565,6 @@ void NumeReEditor::OnMouseDblClk(wxMouseEvent& event)
     // Update the Indicators
     SetIndicatorCurrent(HIGHLIGHT_DBLCLK);
     IndicatorClearRange(0, maxpos);
-    IndicatorSetStyle(HIGHLIGHT_DBLCLK, wxSTC_INDIC_ROUNDBOX);
-    IndicatorSetAlpha(HIGHLIGHT_DBLCLK, 80);
-    IndicatorSetForeground(HIGHLIGHT_DBLCLK, wxColor(0, 255, 0));
 
     int nPos = 0;
     int nCurr = 0;
@@ -2105,6 +2088,60 @@ void NumeReEditor::OnSavePointReached(wxStyledTextEvent& event)
 void NumeReEditor::OnSavePointLeft(wxStyledTextEvent& event)
 {
     SetUnsaved();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This event handler fires, if the user
+/// selects an entry in the autocompletion list
+/// or if he presses e.g. TAB.
+///
+/// \param event wxStyledTextEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::OnAutoCompletion(wxStyledTextEvent& event)
+{
+    // Is the autocompleted text a function or
+    // a control flow statement?
+    if (event.GetText()[event.GetText().length()-1] == '(')
+    {
+        // Ensure that there's actually a need for a new
+        // parenthesis and insert a closed pair
+        if (GetCharAt(GetCurrentPos()) != '(' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION)
+            InsertText(GetCurrentPos(), "()");
+
+        // Replace the current text with the function's
+        // name without the parenthesis
+        Replace(event.GetPosition(), GetCurrentPos(), event.GetText().substr(0, event.GetText().length()-1));
+
+        // Jump into the parenthesis
+        GotoPos(event.GetPosition() + event.GetText().length());
+        AutoCompCancel();
+    }
+    else if (isBlockStart(event.GetText(), true))
+    {
+        // Get the autocompletion block and find
+        // the pipe position
+        wxString sAutoComp = getBlockAutoCompletion(event.GetText());
+        size_t pos = sAutoComp.find('|');
+
+        // Remove the pipe position
+        sAutoComp.erase(pos, 1);
+
+        // Replace the current text with the
+        // complete autocompletion text
+        Replace(event.GetPosition(), GetCurrentPos(), sAutoComp);
+
+        // Copy the line indentation for the second statement,
+        // if needed
+        if (sAutoComp.find("\r\n") != std::string::npos)
+            SetLineIndentation(LineFromPosition(event.GetPosition())+1, GetLineIndentation(LineFromPosition(event.GetPosition())));
+
+        // Goto the pipe position
+        GotoPos(event.GetPosition() + pos);
+        AutoCompCancel();
+    }
 }
 
 
@@ -2851,10 +2888,6 @@ void NumeReEditor::getMatchingBrace(int nPos)
         // the brace and the room in between
         SetIndicatorCurrent(HIGHLIGHT_MATCHING_BRACE);
         IndicatorClearRange(0, GetLastPosition());
-        //IndicatorSetStyle(HIGHLIGHT_MATCHING_BRACE, wxSTC_INDIC_DIAGONAL);
-        //IndicatorSetForeground(HIGHLIGHT_MATCHING_BRACE, wxColour(0, 150, 0));
-        IndicatorSetStyle(HIGHLIGHT_MATCHING_BRACE, wxSTC_INDIC_ROUNDBOX);
-        IndicatorSetForeground(HIGHLIGHT_MATCHING_BRACE, wxColour(0, 200, 0));
 
         if (nMatch < nPos)
         {
@@ -2866,6 +2899,8 @@ void NumeReEditor::getMatchingBrace(int nPos)
             BraceHighlight(nPos, nMatch);
             IndicatorFillRange(nPos + 1, nMatch - nPos - 1);
         }
+
+        m_braceIndicatorActive = true;
     }
 }
 
@@ -2901,12 +2936,6 @@ void NumeReEditor::getMatchingBlock(int nPos)
 
     // Clear the indicators
     IndicatorClearRange(0, GetLastPosition());
-    IndicatorSetStyle(HIGHLIGHT_MATCHING_BLOCK, wxSTC_INDIC_ROUNDBOX);
-    IndicatorSetAlpha(HIGHLIGHT_MATCHING_BLOCK, 100);
-    IndicatorSetForeground(HIGHLIGHT_MATCHING_BLOCK, wxColour(0, 220, 0));
-    IndicatorSetStyle(HIGHLIGHT_NOT_MATCHING_BLOCK, wxSTC_INDIC_ROUNDBOX);
-    IndicatorSetAlpha(HIGHLIGHT_NOT_MATCHING_BLOCK, 128);
-    IndicatorSetForeground(HIGHLIGHT_NOT_MATCHING_BLOCK, wxColour(255, 0, 0));
 
     // Highlight all occurences
     for (size_t i = 0; i < vMatch.size(); i++)
@@ -2916,6 +2945,8 @@ void NumeReEditor::getMatchingBlock(int nPos)
 
         IndicatorFillRange(vMatch[i], WordEndPosition(vMatch[i], true) - vMatch[i]);
     }
+
+    m_blockIndicatorActive = true;
 }
 
 
@@ -2993,7 +3024,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 
     if (startblock.substr(0, 3) == "end")
     {
-        endblock = startblock.substr(3);
+        endblock = getBlockStart(startblock);
         nSearchDir = -1;
     }
     else if (startblock == "else" || startblock == "elseif")
@@ -3164,9 +3195,10 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
         bSearchForSwitch = true;
         endblock = "endswitch";
     }
-    else if (startblock == "if" || startblock == "for" || startblock == "while" || startblock == "compose" || startblock == "procedure" || startblock == "switch" || startblock == "layout" || startblock == "group")
-        endblock = "end" + startblock;
     else
+        endblock = getBlockEnd(startblock);
+
+    if (!endblock.length())
     {
         vPos.push_back(wxSTC_INVALID_POSITION);
         return vPos;
@@ -4105,6 +4137,64 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
 
 
 /////////////////////////////////////////////////
+/// \brief Defines and applies styles to all
+/// needed indicators.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReEditor::UpdateIndicators()
+{
+    // Indicator for the matching brace
+    IndicatorSetStyle(HIGHLIGHT_MATCHING_BRACE, wxSTC_INDIC_ROUNDBOX);
+    IndicatorSetForeground(HIGHLIGHT_MATCHING_BRACE, wxColour(0, 200, 0));
+
+    // Indicator for a matching control
+    // flow block
+    IndicatorSetStyle(HIGHLIGHT_MATCHING_BLOCK, wxSTC_INDIC_ROUNDBOX);
+    IndicatorSetAlpha(HIGHLIGHT_MATCHING_BLOCK, 100);
+    IndicatorSetForeground(HIGHLIGHT_MATCHING_BLOCK, wxColour(0, 220, 0));
+
+    // Indicator for a non-matching
+    // control flow block
+    IndicatorSetStyle(HIGHLIGHT_NOT_MATCHING_BLOCK, wxSTC_INDIC_ROUNDBOX);
+    IndicatorSetAlpha(HIGHLIGHT_NOT_MATCHING_BLOCK, 128);
+    IndicatorSetForeground(HIGHLIGHT_NOT_MATCHING_BLOCK, wxColour(255, 0, 0));
+
+    // Indicator for highlighted occurences
+    // after double-clicking
+    IndicatorSetStyle(HIGHLIGHT_DBLCLK, wxSTC_INDIC_ROUNDBOX);
+    IndicatorSetAlpha(HIGHLIGHT_DBLCLK, 80);
+    IndicatorSetForeground(HIGHLIGHT_DBLCLK, wxColor(0, 255, 0));
+
+    // Indicator for permanently highlighted
+    // occurences
+    IndicatorSetStyle(HIGHLIGHT, wxSTC_INDIC_ROUNDBOX);
+    IndicatorSetAlpha(HIGHLIGHT, 100);
+    IndicatorSetForeground(HIGHLIGHT, wxColor(255, 0, 0));
+
+    // Indicator for strike-through
+    IndicatorSetStyle(HIGHLIGHT_STRIKETHROUGH, wxSTC_INDIC_STRIKE);
+    IndicatorSetForeground(HIGHLIGHT_STRIKETHROUGH, wxColor(255, 0, 0));
+
+    // Indicator for highlighting local
+    // variables
+    IndicatorSetStyle(HIGHLIGHT_LOCALVARIABLES, wxSTC_INDIC_DOTS);
+    IndicatorSetForeground(HIGHLIGHT_LOCALVARIABLES, *wxBLACK);
+
+    // Indicators for highlighting differences in
+    // the duplicated code analysis
+    IndicatorSetStyle(HIGHLIGHT_DIFFERENCES, wxSTC_INDIC_ROUNDBOX);
+    IndicatorSetAlpha(HIGHLIGHT_DIFFERENCES, 64);
+    IndicatorSetForeground(HIGHLIGHT_DIFFERENCES, wxColour(128, 0, 128));
+
+    IndicatorSetStyle(HIGHLIGHT_DIFFERENCE_SOURCE, wxSTC_INDIC_ROUNDBOX);
+    IndicatorSetAlpha(HIGHLIGHT_DIFFERENCE_SOURCE, 64);
+    IndicatorSetForeground(HIGHLIGHT_DIFFERENCE_SOURCE, wxColour(0, 128, 128));
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Performs all general default syntax
 /// highlightings.
 ///
@@ -4183,14 +4273,13 @@ void NumeReEditor::applyStrikeThrough()
     if (!getEditorSetting(SETTING_USETXTADV)
             || m_fileType == FILE_NSCR
             || m_fileType == FILE_NPRC
+            || m_fileType == FILE_MATLAB
             || m_fileType == FILE_TEXSOURCE
             || m_fileType == FILE_DATAFILES)
         return;
 
     SetIndicatorCurrent(HIGHLIGHT_STRIKETHROUGH);
     IndicatorClearRange(0, GetLastPosition());
-    IndicatorSetStyle(HIGHLIGHT_STRIKETHROUGH, wxSTC_INDIC_STRIKE);
-    IndicatorSetForeground(HIGHLIGHT_STRIKETHROUGH, wxColor(255, 0, 0));
 
     for (int i = 0; i < GetLastPosition(); i++)
     {
@@ -4770,9 +4859,6 @@ void NumeReEditor::markLocalVariables(bool bForceRefresh)
         IndicatorClearRange(0, GetLastPosition());
     else if (GetStyleAt(GetLineIndentPosition(GetCurrentLine())) != wxSTC_NPRC_COMMAND)
         return;
-
-    IndicatorSetStyle(HIGHLIGHT_LOCALVARIABLES, wxSTC_INDIC_DOTS);
-    IndicatorSetForeground(HIGHLIGHT_LOCALVARIABLES, *wxBLACK);
 
     // Run the algorithm for every possible local variable declarator
     markLocalVariableOfType("var", bForceRefresh);
@@ -6276,9 +6362,6 @@ void NumeReEditor::OnDisplayVariable(wxCommandEvent& event)
     long int maxpos = this->GetLastPosition();
     SetIndicatorCurrent(HIGHLIGHT);
     IndicatorClearRange(0, maxpos);
-    IndicatorSetStyle(HIGHLIGHT, wxSTC_INDIC_ROUNDBOX);
-    IndicatorSetAlpha(HIGHLIGHT, 100);
-    IndicatorSetForeground(HIGHLIGHT, wxColor(255, 0, 0));
 
     unsigned int nPos = 0;
     unsigned int nCurr = 0;
@@ -6706,17 +6789,9 @@ void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, i
     MarkerDeleteAll(MARKER_DUPLICATEINDICATOR_TWO);
 
     SetIndicatorCurrent(HIGHLIGHT_DIFFERENCES);
-    IndicatorSetStyle(HIGHLIGHT_DIFFERENCES, wxSTC_INDIC_ROUNDBOX);
-    IndicatorSetAlpha(HIGHLIGHT_DIFFERENCES, 64);
-    IndicatorSetForeground(HIGHLIGHT_DIFFERENCES, wxColour(128, 0, 128));
-
     IndicatorClearRange(0, GetLastPosition());
 
     SetIndicatorCurrent(HIGHLIGHT_DIFFERENCE_SOURCE);
-    IndicatorSetStyle(HIGHLIGHT_DIFFERENCE_SOURCE, wxSTC_INDIC_ROUNDBOX);
-    IndicatorSetAlpha(HIGHLIGHT_DIFFERENCE_SOURCE, 64);
-    IndicatorSetForeground(HIGHLIGHT_DIFFERENCE_SOURCE, wxColour(0, 128, 128));
-
     IndicatorClearRange(0, GetLastPosition());
 
     if (nStart1 == -1 && nStart2 == -1 && nEnd1 == -1 && nEnd2 == -1)
@@ -6745,6 +6820,182 @@ void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, i
     }
 
     ScrollToLine(nSelectionLine);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns true, if a
+/// passed word corresponds to a control flow
+/// statement block start.
+///
+/// \param sWord const wxString&
+/// \param allowIntermediate bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReEditor::isBlockStart(const wxString& sWord, bool allowIntermediate)
+{
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        return sWord == "if"
+            || sWord == "for"
+            || sWord == "while"
+            || sWord == "compose"
+            || sWord == "procedure"
+            || sWord == "layout"
+            || sWord == "group"
+            || sWord == "switch"
+            || (allowIntermediate && (sWord == "elseif" || sWord == "else" || sWord == "case" || sWord == "default"));
+    else if (m_fileType == FILE_MATLAB)
+        return sWord == "if"
+            || sWord == "for"
+            || sWord == "while"
+            || sWord == "classdef"
+            || sWord == "properties"
+            || sWord == "function"
+            || sWord == "methods"
+            || sWord == "try"
+            || sWord == "switch"
+            || (allowIntermediate && (sWord == "elseif" || sWord == "else" || sWord == "case" || sWord == "otherwise" || sWord == "catch"));
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns true, if a
+/// passed word corresponds to a control flow
+/// statement block end.
+///
+/// \param sWord const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReEditor::isBlockEnd(const wxString& sWord)
+{
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+        return sWord == "endif"
+            || sWord == "endfor"
+            || sWord == "endwhile"
+            || sWord == "endcompose"
+            || sWord == "endprocedure"
+            || sWord == "endlayout"
+            || sWord == "endgroup"
+            || sWord == "endswitch";
+    else if (m_fileType == FILE_MATLAB)
+        return sWord == "end";
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a the
+/// complete autocompletion block for the passed
+/// control flow statement block start.
+///
+/// \param sWord const wxString&
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString NumeReEditor::getBlockAutoCompletion(const wxString& sWord)
+{
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    {
+        if (sWord == "layout" || sWord == "compose" || sWord == "group")
+            return sWord + " |\r\n" + getBlockEnd(sWord);
+        else if (sWord == "procedure")
+            return sWord + " $|()\r\nendprocedure";
+        else if (sWord == "else")
+            return sWord + "|";
+        else if (sWord == "elseif")
+            return sWord + " (|)";
+        else if (sWord == "case")
+            return sWord + " |:";
+        else if (sWord == "default")
+            return sWord + ":|";
+        else
+            return sWord + " (|)\r\n" + getBlockEnd(sWord);
+    }
+    else if (m_fileType == FILE_MATLAB)
+    {
+        if (sWord == "else" || sWord == "otherwise")
+            return sWord + "|";
+        else if (sWord == "elseif" || sWord == "case" || sWord == "catch")
+            return sWord + " |";
+        else
+            return sWord + " |\r\n" + getBlockEnd(sWord);
+    }
+
+    return "";
+}
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// control flow statement block end, which
+/// corresponds to the passed word.
+///
+/// \param sWord const wxString&
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString NumeReEditor::getBlockEnd(const wxString& sWord)
+{
+    if (m_fileType == FILE_MATLAB)
+        return "end";
+
+    if (sWord == "if" || sWord == "elseif" || sWord == "else")
+        return "endif";
+    else if (sWord == "for")
+        return "endfor";
+    else if (sWord == "while")
+        return "endwhile";
+    else if (sWord == "compose")
+        return "endcompose";
+    else if (sWord == "procedure")
+        return "endprocedure";
+    else if (sWord == "layout")
+        return "endlayout";
+    else if (sWord == "group")
+        return "endgroup";
+    else if (sWord == "switch" || sWord == "case" || sWord == "default")
+        return "endswitch";
+
+    return "";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// control flow statement block start, which
+/// corresponds to the passed word.
+///
+/// \param sWord const wxString&
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString NumeReEditor::getBlockStart(const wxString& sWord)
+{
+    if (m_fileType == FILE_MATLAB)
+        return "";
+
+    if (sWord == "endif" || sWord == "elseif" || sWord == "else")
+        return "if";
+    else if (sWord == "endfor")
+        return "for";
+    else if (sWord == "endwhile")
+        return "while";
+    else if (sWord == "endcompose")
+        return "compose";
+    else if (sWord == "endprocedure")
+        return "procedure";
+    else if (sWord == "endlayout")
+        return "layout";
+    else if (sWord == "endgroup")
+        return "group";
+    else if (sWord == "endswitch" || sWord == "case" || sWord == "default")
+        return "switch";
+
+    return "";
 }
 
 
