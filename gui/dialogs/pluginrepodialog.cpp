@@ -237,7 +237,9 @@ wxThread::ExitCode PackageRepoBrowser::Entry()
     }
     catch (http::Error& e)
     {
-        m_statusText->SetLabel("HTTP Error:" + std::string(e.what()));
+        m_statusText->SetLabel("HTTP Error: " + std::string(e.what()));
+        m_progress->SetRange(100);
+        m_progress->SetValue(100);
     }
 
     m_task = TASK_NONE;
