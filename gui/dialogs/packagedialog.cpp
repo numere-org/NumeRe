@@ -101,6 +101,7 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     license.Add("MIT");
     license.Add("MPL-2.0");
     m_packageProperties->Append(new wxEditEnumProperty(_guilang.get("GUI_PKGDLG_LICENSE"), "-license", license, wxArrayInt(), license[0]));
+    m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINDESC"), "-desc"));
 
     // Add a validator to the package command to enssure that the user
     // only uses alphanumeric characters as command string
@@ -108,7 +109,6 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     m_packageProperties->SetPropertyValidator("-plugincommand", wxTextValidator(wxFILTER_ALPHANUMERIC));
 
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINMAIN"), "-pluginmain"));
-    m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINDESC"), "-plugindesc"));
     m_packageProperties->Append(new wxBoolProperty(_guilang.get("GUI_PKGDLG_INCLUDEDOCUMENTATION"), INCLUDEDOCS));
 
     // Apply some general settings to the whole property grid

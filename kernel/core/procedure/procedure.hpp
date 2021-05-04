@@ -55,7 +55,7 @@ class ProcedureVarFactory;
 /// evaluate complex procedures, which may be
 /// called recursively.
 /////////////////////////////////////////////////
-class Procedure : public FlowCtrl, public PluginManager
+class Procedure : public FlowCtrl, public PackageManager
 {
     private:
         friend class NumeReDebugger;

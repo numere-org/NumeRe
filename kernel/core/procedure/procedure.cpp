@@ -29,7 +29,7 @@ extern value_type vAns;
 /////////////////////////////////////////////////
 /// \brief Default constructor
 /////////////////////////////////////////////////
-Procedure::Procedure() : FlowCtrl(), PluginManager(), _localDef(true)
+Procedure::Procedure() : FlowCtrl(), PackageManager(), _localDef(true)
 {
     // init the object
     init();
@@ -44,7 +44,7 @@ Procedure::Procedure() : FlowCtrl(), PluginManager(), _localDef(true)
 /// \param _procedure const Procedure&
 ///
 /////////////////////////////////////////////////
-Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), PluginManager(_procedure), _localDef(true)
+Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), PackageManager(_procedure), _localDef(true)
 {
     // Init the object
     init();

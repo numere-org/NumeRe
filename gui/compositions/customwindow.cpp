@@ -125,6 +125,7 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
         nColumns--;
 
     listCtrl->DeleteAllItems();
+    //wxSize ctrlSize = listCtrl->GetClientSize();
 
     while (listCtrl->GetColumnCount() < nColumns)
         listCtrl->AppendColumn("");
@@ -149,6 +150,11 @@ static void populateTreeListCtrl(wxTreeListCtrl* listCtrl, const wxArrayString& 
             currCol++;
         }
     }
+
+    //for (size_t i = 0; i < 1u; i++)
+    //{
+    //    listCtrl->SetColumnWidth(i, -1);//ctrlSize.x / nColumns - 2);
+    //}
 }
 
 
@@ -782,12 +788,14 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
                 sSize.substr(0, sSize.find(',')).ToLong(&row);
                 sSize.substr(sSize.find(',')+1).ToLong(&col);
 
+                wxSize ctrlSize = GetClientSize();
+
                 for (size_t j = 0; j < (size_t)col; j++)
                 {
                     if (labels.size() > j)
-                        listCtrl->AppendColumn(labels[j]);
+                        listCtrl->AppendColumn(labels[j], ctrlSize.x/col - 2);
                     else
-                        listCtrl->AppendColumn("");
+                        listCtrl->AppendColumn("", ctrlSize.x/col - 2);
                 }
 
                 for (int i = 0; i < row; i++)
@@ -797,9 +805,11 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             }
             else if (labels.size())
             {
+                wxSize ctrlSize = GetClientSize();
+
                 for (size_t j = 0; j < labels.size(); j++)
                 {
-                    listCtrl->AppendColumn(labels[j]);
+                    listCtrl->AppendColumn(labels[j], ctrlSize.x / labels.size() - 2);
                 }
             }
 

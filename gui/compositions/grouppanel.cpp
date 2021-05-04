@@ -409,6 +409,31 @@ wxTreeListCtrl* GroupPanel::CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer,
 
 /////////////////////////////////////////////////
 /// \brief This member function creates the
+/// layout for a treelist control in the wxCode
+/// variant.
+///
+/// \param parent wxWindow*
+/// \param sizer wxSizer*
+/// \param nStyle int
+/// \param size wxSize
+/// \param id int
+/// \param alignment int
+/// \return wxcode::wxTreeListCtrl*
+///
+/////////////////////////////////////////////////
+wxcode::wxTreeListCtrl* GroupPanel::CreateWxcTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle, wxSize size, int id, int alignment)
+{
+    // Create the listview and assign it to the passed sizer
+    wxcode::wxTreeListCtrl* listCtrl = new wxcode::wxTreeListCtrl(parent, id, wxDefaultPosition, size, nStyle);
+    listCtrl->SetMinClientSize(wxSize(100,200));
+    sizer->Add(listCtrl, 1, alignment | wxALL | wxEXPAND | wxRESERVE_SPACE_EVEN_IF_HIDDEN, ELEMENT_BORDER);
+
+    return listCtrl;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function creates the
 /// layout for a button.
 ///
 /// \param parent wxWindow*

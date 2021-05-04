@@ -630,7 +630,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalTables[i][0] != sLocalTables[i][1])
-            replaceAll(sErraticCommand, (sLocalTables[i][1] + "(").c_str(), sLocalTables[i][0].c_str());
+            replaceAll(sErraticCommand, (sLocalTables[i][1] + (sLocalTables[i][1].back() == '(' ? "" : "(")).c_str(), (sLocalTables[i][0] + (sLocalTables[i][0].back() == '(' ? "" : "(")).c_str());
 
         string sTableData;
 
@@ -656,7 +656,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalClusters[i][0] != sLocalClusters[i][1])
-            replaceAll(sErraticCommand, (sLocalClusters[i][1] + "{").c_str(), sLocalClusters[i][0].c_str());
+            replaceAll(sErraticCommand, (sLocalClusters[i][1] + (sLocalClusters[i][1].back() == '{' ? "" : "{")).c_str(), (sLocalClusters[i][0] + (sLocalClusters[i][0].back() == '{' ? "" : "{")).c_str());
 
         string sTableData;
 

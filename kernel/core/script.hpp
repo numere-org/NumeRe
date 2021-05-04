@@ -125,8 +125,12 @@ class Script : public FileSystem
             }
         inline bool installProcedures() const
             {return bInstallProcedures;}
-        inline string getInstallInfoString() const
-            {return sInstallInfoString;}
+        inline string getInstallInfoString()
+            {
+                std::string cp = sInstallInfoString;
+                sInstallInfoString.clear();
+                return cp;
+            }
 };
 
 #endif

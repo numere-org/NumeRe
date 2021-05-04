@@ -22,6 +22,8 @@
 #include "script.hpp"
 #include "../kernel.hpp"
 
+#include <algorithm>
+
 
 /////////////////////////////////////////////////
 /// \brief Default constructor
@@ -267,9 +269,14 @@ void Script::close()
         {
             bLastScriptCommand = false;
             nCurrentPackage++;
+
+            // Open the file and hope, it
+            // actually exist
             openScript(vInstallPackages[nCurrentPackage]);
+
             return;
         }
+
         if (vInstallPackages.size())
             sScriptFileName = vInstallPackages[0];
 
@@ -474,13 +481,15 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
         // Read all required packages
         while (sInstallPackages.length())
         {
-            // Ensure that the file name is valid
-            string sPackage = ValidFileName(sInstallPackages.substr(0,sInstallPackages.find(',')),".nscr");
+            // Get the next dependency
+            string sPackage = getNextArgument(sInstallPackages, true);
 
-            if (sInstallPackages.find(',') != string::npos)
-                sInstallPackages.erase(0,sInstallPackages.find(',')+1);
+            // Try to find the package in the packages
+            // folder first before using the main folder
+            if (fileExists(ValidFileName("packages/" + sPackage, ".nscr")))
+                sPackage = ValidFileName("packages/" + sPackage, ".nscr");
             else
-                sInstallPackages.clear();
+                sPackage = ValidFileName(sPackage, ".nscr");
 
             if (!sPackage.length())
                 continue;
@@ -490,23 +499,9 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
             {
                 vInstallPackages.push_back(sScriptFileName);
                 vInstallPackages.push_back(sPackage);
-
-                continue;
             }
-
-            // For all others: ensure that they are not already in the
-            // list. This is also ensures that the recursively installed
-            // packages are not installed multiple times
-            for (unsigned int i = 0; i < vInstallPackages.size(); i++)
-            {
-                if (vInstallPackages[i] == sPackage)
-                    break;
-                else if (i+1 == vInstallPackages.size())
-                {
-                    vInstallPackages.push_back(sPackage);
-                    break;
-                }
-            }
+            else if (std::find(vInstallPackages.begin(), vInstallPackages.end(), sPackage) == vInstallPackages.end())
+                vInstallPackages.push_back(sPackage);
         }
     }
 
@@ -825,8 +820,8 @@ void Script::writeLayout(std::string& sScriptCommand)
 /////////////////////////////////////////////////
 void Script::evaluateInstallInformation(bool& bFirstPassedInstallCommand)
 {
-    if (sInstallInfoString.length() && !bFirstPassedInstallCommand)
-        sInstallInfoString = "";
+    //if (sInstallInfoString.length() && !bFirstPassedInstallCommand)
+    //    sInstallInfoString = "";
 
     if (sInstallInfoString.length())
     {

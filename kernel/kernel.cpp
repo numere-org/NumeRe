@@ -228,6 +228,7 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
 
     // Set the current line length
     nLINE_LENGTH = _option.getWindow();
+    installing = false;
 
     // Set the default paths for all objects
     _out.setPath(_option.getSavePath(), true, sPath);
@@ -244,6 +245,8 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     _pData.createRevisionsFolder();
 
     _script.setPath(_option.getScriptPath(), true, sPath);
+    _script.setPath(_option.getScriptPath() + "/packages", true, sPath);
+    _script.setPath(_option.getScriptPath(), false, sPath);
     _script.createRevisionsFolder();
 
     _procedure.setPath(_option.getProcPath(), true, sPath);
@@ -624,6 +627,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     int nNum = 0;               // Zahl der Ergebnisse in value_type* v
     nLastStatusVal = -1;
     nLastLineLength = 0;
+    installing = false;
 
     // Needed for some handler functions
     KernelStatus nReturnVal = NUMERE_ERROR;
@@ -741,13 +745,15 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
             }
 
             // Evaluate the install info string
-            if (_script.isValid() && _script.isOpen() && _script.installProcedures() && _script.getInstallInfoString().length())
+            if (_script.isValid() && _script.isOpen() && _script.installProcedures())
             {
-                if (findParameter(_script.getInstallInfoString(), "type", '='))
-                {
-                    if (getArgAtPos(_script.getInstallInfoString(), findParameter(_script.getInstallInfoString(), "type", '=')).find("TYPE_PLUGIN") != string::npos)
-                        _procedure.declareNewPlugin(_script.getInstallInfoString());
-                }
+                installing = true;
+
+                std::string sInstInfo = _script.getInstallInfoString();
+
+                if (sInstInfo.length())
+                    _procedure.declareNewPackage(sInstInfo);
+
             }
 
             // Get the current command
@@ -817,6 +823,12 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
                             {
                                 print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
                                 _memoryManager.setPluginCommands(_procedure.getPluginNames());
+
+                                if (installing)
+                                {
+                                    installing = false;
+                                    installationDone();
+                                }
                             }
                             sCommandLine.clear();
                             bCancelSignal = false;
@@ -1193,6 +1205,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
         {
             print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
             _memoryManager.setPluginCommands(_procedure.getPluginNames());
+
+            if (installing)
+            {
+                installing = false;
+                installationDone();
+            }
+
             if (!sCmdCache.length())
             {
                 bCancelSignal = false;
@@ -1209,6 +1228,13 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     {
         print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
         _memoryManager.setPluginCommands(_procedure.getPluginNames());
+
+        if (installing)
+        {
+            installing = false;
+            installationDone();
+        }
+
         return NUMERE_DONE_KEYWORD;
     }
 
@@ -1261,7 +1287,7 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
 
         if (sLine.find("<helpindex>") != string::npos && sLine.find("</helpindex>") != string::npos)
         {
-            _procedure.addHelpIndex(sLine.substr(0, sLine.find("<<>>")), getArgAtPos(sLine, sLine.find("id=") + 3));
+            _procedure.addHelpIndex(sLine.substr(0, sLine.find("<<>>")), Documentation::getArgAtPos(sLine, sLine.find("id=") + 3));
             sLine.erase(0, sLine.find("<<>>") + 4);
             _option.addToDocIndex(sLine, _option.useCustomLangFiles());
             return false;
@@ -1619,7 +1645,7 @@ bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCo
         string sPlugin = fromSystemCodePage(getArgAtPos(sLine, findCommand(sLine).nPos + 9));
 
         // Remove the plugin and get the help index ID
-        sPlugin = _procedure.deletePlugin(sPlugin);
+        sPlugin = _procedure.deletePackage(sPlugin);
 
         if (sPlugin.length())
         {
@@ -1890,6 +1916,12 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
                 {
                     print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
                     _memoryManager.setPluginCommands(_procedure.getPluginNames());
+
+                    if (installing)
+                    {
+                        installing = false;
+                        installationDone();
+                    }
                 }
 
                 bCancelSignal = false;
@@ -1909,6 +1941,13 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
             {
                 _script.returnCommand();
                 print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+
+                if (installing)
+                {
+                    installing = false;
+                    installationDone();
+                }
+
                 nReturnVal = NUMERE_DONE_KEYWORD;
             }
         }
@@ -1924,6 +1963,12 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
         {
             _script.returnCommand();
             print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+
+            if (installing)
+            {
+                installing = false;
+                installationDone();
+            }
         }
 
         nReturnVal = NUMERE_DONE_KEYWORD;
@@ -1960,7 +2005,14 @@ bool NumeReKernel::evaluateStrings(string& sLine, string& sCache, const string& 
                 {
                     print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
                     _memoryManager.setPluginCommands(_procedure.getPluginNames());
+
+                    if (installing)
+                    {
+                        installing = false;
+                        installationDone();
+                    }
                 }
+
                 sCommandLine.clear();
                 bCancelSignal = false;
                 nReturnVal = NUMERE_DONE_KEYWORD;
@@ -2177,12 +2229,13 @@ void NumeReKernel::displaySplash()
 map<string, string> NumeReKernel::getPluginLanguageStrings()
 {
     map<string, string> mPluginLangStrings;
-    for (size_t i = 0; i < _procedure.getPluginCount(); i++)
+    for (size_t i = 0; i < _procedure.getPackageCount(); i++)
     {
-        string sDesc = _procedure.getPluginCommand(i) + "     - " + _procedure.getPluginDesc(i);
-        while (sDesc.find("\\\"") != string::npos)
-            sDesc.erase(sDesc.find("\\\""), 1);
+        if (!_procedure.getPluginCommand(i).length())
+            continue;
 
+        string sDesc = _procedure.getPluginCommand(i) + "     - " + _procedure.getPackageDescription(i);
+        replaceAll(sDesc, "\\\"", "\"");
         mPluginLangStrings["PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(_procedure.getPluginCommand(i)) + "_[PLUGINS]"] = sDesc;
     }
     return mPluginLangStrings;
@@ -2225,8 +2278,12 @@ vector<string> NumeReKernel::getPluginCommands()
 {
     vector<string> vPluginCommands;
 
-    for (size_t i = 0; i < _procedure.getPluginCount(); i++)
-        vPluginCommands.push_back(_procedure.getPluginCommand(i));
+    for (size_t i = 0; i < _procedure.getPackageCount(); i++)
+    {
+        if (_procedure.getPluginCommand(i).length())
+            vPluginCommands.push_back(_procedure.getPluginCommand(i));
+    }
+
     return vPluginCommands;
 }
 
@@ -2291,12 +2348,12 @@ NumeReVariables NumeReKernel::getVariableList()
 
     mu::varmap_type varmap = _parser.GetVar();
     const map<string, string>& stringmap = _stringParser.getStringVars();
-    map<string, long long int> tablemap = _memoryManager.getTableMap();
+    map<string, std::pair<size_t, size_t>> tablemap = _memoryManager.getTableMap();
     const map<string, NumeRe::Cluster>& clustermap = _memoryManager.getClusterMap();
     string sCurrentLine;
 
     if (_memoryManager.getStringElements())
-        tablemap["string"] = -2;
+        tablemap["string"] = std::pair<size_t,size_t>(-1, -1);
 
     // Gather all (global) numerical variables
     for (auto iter = varmap.begin(); iter != varmap.end(); ++iter)
@@ -2386,9 +2443,9 @@ bool NumeReKernel::SettingsModified()
 /// \return vector<string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReKernel::getPathSettings() const
+std::vector<std::string> NumeReKernel::getPathSettings() const
 {
-    vector<string> vPaths;
+    std::vector<std::string> vPaths;
     vPaths.push_back(_option.getExePath()); //0
     vPaths.push_back(_option.getWorkPath()); //1
     vPaths.push_back(_option.getLoadPath()); //2
@@ -2398,6 +2455,26 @@ vector<string> NumeReKernel::getPathSettings() const
     vPaths.push_back(_option.getPlotPath()); //6
 
     return vPaths;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns a vector containing the names
+/// and the version info of each installed plugin.
+///
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> NumeReKernel::getInstalledPackages() const
+{
+    std::vector<std::string> vPackages;
+
+    for (size_t i = 0; i < _procedure.getPackageCount(); i++)
+    {
+        vPackages.push_back(_procedure.getPackageName(i) + "\t" + _procedure.getPackageVersion(i));
+    }
+
+    return vPackages;
 }
 
 
@@ -2954,6 +3031,34 @@ void NumeReKernel::setDocumentation(const string& _sDocumentation)
 
 
 /////////////////////////////////////////////////
+/// \brief Notify the GUI that the installation
+/// was processed.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReKernel::installationDone()
+{
+    if (!m_parent)
+        return;
+    else
+    {
+        wxCriticalSectionLocker lock(m_parent->m_kernelCS);
+
+        // Create the task
+        NumeReTask task;
+        task.taskType = NUMERE_INSTALLATION_DONE;
+
+        taskQueue.push(task);
+
+        m_parent->m_KernelStatus = NUMERE_QUEUED_COMMAND;
+    }
+    wxQueueEvent(m_parent->GetEventHandler(), new wxThreadEvent());
+    Sleep(10);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function passes a table to
 /// the GUI to be displayed in the table viewer.
 /// It also allows to create a table editor window.
@@ -3312,10 +3417,10 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     }
 
     // Get the table variable map
-    map<string, long long int> tableMap = getInstance()->getMemoryManager().getTableMap();
+    map<string, std::pair<size_t,size_t>> tableMap = getInstance()->getMemoryManager().getTableMap();
 
     if (getInstance()->getMemoryManager().getStringElements())
-        tableMap["string"] = -2;
+        tableMap["string"] = std::pair<size_t, size_t>(-1, -1);
 
     nLocalTableMapSize = tableMap.size();
 

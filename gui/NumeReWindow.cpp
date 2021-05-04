@@ -84,6 +84,7 @@
 #include "dialogs/packagedialog.hpp"
 #include "dialogs/dependencydialog.hpp"
 #include "dialogs/revisiondialog.hpp"
+#include "dialogs/pluginrepodialog.hpp"
 
 #include "terminal/terminal.hpp"
 
@@ -98,6 +99,8 @@
 #include "../common/vcsmanager.hpp"
 #include "../common/filerevisions.hpp"
 #include "../common/ipc.hpp"
+
+#include "../common/http.h"
 
 #include "controls/treesearchctrl.hpp"
 #include "controls/toolbarsearchctrl.hpp"
@@ -1582,6 +1585,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_EXPORT_AS_HTML:
         {
             m_currentEd->OnExtractAsHTML();
+            break;
+        }
+        case ID_MENU_PLUGINBROWSER:
+        {
+            PackageRepoBrowser* repobrowser = new PackageRepoBrowser(this, m_terminal, m_iconManager);
+            repobrowser->SetIcon(GetIcon());
+            repobrowser->Show();
             break;
         }
 
@@ -4874,6 +4884,7 @@ void NumeReWindow::UpdateMenuBar()
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
     menuTools->Append(ID_MENU_EXPORT_AS_HTML, _guilang.get("GUI_MENU_EXPORT_AS_HTML"), _guilang.get("GUI_MENU_EXPORT_AS_HTML_TTP"));
     menuTools->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
+    menuTools->Append(ID_MENU_PLUGINBROWSER, _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER"), _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER_TTP"));
     menuTools->AppendSeparator();
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_ANALYSIS"), menuAnalyzer);
     m_menuItems[ID_MENU_TOGGLE_DEBUGGER] = menuTools->Append(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), wxITEM_CHECK);
@@ -6172,6 +6183,28 @@ void NumeReWindow::closeWindows(WindowType type)
 wxIcon NumeReWindow::getStandardIcon()
 {
     return wxIcon(getProgramFolder()+"\\icons\\icon.ico", wxBITMAP_TYPE_ICO);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Notifies all instances of the
+/// PackagRepoBrowser to refresh its internal
+/// list of installed packages.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::notifyInstallationDone()
+{
+    wxWindowList& winlist = GetChildren();
+
+    for (size_t win = 0; win < winlist.GetCount(); win++)
+    {
+        if (winlist[win]->IsShown() && winlist[win]->GetLabel() == PACKAGE_REPO_BROWSER_TITLE)
+        {
+            static_cast<PackageRepoBrowser*>(winlist[win])->DetectInstalledPackages();
+        }
+    }
 }
 
 

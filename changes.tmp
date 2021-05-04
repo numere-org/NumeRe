@@ -10,3 +10,4 @@ Added	Created six matop functions for coordinate conversions: carttocyl(), cartt
 Added	Created two matop functions for coordinate to grid conversions and bilinearly interpolation.
 Added	Created two string functions for searching all occurences (strfndall()) or the first occurences of all chars (strmatchall()).
 Added	The autocompletion feature now provides block autocompletion.
+New	Created a package repository browser with downloading, installing and deinstalling features.
