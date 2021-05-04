@@ -1407,7 +1407,7 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 	map<string, string> StringMap = NumeReKernel::getInstance()->getStringParser().getStringVars();
 
 	// Get the current defined data tables
-	map<string, long long int> CacheMap = _data.getTableMap();
+	map<string, std::pair<size_t,size_t>> CacheMap = _data.getTableMap();
 
 	const map<string, NumeRe::Cluster>& mClusterMap = _data.getClusterMap();
 
@@ -1436,14 +1436,14 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 		string sCacheSize = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false));
 		NumeReKernel::printPreFmt("|   " + iter->first + "()" + strfill("Dim:", (_option.getWindow(0) - 32) / 2 - (iter->first).length() + _option.getWindow(0) % 2) + strfill(sCacheSize, (_option.getWindow(0) - 50) / 2) + strfill("[double x double]", 19));
 
-		if (_data.getSize(iter->second) >= 1024 * 1024)
-			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second) / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
-		else if (_data.getSize(iter->second) >= 1024)
-			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second) / (1024.0), 4), 9) + " KBytes\n");
+		if (_data.getSize(iter->second.second) >= 1024 * 1024)
+			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0 * 1024.0), 4), 9) + " MBytes\n");
+		else if (_data.getSize(iter->second.second) >= 1024)
+			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second) / (1024.0), 4), 9) + " KBytes\n");
 		else
-			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second)), 9) + "  Bytes\n");
+			NumeReKernel::printPreFmt(strfill(toString(_data.getSize(iter->second.second)), 9) + "  Bytes\n");
 
-		nBytesSum += _data.getSize(iter->second);
+		nBytesSum += _data.getSize(iter->second.second);
 	}
 
 	NumeReKernel::printPreFmt("|   " + strfill("-", _option.getWindow(0) - 4, '-') + "\n");
@@ -1761,7 +1761,7 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 	Procedure& _procedure = NumeReKernel::getInstance()->getProcedureInterpreter();
 
 	// Probably there's no plugin defined
-	if (!_procedure.getPluginCount())
+	if (!_procedure.getPackageCount())
 		NumeReKernel::print(toSystemCodePage(_lang.get("PARSERFUNCS_LISTPLUGINS_EMPTY")));
 	else
 	{
@@ -1770,7 +1770,7 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 
 		// Print all plugins (name, command and description)
 		// on the terminal
-		for (unsigned int i = 0; i < _procedure.getPluginCount(); i++)
+		for (unsigned int i = 0; i < _procedure.getPackageCount(); i++)
 		{
 			string sLine = "|   ";
 
@@ -1782,14 +1782,14 @@ static void listInstalledPlugins(Parser& _parser, MemoryManager& _data, const Se
 			sLine.append(23 - sLine.length(), ' ');
 
 			// Print basic information about the plugin
-			sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _procedure.getPluginName(i), _procedure.getPluginVersion(i), _procedure.getPluginAuthor(i));
+			sLine += _lang.get("PARSERFUNCS_LISTPLUGINS_PLUGININFO", _procedure.getPackageName(i), _procedure.getPackageVersion(i), _procedure.getPackageAuthor(i));
 
-            if (_procedure.getPluginLicense(i).length())
-                sLine += " | " + _procedure.getPluginLicense(i);
+            if (_procedure.getPackageLicense(i).length())
+                sLine += " | " + _procedure.getPackageLicense(i);
 
 			// Print the description
-			if (_procedure.getPluginDesc(i).length())
-				sLine += "$" + _procedure.getPluginDesc(i);
+			if (_procedure.getPackageDescription(i).length())
+				sLine += "$" + _procedure.getPackageDescription(i);
 
 			sLine = '"' + sLine + "\" -nq";
 			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sLine, sDummy, true);

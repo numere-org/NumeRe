@@ -128,6 +128,9 @@ namespace NumeRe
         if (sLine.find_first_of("({") == string::npos)
             return sLine;
 
+        //getDataElements(sLine, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+        //return sLine;
+
         // Replace calls to any table
         for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
         {
@@ -259,10 +262,17 @@ namespace NumeRe
             }
 
             string sData = sLine.substr(nStartPos, nEndPos - nStartPos + 1);
-            sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
 
-            // Get the data and parse string expressions
-            replaceDataEntities(sData, sOccurence, _data, _parser, _option, true);
+            // Is the current data access a method?
+            if (sData.find("().") != std::string::npos)
+                getDataElements(sData, _parser, _data, _option, true);
+            else
+            {
+                sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
+
+                // Get the data and parse string expressions
+                replaceDataEntities(sData, sOccurence, _data, _parser, _option, true);
+            }
 
             // Strip the spaces, which have been added during the
             // calls to the data entities
@@ -1762,8 +1772,21 @@ namespace NumeRe
                     // vector from the parser using the numerical results
                     if (!tempres.bOnlyLogicals)
                         sVectorTemp = createStringVectorVar(tempres.vResult);
-                    else
+                    else if (tempres.vNumericalValues.size())
                         sVectorTemp = _parser.CreateTempVectorVar(tempres.vNumericalValues);
+                    else if (tempres.vResult.size() == 1 && tempres.vResult.front().find_first_of(":,") != std::string::npos)
+                    {
+                        _parser.SetExpr("{" + tempres.vResult.front() + "}");
+                        int nRes = 0;
+                        double* res = _parser.Eval(nRes);
+
+                        // Store the result in a vector and
+                        // create a temporary vector variable
+                        vector<double> vRes(res, res + nRes);
+                        sVectorTemp = _parser.CreateTempVectorVar(vRes);
+                    }
+                    // TODO: What happens in the remaining case of multiple
+                    // elements in tempres.vResult?
 
                     strExpr.sLine.replace(i, nmatching+1, sVectorTemp);
                 }

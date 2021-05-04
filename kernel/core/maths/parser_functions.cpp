@@ -156,8 +156,18 @@ void convertVectorToExpression(string& sLine, const Settings& _option)
 		if (sTemp[nPos] != '{' || (nQuotes % 2))
 			continue;
 
-		if (isToStringArg(sTemp, nPos) || (nPos && (isalnum(sTemp[nPos-1]) || sTemp[nPos-1] == '_')))
+		if (isToStringArg(sTemp, nPos))
 			continue;
+
+        if (nPos && (isalnum(sTemp[nPos-1]) || sTemp[nPos-1] == '_'))
+        {
+            // Ensure that there's a matching parenthesis
+            if (getMatchingParenthesis(sTemp.substr(nPos)) == string::npos)
+                throw SyntaxError(SyntaxError::INCOMPLETE_VECTOR_SYNTAX, sLine, SyntaxError::invalid_position);
+
+            nPos += getMatchingParenthesis(sTemp.substr(nPos));
+            continue;
+        }
 
 		nDim_vec = 0;
 

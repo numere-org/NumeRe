@@ -1081,8 +1081,20 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 /////////////////////////////////////////////////
 static string createMafVectorName(string sAccessString)
 {
-    if (sAccessString.find(".name") != string::npos)
+    if (sAccessString.find(".name") != std::string::npos)
         return "\"" + sAccessString.substr(0, sAccessString.find("().")+2) + "\"";
+    if (sAccessString.find(".aliasof(") != std::string::npos)
+    {
+        string sTable = sAccessString.substr(0, sAccessString.find("()."));
+        string sReference = sAccessString.substr(sAccessString.find(".aliasof(") + 8);
+        sReference.erase(getMatchingParenthesis(sReference)+1);
+
+        sReference = sReference.substr(1, sReference.length()-2);
+
+        NumeReKernel::getInstance()->getMemoryManager().addReference(sTable, sReference.substr(1, sReference.length()-2));
+
+        return sReference;
+    }
 
     sAccessString.replace(sAccessString.find("()"), 2, "[");
     sAccessString = replaceToVectorname(sAccessString);
