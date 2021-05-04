@@ -265,7 +265,17 @@ namespace NumeRe
 
             // Is the current data access a method?
             if (sData.find("().") != std::string::npos)
+            {
+                if (containsStringVectorVars(sData))
+                {
+                    bool temp;
+                    std::vector<string> vRes = evaluateStringVectors(sData);
+                    applyElementaryStringOperations(vRes, temp);
+                    sData = vRes.front();
+                }
+
                 getDataElements(sData, _parser, _data, _option, true);
+            }
             else
             {
                 sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
