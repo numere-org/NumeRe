@@ -277,13 +277,19 @@ void DebugViewer::getInformationByStackId(size_t id)
     }
 
     // Mark the current selected stack item in the stack
-    // trace list control
+    // trace list control using an arrow and bold font
     for (int i = 0; i < m_stacktrace->GetItemCount(); i++)
     {
         if (m_stacktrace->GetItemCount() - 1 - i == (int)id)
+        {
             m_stacktrace->SetItemText(i, "->");
+            m_stacktrace->SetItemFont(i, GetFont().Bold());
+        }
         else
+        {
             m_stacktrace->SetItemText(i, "");
+            m_stacktrace->SetItemFont(i, GetFont());
+        }
     }
 
     // Update the status bar

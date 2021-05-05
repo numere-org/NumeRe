@@ -12,3 +12,4 @@ Added	Created two string functions for searching all occurences (strfndall()) or
 Added	The autocompletion feature now provides block autocompletion.
 New	Created a package repository browser with downloading, installing and deinstalling features.
 Added	Created the table method "aliasof()", which references another table, whose name was passed to the method.
+Applied	The currently selected stack trace element is now highlighted in bold font.

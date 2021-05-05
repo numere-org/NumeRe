@@ -1961,7 +1961,11 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     sPlotTitle = "";
 
     if (bGraphFinished)
+    {
         sComposedTitle = "";
+        nTargetGUI[0] = -1;
+        nTargetGUI[1] = -1;
+    }
 
     if (!bAllHighRes)
         nHighResLevel = 0;
@@ -1984,8 +1988,6 @@ void PlotData::deleteData(bool bGraphFinished /* = false*/)
     sBackground = "";
     dColorRange[0] = NAN;
     dColorRange[1] = NAN;
-    nTargetGUI[0] = -1;
-    nTargetGUI[1] = -1;
 
     for (int i = 0; i < 2; i++)
     {
