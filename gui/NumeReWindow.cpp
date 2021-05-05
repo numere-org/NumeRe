@@ -2037,16 +2037,17 @@ void NumeReWindow::showGraph(NumeRe::Window& window)
 void NumeReWindow::showFileDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
-    wxFileDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
+    std::string sDir = prepareStringsForDialog(getNextArgument(sExpression, true));
+    std::string sDefFile = prepareStringsForDialog(getNextArgument(sExpression, true));
+    std::string sWildCard = prepareStringsForDialog(getNextArgument(sExpression, true));
+    wxFileDialog dialog(this, window.getWindowSettings().sTitle, sDir, sDefFile, sWildCard);
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
         window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
     else
-    {
         window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetPath().ToStdString());
-    }
 }
 
 
@@ -2068,9 +2069,7 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
     if (ret == wxID_CANCEL)
         window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
     else
-    {
         window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetPath().ToStdString());
-    }
 }
 
 

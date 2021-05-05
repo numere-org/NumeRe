@@ -14,3 +14,4 @@ New	Created a package repository browser with downloading, installing and deinst
 Added	Created the table method "aliasof()", which references another table, whose name was passed to the method.
 Applied	The currently selected stack trace element is now highlighted in bold font.
 Fixed	"Save as" will now correctly select "*.nlyt" for layouts  and "*.nscr" for scripts.
+Added	It is now possible to specify a file mask in the "filedialog" dialog type.

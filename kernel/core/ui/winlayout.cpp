@@ -861,7 +861,12 @@ void dialogCommand(std::string& sCmd)
     // dialog is a valid path and replace all placeholders
     if ((nControls & NumeRe::CTRL_FILEDIALOG || nControls & NumeRe::CTRL_FOLDERDIALOG) && sExpression.length() && sExpression != "\"\"")
     {
-        sExpression = kernel->getMemoryManager().ValidFolderName(removeQuotationMarks(sExpression));
+        std::string sTemp = sExpression;
+
+        sExpression = "\"" + kernel->getMemoryManager().ValidFolderName(removeQuotationMarks(getNextArgument(sTemp, true))) + "\"";
+
+        if (sTemp.length())
+            sExpression += "," + sTemp;
     }
 
     // Get the window manager, create the modal window and
