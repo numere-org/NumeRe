@@ -473,6 +473,7 @@ class NumeReWindow : public wxFrame
 
         wxString m_filterNSCRFiles;
         wxString m_filterNPRCFiles;
+        wxString m_filterNLYTFiles;
         wxString m_filterNumeReFiles;
         wxString m_filterExecutableFiles;
         wxString m_filterDataFiles;

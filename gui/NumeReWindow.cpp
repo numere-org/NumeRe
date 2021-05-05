@@ -499,6 +499,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     m_filterNSCRFiles = _guilang.get("GUI_FILTER_SCRIPTS") + " (*.nscr)|*.nscr";//"NumeRe scripts (*.nscr)|*.nscr";
     m_filterNPRCFiles = _guilang.get("GUI_FILTER_PROCEDURES") + " (*.nprc)|*.nprc";//"NumeRe procedures (*.nprc)|*.nprc";
+    m_filterNLYTFiles = _guilang.get("GUI_FILTER_LAYOUTS") + "(*.nlyt)|*.nlyt";
     m_filterExecutableFiles = _guilang.get("GUI_FILTER_EXECUTABLES") + " (*.nscr, *.nprc)|*.nscr;*.nprc";
     m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc, *.nlyt)|*.ndat;*.nscr;*.nprc;*.nlyt";//"NumeRe files (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";
     m_filterDataFiles = _guilang.get("GUI_FILTER_DATAFILES");// + " (*.dat, *.txt, *.csv, *.jdx, *.dx, *.jcm)|*.dat;*.txt;*.csv;*.jdx;*.dx;*.jcm";
@@ -3877,10 +3878,14 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
             || m_currentEd->getFileType() == FILE_TEXSOURCE
             || m_currentEd->getFileType() == FILE_NONSOURCE)
             i = SAVEPATH;
-        wxFileDialog dlg (this, title, vPaths[i], "", filterString,
+        wxFileDialog dlg (this, title, vPaths[i], m_currentEd->GetFileName().GetName(), filterString,
             wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
 
-        if (m_currentEd->getFileType() == FILE_DATAFILES)
+        // Select the correct filter string depending on the
+        // file extensions
+        if (m_currentEd->getFileType() == FILE_NSCR && m_currentEd->GetFileName().GetExt() == "nlyt")
+            dlg.SetFilterIndex(1);
+        else if (m_currentEd->getFileType() == FILE_DATAFILES)
         {
             if (m_currentEd->GetFileName().GetExt() == "dat")
                 dlg.SetFilterIndex(0);
@@ -3893,7 +3898,7 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
                 || m_currentEd->GetFileName().GetExt() == "jcm")
                 dlg.SetFilterIndex(3);
         }
-        if (m_currentEd->getFileType() == FILE_NONSOURCE)
+        else if (m_currentEd->getFileType() == FILE_NONSOURCE)
         {
             if (m_currentEd->GetFileName().GetExt() == "txt")
                 dlg.SetFilterIndex(0);
@@ -4109,9 +4114,12 @@ wxString NumeReWindow::ConstructFilterString(FileFilterType filterType)
         filterString += m_filterNSCRFiles;
         filterString += "|";
         filterString += m_filterNPRCFiles;
+        filterString += "|";
+        filterString += m_filterNLYTFiles;
         break;
     case FILE_NSCR:
         filterString = m_filterNSCRFiles;
+        filterString += "|" + m_filterNLYTFiles;
         break;
     case FILE_NPRC:
         filterString = m_filterNPRCFiles;
@@ -4762,7 +4770,7 @@ void NumeReWindow::UpdateMenuBar()
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
-    menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
 
     wxMenu* menuFile = new wxMenu();
 
