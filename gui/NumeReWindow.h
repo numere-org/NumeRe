@@ -280,7 +280,7 @@ class NumeReWindow : public wxFrame
         void OnOpenSourceFile( int id );
         void OnExecuteFile(const string& sFileName, int id);
         void OnCalculateDependencies();
-        void OnCreatePackage();
+        void OnCreatePackage(const wxString& projectFile);
 
         void OnClose(wxCloseEvent& event);
         void Test(wxCommandEvent& event);

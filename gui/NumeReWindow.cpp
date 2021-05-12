@@ -258,6 +258,7 @@ bool MyApp::OnInit()
     // last position
     NumeReMainFrame->forceHistoryPageDown();
     NumeReMainFrame->EvaluateCommandLine(wxArgV);
+    NumeReMainFrame->Ready();
 
     // Tip of the day
     if (NumeReMainFrame->showTipAtStartup)
@@ -281,7 +282,6 @@ bool MyApp::OnInit()
         wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", NumeReMainFrame->m_UnrecoverableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR);
     }
 
-    NumeReMainFrame->Ready();
     return true;
 }
 
@@ -1575,7 +1575,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_MENU_CREATE_PACKAGE:
         {
-            OnCreatePackage();
+            OnCreatePackage("");
             break;
         }
         case ID_MENU_CREATE_DOCUMENTATION:
@@ -2643,6 +2643,10 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
                 filestoopen.Add(wxArgV[i]);
         }
 
+        // Package creator projects
+        if (ext == ".npkp")
+            OnCreatePackage(wxArgV[i]);
+
         // Procedures: run or open?
         if (ext == ".nprc")
         {
@@ -2657,6 +2661,8 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
 
         // Usual text files
         if (ext == ".dat"
+            || ext == ".nhlp"
+            || ext == ".xml"
             || ext == ".txt"
             || ext == ".tex")
             filestoopen.Add(wxArgV[i]);
@@ -2934,7 +2940,7 @@ int NumeReWindow::CopyEditorSettings(FileFilterType _fileType)
     {
         int settings = m_currentEd->getSettings();
 
-        if (_fileType != FILE_NSCR && _fileType != FILE_NPRC && _fileType != FILE_MATLAB && _fileType != FILE_PLUGIN)
+        if (_fileType != FILE_NSCR && _fileType != FILE_NPRC && _fileType != FILE_MATLAB && _fileType != FILE_PLUGIN && _fileType != FILE_XML)
         {
             if (settings & NumeReEditor::SETTING_INDENTONTYPE)
                 settings &= ~NumeReEditor::SETTING_INDENTONTYPE;
@@ -3523,6 +3529,7 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
         || filename.GetExt() == "hpp"
         || filename.GetExt() == "hxx"
         || filename.GetExt() == "h"
+        || filename.GetExt() == "xml"
         || filename.GetExt() == "tex")
     {
         wxArrayString filesToOpen;
@@ -3543,6 +3550,8 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
     }
     else if (filename.GetExt() == "pdf")
         openPDF(filename);
+    else if (filename.GetExt() == "npkp")
+        OnCreatePackage(filename.GetFullPath());
     else
     {
         wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
@@ -3635,6 +3644,8 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                 _fileType = FILE_NSCR;
             else if (fnames[n].rfind(".nprc") != string::npos)
                 _fileType = FILE_NPRC;
+            else if (fnames[n].rfind(".xml") != std::string::npos || fnames[n].rfind(".nhlp") != std::string::npos)
+                _fileType = FILE_XML;
             else
                 _fileType = FILE_NOTYPE;
 
@@ -5484,7 +5495,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         wxTreeItemId clickedItem = event.GetItem();
         m_clickedTreeItem = clickedItem;
         wxMenu popupMenu;
-        wxString editableExt = ".dat;.txt;.nscr;.nprc;.dx;.jcm;.jdx;.csv;.log;.tex;";
+        wxString editableExt = ".dat;.txt;.nscr;.nprc;.dx;.jcm;.jdx;.csv;.log;.tex;.xml;.nhlp;.npkp;.cpp;.cxx;.c;.hpp;.hxx;.h;.m;.nlyt;";
         wxString loadableExt = ".dat;.txt;.dx;.jcm;.jdx;.xls;.xlsx;.ods;.ndat;.labx;.ibw;.csv;";
         wxString showableImgExt = ".png;.jpeg;.jpg;.gif;.bmp;";
 
@@ -6384,23 +6395,26 @@ void NumeReWindow::OnCalculateDependencies()
 /// package creator dialog and creates the install
 /// file, if the user confirms his selection.
 ///
+/// \param projectFile const wxString&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::OnCreatePackage()
+void NumeReWindow::OnCreatePackage(const wxString& projectFile)
 {
     try
     {
         PackageDialog dlg(this, m_terminal, m_iconManager);
 
-        if (m_currentEd->getFileType() == FILE_NPRC
+        if (projectFile.length())
+            dlg.loadProjectFile(projectFile);
+        else if (m_currentEd->getFileType() == FILE_NPRC
             || (m_currentEd->getFileType() == FILE_NSCR && m_currentEd->GetFileName().GetExt() == "nlyt"))
             dlg.setMainFile(m_currentEd->GetFileNameAndPath());
 
         if (dlg.ShowModal() == wxID_OK)
         {
             wxString installinfo = dlg.getInstallInfo();
-            wxString identifier = (dlg.isPlugin() ? "plgn_" : "pkg_") + dlg.getPackageIdentifier();
+            wxString identifier = dlg.getPackageIdentifier();
             wxArrayString procedures = dlg.getProcedures();
             string sProcPath = m_terminal->getPathSettings()[PROCPATH];
 
@@ -6411,7 +6425,7 @@ void NumeReWindow::OnCreatePackage()
 
             NewFile(FILE_NSCR, identifier);
 
-            m_currentEd->AddText("<install>\n" + installinfo + "\n");
+            m_currentEd->AddText("<install>\r\n" + installinfo + "\r\n");
 
             for (size_t i = 0; i < procedures.size(); i++)
             {
@@ -6427,22 +6441,31 @@ void NumeReWindow::OnCreatePackage()
                 for (size_t j = 0; j < contents.size(); j++)
                 {
                     if (contents[j].length() && contents[j].find_first_not_of(" \t") != string::npos)
-                        m_currentEd->AddText("\t" + contents[j] + "\n");
+                        m_currentEd->AddText("\t" + contents[j] + "\r\n");
                 }
 
-                m_currentEd->AddText("\n");
+                m_currentEd->AddText("\r\n");
             }
 
             if (dlg.includeDocs())
             {
-                m_currentEd->AddText("\t<helpindex>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" idxkey=\"" + dlg.getPackageIdentifier()
-                                     + "\" />\n\t\t\t<keywords>\n\t\t\t\t<keyword>" + dlg.getPackageIdentifier() + "</keyword>\n\t\t\t</keywords>\n\t\t</article>\n\t</helpindex>\n\n");
-                m_currentEd->AddText("\t<helpfile>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" />\n\t\t\t(...)\n\t\t</article>\n\t</helpfile>\n\n");
+                m_currentEd->AddText("\t<helpindex>\r\n\t\t<article id=\"" + identifier + "\">\r\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" idxkey=\"" + dlg.getPackageIdentifier()
+                                     + "\" />\r\n\t\t\t<keywords>\r\n\t\t\t\t<keyword>" + dlg.getPackageIdentifier() + "</keyword>\r\n\t\t\t</keywords>\r\n\t\t</article>\r\n\t</helpindex>\r\n\r\n");
+                m_currentEd->AddText("\t<helpfile>\r\n\t\t<article id=\"" + identifier + "\">\r\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" />\r\n\t\t\t(...)\r\n\t\t</article>\r\n\t</helpfile>\r\n\r\n");
+            }
+            else if (dlg.getDocFile().length())
+            {
+                wxFile docfile(dlg.getDocFile());
+                wxString fcontents;
+
+                if (docfile.ReadAll(&fcontents))
+                    m_currentEd->AddText(fcontents);
             }
 
-            m_currentEd->AddText("\treturn;\n<endinstall>\n");
-            m_currentEd->AddText("\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\n");
+            m_currentEd->AddText("\treturn;\r\n<endinstall>\r\n");
+            m_currentEd->AddText("\r\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\r\n");
             m_currentEd->UpdateSyntaxHighlighting(true);
+            m_currentEd->ApplyAutoIndentation(0, m_currentEd->GetNumberOfLines());
         }
     }
     catch (SyntaxError& e)

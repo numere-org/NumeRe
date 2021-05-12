@@ -382,7 +382,7 @@ bool NumeReEditor::SaveFile( const wxString& filename )
     }
 
     VersionControlSystemManager manager(m_mainFrame);
-    unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
+    std::unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
 
     if (revisions.get())
     {
@@ -2899,9 +2899,9 @@ void NumeReEditor::getMatchingBrace(int nPos)
             BraceHighlight(nPos, nMatch);
             IndicatorFillRange(nPos + 1, nMatch - nPos - 1);
         }
-
-        m_braceIndicatorActive = true;
     }
+
+    m_braceIndicatorActive = true;
 }
 
 
@@ -4096,6 +4096,26 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
         StyleSetBackground(wxSTC_DIFF_POSITION, *wxWHITE);
         StyleSetBold(wxSTC_DIFF_POSITION, true);
     }
+    else if (filetype == FILE_XML)
+    {
+        SetLexer(wxSTC_LEX_XML);
+        SetProperty("fold", "1");
+        StyleSetForeground(wxSTC_H_DEFAULT, wxColour(0,0,0));
+        StyleSetForeground(wxSTC_H_TAG, wxColour(0,0,255));
+        StyleSetBold(wxSTC_H_TAG, true);
+        StyleSetForeground(wxSTC_H_TAGEND, wxColour(0,0,255));
+        StyleSetBold(wxSTC_H_TAGEND, true);
+        StyleSetForeground(wxSTC_H_ATTRIBUTE, wxColour(255,0,0));
+        StyleSetForeground(wxSTC_H_DOUBLESTRING, wxColour(128,0,255));
+        StyleSetBold(wxSTC_H_DOUBLESTRING, true);
+        StyleSetForeground(wxSTC_H_SINGLESTRING, wxColour(128,0,255));
+        StyleSetBold(wxSTC_H_SINGLESTRING, true);
+        StyleSetForeground(wxSTC_H_COMMENT, wxColour(0,128,0));
+        StyleSetItalic(wxSTC_H_COMMENT, true);
+        StyleSetForeground(wxSTC_H_ENTITY, wxColour(64,0,0));
+        StyleSetBackground(wxSTC_H_ENTITY, wxColour(255,255,220));
+        StyleSetBold(wxSTC_H_ENTITY, true);
+    }
     else
     {
         if (!getEditorSetting(SETTING_USETXTADV))
@@ -4274,6 +4294,7 @@ void NumeReEditor::applyStrikeThrough()
             || m_fileType == FILE_NSCR
             || m_fileType == FILE_NPRC
             || m_fileType == FILE_MATLAB
+            || m_fileType == FILE_XML
             || m_fileType == FILE_TEXSOURCE
             || m_fileType == FILE_DATAFILES)
         return;
@@ -4347,6 +4368,8 @@ FileFilterType NumeReEditor::GetFileType(const wxString& filename)
         fileType = FILE_CPP;
 	else if (extension == "diff" || extension == "patch")
         fileType = FILE_DIFF;
+	else if (extension == "nhlp" || extension == "xml" || extension == "npkp")
+        fileType = FILE_XML;
 
 	return fileType;
 }

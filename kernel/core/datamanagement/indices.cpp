@@ -18,6 +18,7 @@
 
 #include "dataaccess.hpp"
 #include "../utils/tools.hpp"
+#include "../../kernel.hpp"
 #include <vector>
 
 using namespace std;
@@ -128,6 +129,11 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
         //_idx.row.setIndex(0,0);
         //_idx.col.setIndex(0,0);
         //return;
+    if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(_idx.sCompiledAccessEquation))
+    {
+        std::string sDummy;
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(_idx.sCompiledAccessEquation, sDummy, true);
+    }
 
     // If the argument contains a comma, handle it as a usual index list
     handleArgumentForIndices(_idx, _parser, _data, _idx.sCompiledAccessEquation, sCmd);

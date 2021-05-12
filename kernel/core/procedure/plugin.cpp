@@ -252,53 +252,52 @@ void Package::update(const Package& _package)
 /////////////////////////////////////////////////
 void Package::incrementVersion()
 {
-	// Remove the dots in the version string
-    for (unsigned int n = 0; n < sVersion.length(); n++)
-    {
-        if (sVersion[n] == '.')
-        {
-            sVersion.erase(n, 1);
-            n--;
-        }
-    }
-
-    // Increment the version by one (corresponds to
-    // the build count)
-    int nVersion = StrToInt(sVersion);
-    nVersion++;
-    sVersion = toString(nVersion);
-
-    // Prepend zeroes, if the length is shorter than
-    // three
-    if (sVersion.length() < 3)
-        sVersion.insert(0, 3-sVersion.length(), '0');
-
-    // Convert the version string into the M.m.b format
-    for (unsigned int n = 1; n < sVersion.length(); n++)
-    {
-        if (n % 2)
-            sVersion.insert(n, 1, '.');
-    }
+    sVersion = ::incrementVersion(sVersion);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the package name.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string Package::getName() const
 {
     return stripParentheses(sName);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the package author.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string Package::getAuthor() const
 {
     return stripParentheses(sAuthor);
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the package description.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string Package::getDescription() const
 {
     return stripParentheses(sDescription);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns the package license.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string Package::getLicense() const
 {
     return stripParentheses(sLicense);

@@ -863,7 +863,7 @@ void dialogCommand(std::string& sCmd)
     {
         std::string sTemp = sExpression;
 
-        sExpression = "\"" + kernel->getMemoryManager().ValidFolderName(removeQuotationMarks(getNextArgument(sTemp, true))) + "\"";
+        sExpression = "\"" + kernel->getMemoryManager().ValidFolderName(removeQuotationMarks(getNextArgument(sTemp, true)));
 
         if (sTemp.length())
             sExpression += "," + sTemp;

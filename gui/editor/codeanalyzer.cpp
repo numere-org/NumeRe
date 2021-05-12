@@ -334,7 +334,10 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     {
         for (int j = wordend; j < m_editor->GetLineEndPosition(m_nCurrentLine); j++)
         {
-            if (m_editor->GetStyleAt(j) == wxSTC_NSCR_STRING || m_editor->GetStyleAt(j) == wxSTC_NSCR_STRING_PARSER)
+            if (m_editor->GetStyleAt(j) == wxSTC_NSCR_STRING
+                || m_editor->GetStyleAt(j) == wxSTC_NSCR_STRING_PARSER
+                || m_editor->GetStyleAt(j) == wxSTC_NSCR_CLUSTER
+                || m_editor->GetStyleAt(j) == wxSTC_NSCR_IDENTIFIER)
             {
                 canContinue = true;
                 break;

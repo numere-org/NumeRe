@@ -73,12 +73,12 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
     switch (fileSpec)
     {
         case FILE_NSCR:
-            if (filename.length() < 6 || (extension != "nscr" && extension != "nlyt"))
+            if (filename.length() < 6 || (extension != "nscr" && extension != "nlyt" && extension != "npkp" && extension != "nhlp"))
                 return wxDIR_CONTINUE;
 
             break;
         case FILE_NPRC:
-            if (filename.length() < 6 || (extension != "nprc" && extension != "nlyt"))
+            if (filename.length() < 6 || (extension != "nprc" && extension != "nlyt" && extension != "npkp" && extension != "nhlp"))
                 return wxDIR_CONTINUE;
 
             break;
@@ -86,7 +86,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
             if (filename.length() < 6)
                 return wxDIR_CONTINUE;
 
-            filespec = "*.nscr;*.nprc;*.nlyt;*.ndat;";
+            filespec = "*.nscr;*.nprc;*.nlyt;*.ndat;*.npkp;*.nhlp;";
 
             if (filespec.find("*."+extension+";") == string::npos)
                 return wxDIR_CONTINUE;
@@ -96,7 +96,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
             if (filename.length() < 4)
                 return wxDIR_CONTINUE;
 
-            filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;*.pdf;*.m;*.cpp;*.cxx;*.c;*.hpp;*.hxx;*.h;";
+            filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;*.pdf;*.m;*.cpp;*.cxx;*.c;*.hpp;*.hxx;*.h;*.xml;";
 
             if (filespec.find("*."+extension + ";") == string::npos)
                 return wxDIR_CONTINUE;

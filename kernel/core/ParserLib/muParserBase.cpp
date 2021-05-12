@@ -750,7 +750,7 @@ namespace mu
 		vResults.push_back(dFirst);
 
 		// Depending on the relation of the first and last value, change the expansion algorithm
-		if (dFirst < dLast)
+		if (dFirst <= dLast)
 		{
 		    // Avoid rounding errors by allowing a little bit larger values than the last one
 			while (dFirst + dIncrement <= dLast + 1e-10 * dIncrement)

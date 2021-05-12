@@ -615,7 +615,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     dChiSqr = 0.0;
     nIterations = 0;
     sExpr = "";
-    FitVector params;
+
     int nStatus = 0;
     int nRetry = 0;
     unsigned int nPoints = (_fData.vz.size()) ? _fData.vx.size()*_fData.vy.size() : _fData.vx.size();
@@ -670,14 +670,19 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
         }
     }
 
+    // gsl_vector seems to be better in the interaction
+    // with GSL than std::vector
+    gsl_vector* params = gsl_vector_alloc(mParams.size());
+    size_t n = 0;
+
     // Copy the parameter values
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
-        params.push_back(*(iter->second));
+        gsl_vector_set(params, n, *iter->second);
+        n++;
     }
 
     // Prepare the GSL fitting module
-    gsl_vector_view vparams = gsl_vector_view_array(&params[0], mParams.size());
     const gsl_multifit_fdfsolver_type* solver_type = gsl_multifit_fdfsolver_lmsder;
     gsl_multifit_fdfsolver* solver = gsl_multifit_fdfsolver_alloc(solver_type, nPoints, mParams.size());
     gsl_multifit_function_fdf func;
@@ -701,7 +706,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     func.p = mParams.size();
     func.params = &_fData;
 
-    gsl_multifit_fdfsolver_set(solver, &func, &vparams.vector);
+    gsl_multifit_fdfsolver_set(solver, &func, params);
 
     // Main fit iterator
     do
@@ -714,14 +719,14 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
             {
                 for (size_t j = 0; j < mParams.size(); j++)
                 {
-                    if (!gsl_vector_get(&vparams.vector, j)) // 0 durch 1 ersetzen und nochmal probieren
-                        gsl_vector_set(&vparams.vector, j, 1.0);
+                    if (!gsl_vector_get(params, j)) // 0 durch 1 ersetzen und nochmal probieren
+                        gsl_vector_set(params, j, 1.0);
                 }
 
                 // Reset the solver
                 gsl_multifit_fdfsolver_free(solver);
                 solver = gsl_multifit_fdfsolver_alloc(solver_type, nPoints, mParams.size());
-                gsl_multifit_fdfsolver_set(solver, &func, &vparams.vector);
+                gsl_multifit_fdfsolver_set(solver, &func, params);
                 nRetry = 1;
                 nStatus = GSL_CONTINUE;
                 continue;
@@ -762,8 +767,8 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
     }
 
     gsl_matrix_free(mCovar);
-    size_t n = 0;
 
+    n = 0;
     // Get the parameter from the solver
     for (auto iter = mParams.begin(); iter != mParams.end(); ++iter)
     {
@@ -777,6 +782,7 @@ bool Fitcontroller::fitctrl(const string& __sExpr, const string& __sRestrictions
 
     // Free the memory needed by the solver
     gsl_multifit_fdfsolver_free(solver);
+    gsl_vector_free(params);
 
     // Examine the restrictions
     if (__sRestrictions.length())
