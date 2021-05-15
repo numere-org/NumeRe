@@ -149,7 +149,7 @@ string GenericTerminal::getProcNameSpace()
 	// name, then erase this part, because we only want to have the
 	// current namespace
 	if (sNameSpace.find(sAutoCompWordStart) != string::npos)
-		sNameSpace.erase(sNameSpace.find(sAutoCompWordStart));
+		sNameSpace.erase(sNameSpace.rfind(sAutoCompWordStart));
 
 	// return the evaluted namespace
 	return sNameSpace;

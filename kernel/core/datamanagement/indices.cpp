@@ -129,6 +129,8 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
         //_idx.row.setIndex(0,0);
         //_idx.col.setIndex(0,0);
         //return;
+
+    // FIXME: I do not like the check for string variables here
     if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(_idx.sCompiledAccessEquation))
     {
         std::string sDummy;
@@ -187,7 +189,7 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManag
     // Ensure that the indices are casuals and no indices
     if (vLines.size() > 1 || vCols.size() > 1)
     {
-        // Handle the casual indicesD:\CPP\numere-source\trunk\gui\numeredroptarget.cpp
+        // Handle the casual indices
         handleCasualIndices(_parser, _idx, vLines, vCols, sCmd);
     }
 
