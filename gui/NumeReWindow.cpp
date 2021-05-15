@@ -93,6 +93,7 @@
 #include "../kernel/core/procedure/dependency.hpp"
 #include "../kernel/core/datamanagement/database.hpp"
 #include "../kernel/core/documentation/docgen.hpp"
+#include "../kernel/core/ui/error.hpp"
 
 #include "../common/recycler.hpp"
 #include "../common/Options.h"
@@ -310,6 +311,38 @@ int MyApp::OnExit()
         delete m_DDEServer;
 
     return 0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This handler should be called, if an
+/// unhandled exception propagated through the
+/// event loop. We'll try to recover from this
+/// issue here. However, it might not be possible.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool MyApp::OnExceptionInMainLoop()
+{
+    try
+    {
+        throw;
+    }
+    catch (std::exception& e)
+    {
+        wxMessageBox(std::string("An unexpected exception was caught. If it is reproducable, consider informing us about this issue. Message: ") + e.what(), "Exception caught");
+    }
+    catch (SyntaxError& e)
+    {
+        wxMessageBox("An unexpected exception was caught. If it is reproducable, consider informing us about this issue. Code: " + toString((int)e.errorcode) + ", message: " + _guilang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3])) + ", expression: " + e.getExpr() + ", token: " + e.getToken(), "Exception caught");
+    }
+    catch ( ... )
+    {
+        throw;
+    }
+
+    return true;
 }
 
 //----------------------------------------------------------------------

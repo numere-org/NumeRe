@@ -927,7 +927,12 @@ string SearchController::CleanDocumentation(const wxString& __sDoc)
             while ((nPos = sDocumentation.find("\\param ")) != string::npos)
             {
                 sDocumentation.replace(nPos, 6, "-");
-                sDocumentation.insert(sDocumentation.find(' ', sDocumentation.find_first_not_of(' ', nPos+1)), ":");
+                size_t spacePos = sDocumentation.find(' ', sDocumentation.find_first_not_of(' ', nPos+1));
+
+                if (spacePos == std::string::npos)
+                    break;
+
+                sDocumentation.insert(spacePos, ":");
 
                 if (sDocumentation[sDocumentation.find_first_not_of(' ', nPos+1)] == '_')
                     sDocumentation.erase(sDocumentation.find_first_not_of(' ', nPos+1), 1);

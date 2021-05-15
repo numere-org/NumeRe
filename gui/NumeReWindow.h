@@ -153,6 +153,7 @@ class MyApp : public wxApp
         ~MyApp();
         virtual bool OnInit() override;
         virtual int OnExit() override;
+        virtual bool OnExceptionInMainLoop() override;
 
     private:
         wxSingleInstanceChecker* m_singlinst;

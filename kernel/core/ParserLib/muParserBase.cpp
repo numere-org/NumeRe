@@ -1212,7 +1212,8 @@ namespace mu
 	{
 	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
         {
-            iter->second[0] = *(m_VarDef.find(iter->first)->second);
+            if (m_VarDef.find(iter->first) != m_VarDef.end()) // FIX needed because both maps do not have to be identical
+                iter->second[0] = *(m_VarDef.find(iter->first)->second);
         }
 
 	    return mVectorVars;

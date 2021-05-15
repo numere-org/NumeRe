@@ -187,7 +187,7 @@ static void handleArgumentForIndices(Indices& _idx, Parser& _parser, MemoryManag
     // Ensure that the indices are casuals and no indices
     if (vLines.size() > 1 || vCols.size() > 1)
     {
-        // Handle the casual indices
+        // Handle the casual indicesD:\CPP\numere-source\trunk\gui\numeredroptarget.cpp
         handleCasualIndices(_parser, _idx, vLines, vCols, sCmd);
     }
 

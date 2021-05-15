@@ -406,6 +406,9 @@ void PackageDialog::autoDetect(const wxArrayString& mainfiles)
     // of strings (except of layout files)
     for (size_t i = 0; i < mainfiles.size(); i++)
     {
+        if (mainfiles[i].substr(0, 4) == "(!) ")
+            continue;
+
         if (mainfiles[i].rfind(".nlyt") == std::string::npos)
             followBranch(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
         else
@@ -495,6 +498,7 @@ void PackageDialog::loadProjectFile(const wxString& filename)
     tinyxml2::XMLDocument project;
     project.LoadFile(filename.c_str());
     tinyxml2::XMLElement* root = project.FirstChildElement("project");
+    bool allFilesFound = true;
 
     // Ensure that the file is readable and that the version
     // is known
@@ -517,7 +521,7 @@ void PackageDialog::loadProjectFile(const wxString& filename)
         prop->SetTextColour(*wxBLACK);
         tinyxml2::XMLElement* infoitem = info->FirstChildElement(prop->GetName().substr(1).c_str());
 
-        if (!infoitem)
+        if (!infoitem || !infoitem->GetText())
             continue;
 
         if (prop->GetName() == "-version")
@@ -530,6 +534,11 @@ void PackageDialog::loadProjectFile(const wxString& filename)
                 continue;
             }
         }
+        else if (prop->GetName() == DOCFILE && !fileExists(infoitem->GetText()))
+        {
+            allFilesFound = false;
+            continue;
+        }
 
         prop->SetValueFromString(infoitem->GetText());
     }
@@ -541,7 +550,16 @@ void PackageDialog::loadProjectFile(const wxString& filename)
     // Load all files to the table
     while (file)
     {
-        m_fileList->InsertItem(m_fileList->GetItemCount(), file->GetText(), std::string(file->GetText()).find(".nprc") != std::string::npos ? m_icons->GetIconIndex(".nprc") : m_icons->GetIconIndex(".nlyt"));
+        if (!fileExists(file->GetText()))
+        {
+            allFilesFound = false;
+
+            m_fileList->InsertItem(m_fileList->GetItemCount(), "(!) " + std::string(file->GetText()), m_icons->GetIconIndex(""));
+        }
+        else
+            m_fileList->InsertItem(m_fileList->GetItemCount(), file->GetText(), std::string(file->GetText()).find(".nprc") != std::string::npos ? m_icons->GetIconIndex(".nprc") : m_icons->GetIconIndex(".nlyt"));
+
+
         file = file->NextSiblingElement();
     }
 
@@ -551,6 +569,9 @@ void PackageDialog::loadProjectFile(const wxString& filename)
 
     if (m_isAutoIncrement)
         markUnsaved();
+
+    if (!allFilesFound)
+        wxMessageBox(_guilang.get("GUI_PKGDLG_NOTALLFILESFOUND"), _guilang.get("GUI_PKGDLG_NOTALLFILESFOUND_HEAD"), wxOK, this);
 }
 
 
@@ -620,7 +641,12 @@ void PackageDialog::saveProjectFile(const wxString& filename)
     for (int i = 0; i < m_fileList->GetItemCount(); i++)
     {
         tinyxml2::XMLElement* file = project.NewElement("file");
-        file->SetText(m_fileList->GetItemText(i).ToStdString().c_str());
+        std::string sFile = m_fileList->GetItemText(i).ToStdString();
+
+        if (sFile.substr(0, 4) == "(!) ")
+            sFile.erase(0, 4);
+
+        file->SetText(sFile.c_str());
         files->InsertEndChild(file);
     }
 
