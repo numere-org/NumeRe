@@ -19,3 +19,4 @@ Added	The package creator may now store and load "NumeRe package projects" (*.np
 Added	Documentation files (*.nhlp) have now specific icons, will be loaded into the file tree, have syntax highlighting and may be referenced in the package creator
 Fixed	An uncatched exception, which occured after modifiying "\param" documentation keywords in combination with the static code analyzer, was removed.
 Fixed	The terminal namespace and procedure autocompletion feature works now as intended.
+Fixed	The documentation index should not display keywords multiple times anymore.

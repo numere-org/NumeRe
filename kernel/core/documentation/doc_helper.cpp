@@ -19,9 +19,22 @@
 #include "doc_helper.hpp"
 #include "../version.h"
 #include "../utils/tools.hpp"
-#include <list>
+#include "../../kernel.hpp"
+#include <algorithm>
 
 bool fileExists(const string&);
+
+/////////////////////////////////////////////////
+/// \brief This structure defines a single entry
+/// in the documentation index.
+/////////////////////////////////////////////////
+struct DocumentationEntry
+{
+    std::string sArticleId;
+    std::string sDocFilePath;
+    std::string sTitle;
+    std::string sIdxKeys;
+};
 
 /////////////////////////////////////////////////
 /// \brief The default constructor
@@ -41,6 +54,62 @@ Documentation::~Documentation()
 {
     if (fDocument.is_open())
         fDocument.close();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Add a new entry to the documentation
+/// index respecting already existing versions of
+/// the new entry. Older versions will be
+/// overwritten.
+///
+/// \param entry const DocumentationEntry&
+/// \param sKeyWords std::string
+/// \return void
+///
+/////////////////////////////////////////////////
+void Documentation::addEntry(const DocumentationEntry& entry, std::string sKeyWords)
+{
+    EndlessVector<std::string> keys = getAllArguments(entry.sIdxKeys);
+    int nIndex = findPositionUsingIdxKeys(entry.sIdxKeys);
+
+    // No entry found?
+    if (nIndex == -1)
+    {
+        nIndex = vDocIndexTable.size();
+        vDocIndexTable.push_back(entry);
+
+        // Insert all keys
+        for (const std::string& key : keys)
+            mDocumentationIndex[key] = nIndex;
+    }
+    else
+    {
+        vDocIndexTable[nIndex] = entry;
+
+        // synchronize all keys
+        for (const std::string& key : keys)
+            mDocumentationIndex[key] = nIndex;
+    }
+
+    // Insert the keywords to the map and use the
+    // identified index as reference
+    while (sKeyWords.find("<keyword>") != string::npos)
+    {
+        std::string sKeyWord = sKeyWords.substr(sKeyWords.find('>')+1, sKeyWords.find("</keyword>")-1-sKeyWords.find('>'));
+        bool bDelete = sKeyWords.substr(0, sKeyWords.find('>')).find("delete=\"true\"") != string::npos;
+        sKeyWords.erase(0, sKeyWords.find("</keyword>")+10);
+
+        EndlessVector<std::string> keywords = getAllArguments(sKeyWord);
+
+        for (const std::string& keyword : keywords)
+        {
+            if (bDelete && mDocumentationIndex.find(keyword) != mDocumentationIndex.end())
+                mDocumentationIndex.erase(mDocumentationIndex.find(keyword));
+            else
+                mDocumentationIndex[keyword] = nIndex;
+        }
+    }
 }
 
 
@@ -96,9 +165,9 @@ void Documentation::updateIndexFile()
     // Write the single documentation index entries
     for (size_t i = 0; i < vDocIndexTable.size(); i++)
     {
-        fDocument << "\t<article id=\"" << vDocIndexTable[i][0] << "\">\n";
-        fDocument << "\t\t<file path=\"" << vDocIndexTable[i][1] << "\" />\n";
-        fDocument << "\t\t<title string=\"" << vDocIndexTable[i][2] << "\" idxkey=\"" << vDocIndexTable[i][3] << "\" />\n";
+        fDocument << "\t<article id=\"" << vDocIndexTable[i].sArticleId << "\">\n";
+        fDocument << "\t\t<file path=\"" << vDocIndexTable[i].sDocFilePath << "\" />\n";
+        fDocument << "\t\t<title string=\"" << vDocIndexTable[i].sTitle << "\" idxkey=\"" << vDocIndexTable[i].sIdxKeys << "\" />\n";
         fDocument << "\t\t<keywords>\n";
 
         // Write the keywords, which correspond to the
@@ -189,55 +258,14 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
         if (sLine.find("<file ") == string::npos || sLine.find("<keywords>") == string::npos)
             continue;
 
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("id=")+3));
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("path=")+5));
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("string=")+7));
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("idxkey=")+7));
+        DocumentationEntry entry;
 
-        sLine.erase(0, sLine.find("<keywords>")+10);
+        entry.sArticleId = getArgAtPos(sLine, sLine.find("id=")+3);
+        entry.sDocFilePath = getArgAtPos(sLine, sLine.find("path=")+5);
+        entry.sTitle = getArgAtPos(sLine, sLine.find("string=")+7);
+        entry.sIdxKeys = getArgAtPos(sLine, sLine.find("idxkey=")+7);
 
-        // is this item already known? (user lang file)
-        if (mDocumentationIndex.find(vEntry.back()) == mDocumentationIndex.end())
-        {
-            int nIndex = vDocIndexTable.size();
-            mDocumentationIndex[vEntry.back()] = nIndex;
-
-            while (sLine.find("<keyword") != string::npos)
-            {
-                sKeyWord = sLine.substr(sLine.find('>')+1, sLine.find("</keyword>")-1-sLine.find('>'));
-                bool bDelete = sLine.substr(0, sLine.find('>')).find("delete=\"true\"") != string::npos;
-                sLine.erase(0, sLine.find("</keyword>")+10);
-
-                if (bDelete && mDocumentationIndex.find(sKeyWord) != mDocumentationIndex.end())
-                    mDocumentationIndex.erase(mDocumentationIndex.find(sKeyWord));
-                else
-                    mDocumentationIndex[sKeyWord] = nIndex;
-            }
-
-            vDocIndexTable.push_back(vEntry);
-        }
-        else
-        {
-            // overwrite nIndex in this scope
-            int nIndex = mDocumentationIndex[vEntry.back()];
-
-            for (size_t i = 0; i < vEntry.size(); i++)
-                vDocIndexTable[nIndex][i] = vEntry[i];
-
-            while (sLine.find("<keyword>") != string::npos)
-            {
-                sKeyWord = sLine.substr(sLine.find('>')+1, sLine.find("</keyword>")-1-sLine.find('>'));
-                bool bDelete = sLine.substr(0, sLine.find('>')).find("delete=\"true\"") != string::npos;
-                sLine.erase(0, sLine.find("</keyword>")+10);
-
-                if (bDelete && mDocumentationIndex.find(sKeyWord) != mDocumentationIndex.end())
-                    mDocumentationIndex.erase(mDocumentationIndex.find(sKeyWord));
-                else
-                    mDocumentationIndex[sKeyWord] = nIndex;
-            }
-        }
-
-        vEntry.clear();
+        addEntry(entry, sLine.substr(sLine.find("<keywords>")+10));
 
         if (sDocIndex == "</helpindex>")
             break;
@@ -293,6 +321,45 @@ int Documentation::findPositionInDocumentationIndex(const string& sTopic) const
 
         if (nIndex != -1)
             break;
+    }
+
+    return nIndex;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Finds the best match of a
+/// documentation entry using a list of index
+/// keys. If multiple matches have been found,
+/// the entry with the most matches will be
+/// returned. If nothing is found, the function
+/// will return -1.
+///
+/// \param sIdxKeys const std::string&
+/// \return int
+///
+/////////////////////////////////////////////////
+int Documentation::findPositionUsingIdxKeys(const std::string& sIdxKeys) const
+{
+    EndlessVector<std::string> keys = getAllArguments(sIdxKeys);
+    int nIndex = -1;
+
+    // is this item already known? (user lang file)
+    std::map<int,size_t> keyCount;
+    for (const std::string& key : keys)
+    {
+        if (mDocumentationIndex.find(key) != mDocumentationIndex.end())
+        {
+            keyCount[mDocumentationIndex.at(key)]++;
+        }
+    }
+
+    // Find the entry with most key matches
+    if (keyCount.size())
+    {
+        auto el = std::max_element(keyCount.begin(), keyCount.end(),
+                                   [](const pair<int,size_t>& p1, const pair<int,size_t>& p2) { return p1.second < p2.second; });
+        nIndex = el->first;
     }
 
     return nIndex;
@@ -541,7 +608,7 @@ void Documentation::updateDocIndex(string _sFilename)
     }
     catch (...)
     {
-        cerr << endl << " ERROR: Documentation could not be written." << endl;
+        NumeReKernel::print(" ERROR: Documentation could not be written.");
     }
 
     return;
@@ -577,8 +644,6 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
 
     string sKeyWord;
     string sLine;
-    vector<string> vEntry;
-    int nIndex = vDocIndexTable.size();
 
     // Parse the added documentation index entry and
     // insert it in the index
@@ -593,48 +658,14 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
         if (sLine.find("<keywords>") == string::npos)
             continue;
 
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("id=")+3));
-        vEntry.push_back("<>/docs/plugins/" + vEntry[0]);
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("string=")+7));
-        vEntry.push_back(getArgAtPos(sLine, sLine.find("idxkey=")+7));
+        DocumentationEntry entry;
 
-        // Separate the keywords
-        for (unsigned int i = 0; i < vDocIndexTable.size(); i++)
-        {
-            if (vEntry[0] == vDocIndexTable[i][0])
-            {
-                vDocIndexTable[i] = vEntry;
-                vEntry.clear();
+        entry.sArticleId = getArgAtPos(sLine, sLine.find("id=")+3);
+        entry.sDocFilePath = "<>/docs/plugins/" + entry.sArticleId;
+        entry.sTitle = getArgAtPos(sLine, sLine.find("string=")+7);
+        entry.sIdxKeys = getArgAtPos(sLine, sLine.find("idxkey=")+7);
 
-                while (sLine.find("<keyword>") != string::npos)
-                {
-                    sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
-                    sLine.erase(0,sLine.find("</keyword>")+10);
-
-                    mDocumentationIndex[sKeyWord] = i;
-                }
-
-                break;
-            }
-        }
-
-        if (vEntry.size())
-        {
-            vDocIndexTable.push_back(vEntry);
-            vEntry.clear();
-        }
-        else
-            continue;
-
-        while (sLine.find("<keyword>") != string::npos)
-        {
-            sKeyWord = sLine.substr(sLine.find("<keyword>")+9, sLine.find("</keyword>")-9-sLine.find("<keyword>"));
-            sLine.erase(0,sLine.find("</keyword>")+10);
-
-            mDocumentationIndex[sKeyWord] = nIndex;
-        }
-
-        nIndex++;
+        addEntry(entry, sLine.substr(sLine.find("<keywords>")+10));
 
         if (_sIndexToAdd == "</helpindex>")
             break;
@@ -680,7 +711,7 @@ void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFile
     // index table
     for (size_t i = 0; i < vDocIndexTable.size(); i++)
     {
-        if (vDocIndexTable[i][0] == _sID)
+        if (vDocIndexTable[i].sArticleId == _sID)
         {
             // Search the keywords corresponding to the
             // position in the documentation index table
@@ -717,7 +748,8 @@ void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFile
 /////////////////////////////////////////////////
 /// \brief This member function returns the
 /// documentation article, which corresponds to
-/// the passed documentation topic.
+/// the passed documentation topic of the the
+/// whole documentation index in readable form.
 ///
 /// \param sTopic const string&
 /// \return vector<string>
@@ -730,8 +762,11 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
+    // Return the documentation article or
+    // the whole index
     if (sTopic != "idx" && sTopic != "index")
     {
+        // Find the documentation article
         int nIndex = findPositionInDocumentationIndex(sTopic);
 
         if (nIndex != -1)
@@ -739,10 +774,10 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
             if (fDocument.is_open())
                 fDocument.close();
 
-            if (vDocIndexTable[nIndex][1].find("<>") != string::npos)
-                vDocIndexTable[nIndex][1] = FileSystem::ValidFileName(vDocIndexTable[nIndex][1], ".nhlp");
+            if (vDocIndexTable[nIndex].sDocFilePath.find("<>") != string::npos)
+                vDocIndexTable[nIndex].sDocFilePath = FileSystem::ValidFileName(vDocIndexTable[nIndex].sDocFilePath, ".nhlp");
 
-            return loadDocumentationArticle(vDocIndexTable[nIndex][1], vDocIndexTable[nIndex][0]);
+            return loadDocumentationArticle(vDocIndexTable[nIndex].sDocFilePath, vDocIndexTable[nIndex].sArticleId);
         }
         else
             vReturn.push_back("NO_ENTRY_FOUND");
@@ -755,16 +790,12 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
 
         for (size_t i = 0; i < vDocIndexTable.size(); i++)
         {
-            sKeyList = vDocIndexTable[i][3];
+            EndlessVector<std::string> keylist = getAllArguments(vDocIndexTable[i].sIdxKeys);
 
-            while (sKeyList.find(',') != string::npos)
+            for (const std::string& key : keylist)
             {
-                mIdx[sKeyList.substr(0,sKeyList.find(','))] = vDocIndexTable[i][2];
-                sKeyList.erase(0,sKeyList.find(',')+1);
-                StripSpaces(sKeyList);
+                mIdx[key] = vDocIndexTable[i].sTitle;
             }
-
-            mIdx[sKeyList] = vDocIndexTable[i][2];
         }
 
         vReturn.push_back(_lang.get("DOCHELPER_KEYWORDS_AND_ARTICLES")+ ":");
@@ -794,29 +825,22 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
 /////////////////////////////////////////////////
 vector<string> Documentation::getDocIndex() const
 {
-    vector<string> vReturn;
-    list<string> lIndex;
-    string sKeyList;
+    std::vector<std::string> vReturn;
 
     // Go through the index table and extract the
     // key list
     for (size_t i = 0; i < vDocIndexTable.size(); i++)
     {
-        sKeyList = vDocIndexTable[i][3];
+        EndlessVector<std::string> keylist = getAllArguments(vDocIndexTable[i].sIdxKeys);
 
-        while (sKeyList.find(',') != string::npos)
+        for (const std::string& key : keylist)
         {
-            lIndex.push_back(sKeyList.substr(0,sKeyList.find(',')));
-            sKeyList.erase(0,sKeyList.find(',')+1);
-            StripSpaces(sKeyList);
+            if (std::find(vReturn.begin(), vReturn.end(), key) == vReturn.end())
+                vReturn.push_back(key);
         }
-
-        lIndex.push_back(sKeyList);
     }
 
-    lIndex.sort();
-
-    vReturn.assign(lIndex.begin(), lIndex.end());
+    std::sort(vReturn.begin(), vReturn.end());
 
     return vReturn;
 }
@@ -838,7 +862,7 @@ string Documentation::getHelpIdxKey(const string& sTopic)
     if (nIndex == -1)
         return "<<NONE>>";
 
-    sReturn = vDocIndexTable[nIndex][3];
+    sReturn = vDocIndexTable[nIndex].sIdxKeys;
 
     if (sReturn.find(',') != string::npos)
         sReturn.erase(sReturn.find(','));
@@ -860,7 +884,7 @@ string Documentation::getHelpArtclID(const string& sTopic)
     int nIndex = findPositionInDocumentationIndex(sTopic);
 
     if (nIndex != -1)
-        return vDocIndexTable[nIndex][0];
+        return vDocIndexTable[nIndex].sArticleId;
 
     return "NO_ENTRY_FOUND";
 }
@@ -882,6 +906,6 @@ string Documentation::getHelpArticleTitle(const string& _sIdxKey)
     if (nIndex == -1)
         return "<<NONE>>";
 
-    return vDocIndexTable[nIndex][2];
+    return vDocIndexTable[nIndex].sTitle;
 }
 

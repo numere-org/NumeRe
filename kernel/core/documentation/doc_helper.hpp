@@ -29,11 +29,11 @@
 #include "../io/filesystem.hpp"
 #include "../ui/error.hpp"
 
-using namespace std;
+void StripSpaces(std::string&);
+std::string toUpperCase(const std::string&);
+std::string toString(int);
 
-void StripSpaces(string&);
-string toUpperCase(const string&);
-string toString(int);
+struct DocumentationEntry;
 
 /////////////////////////////////////////////////
 /// \brief This class handles the documentation
@@ -43,30 +43,32 @@ string toString(int);
 class Documentation : public FileSystem
 {
     private:
-        fstream fDocument;
-        map<string,int> mDocumentationIndex;
-        vector<vector<string> > vDocIndexTable;
-        string sDocIndexFile;
+        std::fstream fDocument;
+        std::map<std::string,int> mDocumentationIndex;
+        std::vector<DocumentationEntry> vDocIndexTable;
+        std::string sDocIndexFile;
 
+        void addEntry(const DocumentationEntry& entry, std::string sKeyWords);
         void updateIndexFile();
-        bool loadIndexFile(const string& sIndexFile);
-        int findPositionInDocumentationIndex(const string& sTopic) const;
-        vector<string> loadDocumentationArticle(const string& sFileName, const string& sArticleID);
+        bool loadIndexFile(const std::string& sIndexFile);
+        int findPositionInDocumentationIndex(const std::string& sTopic) const;
+        int findPositionUsingIdxKeys(const std::string& sIdxKeys) const;
+        std::vector<std::string> loadDocumentationArticle(const std::string& sFileName, const std::string& sArticleID);
 
     public:
         Documentation();
         ~Documentation();
 
         void loadDocIndex(bool bLoadUserLangFiles = true);
-        void updateDocIndex(string _sFilename = "<>/update.hlpidx");
-        void addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles);
-        void removeFromDocIndex(const string& _sID, bool bUseUserLangFiles);
-        vector<string> getHelpArticle(const string& sTopic);
-        vector<string> getDocIndex() const;
-        string getHelpIdxKey(const string& sTopic);
-        string getHelpArtclID(const string& sTopic);
-        string getHelpArticleTitle(const string& _sIdxKey);
-        static string getArgAtPos(const string& sCmd, unsigned int pos);
+        void updateDocIndex(std::string _sFilename = "<>/update.hlpidx");
+        void addToDocIndex(std::string& _sIndexToAdd, bool bUseUserLangFiles);
+        void removeFromDocIndex(const std::string& _sID, bool bUseUserLangFiles);
+        std::vector<std::string> getHelpArticle(const std::string& sTopic);
+        std::vector<std::string> getDocIndex() const;
+        std::string getHelpIdxKey(const std::string& sTopic);
+        std::string getHelpArtclID(const std::string& sTopic);
+        std::string getHelpArticleTitle(const std::string& _sIdxKey);
+        static std::string getArgAtPos(const std::string& sCmd, unsigned int pos);
 };
 
 #endif
