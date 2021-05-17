@@ -133,8 +133,27 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
     // FIXME: I do not like the check for string variables here
     if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(_idx.sCompiledAccessEquation))
     {
-        std::string sDummy;
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(_idx.sCompiledAccessEquation, sDummy, true);
+        EndlessVector<std::string> idc = getAllArguments(_idx.sCompiledAccessEquation);
+        _idx.sCompiledAccessEquation.clear();
+
+        for (std::string& index : idc)
+        {
+            if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(index))
+            {
+                std::string sDummy;
+                bool isVector = index.front() == '{' && index.back() == '}';
+                NumeReKernel::getInstance()->getStringParser().evalAndFormat(index, sDummy, true);
+
+                if (isVector)
+                    index = "{" + index + "}";
+            }
+
+            if (_idx.sCompiledAccessEquation.length())
+                _idx.sCompiledAccessEquation += ",";
+
+            _idx.sCompiledAccessEquation += index;
+        }
+
     }
 
     // If the argument contains a comma, handle it as a usual index list
