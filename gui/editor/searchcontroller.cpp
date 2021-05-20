@@ -418,6 +418,9 @@ wxString SearchController::FindProcedureDefinition()
 	    // This namespace (the current folder)
 		wxString thispath = m_editor->GetFileNameAndPath();
 		pathname.replace(pathname.find("$this~"), 6, thispath.substr(0, thispath.rfind('\\') + 1));
+
+		while (pathname.find('~') != string::npos)
+			pathname[pathname.find('~')] = '\\';
 	}
 	else if (pathname.find("$thisfile~") != string::npos)
 	{
@@ -474,8 +477,7 @@ wxString SearchController::FindProcedureDefinition()
 /// appends the documentation to the definition, so that
 /// it might be shown in the tooltip
 /////////////////////////////////////////////////
-wxString SearchController::FindProcedureDefinitionInLocalFile(const
-                                                               wxString& procedurename)
+wxString SearchController::FindProcedureDefinitionInLocalFile(const wxString& procedurename)
 {
     wxString procedureline;
 

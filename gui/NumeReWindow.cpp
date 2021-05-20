@@ -6456,7 +6456,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
             if (!procedures.size())
                 return;
 
-            NewFile(FILE_NSCR, identifier);
+            NewFile(FILE_NSCR, "packages/" + identifier);
 
             m_currentEd->AddText("<install>\r\n" + installinfo + "\r\n");
 
@@ -6499,6 +6499,10 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
             m_currentEd->AddText("\r\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\r\n");
             m_currentEd->UpdateSyntaxHighlighting(true);
             m_currentEd->ApplyAutoIndentation(0, m_currentEd->GetNumberOfLines());
+
+            // Deactivate the indent on type in this case
+            if (m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE))
+                m_currentEd->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
         }
     }
     catch (SyntaxError& e)

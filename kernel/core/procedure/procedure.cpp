@@ -135,7 +135,6 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     int nNum = 0;
     int nCurrentByteCode = nByteCode;
     value_type* v = nullptr;
-    _assertionHandler.reset();
 
     // Do not clear the vector variables, if we are currently part of a
     // loop, because the loop uses the cached vector variables for
@@ -788,6 +787,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         // Set the bytecode from the last calculation
         ProcElement->setByteCode(nCurrentByteCode | nByteCode, currentLine.first);
         bProcSupressAnswer = false;
+        _assertionHandler.reset();
 
         // Get the next line from one of the current active
         // command line sources

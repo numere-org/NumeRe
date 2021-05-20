@@ -20,3 +20,4 @@ Added	Documentation files (*.nhlp) have now specific icons, will be loaded into 
 Fixed	An uncatched exception, which occured after modifiying "\param" documentation keywords in combination with the static code analyzer, was removed.
 Fixed	The terminal namespace and procedure autocompletion feature works now as intended.
 Fixed	The documentation index should not display keywords multiple times anymore.
+Fixed	The editor now can also resolve subnamespaces of "this".

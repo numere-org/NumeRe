@@ -50,6 +50,7 @@ void Assertion::assertionFail()
 void Assertion::reset()
 {
     assertionMode = false;
+    sAssertedExpression.clear();
 }
 
 
