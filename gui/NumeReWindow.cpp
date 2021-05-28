@@ -137,6 +137,7 @@ wxPageSetupData* g_pageSetupData = (wxPageSetupData*) nullptr;
 
 BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
     EVT_MENU_RANGE                  (EVENTID_MENU_START, EVENTID_MENU_END-1, NumeReWindow::OnMenuEvent)
+    EVT_MENU_RANGE                  (EVENTID_PLUGIN_MENU_START, EVENTID_PLUGIN_MENU_END-1, NumeReWindow::OnPluginMenuEvent)
 
     EVT_FIND						(-1, NumeReWindow::OnFindEvent)
     EVT_FIND_NEXT					(-1, NumeReWindow::OnFindEvent)
@@ -1688,6 +1689,25 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_terminal->CancelCalculation();
             break;
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Handles events, which originate from
+/// package menu (i.e. graphical plugins).
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnPluginMenuEvent(wxCommandEvent& event)
+{
+    size_t id = event.GetId();
+
+    auto iter = m_pluginMenuMap.find(id);
+
+    if (iter != m_pluginMenuMap.end())
+        m_terminal->pass_command("$" + iter->second + "()", true);
 }
 
 
@@ -4806,6 +4826,7 @@ void NumeReWindow::UpdateMenuBar()
     menuBar = new wxMenuBar();
     SetMenuBar(menuBar);
 
+    // Create new file menu
     wxMenu* menuNewFile = new wxMenu();
 
     menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
@@ -4815,6 +4836,7 @@ void NumeReWindow::UpdateMenuBar()
     menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
     menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
 
+    // Create file menu
     wxMenu* menuFile = new wxMenu();
 
     menuFile->Append(wxID_ANY, _guilang.get("GUI_MENU_NEWFILE"), menuNewFile, _guilang.get("GUI_MENU_NEWFILE_TTP"));
@@ -4833,12 +4855,13 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuFile, _guilang.get("GUI_MENU_FILE"));
 
-    // stripspaces (only front, only back, all)
+    // Create strip spaces menu
     wxMenu* menuStripSpaces = new wxMenu();
     menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BOTH, _guilang.get("GUI_MENU_STRIP_BOTH"), _guilang.get("GUI_MENU_STRIP_BOTH_TTP"));
     menuStripSpaces->Append(ID_MENU_STRIP_SPACES_FRONT, _guilang.get("GUI_MENU_STRIP_FRONT"), _guilang.get("GUI_MENU_STRIP_FRONT_TTP"));
     menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BACK, _guilang.get("GUI_MENU_STRIP_BACK"), _guilang.get("GUI_MENU_STRIP_BACK_TTP"));
 
+    // Create edit menu
     wxMenu* menuEdit = new wxMenu();
 
     menuEdit->Append(ID_MENU_UNDO, _guilang.get("GUI_MENU_UNDO"));
@@ -4866,7 +4889,9 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuEdit, _guilang.get("GUI_MENU_EDIT"));
 
+    // Create search menu
     wxMenu* menuSearch = new wxMenu();
+
     menuSearch->Append(ID_MENU_FIND, _guilang.get("GUI_MENU_FIND"));
     menuSearch->Append(ID_MENU_REPLACE, _guilang.get("GUI_MENU_REPLACE"));
     menuSearch->AppendSeparator();
@@ -4881,8 +4906,9 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuSearch, _guilang.get("GUI_MENU_SEARCH"));
 
-
+    // Create view menu
     wxMenu* menuView = new wxMenu();
+
     menuView->Append(ID_MENU_TOGGLE_CONSOLE, _guilang.get("GUI_MENU_TOGGLE_CONSOLE"));
     menuView->Append(ID_MENU_TOGGLE_FILETREE, _guilang.get("GUI_MENU_TOGGLE_FILETREE"));
     menuView->Append(ID_MENU_TOGGLE_HISTORY, _guilang.get("GUI_MENU_TOGGLE_HISTORY"));
@@ -4899,27 +4925,30 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuView, _guilang.get("GUI_MENU_VIEW"));
 
-
+    // Create format menu
     wxMenu* menuFormat = new wxMenu();
     menuFormat->Append(ID_MENU_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
     m_menuItems[ID_MENU_INDENTONTYPE] = menuFormat->Append(ID_MENU_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), wxITEM_CHECK);
     menuFormat->Append(ID_MENU_AUTOFORMAT, _guilang.get("GUI_MENU_AUTOFORMAT"), _guilang.get("GUI_MENU_AUTOFORMAT_TTP"));
 
+    // Create LaTeX menu
     wxMenu* menuLaTeX = new wxMenu();
     menuLaTeX->Append(ID_MENU_CREATE_LATEX_FILE, _guilang.get("GUI_MENU_CREATELATEX"), _guilang.get("GUI_MENU_CREATELATEX_TTP"));
     menuLaTeX->Append(ID_MENU_RUN_LATEX, _guilang.get("GUI_MENU_RUNLATEX"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
     menuLaTeX->Append(ID_MENU_COMPILE_LATEX, _guilang.get("GUI_MENU_COMPILE_TEX"), _guilang.get("GUI_MENU_COMPILE_TEX_TTP"));
 
+    // Create refactoring menu
     wxMenu* menuRefactoring = new wxMenu();
     menuRefactoring->Append(ID_MENU_RENAME_SYMBOL, _guilang.get("GUI_MENU_RENAME_SYMBOL"), _guilang.get("GUI_MENU_RENAME_SYMBOL_TTP"));
     menuRefactoring->Append(ID_MENU_ABSTRAHIZE_SECTION, _guilang.get("GUI_MENU_ABSTRAHIZE_SECTION"), _guilang.get("GUI_MENU_ABSTRAHIZE_SECTION_TTP"));
 
+    // Create analyzer menu
     wxMenu* menuAnalyzer = new wxMenu();
     m_menuItems[ID_MENU_USEANALYZER] = menuAnalyzer->Append(ID_MENU_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), wxITEM_CHECK);
     menuAnalyzer->Append(ID_MENU_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
     menuAnalyzer->Append(ID_MENU_SHOW_DEPENDENCY_REPORT, _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT"), _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT_TTP"));
 
-
+    // Create tools menu
     wxMenu* menuTools = new wxMenu();
 
     menuTools->Append(ID_MENU_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
@@ -4934,14 +4963,24 @@ void NumeReWindow::UpdateMenuBar()
     menuTools->Append(ID_MENU_CREATE_DOCUMENTATION, _guilang.get("GUI_MENU_CREATE_DOCUMENTATION"), _guilang.get("GUI_MENU_CREATE_DOCUMENTATION_TTP"));
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
     menuTools->Append(ID_MENU_EXPORT_AS_HTML, _guilang.get("GUI_MENU_EXPORT_AS_HTML"), _guilang.get("GUI_MENU_EXPORT_AS_HTML_TTP"));
-    menuTools->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
-    menuTools->Append(ID_MENU_PLUGINBROWSER, _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER"), _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER_TTP"));
+
     menuTools->AppendSeparator();
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_ANALYSIS"), menuAnalyzer);
     m_menuItems[ID_MENU_TOGGLE_DEBUGGER] = menuTools->Append(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), wxITEM_CHECK);
 
     menuBar->Append(menuTools, _guilang.get("GUI_MENU_TOOLS"));
 
+    // Create packages menu
+    wxMenu* menuPackages = new wxMenu();
+
+    menuPackages->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
+    menuPackages->Append(ID_MENU_PLUGINBROWSER, _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER"), _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER_TTP"));
+    menuPackages->AppendSeparator();
+    wxMenuItem* item = menuPackages->Append(EVENTID_PLUGIN_MENU_END, _guilang.get("GUI_MENU_NO_PLUGINS_INSTALLED"));
+    item->Enable(false);
+    menuBar->Append(menuPackages, "Packages");
+
+    // Create help menu
     wxMenu *helpMenu = new wxMenu;
     helpMenu->Append(ID_MENU_HELP, _guilang.get("GUI_MENU_SHOWHELP"));
     helpMenu->Append(ID_MENU_ABOUT, _guilang.get("GUI_MENU_ABOUT"), _guilang.get("GUI_MENU_ABOUT_TTP"));
@@ -4970,6 +5009,58 @@ void NumeReWindow::UpdateMenuBar()
     m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW]->Check(m_multiRowState);
     m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(m_terminal->getKernelSettings().useDebugger());
 
+    // Update now the package menu (avoids code duplication)
+    UpdatePackageMenu();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Updates the package menu after an
+/// installation.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::UpdatePackageMenu()
+{
+    int id = GetMenuBar()->FindMenu("Packages");
+
+    if (id == wxNOT_FOUND)
+        return;
+
+    // Get menu
+    wxMenu* menuPackages = GetMenuBar()->GetMenu(id);
+
+    // Remove all entries
+    if (m_pluginMenuMap.size())
+    {
+        for (auto iter : m_pluginMenuMap)
+            menuPackages->Delete(iter.first);
+
+        m_pluginMenuMap.clear();
+    }
+    else
+        menuPackages->Delete(EVENTID_PLUGIN_MENU_END);
+
+    // Get new map
+    std::map<std::string,std::string> mMenuMap = m_terminal->getMenuMap();
+
+    // Fill the menu with new entries
+    if (mMenuMap.size())
+    {
+        size_t id = EVENTID_PLUGIN_MENU_START;
+
+        for (auto iter = mMenuMap.begin(); iter != mMenuMap.end(); ++iter, id++)
+        {
+            menuPackages->Append(id, removeMaskedStrings(iter->first));
+            m_pluginMenuMap[id] = iter->second;
+        }
+    }
+    else
+    {
+        wxMenuItem* item = menuPackages->Append(EVENTID_PLUGIN_MENU_END, _guilang.get("GUI_MENU_NO_PLUGINS_INSTALLED"));
+        item->Enable(false);
+    }
 }
 
 
@@ -6240,13 +6331,16 @@ wxIcon NumeReWindow::getStandardIcon()
 /////////////////////////////////////////////////
 /// \brief Notifies all instances of the
 /// PackagRepoBrowser to refresh its internal
-/// list of installed packages.
+/// list of installed packages and refreshes the
+/// package menu.
 ///
 /// \return void
 ///
 /////////////////////////////////////////////////
 void NumeReWindow::notifyInstallationDone()
 {
+    UpdatePackageMenu();
+
     wxWindowList& winlist = GetChildren();
 
     for (size_t win = 0; win < winlist.GetCount(); win++)

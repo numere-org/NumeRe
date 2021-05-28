@@ -1017,7 +1017,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     if ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC) && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_METHOD)
     {
         // ignore modifiers, i.e. method without parentheses
-        string sModifier = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,";
+        string sModifier = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,";
         if (sModifier.find("," + sSyntaxElement + ",") == string::npos)
             sSyntaxElement += "()";
         sSyntaxElement.insert(0, "VAR.");

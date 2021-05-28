@@ -218,6 +218,20 @@ std::vector<std::string> NumeReTerminal::getInstalledPackages()
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the menu map of the installed
+/// plugins as a STL map.
+///
+/// \return std::map<std::string, std::string>
+///
+/////////////////////////////////////////////////
+std::map<std::string, std::string> NumeReTerminal::getMenuMap()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getMenuMap();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Passes a table (as a container) to the
 /// kernel.
 ///

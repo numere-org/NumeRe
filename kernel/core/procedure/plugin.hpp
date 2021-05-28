@@ -74,6 +74,7 @@ class Package
         std::string sVersion;
         std::string sAuthor;
         std::string sDescription;
+        std::string sMenuEntry;
         std::string sDocumentationIndexID;
 
         Package();
@@ -91,6 +92,7 @@ class Package
         std::string getAuthor() const;
         std::string getDescription() const;
         std::string getLicense() const;
+        std::string getMenuEntry() const;
 };
 
 
@@ -129,6 +131,7 @@ class PackageManager : public FileSystem
         bool declareNewPackage(const string& sInstallInfoString);
         bool isPluginCmd(const string& sCmd) const;
         string deletePackage(const string& sPackage);
+        std::map<std::string, std::string> getMenuMap() const;
 
         /////////////////////////////////////////////////
         /// \brief Returns the number of installed
@@ -271,6 +274,22 @@ class PackageManager : public FileSystem
         {
             if (i < vPackageInfo.size())
                 return vPackageInfo[i].getLicense();
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the menu entry of the ith
+        /// plugin.
+        ///
+        /// \param unsigned int i = 0
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        inline string getPluginMenuEntry(unsigned int i = 0) const
+        {
+            if (i < vPackageInfo.size())
+                return vPackageInfo[i].getMenuEntry();
 
             return "";
         }

@@ -263,7 +263,8 @@ class NumeReWindow : public wxFrame
 
         int CopyEditorSettings(FileFilterType _fileType);
 
-        void OnMenuEvent(wxCommandEvent &event);
+        void OnMenuEvent(wxCommandEvent& event);
+        void OnPluginMenuEvent(wxCommandEvent& event);
         void OnAskForNewFile();
         void OnHelp();
         void OnAbout();
@@ -345,6 +346,7 @@ class NumeReWindow : public wxFrame
         void renameFile();
 
         void UpdateMenuBar();
+        void UpdatePackageMenu();
         void UpdateToolbar();
         void UpdateTerminalNotebook();
         void UpdateVarViewer();
@@ -470,6 +472,7 @@ class NumeReWindow : public wxFrame
         std::map<int, wxMenuItem*> m_menuItems;
         std::vector<std::pair<int, wxString> > m_modifiedFiles;
         std::map<wxWindow*, WindowType> m_openedWindows;
+        std::map<size_t, std::string> m_pluginMenuMap;
 
 
         wxString m_filterNSCRFiles;

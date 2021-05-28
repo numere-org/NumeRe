@@ -1662,6 +1662,7 @@ bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCo
             }
 
             print(LineBreak(_lang.get("PARSER_PLUGINDELETED"), _option));
+            installationDone();
         }
         else
             print(LineBreak(_lang.get("PARSER_PLUGINNOTFOUND"), _option));
@@ -2475,6 +2476,19 @@ std::vector<std::string> NumeReKernel::getInstalledPackages() const
     }
 
     return vPackages;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the menu map used to construct
+/// the package menu.
+///
+/// \return std::map<std::string, std::string>
+///
+/////////////////////////////////////////////////
+std::map<std::string, std::string> NumeReKernel::getMenuMap() const
+{
+    return _procedure.getMenuMap();
 }
 
 

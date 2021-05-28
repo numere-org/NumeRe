@@ -521,8 +521,11 @@ namespace mu
     /////////////////////////////////////////////////
 	MutableStringView ParserBase::PreEvaluateVectors(MutableStringView sExpr)
 	{
+	    bool isPaused = bPauseLoopByteCode && bMakeLoopByteCode;
+
 	    // Pause the loop mode if it is active
-		PauseLoopMode();
+	    if (!isPaused)
+            PauseLoopMode();
 
 		vector<double> vResults;
 
@@ -618,7 +621,8 @@ namespace mu
 		}
 
 		// Re-enable the loop mode if it is used in the moment
-		PauseLoopMode(false);
+		if (!isPaused)
+            PauseLoopMode(false);
 
 		return sExpr;
 	}

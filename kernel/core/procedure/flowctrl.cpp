@@ -2381,6 +2381,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     {
         if (!bLockedPauseMode && bUseLoopParsingMode)
             _parserRef->PauseLoopMode();
+
         {
             bool bSupressAnswer_back = NumeReKernel::bSupressAnswer;
             string sPreCommandLine = sLine;

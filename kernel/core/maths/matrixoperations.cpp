@@ -311,6 +311,13 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                         vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _functions, _option), evalMatOp(sSubExpr, _parser, _data, _functions, _option)), errorInfo));
                         break;
                     }
+                    case MATSIG_MAT_MAT_MAT:
+                    {
+                        std::string sMatrix1 = getNextArgument(sSubExpr, true);
+                        std::string sMatrix2 = getNextArgument(sSubExpr, true);
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _functions, _option), evalMatOp(sMatrix2, _parser, _data, _functions, _option), evalMatOp(sSubExpr, _parser, _data, _functions, _option)), errorInfo));
+                        break;
+                    }
                     case MATSIG_MAT_F:
                     {
                         std::string sMatrix = getNextArgument(sSubExpr, true);

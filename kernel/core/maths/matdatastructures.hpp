@@ -38,16 +38,18 @@ struct MatFuncData
 {
     const Matrix& mat1;
     const Matrix& mat2;
+    const Matrix& mat3;
     double fVal;
     int nVal;
     int mVal;
 
-    MatFuncData() : mat1(Matrix()), mat2(Matrix()), fVal(NAN), nVal(0), mVal(0) {}
-    MatFuncData(const Matrix& _mat, int n = 0) : mat1(_mat), mat2(Matrix()), fVal(NAN), nVal(n), mVal(0) {}
-    MatFuncData(const Matrix& _mat1, const Matrix& _mat2) : mat1(_mat1), mat2(_mat2), fVal(NAN), nVal(0), mVal(0) {}
-    MatFuncData(const Matrix& _mat, double f) : mat1(_mat), mat2(Matrix()), fVal(f), nVal(0), mVal(0) {}
-    MatFuncData(const Matrix& _mat, double f, int n) : mat1(_mat), mat2(Matrix()), fVal(f), nVal(n), mVal(0) {}
-    MatFuncData(int n, int m = 0) : mat1(Matrix()), mat2(Matrix()), fVal(NAN), nVal(n), mVal(m) {}
+    MatFuncData() : mat1(Matrix()), mat2(Matrix()), mat3(Matrix()), fVal(NAN), nVal(0), mVal(0) {}
+    MatFuncData(const Matrix& _mat, int n = 0) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(NAN), nVal(n), mVal(0) {}
+    MatFuncData(const Matrix& _mat1, const Matrix& _mat2) : mat1(_mat1), mat2(_mat2), mat3(Matrix()), fVal(NAN), nVal(0), mVal(0) {}
+    MatFuncData(const Matrix& _mat1, const Matrix& _mat2, const Matrix& _mat3) : mat1(_mat1), mat2(_mat2), mat3(_mat3), fVal(NAN), nVal(0), mVal(0) {}
+    MatFuncData(const Matrix& _mat, double f) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(0), mVal(0) {}
+    MatFuncData(const Matrix& _mat, double f, int n) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(n), mVal(0) {}
+    MatFuncData(int n, int m = 0) : mat1(Matrix()), mat2(Matrix()), mat3(Matrix()), fVal(NAN), nVal(n), mVal(m) {}
 };
 
 
@@ -81,6 +83,7 @@ enum MatFuncSignature
     MATSIG_MAT,
     MATSIG_MAT_NOPT,
     MATSIG_MAT_MAT,
+    MATSIG_MAT_MAT_MAT,
     MATSIG_MAT_F,
     MATSIG_MAT_F_N,
     MATSIG_N_MOPT

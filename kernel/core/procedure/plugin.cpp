@@ -30,7 +30,7 @@
 /////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
-Package::Package() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("TYPE_UNSPECIFIED"), sLicense(""), sName("Plugin"), sVersion("<AUTO>"), sAuthor("User"), sDescription("Description"), sDocumentationIndexID("")
+Package::Package() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("TYPE_UNSPECIFIED"), sLicense(""), sName("Plugin"), sVersion("<AUTO>"), sAuthor("User"), sDescription("Description"), sMenuEntry(""), sDocumentationIndexID("")
 { }
 
 
@@ -48,6 +48,7 @@ Package::Package(const std::string& sInstallInfoString) : Package()
     sCommand = getOptionValue(sInstallInfoString, "plugincommand", "");
     sMainProcedure = getOptionValue(sInstallInfoString, "pluginmain", "");
     sArgumentList = getOptionValue(sInstallInfoString, "pluginmain", "");
+    sMenuEntry = getOptionValue(sInstallInfoString, "pluginmenuentry", "");
     sType = getOptionValue(sInstallInfoString, "type", "TYPE_UNSPECIFIED");
     sLicense = getOptionValue(sInstallInfoString, "license", "???");
     sName = getOptionValue(sInstallInfoString, "name", "Plugin");
@@ -122,7 +123,7 @@ std::string Package::getOptionValue(const std::string& sInstallInfoString, const
 /////////////////////////////////////////////////
 string Package::exportDefinition() const
 {
-    return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + "," + sLicense + ",";
+    return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + "," + sLicense + "," + sMenuEntry + ",";
 }
 
 
@@ -170,6 +171,11 @@ void Package::importDefinition(std::string sDefinitionString)
         return;
 
     sLicense = getNextArgument(sDefinitionString, true);
+
+    if (!sDefinitionString.length())
+        return;
+
+    sMenuEntry = getNextArgument(sDefinitionString, true);
 }
 
 
@@ -301,6 +307,18 @@ std::string Package::getDescription() const
 std::string Package::getLicense() const
 {
     return stripParentheses(sLicense);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the menu entry of this plugin.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Package::getMenuEntry() const
+{
+    return stripParentheses(sMenuEntry);
 }
 
 
@@ -535,10 +553,13 @@ bool PackageManager::evalPluginCmd(string& sCmd)
             sCommandLine.insert(i,1,'\\');
     }
 
-    for (unsigned int i = 1; i < sParams.length()-1; i++)
+    if (sParams.length())
     {
-        if (sParams[i] == '"' && sParams[i-1] != '\\')
-            sParams.insert(i,1,'\\');
+        for (unsigned int i = 1; i < sParams.length()-1; i++)
+        {
+            if (sParams[i] == '"' && sParams[i-1] != '\\')
+                sParams.insert(i,1,'\\');
+        }
     }
 
     // Replace the procedure argument list with the
@@ -790,6 +811,28 @@ string PackageManager::deletePackage(const string& sPackage)
     }
 
     return "";
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the menu map connecting menu
+/// entry names with their corresponding
+/// procedure, which shall be called.
+///
+/// \return std::map<std::string, std::string>
+///
+/////////////////////////////////////////////////
+std::map<std::string, std::string> PackageManager::getMenuMap() const
+{
+    std::map<std::string, std::string> mMenuMap;
+
+    for (size_t i = 0; i < vPackageInfo.size(); i++)
+    {
+        if (vPackageInfo[i].sType == "TYPE_GUI_PLUGIN" && vPackageInfo[i].getMenuEntry().length())
+            mMenuMap[vPackageInfo[i].getMenuEntry()] = vPackageInfo[i].sMainProcedure;
+    }
+
+    return mMenuMap;
 }
 
 

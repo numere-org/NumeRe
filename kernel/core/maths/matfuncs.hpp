@@ -2603,6 +2603,59 @@ static Matrix interpolate(const MatFuncData& funcData, const MatFuncErrorInfo& e
 
 
 /////////////////////////////////////////////////
+/// \brief Extracts a selection from a matrix
+/// iterating through two matrices simultaneously.
+///
+/// \param funcData const MatFuncData&
+/// \param errorInfo const MatFuncErrorInfo&
+/// \return Matrix
+///
+/////////////////////////////////////////////////
+static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
+{
+    if (!funcData.mat1.size() || !funcData.mat1[0].size() || !funcData.mat2.size() || !funcData.mat2[0].size() || !funcData.mat3.size() || !funcData.mat3[0].size())
+        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
+
+    // Store the scalar state
+    bool isScalar[2] = {funcData.mat2.size() == 1 && funcData.mat2[0].size() == 1, funcData.mat3.size() == 1 && funcData.mat3[0].size() == 1};
+
+    if (!isScalar[0] && !isScalar[1] && (funcData.mat2.size() != funcData.mat3.size() || funcData.mat2[0].size() != funcData.mat3[0].size()))
+        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(funcData.mat2.size()) + "x" + toString(funcData.mat2[0].size()) + " vs. "+ toString(funcData.mat3.size()) + "x"+ toString(funcData.mat3[0].size()));
+
+    // Prepare the return value
+    Matrix selected = createFilledMatrix(std::max(funcData.mat2.size(), funcData.mat3.size()), std::max(funcData.mat2[0].size(), funcData.mat3[0].size()), NAN);
+
+    double row,col;
+
+    // Store the scalar values
+    if (isScalar[0])
+        row = funcData.mat2[0][0]-1;
+
+    if (isScalar[1])
+        col = funcData.mat3[0][0]-1;
+
+    for (size_t i = 0; i < selected.size(); i++)
+    {
+        for (size_t j = 0; j < selected[i].size(); j++)
+        {
+            // Get the values, if they are no scalars
+            if (!isScalar[0])
+                row = funcData.mat2[i][j]-1;
+
+            if (!isScalar[1])
+                col = funcData.mat3[i][j]-1;
+
+            // Extract the selected value
+            if (row >= 0 && row < funcData.mat1.size() && col >= 0 && col < funcData.mat1[0].size())
+                selected[i][j] = funcData.mat1[row][col];
+        }
+    }
+
+    return selected;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Static invalid matrix function, which
 /// will always throw an error.
 ///
@@ -2677,6 +2730,7 @@ static std::map<std::string,MatFuncDef> getMatrixFunctions()
     mFunctions["poltocyl"] = MatFuncDef(MATSIG_MAT, polarToCyl);
     mFunctions["coordstogrid"] = MatFuncDef(MATSIG_MAT_MAT, coordsToGrid);
     mFunctions["interpolate"] = MatFuncDef(MATSIG_MAT_MAT, interpolate);
+    mFunctions["select"] = MatFuncDef(MATSIG_MAT_MAT_MAT, selection);
 
     // For finding matrix functions
     mFunctions["matfl"] = MatFuncDef(MATSIG_INVALID, invalidMatrixFunction);

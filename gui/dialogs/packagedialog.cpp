@@ -75,7 +75,8 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
 
     // Create a property grid containing the package
     // properties
-    m_packageProperties = new wxPropertyGrid(group->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(-1, 250), wxPG_THEME_BORDER | wxPG_TOOLTIPS | wxPG_SPLITTER_AUTO_CENTER);
+    m_packageProperties = new wxPropertyGrid(group->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(-1, 260), wxPG_THEME_BORDER | wxPG_TOOLTIPS | wxPG_SPLITTER_AUTO_CENTER);
+    m_packageProperties->Append(new wxPropertyCategory(_guilang.get("GUI_PKGDLG_GENERAL_CATEGORY")));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PACKAGENAME"), "-name"));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_AUTHOR"), "-author"));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_VERSION"), "-version", "<AUTO>"));
@@ -87,9 +88,10 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     m_packageProperties->Append(new wxEnumProperty(_guilang.get("GUI_PKGDLG_FLAGS"), "-flags", flags));
 
     wxArrayString type;
-    type.Add("TYPE_UNSPECIFIED");
+    type.Add("TYPE_PACKAGE");
     type.Add("TYPE_PLUGIN");
     type.Add("TYPE_PLUGIN_WITH_RETURN_VALUE");
+    type.Add("TYPE_GUI_PLUGIN");
     m_packageProperties->Append(new wxEnumProperty(_guilang.get("GUI_PKGDLG_TYPE"), "-type", type));
 
     // Add a license field
@@ -118,10 +120,15 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
 
     // Add a validator to the package command to enssure that the user
     // only uses alphanumeric characters as command string
+    wxPGProperty* pluginsCategory = m_packageProperties->Append(new wxPropertyCategory(_guilang.get("GUI_PKGDLG_PLUGIN_CATEGORY")));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINCOMMAND"), "-plugincommand"));
     m_packageProperties->SetPropertyValidator("-plugincommand", wxTextValidator(wxFILTER_ALPHANUMERIC));
+    m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINMENUENTRY"), "-pluginmenuentry"));
+    m_packageProperties->SetPropertyValidator("-pluginmenuentry", wxTextValidator(wxFILTER_ALPHANUMERIC));
 
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINMAIN"), "-pluginmain"));
+
+    wxPGProperty* docsCategory = m_packageProperties->Append(new wxPropertyCategory(_guilang.get("GUI_PKGDLG_DOCS_CATEGORY")));
     m_packageProperties->Append(new wxBoolProperty(_guilang.get("GUI_PKGDLG_INCLUDEDOCUMENTATION"), INCLUDEDOCS));
     wxFileProperty* docfile = new wxFileProperty(_guilang.get("GUI_PKGDLG_DOCUMENTATION"), DOCFILE);
     docfile->SetAttribute(wxPG_FILE_DIALOG_STYLE, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -132,6 +139,10 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     // Apply some general settings to the whole property grid
     m_packageProperties->SetPropertyAttributeAll(wxPG_BOOL_USE_CHECKBOX, true);
     m_packageProperties->SetValidationFailureBehavior(wxPG_VFB_MARK_CELL | wxPG_VFB_STAY_IN_PROPERTY);
+
+    // Fold the non-general categories
+    m_packageProperties->Collapse(wxPGPropArg(pluginsCategory));
+    m_packageProperties->Collapse(wxPGPropArg(docsCategory));
 
     group->Add(m_packageProperties, 1, wxEXPAND | wxALL, 5);
 
@@ -768,7 +779,7 @@ wxString PackageDialog::getInstallInfo()
             installInfo += "\t\t" + prop->GetName() + "=" + prop->GetValueAsString() + "\r\n";
             continue;
         }
-        else if ((prop->GetName().substr(0, 7) == "-plugin" && !isplugin) || prop->GetName()[0] != '-')
+        else if ((prop->GetName().substr(0, 7) == "-plugin" && (!isplugin || !prop->GetValueAsString().length())) || prop->GetName()[0] != '-')
             continue;
         else if (prop->GetName() == "-name")
         {
@@ -882,7 +893,7 @@ bool PackageDialog::includeDocs()
 /////////////////////////////////////////////////
 bool PackageDialog::isPlugin()
 {
-    return m_packageProperties->GetPropertyByName("-type")->GetValueAsString().find("TYPE_PLUGIN") != std::string::npos;
+    return m_packageProperties->GetPropertyByName("-type")->GetValueAsString().find("PLUGIN") != std::string::npos;
 }
 
 

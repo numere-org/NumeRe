@@ -199,6 +199,7 @@ class NumeReTerminal : public wxWindow, public GenericTerminal, public wxThreadH
 		void OnClose(wxCloseEvent& event);
 		std::vector<std::string> getPathSettings();
 		std::vector<std::string> getInstalledPackages();
+		std::map<std::string, std::string> getMenuMap();
 		void passEditedTable(NumeRe::Table _table);
 		void cancelTableEdit()
 		{
