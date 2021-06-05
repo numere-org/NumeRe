@@ -1317,7 +1317,7 @@ wxString wxMGL::getClickedCoords()
     if (gr)
     {
         mglPoint p = gr->CalcXYZ(x0, y0);
-        return wxString::Format("{%.4g,%.4g}", p.x, p.y);
+        return wxString::Format("{%.12g,%.12g}", p.x, p.y);
     }
 
     return "{nan,nan}";

@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
 
@@ -319,7 +320,7 @@ class VectorIndex
             else if (vStorage.back() == OPEN_END)
                 return -1;
             else if (vStorage.size() == 2 && expand)
-                return abs(vStorage.back() - vStorage.front() + 1);
+                return abs(vStorage.back() - vStorage.front()) + 1;
             else
                 return vStorage.size();
         }
@@ -556,18 +557,12 @@ class VectorIndex
         /////////////////////////////////////////////////
         long long int max() const
         {
-            if (expand)
+            if (isOpenEnd())
+                return OPEN_END;
+            else if (expand)
                 return ::max(vStorage.front(), vStorage.back());
 
-            long long int nMax = vStorage.front();
-
-            for (size_t i = 1; i < vStorage.size(); i++)
-            {
-                if (vStorage[i] > nMax)
-                    nMax = vStorage[i];
-            }
-
-            return nMax;
+            return *std::max_element(vStorage.begin(), vStorage.end());
         }
 
         /////////////////////////////////////////////////
@@ -580,14 +575,16 @@ class VectorIndex
         /////////////////////////////////////////////////
         long long int min() const
         {
-            if (expand)
+            if (expand && isOpenEnd())
+                return vStorage.front();
+            else if (expand)
                 return ::min(vStorage.front(), vStorage.back());
 
             long long int nMin = vStorage.front();
 
             for (size_t i = 1; i < vStorage.size(); i++)
             {
-                if (vStorage[i] > nMin)
+                if (nMin < 0 || (vStorage[i] > 0 && vStorage[i] < nMin))
                     nMin = vStorage[i];
             }
 

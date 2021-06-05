@@ -29,6 +29,8 @@
 #include "../kernel.hpp"
 #include "ui/winlayout.hpp"
 
+#include "commandlineparser.hpp"
+
 using namespace std;
 using namespace mu;
 
@@ -2285,11 +2287,12 @@ static CommandReturnValues saveDataObject(string& sCmd)
 static CommandReturnValues cmd_find(string& sCmd)
 {
     Settings& _option = NumeReKernel::getInstance()->getSettings();
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
 
-    if (sCmd.length() > 6 && sCmd.find("-") != string::npos)
-        doc_SearchFct(sCmd.substr(sCmd.find('-', findCommand(sCmd).nPos) + 1), _option);
-    else if (sCmd.length() > 6)
-        doc_SearchFct(sCmd.substr(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + findCommand(sCmd).sString.length())), _option);
+    if (cmdParser.getExpr().length())
+        doc_SearchFct(cmdParser.getExpr(), _option);
+    else if (cmdParser.getParameterList().length())
+        doc_SearchFct(cmdParser.getParameterList(), _option);
     else
     {
         NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_FIND_CANNOT_READ"), _option));
@@ -2310,43 +2313,21 @@ static CommandReturnValues cmd_find(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_integrate(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    //sCmd = evaluateParameterValues(sCmd);
 
-    size_t nPos = findCommand(sCmd, "integrate").nPos;
-    vector<double> vIntegrate;
-    string sArgument;
+    CommandLineParser cmdParser(sCmd, "integrate", CommandLineParser::CMD_EXPR_set_PAR);
 
-    if (nPos)
-    {
-        sArgument = sCmd;
-        sCmd = extractCommandString(sCmd, findCommand(sCmd, "integrate"));
-        sArgument.replace(nPos, sCmd.length(), "<<ANS>>");
-    }
-    else
-        sArgument = "<<ANS>>";
-
-    sCmd = evaluateParameterValues(sCmd);
-
-    StripSpaces(sCmd);
-
-    if ((findCommand(sCmd, "integrate").sString.length() >= 10 && findCommand(sCmd, "integrate").sString.substr(0, 10) == "integrate2")
+    if (cmdParser.getCommand().substr(0, 10) == "integrate2"
         || (findParameter(sCmd, "x", '=') && findParameter(sCmd, "y", '=')))
     {
-        vIntegrate = integrate2d(sCmd, _data, _parser, _option, _functions);
-        sCmd = sArgument;
-        sCmd.replace(sCmd.find("<<ANS>>"), 7, "_~integrate2[~_~]");
-        _parser.SetVectorVar("_~integrate2[~_~]", vIntegrate);
+        integrate2d(cmdParser);
+        sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
     }
     else
     {
-        vIntegrate = integrate(sCmd, _data, _parser, _option, _functions);
-        sCmd = sArgument;
-        sCmd.replace(sCmd.find("<<ANS>>"), 7, "_~integrate[~_~]");
-        _parser.SetVectorVar("_~integrate[~_~]", vIntegrate);
+        integrate(cmdParser);
+        sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
     }
     /*else
@@ -2367,34 +2348,16 @@ static CommandReturnValues cmd_integrate(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_diff(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "diff", CommandLineParser::CMD_EXPR_set_PAR);
 
-    size_t nPos = findCommand(sCmd, "diff").nPos;
-    vector<double> vDiff;
-    string sArgument;
-
-    if (nPos)
+    if (cmdParser.getExpr().length())
     {
-        sArgument = sCmd;
-        sCmd = extractCommandString(sCmd, findCommand(sCmd, "diff"));
-        sArgument.replace(nPos, sCmd.length(), "<<ANS>>");
-    }
-    else
-        sArgument = "<<ANS>>";
-
-    if (sCmd.length() > 5)
-    {
-        vDiff = differentiate(sCmd, _parser, _data, _option, _functions);
-        sCmd = sArgument;
-        sCmd.replace(sCmd.find("<<ANS>>"), 7, "_~diff[~_~]");
-        _parser.SetVectorVar("_~diff[~_~]", vDiff);
+        differentiate(cmdParser);
+        sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
     }
     else
-        doc_Help("diff", _option);
+        doc_Help("diff", NumeReKernel::getInstance()->getSettings());
 
     return COMMAND_PROCESSED;
 }
@@ -2622,7 +2585,9 @@ static CommandReturnValues cmd_sort(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_dialog(string& sCmd)
 {
-    dialogCommand(sCmd);
+    CommandLineParser cmdParser(sCmd, "dialog", CommandLineParser::CMD_EXPR_set_PAR);
+    dialogCommand(cmdParser);
+    sCmd = cmdParser.getReturnValueStatement();
 
     return COMMAND_HAS_RETURNVALUE;
 }
@@ -3083,14 +3048,12 @@ static CommandReturnValues cmd_read(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_window(string& sCmd)
 {
-    size_t nPos = findCommand(sCmd, "window").nPos;
-    string sArgument = extractCommandString(sCmd, findCommand(sCmd, "window"));
-    string sCommand = sArgument;
+    CommandLineParser cmdParser(sCmd, "window", CommandLineParser::CMD_DAT_PAR);
 
-    if (sArgument.length() > 7)
+    if (cmdParser.getExpr().length() || cmdParser.getParameterList().length())
     {
-        windowCommand(sArgument);
-        sCmd.replace(nPos, sCommand.length(), sArgument);
+        windowCommand(cmdParser);
+        sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
     }
     else
@@ -3674,17 +3637,58 @@ static CommandReturnValues cmd_append(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_audio(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "audio", CommandLineParser::CMD_EXPR_set_PAR);
 
-    if (!writeAudioFile(sCmd, _parser, _data, _functions, _option))
+    if (!writeAudioFile(cmdParser))
         throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
-    else if (_option.systemPrints())
+    else if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_AUDIO_SUCCESS"));
 
     return COMMAND_PROCESSED;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// "audioread" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_audioread(string& sCmd)
+{
+    CommandLineParser cmdParser(sCmd, "audioread", CommandLineParser::CMD_EXPR_set_PAR);
+
+    if (!readAudioFile(cmdParser))
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position);
+    else if (NumeReKernel::getInstance()->getSettings().systemPrints())
+        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_AUDIOREAD_SUCCESS"));
+
+    sCmd = cmdParser.getReturnValueStatement();
+    return COMMAND_HAS_RETURNVALUE;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// "seek" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
+static CommandReturnValues cmd_seek(string& sCmd)
+{
+    CommandLineParser cmdParser(sCmd, "seek", CommandLineParser::CMD_EXPR_set_PAR);
+
+    if (!seekInAudioFile(cmdParser))
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position);
+    else if (NumeReKernel::getInstance()->getSettings().systemPrints())
+        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SEEK_SUCCESS"));
+
+    sCmd = cmdParser.getReturnValueStatement();
+    return COMMAND_HAS_RETURNVALUE;
 }
 
 
@@ -5684,6 +5688,7 @@ static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
     map<string, CommandFunc> mCommandFuncMap;
 
     mCommandFuncMap["append"] = cmd_append;
+    mCommandFuncMap["audioread"] = cmd_audioread;
     mCommandFuncMap["dialog"] = cmd_dialog;
     mCommandFuncMap["diff"] = cmd_diff;
     mCommandFuncMap["eval"] = cmd_eval;
@@ -5697,6 +5702,7 @@ static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["read"] = cmd_read;
     mCommandFuncMap["readline"] = cmd_readline;
     mCommandFuncMap["reload"] = cmd_reload;
+    mCommandFuncMap["seek"] = cmd_seek;
     mCommandFuncMap["sort"] = cmd_sort;
     mCommandFuncMap["stats"] = cmd_stats;
     mCommandFuncMap["window"] = cmd_window;

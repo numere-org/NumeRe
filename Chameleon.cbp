@@ -383,6 +383,10 @@
 		<Unit filename="gui/wx.cpp" />
 		<Unit filename="gui/wx.h" />
 		<Unit filename="gui/wxProportionalSplitterWindow.h" />
+		<Unit filename="kernel/core/AudioLib/audiofile.cpp" />
+		<Unit filename="kernel/core/AudioLib/audiofile.hpp" />
+		<Unit filename="kernel/core/AudioLib/wavfile.cpp" />
+		<Unit filename="kernel/core/AudioLib/wavfile.hpp" />
 		<Unit filename="kernel/core/IgorLib/CrossPlatformFileIO.cpp" />
 		<Unit filename="kernel/core/IgorLib/CrossPlatformFileIO.h" />
 		<Unit filename="kernel/core/IgorLib/IgorBin.h" />
@@ -410,6 +414,8 @@
 		<Unit filename="kernel/core/built-in.cpp" />
 		<Unit filename="kernel/core/built-in.hpp" />
 		<Unit filename="kernel/core/commandfunctions.hpp" />
+		<Unit filename="kernel/core/commandlineparser.cpp" />
+		<Unit filename="kernel/core/commandlineparser.hpp" />
 		<Unit filename="kernel/core/datamanagement/cluster.cpp" />
 		<Unit filename="kernel/core/datamanagement/cluster.hpp" />
 		<Unit filename="kernel/core/datamanagement/container.hpp" />

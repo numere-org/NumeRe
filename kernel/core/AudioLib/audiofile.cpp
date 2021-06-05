@@ -16,20 +16,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef WINLAYOUT_HPP
-#define WINLAYOUT_HPP
+#include "audiofile.hpp"
 
-#include <string>
-#include <vector>
+#include "wavfile.hpp"
 
-#include "../commandlineparser.hpp"
+namespace Audio
+{
+    /////////////////////////////////////////////////
+    /// \brief Return a audio file type depending on
+    /// the file extension or a nullptr if the file
+    /// type is not supported.
+    ///
+    /// \param sFileName const std::string&
+    /// \return File*
+    ///
+    /////////////////////////////////////////////////
+    File* getAudioFileByType(const std::string& sFileName)
+    {
+        std::string sExt = sFileName.substr(sFileName.rfind('.'));
 
-void windowCommand(CommandLineParser& cmdParser);
-std::vector<std::string> getEventProcedures(const std::string& sLayoutFile);
-void dialogCommand(CommandLineParser& cmdParser);
+        if (sExt == ".wav")
+            return new WavFile(sFileName);
 
-
-#endif // WINLAYOUT_HPP
-
+        return nullptr;
+    }
+}
 
 

@@ -24,3 +24,5 @@ Fixed	The editor now can also resolve subnamespaces of "this".
 Fixed	Resolved a rare issue occuring in combination with the "matop" mode and vector expressions in for loops.
 Added	The "select(MAT,MAT,MAT)"  function allows using the two latter matrices (vectors) as indices for the first matrix.
 Applied	It is now possible to link GUI plugins into the new "Packages" menu.
+Added	The command "audioread" can read the metadata of or a whole audio file.
+Added	The command "seek" can extract sections of audio files.

@@ -23,6 +23,7 @@
 #include "../datamanagement/memorymanager.hpp"
 #include "../ParserLib/muParser.h"
 #include "../settings.hpp"
+#include "../commandlineparser.hpp"
 #include "define.hpp"
 
 #include <string>
@@ -31,9 +32,9 @@
 using namespace std;
 using namespace mu;
 
-vector<double> integrate(const string&, MemoryManager&, Parser&, const Settings&, FunctionDefinitionManager&);
-vector<double> integrate2d(const string&, MemoryManager&, Parser&, const Settings&, FunctionDefinitionManager&);
-vector<double> differentiate(const string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option, FunctionDefinitionManager& _functions);
+bool integrate(CommandLineParser& cmdParser);
+bool integrate2d(CommandLineParser& cmdParser);
+bool differentiate(CommandLineParser& cmdParser);
 bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
 bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
 void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
@@ -42,7 +43,9 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, c
 bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
 bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
 bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool writeAudioFile(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool writeAudioFile(CommandLineParser& cmdParser);
+bool readAudioFile(CommandLineParser& cmdParser);
+bool seekInAudioFile(CommandLineParser& cmdParser);
 bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool analyzePulse(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
