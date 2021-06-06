@@ -23,6 +23,7 @@
 #include <string>
 #include "memorymanager.hpp"
 #include "../settings.hpp"
+#include "../commandlineparser.hpp"
 #include "../ParserLib/muParser.h"
 #include "../io/output.hpp"
 #include "../maths/define.hpp"
@@ -39,9 +40,9 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore = false);
 bool deleteCacheEntry(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
 bool CopyData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
 bool moveData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool sortData(CommandLineParser& cmdParser);
 bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option);
-bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option);
+bool readFromFile(CommandLineParser& cmdParser);
 bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option);
 
 

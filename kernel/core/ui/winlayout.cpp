@@ -363,17 +363,9 @@ static std::string parseLayoutScript(std::string& sLayoutScript, tinyxml2::XMLDo
 static int getItemId(const std::string& sCmd)
 {
     if (findParameter(sCmd, "item", '='))
-    {
-        std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "item", '=')+4);
-        NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
-        return intCast(NumeReKernel::getInstance()->getParser().Eval());
-    }
+        return StrToInt(getArgAtPos(sCmd, findParameter(sCmd, "item", '=')+4, ARGEXTRACT_PARSED | ARGEXTRACT_ASINT | ARGEXTRACT_STRIPPED));
     else if (findParameter(sCmd, "id", '='))
-    {
-        std::string sItemID = getArgAtPos(sCmd, findParameter(sCmd, "id", '=')+2);
-        NumeReKernel::getInstance()->getParser().SetExpr(sItemID);
-        return intCast(NumeReKernel::getInstance()->getParser().Eval());
-    }
+        return StrToInt(getArgAtPos(sCmd, findParameter(sCmd, "id", '=')+2, ARGEXTRACT_PARSED | ARGEXTRACT_ASINT | ARGEXTRACT_STRIPPED));
 
     return -1;
 }
@@ -390,7 +382,12 @@ static int getItemId(const std::string& sCmd)
 /////////////////////////////////////////////////
 static NumeRe::WindowInformation getWindow(const std::string& sExpr)
 {
-    NumeReKernel::getInstance()->getParser().SetExpr(sExpr);
+    std::string sCurExpr = sExpr;
+
+    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sCurExpr))
+        getDataElements(sCurExpr, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
+    NumeReKernel::getInstance()->getParser().SetExpr(sCurExpr);
     int windowID = intCast(NumeReKernel::getInstance()->getParser().Eval());
 
     return NumeReKernel::getInstance()->getWindowManager().getWindowInformation(windowID);
@@ -401,52 +398,54 @@ static NumeRe::WindowInformation getWindow(const std::string& sExpr)
 /// \brief This static function handles property
 /// reads from windows.
 ///
-/// \param sCmd std::string&
+/// \param cmdParser CommandLineParser&
 /// \param sExpr const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void getParametersFromWindow(std::string& sCmd, const std::string& sExpr)
+static void getParametersFromWindow(CommandLineParser& cmdParser, const std::string& sExpr)
 {
+    const std::string& sParList = cmdParser.getParameterList();
+
     // Get value of window item
-    int itemID = getItemId(sCmd);
+    int itemID = getItemId(sParList);
     NumeRe::WindowInformation winInfo = getWindow(sExpr);
 
     // If the window does not exist, the pointer
     // is a nullptr type
     if (!winInfo.window || winInfo.nStatus != NumeRe::STATUS_RUNNING)
-        throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, sCmd, sExpr);
+        throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, cmdParser.getCommandLine(), sExpr);
 
-    if (findParameter(sCmd, "value"))
+    if (findParameter(sParList, "value"))
     {
-        if (findParameter(sCmd, "prop", '='))
+        if (findParameter(sParList, "prop", '='))
         {
-            std::string varname = getArgAtPos(sCmd, findParameter(sCmd, "prop", '=')+4);
-            sCmd = winInfo.window->getPropValue(varname);
+            std::string varname = getArgAtPos(sParList, findParameter(sParList, "prop", '=')+4);
+            cmdParser.setReturnValue(winInfo.window->getPropValue(varname));
         }
         else
         {
             NumeRe::WinItemValue val = winInfo.window->getItemValue(itemID);
 
             if (val.type != "tablegrid")
-                sCmd = val.stringValue;
+                cmdParser.setReturnValue(val.stringValue);
             else
             {
                 MemoryManager& _memManager = NumeReKernel::getInstance()->getMemoryManager();
                 Indices _idx;
-                std::string sTarget = evaluateTargetOptionInCommand(sCmd, "valtable", _idx, NumeReKernel::getInstance()->getParser(), _memManager, NumeReKernel::getInstance()->getSettings());
+                std::string sTarget = cmdParser.getTargetTable(_idx, "valtable");
 
-                sCmd = "\"" + sTarget + "()\"";
+                cmdParser.setReturnValue("\"" + sTarget + "()\"");
                 _memManager.importTable(val.tableValue, sTarget, _idx.row, _idx.col);
             }
         }
     }
-    else if (findParameter(sCmd, "label"))
-        sCmd = winInfo.window->getItemLabel(itemID);
-    else if (findParameter(sCmd, "state"))
-        sCmd = winInfo.window->getItemState(itemID);
-    else if (findParameter(sCmd, "color"))
-        sCmd = winInfo.window->getItemColor(itemID);
+    else if (findParameter(sParList, "label"))
+        cmdParser.setReturnValue(winInfo.window->getItemLabel(itemID));
+    else if (findParameter(sParList, "state"))
+        cmdParser.setReturnValue(winInfo.window->getItemState(itemID));
+    else if (findParameter(sParList, "color"))
+        cmdParser.setReturnValue(winInfo.window->getItemColor(itemID));
 }
 
 
@@ -454,33 +453,35 @@ static void getParametersFromWindow(std::string& sCmd, const std::string& sExpr)
 /// \brief This static function handles property
 /// writes in windows.
 ///
-/// \param sCmd std::string&
+/// \param cmdParser CommandLineParser&
 /// \param sExpr const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void setParametersInWindow(std::string& sCmd, const std::string& sExpr)
+static void setParametersInWindow(CommandLineParser& cmdParser, const std::string& sExpr)
 {
+    const std::string& sParList = cmdParser.getParameterList();
+
     // Change value of window item
-    int itemID = getItemId(sCmd);
+    int itemID = getItemId(sParList);
     NumeRe::WindowInformation winInfo = getWindow(sExpr);
 
     // If the window does not exist, the pointer
     // is a nullptr type
     if (!winInfo.window || winInfo.nStatus != NumeRe::STATUS_RUNNING)
-        throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, sCmd, sExpr);
+        throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, cmdParser.getCommandLine(), sExpr);
 
     // Get the new value
-    if (findParameter(sCmd, "value", '='))
+    if (findParameter(sParList, "value", '='))
     {
-        if (findParameter(sCmd, "prop", '='))
+        if (findParameter(sParList, "prop", '='))
         {
-            std::string varname = getArgAtPos(sCmd, findParameter(sCmd, "prop", '=')+4);
-            sCmd = toString(winInfo.window->setPropValue(getArgAtPos(sCmd, findParameter(sCmd, "value", '=')+5, ARGEXTRACT_PARSED), varname));
+            std::string varname = getArgAtPos(sParList, findParameter(sParList, "prop", '=')+4);
+            cmdParser.setReturnValue(toString(winInfo.window->setPropValue(getArgAtPos(sParList, findParameter(sParList, "value", '=')+5, ARGEXTRACT_PARSED), varname)));
         }
         else
         {
-            std::string sValue = getArgAtPos(sCmd, findParameter(sCmd, "value", '=')+5);
+            std::string sValue = getArgAtPos(sParList, findParameter(sParList, "value", '=')+5);
             MemoryManager& _memManager = NumeReKernel::getInstance()->getMemoryManager();
             NumeRe::WinItemValue value;
 
@@ -491,25 +492,25 @@ static void setParametersInWindow(std::string& sCmd, const std::string& sExpr)
                 value.stringValue = _access.getDataObject() + "()";
             }
             else
-                value.stringValue = parseStringOpt(sCmd, findParameter(sCmd, "value", '=')+5);
+                value.stringValue = cmdParser.getParameterValueAsString("value", "");
 
-            sCmd = toString(winInfo.window->setItemValue(value, itemID));
+            cmdParser.setReturnValue(toString(winInfo.window->setItemValue(value, itemID)));
         }
     }
-    else if (findParameter(sCmd, "label", '='))
+    else if (findParameter(sParList, "label", '='))
     {
-        std::string sLabel = parseStringOpt(sCmd, findParameter(sCmd, "label", '=')+5);
-        sCmd = toString(winInfo.window->setItemLabel(sLabel, itemID));
+        std::string sLabel = cmdParser.getParameterValueAsString("label", "");
+        cmdParser.setReturnValue(toString(winInfo.window->setItemLabel(sLabel, itemID)));
     }
-    else if (findParameter(sCmd, "state", '='))
+    else if (findParameter(sParList, "state", '='))
     {
-        std::string sState = getArgAtPos(sCmd, findParameter(sCmd, "state", '=')+5);
-        sCmd = toString(winInfo.window->setItemState(sState, itemID));
+        std::string sState = getArgAtPos(sParList, findParameter(sParList, "state", '=')+5);
+        cmdParser.setReturnValue(toString(winInfo.window->setItemState(sState, itemID)));
     }
-    else if (findParameter(sCmd, "color", '='))
+    else if (findParameter(sParList, "color", '='))
     {
-        std::string sColor = parseNumOpt(sCmd, findParameter(sCmd, "color", '=')+5);
-        sCmd = toString(winInfo.window->setItemColor(sColor, itemID));
+        std::string sColor = parseNumOpt(sParList, findParameter(sParList, "color", '=')+5);
+        cmdParser.setReturnValue(toString(winInfo.window->setItemColor(sColor, itemID)));
     }
 
 
@@ -520,31 +521,17 @@ static void setParametersInWindow(std::string& sCmd, const std::string& sExpr)
 /// \brief This function is the actual
 /// implementation of the \c window command.
 ///
-/// \param sCmd std::string&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void windowCommand(std::string& sCmd)
+void windowCommand(CommandLineParser& cmdParser)
 {
     NumeRe::WindowManager& winManager = NumeReKernel::getInstance()->getWindowManager();
 
     // Find the expression part
-    std::string sExpr = sCmd.substr(6);
-    size_t nQuotes = 0;
-
-    // Remove trailing parameters from the
-    // expression part
-    for (size_t i = 0; i < sExpr.length(); i++)
-    {
-        if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
-            nQuotes++;
-
-        if (!(nQuotes % 2) && sExpr[i] == '-')
-        {
-            sExpr.erase(i);
-            break;
-        }
-    }
+    std::string sExpr = cmdParser.getExpr();
+    std::string sParList = cmdParser.getParameterList();
 
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpr))
     {
@@ -556,10 +543,10 @@ void windowCommand(std::string& sCmd)
     sExpr = removeQuotationMarks(sExpr);
 
     // Determine, what the user wants to do
-    if (findParameter(sCmd, "getitems", '='))
+    if (findParameter(sParList, "getitems", '='))
     {
         // get IDs of all selected items
-        std::string sItemType = getArgAtPos(sCmd, findParameter(sCmd, "getitems", '=')+8);
+        std::string sItemType = getArgAtPos(sParList, findParameter(sParList, "getitems", '=')+8);
         NumeRe::WindowInformation winInfo = getWindow(sExpr);
         Parser& _parser = NumeReKernel::getInstance()->getParser();
 
@@ -569,14 +556,14 @@ void windowCommand(std::string& sCmd)
         {
             if (sItemType == "prop")
             {
-                sCmd = winInfo.window->getProperties();
+                cmdParser.setReturnValue("{" + winInfo.window->getProperties() + "}");
             }
             else
             {
                 std::vector<int> vItems = winInfo.window->getWindowItems(sItemType);
 
                 if (!vItems.size())
-                    sCmd = "nan";
+                    cmdParser.setReturnValue("nan");
                 else
                 {
                     std::vector<double> vRes;
@@ -585,18 +572,18 @@ void windowCommand(std::string& sCmd)
                     for (auto items : vItems)
                         vRes.push_back(items);
 
-                    sCmd = _parser.CreateTempVectorVar(vRes);
+                    cmdParser.setReturnValue(_parser.CreateTempVectorVar(vRes));
                 }
             }
         }
         else
-            throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, sCmd, sExpr);
+            throw SyntaxError(SyntaxError::INVALID_WINDOW_ID, cmdParser.getCommandLine(), cmdParser.getExpr());
     }
-    else if (findParameter(sCmd, "get"))
-        getParametersFromWindow(sCmd, sExpr);
-    else if (findParameter(sCmd, "set"))
-        setParametersInWindow(sCmd, sExpr);
-    else if (findParameter(sCmd, "close"))
+    else if (findParameter(sParList, "get"))
+        getParametersFromWindow(cmdParser, sExpr);
+    else if (findParameter(sParList, "set"))
+        setParametersInWindow(cmdParser, sExpr);
+    else if (findParameter(sParList, "close"))
     {
         // Close window
         NumeRe::WindowInformation winInfo = getWindow(sExpr);
@@ -604,9 +591,9 @@ void windowCommand(std::string& sCmd)
         // If the window does not exist, the pointer
         // is a nullptr type
         if (winInfo.window && winInfo.nStatus == NumeRe::STATUS_RUNNING)
-            sCmd = toString(winInfo.window->closeWindow());
+            cmdParser.setReturnValue(toString(winInfo.window->closeWindow()));
         else
-            sCmd = "false";
+            cmdParser.setReturnValue("false");
     }
     else
     {
@@ -639,12 +626,102 @@ void windowCommand(std::string& sCmd)
                 break;
         }
 
-        sCmd = toString(id);
+        cmdParser.setReturnValue(toString(id));
 
         // Create the string for the onopen event
         if (sOnOpenEvent.length())
-            sCmd += " " + sOnOpenEvent + "(" + toString(id) + ", -1, {\"event\",\"onopen\",\"object\",\"window\",\"value\",nan,\"state\",\"enabled\"})";
+            cmdParser.setReturnValue(" " + sOnOpenEvent + "(" + toString(id) + ", -1, {\"event\",\"onopen\",\"object\",\"window\",\"value\",nan,\"state\",\"enabled\"})");
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts a full-qualified procedure
+/// name into the corresponding file name.
+///
+/// \param sProc std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+static std::string getProcedureFileName(std::string sProc)
+{
+    // Create a valid file name from the procedure name
+    sProc = NumeReKernel::getInstance()->getProcedureInterpreter().ValidFileName(sProc, ".nprc");
+
+    // Replace tilde characters with path separators
+    if (sProc.find('~') != std::string::npos)
+    {
+        size_t nPos = sProc.rfind('/');
+
+        // Find the last path separator
+        if (nPos < sProc.rfind('\\') && sProc.rfind('\\') != std::string::npos)
+            nPos = sProc.rfind('\\');
+
+        // Replace all tilde characters in the current path
+        // string. Consider the special namespace "main", which
+        // is a reference to the toplevel procedure folder
+        for (size_t i = nPos; i < sProc.length(); i++)
+        {
+            if (sProc[i] == '~')
+            {
+                if (sProc.length() > 5 && i >= 4 && sProc.substr(i - 4, 5) == "main~")
+                    sProc = sProc.substr(0, i - 4) + sProc.substr(i + 1);
+                else
+                    sProc[i] = '/';
+            }
+        }
+    }
+
+    return sProc;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Examines a window layout file and
+/// searches for all event handler procedures.
+/// Returns their corresponding filenames as a
+/// vector. Might contain duplicates.
+///
+/// \param sLayoutFile const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> getEventProcedures(const std::string& sLayoutFile)
+{
+    StyledTextFile layoutFile(sLayoutFile);
+    std::string sFolderName = sLayoutFile.substr(0, sLayoutFile.rfind('/'));
+    std::vector<std::string> vProcedures;
+
+    for (size_t i = 0; i < layoutFile.getLinesCount(); i++)
+    {
+        std::string sLine = layoutFile.getStrippedLine(i);
+
+        if (findParameter(sLine, "onopen", '='))
+        {
+            std::string sEvent = parseEventOpt(sLine, findParameter(sLine, "onopen", '=')+6, sFolderName);
+
+            if (sEvent.front() == '$')
+                vProcedures.push_back(getProcedureFileName(sEvent.substr(1)));
+        }
+
+        if (findParameter(sLine, "onclick", '='))
+        {
+            std::string sEvent = parseEventOpt(sLine, findParameter(sLine, "onclick", '=')+7, sFolderName);
+
+            if (sEvent.front() == '$')
+                vProcedures.push_back(getProcedureFileName(sEvent.substr(1)));
+        }
+
+        if (findParameter(sLine, "onchange", '='))
+        {
+            std::string sEvent = parseEventOpt(sLine, findParameter(sLine, "onchange", '=')+8, sFolderName);
+
+            if (sEvent.front() == '$')
+                vProcedures.push_back(getProcedureFileName(sEvent.substr(1)));
+        }
+    }
+
+    return vProcedures;
 }
 
 
@@ -652,38 +729,32 @@ void windowCommand(std::string& sCmd)
 /// \brief This function is the actual
 /// implementation of the \c dialog command.
 ///
-/// \param sCmd std::string&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void dialogCommand(std::string& sCmd)
+void dialogCommand(CommandLineParser& cmdParser)
 {
-    size_t position = findCommand(sCmd, "dialog").nPos;
-    string sDialogSettings = sCmd.substr(position+7);
+    const string& sParList = cmdParser.getParameterList();
     string sMessage;
     string sTitle = "NumeRe: Window";
     string sExpression;
     int nControls = NumeRe::CTRL_NONE;
     NumeReKernel* kernel = NumeReKernel::getInstance();
 
-    // If the current command line contains strings in the option values
-    // handle them here
-    if (kernel->getStringParser().isStringExpression(sDialogSettings))
-        sDialogSettings = evaluateParameterValues(sDialogSettings);
-
     // Extract the message for the user
-    if (findParameter(sDialogSettings, "msg", '='))
-        sMessage = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "msg", '=')+3);
+    if (findParameter(sParList, "msg", '='))
+        sMessage = cmdParser.getParameterValueAsString("msg", "");
 
     // Extract the window title
-    if (findParameter(sDialogSettings, "title", '='))
-        sTitle = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "title", '=')+5);
+    if (findParameter(sParList, "title", '='))
+        sTitle = cmdParser.getParameterValueAsString("title", sTitle);
 
     // Extract the selected dialog type if available, otherwise
     // use the message box as default value
-    if (findParameter(sDialogSettings, "type", '='))
+    if (findParameter(sParList, "type", '='))
     {
-        string sType = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "type", '=')+4);
+        string sType = getArgAtPos(sParList, findParameter(sParList, "type", '=')+4);
 
         if (sType == "filedialog")
             nControls = NumeRe::CTRL_FILEDIALOG;
@@ -703,9 +774,9 @@ void dialogCommand(std::string& sCmd)
 
     // Extract the button information. The default values are
     // created by wxWidgets. We don't have to do that here
-    if (findParameter(sDialogSettings, "buttons", '='))
+    if (findParameter(sParList, "buttons", '='))
     {
-        string sButtons = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "buttons", '=')+7);
+        string sButtons = getArgAtPos(sParList, findParameter(sParList, "buttons", '=')+7);
 
         if (sButtons == "ok")
             nControls |= NumeRe::CTRL_OKBUTTON;
@@ -717,9 +788,9 @@ void dialogCommand(std::string& sCmd)
 
     // Extract the icon information. The default values are
     // created by wxWidgets. We don't have to do that here
-    if (findParameter(sDialogSettings, "icon", '='))
+    if (findParameter(sParList, "icon", '='))
     {
-        string sIcon = getArgAtPos(sDialogSettings, findParameter(sDialogSettings, "icon", '=')+4);
+        string sIcon = getArgAtPos(sParList, findParameter(sParList, "icon", '=')+4);
 
         if (sIcon == "erroricon")
             nControls |= NumeRe::CTRL_ICONERROR;
@@ -731,16 +802,8 @@ void dialogCommand(std::string& sCmd)
             nControls |= NumeRe::CTRL_ICONQUESTION;
     }
 
-    // Extract the default values for the dialog. First,
-    // erase the appended parameter list
-    if (sDialogSettings.find("-set") != string::npos)
-        sDialogSettings.erase(sDialogSettings.find("-set"));
-    else if (sDialogSettings.find("--") != string::npos)
-        sDialogSettings.erase(sDialogSettings.find("--"));
-
     // Strip spaces and assign the value
-    StripSpaces(sDialogSettings);
-    sExpression = sDialogSettings;
+    sExpression = cmdParser.getExpr();
 
     // Handle strings in the default value
     // expression. This will include also possible path
@@ -755,7 +818,7 @@ void dialogCommand(std::string& sCmd)
     // selected either a list or a selection dialog
     if ((nControls & NumeRe::CTRL_LISTDIALOG || nControls & NumeRe::CTRL_SELECTIONDIALOG) && (!sExpression.length() || sExpression == "\"\""))
     {
-        throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, sCmd, "dialog");
+        throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, cmdParser.getCommandLine(), "dialog");
     }
 
     // Use the default expression as message for the message
@@ -767,14 +830,19 @@ void dialogCommand(std::string& sCmd)
     // because the message box is the default value
     if (nControls & NumeRe::CTRL_MESSAGEBOX && (!sMessage.length() || sMessage == "\"\""))
     {
-        throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, sCmd, "dialog");
+        throw SyntaxError(SyntaxError::NO_DEFAULTVALUE_FOR_DIALOG, cmdParser.getCommandLine(), "dialog");
     }
 
     // Ensure that the path for the file and the directory
     // dialog is a valid path and replace all placeholders
     if ((nControls & NumeRe::CTRL_FILEDIALOG || nControls & NumeRe::CTRL_FOLDERDIALOG) && sExpression.length() && sExpression != "\"\"")
     {
-        sExpression = kernel->getMemoryManager().ValidFolderName(removeQuotationMarks(sExpression));
+        std::string sTemp = sExpression;
+
+        sExpression = "\"" + kernel->getMemoryManager().ValidFolderName(removeQuotationMarks(getNextArgument(sTemp, true)));
+
+        if (sTemp.length())
+            sExpression += "," + sTemp;
     }
 
     // Get the window manager, create the modal window and
@@ -786,7 +854,7 @@ void dialogCommand(std::string& sCmd)
     // Insert the return value as a string into the command
     // line and inform the command handler, that a value
     // has to be evaluated
-    sCmd = sCmd.substr(0, position) + "\"" + replacePathSeparator(wininfo.sReturn) + "\"";
+    cmdParser.setReturnValue("\"" + replacePathSeparator(wininfo.sReturn) + "\"");
 }
 
 

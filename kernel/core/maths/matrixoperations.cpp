@@ -18,6 +18,7 @@
 #include <Eigen/Dense>
 
 #include "matrixoperations.hpp"
+#include "matfuncs.hpp"
 #include "parser_functions.hpp"
 #include "../../kernel.hpp"
 #include <list>
@@ -27,67 +28,23 @@
 #define EIGENVECTORS 1
 #define DIAGONALIZE 2
 
-static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos);
-static Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLine);
-static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static void parser_makeReal(Matrix& _mMatrix);
-static double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines);
-static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option);
-static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
-static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, MemoryManager& _data, const Settings& _option);
-static map<string,string> createMatrixFunctionsMap();
+static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static size_t getPrevMatMultiOp(const string& sCmd, size_t nLastPos);
+static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
+static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static vector<double> calcDeltasForMatFill(const Matrix& _mMatrix, unsigned int nLine);
+static void showMatrixResult(const Matrix& _mResult, const Settings& _option);
+static Indices getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static bool containsMatrices(const string& sExpr, MemoryManager& _data);
 
-
-
-static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_IdentityMatrix(unsigned int nSize);
-static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols);
-Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols);
-static Matrix parser_shuffleMatrix(unsigned int nShuffle, unsigned int nBase);
-static Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_matFromCols(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static Matrix parser_matFromLines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
 Matrix transposeMatrix(const Matrix& _mMatrix);
-static Matrix parser_MatrixLogToIndex(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixIndexToLog(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixXor(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixSum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixStd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixAvg(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixPrd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixCnt(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixNum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixNorm(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixMin(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixMinPos(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixMaxPos(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_Normalize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixRepMat(const Matrix& _mMatrix, size_t n, size_t m, const string& sCmd, const string& sExpr, size_t position);
-static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const string& sCmd, const string& sExpr, size_t position);
-static std::vector<double> parser_getUniqueList(std::list<double>& _list);
-static void parser_fillMissingMatrixElements(Matrix& _mMatrix);
+Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols);
+
+static Matrix createMatFromCols(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix createMatFromColsFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix createMatFromLines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+
 
 
 /////////////////////////////////////////////////
@@ -197,7 +154,8 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
 
     // Matrixmultiplikationen / Transpositionen / Invertierungen?
     // -> Submatrixoperationen ausfuehren
-    Matrix _mResult = parser_subMatrixOperations(sCmd, _parser, _data, _functions, _option);
+    Matrix _mResult = evalMatOp(sCmd, _parser, _data, _functions, _option);
+    _assertionHandler.checkAssertion(_mResult);
 
     // Target in Zielmatrix speichern
     if (!isCluster)
@@ -260,7 +218,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
     }
 
     // Display the result in the terminal
-    parser_ShowMatrixResult(_mResult, _option);
+    showMatrixResult(_mResult, _option);
 
     return true;
 }
@@ -279,7 +237,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     string __sCmd;
     size_t pos_back = 0;
@@ -287,6 +245,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
     vector<Matrix> vReturnedMatrices;
     value_type* v = 0;
     int nResults = 0;
+    static std::map<std::string, MatFuncDef> mMatrixFunctions = getMatrixFunctions();
 
     // Check, whether there's a target vector available in this expression part
     if (sCmd.find('=') != string::npos
@@ -305,671 +264,159 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
     // part will be appended to the evaluated equation.
     for (unsigned int i = iter_start; i < sCmd.length(); i++)
     {
-        // transpose matrix
-        if (sCmd.substr(i,10) == "transpose("
-            && getMatchingParenthesis(sCmd.substr(i+9)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,11))))
+        for (auto fIter = mMatrixFunctions.begin(); fIter != mMatrixFunctions.end(); ++fIter)
         {
-            string sSubExpr = sCmd.substr(i+9, getMatchingParenthesis(sCmd.substr(i+9))+1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(transposeMatrix(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option)));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+9))+10;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
+            if (fIter->second.signature == MATSIG_INVALID)
+                continue;
+
+            if (sCmd.substr(i, fIter->first.length()+1) == fIter->first + "("
+                && getMatchingParenthesis(sCmd.substr(i+fIter->first.length())) != string::npos
+                && (!i || checkDelimiter(sCmd.substr(i-1, fIter->first.length()+2))))
+            {
+                // Extract argument
+                std::string sSubExpr = sCmd.substr(i+fIter->first.length()+1, getMatchingParenthesis(sCmd.substr(i+fIter->first.length()))-1);
+
+                // Create the error structure
+                MatFuncErrorInfo errorInfo(sCmd, sSubExpr, i+fIter->first.length());
+
+                // Handle the signatures and
+                // perform the recursions
+                switch (fIter->second.signature)
+                {
+                    case MATSIG_INVALID:
+                        break; // Just to avoid compiler warnings
+                    case MATSIG_MAT:
+                    {
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sSubExpr, _parser, _data, _functions, _option)), errorInfo));
+                        break;
+                    }
+                    case MATSIG_MAT_NOPT:
+                    {
+                        std::string sMatrix = getNextArgument(sSubExpr, true);
+                        int n = 0;
+
+                        if (sSubExpr.length())
+                        {
+                            _parser.SetExpr(sSubExpr);
+                            v = _parser.Eval(nResults);
+                            n = intCast(v[0]);
+                        }
+
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), n), errorInfo));
+                        break;
+                    }
+                    case MATSIG_MAT_MAT:
+                    {
+                        std::string sMatrix1 = getNextArgument(sSubExpr, true);
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _functions, _option), evalMatOp(sSubExpr, _parser, _data, _functions, _option)), errorInfo));
+                        break;
+                    }
+                    case MATSIG_MAT_MAT_MAT:
+                    {
+                        std::string sMatrix1 = getNextArgument(sSubExpr, true);
+                        std::string sMatrix2 = getNextArgument(sSubExpr, true);
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix1, _parser, _data, _functions, _option), evalMatOp(sMatrix2, _parser, _data, _functions, _option), evalMatOp(sSubExpr, _parser, _data, _functions, _option)), errorInfo));
+                        break;
+                    }
+                    case MATSIG_MAT_F:
+                    {
+                        std::string sMatrix = getNextArgument(sSubExpr, true);
+
+                        _parser.SetExpr(sSubExpr);
+                        v = _parser.Eval(nResults);
+
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), v[0]), errorInfo));
+                        break;
+                    }
+                    case MATSIG_MAT_F_N:
+                    {
+                        std::string sMatrix = getNextArgument(sSubExpr, true);
+
+                        _parser.SetExpr(sSubExpr);
+                        v = _parser.Eval(nResults);
+
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), v[0], v[1]), errorInfo));
+                        break;
+                    }
+                    case MATSIG_N_MOPT:
+                    {
+                        _parser.SetExpr(sSubExpr);
+                        v = _parser.Eval(nResults);
+
+                        if (nResults > 1)
+                            vReturnedMatrices.push_back(fIter->second.func(MatFuncData(v[0], v[1]), errorInfo));
+                        else
+                            vReturnedMatrices.push_back(fIter->second.func(MatFuncData(v[0]), errorInfo));
+
+                        break;
+                    }
+                }
+
+                // Prepare leading part of the equation
+                __sCmd += sCmd.substr(pos_back, i-pos_back);
+
+                // Store the last position and advance the
+                // current position
+                pos_back = i+getMatchingParenthesis(sCmd.substr(i+fIter->first.length()))+fIter->first.length()+1;
+                i = pos_back-1;
+
+                // append the returned matrix
+                __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
+            }
         }
 
-        // invert matrix (if possible)
-        if (sCmd.substr(i,7) == "invert("
-            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
-        {
-            string sSubExpr = sCmd.substr(i+6, getMatchingParenthesis(sCmd.substr(i+6))+1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_InvertMatrix(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+6));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // calculate eigenvalues
-        if (sCmd.substr(i,10) == "eigenvals("
-            && getMatchingParenthesis(sCmd.substr(i+9)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,11))))
-        {
-            string sSubExpr = sCmd.substr(i+9, getMatchingParenthesis(sCmd.substr(i+9))+1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), EIGENVALUES, sCmd, sSubExpr, i+9));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+9))+10;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // calculate the eigenvectors
-        if (sCmd.substr(i,11) == "eigenvects("
-            && getMatchingParenthesis(sCmd.substr(i+10)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,12))))
-        {
-            string sSubExpr = sCmd.substr(i+10, getMatchingParenthesis(sCmd.substr(i+10))+1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), EIGENVECTORS, sCmd, sSubExpr, i+10));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+10))+11;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // diagonalize the matrix
-        if (sCmd.substr(i,12) == "diagonalize("
-            && getMatchingParenthesis(sCmd.substr(i+11)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,13))))
-        {
-            string sSubExpr = sCmd.substr(i+11, getMatchingParenthesis(sCmd.substr(i+11))+1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_calcEigenVects(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), DIAGONALIZE, sCmd, sSubExpr, i+11));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+11))+12;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // solve the linear system of equations
-        if (sCmd.substr(i,6) == "solve("
-            && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,7))))
-        {
-            string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+5))+1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_solveLGS(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), _parser, _functions, _option, sCmd, sSubExpr, i+5));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // calculate the n-dimensional cross product
-        if (sCmd.substr(i,6) == "cross("
-            && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,7))))
-        {
-            string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+5))+1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_calcCrossProduct(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+5));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // calculate the trace of the matrix
-        if (sCmd.substr(i,6) == "trace("
-            && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,7))))
-        {
-            string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+5))+1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_calcTrace(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+5));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // calculate the determinant
-        if (sCmd.substr(i,4) == "det("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+3, getMatchingParenthesis(sCmd.substr(i+3))+1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_getDeterminant(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // create a matrix filled with ones
-        if (sCmd.substr(i,4) == "one("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            _parser.SetExpr(sSubExpr);
-            v = _parser.Eval(nResults);
-            if (nResults > 1)
-                vReturnedMatrices.push_back(parser_OnesMatrix((unsigned int)v[0], (unsigned int)v[1]));
-            else
-                vReturnedMatrices.push_back(parser_OnesMatrix((unsigned int)v[0], (unsigned int)v[0]));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // create a matrix filled with zeros
-        if (sCmd.substr(i,5) == "zero("
-            && getMatchingParenthesis(sCmd.substr(i+4)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,6))))
-        {
-            string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+4))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            _parser.SetExpr(sSubExpr);
-            v = _parser.Eval(nResults);
-            if (nResults > 1)
-                vReturnedMatrices.push_back(createZeroesMatrix((unsigned int)v[0], (unsigned int)v[1]));
-            else
-                vReturnedMatrices.push_back(createZeroesMatrix((unsigned int)v[0], (unsigned int)v[0]));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // create a shuffled vector
-        if (sCmd.substr(i,8) == "shuffle("
-            && getMatchingParenthesis(sCmd.substr(i+7)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,9))))
-        {
-            string sSubExpr = sCmd.substr(i+8, getMatchingParenthesis(sCmd.substr(i+7))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            _parser.SetExpr(sSubExpr);
-            v = _parser.Eval(nResults);
-            if (nResults > 1)
-                vReturnedMatrices.push_back(parser_shuffleMatrix((unsigned int)v[0], (unsigned int)v[1]));
-            else
-                vReturnedMatrices.push_back(parser_shuffleMatrix((unsigned int)v[0], (unsigned int)v[0]));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+7))+8;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // calculate the covariance of two
-        // matrices
-        if (sCmd.substr(i, 6) == "covar("
-            && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,7))))
-        {
-            string sMatrix2 = sCmd.substr(i+6, getMatchingParenthesis(sCmd.substr(i+5))-1);
-            string sMatrix1 = getNextArgument(sMatrix2, true);
-
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
-            vReturnedMatrices.push_back(parser_Covariance(parser_subMatrixOperations(sMatrix1, _parser, _data, _functions, _option), parser_subMatrixOperations(sMatrix2, _parser, _data, _functions, _option), sCmd, sMatrix1 + ", " + sMatrix2, i+5));
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // calculate the correlation of two
-        // matrices
-        if (sCmd.substr(i, 7) == "correl("
-            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
-        {
-            string sMatrix2 = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
-            string sMatrix1 = getNextArgument(sMatrix2, true);
-
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            vReturnedMatrices.push_back(parser_Correlation(parser_subMatrixOperations(sMatrix1, _parser, _data, _functions, _option), parser_subMatrixOperations(sMatrix2, _parser, _data, _functions, _option), sCmd, sMatrix1 + ", " + sMatrix2, i+6));
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // create an identity matrix
-        if (sCmd.substr(i,9) == "identity("
-            && getMatchingParenthesis(sCmd.substr(i+8)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,10))))
-        {
-            string sSubExpr = sCmd.substr(i+9, getMatchingParenthesis(sCmd.substr(i+8))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            _parser.SetExpr(sSubExpr);
-            v = _parser.Eval(nResults);
-            vReturnedMatrices.push_back(parser_IdentityMatrix((unsigned int)v[0]));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+8))+9;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // construct matrix from columns
+        // construct matrix from columns -> MAT(...)
         if (sCmd.substr(i,6) == "matfc("
             && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,7))))
         {
             string sSubExpr = sCmd.substr(i+6, getMatchingParenthesis(sCmd.substr(i+5))-1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_matFromCols(sSubExpr, _parser, _data, _functions, _option));
+            vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
-        // construct matrix from lines
+        // construct matrix from lines -> MAT(...)
         if (sCmd.substr(i,6) == "matfl("
             && getMatchingParenthesis(sCmd.substr(i+5)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,7))))
         {
             string sSubExpr = sCmd.substr(i+6, getMatchingParenthesis(sCmd.substr(i+5))-1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_matFromLines(sSubExpr, _parser, _data, _functions, _option));
+            vReturnedMatrices.push_back(createMatFromLines(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+5))+6;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
-        // construct matrix from columns and fill missing values
+        // construct matrix from columns and fill missing values -> MAT(...)
         if (sCmd.substr(i,7) == "matfcf("
             && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,8))))
         {
             string sSubExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_matFromColsFilled(sSubExpr, _parser, _data, _functions, _option));
+            vReturnedMatrices.push_back(createMatFromColsFilled(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
-        // construct matrix from lines and fill missing values
+        // construct matrix from lines and fill missing values -> MAT(...)
         if (sCmd.substr(i,7) == "matflf("
             && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
             && (!i || checkDelimiter(sCmd.substr(i-1,8))))
         {
             string sSubExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_matFromLinesFilled(sSubExpr, _parser, _data, _functions, _option));
+            vReturnedMatrices.push_back(createMatFromLinesFilled(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
         }
 
-        // Create a square matrix with the passed elements on its main diagonal
-        if (sCmd.substr(i,5) == "diag("
-            && getMatchingParenthesis(sCmd.substr(i+4)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,6))))
-        {
-            string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+4))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_diagonalMatrix(sSubExpr, _parser, _data, _functions, _option));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Normalize the values in the matrix into the (absolute) range of [0,1]
-        if (sCmd.substr(i,10) == "normalize("
-            && getMatchingParenthesis(sCmd.substr(i+9)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,11))))
-        {
-            string sSubExpr = sCmd.substr(i+10, getMatchingParenthesis(sCmd.substr(i+9))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_Normalize(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+9));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+9))+10;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Convert logical values into indices
-        if (sCmd.substr(i,9) == "logtoidx("
-            && getMatchingParenthesis(sCmd.substr(i+8)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,10))))
-        {
-            string sSubExpr = sCmd.substr(i+9, getMatchingParenthesis(sCmd.substr(i+8))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixLogToIndex(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+8));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+8))+9;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Convcert indices into logical values
-        if (sCmd.substr(i,9) == "idxtolog("
-            && getMatchingParenthesis(sCmd.substr(i+8)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,10))))
-        {
-            string sSubExpr = sCmd.substr(i+9, getMatchingParenthesis(sCmd.substr(i+8))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixIndexToLog(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+8));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+8))+9;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Get the size of the matrix
-        if (sCmd.substr(i,5) == "size("
-            && getMatchingParenthesis(sCmd.substr(i+4)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,6))))
-        {
-            string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+4))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixSize(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+4));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "and()" for matrices
-        if (sCmd.substr(i,4) == "and("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixAnd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "xor()" for matrices
-        if (sCmd.substr(i,4) == "xor("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixXor(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "or()" for matrices
-        if (sCmd.substr(i,3) == "or("
-            && getMatchingParenthesis(sCmd.substr(i+2)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,4))))
-        {
-            string sSubExpr = sCmd.substr(i+3, getMatchingParenthesis(sCmd.substr(i+2))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixOr(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+2));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+2))+3;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "sum()" for matrices
-        if (sCmd.substr(i,4) == "sum("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixSum(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "avg()" for matrices
-        if (sCmd.substr(i,4) == "avg("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixAvg(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "std()" for matrices
-        if (sCmd.substr(i,4) == "std("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixStd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "num()" for matrices
-        if (sCmd.substr(i,4) == "num("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixNum(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "cnt()" for matrices
-        if (sCmd.substr(i,4) == "cnt("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixCnt(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "min()" for matrices
-        if (sCmd.substr(i,4) == "min("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixMin(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "max()" for matrices
-        if (sCmd.substr(i,4) == "max("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixMax(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "min()" for matrices
-        if (sCmd.substr(i,7) == "minpos("
-            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
-        {
-            string sSubExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixMinPos(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+6));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "max()" for matrices
-        if (sCmd.substr(i,7) == "maxpos("
-            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
-        {
-            string sSubExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixMaxPos(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+6));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "prd()" for matrices
-        if (sCmd.substr(i,4) == "prd("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixPrd(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "norm()" for matrices
-        if (sCmd.substr(i,5) == "norm("
-            && getMatchingParenthesis(sCmd.substr(i+4)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,6))))
-        {
-            string sSubExpr = sCmd.substr(i+5, getMatchingParenthesis(sCmd.substr(i+4))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixNorm(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+4))+5;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "med()" for matrices
-        if (sCmd.substr(i,4) == "med("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            string sSubExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixMed(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "cmp()" for matrices
-        if (sCmd.substr(i,4) == "cmp("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            int nRes;
-            value_type* v;
-            string sExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            string sSubExpr = getNextArgument(sExpr, true);
-            if (!sExpr.length())
-                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+4, "cmp()");
-            _parser.SetExpr(sExpr);
-            v = _parser.Eval(nRes);
-            if (nRes < 2)
-                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+4, "cmp()");
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-
-            vReturnedMatrices.push_back(parser_MatrixCmp(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), v[0], (int)v[1], sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "pct()" for matrices
-        if (sCmd.substr(i,4) == "pct("
-            && getMatchingParenthesis(sCmd.substr(i+3)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,5))))
-        {
-            int nRes;
-            value_type* v;
-            string sExpr = sCmd.substr(i+4, getMatchingParenthesis(sCmd.substr(i+3))-1);
-            string sSubExpr = getNextArgument(sExpr, true);
-            if (!sExpr.length())
-                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+4, "pct()");
-            _parser.SetExpr(sExpr);
-            v = _parser.Eval(nRes);
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-
-            vReturnedMatrices.push_back(parser_MatrixPct(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), v[0], sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Reshape the passed matrix to fit to the specified dimensions
-        if (sCmd.substr(i,8) == "reshape("
-            && getMatchingParenthesis(sCmd.substr(i+7)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,9))))
-        {
-            int nRes;
-            value_type* v;
-            string sExpr = sCmd.substr(i+8, getMatchingParenthesis(sCmd.substr(i+7))-1);
-            string sSubExpr = getNextArgument(sExpr, true);
-            if (!sExpr.length())
-                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+8, "reshape()");
-            _parser.SetExpr(sExpr);
-            v = _parser.Eval(nRes);
-            if (nRes < 2)
-                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+8, "reshape()");
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-
-            vReturnedMatrices.push_back(parser_MatrixReshape(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), (size_t)v[0], (size_t)v[1], sCmd, sSubExpr, i+7));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+7))+8;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Resize the passed matrix to fit to the specified dimensions
-        if (sCmd.substr(i,7) == "resize("
-            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
-        {
-            int nRes;
-            value_type* v;
-            string sExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
-            string sSubExpr = getNextArgument(sExpr, true);
-            if (!sExpr.length())
-                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+7, "resize()");
-            _parser.SetExpr(sExpr);
-            v = _parser.Eval(nRes);
-            if (nRes < 2)
-                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+7, "resize()");
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixResize(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), (size_t)v[0], (size_t)v[1], sCmd, sSubExpr, i+6));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Repeat the passed matrix to fit to the specified dimensions
-        if (sCmd.substr(i,7) == "repmat("
-            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
-        {
-            int nRes;
-            value_type* v;
-            string sExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
-            string sSubExpr = getNextArgument(sExpr, true);
-            if (!sExpr.length())
-                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+7, "repmat()");
-            _parser.SetExpr(sExpr);
-            v = _parser.Eval(nRes);
-            if (nRes < 2)
-                throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, i+7, "repmat()");
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_MatrixRepMat(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), (size_t)v[0], (size_t)v[1], sCmd, sSubExpr, i+6));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+6))+7;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
-
-        // Apply "unique()" for matrices
-        if (sCmd.substr(i,7) == "unique("
-            && getMatchingParenthesis(sCmd.substr(i+6)) != string::npos
-            && (!i || checkDelimiter(sCmd.substr(i-1,8))))
-        {
-            int nRes;
-            value_type* v;
-            size_t nDim = 0;
-            string sExpr = sCmd.substr(i+7, getMatchingParenthesis(sCmd.substr(i+6))-1);
-            string sSubExpr = getNextArgument(sExpr, true);
-            if (sExpr.length())
-            {
-                _parser.SetExpr(sExpr);
-                v = _parser.Eval(nRes);
-                nDim = intCast(v[0]);
-            }
-
-            __sCmd += sCmd.substr(pos_back, i-pos_back);
-
-            vReturnedMatrices.push_back(parser_MatrixUnique(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option), nDim, sCmd, sSubExpr, i+3));
-            pos_back = i+getMatchingParenthesis(sCmd.substr(i+3))+4;
-            __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
-            i = pos_back-1;
-        }
 
         // Handle old vector syntax (will most probably be changed to matrix syntax)
         if (sCmd.substr(i,2) == "{{"
@@ -978,7 +425,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
         {
             string sSubExpr = sCmd.substr(i, getMatchingParenthesis(sCmd.substr(i))+1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_matFromCols(sSubExpr, _parser, _data, _functions, _option));
+            vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
@@ -991,7 +438,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
         {
             string sSubExpr = sCmd.substr(i, getMatchingParenthesis(sCmd.substr(i))+1);
             __sCmd += sCmd.substr(pos_back, i-pos_back);
-            vReturnedMatrices.push_back(parser_matFromCols(sSubExpr, _parser, _data, _functions, _option));
+            vReturnedMatrices.push_back(createMatFromCols(sSubExpr, _parser, _data, _functions, _option));
             pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
             i = pos_back-1;
@@ -1010,7 +457,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
             {
                 string sSubExpr = sCmd.substr(i, getMatchingParenthesis(sCmd.substr(i))+1);
                 pos_back = i+getMatchingParenthesis(sCmd.substr(i))+1;
-                vReturnedMatrices[nMatrix] = parser_getMatrixElements(sSubExpr, vReturnedMatrices[nMatrix], _parser, _data, _functions, _option);
+                vReturnedMatrices[nMatrix] = getMatrixElements(sSubExpr, vReturnedMatrices[nMatrix], _parser, _data, _functions, _option);
                 i = pos_back-1;
             }
         }
@@ -1042,7 +489,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
                         __sCmd += sCmd.substr(pos_back, i-pos_back);
                     }
 
-                    vReturnedMatrices.push_back(parser_subMatrixOperations(sSubExpr, _parser, _data, _functions, _option));
+                    vReturnedMatrices.push_back(evalMatOp(sSubExpr, _parser, _data, _functions, _option));
                     __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
                 }
                 else
@@ -1058,7 +505,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
 
                         if (containsMatrices(sExpr, _data))
                         {
-                            vReturnedMatrices.push_back(parser_subMatrixOperations(sExpr, _parser, _data, _functions, _option));
+                            vReturnedMatrices.push_back(evalMatOp(sExpr, _parser, _data, _functions, _option));
                             __sCmd += "_~returnedMatrix["+toString((int)vReturnedMatrices.size()-1)+"]";
                         }
                         else
@@ -1108,7 +555,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
             }
 
             // Get the indices
-            vIndices.push_back(parser_getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option));
+            vIndices.push_back(getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option));
 
             // Evaluate the indices
             if (!evaluateIndices(iter->first, vIndices[vIndices.size()-1], _data))
@@ -1145,7 +592,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
             }
 
             // Get the indices
-            Indices _idx = parser_getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option);
+            Indices _idx = getIndicesForMatrix(__sCmd.substr(nPos), vMatrixNames, vIndices, vReturnedMatrices, _parser, _data, _option);
 
             if (_idx.row.isOpenEnd())
                 _idx.row.setRange(0, iter->second.size()-1);
@@ -1181,7 +628,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
             if (__sCmd.substr(n,2) == "**")
             {
                 // Find the last operator
-                pos_back = parser_getPreviousMatrixMultiplicationOperator(sCmd, pos_back)-1;
+                pos_back = getPrevMatMultiOp(sCmd, pos_back)-1;
                 Matrix _mLeft;
                 Matrix _mRight;
                 unsigned int nPositions[2];
@@ -1242,7 +689,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
                 }
 
                 // Perform the actual matrix multiplication
-                vReturnedMatrices.push_back(parser_matrixMultiplication(_mLeft, _mRight, sCmd, "", pos_back+1));
+                vReturnedMatrices.push_back(multiplyMatrices(_mLeft, _mRight, sCmd, "", pos_back+1));
 
                 // Replace the current multiplication with its return value
                 __sCmd.replace(nPositions[0], nPositions[1]-nPositions[0], "_~returnedMatrix[" + toString((int)vReturnedMatrices.size()-1)+"]");
@@ -1440,7 +887,7 @@ static Matrix parser_subMatrixOperations(string& sCmd, Parser& _parser, MemoryMa
 /// \return size_t
 ///
 /////////////////////////////////////////////////
-static size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd, size_t nLastPos)
+static size_t getPrevMatMultiOp(const string& sCmd, size_t nLastPos)
 {
     int nQuotes = 0;
 
@@ -1460,8 +907,6 @@ static size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd,
 }
 
 
-
-
 /////////////////////////////////////////////////
 /// \brief This static function performs the
 /// multiplication of two matrices.
@@ -1474,7 +919,7 @@ static size_t parser_getPreviousMatrixMultiplicationOperator(const string& sCmd,
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position)
+static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position)
 {
     if (!_mLeft.size() || !_mLeft[0].size() || !_mRight.size() || !_mRight[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
@@ -1545,72 +990,7 @@ static Matrix parser_matrixMultiplication(const Matrix& _mLeft, const Matrix& _m
 /////////////////////////////////////////////////
 Matrix transposeMatrix(const Matrix& _mMatrix)
 {
-    Matrix _mTransposed;
-    vector<double> vLine;
-    for (unsigned int j = 0; j < _mMatrix[0].size(); j++)
-    {
-        for (unsigned int i = 0; i < _mMatrix.size(); i++)
-            vLine.push_back(_mMatrix[i][j]);
-        _mTransposed.push_back(vLine);
-        vLine.clear();
-    }
-    return _mTransposed;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function returns an
-/// identity matrix of the defined size.
-///
-/// \param nSize unsigned int
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_IdentityMatrix(unsigned int nSize)
-{
-    if (!nSize)
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
-
-    Matrix _mIdentity;
-    vector<double> vLine;
-    for (unsigned int i = 0; i < nSize; i++)
-    {
-        for (unsigned int j = 0; j < nSize; j++)
-        {
-            if (i == j)
-                vLine.push_back(1.0);
-            else
-                vLine.push_back(0.0);
-        }
-        _mIdentity.push_back(vLine);
-        vLine.clear();
-    }
-    return _mIdentity;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function returns a matrix
-/// filled with ones with the defined lines and
-/// columns.
-///
-/// \param nLines unsigned int
-/// \param nCols unsigned int
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_OnesMatrix(unsigned int nLines, unsigned int nCols)
-{
-    if (!nLines || !nCols)
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
-
-    Matrix _mOnes;
-    vector<double> vLine(nCols, 1.0);
-    for (unsigned int i = 0; i < nLines; i++)
-    {
-        _mOnes.push_back(vLine);
-    }
-    return _mOnes;
+    return transposeMatrix(MatFuncData(_mMatrix), MatFuncErrorInfo("", "", SyntaxError::invalid_position));
 }
 
 
@@ -1630,201 +1010,7 @@ Matrix createZeroesMatrix(unsigned int nLines, unsigned int nCols)
     if (!nLines || !nCols)
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
 
-    Matrix _mZeroes;
-    vector<double> vLine(nCols, 0.0);
-    for (unsigned int i = 0; i < nLines; i++)
-        _mZeroes.push_back(vLine);
-    return _mZeroes;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function creates a
-/// shuffled vector of nShuffle elements created
-/// from a 1:nBase vector.
-///
-/// \param nShuffle unsigned int
-/// \param nBase unsigned int
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_shuffleMatrix(unsigned int nShuffle, unsigned int nBase)
-{
-    if (!nBase)
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
-
-    Matrix _mBase = createZeroesMatrix(nBase, 1);
-    static double dSeed = 1;
-
-    if (nShuffle > nBase)
-        nShuffle = nBase;
-
-    // Create the base (unshuffled) vector
-    for (size_t i = 0; i < nBase; i++)
-        _mBase[i][0] = i+1;
-
-    // Initialize the random number engine using the
-    // time and the last random number created by the
-    // random engine
-    default_random_engine randGen((double)time(0)*dSeed);
-
-    // Shuffle the vector by swapping the i-th shuffled
-    // element with the i-th element
-    for (size_t i = 0; i < nShuffle; i++)
-    {
-        uniform_real_distribution<double> randDist(i, nBase-1);
-
-        int nIndex = rint(randDist(randGen));
-        double dTemp = _mBase[i][0];
-        _mBase[i][0] = _mBase[nIndex][0];
-        _mBase[nIndex][0] = dTemp;
-    }
-
-    uniform_real_distribution<double> randDist(1, nBase-1);
-
-    // Update the seed
-    dSeed = randDist(randGen);
-
-    // Return only the requested vector length
-    return Matrix(_mBase.begin(), _mBase.begin()+nShuffle);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function calculates the
-/// inverse of the passed matrix, if it exists.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    if (_mMatrix.size() != _mMatrix[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
-    // Gauss-Elimination???
-    Matrix _mInverse = parser_IdentityMatrix(_mMatrix.size());
-    Matrix _mToInvert = _mMatrix;
-
-    //Spezialfaelle mit analytischem Ausdruck
-    if (_mMatrix.size() == 1)
-    {
-        // eigentlich nicht zwangslaeufig existent... aber skalar und so...
-        _mInverse[0][0] /= _mMatrix[0][0];
-        return _mInverse;
-    }
-    else if (_mMatrix.size() == 2)
-    {
-        double dDet = _mToInvert[0][0]*_mToInvert[1][1] - _mToInvert[1][0]*_mToInvert[0][1];
-        if (!dDet)
-            throw SyntaxError(SyntaxError::MATRIX_IS_NOT_INVERTIBLE, "", SyntaxError::invalid_position);
-        _mInverse = _mToInvert;
-        _mInverse[0][0] = _mToInvert[1][1];
-        _mInverse[1][1] = _mToInvert[0][0];
-        _mInverse[1][0] *= -1.0;
-        _mInverse[0][1] *= -1.0;
-        for (unsigned int i = 0; i < 2; i++)
-        {
-            _mInverse[i][0] /= dDet;
-            _mInverse[i][1] /= dDet;
-        }
-        return _mInverse;
-    }
-    else if (_mMatrix.size() == 3)
-    {
-        double dDet = _mMatrix[0][0]*(_mMatrix[1][1]*_mMatrix[2][2] - _mMatrix[2][1]*_mMatrix[1][2])
-                        - _mMatrix[0][1]*(_mMatrix[1][0]*_mMatrix[2][2] - _mMatrix[1][2]*_mMatrix[2][0])
-                        + _mMatrix[0][2]*(_mMatrix[1][0]*_mMatrix[2][1] - _mMatrix[1][1]*_mMatrix[2][0]);
-        if (!dDet)
-            throw SyntaxError(SyntaxError::MATRIX_IS_NOT_INVERTIBLE, "", SyntaxError::invalid_position);
-        _mInverse[0][0] = (_mMatrix[1][1]*_mMatrix[2][2] - _mMatrix[2][1]*_mMatrix[1][2]) / dDet;
-        _mInverse[1][0] = -(_mMatrix[1][0]*_mMatrix[2][2] - _mMatrix[1][2]*_mMatrix[2][0]) / dDet;
-        _mInverse[2][0] = (_mMatrix[1][0]*_mMatrix[2][1] - _mMatrix[1][1]*_mMatrix[2][0]) / dDet;
-
-        _mInverse[0][1] = -(_mMatrix[0][1]*_mMatrix[2][2] - _mMatrix[0][2]*_mMatrix[2][1]) / dDet;
-        _mInverse[1][1] = (_mMatrix[0][0]*_mMatrix[2][2] - _mMatrix[0][2]*_mMatrix[2][0]) / dDet;
-        _mInverse[2][1] = -(_mMatrix[0][0]*_mMatrix[2][1] - _mMatrix[0][1]*_mMatrix[2][0]) / dDet;
-
-        _mInverse[0][2] = (_mMatrix[0][1]*_mMatrix[1][2] - _mMatrix[0][2]*_mMatrix[1][1]) / dDet;
-        _mInverse[1][2] = -(_mMatrix[0][0]*_mMatrix[1][2] - _mMatrix[0][2]*_mMatrix[1][0]) / dDet;
-        _mInverse[2][2] = (_mMatrix[0][0]*_mMatrix[1][1] - _mMatrix[0][1]*_mMatrix[1][0]) / dDet;
-
-        return _mInverse;
-    }
-
-    // Allgemeiner Fall fuer n > 3
-    for (unsigned int j = 0; j < _mToInvert.size(); j++)
-    {
-        for (unsigned int i = j; i < _mToInvert.size(); i++)
-        {
-            if (_mToInvert[i][j] != 0.0)
-            {
-                if (i != j) //vertauschen
-                {
-                    double dElement;
-                    for (unsigned int _j = 0; _j < _mToInvert.size(); _j++)
-                    {
-                        dElement = _mToInvert[i][_j];
-                        _mToInvert[i][_j] = _mToInvert[j][_j];
-                        _mToInvert[j][_j] = dElement;
-                        dElement = _mInverse[i][_j];
-                        _mInverse[i][_j] = _mInverse[j][_j];
-                        _mInverse[j][_j] = dElement;
-                    }
-                    i = j-1;
-                }
-                else //Gauss-Elimination
-                {
-                    double dPivot = _mToInvert[i][j];
-                    for (unsigned int _j = 0; _j < _mToInvert.size(); _j++)
-                    {
-                        _mToInvert[i][_j] /= dPivot;
-                        _mInverse[i][_j] /= dPivot;
-                    }
-                    for (unsigned int _i = i+1; _i < _mToInvert.size(); _i++)
-                    {
-                        double dFactor = _mToInvert[_i][j];
-                        if (!dFactor) // Bereits 0???
-                            continue;
-                        for (unsigned int _j = 0; _j < _mToInvert.size(); _j++)
-                        {
-                            _mToInvert[_i][_j] -= _mToInvert[i][_j]*dFactor;
-                            _mInverse[_i][_j] -= _mInverse[i][_j]*dFactor;
-                        }
-                    }
-                    break;
-                }
-            }
-            /*else if (_mToInvert[i][j] == 0.0 && j+1 == _mToInvert.size()) // Matrix scheint keinen vollen Rang zu besitzen
-                throw MATRIX_IS_NOT_INVERTIBLE;*/
-        }
-    }
-    // die Matrix _mToInvert() sollte nun Dreiecksgestalt besitzen. Jetzt den Gauss von unten her umkehren
-    for (int j = (int)_mToInvert.size()-1; j >= 0; j--)
-    {
-        if (_mToInvert[j][j] == 0.0) // Hauptdiagonale ist ein Element == 0??
-            throw SyntaxError(SyntaxError::MATRIX_IS_NOT_INVERTIBLE, "", SyntaxError::invalid_position);
-        if (_mToInvert[j][j] != 1.0)
-        {
-            for (unsigned int _j = 0; _j < _mInverse.size(); _j++)
-                _mInverse[j][_j] /= _mToInvert[j][j];
-            _mToInvert[j][j] = 1.0;
-        }
-        for (int i = 0; i < j; i++)
-        {
-            for (unsigned int _j = 0; _j < _mInverse.size(); _j++)
-                _mInverse[i][_j] -= _mToInvert[i][j]*_mInverse[j][_j];
-            _mToInvert[i][j] -= _mToInvert[i][j]*_mToInvert[j][j];
-        }
-    }
-
-    return _mInverse;
+    return createFilledMatrix(nLines, nCols, 0.0);
 }
 
 
@@ -1841,9 +1027,9 @@ static Matrix parser_InvertMatrix(const Matrix& _mMatrix, const string& sCmd, co
 ///
 /// Missing elements are filled up with zeros.
 /////////////////////////////////////////////////
-static Matrix parser_matFromCols(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix createMatFromCols(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
-    return transposeMatrix(parser_matFromLines(sCmd, _parser, _data, _functions, _option));
+    return transposeMatrix(createMatFromLines(sCmd, _parser, _data, _functions, _option));
 }
 
 
@@ -1860,9 +1046,9 @@ static Matrix parser_matFromCols(string& sCmd, Parser& _parser, MemoryManager& _
 ///
 /// Missing elements are filled up logically.
 /////////////////////////////////////////////////
-static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix createMatFromColsFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
-    return transposeMatrix(parser_matFromLinesFilled(sCmd, _parser, _data, _functions, _option));
+    return transposeMatrix(createMatFromLinesFilled(sCmd, _parser, _data, _functions, _option));
 }
 
 
@@ -1879,7 +1065,7 @@ static Matrix parser_matFromColsFilled(string& sCmd, Parser& _parser, MemoryMana
 ///
 /// Missing elements are filled up with zeros.
 /////////////////////////////////////////////////
-static Matrix parser_matFromLines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix createMatFromLines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _matfl;
     value_type* v = 0;
@@ -1938,7 +1124,7 @@ static Matrix parser_matFromLines(string& sCmd, Parser& _parser, MemoryManager& 
 ///
 /// Missing elements are filled up logically.
 /////////////////////////////////////////////////
-static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _matfl;
     value_type* v = 0;
@@ -1984,7 +1170,7 @@ static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, MemoryMan
         }
         else
         {
-            vector<double> vDeltas = parser_calcDeltas(_matfl, i);
+            vector<double> vDeltas = calcDeltasForMatFill(_matfl, i);
             while (_matfl[i].size() < nLineLength)
             {
                 _matfl[i].push_back(_matfl[i].back() + vDeltas[(_matfl[i].size()+1) % vDeltas.size()]);
@@ -2008,7 +1194,7 @@ static Matrix parser_matFromLinesFilled(string& sCmd, Parser& _parser, MemoryMan
 /// This function is used by the \c matf*f()
 /// functions to derive the filling logic.
 /////////////////////////////////////////////////
-static vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLine)
+static vector<double> calcDeltasForMatFill(const Matrix& _mMatrix, unsigned int nLine)
 {
     vector<double> vDeltas;
     for (unsigned int j = 1; j < _mMatrix[nLine].size(); j++)
@@ -2016,1727 +1202,6 @@ static vector<double> parser_calcDeltas(const Matrix& _mMatrix, unsigned int nLi
         vDeltas.push_back(_mMatrix[nLine][j]-_mMatrix[nLine][j-1]);
     }
     return vDeltas;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function creates a
-/// diagonal matrix with the passed elements in
-/// its main diagonal.
-///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_diagonalMatrix(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
-{
-    Matrix _diag;
-    value_type* v = 0;
-    int nResults = 0;
-    vector<double> vLine;
-    if (!sCmd.length())
-    {
-        _diag.push_back(vector<double>(1,NAN));
-    }
-    if (!_functions.call(sCmd))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
-    if (_data.containsTablesOrClusters(sCmd))
-    {
-        getDataElements(sCmd, _parser, _data, _option);
-    }
-    while (sCmd.length())
-    {
-        if (!getNextArgument(sCmd, false).length())
-            break;
-        _parser.SetExpr(getNextArgument(sCmd, true));
-        v = _parser.Eval(nResults);
-        for (int n = 0; n < nResults; n++)
-            vLine.push_back(v[n]);
-    }
-    if (!vLine.size())
-    {
-        _diag.push_back(vector<double>(1,NAN));
-    }
-
-    if (!vLine.size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, "", SyntaxError::invalid_position);
-
-    _diag = createZeroesMatrix(vLine.size(),vLine.size());
-
-    for (unsigned int i = 0; i < _diag.size(); i++)
-    {
-        _diag[i][i] = vLine[i];
-    }
-
-    return _diag;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function returns the
-/// determinant of the passed matrix.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_getDeterminant(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = parser_IdentityMatrix(1);
-    vector<int> vRemovedLines(_mMatrix.size(), 0);
-
-    if (_mMatrix.size() != _mMatrix[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
-
-    _mReturn[0][0] = parser_calcDeterminant(_mMatrix, vRemovedLines);
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function calculates the
-/// determinant of the passed matrix using the
-/// LaPlace algorithm.
-///
-/// \param _mMatrix const Matrix&
-/// \param vRemovedLines vector<int>
-/// \return double
-///
-/////////////////////////////////////////////////
-static double parser_calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines)
-{
-    // simple Sonderfaelle
-    if (_mMatrix.size() == 1)
-        return _mMatrix[0][0];
-    if (_mMatrix.size() == 2)
-        return _mMatrix[0][0] * _mMatrix[1][1] - _mMatrix[1][0]*_mMatrix[0][1];
-    if (_mMatrix.size() == 3)
-    {
-        return _mMatrix[0][0]*_mMatrix[1][1]*_mMatrix[2][2]
-            + _mMatrix[0][1]*_mMatrix[1][2]*_mMatrix[2][0]
-            + _mMatrix[0][2]*_mMatrix[1][0]*_mMatrix[2][1]
-            - _mMatrix[0][2]*_mMatrix[1][1]*_mMatrix[2][0]
-            - _mMatrix[0][1]*_mMatrix[1][0]*_mMatrix[2][2]
-            - _mMatrix[0][0]*_mMatrix[1][2]*_mMatrix[2][1];
-    }
-    int nSign = 1;
-    double dDet = 0.0;
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
-    {
-        // Noch nicht entfernte Zeile?
-        if (!(vRemovedLines[i] & 1))
-        {
-            // entferne Zeile i
-            vRemovedLines[i] += 1;
-            for (unsigned int j = 0; j < _mMatrix.size(); j++)
-            {
-                // Noch nicht entfernte Spalte?
-                if (!(vRemovedLines[j] & 2))
-                {
-                    if (_mMatrix[i][j] == 0.0)
-                    {
-                        nSign *= -1;
-                        continue;
-                    }
-                    // entferne Spalte j
-                    vRemovedLines[j] += 2;
-                    // Berechne Determinante rekursiv
-                    if (i+1 < _mMatrix.size())
-                        dDet += nSign * _mMatrix[i][j] * parser_calcDeterminant(_mMatrix, vRemovedLines);
-                    else
-                        dDet += nSign * _mMatrix[i][j];
-                    // füge Spalte j wieder hinzu
-                    vRemovedLines[j] -= 2;
-                    // alternierendes Vorzeichen
-                    nSign *= -1;
-                }
-            }
-            vRemovedLines[i] -= 1;
-            return dDet;
-        }
-    }
-    return 1.0;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function converts logical
-/// vectors into matrix indices.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixLogToIndex(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    vector<int> vLines;
-    vector<int> vRows;
-
-    if (_mMatrix.size() == 1 || _mMatrix[0].size() == 1)
-    {
-        for (size_t i = 0; i < _mMatrix.size(); i++)
-        {
-            for (size_t j = 0; j < _mMatrix[0].size(); j++)
-            {
-                if (_mMatrix[i][j])
-                {
-                    vLines.push_back(i + j + 1);
-                }
-            }
-        }
-        if (!vLines.size())
-            return createZeroesMatrix(1,1);
-        Matrix _mReturn = createZeroesMatrix(vLines.size(), 1);
-        for (size_t i = 0; i < vLines.size(); i++)
-            _mReturn[i][0] = vLines[i];
-        return _mReturn;
-    }
-    else
-    {
-        for (size_t i = 0; i < _mMatrix.size(); i++)
-        {
-            for (size_t j = 0; j < _mMatrix[0].size(); j++)
-            {
-                if (_mMatrix[i][j])
-                {
-                    vLines.push_back(i+1);
-                    vRows.push_back(j+1);
-                }
-            }
-        }
-        if (!vLines.size())
-            return createZeroesMatrix(1,1);
-        Matrix _mReturn = createZeroesMatrix(vLines.size(), 2);
-        for (size_t i = 0; i < vLines.size(); i++)
-        {
-            _mReturn[i][0] = vLines[i];
-            _mReturn[i][1] = vRows[i];
-        }
-        return _mReturn;
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function converts matrix
-/// indices into logical vectors.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixIndexToLog(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    if (_mMatrix.size() == 1 || _mMatrix[0].size() == 1)
-    {
-        Matrix _mMatrixMax = parser_MatrixMax(_mMatrix, sCmd, sExpr, position);
-        if (!_mMatrixMax[0][0] || _mMatrixMax[0][0] < 0)
-            return createZeroesMatrix(1,1);
-        Matrix _mReturn = createZeroesMatrix(_mMatrixMax[0][0], 1);
-        for (size_t i = 0; i < _mMatrix.size(); i++)
-        {
-            for (size_t j = 0; j < _mMatrix[0].size(); j++)
-            {
-                if (_mMatrix[i][j] > 0)
-                {
-                    _mReturn[_mMatrix[i][j]-1][0] = 1.0;
-                }
-            }
-        }
-        return _mReturn;
-    }
-    else
-    {
-        vector<int> vCol;
-        vector<int> vRow;
-
-        if (_mMatrix.size() == 2 && _mMatrix[0].size() != 2)
-        {
-            for (size_t i = 0; i < _mMatrix[0].size(); i++)
-            {
-                vRow.push_back(_mMatrix[0][i]);
-                vCol.push_back(_mMatrix[1][i]);
-            }
-        }
-        else if (_mMatrix.size() != 2 && _mMatrix[0].size() == 2)
-        {
-            for (size_t i = 0; i < _mMatrix.size(); i++)
-            {
-                vRow.push_back(_mMatrix[i][0]);
-                vCol.push_back(_mMatrix[i][1]);
-            }
-        }
-        else
-            return createZeroesMatrix(1,1);
-
-        int nRowMax = 0;
-        int nColMax = 0;
-
-        for (size_t i = 0; i < vRow.size(); i++)
-        {
-            if (nRowMax < (int)vRow[i])
-                nRowMax = (int)vRow[i];
-            if (nColMax < (int)vCol[i])
-                nColMax = (int)vCol[i];
-        }
-
-        if (!nColMax || !nRowMax)
-            return createZeroesMatrix(1,1);
-
-        Matrix _mReturn = createZeroesMatrix(nRowMax, nColMax);
-
-        for (size_t i = 0; i < vRow.size(); i++)
-        {
-            if (vRow[i] > 0 && vCol[i] > 0)
-                _mReturn[vRow[i]-1][vCol[i]-1] = 1.0;
-        }
-
-        return _mReturn;
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function returns the size
-/// of the passed matrix.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixSize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(2,1);
-    if (_mMatrix.size() == 1 && _mMatrix[0].size() == 1 && isnan(_mMatrix[0][0]))
-        return _mReturn;
-    _mReturn[0][0] = _mMatrix.size();
-    _mReturn[1][0] = _mMatrix[0].size();
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c and() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixAnd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = parser_IdentityMatrix(1);
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[i].size(); j++)
-        {
-            if (!_mMatrix[i][j])
-            {
-                _mReturn[0][0] = 0;
-                return _mReturn;
-            }
-        }
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c or() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixOr(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[i].size(); j++)
-        {
-            if (_mMatrix[i][j])
-            {
-                _mReturn[0][0] = 1;
-                return _mReturn;
-            }
-        }
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c xor() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixXor(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    bool isTrue = false;
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[i].size(); j++)
-        {
-            if (_mMatrix[i][j])
-            {
-                if (!isTrue)
-                    isTrue = true;
-                else
-                    return _mReturn;
-            }
-        }
-    }
-    if (isTrue)
-        _mReturn[0][0] = 1;
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c sum() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixSum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            if (!isnan(_mMatrix[i][j]))
-                _mReturn[0][0] += _mMatrix[i][j];
-        }
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c std() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixStd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    Matrix _mAvg = parser_MatrixAvg(_mMatrix, sCmd, sExpr, position);
-    Matrix _mNum = parser_MatrixNum(_mMatrix, sCmd, sExpr, position);
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            if (!isnan(_mMatrix[i][j]))
-                _mReturn[0][0] += (_mMatrix[i][j] - _mAvg[0][0])*(_mMatrix[i][j] - _mAvg[0][0]);
-        }
-    }
-    _mReturn[0][0] = sqrt(_mReturn[0][0])/(_mNum[0][0]-1);
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c avg() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixAvg(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    Matrix _mSum = parser_MatrixSum(_mMatrix, sCmd, sExpr, position);
-    Matrix _mNum = parser_MatrixNum(_mMatrix, sCmd, sExpr, position);
-    _mReturn[0][0] = _mSum[0][0] / _mNum[0][0];
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c prd() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixPrd(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = parser_IdentityMatrix(1);
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            if (!isnan(_mMatrix[i][j]))
-                _mReturn[0][0] *= _mMatrix[i][j];
-        }
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c cnt() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixCnt(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    _mReturn[0][0] = _mMatrix.size() * _mMatrix[0].size();
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c num() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixNum(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            if (!isnan(_mMatrix[i][j]))
-                _mReturn[0][0] += 1;
-        }
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c norm() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixNorm(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            if (!isnan(_mMatrix[i][j]))
-                _mReturn[0][0] += _mMatrix[i][j]*_mMatrix[i][j];
-        }
-    }
-    _mReturn[0][0] = sqrt(_mReturn[0][0]);
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c min() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixMin(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            if (!i && !j)
-                _mReturn[0][0] = _mMatrix[i][j];
-            else if (_mMatrix[i][j] < _mReturn[0][0] || isnan(_mReturn[0][0]))
-                _mReturn[0][0] = _mMatrix[i][j];
-        }
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c max() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixMax(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            if (!i && !j)
-                _mReturn[0][0] = _mMatrix[i][j];
-            else if (_mMatrix[i][j] > _mReturn[0][0] || isnan(_mReturn[0][0]))
-                _mReturn[0][0] = _mMatrix[i][j];
-        }
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c minpos() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixMinPos(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    return parser_MatrixCmp(_mMatrix, parser_MatrixMin(_mMatrix, sCmd, sExpr, position)[0][0], 0, sCmd, sExpr, position);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c maxpos() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixMaxPos(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    return parser_MatrixCmp(_mMatrix, parser_MatrixMax(_mMatrix, sCmd, sExpr, position)[0][0], 0, sCmd, sExpr, position);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c med() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixMed(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    Memory _mem;
-
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            _mem.writeData(j + i*_mMatrix.size(), 0, _mMatrix[i][j]);
-        }
-    }
-
-    _mReturn[0][0] = _mem.med(VectorIndex(0, _mMatrix.size()*_mMatrix[0].size()-1), VectorIndex(0));
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c pct() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param dPercentage double
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixPct(const Matrix& _mMatrix, double dPercentage, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    Memory _mem;
-
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            _mem.writeData(j + i*_mMatrix.size(), 0, _mMatrix[i][j]);
-        }
-    }
-
-    _mReturn[0][0] = _mem.pct(VectorIndex(0, (long long int)(_mMatrix.size()*_mMatrix[0].size())-1), VectorIndex(0), dPercentage);
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function applies the
-/// \c cmp() function on the matrix elements.
-///
-/// \param _mMatrix const Matrix&
-/// \param dValue double
-/// \param nType int
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixCmp(const Matrix& _mMatrix, double dValue, int nType, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    Matrix _mCoords = createZeroesMatrix(2,1);
-    _mCoords[0][0] = -1;
-
-    double dKeep = dValue;
-
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            if (isnan(_mMatrix[i][j]) || isinf(_mMatrix[i][j]))
-                continue;
-            if (_mMatrix[i][j] == dValue)
-            {
-                if (!nType || abs(nType) <= 1)
-                {
-                    _mCoords[0][0] = i+1;
-                    _mCoords[1][0] = j+1;
-                    return _mCoords;
-                }
-                else
-                    _mReturn[0][0] = _mMatrix[i][j];
-                return _mReturn;
-            }
-            else if (nType > 0 && _mMatrix[i][j] > dValue)
-            {
-                if (_mCoords[0][0] == -1 || _mMatrix[i][j] < dKeep)
-                {
-                    dKeep = _mMatrix[i][j];
-                    _mCoords[0][0] = i+1;
-                    _mCoords[1][0] = j+1;
-                }
-                else
-                    continue;
-            }
-            else if (nType < 0 && _mMatrix[i][j] < dValue)
-            {
-                if (_mCoords[0][0] == -1 || _mMatrix[i][j] > dKeep)
-                {
-                    dKeep = _mMatrix[i][j];
-                    _mCoords[0][0] = i+1;
-                    _mCoords[1][0] = j+1;
-                }
-                else
-                    continue;
-            }
-        }
-    }
-    if (_mCoords[0][0] == -1)
-        _mReturn[0][0] = NAN;
-    else if (nType <= -2 || nType >= 2)
-        _mReturn[0][0] = dKeep;
-    else
-    {
-        return _mCoords;
-    }
-
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
-/// cross- and auto-correlation matrix
-/// calculation from the passed two matrices.
-///
-/// \param _mMatrix1 const Matrix&
-/// \param _mMatrix2 const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/// If their sizes are not fitting, they are
-/// resized to fit.
-/////////////////////////////////////////////////
-static Matrix parser_Correlation(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix1.size() || !_mMatrix1[0].size() || !_mMatrix2.size() || !_mMatrix2[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    // Ensure that the size is non-zero
-    if (!(_mMatrix1.size() && _mMatrix2.size()) || !(_mMatrix1[0].size() && _mMatrix2[0].size()))
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix1.size()) +"x"+ toString(_mMatrix1[0].size()) + ", " + toString(_mMatrix2.size()) +"x"+ toString(_mMatrix2[0].size()));
-
-    // Resize the matrices to fit their counterparts
-    Matrix mMatrix1 = parser_MatrixResize(_mMatrix1, max(_mMatrix1.size(), _mMatrix2.size()), max(_mMatrix1[0].size(), _mMatrix2[0].size()), sCmd, sExpr, position);
-    Matrix mMatrix2 = parser_MatrixResize(_mMatrix2, max(_mMatrix1.size(), _mMatrix2.size()), max(_mMatrix1[0].size(), _mMatrix2[0].size()), sCmd, sExpr, position);
-
-    int n = mMatrix1.size();
-    int m = mMatrix1[0].size();
-
-    // Create the target matrix
-    Matrix mCorrelation = createZeroesMatrix(2*n-1, 2*m-1);
-
-    // Calculate the elements of the matrix by applying
-    // elementwise shifts to the matrices
-    for (int i1 = 0; i1 < (int)mCorrelation.size(); i1++)
-    {
-        for (int j1 = 0; j1 < (int)mCorrelation[0].size(); j1++)
-        {
-            // These loops shall indicate the number of elements
-            for (int i2 = 0; i2 < n + min(i1-n+1, n-i1-1); i2++)
-            {
-                for (int j2 = 0; j2 < m + min(j1-m+1, m-j1-1); j2++)
-                {
-                    // calculate the correlation of the current
-                    // shift indicated by the other two loops
-                    mCorrelation[i1][j1] += mMatrix1[i2 + max(0, i1-n+1)][j2 + max(0, j1-m+1)] * mMatrix2[i2 + max(0, n-i1-1)][j2 + max(0, m-j1-1)];
-                }
-            }
-        }
-    }
-
-    return mCorrelation;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
-/// covariance calculation of the passed two
-/// matrices.
-///
-/// \param _mMatrix1 const Matrix&
-/// \param _mMatrix2 const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_Covariance(const Matrix& _mMatrix1, const Matrix& _mMatrix2, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix1.size() || !_mMatrix1[0].size() || !_mMatrix2.size() || !_mMatrix2[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    // Ensure that their size is equal
-    if (_mMatrix1.size() != _mMatrix2.size() || _mMatrix1[0].size() != _mMatrix2[0].size() || !_mMatrix1.size() || !_mMatrix1[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix1.size()) +"x"+ toString(_mMatrix1[0].size()) + " != " + toString(_mMatrix2.size()) +"x"+ toString(_mMatrix2[0].size()));
-
-    // Prepare the target matrix
-    Matrix mCovariance = createZeroesMatrix(1, 1);
-
-    // Calculate the average values of both
-    // matrices
-    Matrix mAvg1 = parser_MatrixAvg(_mMatrix1, sCmd, sExpr, position);
-    Matrix mAvg2 = parser_MatrixAvg(_mMatrix2, sCmd, sExpr, position);
-
-    // Calculate the covariance value for each
-    // component and sum it up
-    for (size_t i = 0; i < _mMatrix1.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix2.size(); j++)
-        {
-            mCovariance[0][0] += (_mMatrix1[i][j] - mAvg1[0][0]) * (_mMatrix2[i][j] - mAvg2[0][0]);
-        }
-    }
-
-    // Normalize the covariance value using
-    // the number of elements
-    mCovariance[0][0] /= (_mMatrix1.size() * _mMatrix1[0].size() - 1);
-
-    return mCovariance;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
-/// normalize function, which will normalize the
-/// (absolute) data range of the passed matrix
-/// into the range [0,1].
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_Normalize(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mReturn = _mMatrix;
-    Matrix _mMax = parser_MatrixMax(_mMatrix, sCmd, sExpr, position);
-    Matrix _mMin = parser_MatrixMin(_mMatrix, sCmd, sExpr, position);
-
-    double dMax = max(fabs(_mMax[0][0]), fabs(_mMin[0][0]));
-
-    for (size_t  i = 0; i < _mReturn.size(); i++)
-    {
-        for (size_t j = 0; j < _mReturn[i].size(); j++)
-        {
-            _mReturn[i][j] /= dMax;
-        }
-    }
-
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function changes the
-/// number of rows and columns to fit the new
-/// shape.
-///
-/// \param _mMatrix const Matrix&
-/// \param nLines size_t
-/// \param nCols size_t
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/// The total number of elements before and
-/// afterwards must be identical.
-/////////////////////////////////////////////////
-static Matrix parser_MatrixReshape(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size() || !nLines || !nCols)
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    if (nLines * nCols != _mMatrix.size() * _mMatrix[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(nLines) + "x" + toString(nCols) + "=" + toString(nLines*nCols) +" vs. "+ toString(_mMatrix.size()) + "x" +  toString(_mMatrix[0].size()) + "=" + toString(_mMatrix.size()*_mMatrix[0].size()));
-    Matrix _mReturn = createZeroesMatrix(nLines, nCols);
-    for (size_t i = 0; i < nLines*nCols; i++)
-    {
-        _mReturn[i / nCols][i % nCols] = _mMatrix[i / _mMatrix[0].size()][i % _mMatrix[0].size()];
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function changes the size
-/// of the passed matrix to fit the new size.
-///
-/// \param _mMatrix const Matrix&
-/// \param nLines size_t
-/// \param nCols size_t
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/// Missing elements are filled up with zeros.
-/////////////////////////////////////////////////
-static Matrix parser_MatrixResize(const Matrix& _mMatrix, size_t nLines, size_t nCols, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size() || !nLines || !nCols)
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    if (nLines == _mMatrix.size() && nCols == _mMatrix[0].size())
-        return _mMatrix;
-    Matrix _mReturn = createZeroesMatrix(nLines, nCols);
-    for (size_t i = 0; i < min(nLines, _mMatrix.size()); i++)
-    {
-        for (size_t j = 0; j < min(nCols, _mMatrix[0].size()); j++)
-        {
-            _mReturn[i][j] = _mMatrix[i][j];
-        }
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function repeats the
-/// passed matrix n and m times.
-///
-/// \param _mMatrix const Matrix&
-/// \param n size_t
-/// \param m size_t
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixRepMat(const Matrix& _mMatrix, size_t n, size_t m, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (n == 0)
-        n++;
-
-    if (m == 0)
-        m++;
-
-    if ((n * _mMatrix.size()) / _mMatrix.size() != n || (m * _mMatrix[0].size()) / _mMatrix[0].size() != m)
-        throw SyntaxError(SyntaxError::TOO_LARGE_CACHE, sCmd, position);
-
-    Matrix _mReturn = createZeroesMatrix(n * _mMatrix.size(), m * _mMatrix[0].size());
-
-    for (size_t i = 0; i < _mMatrix.size(); i++)
-    {
-        for (size_t j = 0; j < _mMatrix[0].size(); j++)
-        {
-            for (size_t _n = 0; _n < n; _n++)
-            {
-                for (size_t _m = 0; _m < m; _m++)
-                {
-                    _mReturn[i+_n*_mMatrix.size()][j+_m*_mMatrix[0].size()] = _mMatrix[i][j];
-                }
-            }
-        }
-    }
-
-    return _mReturn;
-}
-
-/////////////////////////////////////////////////
-/// \brief This static function implements the
-/// \c unique(MAT,nDim) function.
-///
-/// \param _mMatrix const Matrix&
-/// \param nDim size_t
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_MatrixUnique(const Matrix& _mMatrix, size_t nDim, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    // Create a std::list and the return value
-    std::list<double> dataList;
-    Matrix _mReturn;
-
-    // Depending on the dimensions of the passed matrix, change
-    // the evaluation method
-    if (_mMatrix.size() == 1)
-    {
-        // Row vector
-        dataList.assign(_mMatrix[0].begin(), _mMatrix[0].end());
-        _mReturn.push_back(parser_getUniqueList(dataList));
-    }
-    else if (_mMatrix[0].size() == 1)
-    {
-        // Column vector
-        for (size_t i = 0; i < _mMatrix.size(); i++)
-        {
-            dataList.push_back(_mMatrix[i][0]);
-        }
-        _mReturn.push_back(parser_getUniqueList(dataList));
-        _mReturn = transposeMatrix(_mReturn);
-    }
-    else
-    {
-        // Matrix
-        if (!nDim)
-        {
-            // nDim == 0 -> Roll out the total matrix and return it as a overall row vector
-            Matrix retVal = parser_MatrixReshape(_mMatrix, 1, _mMatrix.size()*_mMatrix[0].size(), sCmd, sExpr, position);
-            dataList.assign(retVal[0].begin(), retVal[0].end());
-            _mReturn.push_back(parser_getUniqueList(dataList));
-        }
-        else if (nDim == 1)
-        {
-            // Make the rows unique
-            for (size_t i = 0; i < _mMatrix.size(); i++)
-            {
-                dataList.clear();
-                dataList.assign(_mMatrix[i].begin(), _mMatrix[i].end());
-                _mReturn.push_back(parser_getUniqueList(dataList));
-            }
-            parser_fillMissingMatrixElements(_mReturn);
-        }
-        else
-        {
-            // Make the columns unique
-            for (size_t j = 0; j < _mMatrix[0].size(); j++)
-            {
-                dataList.clear();
-                for (size_t i = 0; i < _mMatrix.size(); i++)
-                    dataList.push_back(_mMatrix[i][j]);
-                _mReturn.push_back(parser_getUniqueList(dataList));
-            }
-            parser_fillMissingMatrixElements(_mReturn);
-            _mReturn = transposeMatrix(_mReturn);
-        }
-    }
-    return _mReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Static helper function for
-/// std::list::remove_if() called in
-/// parser_getUniqueList()
-///
-/// \param value const double&
-/// \return bool
-///
-/////////////////////////////////////////////////
-static bool is_nan(const double& value)
-{
-    return isnan(value);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This is a static helper function for
-/// the implementation of the \c unique()
-/// function.
-///
-/// \param _list std::list<double>&
-/// \return std::vector<double>
-///
-/////////////////////////////////////////////////
-static std::vector<double> parser_getUniqueList(std::list<double>& _list)
-{
-    _list.remove_if(is_nan);
-
-    if (_list.empty())
-        return std::vector<double>(1, NAN);
-
-    _list.sort();
-    _list.unique();
-    std::vector<double> vReturn(_list.begin(), _list.end());
-    return vReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This is a static helper function,
-/// which will add the elements in the rows of
-/// the passed matrix.
-///
-/// \param _mMatrix Matrix&
-/// \return void
-///
-/////////////////////////////////////////////////
-static void parser_fillMissingMatrixElements(Matrix& _mMatrix)
-{
-    size_t lines = _mMatrix.size();
-    size_t columns = _mMatrix[0].size();
-
-    // Get the maximal column count
-    for (size_t i = 0; i < lines; i++)
-    {
-        if (_mMatrix[i].size() > columns)
-            columns = _mMatrix[i].size();
-    }
-
-    // Add the missing elements to all other
-    // rows
-    for (size_t i = 0; i < lines; i++)
-    {
-        while (_mMatrix[i].size() < columns)
-            _mMatrix[i].push_back(NAN);
-    }
-}
-
-// LGS-Loesung auf Basis des Invert-Algorthmuses
-/////////////////////////////////////////////////
-/// \brief This static function will solve the
-/// system of linear equations passed as matrix
-/// using the Gauss elimination algorithm.
-///
-/// \param _mMatrix const Matrix&
-/// \param _parser Parser&
-/// \param _functions Define&
-/// \param _option const Settings&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_solveLGS(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mResult = createZeroesMatrix(_mMatrix[0].size()-1,1);
-    Matrix _mToSolve = _mMatrix;
-
-    if (_mMatrix.size() == 1)
-    {
-        _mResult[0][0] = _mMatrix[0][1]/_mMatrix[0][0];
-        return _mResult;
-    }
-
-    // Allgemeiner Fall fuer n > 2
-    for (unsigned int j = 0; j < _mToSolve[0].size()-1; j++)
-    {
-        for (unsigned int i = j; i < _mToSolve.size(); i++)
-        {
-            if (_mToSolve[i][j] != 0.0)
-            {
-                if (i != j) //vertauschen
-                {
-                    double dElement;
-                    for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
-                    {
-                        dElement = _mToSolve[i][_j];
-                        _mToSolve[i][_j] = _mToSolve[j][_j];
-                        _mToSolve[j][_j] = dElement;
-                    }
-                    i = j-1;
-                }
-                else //Gauss-Elimination
-                {
-                    double dPivot = _mToSolve[i][j];
-                    for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
-                    {
-                        _mToSolve[i][_j] /= dPivot;
-                    }
-                    for (unsigned int _i = i+1; _i < _mToSolve.size(); _i++)
-                    {
-                        double dFactor = _mToSolve[_i][j];
-                        if (!dFactor) // Bereits 0???
-                            continue;
-                        for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
-                        {
-                            _mToSolve[_i][_j] -= _mToSolve[i][_j]*dFactor;
-                        }
-                    }
-                    break;
-                }
-            }
-            /*else if (_mToSolve[i][j] == 0.0 && j+1 == _mToSolve.size()) // Matrix scheint keinen vollen Rang zu besitzen
-                throw MATRIX_IS_NOT_INVERTIBLE;*/
-        }
-    }
-
-    if ((_mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-1] == 0.0)
-        || _mToSolve.size()+1 < _mToSolve[0].size())
-    {
-        NumeReKernel::print(toSystemCodePage(_lang.get("ERR_NR_2101_0_LGS_HAS_NO_UNIQUE_SOLUTION")));
-        parser_solveLGSSymbolic(_mToSolve, _parser, _functions, _option, sCmd, sExpr, position);
-        return _mToSolve;
-    }
-    else if (_mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-1] != 0.0)
-        throw SyntaxError(SyntaxError::LGS_HAS_NO_SOLUTION, sCmd, position);
-    else if ((_mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-1] == 0.0)
-        || _mToSolve.size()+1 > _mToSolve[0].size())
-    {
-        // Ggf. Nullzeilen nach unten tauschen
-        vector<bool> vIsZerosLine(_mToSolve.size(),true);
-        for (unsigned int i = 0; i < _mToSolve.size(); i++)
-        {
-            for (unsigned int j = 0; j < _mToSolve[0].size(); j++)
-            {
-                if (_mToSolve[i][j])
-                {
-                    vIsZerosLine[i] = false;
-                    break;
-                }
-            }
-        }
-        for (unsigned int i = 0; i < vIsZerosLine.size(); i++)
-        {
-            if (vIsZerosLine[i])
-            {
-                for (unsigned int _i = i+1; _i < vIsZerosLine.size(); _i++)
-                {
-                    if (!vIsZerosLine[_i])
-                    {
-                        double dElement;
-                        for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
-                        {
-                            dElement = _mToSolve[i][_j];
-                            _mToSolve[i][_j] = _mToSolve[_i][_j];
-                            _mToSolve[_i][_j] = dElement;
-                        }
-                        vIsZerosLine[i] = false;
-                        vIsZerosLine[_i] = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (_mToSolve[_mToSolve[0].size()-2][_mToSolve[0].size()-2] == 0.0 && _mToSolve[_mToSolve[2].size()-2][_mToSolve[0].size()-1] == 0.0)
-        {
-            NumeReKernel::print(toSystemCodePage(_lang.get("ERR_NR_2101_0_LGS_HAS_NO_UNIQUE_SOLUTION")));
-            parser_solveLGSSymbolic(_mToSolve, _parser, _functions, _option, sCmd, sExpr, position);
-            return _mToSolve;
-        }
-        _mResult[_mResult[0].size()-2][0] = _mToSolve[_mToSolve[0].size()-2][_mToSolve[0].size()-1];
-    }
-    else
-        _mResult[_mResult.size()-1][0] = _mToSolve[_mToSolve.size()-1][_mToSolve[0].size()-1];
-    for (int i = _mToSolve[0].size()-3; i >= 0; i--)
-    {
-        for (unsigned int j = 0; j < _mToSolve[0].size()-1; j++)
-        {
-            _mToSolve[i][_mToSolve[0].size()-1] -= _mToSolve[i][j]*_mResult[j][0];
-            if (_mToSolve[i][j]*_mResult[j][0])
-                _mToSolve[i][j] = 0.0;
-        }
-        if (_mToSolve[i][i] == 0.0 && _mToSolve[i][_mToSolve[0].size()-1] == 0.0)
-        {
-            NumeReKernel::print(toSystemCodePage(_lang.get("ERR_NR_2101_0_LGS_HAS_NO_UNIQUE_SOLUTION")));
-            parser_solveLGSSymbolic(_mToSolve, _parser, _functions, _option, sCmd, sExpr, position);
-            return _mToSolve;
-        }
-        if (_mToSolve[i][i] == 0.0 && _mToSolve[i][_mToSolve[0].size()-1] != 0.0)
-            throw SyntaxError(SyntaxError::LGS_HAS_NO_SOLUTION, sCmd, position);
-        _mResult[i][0] = _mToSolve[i][_mToSolve[0].size()-1];
-    }
-    return _mResult;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function calulates the
-/// n-dimensional cross product ("curl").
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_calcCrossProduct(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    Matrix _mResult = createZeroesMatrix(_mMatrix.size(),1);
-    vector<int> vRemovedLines(_mMatrix.size(), 0);
-    if (_mMatrix.size() == 1)
-    {
-        return _mResult;
-    }
-    if (_mMatrix.size()-1 != _mMatrix[0].size())
-    {
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
-    }
-    if (_mMatrix.size() == 2)
-    {
-        _mResult[0][0] = _mMatrix[0][1];
-        _mResult[1][0] = -_mMatrix[0][0];
-        return _mResult;
-    }
-    if (_mMatrix.size() == 3)
-    {
-        _mResult[0][0] = _mMatrix[1][0]*_mMatrix[2][1] - _mMatrix[2][0]*_mMatrix[1][1];
-        _mResult[1][0] = _mMatrix[2][0]*_mMatrix[0][1] - _mMatrix[0][0]*_mMatrix[2][1];
-        _mResult[2][0] = _mMatrix[0][0]*_mMatrix[1][1] - _mMatrix[1][0]*_mMatrix[0][1];
-        return _mResult;
-    }
-    Matrix _mTemp = createZeroesMatrix(_mMatrix.size(), _mMatrix[0].size()+1);
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
-    {
-        for (unsigned int j = 0; j < _mMatrix[0].size(); j++)
-        {
-            _mTemp[i][j+1] = _mMatrix[i][j];
-        }
-    }
-    _mTemp[0][0] = 1.0;
-    _mResult[0][0] = parser_calcDeterminant(_mTemp, vRemovedLines);
-
-    for (unsigned int i = 1; i < _mMatrix.size(); i++)
-    {
-        _mTemp[i-1][0] = 0.0;
-        _mTemp[i][0] = 1.0;
-        _mResult[i][0] = parser_calcDeterminant(_mTemp, vRemovedLines);
-    }
-
-    return _mResult;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function does the whole
-/// eigenvalues, eigenvectors and diagonalizing
-/// stuff.
-///
-/// \param _mMatrix const Matrix&
-/// \param nReturnType int
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/// If the results are complex then the real and
-/// imaginary parts of the result are returned as
-/// separate results:
-/// \li for eigenvalues it's two columns of the
-/// returned matrix
-/// \li for eigenvectors or the diagonal matrix
-/// it's a matrix with 2N columns, where the
-/// imaginary part may be found in the columns
-/// N+1 - 2N
-///
-/// \c __attribute__((force_align_arg_pointer))
-/// fixes TDM-GCC Bug for wrong stack alignment.
-/////////////////////////////////////////////////
-__attribute__((force_align_arg_pointer)) static Matrix parser_calcEigenVects(const Matrix& _mMatrix, int nReturnType, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    if (_mMatrix.size() != _mMatrix[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
-    Matrix _mEigenVals;
-    Matrix _mEigenVects;
-
-    Eigen::MatrixXd mMatrix(_mMatrix.size(), _mMatrix.size());
-
-    // Copy the passed matrix into an Eigen matrix
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
-    {
-        for (unsigned int j = 0; j < _mMatrix.size(); j++)
-        {
-            mMatrix(i,j) = _mMatrix[i][j];
-        }
-    }
-
-    // For symmetric matrices the return value is always real
-    // This is not true for asymmetric matrices
-    if (parser_IsSymmMatrix(_mMatrix, sCmd, sExpr, position))
-    {
-        // Prepare return values
-        _mEigenVals = createZeroesMatrix(_mMatrix.size(),1);
-        _mEigenVects = createZeroesMatrix(_mMatrix.size(), _mMatrix.size());
-
-        // Construct an Eigen eigenvalue solver
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eSolver(mMatrix);
-
-        // Get eigenvalues, eigenvectors or the diagonal matrix depending
-        // on the selected return type
-        if (nReturnType == EIGENVALUES)
-        {
-            Eigen::VectorXd vEigenVals = eSolver.eigenvalues();
-            for (unsigned int i = 0; i < _mEigenVals.size(); i++)
-            {
-                _mEigenVals[i][0] = vEigenVals(i,0);
-            }
-        }
-        else if (nReturnType == EIGENVECTORS)
-        {
-            Eigen::MatrixXd mEigenVects = eSolver.eigenvectors();
-            for (unsigned int i = 0; i < _mEigenVects.size(); i++)
-            {
-                for (unsigned int j = 0; j < _mEigenVects.size(); j++)
-                {
-                    _mEigenVects[i][j] = mEigenVects(i,j);
-                }
-            }
-        }
-        else if (nReturnType == DIAGONALIZE)
-        {
-            Eigen::VectorXd vEigenVals = eSolver.eigenvalues();
-            for (unsigned int i = 0; i < _mEigenVects.size(); i++)
-            {
-                _mEigenVects[i][i] = vEigenVals(i,0);
-            }
-        }
-    }
-    else
-    {
-        // Prepare return values
-        _mEigenVals = createZeroesMatrix(_mMatrix.size(),2);
-        _mEigenVects = createZeroesMatrix(_mMatrix.size(), 2*_mMatrix.size());
-
-        // Construct an Eigen eigenvalue solver
-        Eigen::EigenSolver<Eigen::MatrixXd> eSolver(mMatrix);
-
-        // Get eigenvalues, eigenvectors or the diagonal matrix depending
-        // on the selected return type. Separate the result into real and
-        // imaginary parts
-        if (nReturnType == EIGENVALUES)
-        {
-            Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
-            for (unsigned int i = 0; i < _mEigenVals.size(); i++)
-            {
-                _mEigenVals[i][0] = real(vEigenVals(i,0));
-                _mEigenVals[i][1] = imag(vEigenVals(i,0));
-            }
-            parser_makeReal(_mEigenVals);
-        }
-        else if (nReturnType == EIGENVECTORS)
-        {
-            Eigen::MatrixXcd mEigenVects = eSolver.eigenvectors();
-            for (unsigned int i = 0; i < _mEigenVects.size(); i++)
-            {
-                for (unsigned int j = 0; j < _mEigenVects.size(); j++)
-                {
-                    _mEigenVects[i][j] = real(mEigenVects(i, j));
-                    _mEigenVects[i][j+_mEigenVects.size()] = imag(mEigenVects(i, j));
-                }
-            }
-            parser_makeReal(_mEigenVects);
-        }
-        else if (nReturnType == DIAGONALIZE)
-        {
-            Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
-            for (unsigned int i = 0; i < _mEigenVects.size(); i++)
-            {
-                _mEigenVects[i][i] = real(vEigenVals(i, 0));
-                _mEigenVects[i][i+_mEigenVects.size()] = imag(vEigenVals(i, 0));
-            }
-            parser_makeReal(_mEigenVects);
-        }
-    }
-
-    // Return the corresponding result
-    if (nReturnType == EIGENVALUES)
-        return _mEigenVals;
-    else
-        return _mEigenVects;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function tries to remove
-/// the imaginary part of the returned
-/// eigenvalues.
-///
-/// \param _mMatrix Matrix&
-/// \return void
-///
-/////////////////////////////////////////////////
-static void parser_makeReal(Matrix& _mMatrix)
-{
-    if (_mMatrix[0].size() < 2 || (_mMatrix[0].size() % 2))
-        return;
-
-    // Try to find a non-zero imaginary value
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
-    {
-        // imaginary values are found in the second half of the columns
-        for (unsigned int j = _mMatrix[0].size()/2; j < _mMatrix[0].size(); j++)
-        {
-            if (_mMatrix[i][j])
-                return;
-        }
-    }
-
-    // The matrix is completely real, remove the unnecessary empty columns
-    if (_mMatrix[0].size() == 2)
-    {
-        for (unsigned int i = 0; i < _mMatrix.size(); i++)
-            _mMatrix[i].pop_back();
-    }
-    else
-    {
-        for (unsigned int i = 0; i < _mMatrix.size(); i++)
-        {
-            _mMatrix[i].erase(_mMatrix[i].begin() + _mMatrix[i].size()/2, _mMatrix[i].end());
-        }
-    }
-    return;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function determines,
-/// whether the passed matrix is symmetric or not.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return bool
-///
-/////////////////////////////////////////////////
-static bool parser_IsSymmMatrix(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    if (_mMatrix.size() != _mMatrix[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
-
-    // Try to find a value, which is not symmetric
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
-    {
-        for (unsigned int j = i; j < _mMatrix.size(); j++)
-        {
-            // Is this value not symmetric?
-            if (_mMatrix[i][j] != _mMatrix[j][i])
-                return false;
-        }
-    }
-
-    // Is symmetric
-    return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function calculates the
-/// trace of the passed matrix.
-///
-/// \param _mMatrix const Matrix&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return Matrix
-///
-/////////////////////////////////////////////////
-static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    if (_mMatrix.size() != _mMatrix[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
-    Matrix _mReturn = createZeroesMatrix(1,1);
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
-    {
-        _mReturn[0][0] += _mMatrix[i][i];
-    }
-    return _mReturn;
 }
 
 
@@ -3754,7 +1219,7 @@ static Matrix parser_calcTrace(const Matrix& _mMatrix, const string& sCmd, const
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
 {
     Matrix _mReturn;
     Indices _idx = getIndices(sExpr, _mMatrix, _parser, _data, _option);
@@ -3791,7 +1256,7 @@ static Matrix parser_getMatrixElements(string& sExpr, const Matrix& _mMatrix, Pa
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _option)
+static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
 {
     if (!_option.systemPrints() || NumeReKernel::bSupressAnswer)
         return;
@@ -3930,132 +1395,6 @@ static void parser_ShowMatrixResult(const Matrix& _mResult, const Settings& _opt
     }
     NumeReKernel::flush();
     NumeReKernel::toggleTableStatus();
-    return;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This static function solves the system
-/// of linear equations symbolically.
-///
-/// \param _mMatrix const Matrix&
-/// \param _parser Parser&
-/// \param _functions Define&
-/// \param _option const Settings&
-/// \param sCmd const string&
-/// \param sExpr const string&
-/// \param position size_t
-/// \return void
-///
-/////////////////////////////////////////////////
-static void parser_solveLGSSymbolic(const Matrix& _mMatrix, Parser& _parser, FunctionDefinitionManager& _functions, const Settings& _option, const string& sCmd, const string& sExpr, size_t position)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
-
-    string sSolution = "sle(";
-    vector<string> vResult(_mMatrix[0].size()-1, "");
-    bool bIsZeroesLine = true;
-    unsigned int nVarCount = 0;
-    Matrix _mToSolve = createZeroesMatrix(_mMatrix[0].size()-1, _mMatrix[0].size());
-    Matrix _mCoefficents = createZeroesMatrix(_mMatrix[0].size()-1, _mMatrix[0].size());
-    for (unsigned int i = 0; i < min(_mMatrix.size(), _mMatrix[0].size()-1); i++)
-    {
-        for (unsigned int j = 0; j < _mMatrix[0].size(); j++)
-        {
-            _mToSolve[i][j] = _mMatrix[i][j];
-        }
-    }
-
-    for (int i = _mToSolve.size()-1; i >= 0; i--)
-    {
-        bIsZeroesLine = true;
-        for (unsigned int j = 0; j < _mToSolve[0].size(); j++)
-        {
-            if (bIsZeroesLine && _mToSolve[i][j])
-            {
-                bIsZeroesLine = false;
-                break;
-            }
-        }
-        if (bIsZeroesLine)
-        {
-            _mCoefficents[i][i] = 1.0;
-            nVarCount++;
-        }
-        else
-        {
-            // Konstanter Term
-            _mCoefficents[i][_mCoefficents[0].size()-1] = _mToSolve[i][_mToSolve[0].size()-1];
-            for (unsigned int j = i+1; j < _mToSolve[0].size()-1; j++)
-            {
-                if (_mToSolve[i][j])
-                {
-                    // Konstanter Term
-                    _mCoefficents[i][_mCoefficents[0].size()-1] -= _mToSolve[i][j] * _mCoefficents[j][_mCoefficents[0].size()-1];
-                    // Alle Koeffizienten
-                    for (unsigned int n = i+1; n < _mCoefficents[0].size()-1; n++)
-                    {
-                        _mCoefficents[i][n] -= _mToSolve[i][j] * _mCoefficents[j][n];
-                    }
-                }
-            }
-        }
-    }
-
-    for (unsigned int i = 0; i < _mCoefficents.size(); i++)
-    {
-        for (unsigned int j = 0; j < _mCoefficents[0].size()-1; j++)
-        {
-            if (_mCoefficents[i][j])
-            {
-                if (fabs(_mCoefficents[i][j]) != 1.0)
-                {
-                    vResult[i] += toString(_mCoefficents[i][j], 5) + "*";
-                }
-                if (_mCoefficents[i][j] == -1.0)
-                {
-                    vResult[i] += "-";
-                }
-                vResult[i] += ('z'-vResult.size()+1+j);
-            }
-        }
-        if (_mCoefficents[i][_mCoefficents[0].size()-1])
-            vResult[i] += "+" + toString(_mCoefficents[i][_mCoefficents[0].size()-1], 5);
-        while (vResult[i].find("+-") != string::npos)
-            vResult[i].erase(vResult[i].find("+-"),1);
-    }
-
-    for (unsigned int i = 0; i < nVarCount; i++)
-    {
-        sSolution += ('z'-nVarCount+i+1);
-    }
-    sSolution += ") := {";
-    for (unsigned int i = 0; i < vResult.size(); i++)
-    {
-        sSolution += vResult[i];
-        if (i < vResult.size()-1)
-            sSolution += ",";
-    }
-    sSolution += "}";
-
-    NumeReKernel::print(sSolution);
-    sSolution += " "+_lang.get("MATOP_SOLVELGSSYMBOLIC_DEFINECOMMENT");
-
-    bool bDefinitionSuccess = false;
-
-    if (!_functions.isDefined(sSolution))
-        bDefinitionSuccess = _functions.defineFunc(sSolution);
-    else if (_functions.getDefinitionString(_functions.getFunctionIndex(sSolution)) != sSolution)
-        bDefinitionSuccess = _functions.defineFunc(sSolution, true);
-    else if (_functions.getDefinitionString(_functions.getFunctionIndex(sSolution)) == sSolution)
-        return;
-
-    if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints());
-    else
-        NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
-
     return;
 }
 
@@ -4262,7 +1601,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
 /////////////////////////////////////////////////
 void showMatrix(const vector<vector<double> >& _mMatrix)
 {
-    parser_ShowMatrixResult(_mMatrix, NumeReKernel::getInstance()->getSettings());
+    showMatrixResult(_mMatrix, NumeReKernel::getInstance()->getSettings());
 }
 
 /////////////////////////////////////////////////
@@ -4351,7 +1690,7 @@ static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector
 /// \return Indices
 ///
 /////////////////////////////////////////////////
-static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, MemoryManager& _data, const Settings& _option)
+static Indices getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, MemoryManager& _data, const Settings& _option)
 {
     string _sCmd = sCmd;
 
@@ -4371,49 +1710,6 @@ static Indices parser_getIndicesForMatrix(const string& sCmd, const vector<strin
 
 
 /////////////////////////////////////////////////
-/// \brief This static function creates the
-/// matrix function map.
-///
-/// \return map<string,string>
-///
-/////////////////////////////////////////////////
-static map<string,string> createMatrixFunctionsMap()
-{
-    map<string,string> mFunctionMap;
-
-    mFunctionMap["det"] = "det(";
-    mFunctionMap["invert"] = "invert(";
-    mFunctionMap["transpose"] = "transpose(";
-    mFunctionMap["zero"] = "zero(";
-    mFunctionMap["one"] = "one(";
-    mFunctionMap["matfl"] = "matfl(";
-    mFunctionMap["matflf"] = "matflf(";
-    mFunctionMap["matfc"] = "matfc(";
-    mFunctionMap["matfcf"] = "matfcf(";
-    mFunctionMap["diag"] = "diag(";
-    mFunctionMap["solve"] = "solve(";
-    mFunctionMap["cross"] = "cross(";
-    mFunctionMap["diagonalize"] = "diagonalize(";
-    mFunctionMap["eigenvals"] = "eigenvals(";
-    mFunctionMap["eigenvects"] = "eigenvects(";
-    mFunctionMap["trace"] = "trace(";
-    mFunctionMap["size"] = "size(";
-    mFunctionMap["reshape"] = "reshape(";
-    mFunctionMap["resize"] = "resize(";
-    mFunctionMap["logtoidx"] = "logtoidx(";
-    mFunctionMap["idxtolog"] = "idxtolog(";
-    mFunctionMap["unique"] = "unique(";
-    mFunctionMap["identity"] = "identity(";
-    mFunctionMap["covar"] = "covar(";
-    mFunctionMap["correl"] = "correl(";
-    mFunctionMap["normalize"] = "normalize(";
-    mFunctionMap["shuffle"] = "shuffle(";
-
-    return mFunctionMap;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This static function evaluates,
 /// whether there are matrix expressions in the
 /// passed expression.
@@ -4428,11 +1724,14 @@ static bool containsMatrices(const string& sExpr, MemoryManager& _data)
     if (_data.containsTablesOrClusters(sExpr) || sExpr.find('{') != string::npos)
         return true;
 
-    static map<string, string> mMatrixFunctionsMap = createMatrixFunctionsMap();
+    static map<string, MatFuncDef> mMatrixFunctionsMap = getMatrixFunctions();
 
     // search for any matrix function
     for (auto iter = mMatrixFunctionsMap.begin(); iter != mMatrixFunctionsMap.end(); ++iter)
     {
+        if (!iter->second.isPureMatFunc)
+            continue;
+
         size_t match = sExpr.find(iter->first+"(");
 
         if (match != string::npos && (!match || (!isalpha(sExpr[match-1]) && sExpr[match-1] != '_')))

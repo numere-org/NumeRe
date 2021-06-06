@@ -229,6 +229,23 @@ static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parse
 static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim);
 
 
+size_t findAssignmentOperator(StringView sCmd)
+{
+    size_t pos = sCmd.find('=');
+
+    if (pos != std::string::npos
+        && pos > 0
+        && sCmd[pos - 1] != '!'
+        && sCmd[pos - 1] != '<'
+        && sCmd[pos - 1] != '>'
+        && sCmd[pos + 1] != '='
+        && sCmd[pos - 1] != '=')
+        return pos;
+
+    return std::string::npos;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief Searches the passed string for calls
 /// to any table or cluster and replaces them with
@@ -274,11 +291,10 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 		// these cases, it is most assured a parameter string
 		// full of equality signs.
         if (sLine[sLine.find_first_not_of(' ')] != '-')
-            eq_pos = sLine.find('=');
+            eq_pos = findAssignmentOperator(sLine);
 
 		if (eq_pos == string::npos              // gar kein "="?
-            || !_data.containsTablesOrClusters(sLine.substr(0, eq_pos))   // nur links von "cache("?
-            || (sLine[eq_pos + 1] == '=' || sLine[eq_pos - 1] == '<' || sLine[eq_pos - 1] == '>' || sLine[eq_pos - 1] == '!')) // wenn rechts von "cache(", dann nur Logikausdruecke...
+            || !_data.containsTablesOrClusters(sLine.substr(0, eq_pos)))   // nur links von "cache("?
 		{
             resolveTablesAndClusters(sLine, _parser, _data, _option, bReplaceNANs);
 		}
@@ -1065,7 +1081,22 @@ static string createEveryDefinition(const string& sLine, Parser& _parser)
 /////////////////////////////////////////////////
 static string createMafVectorName(string sAccessString)
 {
-    if (sAccessString.find(".name") != string::npos)
+    if (sAccessString.find(".aliasof(") != std::string::npos)
+    {
+        string sTable = sAccessString.substr(0, sAccessString.find("()."));
+        string sReference = sAccessString.substr(sAccessString.find(".aliasof(") + 8);
+        sReference.erase(getMatchingParenthesis(sReference)+1);
+        sReference = sReference.substr(1, sReference.length()-2);
+
+        // Might be necessary to resolve the contents of the reference
+        getDataElements(sReference, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
+        NumeReKernel::getInstance()->getMemoryManager().addReference(sTable, sReference.substr(1, sReference.length()-2));
+
+        return sReference;
+    }
+
+    if (sAccessString.find(".name") != std::string::npos)
         return "\"" + sAccessString.substr(0, sAccessString.find("().")+2) + "\"";
 
     sAccessString.replace(sAccessString.find("()"), 2, "[");
@@ -1407,7 +1438,7 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 {
     // Do nothing, if the current line does not contain
     // an assignment operator
-    if (sLine.find('=') == string::npos || sLine[sLine.find_first_not_of(' ')] == '-')
+    if (findAssignmentOperator(sLine) == string::npos || sLine[sLine.find_first_not_of(' ')] == '-')
         return false;
 
     size_t nQuotes = 0;

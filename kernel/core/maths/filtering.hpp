@@ -180,10 +180,6 @@ namespace NumeRe
     class WeightedLinearFilter : public Filter
     {
         private:
-            std::vector<double> m_left;
-            std::vector<double> m_right;
-            std::vector<double> m_top;
-            std::vector<double> m_bottom;
             bool is2D;
             std::vector<std::vector<double> > m_filterKernel;
 
@@ -196,13 +192,17 @@ namespace NumeRe
             /////////////////////////////////////////////////
             void createKernel()
             {
-                m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
-
                 if (!is2D)
                     is2D = m_windowSize.first > 1 && m_windowSize.second > 1;
 
+                if (!(m_windowSize.first % 2))
+                    m_windowSize.first++;
+
+                m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
+
                 double mean_row = m_windowSize.first > 1 ? 0.5 : 0.0;
                 double mean_col = m_windowSize.second > 1 ? 0.5 : 0.0;
+                double sum = 0;
 
                 // Calculate the filter values
                 for (size_t i = 0; i < m_windowSize.first; i++)
@@ -210,171 +210,20 @@ namespace NumeRe
                     for (size_t j = 0; j < m_windowSize.second; j++)
                     {
                         if (sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) <= 0.5)
+                        {
                             m_filterKernel[i][j] = fabs(sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) - 0.5);
+                            sum += m_filterKernel[i][j];
+                        }
                     }
                 }
-            }
 
-            /////////////////////////////////////////////////
-            /// \brief This method will return the correct
-            /// value for the left interval boundary.
-            ///
-            /// \param i size_t
-            /// \param j size_t
-            /// \return double
-            ///
-            /////////////////////////////////////////////////
-            double left(size_t i, size_t j) const
-            {
-                if (!is2D)
-                    return validize(m_left.front());
-
-                return validize(m_left[i+1]);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method will return the correct
-            /// value for the right interval boundary.
-            ///
-            /// \param i size_t
-            /// \param j size_t
-            /// \return double
-            ///
-            /////////////////////////////////////////////////
-            double right(size_t i, size_t j) const
-            {
-                if (!is2D)
-                    return validize(m_right.front());
-
-                return validize(m_right[i+1]);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method will return the correct
-            /// value for the top interval boundary.
-            ///
-            /// \param i size_t
-            /// \param j size_t
-            /// \return double
-            ///
-            /////////////////////////////////////////////////
-            double top(size_t i, size_t j) const
-            {
-                if (!is2D)
-                    return 0.0;
-
-                return validize(m_top[j+1]);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method will return the correct
-            /// value for the bottom interval boundary.
-            ///
-            /// \param i size_t
-            /// \param j size_t
-            /// \return double
-            ///
-            /////////////////////////////////////////////////
-            double bottom(size_t i, size_t j) const
-            {
-                if (!is2D)
-                    return 0.0;
-
-                return validize(m_bottom[j+1]);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method will return the correct
-            /// value for the topleft diagonal interval
-            /// boundary.
-            ///
-            /// \param i size_t
-            /// \param j size_t
-            /// \return double
-            ///
-            /////////////////////////////////////////////////
-            double topleft(size_t i, size_t j) const
-            {
-                if (i >= j)
-                    return validize(m_left[i-j]);
-
-                return validize(m_top[j-i]);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method will return the correct
-            /// value for the topright diagonal interval
-            /// boundary.
-            ///
-            /// \param i size_t
-            /// \param j size_t
-            /// \return double
-            ///
-            /////////////////////////////////////////////////
-            double topright(size_t i, size_t j) const
-            {
-                if (i+j <= m_windowSize.second-1)
-                    return validize(m_top[i+j+2]); // size(m_top) + 2 == m_order
-
-                return validize(m_right[i+j-m_windowSize.second+1]);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method will return the correct
-            /// value for the bottomleft diagonal interval
-            /// boundary.
-            ///
-            /// \param i size_t
-            /// \param j size_t
-            /// \return double
-            ///
-            /////////////////////////////////////////////////
-            double bottomleft(size_t i, size_t j) const
-            {
-                if (i+j <= m_windowSize.first-1)
-                    return validize(m_left[i+j+2]); // size(m_left) + 2 == m_order
-
-                return validize(m_bottom[i+j-m_windowSize.first+1]);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method will return the correct
-            /// value for the bottomright diagonal interval
-            /// boundary.
-            ///
-            /// \param i size_t
-            /// \param j size_t
-            /// \return double
-            ///
-            /////////////////////////////////////////////////
-            double bottomright(size_t i, size_t j) const
-            {
-                if (i >= j)
-                    return validize(m_bottom[m_windowSize.second-(i-j)+1]); // size(m_bottom) + 2 == m_order
-
-                return validize(m_right[m_windowSize.first-(j-i)+1]);
-            }
-
-        protected:
-            double m_fallback;
-            bool m_invertedKernel;
-
-            /////////////////////////////////////////////////
-            /// \brief This method checks, whether the passed
-            /// value is a valid value and returns it. If it
-            /// is not, it will be replaced by the fallback
-            /// value.
-            ///
-            /// \param val double
-            /// \return double
-            ///
-            /////////////////////////////////////////////////
-            double validize(double val) const
-            {
-                if (isnan(val))
-                    return m_fallback;
-
-                return val;
+                for (size_t i = 0; i < m_windowSize.first; i++)
+                {
+                    for (size_t j = 0; j < m_windowSize.second; j++)
+                    {
+                        m_filterKernel[i][j] /= sum;
+                    }
+                }
             }
 
         public:
@@ -390,9 +239,7 @@ namespace NumeRe
             WeightedLinearFilter(size_t row, size_t col, bool force2D = false) : Filter(row, col)
             {
                 m_type = FilterSettings::FILTER_WEIGHTED_LINEAR;
-                m_isConvolution = false;
-                m_fallback = 0.0;
-                m_invertedKernel = false;
+                m_isConvolution = true;
                 is2D = force2D;
 
                 createKernel();
@@ -441,58 +288,7 @@ namespace NumeRe
                 if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
 
-                if (!is2D)
-                {
-                    if (m_invertedKernel)
-                        return m_filterKernel[i][j]*val + (1-m_filterKernel[i][j])*(left(i,j) + (right(i,j) - left(i,j))/(m_windowSize.first + 1.0)*(i + 1.0));
-
-                    return (1-m_filterKernel[i][j])*val + m_filterKernel[i][j]*(left(i,j) + (right(i,j) - left(i,j))/(m_windowSize.first + 1.0)*(i + 1.0));
-                }
-
-                // cross hair: summarize the linearily interpolated values along the rows and cols at the desired position
-                // Summarize implies that the value is not averaged yet
-                double dAverage = top(i,j) + (bottom(i,j) - top(i,j)) / (m_windowSize.first + 1.0) * (i+1.0)
-                                  + left(i,j) + (right(i,j) - left(i,j)) / (m_windowSize.second + 1.0) * (j+1.0);
-
-                // Additional weighting because are the nearest neighbours
-                dAverage *= 2.0;
-
-                // Calculate along columns
-                // Find the diagonal neighbours and interpolate the value
-                if (i >= j)
-                    dAverage += topleft(i,j) + (bottomright(i,j) - topleft(i,j)) / (m_windowSize.second - fabs(i-j) + 1.0) * (j+1.0);
-                else
-                    dAverage += topleft(i,j) + (bottomright(i,j) - topleft(i,j)) / (m_windowSize.first - fabs(i-j) + 1.0) * (i+1.0);
-
-                // calculate along rows
-                // Find the diagonal neighbours and interpolate the value
-                if (i + j <= m_windowSize.first + 1)
-                    dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (i+j+2.0) * (j+1.0);
-                else
-                    dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (m_windowSize.first + m_windowSize.second - i - j) * (double)(m_windowSize.first-i);
-
-                // Restore the desired average
-                dAverage /= 6.0;
-
-                if (m_invertedKernel)
-                    return (1-m_filterKernel[i][j])*dAverage + m_filterKernel[i][j]*val;
-
-                return (1-m_filterKernel[i][j])*val + m_filterKernel[i][j]*dAverage;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method is used to update the
-            /// internal filter boundaries.
-            ///
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void setBoundaries(const std::vector<double>& left, const std::vector<double>& right, const std::vector<double>& top = std::vector<double>(), const std::vector<double>& bottom = std::vector<double>())
-            {
-                m_left = left;
-                m_right = right;
-                m_top = top;
-                m_bottom = bottom;
+                return m_filterKernel[i][j]*val;
             }
     };
 
@@ -865,8 +661,206 @@ namespace NumeRe
     /// WeightedLinearFilter used to retouch missing
     /// data values.
     /////////////////////////////////////////////////
-    class RetouchRegion : public WeightedLinearFilter
+    class RetouchRegion : public Filter
     {
+        private:
+            std::vector<double> m_left;
+            std::vector<double> m_right;
+            std::vector<double> m_top;
+            std::vector<double> m_bottom;
+            bool is2D;
+            std::vector<std::vector<double> > m_filterKernel;
+            double m_fallback;
+            bool m_invertedKernel;
+
+            /////////////////////////////////////////////////
+            /// \brief This method will create the filter's
+            /// kernel for the selected window size.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void createKernel()
+            {
+                m_filterKernel = std::vector<std::vector<double> >(m_windowSize.first, std::vector<double>(m_windowSize.second, 0.0));
+
+                if (!is2D)
+                    is2D = m_windowSize.first > 1 && m_windowSize.second > 1;
+
+                double mean_row = m_windowSize.first > 1 ? 0.5 : 0.0;
+                double mean_col = m_windowSize.second > 1 ? 0.5 : 0.0;
+
+                // Calculate the filter values
+                for (size_t i = 0; i < m_windowSize.first; i++)
+                {
+                    for (size_t j = 0; j < m_windowSize.second; j++)
+                    {
+                        if (sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) <= 0.5)
+                        {
+                            m_filterKernel[i][j] = fabs(sqrt(pow2(i/((double)max(1u, m_windowSize.first-1))-mean_row) + pow2(j/((double)max(1u, m_windowSize.second-1))-mean_col)) - 0.5);
+                        }
+                    }
+                }
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method will return the correct
+            /// value for the left interval boundary.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double left(size_t i, size_t j) const
+            {
+                if (!is2D)
+                    return validize(m_left.front());
+
+                return validize(m_left[i+1]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method will return the correct
+            /// value for the right interval boundary.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double right(size_t i, size_t j) const
+            {
+                if (!is2D)
+                    return validize(m_right.front());
+
+                return validize(m_right[i+1]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method will return the correct
+            /// value for the top interval boundary.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double top(size_t i, size_t j) const
+            {
+                if (!is2D)
+                    return 0.0;
+
+                return validize(m_top[j+1]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method will return the correct
+            /// value for the bottom interval boundary.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double bottom(size_t i, size_t j) const
+            {
+                if (!is2D)
+                    return 0.0;
+
+                return validize(m_bottom[j+1]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method will return the correct
+            /// value for the topleft diagonal interval
+            /// boundary.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double topleft(size_t i, size_t j) const
+            {
+                if (i >= j)
+                    return validize(m_left[i-j]);
+
+                return validize(m_top[j-i]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method will return the correct
+            /// value for the topright diagonal interval
+            /// boundary.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double topright(size_t i, size_t j) const
+            {
+                if (i+j <= m_windowSize.second-1)
+                    return validize(m_top[i+j+2]); // size(m_top) + 2 == m_order
+
+                return validize(m_right[i+j-m_windowSize.second+1]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method will return the correct
+            /// value for the bottomleft diagonal interval
+            /// boundary.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double bottomleft(size_t i, size_t j) const
+            {
+                if (i+j <= m_windowSize.first-1)
+                    return validize(m_left[i+j+2]); // size(m_left) + 2 == m_order
+
+                return validize(m_bottom[i+j-m_windowSize.first+1]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method will return the correct
+            /// value for the bottomright diagonal interval
+            /// boundary.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double bottomright(size_t i, size_t j) const
+            {
+                if (i >= j)
+                    return validize(m_bottom[m_windowSize.second-(i-j)+1]); // size(m_bottom) + 2 == m_order
+
+                return validize(m_right[m_windowSize.first-(j-i)+1]);
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method checks, whether the passed
+            /// value is a valid value and returns it. If it
+            /// is not, it will be replaced by the fallback
+            /// value.
+            ///
+            /// \param val double
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            double validize(double val) const
+            {
+                if (isnan(val))
+                    return m_fallback;
+
+                return val;
+            }
+
         public:
             /////////////////////////////////////////////////
             /// \brief Filter constructor. Will automatically
@@ -876,7 +870,113 @@ namespace NumeRe
             /// \param _col
             ///
             /////////////////////////////////////////////////
-            RetouchRegion(size_t _row, size_t _col, double _dMedian) : WeightedLinearFilter(_row, _col, true) { m_fallback = _dMedian; m_invertedKernel = true;}
+            RetouchRegion(size_t _row, size_t _col, double _dMedian) : Filter(_row, _col)
+            {
+                m_type = FilterSettings::FILTER_WEIGHTED_LINEAR;
+                m_isConvolution = false;
+                m_fallback = _dMedian;
+                m_invertedKernel = true;
+                is2D = true;
+
+                createKernel();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Filter destructor. Will clear the
+            /// previously calculated filter kernel.
+            /////////////////////////////////////////////////
+            virtual ~RetouchRegion() override
+            {
+                m_filterKernel.clear();
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Override for the operator(). Returns
+            /// the filter kernel at the desired position.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \return double
+            ///
+            /////////////////////////////////////////////////
+            virtual double operator()(size_t i, size_t j) const override
+            {
+                if (i >= m_windowSize.first || j >= m_windowSize.second)
+                    return NAN;
+
+                return m_filterKernel[i][j];
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief Override for the abstract apply method
+            /// of the base class. Applies the filter to the
+            /// value at the selected position and returns
+            /// the new value.
+            ///
+            /// \param i size_t
+            /// \param j size_t
+            /// \param val double
+            /// \return virtual double
+            ///
+            /////////////////////////////////////////////////
+            virtual double apply(size_t i, size_t j, double val) const override
+            {
+                if (i >= m_windowSize.first || j >= m_windowSize.second)
+                    return NAN;
+
+                if (!is2D)
+                {
+                    if (m_invertedKernel)
+                        return m_filterKernel[i][j]*val + (1-m_filterKernel[i][j])*(left(i,j) + (right(i,j) - left(i,j))/(m_windowSize.first + 1.0)*(i + 1.0));
+
+                    return (1-m_filterKernel[i][j])*val + m_filterKernel[i][j]*(left(i,j) + (right(i,j) - left(i,j))/(m_windowSize.first + 1.0)*(i + 1.0));
+                }
+
+                // cross hair: summarize the linearily interpolated values along the rows and cols at the desired position
+                // Summarize implies that the value is not averaged yet
+                double dAverage = top(i,j) + (bottom(i,j) - top(i,j)) / (m_windowSize.first + 1.0) * (i+1.0)
+                                  + left(i,j) + (right(i,j) - left(i,j)) / (m_windowSize.second + 1.0) * (j+1.0);
+
+                // Additional weighting because are the nearest neighbours
+                dAverage /= 2.0;
+
+                // Calculate along columns
+                // Find the diagonal neighbours and interpolate the value
+                if (i >= j)
+                    dAverage += topleft(i,j) + (bottomright(i,j) - topleft(i,j)) / (m_windowSize.second - fabs(i-j) + 1.0) * (j+1.0);
+                else
+                    dAverage += topleft(i,j) + (bottomright(i,j) - topleft(i,j)) / (m_windowSize.first - fabs(i-j) + 1.0) * (i+1.0);
+
+                // calculate along rows
+                // Find the diagonal neighbours and interpolate the value
+                if (i + j <= m_windowSize.first + 1)
+                    dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (i+j+2.0) * (j+1.0);
+                else
+                    dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (m_windowSize.first + m_windowSize.second - i - j) * (double)(m_windowSize.first-i);
+
+                // Restore the desired average
+                dAverage /= 6.0;
+
+                if (m_invertedKernel)
+                    return (1-m_filterKernel[i][j])*dAverage + m_filterKernel[i][j]*val;
+
+                return (1-m_filterKernel[i][j])*val + m_filterKernel[i][j]*dAverage;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method is used to update the
+            /// internal filter boundaries.
+            ///
+            /// \return void
+            ///
+            /////////////////////////////////////////////////
+            void setBoundaries(const std::vector<double>& left, const std::vector<double>& right, const std::vector<double>& top = std::vector<double>(), const std::vector<double>& bottom = std::vector<double>())
+            {
+                m_left = left;
+                m_right = right;
+                m_top = top;
+                m_bottom = bottom;
+            }
 
             /////////////////////////////////////////////////
             /// \brief This method is a wrapper to retouch

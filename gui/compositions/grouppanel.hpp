@@ -22,6 +22,8 @@
 #include <wx/treelist.h>
 #include <wx/collpane.h>
 
+#include "../controls/treelistctrl.h"
+
 #ifndef GROUPPANEL_HPP
 #define GROUPPANEL_HPP
 
@@ -207,6 +209,7 @@ class GroupPanel : public wxScrolledWindow
         SpinBut* CreateSpinControl(wxWindow* parent, wxSizer* sizer, const wxString& description, int nMin, int nMax, int nInitial, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxListView* CreateListView(wxWindow* parent, wxSizer* sizer, int nStyle = wxLC_REPORT, wxSize size = wxDefaultSize, int id = wxID_ANY);
         wxTreeListCtrl* CreateTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle = wxTL_SINGLE, wxSize size = wxDefaultSize, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
+        wxcode::wxTreeListCtrl* CreateWxcTreeListCtrl(wxWindow* parent, wxSizer* sizer, int nStyle = wxTR_TWIST_BUTTONS | wxTR_FULL_ROW_HIGHLIGHT | wxTR_EXTENDED, wxSize size = wxDefaultSize, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxButton* CreateButton(wxWindow* parent, wxSizer* sizer, const wxString& description, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxRadioBox* CreateRadioBox(wxWindow* parent, wxSizer* sizer, const wxString& description, const wxArrayString& choices, int style = wxHORIZONTAL, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);
         wxChoice* CreateChoices(wxWindow* parent, wxSizer* sizer, const wxArrayString& choices, int id = wxID_ANY, int alignment = wxALIGN_CENTER_VERTICAL);

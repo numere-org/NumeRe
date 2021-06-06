@@ -1074,16 +1074,15 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 /// is called by sortData, if the selected data
 /// object equals "string".
 ///
-/// \param sCmd string&
+/// \param cmdParser CommandLineParser&
 /// \param _idx Indices&
-/// \param _parser Parser&
-/// \param _data Datafile&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, MemoryManager& _data)
+static bool sortStrings(CommandLineParser& cmdParser, Indices& _idx)
 {
     vector<int> vSortIndex;
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Evalulate special index values
 	if (_idx.row.isOpenEnd())
@@ -1094,7 +1093,7 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, MemoryMana
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = _data.sortStringElements(_idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), sCmd.substr(11));
+	vSortIndex = _data.sortStringElements(_idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), cmdParser.getParameterList());
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1106,11 +1105,10 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, MemoryMana
 			vDoubleSortIndex.push_back(vSortIndex[i]);
 
         // Set the vector name and set the vector for the parser
-		sCmd = "_~sortIndex[]";
-		_parser.SetVectorVar(sCmd, vDoubleSortIndex);
+		cmdParser.setReturnValue(vDoubleSortIndex);
 	}
 	else
-		sCmd.clear(); // simply clear, if the user didn't request a sorting index
+		cmdParser.clearReturnValue(); // simply clear, if the user didn't request a sorting index
 
     // Return true
 	return true;
@@ -1122,18 +1120,16 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, MemoryMana
 /// and is called by sortData, if the selected
 /// data object equals a cluster identifier.
 ///
-/// \param sCmd string&
+/// \param cmdParser CommandLineParser&
 /// \param sCluster const string&
 /// \param _idx Indices&
-/// \param _parser Parser&
-/// \param _data Datafile&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Parser& _parser, MemoryManager& _data)
+static bool sortClusters(CommandLineParser& cmdParser, const string& sCluster, Indices& _idx)
 {
     vector<int> vSortIndex;
-    NumeRe::Cluster& cluster = _data.getCluster(sCluster);
+    NumeRe::Cluster& cluster = NumeReKernel::getInstance()->getMemoryManager().getCluster(sCluster);
 
     // Evalulate special index values
 	if (_idx.row.isOpenEnd())
@@ -1141,7 +1137,7 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = cluster.sortElements(_idx.row.front(), _idx.row.back(), sCmd.substr(5 + sCluster.length()));
+	vSortIndex = cluster.sortElements(_idx.row.front(), _idx.row.back(), cmdParser.getParameterList());
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1153,11 +1149,10 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 			vDoubleSortIndex.push_back(vSortIndex[i]);
 
         // Set the vector name and set the vector for the parser
-		sCmd = "_~sortIndex[]";
-		_parser.SetVectorVar(sCmd, vDoubleSortIndex);
+		cmdParser.setReturnValue(vDoubleSortIndex);
 	}
 	else
-		sCmd.clear(); // simply clear, if the user didn't request a sorting index
+		cmdParser.clearReturnValue(); // simply clear, if the user didn't request a sorting index
 
     // Return true
 	return true;
@@ -1169,40 +1164,38 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 /// corresponding member function of the Datafile
 /// object.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool sortData(CommandLineParser& cmdParser)
 {
 	vector<int> vSortIndex;
-	DataAccessParser _accessParser(sCmd);
+	DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
 
 	if (!_accessParser.getDataObject().length())
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
 	// Get the indices
 	Indices& _idx = _accessParser.getIndices();
 
 	// Ensure that the indices are reasonable
 	if (!isValidIndexSet(_idx))
-		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.row.to_string() + ", " + _idx.col.to_string());
+		throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
 	// If the current cache equals to "string", leave the function at
 	// this point and redirect the control to the string sorting
 	// function
 	if (_accessParser.getDataObject() == "string")
-        return sortStrings(sCmd, _idx, _parser, _data);
+        return sortStrings(cmdParser, _idx);
 
     // If the current cache equals a cluster, leave the function at
 	// this point and redirect the control to the cluster sorting
 	// function
 	if (_accessParser.isCluster())
-        return sortClusters(sCmd, _accessParser.getDataObject(), _idx, _parser, _data);
+        return sortClusters(cmdParser, _accessParser.getDataObject(), _idx);
+
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
 	// Evalulate special index values
 	if (_idx.row.isOpenEnd())
@@ -1212,7 +1205,7 @@ bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefin
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = _data.sortElements(_accessParser.getDataObject(), _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), sCmd.substr(5 + _accessParser.getDataObject().length()));
+	vSortIndex = _data.sortElements(_accessParser.getDataObject(), _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), cmdParser.getParameterList());
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1223,11 +1216,10 @@ bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefin
 			vDoubleSortIndex.push_back(vSortIndex[i]);
 
         // Set the vector name and set the vector for the parser
-		sCmd = "_~sortIndex[]";
-		_parser.SetVectorVar(sCmd, vDoubleSortIndex);
+		cmdParser.setReturnValue(vDoubleSortIndex);
 	}
 	else
-		sCmd.clear(); // simply clear, if the user didn't request a sorting index
+		cmdParser.clearReturnValue(); // simply clear, if the user didn't request a sorting index
 
     // Return true
 	return true;
@@ -1254,6 +1246,7 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 	bool bAppend = false;
 	bool bTrunc = true;
 	bool bNoQuotes = false;
+	bool bKeepEmptyLines = false;
 	FileSystem _fSys;
 
 	// Set default tokens and default path
@@ -1280,20 +1273,22 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 		{
 			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))
 				NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
+
 			addArgumentQuotes(sParams, "file");
 			extractFirstParameterStringValue(sParams, sFileName);
 			StripSpaces(sFileName);
+
 			if (!sFileName.length())
 				return false;
+
 			string sExt = "";
+
 			if (sFileName.find('.') != string::npos)
 				sExt = sFileName.substr(sFileName.rfind('.'));
 
 			// Some file extensions are protected
 			if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
-			{
 				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sExt);
-			}
 
 			// Declare the current file extension as valid for the current process
 			_fSys.declareFileType(sExt);
@@ -1307,12 +1302,14 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 			if (sFileName.substr(sFileName.rfind('.')) == ".nprc" || sFileName.substr(sFileName.rfind('.')) == ".nscr" || sFileName.substr(sFileName.rfind('.')) == ".ndat")
 			{
 				string sErrorToken;
+
 				if (sFileName.substr(sFileName.rfind('.')) == ".nprc")
 					sErrorToken = "NumeRe-Prozedur";
 				else if (sFileName.substr(sFileName.rfind('.')) == ".nscr")
 					sErrorToken = "NumeRe-Script";
 				else if (sFileName.substr(sFileName.rfind('.')) == ".ndat")
 					sErrorToken = "NumeRe-Datenfile";
+
 				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sErrorToken);
 			}
 		}
@@ -1320,6 +1317,9 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 		// Avoid quotation marks
 		if (findParameter(sParams, "noquotes") || findParameter(sParams, "nq"))
 			bNoQuotes = true;
+
+        if (findParameter(sParams, "keepdim") || findParameter(sParams, "k"))
+            bKeepEmptyLines = true;
 
         // Get the file open mode
 		if (findParameter(sParams, "mode", '='))
@@ -1366,17 +1366,16 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 	{
 		if (!fileExists(sFileName))
 			ofstream fTemp(sFileName.c_str());
+
 		fFile.open(sFileName.c_str());
 	}
 
 	// Ensure that the file is read- and writable
 	if (fFile.fail())
-	{
 		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position, sFileName);
-	}
 
 	// Ensure that the expression has a length and is not only an empty quotation marks pair
-	if (!sExpression.length() || sExpression == "\"\"")
+	if ((!sExpression.length() || sExpression == "\"\"") && !bKeepEmptyLines)
 		throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, sCmd, SyntaxError::invalid_position);
 
     // Write the expression linewise
@@ -1392,7 +1391,7 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 			sArgument = sArgument.substr(1, sArgument.length() - 2);
 
         // Write only strings, which are not empty
-		if (!sArgument.length() || sArgument == "\"\"")
+		if ((!sArgument.length() || sArgument == "\"\"") && !bKeepEmptyLines)
 			continue;
 
         // Remove escaped characters
@@ -1423,54 +1422,35 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 /// file as strings and copies them to a
 /// temporary string vector variable.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
+bool readFromFile(CommandLineParser& cmdParser)
 {
-	string sFileName = "";
 	string sInput = "";
-	string sCommentEscapeSequence = "";
-	string sParams = "";
+	string sCommentEscapeSequence = cmdParser.getParameterValue("comments");
 	ifstream fFile;
 
-	// Get the parameter list
-	if (sCmd.rfind('-') != string::npos && !isInQuotes(sCmd, sCmd.rfind('-')))
-	{
-		sParams = sCmd.substr(sCmd.rfind('-'));
-		sCmd.erase(sCmd.rfind('-'));
-	}
+	bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");
 
-	// Find the comment escape sequence in the parameter list if available
-	if (findParameter(sParams, "comments", '='))
-	{
-		sCommentEscapeSequence = getArgAtPos(sParams, findParameter(sParams, "comments", '=') + 8);
-		if (sCommentEscapeSequence != " ")
-			StripSpaces(sCommentEscapeSequence);
-		while (sCommentEscapeSequence.find("\\t") != string::npos)
-			sCommentEscapeSequence.replace(sCommentEscapeSequence.find("\\t"), 2, "\t");
-	}
+    if (sCommentEscapeSequence != " ")
+        StripSpaces(sCommentEscapeSequence);
+    while (sCommentEscapeSequence.find("\\t") != string::npos)
+        sCommentEscapeSequence.replace(sCommentEscapeSequence.find("\\t"), 2, "\t");
 
 	// Get the source file name from the command string or the parameter list
-	sFileName = getFilenameFromCommandString(sCmd, sParams, ".txt", _parser, _data, _option);
+    std::string sFileName = cmdParser.getExprAsFileName(".txt");
 
 	// Ensure that a filename is present
 	if (!sFileName.length())
-		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
-
-    // Clear the command line (it will contain the contents of the read file)
-	sCmd.clear();
+		throw SyntaxError(SyntaxError::NO_FILENAME, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
 	// Open the file and ensure that it is readable
 	fFile.open(sFileName.c_str());
+
 	if (fFile.fail())
-	{
-		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sFileName);
-	}
+		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, cmdParser.getCommandLine(), SyntaxError::invalid_position, sFileName);
 
 	// create a new vector for the file's contents
 	vector<string> vFileContents;
@@ -1482,21 +1462,34 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
 
 		// Omit empty lines
 		if (!sInput.length() || sInput == "\"\"" || sInput == "\"")
+        {
+            if (bKeepEmptyLines && !fFile.eof())
+                vFileContents.push_back("\"\"");
+
 			continue;
+        }
 
         // Remove comments from the read lines (only line comments are supported)
 		if (sCommentEscapeSequence.length() && sInput.find(sCommentEscapeSequence) != string::npos)
 		{
 			sInput.erase(sInput.find(sCommentEscapeSequence));
+
 			if (!sInput.length() || sInput == "\"\"" || sInput == "\"")
+            {
+                if (bKeepEmptyLines && !fFile.eof())
+                    vFileContents.push_back("\"\"");
+
 				continue;
+            }
 		}
 
 		// Add the missing quotation marks
 		if (sInput.front() != '"')
 			sInput = '"' + sInput;
+
 		if (sInput.back() == '\\')
 			sInput += ' ';
+
 		if (sInput.back() != '"')
 			sInput += '"';
 
@@ -1505,6 +1498,7 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
 		{
 			if (sInput[i] == '\\')
 				sInput.insert(i + 1, 1, ' ');
+
 			if (sInput[i] == '"' && sInput[i - 1] != '\\')
 				sInput.insert(i, 1, '\\');
 		}
@@ -1516,9 +1510,9 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
     // Create a new temporary variable, if we actually
     // read something from the file
     if (vFileContents.size())
-        sCmd = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(vFileContents);
+        cmdParser.setReturnValue(vFileContents);
 	else
-		sCmd = "\"\"";
+		cmdParser.setReturnValue("\"\"");
 
     // Close the file
 	fFile.close();
@@ -1724,8 +1718,8 @@ static string getFilenameFromCommandString(string& sCmd, string& sParams, const 
 			NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
 
         if (_data.containsTablesOrClusters(sParams))
-        if (_data.containsTablesOrClusters(sParams))
             getDataElements(sParams, _parser, _data, _option);
+
 		addArgumentQuotes(sParams, "file");
 
 		// Parse the string argument and return it in the second argument

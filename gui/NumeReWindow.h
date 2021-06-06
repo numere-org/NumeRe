@@ -153,6 +153,7 @@ class MyApp : public wxApp
         ~MyApp();
         virtual bool OnInit() override;
         virtual int OnExit() override;
+        virtual bool OnExceptionInMainLoop() override;
 
     private:
         wxSingleInstanceChecker* m_singlinst;
@@ -253,6 +254,8 @@ class NumeReWindow : public wxFrame
         void closeWindows(WindowType type = WT_ALL);
         wxIcon getStandardIcon();
 
+        void notifyInstallationDone();
+
 
     private:
         void InitializeProgramOptions();
@@ -260,7 +263,8 @@ class NumeReWindow : public wxFrame
 
         int CopyEditorSettings(FileFilterType _fileType);
 
-        void OnMenuEvent(wxCommandEvent &event);
+        void OnMenuEvent(wxCommandEvent& event);
+        void OnPluginMenuEvent(wxCommandEvent& event);
         void OnAskForNewFile();
         void OnHelp();
         void OnAbout();
@@ -278,7 +282,7 @@ class NumeReWindow : public wxFrame
         void OnOpenSourceFile( int id );
         void OnExecuteFile(const string& sFileName, int id);
         void OnCalculateDependencies();
-        void OnCreatePackage();
+        void OnCreatePackage(const wxString& projectFile);
 
         void OnClose(wxCloseEvent& event);
         void Test(wxCommandEvent& event);
@@ -331,7 +335,8 @@ class NumeReWindow : public wxFrame
         void LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid);
 
 
-        vector<string> getProcedureFileForInstaller(const string& sProcFileName, const string& sDefaultPath);
+        std::vector<std::string> getProcedureFileForInstaller(const std::string& sProcFileName, const std::string& sDefaultPath);
+        std::vector<std::string> getLayoutFileForInstaller(const std::string& sLayoutFileName);
         wxString ConstructFilterString(FileFilterType filterType);
         int FindString(const wxString &findString, int start_pos = -1, int flags = -1, bool highlight = TRUE);
         int ReplaceAllStrings(const wxString &findString, const wxString &replaceString, int flags = -1);
@@ -341,6 +346,7 @@ class NumeReWindow : public wxFrame
         void renameFile();
 
         void UpdateMenuBar();
+        void UpdatePackageMenu();
         void UpdateToolbar();
         void UpdateTerminalNotebook();
         void UpdateVarViewer();
@@ -466,10 +472,12 @@ class NumeReWindow : public wxFrame
         std::map<int, wxMenuItem*> m_menuItems;
         std::vector<std::pair<int, wxString> > m_modifiedFiles;
         std::map<wxWindow*, WindowType> m_openedWindows;
+        std::map<size_t, std::string> m_pluginMenuMap;
 
 
         wxString m_filterNSCRFiles;
         wxString m_filterNPRCFiles;
+        wxString m_filterNLYTFiles;
         wxString m_filterNumeReFiles;
         wxString m_filterExecutableFiles;
         wxString m_filterDataFiles;

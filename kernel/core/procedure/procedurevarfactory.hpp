@@ -60,6 +60,16 @@ class ProcedureVarFactory
         unsigned int nth_procedure;
         bool inliningMode;
 
+        enum VarType
+        {
+            NUMTYPE,
+            STRINGTYPE,
+            CLUSTERTYPE,
+            TABLETYPE
+        };
+
+        std::map<std::string,VarType> mLocalArgs;
+
         void init();
 
         string replaceProcedureName(string sProcedureName);
@@ -73,6 +83,7 @@ class ProcedureVarFactory
         void checkKeywordsInArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex);
         void createLocalInlineVars(string sVarList);
         void createLocalInlineStrings(string sVarList);
+        void evaluateProcedureArguments(const std::string& sArgumentList);
 
     public:
         string** sArgumentMap;
@@ -97,6 +108,7 @@ class ProcedureVarFactory
         ~ProcedureVarFactory();
 
         void reset();
+        bool isReference(const std::string& sArgName) const;
         map<string,string> createProcedureArguments(string sArgumentList, string sArgumentValues);
         void createLocalVars(string sVarList);
         void createLocalStrings(string sStringList);

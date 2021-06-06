@@ -253,7 +253,11 @@ wxString FileRevisions::diff(const wxString& revision1, const wxString& revision
 
     // Print the differences to a string stream
     std::ostringstream uniDiff;
-    uniDiff << "--- " << revisionID1 << "\n+++ " << revisionID2 << "\n";
+
+    // Get revision identifier
+    if (revisionID1.length() && revisionID2.length())
+        uniDiff << "--- " << revisionID1 << "\n+++ " << revisionID2 << "\n";
+
     diffFile.printUnifiedFormat(uniDiff);
 
     // Return the contents of the stream
@@ -793,7 +797,12 @@ size_t FileRevisions::addExternalRevision(const wxString& filePath)
 
     // Only add the external revision, if it actually
     // modified the file
-    if (getRevision(getCurrentRevision()) == revContent)
+    wxString currRev = getRevision(getCurrentRevision());
+    if (currRev == revContent)
+        return -1;
+
+    // Ensure that the diff is not actually empty
+    if (!diff(currRev, "", revContent, "").length())
         return -1;
 
     return createNewRevision(convertLineEndings(revContent), "External modification");

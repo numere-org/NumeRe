@@ -18,6 +18,7 @@
 
 #include "dataaccess.hpp"
 #include "../utils/tools.hpp"
+#include "../../kernel.hpp"
 #include <vector>
 
 using namespace std;
@@ -128,6 +129,32 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
         //_idx.row.setIndex(0,0);
         //_idx.col.setIndex(0,0);
         //return;
+
+    // FIXME: I do not like the check for string variables here
+    if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(_idx.sCompiledAccessEquation))
+    {
+        EndlessVector<std::string> idc = getAllArguments(_idx.sCompiledAccessEquation);
+        _idx.sCompiledAccessEquation.clear();
+
+        for (std::string& index : idc)
+        {
+            if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(index))
+            {
+                std::string sDummy;
+                bool isVector = index.front() == '{' && index.back() == '}';
+                NumeReKernel::getInstance()->getStringParser().evalAndFormat(index, sDummy, true);
+
+                if (isVector)
+                    index = "{" + index + "}";
+            }
+
+            if (_idx.sCompiledAccessEquation.length())
+                _idx.sCompiledAccessEquation += ",";
+
+            _idx.sCompiledAccessEquation += index;
+        }
+
+    }
 
     // If the argument contains a comma, handle it as a usual index list
     handleArgumentForIndices(_idx, _parser, _data, _idx.sCompiledAccessEquation, sCmd);

@@ -223,6 +223,12 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
 
                 if (sFlags.find("template") != std::string::npos)
                     nFlags |= ProcedureCommandLine::FLAG_TEMPLATE;
+
+                if (sFlags.find("macro") != std::string::npos)
+                    nFlags |= ProcedureCommandLine::FLAG_MACRO;
+
+                if (sFlags.find("test") != std::string::npos)
+                    nFlags |= ProcedureCommandLine::FLAG_TEST;
             }
 
             // Extract procedure name and argument list

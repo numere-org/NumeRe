@@ -4009,16 +4009,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
         bool openEnd = _idx.col.isOpenEnd();
 
         // fill the open end indices
-        if (_idx.row.isOpenEnd())
-        {
-            if (!_accessParser.isCluster())
-                _idx.row.setRange(0, _data.getLines(sDataTable, false)-1);
-            else
-                _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
-        }
-
-        if (!_accessParser.isCluster() && _idx.col.isOpenEnd())
-            _idx.col.setRange(0, _data.getCols(sDataTable, false)-1);
+        _accessParser.evalIndices();
 
         if (!_accessParser.isCluster())
         {
@@ -4082,7 +4073,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
 
                 break;
             default:
-                if (!(_pData.getBoxplot() || _pData.getBars() || _pData.getHBars()) || _pInfo.b2D)
+                if (!(_pData.getBoxplot() || _pData.getBars() || _pData.getHBars() || _pInfo.b2D))
                 {
                     // This section was commented to allow arrays of curves
                     // to be displayed in the plot
@@ -4097,6 +4088,8 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
                         _idx.col = vector<long long int>(vJ.begin() + 6, vJ.end());
                     }*/
                 }
+                else if (_pInfo.b2D)
+                    v_mDataPlots[i].resize(3);
                 else
                 {
                     if (_pData.getBars() || _pData.getHBars())
@@ -4134,7 +4127,7 @@ void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, const st
 {
     Indices& _idx = _accessParser.getIndices();
 
-    if (_idx.col.numberOfNodes() > 2)
+    if (_idx.col.numberOfNodes() > 2 && !_pInfo.b2D)
     {
         // A vector index was used. Insert a column index
         // if the current plot is a boxplot
@@ -4188,8 +4181,11 @@ void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, const st
 
         long long int nDataCols = _data.getCols(_accessParser.getDataObject());
 
+        size_t nNum = 0;
+
         // Needed for data grids
-        size_t nNum = _data.num(_accessParser.getDataObject(), _idx.row, VectorIndex(_idx.col.front()+1));
+        if (!_accessParser.isCluster())
+            nNum = _data.num(_accessParser.getDataObject(), _idx.row, VectorIndex(_idx.col.front()+1));
 
         // Fill the mglData objects using the single indices
         // and the referenced data object
@@ -4248,7 +4244,7 @@ void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, const st
                     throw SyntaxError(SyntaxError::TOO_FEW_COLS, _accessParser.getDataObject(), SyntaxError::invalid_position);
                 }
             }
-            else if (!_accessParser.isCluster() && v_mDataPlots[i].size() >= 3 && _idx.col.numberOfNodes() == 2)
+            else if (!_accessParser.isCluster() && v_mDataPlots[i].size() >= 3 && (_idx.col.numberOfNodes() == 2 || _pInfo.b2D))
             {
                 // These are xyz data values
                 // These columns are in correct order
@@ -4579,13 +4575,16 @@ void Plot::createDataLegends()
 /// \brief This member function is used to
 /// construct special legend elements.
 ///
-/// \param sColumnIndices const string&
+/// \param sColumnIndices string&
 /// \param sTableName const string&
 /// \return string
 ///
 /////////////////////////////////////////////////
-string Plot::constructDataLegendElement(const string& sColumnIndices, const string& sTableName)
+string Plot::constructDataLegendElement(string& sColumnIndices, const string& sTableName)
 {
+    if (NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(sColumnIndices))
+        getDataElements(sColumnIndices, _parser, NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+
     value_type* v = nullptr;
     int nResults = 0;
 

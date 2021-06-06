@@ -38,63 +38,15 @@ using namespace std;
 
 /////////////////////////////////////////////////
 /// \brief This class implements a single
-/// declared plugin. It can be constructed
+/// declared package. It can be constructed
 /// directly from an install information string.
 /// It also supports importing from and exporting
 /// to the plugin definition file.
 /////////////////////////////////////////////////
-class Plugin
+class Package
 {
     private:
-        string getOptionValue(const string& sInstallInfoString, const string& sOption, const string& sDefault);
-
-    public:
-        string sCommand;
-        string sMainProcedure;
-        string sArgumentList;
-        string sType;
-        string sName;
-        string sVersion;
-        string sAuthor;
-        string sDescription;
-        string sDocumentationIndexID;
-
-        Plugin();
-        Plugin(const string& sInstallInfoString);
-
-        string exportDefinition() const;
-        void importDefinition(string sDefinitionString);
-
-        bool operator==(const Plugin& _plugin) const;
-        bool operator!=(const Plugin& _plugin) const;
-        void update(const Plugin& _plugin);
-        void incrementVersion();
-};
-
-
-/////////////////////////////////////////////////
-/// \brief This class implements the procedure
-/// plugin system. It will be a parent class of
-/// the procedure class.
-///
-/// The plugin system is represented by dedicated
-/// NumeRe procedures, which one has to declare
-/// during plugin installation. This class will
-/// redirect the control to this dedicated "main"
-/// procedure once the plugin keyword has been
-/// found.
-/////////////////////////////////////////////////
-class PluginManager : public FileSystem
-{
-    private:
-        fstream fPlugins;
-        vector<Plugin> vPluginInfo;
-        string sPluginDefinitionFile;
-
-        string sPluginProcName;
-        string sPluginVarList;
-        void assign(const PluginManager& _pluginManager);
-        void updatePluginFile();
+        std::string getOptionValue(const std::string& sInstallInfoString, const std::string& sOption, const std::string& sDefault);
 
         /////////////////////////////////////////////////
         /// \brief This private member function removes
@@ -113,16 +65,73 @@ class PluginManager : public FileSystem
         }
 
     public:
-        PluginManager();
-        PluginManager(const PluginManager& _pluginManager);
-        ~PluginManager();
-        PluginManager& operator= (const PluginManager& _pluginManager);
+        std::string sCommand;
+        std::string sMainProcedure;
+        std::string sArgumentList;
+        std::string sType;
+        std::string sLicense;
+        std::string sName;
+        std::string sVersion;
+        std::string sAuthor;
+        std::string sDescription;
+        std::string sMenuEntry;
+        std::string sDocumentationIndexID;
+
+        Package();
+        Package(const std::string& sInstallInfoString);
+
+        std::string exportDefinition() const;
+        void importDefinition(std::string sDefinitionString);
+
+        bool isPlugin() const;
+        bool operator==(const Package& _plugin) const;
+        bool operator!=(const Package& _plugin) const;
+        void update(const Package& _plugin);
+        void incrementVersion();
+        std::string getName() const;
+        std::string getAuthor() const;
+        std::string getDescription() const;
+        std::string getLicense() const;
+        std::string getMenuEntry() const;
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This class implements the procedure
+/// plugin system. It will be a parent class of
+/// the procedure class.
+///
+/// The plugin system is represented by dedicated
+/// NumeRe procedures, which one has to declare
+/// during plugin installation. This class will
+/// redirect the control to this dedicated "main"
+/// procedure once the plugin keyword has been
+/// found.
+/////////////////////////////////////////////////
+class PackageManager : public FileSystem
+{
+    private:
+        fstream fPlugins;
+        vector<Package> vPackageInfo;
+        string sPluginDefinitionFile;
+
+        string sPluginProcName;
+        string sPluginVarList;
+        void assign(const PackageManager& _manager);
+        void updatePluginFile();
+
+    public:
+        PackageManager();
+        PackageManager(const PackageManager& _manager);
+        ~PackageManager();
+        PackageManager& operator= (const PackageManager& _manager);
 
         bool loadPlugins();
         bool evalPluginCmd(string& sCmd);
-        bool declareNewPlugin(const string& sInstallInfoString);
+        bool declareNewPackage(const string& sInstallInfoString);
         bool isPluginCmd(const string& sCmd) const;
-        string deletePlugin(const string& sPlugin);
+        string deletePackage(const string& sPackage);
+        std::map<std::string, std::string> getMenuMap() const;
 
         /////////////////////////////////////////////////
         /// \brief Returns the number of installed
@@ -131,8 +140,8 @@ class PluginManager : public FileSystem
         /// \return unsigned int
         ///
         /////////////////////////////////////////////////
-        inline unsigned int getPluginCount() const
-            {return vPluginInfo.size();}
+        inline unsigned int getPackageCount() const
+            {return vPackageInfo.size();}
 
         string getPluginInfoPath();
         void addHelpIndex(const string& _sPluginName, string _sHelpId);
@@ -148,8 +157,8 @@ class PluginManager : public FileSystem
         {
             string sReturn = ";";
 
-            for (unsigned int i = 0; i < vPluginInfo.size(); i++)
-                sReturn += vPluginInfo[i].sName + ";";
+            for (unsigned int i = 0; i < vPackageInfo.size(); i++)
+                sReturn += vPackageInfo[i].getName() + ";";
 
             return sReturn;
         }
@@ -184,8 +193,8 @@ class PluginManager : public FileSystem
         /////////////////////////////////////////////////
         inline string getPluginCommand(unsigned int i = 0) const
         {
-            if (i < vPluginInfo.size())
-                return vPluginInfo[i].sCommand;
+            if (i < vPackageInfo.size())
+                return vPackageInfo[i].sCommand;
 
             return "";
         }
@@ -198,10 +207,10 @@ class PluginManager : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginName(unsigned int i = 0) const
+        inline string getPackageName(unsigned int i = 0) const
         {
-            if (i < vPluginInfo.size())
-                return stripParentheses(vPluginInfo[i].sName);
+            if (i < vPackageInfo.size())
+                return vPackageInfo[i].getName();
 
             return "";
         }
@@ -214,10 +223,10 @@ class PluginManager : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginVersion(unsigned int i = 0) const
+        inline string getPackageVersion(unsigned int i = 0) const
         {
-            if (i < vPluginInfo.size())
-                return stripParentheses(vPluginInfo[i].sVersion);
+            if (i < vPackageInfo.size())
+                return vPackageInfo[i].sVersion;
 
             return "";
         }
@@ -229,10 +238,10 @@ class PluginManager : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginAuthor(unsigned int i = 0) const
+        inline string getPackageAuthor(unsigned int i = 0) const
         {
-            if (i < vPluginInfo.size())
-                return stripParentheses(vPluginInfo[i].sAuthor);
+            if (i < vPackageInfo.size())
+                return vPackageInfo[i].getAuthor();
 
             return "";
         }
@@ -245,10 +254,42 @@ class PluginManager : public FileSystem
         /// \return string
         ///
         /////////////////////////////////////////////////
-        inline string getPluginDesc(unsigned int i = 0) const
+        inline string getPackageDescription(unsigned int i = 0) const
         {
-            if (i < vPluginInfo.size())
-                return stripParentheses(vPluginInfo[i].sDescription);
+            if (i < vPackageInfo.size())
+                return vPackageInfo[i].getDescription();
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the license information of the
+        /// ith plugin.
+        ///
+        /// \param unsigned int i = 0
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        inline string getPackageLicense(unsigned int i = 0) const
+        {
+            if (i < vPackageInfo.size())
+                return vPackageInfo[i].getLicense();
+
+            return "";
+        }
+
+        /////////////////////////////////////////////////
+        /// \brief Returns the menu entry of the ith
+        /// plugin.
+        ///
+        /// \param unsigned int i = 0
+        /// \return string
+        ///
+        /////////////////////////////////////////////////
+        inline string getPluginMenuEntry(unsigned int i = 0) const
+        {
+            if (i < vPackageInfo.size())
+                return vPackageInfo[i].getMenuEntry();
 
             return "";
         }

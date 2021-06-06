@@ -29,7 +29,7 @@ extern value_type vAns;
 /////////////////////////////////////////////////
 /// \brief Default constructor
 /////////////////////////////////////////////////
-Procedure::Procedure() : FlowCtrl(), PluginManager(), _localDef(true)
+Procedure::Procedure() : FlowCtrl(), PackageManager(), _localDef(true)
 {
     // init the object
     init();
@@ -44,7 +44,7 @@ Procedure::Procedure() : FlowCtrl(), PluginManager(), _localDef(true)
 /// \param _procedure const Procedure&
 ///
 /////////////////////////////////////////////////
-Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), PluginManager(_procedure), _localDef(true)
+Procedure::Procedure(const Procedure& _procedure) : FlowCtrl(), PackageManager(_procedure), _localDef(true)
 {
     // Init the object
     init();
@@ -158,13 +158,29 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         return thisReturnVal;
     }
 
+    // Check for the "assert" command
+    if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
+        || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_ASSERT
+            && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
+    {
+        if (findCommand(sLine, "assert").sString == "assert")
+        {
+            _assertionHandler.enable(sLine);
+            sLine.erase(findCommand(sLine, "assert").nPos, 6);
+            StripSpaces(sLine);
+
+            if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
+                nByteCode |= ProcedureCommandLine::BYTECODE_ASSERT;
+        }
+    }
+
     // Handle the "to_cmd()" function, which is quite slow
     // Only handle this function, if we're not inside of a loop
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_TOCOMMAND
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
     {
-        if (sLine.find("to_cmd(") != string::npos && !getLoop())
+        if (sLine.find("to_cmd(") != string::npos)
         {
             unsigned int nPos = 0;
 
@@ -199,6 +215,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
                 if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                     nByteCode |= ProcedureCommandLine::BYTECODE_TOCOMMAND;
             }
+
             replaceLocalVars(sLine);
             sCurrentCommand = findCommand(sLine).sString;
         }
@@ -209,7 +226,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_THROWCOMMAND
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
     {
-        if (sCurrentCommand == "throw" && !getLoop())
+        if (sCurrentCommand == "throw")
         {
             string sErrorToken;
 
@@ -235,7 +252,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_PROMPT
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
     {
-        if (!getLoop() && sLine.find("??") != string::npos && sCurrentCommand != "help")
+        if (sLine.find("??") != string::npos && sCurrentCommand != "help")
         {
             sLine = promptForUserInput(sLine);
 
@@ -252,7 +269,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_COMMAND
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
     {
-        if (!getLoop()
+        if ((sCurrentCommand != "if" && sCurrentCommand != "for" && sCurrentCommand != "while" && sCurrentCommand != "switch")
             || sCurrentCommand == "help"
             || sCurrentCommand == "man"
             || sCurrentCommand == "quit"
@@ -309,7 +326,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
     if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
         || !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
     {
-        if (!getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
+        if (sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
         {
             if (!_functions.call(sLine))
                 throw SyntaxError(SyntaxError::FUNCTION_ERROR, sLine, SyntaxError::invalid_position);
@@ -454,6 +471,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         _parser.SetExpr(sLine);
 
     v = _parser.Eval(nNum);
+    _assertionHandler.checkAssertion(v, nNum);
 
     // Copy the return values
     if (nNum > 1)
@@ -769,6 +787,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         // Set the bytecode from the last calculation
         ProcElement->setByteCode(nCurrentByteCode | nByteCode, currentLine.first);
         bProcSupressAnswer = false;
+        _assertionHandler.reset();
 
         // Get the next line from one of the current active
         // command line sources
@@ -922,6 +941,15 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             _localDef.call(sProcCommandLine);
         }
 
+        // define the current command to be a flow control statement,
+        // if the procedure was not parsed already
+        if (nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED
+            && (sCurrentCommand == "if" || sCurrentCommand == "for" || sCurrentCommand == "while" || sCurrentCommand == "switch" || getLoop()))
+        {
+            nCurrentByteCode = ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT;
+            nByteCode |= ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT;
+        }
+
         // Handle breakpoints
         if (_option.useDebugger()
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT))
@@ -1049,33 +1077,36 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_PROCEDUREINTERFACE
                 && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
         {
-            if (!getLoop() && sCurrentCommand != "for" && sCurrentCommand != "if" && sCurrentCommand != "while" && sCurrentCommand != "switch")
+            // Handle procedure calls and plugins in the common
+            // virtual procedure interface function
+            try
             {
-                // Handle procedure calls and plugins in the common
-                // virtual procedure interface function
-                try
+                int nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure, 0);
+
+                // Only those two return values indicate that this line
+                // does contain a procedure or a plugin
+                if ((nRetVal == -2 || nRetVal == 2)
+                    && nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 {
-                    int nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure, 0);
-
-                    // Only those two return values indicate that this line
-                    // does contain a procedure or a plugin
-                    if ((nRetVal == -2 || nRetVal == 2)
-                        && nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
-                    {
-                        nByteCode |= ProcedureCommandLine::BYTECODE_PROCEDUREINTERFACE;
-                    }
-
-                    if (nRetVal < 0)
-                        continue;
+                    nByteCode |= ProcedureCommandLine::BYTECODE_PROCEDUREINTERFACE;
                 }
-                catch (...)
-                {
-                    _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
-                    _debugger.showError(current_exception());
 
-                    resetProcedure(_parser, bSupressAnswer_back);
-                    throw;
-                }
+                if (nRetVal < 0)
+                    continue;
+            }
+            catch (...)
+            {
+                _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
+                _debugger.showError(current_exception());
+
+                nCurrentByteCode = 0;
+                catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
+
+                // If the error is converted, we have to skip
+                // the remaining code, otherwise the procedure
+                // is called again in ProcCalc(). If it's not
+                // converted, this line won't be reached.
+                continue;
             }
         }
 
@@ -1097,7 +1128,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_THROWCOMMAND
                 && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
         {
-            if (sCurrentCommand == "throw" && !getLoop())
+            if (sCurrentCommand == "throw")
             {
                 string sErrorToken;
 
@@ -1133,7 +1164,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_RETURNCOMMAND
                 && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
         {
-            if (sCurrentCommand == "return" && !getLoop())
+            if (sCurrentCommand == "return")
             {
                 try
                 {
@@ -1165,8 +1196,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
                     _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
                     _debugger.showError(current_exception());
 
-                    resetProcedure(_parser, bSupressAnswer_back);
-                    throw;
+                    nCurrentByteCode = 0;
+                    catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
                 }
             }
         }
@@ -1188,8 +1219,8 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             _debugger.gatherInformations(_varFactory, sProcCommandLine, sCurrentProcedureName, GetCurrentLine());
             _debugger.showError(current_exception());
 
-            resetProcedure(_parser, bSupressAnswer_back);
-            throw;
+            nCurrentByteCode = 0;
+            catchExceptionForTest(current_exception(), bSupressAnswer_back, GetCurrentLine());
         }
 
         sProcCommandLine.clear();
@@ -1212,9 +1243,6 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             throw;
         }
     }
-
-    // Remove the current procedure from the call stack
-    NumeReKernel::getInstance()->getDebugger().popStackItem();
 
     if (nFlags & ProcedureCommandLine::FLAG_MASK)
     {
@@ -1775,7 +1803,7 @@ bool Procedure::writeProcedure(string sProcedureLine)
         fProcedure << endl;
         fProcedure << "#**" << _lang.get("PROC_END_OF_PROCEDURE") << endl;
         fProcedure << " * " << _lang.get("PROC_FOOTER") << endl;
-        fProcedure << " * https://sites.google.com/site/numereframework/" << endl;
+        fProcedure << " * https://www.numere.org/" << endl;
         fProcedure << " **" << std::setfill('*') << std::setw(_lang.get("PROC_FOOTER").length() + 1) << "#" << endl;
 
         fProcedure.close();
@@ -2377,6 +2405,80 @@ int Procedure::getErrorInformationForDebugger()
 
 
 /////////////////////////////////////////////////
+/// \brief This virtual member function is
+/// inserted in some automatically catchable
+/// locations to convert an error into a warning
+/// to avoid that the calculation is aborted.
+/// This will only get active, if the
+/// corresponding procedure is flagged as "test".
+///
+/// \param e_ptr exception_ptr
+/// \param bSupressAnswer_back bool
+/// \param nLine int
+/// \return int
+///
+/////////////////////////////////////////////////
+int Procedure::catchExceptionForTest(exception_ptr e_ptr, bool bSupressAnswer_back, int nLine)
+{
+    // Assure that the procedure is flagges as "test"
+    if (nFlags & ProcedureCommandLine::FLAG_TEST)
+    {
+        try
+        {
+            // Rethrow to determine the exception type
+            rethrow_exception(e_ptr);
+        }
+        catch (mu::Parser::exception_type& e)
+        {
+            // Catch and convert parser errors
+            NumeReKernel::getInstance()->getDebugger().finalizeTest();
+            NumeReKernel::failMessage("@" + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.GetExpr() + "'");
+        }
+        catch (SyntaxError& e)
+        {
+            // Catch and convert syntax errors with the exception
+            // of a user abort request
+            if (e.errorcode == SyntaxError::PROCESS_ABORTED_BY_USER)
+            {
+                // Rethrow the abort request
+                resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+                throw;
+            }
+            else if (e.getToken().length() && (e.errorcode == SyntaxError::PROCEDURE_THROW || e.errorcode == SyntaxError::LOOP_THROW))
+            {
+                // Display custom errors with their message
+                NumeReKernel::getInstance()->getDebugger().finalizeTest();
+                NumeReKernel::failMessage("@" + toString(nLine+1) + " | ERROR CAUGHT: " + e.getToken());
+            }
+            else
+            {
+                // Mark default errors only with the failing expression
+                NumeReKernel::getInstance()->getDebugger().finalizeTest();
+                NumeReKernel::failMessage("@" + toString(nLine+1) + " | FAILED EXPRESSION: '" + e.getExpr() + "'");
+            }
+        }
+        catch (...)
+        {
+            // All other exceptions are not catchable, because they refer
+            // to internal issues, for which it might not possible to
+            // handle them here
+            resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+            throw;
+        }
+    }
+    else
+    {
+        // If not a test, then simply reset the current procedure
+        // and rethrow the error
+        resetProcedure(NumeReKernel::getInstance()->getParser(), bSupressAnswer_back);
+        rethrow_exception(e_ptr);
+    }
+
+    return 0;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function will return the
 /// current line number depending on whether a
 /// flow control statement is evaluated or not.
@@ -2469,6 +2571,9 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
 /////////////////////////////////////////////////
 void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
 {
+    // Remove the current procedure from the call stack
+    NumeReKernel::getInstance()->getDebugger().popStackItem();
+
     sCallingNameSpace = "main";
     sNameSpace.clear();
     sThisNameSpace.clear();

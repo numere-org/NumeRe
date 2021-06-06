@@ -53,7 +53,9 @@ class ProcedureCommandLine
             FLAG_MASK = 0x4,
             FLAG_PRIVATE = 0x8,
             FLAG_TEMPLATE = 0x10,
-            FLAG_EVENT = 0x20
+            FLAG_EVENT = 0x20,
+            FLAG_MACRO = 0x40,
+            FLAG_TEST = 0x80
         };
 
         enum ByteCodes
@@ -76,7 +78,8 @@ class ProcedureCommandLine
             BYTECODE_BREAKCMD = 0x4000,
             BYTECODE_PROMPT = 0x8000,
             BYTECODE_RECURSIVEEXPRESSION = 0x10000,
-            BYTECODE_SUPPRESSANSWER = 0x20000
+            BYTECODE_SUPPRESSANSWER = 0x20000,
+            BYTECODE_ASSERT = 0x40000
         };
 
         enum Inlineable

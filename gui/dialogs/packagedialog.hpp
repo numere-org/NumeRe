@@ -23,6 +23,7 @@
 #include <wx/propgrid/propgrid.h>
 #include "../terminal/terminal.hpp"
 #include "../IconManager.h"
+
 #include <set>
 #include <string>
 
@@ -39,22 +40,38 @@ class PackageDialog : public wxDialog
         wxListView* m_fileList;
         NumeReTerminal* m_terminal;
         IconManager* m_icons;
+        bool m_isAutoIncrement;
 
         void OnAutoDetect(wxCommandEvent& event);
         void OnAddItems(wxCommandEvent& event);
         void OnRemoveItems(wxCommandEvent& event);
+        void OnLoadProjectFile(wxCommandEvent& event);
+        void OnSaveProjectFile(wxCommandEvent& event);
+        void OnCreatePackage(wxCommandEvent& event);
+        void OnAbort(wxCommandEvent& event);
+        void OnPropGridChange(wxPropertyGridEvent& event);
+        void OnClose(wxCloseEvent& event);
+
+        void SaveOnClose();
 
         void autoDetect(const wxArrayString& mainfiles);
         void followBranch(const std::string& sFile, std::set<std::string>& fileSet);
+        void findLayoutDependencies(const std::string& sFile, std::set<std::string>& fileSet);
+
+        void saveProjectFile(const wxString& filename);
+        void markUnsaved();
+        bool isSaved();
 
     public:
         PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons);
 
+        void loadProjectFile(const wxString& filename);
         void setMainFile(const wxString& mainfile);
         wxArrayString getProcedures();
         wxString getInstallInfo();
         wxString getPackageName();
         wxString getPackageIdentifier();
+        wxString getDocFile();
         bool includeDocs();
         bool isPlugin();
 

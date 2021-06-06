@@ -128,6 +128,9 @@ namespace NumeRe
         if (sLine.find_first_of("({") == string::npos)
             return sLine;
 
+        //getDataElements(sLine, NumeReKernel::getInstance()->getParser(), NumeReKernel::getInstance()->getMemoryManager(), NumeReKernel::getInstance()->getSettings());
+        //return sLine;
+
         // Replace calls to any table
         for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
         {
@@ -259,10 +262,27 @@ namespace NumeRe
             }
 
             string sData = sLine.substr(nStartPos, nEndPos - nStartPos + 1);
-            sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
 
-            // Get the data and parse string expressions
-            replaceDataEntities(sData, sOccurence, _data, _parser, _option, true);
+            // Is the current data access a method?
+            if (sData.find("().") != std::string::npos)
+            {
+                if (containsStringVectorVars(sData))
+                {
+                    bool temp;
+                    std::vector<string> vRes = evaluateStringVectors(sData);
+                    applyElementaryStringOperations(vRes, temp);
+                    sData = vRes.front();
+                }
+
+                getDataElements(sData, _parser, _data, _option, true);
+            }
+            else
+            {
+                sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
+
+                // Get the data and parse string expressions
+                replaceDataEntities(sData, sOccurence, _data, _parser, _option, true);
+            }
 
             // Strip the spaces, which have been added during the
             // calls to the data entities
@@ -1414,66 +1434,6 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function performs the
-    /// actual string concatenation of the passed
-    /// string expression.
-    ///
-    /// \param sExpr string&
-    /// \return void
-    ///
-    /// This member is called by
-    /// StringParser::applyElementaryStringOperations()
-    /// for the concatenation.
-    /////////////////////////////////////////////////
-    void StringParser::concatenateStrings(string& sExpr)
-    {
-        size_t nQuotes = 0;
-
-        for (unsigned int i = 0; i < sExpr.length(); i++)
-        {
-            if (sExpr[i] == '"' && (!i || sExpr[i-1] != '\\'))
-                nQuotes++;
-
-            // Search for the concatenation operator (aka "+")
-            if (!(nQuotes % 2) && sExpr[i] == '+')
-            {
-                string sLeft = sExpr.substr(0, i);
-                string sRight = sExpr.substr(i+1);
-
-                StripSpaces(sLeft);
-                StripSpaces(sRight);
-
-                // Determine the correct concatenation process
-                if (sLeft == "\"\"" && sRight != "\"\"")
-                {
-                    sExpr = " " + sRight;
-                    i = 0;
-                }
-                else if (sLeft != "\"\"" && sRight == "\"\"")
-                {
-                    sExpr = sLeft;
-                    break;
-                }
-                else if (sLeft.back() == '"' && sRight.front() == '"')
-                {
-                    sExpr = sLeft.substr(0, sLeft.length()-1) + sRight.substr(1);
-
-                    // We removed some characters
-                    i = sLeft.length()-2;
-
-                    // We're now part of a string
-                    nQuotes++;
-                }
-
-                // Everything not catched here is a strange mixture
-            }
-        }
-
-        StripSpaces(sExpr);
-    }
-
-
-    /////////////////////////////////////////////////
     /// \brief This public member function provides
     /// the string parser core functionality and is
     /// the function, which is called recursively.
@@ -1792,7 +1752,7 @@ namespace NumeRe
 
                             continue;
                         }
-                        else if (sVectorTemp.find('"') == string::npos)
+                        else if (sVectorTemp.find('"') == string::npos && !containsStringVectorVars(sVectorTemp))
                             continue;
                     }
 
@@ -1822,8 +1782,21 @@ namespace NumeRe
                     // vector from the parser using the numerical results
                     if (!tempres.bOnlyLogicals)
                         sVectorTemp = createStringVectorVar(tempres.vResult);
-                    else
+                    else if (tempres.vNumericalValues.size())
                         sVectorTemp = _parser.CreateTempVectorVar(tempres.vNumericalValues);
+                    else if (tempres.vResult.size() == 1 && tempres.vResult.front().find_first_of(":,") != std::string::npos)
+                    {
+                        _parser.SetExpr("{" + tempres.vResult.front() + "}");
+                        int nRes = 0;
+                        double* res = _parser.Eval(nRes);
+
+                        // Store the result in a vector and
+                        // create a temporary vector variable
+                        vector<double> vRes(res, res + nRes);
+                        sVectorTemp = _parser.CreateTempVectorVar(vRes);
+                    }
+                    // TODO: What happens in the remaining case of multiple
+                    // elements in tempres.vResult?
 
                     strExpr.sLine.replace(i, nmatching+1, sVectorTemp);
                 }
@@ -1898,6 +1871,10 @@ namespace NumeRe
         // Clear the internal string vector variables, because they're
         // all evaluated and processed now
         removeStringVectorVars();
+
+        // Check the results, if the assertion handler is active
+        // and the results are not logical only
+        _assertionHandler.checkAssertion(StrRes);
 
         // The result of the string parser core has to be parsed, so that
         // it is readable in the terminal. This is done here in this

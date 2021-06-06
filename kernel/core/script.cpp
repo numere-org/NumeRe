@@ -22,6 +22,8 @@
 #include "script.hpp"
 #include "../kernel.hpp"
 
+#include <algorithm>
+
 
 /////////////////////////////////////////////////
 /// \brief Default constructor
@@ -267,9 +269,14 @@ void Script::close()
         {
             bLastScriptCommand = false;
             nCurrentPackage++;
+
+            // Open the file and hope, it
+            // actually exist
             openScript(vInstallPackages[nCurrentPackage]);
+
             return;
         }
+
         if (vInstallPackages.size())
             sScriptFileName = vInstallPackages[0];
 
@@ -474,13 +481,15 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
         // Read all required packages
         while (sInstallPackages.length())
         {
-            // Ensure that the file name is valid
-            string sPackage = ValidFileName(sInstallPackages.substr(0,sInstallPackages.find(',')),".nscr");
+            // Get the next dependency
+            string sPackage = getNextArgument(sInstallPackages, true);
 
-            if (sInstallPackages.find(',') != string::npos)
-                sInstallPackages.erase(0,sInstallPackages.find(',')+1);
+            // Try to find the package in the packages
+            // folder first before using the main folder
+            if (fileExists(ValidFileName("packages/" + sPackage, ".nscr")))
+                sPackage = ValidFileName("packages/" + sPackage, ".nscr");
             else
-                sInstallPackages.clear();
+                sPackage = ValidFileName(sPackage, ".nscr");
 
             if (!sPackage.length())
                 continue;
@@ -490,23 +499,9 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
             {
                 vInstallPackages.push_back(sScriptFileName);
                 vInstallPackages.push_back(sPackage);
-
-                continue;
             }
-
-            // For all others: ensure that they are not already in the
-            // list. This is also ensures that the recursively installed
-            // packages are not installed multiple times
-            for (unsigned int i = 0; i < vInstallPackages.size(); i++)
-            {
-                if (vInstallPackages[i] == sPackage)
-                    break;
-                else if (i+1 == vInstallPackages.size())
-                {
-                    vInstallPackages.push_back(sPackage);
-                    break;
-                }
-            }
+            else if (std::find(vInstallPackages.begin(), vInstallPackages.end(), sPackage) == vInstallPackages.end())
+                vInstallPackages.push_back(sPackage);
         }
     }
 
@@ -524,6 +519,24 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
     // Throw an error, if the current version if NumeRe is too old
     if (nRequiredVersion > nNumereVersion)
         throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sScriptCommand, SyntaxError::invalid_position, toString(nRequiredVersion));
+
+    // Examine the license information
+    if (sInstallInfoString.find("license=") != std::string::npos)
+    {
+        std::string sLicense = getArgAtPos(sInstallInfoString, sInstallInfoString.find("license=")+8);
+        NumeReKernel::print(LineBreak(_lang.get("SCRIPT_INSTALL_LICENSE_AGREEMENT", sInstallID, sLicense), NumeReKernel::getInstance()->getSettings()));
+        NumeReKernel::printPreFmt("|<- ");
+
+        std::string sAnswer;
+        NumeReKernel::getline(sAnswer);
+
+        if (sAnswer.substr(0, 1) != _lang.YES())
+        {
+            NumeReKernel::print(_lang.get("SCRIPT_INSTALL_ABORT"));
+            close();
+            return false;
+        }
+    }
 
     if (!sScriptCommand.length())
         return false;
@@ -573,7 +586,7 @@ string Script::extractDocumentationIndex(string& sScriptCommand)
     }
 
     // Extract the article ID
-    sHelpID = getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3);
+    sHelpID = Documentation::getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3);
     StripSpaces(sHelpID);
 
     // Ensure that the article ID start with the plugin prefix
@@ -696,6 +709,107 @@ void Script::writeDocumentationArticle(string& sScriptCommand)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function writes the
+/// embedded window layout to the target file.
+///
+/// \param sScriptCommand std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Script::writeLayout(std::string& sScriptCommand)
+{
+    // create a valid file name
+    std::string sLayoutFileName = getArgAtPos(sScriptCommand, sScriptCommand.find_first_not_of(' ', 6));
+    sLayoutFileName = FileSystem::ValidFileName(sLayoutFileName, ".nlyt");
+    ofstream fLayoutFile(sLayoutFileName.c_str());
+
+    // Remove the file name
+    size_t nQuotes = 0;
+
+    for (size_t i = sScriptCommand.find_first_not_of(' ', 6); i < sScriptCommand.length(); i++)
+    {
+        if (sScriptCommand[i] == '"' && sScriptCommand[i-1] != '\\')
+            nQuotes++;
+
+        if (!(nQuotes % 2) && sScriptCommand[i] == ' ')
+        {
+            sScriptCommand = "layout " + sScriptCommand.substr(i);
+            break;
+        }
+        else if (i+1 == sScriptCommand.length())
+            sScriptCommand = "layout";
+    }
+
+    // Depending on whether the whole file was written in
+    // one line or multiple script lines
+    if (sScriptCommand.find("endlayout") != string::npos)
+    {
+        sScriptCommand.erase(sScriptCommand.find("endlayout")+9);
+
+        // Write the contents to the documentation article file
+        if (!fLayoutFile.fail())
+            fLayoutFile << sScriptCommand << endl;
+        else
+        {
+            fLayoutFile.close();
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sLayoutFileName);
+        }
+
+        fLayoutFile.close();
+    }
+    else
+    {
+        // Write the contents linewise to the documentation article file
+        if (!fLayoutFile.fail())
+        {
+            fLayoutFile << sScriptCommand << endl;
+
+            string sTemp;
+            size_t nIndent = 1;
+
+            // Read the contents linewise from the script
+            while (!fScript.eof())
+            {
+                getline(fScript, sTemp);
+                nLine++;
+                StripSpaces(sTemp);
+
+                if (sTemp.substr(0, 8) == "endgroup" || sTemp.substr(0, 9) == "endlayout")
+                    nIndent--;
+
+                sTemp.insert(0, nIndent, '\t');
+
+                // Try to find the end of the current documentation article
+                if (sTemp.find("endlayout") == string::npos)
+                {
+                    // Write the current line
+                    fLayoutFile << sTemp << endl;
+                }
+                else
+                {
+                    // Write the last line
+                    fLayoutFile << sTemp.substr(0, sTemp.find("endlayout")+9) << endl;
+                    break;
+                }
+
+                if (sTemp.substr(nIndent, 5) == "group")
+                    nIndent++;
+            }
+        }
+        else
+        {
+            fLayoutFile.close();
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sLayoutFileName);
+        }
+
+        fLayoutFile.close();
+    }
+
+    sScriptCommand.clear();
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function evaluates the
 /// flags from the installation information
 /// string and also removes unnecessary comments.
@@ -706,8 +820,8 @@ void Script::writeDocumentationArticle(string& sScriptCommand)
 /////////////////////////////////////////////////
 void Script::evaluateInstallInformation(bool& bFirstPassedInstallCommand)
 {
-    if (sInstallInfoString.length() && !bFirstPassedInstallCommand)
-        sInstallInfoString = "";
+    //if (sInstallInfoString.length() && !bFirstPassedInstallCommand)
+    //    sInstallInfoString = "";
 
     if (sInstallInfoString.length())
     {
@@ -889,6 +1003,13 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         if (sScriptCommand.substr(0,10) == "<helpfile>" && bInstallProcedures)
         {
             writeDocumentationArticle(sScriptCommand);
+            continue;
+        }
+
+        // Write window layouts
+        if (sScriptCommand.substr(0, 7) == "layout ")
+        {
+            writeLayout(sScriptCommand);
             continue;
         }
 

@@ -20,9 +20,31 @@
 /*
  * Implementierung der Parser-Funktionen
  */
-
 #include "functionimplementation.hpp"
+#define _USE_MATH_DEFINES
+
+#include <cstdlib>
+#include <cmath>
+#include <fstream>
+#include <string>
+#include <iostream>
+#include <locale>
+#include <limits>
+#include <ios>
+#include <iomanip>
+#include <numeric>
+#include <ctime>
+#include <random>
+#include <csignal>
+#include <boost/math/common_factor.hpp>
+#include <gsl/gsl_sf.h>
+#include <boost/math/distributions/students_t.hpp>
 #include <noise/noise.h>
+
+#include "../datamanagement/memorymanager.hpp"
+#include "../utils/tools.hpp"
+#include "../version.h"
+
 
 int nErrorIndices[2] = {-1,-1};
 string sErrorToken = "";
@@ -379,6 +401,7 @@ value_type parser_Knoten(value_type v)
     return v * 463.0 / 900.0;
 }
 
+
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1l.
 ///
@@ -422,6 +445,7 @@ value_type parser_mph(value_type v)
         return NAN;
     return v * 1.609334 / 3.6;
 }
+
 
 /////////////////////////////////////////////////
 /// \brief Conversion function for 1°C.
@@ -1669,6 +1693,7 @@ value_type parser_phi(value_type x, value_type y)
     return atan2(y,x);
 }
 
+
 // --> Polarwinkel theta <--
 /////////////////////////////////////////////////
 /// \brief This function calculates the angle of
@@ -2408,6 +2433,27 @@ value_type parser_sleep(value_type milliseconds)
 {
     Sleep(intCast(milliseconds));
     return intCast(milliseconds);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Calculates the logarithm of x using
+/// the base b.
+///
+/// \param b value_type
+/// \param x value_type
+/// \return value_type
+///
+/////////////////////////////////////////////////
+value_type parser_log_b(value_type b, value_type x)
+{
+    if (isnan(b) || isnan(x) || isinf(b) || x <= 0.0 || b <= 0.0)
+        return NAN;
+
+    if (isinf(x))
+        return INFINITY;
+
+    return log10(x) / log10(b);
 }
 
 

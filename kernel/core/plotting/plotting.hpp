@@ -94,7 +94,7 @@ class Plot
         void extractDataValues(const std::vector<std::string>& vDataPlots, const std::string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2]);
         void getValuesFromData(DataAccessParser& _accessParser, size_t i, const std::string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], bool openEnd);
         void createDataLegends();
-        string constructDataLegendElement(const string& sColumnIndices, const string& sTableName);
+        string constructDataLegendElement(string& sColumnIndices, const string& sTableName);
         void calculateDataRanges(const string& sDataAxisBinds, double dDataRanges[3][2], double dSecDataRanges[2][2], int i, int l, const VectorIndex& _vLine, size_t numberofColNodes = 2);
         size_t countValidElements(const mglData& _mData);
         void separateLegends();

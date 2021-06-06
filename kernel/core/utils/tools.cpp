@@ -1766,7 +1766,7 @@ static size_t isStringContinuation(const std::string& sCmd, size_t pos)
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void parseArg(std::string& sArg)
+static void parseArg(std::string& sArg, bool bAsInt)
 {
     NumeReKernel* instance = NumeReKernel::getInstance();
 
@@ -1803,7 +1803,10 @@ static void parseArg(std::string& sArg)
         if (sArg.length())
             sArg += ",";
 
-        sArg += toString(v[i], nPrec);
+        if (bAsInt)
+            sArg += toString(intCast(v[i]));
+        else
+            sArg += toString(v[i], nPrec);
     }
 }
 
@@ -1867,7 +1870,7 @@ string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction)
 
     // Parse the argument, if necessary
     if (extraction & ARGEXTRACT_PARSED)
-        parseArg(sArgument);
+        parseArg(sArgument, (extraction & ARGEXTRACT_ASINT));
 
     // Strip the argument, if necessary
     if (extraction & ARGEXTRACT_STRIPPED)
@@ -3978,5 +3981,47 @@ std::string shortenFileName(const std::string& sFullFileName)
     }
 
     return sFileName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Increments a MAJOR.MINOR.BUILD version
+/// string by one build count.
+///
+/// \param _sVer std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string incrementVersion(std::string _sVer)
+{
+	// Remove the dots in the version string
+    for (unsigned int n = 0; n < _sVer.length(); n++)
+    {
+        if (_sVer[n] == '.')
+        {
+            _sVer.erase(n, 1);
+            n--;
+        }
+    }
+
+    // Increment the version by one (corresponds to
+    // the build count)
+    int nVersion = StrToInt(_sVer);
+    nVersion++;
+    _sVer = toString(nVersion);
+
+    // Prepend zeroes, if the length is shorter than
+    // three
+    if (_sVer.length() < 3)
+        _sVer.insert(0, 3-_sVer.length(), '0');
+
+    // Convert the version string into the M.m.b format
+    for (unsigned int n = 1; n < _sVer.length(); n++)
+    {
+        if (n % 2)
+            _sVer.insert(n, 1, '.');
+    }
+
+    return _sVer;
 }
 

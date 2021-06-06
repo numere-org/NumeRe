@@ -278,9 +278,9 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
     }
 
     // Write the headline to the fitting logfile
-    oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
+    oFitLog << std::setw(156) << std::setfill('=') << '=' << endl;
     oFitLog << toUpperCase(_lang.get("PARSERFUNCS_FIT_HEADLINE")) << ": " << getTimeStamp(false) << endl;
-    oFitLog << std::setw(76) << std::setfill('=') << '=' << endl;
+    oFitLog << std::setw(156) << std::setfill('=') << '=' << endl;
 
     // Write the fitting options table to the log file
     oFitLog << getFitOptionsTable(_fControl, fitData, sFuncDisplay, sFittedFunction, sDimsForFitLog, dChisq, paramsMap, nSize, true) << endl;
@@ -295,9 +295,9 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
         oFitLog << _lang.get("PARSERFUNCS_FIT_LOG_TABLEHEAD2") << endl;
 
     // Write the fitting parameter table to the logfile
-    oFitLog << std::setw(76) << std::setfill('-') << '-' << endl;
-    oFitLog << getParameterTable(fitData, paramsMap, vInitialVals, 80, sPMSign, true);
-    oFitLog << std::setw(76) << std::setfill('-') << '-' << endl;
+    oFitLog << std::setw(156) << std::setfill('-') << '-' << endl;
+    oFitLog << getParameterTable(fitData, paramsMap, vInitialVals, 160, sPMSign, true);
+    oFitLog << std::setw(156) << std::setfill('-') << '-' << endl;
 
 
     if (_option.systemPrints())
@@ -836,7 +836,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 nDim = 3;
 
-                if (_idx.col.size() < _idx.row.size() + 2)
+                if (_idx.col.size() < _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)) + 2)
                     throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
         }
@@ -853,7 +853,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 nDim = 5;
 
-                if (_idx.col.size() < 3 * _idx.row.size() + 2)
+                if (_idx.col.size() < 3 * _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)) + 2)
                     throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
         }
@@ -1497,7 +1497,7 @@ static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap
         // Write the single fitting parameter line including
         // parameter name, initial and final value and errors
         sParameterTable += pItem->first + "    "
-            + strfill(toString(vInitialVals[n], _option), (windowSize - 32) / 2 + windowSize % 2 - pItem->first.length())
+            + strfill(toString(vInitialVals[n], _option), (pItem->first.length() > (windowSize - 32) / 2 + windowSize % 2 ? 0u : (windowSize - 32) / 2 + windowSize % 2 - pItem->first.length()))
             + strfill(toString(*(pItem->second), _option), (windowSize - 50) / 2)
             + strfill(sPMSign + " " + toString(sqrt(abs(fitData.vz_w[n][n])), 5), 16);
 

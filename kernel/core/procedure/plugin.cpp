@@ -30,7 +30,7 @@
 /////////////////////////////////////////////////
 /// \brief Default constructor.
 /////////////////////////////////////////////////
-Plugin::Plugin() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("TYPE_UNSPECIFIED"), sName("Plugin"), sVersion("<AUTO>"), sAuthor("User"), sDescription("Description"), sDocumentationIndexID("")
+Package::Package() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("TYPE_UNSPECIFIED"), sLicense(""), sName("Plugin"), sVersion("<AUTO>"), sAuthor("User"), sDescription("Description"), sMenuEntry(""), sDocumentationIndexID("")
 { }
 
 
@@ -39,20 +39,25 @@ Plugin::Plugin() : sCommand(""), sMainProcedure(""), sArgumentList(""), sType("T
 /// internal attributes using the passed install
 /// information string.
 ///
-/// \param sInstallInfoString const string&
+/// \param sInstallInfoString const std::string&
 ///
 /////////////////////////////////////////////////
-Plugin::Plugin(const string& sInstallInfoString) : Plugin()
+Package::Package(const std::string& sInstallInfoString) : Package()
 {
     // Get the options values from the string
     sCommand = getOptionValue(sInstallInfoString, "plugincommand", "");
     sMainProcedure = getOptionValue(sInstallInfoString, "pluginmain", "");
     sArgumentList = getOptionValue(sInstallInfoString, "pluginmain", "");
+    sMenuEntry = getOptionValue(sInstallInfoString, "pluginmenuentry", "");
     sType = getOptionValue(sInstallInfoString, "type", "TYPE_UNSPECIFIED");
+    sLicense = getOptionValue(sInstallInfoString, "license", "???");
     sName = getOptionValue(sInstallInfoString, "name", "Plugin");
     sVersion = getOptionValue(sInstallInfoString, "version", "<AUTO>");
     sAuthor = getOptionValue(sInstallInfoString, "author", "User");
-    sDescription = getOptionValue(sInstallInfoString, "plugindesc", "Description");
+    sDescription = getOptionValue(sInstallInfoString, "desc", "Description");
+
+    if (!sDescription.length())
+        sDescription = getOptionValue(sInstallInfoString, "plugindesc", "Description");
 
     // If the main procedure was defined, separate it
     // here into name and argument list
@@ -74,13 +79,13 @@ Plugin::Plugin(const string& sInstallInfoString) : Plugin()
 /// replaces it by its default value, if it does
 /// not exist.
 ///
-/// \param sInstallInfoString const string&
-/// \param sOption const string&
-/// \param sDefault const string&
-/// \return string
+/// \param sInstallInfoString const std::string&
+/// \param sOption const std::string&
+/// \param sDefault const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string Plugin::getOptionValue(const string& sInstallInfoString, const string& sOption, const string& sDefault)
+std::string Package::getOptionValue(const std::string& sInstallInfoString, const std::string& sOption, const std::string& sDefault)
 {
     // Option is available? If no,
     // return the default value
@@ -116,25 +121,25 @@ string Plugin::getOptionValue(const string& sInstallInfoString, const string& sO
 /// \return string
 ///
 /////////////////////////////////////////////////
-string Plugin::exportDefinition() const
+string Package::exportDefinition() const
 {
-    return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + ",";
+    return sCommand + "," + sMainProcedure + "," + sArgumentList + "," + sType + "," + sName + "," + sVersion + "," + sAuthor + "," + sDescription + "," + sDocumentationIndexID + "," + sLicense + "," + sMenuEntry + ",";
 }
 
 
 /////////////////////////////////////////////////
 /// \brief This member function will import the
-/// plugin definition from the passed definition
+/// package definition from the passed definition
 /// string.
 ///
-/// \param sDefinitionString string
+/// \param sDefinitionString std::string
 /// \return void
 ///
-/// \remark A default constructed Plugin object
+/// \remark A default constructed Package object
 /// is assumed by this member function.
 ///
 /////////////////////////////////////////////////
-void Plugin::importDefinition(string sDefinitionString)
+void Package::importDefinition(std::string sDefinitionString)
 {
     sCommand = getNextArgument(sDefinitionString, true);
     sMainProcedure = getNextArgument(sDefinitionString, true);
@@ -161,6 +166,29 @@ void Plugin::importDefinition(string sDefinitionString)
         return;
 
     sDocumentationIndexID = getNextArgument(sDefinitionString, true);
+
+    if (!sDefinitionString.length())
+        return;
+
+    sLicense = getNextArgument(sDefinitionString, true);
+
+    if (!sDefinitionString.length())
+        return;
+
+    sMenuEntry = getNextArgument(sDefinitionString, true);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns, whether the current package
+/// provides plugin functionalities.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Package::isPlugin() const
+{
+    return sType.substr(0, 11) == "TYPE_PLUGIN";
 }
 
 
@@ -168,13 +196,13 @@ void Plugin::importDefinition(string sDefinitionString)
 /// \brief This member function is an overload
 /// for the equality comparison operator.
 ///
-/// \param _plugin const Plugin&
+/// \param _package const Package&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Plugin::operator==(const Plugin& _plugin) const
+bool Package::operator==(const Package& _package) const
 {
-    return _plugin.sCommand == sCommand && _plugin.sName == sName && _plugin.sAuthor == sAuthor;
+    return _package.sCommand == sCommand && _package.sName == sName && _package.sAuthor == sAuthor;
 }
 
 
@@ -182,80 +210,115 @@ bool Plugin::operator==(const Plugin& _plugin) const
 /// \brief This member function is an overload
 /// for the inequality comparison operator.
 ///
-/// \param _plugin const Plugin&
+/// \param _package const Package&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Plugin::operator!=(const Plugin& _plugin) const
+bool Package::operator!=(const Package& _package) const
 {
-    return !operator==(_plugin);
+    return !operator==(_package);
 }
 
 
 /////////////////////////////////////////////////
 /// \brief This member function can be used to
-/// update a plugin definition with a newer
+/// update a package definition with a newer
 /// definition. It will automatically increment
-/// the plugin version, if necessary.
+/// the packge version, if necessary.
 ///
-/// \param _plugin const Plugin&
+/// \param _package const Package&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plugin::update(const Plugin& _plugin)
+void Package::update(const Package& _package)
 {
-    sMainProcedure = _plugin.sMainProcedure;
-    sArgumentList = _plugin.sArgumentList;
-    sType = _plugin.sType;
-    sName = _plugin.sName;
-    sAuthor = _plugin.sAuthor;
-    sDescription = _plugin.sDescription;
+    sMainProcedure = _package.sMainProcedure;
+    sArgumentList = _package.sArgumentList;
+    sType = _package.sType;
+    sName = _package.sName;
+    sAuthor = _package.sAuthor;
+    sDescription = _package.sDescription;
+    sLicense = _package.sLicense;
 
     // Do we need to increment the current
-    // plugin version?
-    if (_plugin.sVersion == "<AUTO>")
+    // package version?
+    if (_package.sVersion == "<AUTO>")
         incrementVersion();
     else
-        sVersion = _plugin.sVersion;
+        sVersion = _package.sVersion;
 }
 
 
 /////////////////////////////////////////////////
 /// \brief This member function will increment
-/// the plugin version number by a build count.
+/// the package version number by a build count.
 ///
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plugin::incrementVersion()
+void Package::incrementVersion()
 {
-	// Remove the dots in the version string
-    for (unsigned int n = 0; n < sVersion.length(); n++)
-    {
-        if (sVersion[n] == '.')
-        {
-            sVersion.erase(n, 1);
-            n--;
-        }
-    }
+    sVersion = ::incrementVersion(sVersion);
+}
 
-    // Increment the version by one (corresponds to
-    // the build count)
-    int nVersion = StrToInt(sVersion);
-    nVersion++;
-    sVersion = toString(nVersion);
 
-    // Prepend zeroes, if the length is shorter than
-    // three
-    if (sVersion.length() < 3)
-        sVersion.insert(0, 3-sVersion.length(), '0');
+/////////////////////////////////////////////////
+/// \brief Returns the package name.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Package::getName() const
+{
+    return stripParentheses(sName);
+}
 
-    // Convert the version string into the M.m.b format
-    for (unsigned int n = 1; n < sVersion.length(); n++)
-    {
-        if (n % 2)
-            sVersion.insert(n, 1, '.');
-    }
+
+/////////////////////////////////////////////////
+/// \brief Returns the package author.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Package::getAuthor() const
+{
+    return stripParentheses(sAuthor);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the package description.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Package::getDescription() const
+{
+    return stripParentheses(sDescription);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the package license.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Package::getLicense() const
+{
+    return stripParentheses(sLicense);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the menu entry of this plugin.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Package::getMenuEntry() const
+{
+    return stripParentheses(sMenuEntry);
 }
 
 
@@ -271,7 +334,7 @@ void Plugin::incrementVersion()
 /////////////////////////////////////////////////
 /// \brief PluginManager default constructor.
 /////////////////////////////////////////////////
-PluginManager::PluginManager() : FileSystem()
+PackageManager::PackageManager() : FileSystem()
 {
     sPluginDefinitionFile = "<>/numere.plugins";
     sPluginProcName = "";
@@ -282,12 +345,12 @@ PluginManager::PluginManager() : FileSystem()
 /////////////////////////////////////////////////
 /// \brief PluginManager copy constructor.
 ///
-/// \param _pluginManager const PluginManager&
+/// \param _manager const PluginManager&
 ///
 /////////////////////////////////////////////////
-PluginManager::PluginManager(const PluginManager& _pluginManager) : PluginManager()
+PackageManager::PackageManager(const PackageManager& _manager) : PackageManager()
 {
-    assign(_pluginManager);
+    assign(_manager);
 }
 
 
@@ -295,13 +358,13 @@ PluginManager::PluginManager(const PluginManager& _pluginManager) : PluginManage
 /// \brief This private member function handles
 /// the actual copy process.
 ///
-/// \param _pluginManager const PluginManager&
+/// \param _manager const PluginManager&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PluginManager::assign(const PluginManager& _pluginManager)
+void PackageManager::assign(const PackageManager& _manager)
 {
-    vPluginInfo = _pluginManager.vPluginInfo;
+    vPackageInfo = _manager.vPackageInfo;
 }
 
 
@@ -309,7 +372,7 @@ void PluginManager::assign(const PluginManager& _pluginManager)
 /// \brief PluginManager destructor. Will close
 /// the internal file stream if it is still open.
 /////////////////////////////////////////////////
-PluginManager::~PluginManager()
+PackageManager::~PackageManager()
 {
     if (fPlugins.is_open())
         fPlugins.close();
@@ -320,13 +383,13 @@ PluginManager::~PluginManager()
 /// \brief This is the overload for the
 /// assignment operator.
 ///
-/// \param _pluginManager const PluginManager&
+/// \param _manager const PluginManager&
 /// \return PluginManager&
 ///
 /////////////////////////////////////////////////
-PluginManager& PluginManager::operator=(const PluginManager& _pluginManager)
+PackageManager& PackageManager::operator=(const PackageManager& _manager)
 {
-    assign(_pluginManager);
+    assign(_manager);
     return *this;
 }
 
@@ -339,7 +402,7 @@ PluginManager& PluginManager::operator=(const PluginManager& _pluginManager)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PluginManager::updatePluginFile()
+void PackageManager::updatePluginFile()
 {
     sPluginDefinitionFile = FileSystem::ValidFileName(sPluginDefinitionFile, ".plugins");
 
@@ -350,9 +413,9 @@ void PluginManager::updatePluginFile()
         throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sPluginDefinitionFile);
 
     // Write the contents to file
-    for (unsigned int i = 0; i < vPluginInfo.size(); i++)
+    for (unsigned int i = 0; i < vPackageInfo.size(); i++)
     {
-        fPlugins << vPluginInfo[i].exportDefinition() << endl;
+        fPlugins << vPackageInfo[i].exportDefinition() << endl;
     }
 
     fPlugins.close();
@@ -368,7 +431,7 @@ void PluginManager::updatePluginFile()
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool PluginManager::loadPlugins()
+bool PackageManager::loadPlugins()
 {
     string sLine = "";
 
@@ -390,8 +453,8 @@ bool PluginManager::loadPlugins()
         {
             // Create a new Plugin instance and import
             // the definition
-            vPluginInfo.push_back(Plugin());
-            vPluginInfo.back().importDefinition(sLine);
+            vPackageInfo.push_back(Package());
+            vPackageInfo.back().importDefinition(sLine);
         }
     }
 
@@ -411,23 +474,23 @@ bool PluginManager::loadPlugins()
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool PluginManager::evalPluginCmd(string& sCmd)
+bool PackageManager::evalPluginCmd(string& sCmd)
 {
     string sExpr = "";
     string sParams = "";
     string sCommand = "";
     string sCommandLine = "";
-    Plugin _plugin;
+    Package _plugin;
 
-    if (!vPluginInfo.size())
+    if (!vPackageInfo.size())
         return false;
 
     // Find the plugin definition
-    for (unsigned int i = 0; i < vPluginInfo.size(); i++)
+    for (unsigned int i = 0; i < vPackageInfo.size(); i++)
     {
-        if (findCommand(sCmd, vPluginInfo[i].sCommand).sString == vPluginInfo[i].sCommand)
+        if (findCommand(sCmd, vPackageInfo[i].sCommand).sString == vPackageInfo[i].sCommand)
         {
-            _plugin = vPluginInfo[i];
+            _plugin = vPackageInfo[i];
             break;
         }
     }
@@ -490,10 +553,13 @@ bool PluginManager::evalPluginCmd(string& sCmd)
             sCommandLine.insert(i,1,'\\');
     }
 
-    for (unsigned int i = 1; i < sParams.length()-1; i++)
+    if (sParams.length())
     {
-        if (sParams[i] == '"' && sParams[i-1] != '\\')
-            sParams.insert(i,1,'\\');
+        for (unsigned int i = 1; i < sParams.length()-1; i++)
+        {
+            if (sParams[i] == '"' && sParams[i-1] != '\\')
+                sParams.insert(i,1,'\\');
+        }
     }
 
     // Replace the procedure argument list with the
@@ -528,13 +594,13 @@ bool PluginManager::evalPluginCmd(string& sCmd)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool PluginManager::declareNewPlugin(const string& sInstallInfoString)
+bool PackageManager::declareNewPackage(const string& sInstallInfoString)
 {
     static string sProtectedCommands = ";quit;help;find;uninstall;install;credits;about;continue;break;var;tab;global;throw;namespace;return;abort;explicit;str;if;else;elseif;endif;while;endwhile;for;endfor;switch;case;default;endswitch;";
     bool bAllowOverride = false;
 
     // Create the new plugin
-    Plugin _plugin(sInstallInfoString);
+    Package _package(sInstallInfoString);
 
     // Determine, whether a forced override is
     // allowed
@@ -545,56 +611,65 @@ bool PluginManager::declareNewPlugin(const string& sInstallInfoString)
     }
 
     // Ensure that the necessary information has been provided
-    if (!_plugin.sCommand.length())
-        throw SyntaxError(SyntaxError::PLUGIN_HAS_NO_CMD, "", SyntaxError::invalid_position);
+    // if the new package is a plugin
+    if (_package.isPlugin())
+    {
+        if (!_package.sCommand.length())
+            throw SyntaxError(SyntaxError::PLUGIN_HAS_NO_CMD, "", SyntaxError::invalid_position);
 
-    if (sProtectedCommands.find(";" + _plugin.sCommand + ";") != string::npos)
-        throw SyntaxError(SyntaxError::PLUGIN_MAY_NOT_OVERRIDE, "", SyntaxError::invalid_position, _plugin.sCommand);
+        if (sProtectedCommands.find(";" + _package.sCommand + ";") != string::npos)
+            throw SyntaxError(SyntaxError::PLUGIN_MAY_NOT_OVERRIDE, "", SyntaxError::invalid_position, _package.sCommand);
 
-    if (!_plugin.sMainProcedure.length())
-        throw SyntaxError(SyntaxError::PLUGIN_HAS_NO_MAIN, "", SyntaxError::invalid_position);
+        if (!_package.sMainProcedure.length())
+            throw SyntaxError(SyntaxError::PLUGIN_HAS_NO_MAIN, "", SyntaxError::invalid_position);
+    }
 
     // Append the plugin or override an existing one
-    if (vPluginInfo.size())
+    if (vPackageInfo.size())
     {
-        for (unsigned int i = 0; i < vPluginInfo.size(); i++)
+        for (unsigned int i = 0; i < vPackageInfo.size(); i++)
         {
             // Identical plugin command found?
-            if (vPluginInfo[i].sCommand == _plugin.sCommand)
+            if (_package.isPlugin() && vPackageInfo[i].sCommand == _package.sCommand)
             {
                 // Plugin is identical or forced override is enabled
-                if (vPluginInfo[i] == _plugin || bAllowOverride)
+                if (vPackageInfo[i] == _package || bAllowOverride)
                 {
                     // Plugin names have to be unique: ensure that there's no
                     // duplicate
-                    for (unsigned int j = i+1; j < vPluginInfo.size(); j++)
+                    for (unsigned int j = i+1; j < vPackageInfo.size(); j++)
                     {
-                        if (vPluginInfo[j].sName == _plugin.sName && vPluginInfo[j] != _plugin)
-                            throw SyntaxError(SyntaxError::PLUGINNAME_ALREADY_EXISTS, "", SyntaxError::invalid_position, stripParentheses(_plugin.sName));
+                        if (vPackageInfo[j].sName == _package.sName && vPackageInfo[j] != _package)
+                            throw SyntaxError(SyntaxError::PLUGINNAME_ALREADY_EXISTS, "", SyntaxError::invalid_position, _package.getName());
                     }
 
                     // Update the existing plugin
-                    vPluginInfo[i].update(_plugin);
+                    vPackageInfo[i].update(_package);
                 }
                 else
-                    throw SyntaxError(SyntaxError::PLUGINCMD_ALREADY_EXISTS, "", SyntaxError::invalid_position, _plugin.sCommand);
+                    throw SyntaxError(SyntaxError::PLUGINCMD_ALREADY_EXISTS, "", SyntaxError::invalid_position, _package.sCommand);
 
                 break;
             }
-            else if (vPluginInfo[i].sName == _plugin.sName)
+            else if (vPackageInfo[i].sName == _package.sName)
             {
                 // Plugin names have to be unique
-                if (vPluginInfo[i] != _plugin)
-                    throw SyntaxError(SyntaxError::PLUGINNAME_ALREADY_EXISTS, "", SyntaxError::invalid_position, stripParentheses(_plugin.sName));
+                if (vPackageInfo[i] != _package)
+                    throw SyntaxError(SyntaxError::PLUGINNAME_ALREADY_EXISTS, "", SyntaxError::invalid_position, _package.getName());
+
+                vPackageInfo[i] = _package;
+                break;
             }
 
             // Nothing found? Simply append the new plugin
-            if (i == vPluginInfo.size()-1)
+            if (i == vPackageInfo.size()-1)
             {
-                vPluginInfo.push_back(_plugin);
+                vPackageInfo.push_back(_package);
 
-                if (vPluginInfo.back().sVersion == "<AUTO>")
-                    vPluginInfo.back().sVersion = "0.0.1";
+                if (vPackageInfo.back().sVersion == "<AUTO>")
+                    vPackageInfo.back().sVersion = "0.0.1";
+
+                break;
             }
         }
     }
@@ -602,10 +677,10 @@ bool PluginManager::declareNewPlugin(const string& sInstallInfoString)
     {
         // No plugin installed? Simply append the
         // new plugin
-        vPluginInfo.push_back(_plugin);
+        vPackageInfo.push_back(_package);
 
-        if (vPluginInfo.back().sVersion == "<AUTO>")
-            vPluginInfo.back().sVersion = "0.0.1";
+        if (vPackageInfo.back().sVersion == "<AUTO>")
+            vPackageInfo.back().sVersion = "0.0.1";
     }
 
     updatePluginFile();
@@ -625,34 +700,34 @@ bool PluginManager::declareNewPlugin(const string& sInstallInfoString)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void PluginManager::addHelpIndex(const string& _sPluginName, string _sHelpId)
+void PackageManager::addHelpIndex(const string& _sPluginName, string _sHelpId)
 {
     StripSpaces(_sHelpId);
     string sPluginName = _sPluginName;
     StripSpaces(sPluginName);
 
-    if (!vPluginInfo.size() || !_sHelpId.length())
+    if (!vPackageInfo.size() || !_sHelpId.length())
         return;
 
     if (sPluginName.length())
     {
         // Search for the plugin with the selected name
-        for (unsigned int i = 0; i < vPluginInfo.size(); i++)
+        for (unsigned int i = 0; i < vPackageInfo.size(); i++)
         {
             // Identical name found? Append the documentation
             // index ID
-            if (vPluginInfo[i].sName == sPluginName)
+            if (vPackageInfo[i].getName() == sPluginName)
             {
-                if (vPluginInfo[i].sDocumentationIndexID.length())
+                if (vPackageInfo[i].sDocumentationIndexID.length())
                 {
-                    if (vPluginInfo[i].sDocumentationIndexID != _sHelpId
-                        && vPluginInfo[i].sDocumentationIndexID.find(";"+_sHelpId) == string::npos
-                        && vPluginInfo[i].sDocumentationIndexID.find(_sHelpId+";") == string::npos
-                        && vPluginInfo[i].sDocumentationIndexID.find(";"+_sHelpId+";") == string::npos)
-                    vPluginInfo[i].sDocumentationIndexID += ";" + _sHelpId;
+                    if (vPackageInfo[i].sDocumentationIndexID != _sHelpId
+                        && vPackageInfo[i].sDocumentationIndexID.find(";"+_sHelpId) == string::npos
+                        && vPackageInfo[i].sDocumentationIndexID.find(_sHelpId+";") == string::npos
+                        && vPackageInfo[i].sDocumentationIndexID.find(";"+_sHelpId+";") == string::npos)
+                    vPackageInfo[i].sDocumentationIndexID += ";" + _sHelpId;
                 }
                 else
-                    vPluginInfo[i].sDocumentationIndexID = _sHelpId;
+                    vPackageInfo[i].sDocumentationIndexID = _sHelpId;
 
                 updatePluginFile();
                 break;
@@ -663,10 +738,10 @@ void PluginManager::addHelpIndex(const string& _sPluginName, string _sHelpId)
     {
         // No plugin name selected? Simply append it to the last
         // available plugin definition
-        if (vPluginInfo.back().sDocumentationIndexID.length())
-            vPluginInfo.back().sDocumentationIndexID += ";" + _sHelpId;
+        if (vPackageInfo.back().sDocumentationIndexID.length())
+            vPackageInfo.back().sDocumentationIndexID += ";" + _sHelpId;
         else
-            vPluginInfo.back().sDocumentationIndexID = _sHelpId;
+            vPackageInfo.back().sDocumentationIndexID = _sHelpId;
 
         updatePluginFile();
     }
@@ -684,16 +759,16 @@ void PluginManager::addHelpIndex(const string& _sPluginName, string _sHelpId)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool PluginManager::isPluginCmd(const string& sCmd) const
+bool PackageManager::isPluginCmd(const string& sCmd) const
 {
     if (findCommand(sCmd, "explicit").sString == "explicit")
         return false;
 
-    if (vPluginInfo.size())
+    if (vPackageInfo.size())
     {
-        for (unsigned int i = 0; i < vPluginInfo.size(); i++)
+        for (unsigned int i = 0; i < vPackageInfo.size(); i++)
         {
-            if (findCommand(sCmd, vPluginInfo[i].sCommand).sString == vPluginInfo[i].sCommand)
+            if (vPackageInfo[i].isPlugin() && findCommand(sCmd, vPackageInfo[i].sCommand).sString == vPackageInfo[i].sCommand)
                 return true;
         }
     }
@@ -708,25 +783,25 @@ bool PluginManager::isPluginCmd(const string& sCmd) const
 /// set of definitions and returns the stored
 /// documentation index IDs.
 ///
-/// \param sPlugin const string&
+/// \param sPackage const string&
 /// \return string
 ///
 /////////////////////////////////////////////////
-string PluginManager::deletePlugin(const string& sPlugin)
+string PackageManager::deletePackage(const string& sPackage)
 {
     string sHLPIDs = "<<NO_HLP_ENTRY>>";
 
-    for (size_t i = 0; i < vPluginInfo.size(); i++)
+    for (size_t i = 0; i < vPackageInfo.size(); i++)
     {
         // Plugin found?
-        if (vPluginInfo[i].sName == sPlugin || vPluginInfo[i].sName == "("+sPlugin+")")
+        if (vPackageInfo[i].getName() == sPackage)
         {
             // Store the documentation index ID
-            if (vPluginInfo[i].sDocumentationIndexID.length())
-                sHLPIDs = vPluginInfo[i].sDocumentationIndexID;
+            if (vPackageInfo[i].sDocumentationIndexID.length())
+                sHLPIDs = vPackageInfo[i].sDocumentationIndexID;
 
             // Remove the plugin
-            vPluginInfo.erase(i + vPluginInfo.begin());
+            vPackageInfo.erase(i + vPackageInfo.begin());
 
             updatePluginFile();
 
@@ -740,13 +815,35 @@ string PluginManager::deletePlugin(const string& sPlugin)
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the menu map connecting menu
+/// entry names with their corresponding
+/// procedure, which shall be called.
+///
+/// \return std::map<std::string, std::string>
+///
+/////////////////////////////////////////////////
+std::map<std::string, std::string> PackageManager::getMenuMap() const
+{
+    std::map<std::string, std::string> mMenuMap;
+
+    for (size_t i = 0; i < vPackageInfo.size(); i++)
+    {
+        if (vPackageInfo[i].sType == "TYPE_GUI_PLUGIN" && vPackageInfo[i].getMenuEntry().length())
+            mMenuMap[vPackageInfo[i].getMenuEntry()] = vPackageInfo[i].sMainProcedure;
+    }
+
+    return mMenuMap;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function simply returns
 /// the plugin definition file path.
 ///
 /// \return string
 ///
 /////////////////////////////////////////////////
-string PluginManager::getPluginInfoPath()
+string PackageManager::getPluginInfoPath()
 {
     return FileSystem::ValidFileName(sPluginDefinitionFile, ".plugins");
 }

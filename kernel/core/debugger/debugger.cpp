@@ -104,7 +104,7 @@ void NumeReDebugger::showError(exception_ptr e_ptr)
     }
     catch (...)
     {
-        return;
+        return ;
     }
 }
 
@@ -127,7 +127,7 @@ void NumeReDebugger::showError(const string& sTitle)
 
     bExceptionHandled = true;
     showEvent(sTitle);
-    reset();
+    resetBP();
 }
 
 
@@ -251,10 +251,11 @@ void NumeReDebugger::formatMessage()
 /// values and apply some guesses.
 ///
 /// \param sArgumentValue string&
+/// \param sArgumentName const std::string&
 /// \return string
 ///
 /////////////////////////////////////////////////
-string NumeReDebugger::decodeType(string& sArgumentValue)
+string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sArgumentName)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
@@ -265,6 +266,15 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
     if (!NumeReKernel::getInstance()->getSettings().decodeArguments())
         return "\t1 x 1\t(...)\t";
 
+    std::string isRef = "";
+
+    if (nCurrentStackElement < vStackTrace.size())
+    {
+        // Is the current argument a reference?
+        if (vStackTrace[nCurrentStackElement].second->_varFactory->isReference(sArgumentValue))
+            isRef = "(&) ";
+    }
+
     // Is the current argument value a table?
     if (_data.isTable(sArgumentValue))
     {
@@ -273,6 +283,11 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
         // Replace the value with its actual value and mark the
         // argument type as reference
         sArgumentValue = "{" + toString(_data.min(sCache, "")[0], 5) + ", ..., " + toString(_data.max(sCache, "")[0], 5) + "}";
+
+        // Determine whether this is a templated variable
+        if (sArgumentName.length() && sArgumentName.find("()") == std::string::npos)
+            return "\t" + toString(_data.getLines(sCache, false)) + " x " + toString(_data.getCols(sCache, false)) + "\t(&@) double\t";
+
         return "\t" + toString(_data.getLines(sCache, false)) + " x " + toString(_data.getCols(sCache, false)) + "\t(&) double\t";
     }
 
@@ -284,7 +299,13 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
         // Replace the value with its actual value and mark the
         // argument type as reference
         sArgumentValue = cluster.getShortVectorRepresentation();
-        return "\t" + toString(cluster.size()) + " x 1\t(&) cluster\t";
+
+        // Determine whether this is a reference or a templated
+        // variable
+        if (sArgumentName.length() && sArgumentName.find("{}") == std::string::npos)
+            isRef = isRef.length() ? "(&@) " : "(@) ";
+
+        return "\t" + toString(cluster.size()) + " x 1\t" + isRef + "cluster\t";
     }
 
     // Is the current value surrounded from braces?
@@ -308,7 +329,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
         // Replace the value with its actual value and mark the
         // argument type as reference
         sArgumentValue = "\"" + (_stringParser.getStringVars().find(sArgumentValue)->second) + "\"";
-        return "\t1 x 1\t(&) string\t";
+        return "\t1 x 1\t" + isRef + "string\t";
     }
 
     // Equals the current argument the string table?
@@ -317,6 +338,11 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
         // Replace the value with its actual value and mark the
         // argument type as reference
         sArgumentValue = "{\"" + replaceControlCharacters(_data.minString()) + "\", ..., \"" + replaceControlCharacters(_data.maxString()) + "\"}";
+
+        // Determine whether this is a templated variable
+        if (sArgumentName.length() && sArgumentName.find("()") == std::string::npos)
+            return "\t" + toString(_data.getStringSize()) + " x " + toString(_data.getStringCols()) + "\t(&@) string\t";
+
         return "\t" + toString(_data.getStringSize()) + " x " + toString(_data.getStringCols()) + "\t(&) string\t";
     }
 
@@ -328,7 +354,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue)
         double* address = _parser.GetVar().find(sArgumentValue)->second;
         sArgumentValue = toString(*address, 5);
         //return "\t1 x 1\t(&) double @" + toHexString((int)address) + "\t";
-        return "\t1 x 1\t(&) double\t";
+        return "\t1 x 1\t" + isRef + "double\t";
     }
 
     // Is it a constant numerical expression or value?
@@ -372,6 +398,9 @@ bool NumeReDebugger::select(size_t nStackElement)
     // (for some reason)
     if (!_curProcedure)
         return false;
+
+    // Store the new stack position
+    nCurrentStackElement = nStackElement;
 
     // Clear the breakpoint information
     resetBP();
@@ -462,6 +491,8 @@ void NumeReDebugger::pushStackItem(const string& sStackItem, Procedure* _current
         vStackTrace.back().first.insert(vStackTrace.back().first.find('('), "'");
     }
 
+    nCurrentStackElement = vStackTrace.size()-1;
+
     return;
 }
 
@@ -477,6 +508,9 @@ void NumeReDebugger::popStackItem()
 {
     if (vStackTrace.size())
         vStackTrace.pop_back();
+
+    if (vStackTrace.size())
+        nCurrentStackElement = vStackTrace.size()-1;
 
     return;
 }
@@ -574,10 +608,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalVars[i][0] != sLocalVars[i][1])
-        {
-            while (sErraticCommand.find(sLocalVars[i][1]) != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalVars[i][1]), sLocalVars[i][1].length(), sLocalVars[i][0]);
-        }
+            replaceAll(sErraticCommand, sLocalVars[i][1].c_str(), sLocalVars[i][0].c_str());
 
         mLocalVars[sLocalVars[i][0] + "\t" + sLocalVars[i][1]] = dLocalVars[i];
     }
@@ -588,10 +619,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalStrings[i][0] != sLocalStrings[i][1])
-        {
-            while (sErraticCommand.find(sLocalStrings[i][1]) != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalStrings[i][1]), sLocalStrings[i][1].length(), sLocalStrings[i][0]);
-        }
+            replaceAll(sErraticCommand, sLocalStrings[i][1].c_str(), sLocalStrings[i][0].c_str());
 
         mLocalStrings[sLocalStrings[i][0] + "\t" + sLocalStrings[i][1]] = replaceControlCharacters(instance->getStringParser().getStringVars().at(sLocalStrings[i][1]));
     }
@@ -602,10 +630,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalTables[i][0] != sLocalTables[i][1])
-        {
-            while (sErraticCommand.find(sLocalTables[i][1] + "(") != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalTables[i][1] + "("), sLocalTables[i][1].length(), sLocalTables[i][0]);
-        }
+            replaceAll(sErraticCommand, (sLocalTables[i][1] + (sLocalTables[i][1].back() == '(' ? "" : "(")).c_str(), (sLocalTables[i][0] + (sLocalTables[i][0].back() == '(' ? "" : "(")).c_str());
 
         string sTableData;
 
@@ -631,10 +656,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
     {
         // Replace the occurences
         if (sLocalClusters[i][0] != sLocalClusters[i][1])
-        {
-            while (sErraticCommand.find(sLocalClusters[i][1] + "{") != string::npos)
-                sErraticCommand.replace(sErraticCommand.find(sLocalClusters[i][1] + "{"), sLocalClusters[i][1].length(), sLocalClusters[i][0]);
-        }
+            replaceAll(sErraticCommand, (sLocalClusters[i][1] + (sLocalClusters[i][1].back() == '{' ? "" : "{")).c_str(), (sLocalClusters[i][0] + (sLocalClusters[i][0].back() == '{' ? "" : "{")).c_str());
 
         string sTableData;
 
@@ -646,15 +668,36 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         mLocalClusters[sLocalClusters[i][0] + "{}"] = sTableData;
     }
 
+    // Is this procedure a macro?
+    bool isMacro = nCurrentStackElement < vStackTrace.size() ? vStackTrace[nCurrentStackElement].second->getProcedureFlags() & ProcedureCommandLine::FLAG_MACRO : false;
+
     // Store the arguments
     for (unsigned int i = 0; i < nArgumentMapSize; i++)
     {
         if (sArgumentMap[i][0].back() == '(')
+        {
+            // Replace the occurences
+            if (!isMacro && sArgumentMap[i][0] != sArgumentMap[i][1])
+                replaceAll(sErraticCommand, (sArgumentMap[i][1] + "(").c_str(), sArgumentMap[i][0].c_str());
+
             mArguments[sArgumentMap[i][0] + ")\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
+        }
         else if (sArgumentMap[i][0].back() == '{')
+        {
+            // Replace the occurences
+            if (!isMacro && sArgumentMap[i][0] != sArgumentMap[i][1])
+                replaceAll(sErraticCommand, (sArgumentMap[i][1] + "{").c_str(), sArgumentMap[i][0].c_str());
+
             mArguments[sArgumentMap[i][0] + "}\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
+        }
         else
+        {
+            // Replace the occurences
+            if (!isMacro && sArgumentMap[i][0] != sArgumentMap[i][1])
+                replaceAll(sErraticCommand, sArgumentMap[i][1].c_str(), sArgumentMap[i][0].c_str());
+
             mArguments[sArgumentMap[i][0] + "\t" + sArgumentMap[i][1]] = sArgumentMap[i][1];
+        }
     }
 
     return;
@@ -861,7 +904,7 @@ vector<string> NumeReDebugger::getArguments()
     for (auto iter = mArguments.begin(); iter != mArguments.end(); ++iter)
     {
         string sValue = iter->second;
-        vArguments.push_back((iter->first).substr(0, (iter->first).find('\t')) + decodeType(sValue) + sValue + (iter->first).substr((iter->first).find('\t')));
+        vArguments.push_back((iter->first).substr(0, (iter->first).find('\t')) + decodeType(sValue, (iter->first).substr(0, (iter->first).find('\t'))) + sValue + (iter->first).substr((iter->first).find('\t')));
     }
 
     return vArguments;

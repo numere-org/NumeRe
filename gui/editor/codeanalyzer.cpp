@@ -334,7 +334,10 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     {
         for (int j = wordend; j < m_editor->GetLineEndPosition(m_nCurrentLine); j++)
         {
-            if (m_editor->GetStyleAt(j) == wxSTC_NSCR_STRING || m_editor->GetStyleAt(j) == wxSTC_NSCR_STRING_PARSER)
+            if (m_editor->GetStyleAt(j) == wxSTC_NSCR_STRING
+                || m_editor->GetStyleAt(j) == wxSTC_NSCR_STRING_PARSER
+                || m_editor->GetStyleAt(j) == wxSTC_NSCR_CLUSTER
+                || m_editor->GetStyleAt(j) == wxSTC_NSCR_IDENTIFIER)
             {
                 canContinue = true;
                 break;
@@ -1014,7 +1017,7 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     if ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC) && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_METHOD)
     {
         // ignore modifiers, i.e. method without parentheses
-        string sModifier = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,";
+        string sModifier = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,";
         if (sModifier.find("," + sSyntaxElement + ",") == string::npos)
             sSyntaxElement += "()";
         sSyntaxElement.insert(0, "VAR.");

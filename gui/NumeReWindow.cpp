@@ -84,6 +84,7 @@
 #include "dialogs/packagedialog.hpp"
 #include "dialogs/dependencydialog.hpp"
 #include "dialogs/revisiondialog.hpp"
+#include "dialogs/pluginrepodialog.hpp"
 
 #include "terminal/terminal.hpp"
 
@@ -92,12 +93,15 @@
 #include "../kernel/core/procedure/dependency.hpp"
 #include "../kernel/core/datamanagement/database.hpp"
 #include "../kernel/core/documentation/docgen.hpp"
+#include "../kernel/core/ui/error.hpp"
 
 #include "../common/recycler.hpp"
 #include "../common/Options.h"
 #include "../common/vcsmanager.hpp"
 #include "../common/filerevisions.hpp"
 #include "../common/ipc.hpp"
+
+#include "../common/http.h"
 
 #include "controls/treesearchctrl.hpp"
 #include "controls/toolbarsearchctrl.hpp"
@@ -133,6 +137,7 @@ wxPageSetupData* g_pageSetupData = (wxPageSetupData*) nullptr;
 
 BEGIN_EVENT_TABLE(NumeReWindow, wxFrame)
     EVT_MENU_RANGE                  (EVENTID_MENU_START, EVENTID_MENU_END-1, NumeReWindow::OnMenuEvent)
+    EVT_MENU_RANGE                  (EVENTID_PLUGIN_MENU_START, EVENTID_PLUGIN_MENU_END-1, NumeReWindow::OnPluginMenuEvent)
 
     EVT_FIND						(-1, NumeReWindow::OnFindEvent)
     EVT_FIND_NEXT					(-1, NumeReWindow::OnFindEvent)
@@ -255,6 +260,7 @@ bool MyApp::OnInit()
     // last position
     NumeReMainFrame->forceHistoryPageDown();
     NumeReMainFrame->EvaluateCommandLine(wxArgV);
+    NumeReMainFrame->Ready();
 
     // Tip of the day
     if (NumeReMainFrame->showTipAtStartup)
@@ -278,7 +284,6 @@ bool MyApp::OnInit()
         wxMessageBox(_guilang.get("GUI_DLG_SESSION_RECREATIONERROR", NumeReMainFrame->m_UnrecoverableFiles), _guilang.get("GUI_DLG_SESSION_ERROR"), wxICON_ERROR);
     }
 
-    NumeReMainFrame->Ready();
     return true;
 }
 
@@ -307,6 +312,38 @@ int MyApp::OnExit()
         delete m_DDEServer;
 
     return 0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This handler should be called, if an
+/// unhandled exception propagated through the
+/// event loop. We'll try to recover from this
+/// issue here. However, it might not be possible.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool MyApp::OnExceptionInMainLoop()
+{
+    try
+    {
+        throw;
+    }
+    catch (std::exception& e)
+    {
+        wxMessageBox(std::string("An unexpected exception was caught. If it is reproducable, consider informing us about this issue. Message: ") + e.what(), "Exception caught");
+    }
+    catch (SyntaxError& e)
+    {
+        wxMessageBox("An unexpected exception was caught. If it is reproducable, consider informing us about this issue. Code: " + toString((int)e.errorcode) + ", message: " + _guilang.get("ERR_NR_" + toString((int)e.errorcode) + "_0_*", e.getToken(), toString(e.getIndices()[0]), toString(e.getIndices()[1]), toString(e.getIndices()[2]), toString(e.getIndices()[3])) + ", expression: " + e.getExpr() + ", token: " + e.getToken(), "Exception caught");
+    }
+    catch ( ... )
+    {
+        throw;
+    }
+
+    return true;
 }
 
 //----------------------------------------------------------------------
@@ -496,6 +533,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     m_filterNSCRFiles = _guilang.get("GUI_FILTER_SCRIPTS") + " (*.nscr)|*.nscr";//"NumeRe scripts (*.nscr)|*.nscr";
     m_filterNPRCFiles = _guilang.get("GUI_FILTER_PROCEDURES") + " (*.nprc)|*.nprc";//"NumeRe procedures (*.nprc)|*.nprc";
+    m_filterNLYTFiles = _guilang.get("GUI_FILTER_LAYOUTS") + "(*.nlyt)|*.nlyt";
     m_filterExecutableFiles = _guilang.get("GUI_FILTER_EXECUTABLES") + " (*.nscr, *.nprc)|*.nscr;*.nprc";
     m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc, *.nlyt)|*.ndat;*.nscr;*.nprc;*.nlyt";//"NumeRe files (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";
     m_filterDataFiles = _guilang.get("GUI_FILTER_DATAFILES");// + " (*.dat, *.txt, *.csv, *.jdx, *.dx, *.jcm)|*.dat;*.txt;*.csv;*.jdx;*.dx;*.jcm";
@@ -1571,7 +1609,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         }
         case ID_MENU_CREATE_PACKAGE:
         {
-            OnCreatePackage();
+            OnCreatePackage("");
             break;
         }
         case ID_MENU_CREATE_DOCUMENTATION:
@@ -1582,6 +1620,13 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
         case ID_MENU_EXPORT_AS_HTML:
         {
             m_currentEd->OnExtractAsHTML();
+            break;
+        }
+        case ID_MENU_PLUGINBROWSER:
+        {
+            PackageRepoBrowser* repobrowser = new PackageRepoBrowser(this, m_terminal, m_iconManager);
+            repobrowser->SetIcon(GetIcon());
+            repobrowser->Show();
             break;
         }
 
@@ -1627,16 +1672,15 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_MENU_EXECUTE:
         {
-            if(!m_currentEd->HasBeenSaved() || m_currentEd->Modified())
+            if (!m_currentEd->HasBeenSaved() || m_currentEd->Modified())
             {
                 int tabNum = m_book->FindPagePosition(m_currentEd);
                 int result = HandleModifiedFile(tabNum, MODIFIEDFILE_COMPILE);
 
                 if (result == wxCANCEL)
-                {
                     return;
-                }
             }
+
             string command = replacePathSeparator((m_currentEd->GetFileName()).GetFullPath().ToStdString());
             OnExecuteFile(command, id);
             break;
@@ -1645,6 +1689,25 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
             m_terminal->CancelCalculation();
             break;
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Handles events, which originate from
+/// package menu (i.e. graphical plugins).
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::OnPluginMenuEvent(wxCommandEvent& event)
+{
+    size_t id = event.GetId();
+
+    auto iter = m_pluginMenuMap.find(id);
+
+    if (iter != m_pluginMenuMap.end())
+        m_terminal->pass_command("$" + iter->second + "()", true);
 }
 
 
@@ -2027,16 +2090,17 @@ void NumeReWindow::showGraph(NumeRe::Window& window)
 void NumeReWindow::showFileDialog(NumeRe::Window& window)
 {
     string sExpression = window.getWindowSettings().sExpression;
-    wxFileDialog dialog(this, window.getWindowSettings().sTitle, prepareStringsForDialog(getNextArgument(sExpression, true)));
+    std::string sDir = prepareStringsForDialog(getNextArgument(sExpression, true));
+    std::string sDefFile = prepareStringsForDialog(getNextArgument(sExpression, true));
+    std::string sWildCard = prepareStringsForDialog(getNextArgument(sExpression, true));
+    wxFileDialog dialog(this, window.getWindowSettings().sTitle, sDir, sDefFile, sWildCard);
     dialog.SetIcon(getStandardIcon());
     int ret = dialog.ShowModal();
 
     if (ret == wxID_CANCEL)
         window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
     else
-    {
         window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetPath().ToStdString());
-    }
 }
 
 
@@ -2058,9 +2122,7 @@ void NumeReWindow::showDirDialog(NumeRe::Window& window)
     if (ret == wxID_CANCEL)
         window.updateWindowInformation(NumeRe::STATUS_CANCEL, "");
     else
-    {
         window.updateWindowInformation(NumeRe::STATUS_OK, dialog.GetPath().ToStdString());
-    }
 }
 
 
@@ -2634,6 +2696,10 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
                 filestoopen.Add(wxArgV[i]);
         }
 
+        // Package creator projects
+        if (ext == ".npkp")
+            OnCreatePackage(wxArgV[i]);
+
         // Procedures: run or open?
         if (ext == ".nprc")
         {
@@ -2648,6 +2714,8 @@ void NumeReWindow::EvaluateCommandLine(wxArrayString& wxArgV)
 
         // Usual text files
         if (ext == ".dat"
+            || ext == ".nhlp"
+            || ext == ".xml"
             || ext == ".txt"
             || ext == ".tex")
             filestoopen.Add(wxArgV[i]);
@@ -2925,7 +2993,7 @@ int NumeReWindow::CopyEditorSettings(FileFilterType _fileType)
     {
         int settings = m_currentEd->getSettings();
 
-        if (_fileType != FILE_NSCR && _fileType != FILE_NPRC && _fileType != FILE_MATLAB && _fileType != FILE_PLUGIN)
+        if (_fileType != FILE_NSCR && _fileType != FILE_NPRC && _fileType != FILE_MATLAB && _fileType != FILE_PLUGIN && _fileType != FILE_XML)
         {
             if (settings & NumeReEditor::SETTING_INDENTONTYPE)
                 settings &= ~NumeReEditor::SETTING_INDENTONTYPE;
@@ -3514,6 +3582,7 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
         || filename.GetExt() == "hpp"
         || filename.GetExt() == "hxx"
         || filename.GetExt() == "h"
+        || filename.GetExt() == "xml"
         || filename.GetExt() == "tex")
     {
         wxArrayString filesToOpen;
@@ -3534,6 +3603,8 @@ void NumeReWindow::OpenFileByType(const wxFileName& filename)
     }
     else if (filename.GetExt() == "pdf")
         openPDF(filename);
+    else if (filename.GetExt() == "npkp")
+        OnCreatePackage(filename.GetFullPath());
     else
     {
         wxString path = "load \"" + replacePathSeparator(filename.GetFullPath().ToStdString()) + "\" -app -ignore";
@@ -3626,6 +3697,8 @@ void NumeReWindow::OpenSourceFile(wxArrayString fnames, unsigned int nLine, int 
                 _fileType = FILE_NSCR;
             else if (fnames[n].rfind(".nprc") != string::npos)
                 _fileType = FILE_NPRC;
+            else if (fnames[n].rfind(".xml") != std::string::npos || fnames[n].rfind(".nhlp") != std::string::npos)
+                _fileType = FILE_XML;
             else
                 _fileType = FILE_NOTYPE;
 
@@ -3868,10 +3941,14 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
             || m_currentEd->getFileType() == FILE_TEXSOURCE
             || m_currentEd->getFileType() == FILE_NONSOURCE)
             i = SAVEPATH;
-        wxFileDialog dlg (this, title, vPaths[i], "", filterString,
+        wxFileDialog dlg (this, title, vPaths[i], m_currentEd->GetFileName().GetName(), filterString,
             wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
 
-        if (m_currentEd->getFileType() == FILE_DATAFILES)
+        // Select the correct filter string depending on the
+        // file extensions
+        if (m_currentEd->getFileType() == FILE_NSCR && m_currentEd->GetFileName().GetExt() == "nlyt")
+            dlg.SetFilterIndex(1);
+        else if (m_currentEd->getFileType() == FILE_DATAFILES)
         {
             if (m_currentEd->GetFileName().GetExt() == "dat")
                 dlg.SetFilterIndex(0);
@@ -3884,7 +3961,7 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
                 || m_currentEd->GetFileName().GetExt() == "jcm")
                 dlg.SetFilterIndex(3);
         }
-        if (m_currentEd->getFileType() == FILE_NONSOURCE)
+        else if (m_currentEd->getFileType() == FILE_NONSOURCE)
         {
             if (m_currentEd->GetFileName().GetExt() == "txt")
                 dlg.SetFilterIndex(0);
@@ -3968,21 +4045,21 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 /// them to be used by an installer script (i.e.
 /// prepending the target namespace).
 ///
-/// \param sProcFileName const string&
-/// \param sDefaultPath const string&
-/// \return vector<string>
+/// \param sProcFileName const std::string&
+/// \param sDefaultPath const std::string&
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFileName, const string& sDefaultPath)
+std::vector<std::string> NumeReWindow::getProcedureFileForInstaller(const std::string& sProcFileName, const std::string& sDefaultPath)
 {
-    ifstream fProc;
-    string sNameSpace;
-    string sLine;
-    vector<string> vProc;
+    std::ifstream fProc;
+    std::string sNameSpace;
+    std::string sLine;
+    std::vector<std::string> vProc;
     bool foundMainProcedure = false;
 
     // Decode the procedure file name
-    if (sProcFileName.find(sDefaultPath) != string::npos)
+    if (sProcFileName.find(sDefaultPath) != std::string::npos)
     {
         sNameSpace = sProcFileName.substr(0, sProcFileName.rfind('/')+1);
         sNameSpace.erase(sNameSpace.find(sDefaultPath), sDefaultPath.length());
@@ -3990,7 +4067,7 @@ vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFil
         while (sNameSpace.front() == '/')
             sNameSpace.erase(0, 1);
 
-        while (sNameSpace.find('/') != string::npos)
+        while (sNameSpace.find('/') != std::string::npos)
             sNameSpace[sNameSpace.find('/')] = '~';
     }
 
@@ -4003,12 +4080,12 @@ vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFil
     // Read the contents of the procedure file
     while (!fProc.eof())
     {
-        getline(fProc, sLine);
+        std::getline(fProc, sLine);
 
         // Transform procedure heads
-        if (sLine.find_first_not_of(" \t") != string::npos && sLine.substr(sLine.find_first_not_of(" \t"), 10) == "procedure ")
+        if (sLine.find_first_not_of(" \t") != std::string::npos && sLine.substr(sLine.find_first_not_of(" \t"), 10) == "procedure ")
         {
-            string sProcName = sLine.substr(sLine.find('$'), sLine.find('(') - sLine.find('$'));
+            std::string sProcName = sLine.substr(sLine.find('$'), sLine.find('(') - sLine.find('$'));
 
             // Insert namespaces
             if ("$" + sProcFileName.substr(sProcFileName.rfind('/')+1) == sProcName + ".nprc")
@@ -4034,6 +4111,51 @@ vector<string> NumeReWindow::getProcedureFileForInstaller(const string& sProcFil
     return vProc;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member funciton obtains the
+/// contents of a window layout file and
+/// transforms it to be used by an installer
+/// script.
+///
+/// \param sLayoutFileName const std::string&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> NumeReWindow::getLayoutFileForInstaller(const std::string& sLayoutFileName)
+{
+    std::ifstream layout(sLayoutFileName.c_str());
+    std::string sTargetFileName = sLayoutFileName;
+
+    std::vector<std::string> vPaths = m_terminal->getPathSettings();
+    std::vector<std::string> vLayout;
+
+    if (sTargetFileName.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
+        sTargetFileName = " \"<scriptpath>" + sTargetFileName.substr(vPaths[SCRIPTPATH].length()) + "\"";
+
+    if (sTargetFileName.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+        sTargetFileName = " \"<procpath>" + sTargetFileName.substr(vPaths[PROCPATH].length()) + "\"";
+
+    if (!layout.good())
+        return vLayout;
+
+    std::string currLine;
+
+    while (!layout.eof())
+    {
+        std::getline(layout, currLine);
+
+        // Transform layout definitions
+        if (currLine.find_first_not_of(" \t") != string::npos && currLine.substr(currLine.find_first_not_of(" \t"), 6) == "layout")
+            currLine.insert(6, sTargetFileName);
+
+        vLayout.push_back(currLine);
+    }
+
+    return vLayout;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private ConstructFilterString
 ///  Puts together the filter that defines what files are shown in a file dialog
@@ -4055,9 +4177,12 @@ wxString NumeReWindow::ConstructFilterString(FileFilterType filterType)
         filterString += m_filterNSCRFiles;
         filterString += "|";
         filterString += m_filterNPRCFiles;
+        filterString += "|";
+        filterString += m_filterNLYTFiles;
         break;
     case FILE_NSCR:
         filterString = m_filterNSCRFiles;
+        filterString += "|" + m_filterNLYTFiles;
         break;
     case FILE_NPRC:
         filterString = m_filterNPRCFiles;
@@ -4701,6 +4826,7 @@ void NumeReWindow::UpdateMenuBar()
     menuBar = new wxMenuBar();
     SetMenuBar(menuBar);
 
+    // Create new file menu
     wxMenu* menuNewFile = new wxMenu();
 
     menuNewFile->Append(ID_MENU_NEW_EMPTY, _guilang.get("GUI_MENU_NEW_EMPTYFILE"), _guilang.get("GUI_MENU_NEW_EMPTYFILE_TTP"));
@@ -4708,8 +4834,9 @@ void NumeReWindow::UpdateMenuBar()
     menuNewFile->Append(ID_MENU_NEW_SCRIPT, _guilang.get("GUI_MENU_NEW_NSCR"), _guilang.get("GUI_MENU_NEW_NSCR_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PROCEDURE, _guilang.get("GUI_MENU_NEW_NPRC"), _guilang.get("GUI_MENU_NEW_NPRC_TTP"));
     menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_PLUGIN"), _guilang.get("GUI_MENU_NEW_PLUGIN_TTP"));
-    menuNewFile->Append(ID_MENU_NEW_PLUGIN, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
+    menuNewFile->Append(ID_MENU_NEW_LAYOUT, _guilang.get("GUI_MENU_NEW_LAYOUT"), _guilang.get("GUI_MENU_NEW_LAYOUT_TTP"));
 
+    // Create file menu
     wxMenu* menuFile = new wxMenu();
 
     menuFile->Append(wxID_ANY, _guilang.get("GUI_MENU_NEWFILE"), menuNewFile, _guilang.get("GUI_MENU_NEWFILE_TTP"));
@@ -4728,12 +4855,13 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuFile, _guilang.get("GUI_MENU_FILE"));
 
-    // stripspaces (only front, only back, all)
+    // Create strip spaces menu
     wxMenu* menuStripSpaces = new wxMenu();
     menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BOTH, _guilang.get("GUI_MENU_STRIP_BOTH"), _guilang.get("GUI_MENU_STRIP_BOTH_TTP"));
     menuStripSpaces->Append(ID_MENU_STRIP_SPACES_FRONT, _guilang.get("GUI_MENU_STRIP_FRONT"), _guilang.get("GUI_MENU_STRIP_FRONT_TTP"));
     menuStripSpaces->Append(ID_MENU_STRIP_SPACES_BACK, _guilang.get("GUI_MENU_STRIP_BACK"), _guilang.get("GUI_MENU_STRIP_BACK_TTP"));
 
+    // Create edit menu
     wxMenu* menuEdit = new wxMenu();
 
     menuEdit->Append(ID_MENU_UNDO, _guilang.get("GUI_MENU_UNDO"));
@@ -4761,7 +4889,9 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuEdit, _guilang.get("GUI_MENU_EDIT"));
 
+    // Create search menu
     wxMenu* menuSearch = new wxMenu();
+
     menuSearch->Append(ID_MENU_FIND, _guilang.get("GUI_MENU_FIND"));
     menuSearch->Append(ID_MENU_REPLACE, _guilang.get("GUI_MENU_REPLACE"));
     menuSearch->AppendSeparator();
@@ -4776,8 +4906,9 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuSearch, _guilang.get("GUI_MENU_SEARCH"));
 
-
+    // Create view menu
     wxMenu* menuView = new wxMenu();
+
     menuView->Append(ID_MENU_TOGGLE_CONSOLE, _guilang.get("GUI_MENU_TOGGLE_CONSOLE"));
     menuView->Append(ID_MENU_TOGGLE_FILETREE, _guilang.get("GUI_MENU_TOGGLE_FILETREE"));
     menuView->Append(ID_MENU_TOGGLE_HISTORY, _guilang.get("GUI_MENU_TOGGLE_HISTORY"));
@@ -4794,27 +4925,30 @@ void NumeReWindow::UpdateMenuBar()
 
     menuBar->Append(menuView, _guilang.get("GUI_MENU_VIEW"));
 
-
+    // Create format menu
     wxMenu* menuFormat = new wxMenu();
     menuFormat->Append(ID_MENU_AUTOINDENT, _guilang.get("GUI_MENU_AUTOINDENT"), _guilang.get("GUI_MENU_AUTOINDENT_TTP"));
     m_menuItems[ID_MENU_INDENTONTYPE] = menuFormat->Append(ID_MENU_INDENTONTYPE, _guilang.get("GUI_MENU_INDENTONTYPE"), _guilang.get("GUI_MENU_INDENTONTYPE_TTP"), wxITEM_CHECK);
     menuFormat->Append(ID_MENU_AUTOFORMAT, _guilang.get("GUI_MENU_AUTOFORMAT"), _guilang.get("GUI_MENU_AUTOFORMAT_TTP"));
 
+    // Create LaTeX menu
     wxMenu* menuLaTeX = new wxMenu();
     menuLaTeX->Append(ID_MENU_CREATE_LATEX_FILE, _guilang.get("GUI_MENU_CREATELATEX"), _guilang.get("GUI_MENU_CREATELATEX_TTP"));
     menuLaTeX->Append(ID_MENU_RUN_LATEX, _guilang.get("GUI_MENU_RUNLATEX"), _guilang.get("GUI_MENU_RUNLATEX_TTP"));
     menuLaTeX->Append(ID_MENU_COMPILE_LATEX, _guilang.get("GUI_MENU_COMPILE_TEX"), _guilang.get("GUI_MENU_COMPILE_TEX_TTP"));
 
+    // Create refactoring menu
     wxMenu* menuRefactoring = new wxMenu();
     menuRefactoring->Append(ID_MENU_RENAME_SYMBOL, _guilang.get("GUI_MENU_RENAME_SYMBOL"), _guilang.get("GUI_MENU_RENAME_SYMBOL_TTP"));
     menuRefactoring->Append(ID_MENU_ABSTRAHIZE_SECTION, _guilang.get("GUI_MENU_ABSTRAHIZE_SECTION"), _guilang.get("GUI_MENU_ABSTRAHIZE_SECTION_TTP"));
 
+    // Create analyzer menu
     wxMenu* menuAnalyzer = new wxMenu();
     m_menuItems[ID_MENU_USEANALYZER] = menuAnalyzer->Append(ID_MENU_USEANALYZER, _guilang.get("GUI_MENU_ANALYZER"), _guilang.get("GUI_MENU_ANALYZER_TTP"), wxITEM_CHECK);
     menuAnalyzer->Append(ID_MENU_FIND_DUPLICATES, _guilang.get("GUI_MENU_FIND_DUPLICATES"), _guilang.get("GUI_MENU_FIND_DUPLICATES_TTP"));
     menuAnalyzer->Append(ID_MENU_SHOW_DEPENDENCY_REPORT, _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT"), _guilang.get("GUI_MENU_SHOW_DEPENDENCY_REPORT_TTP"));
 
-
+    // Create tools menu
     wxMenu* menuTools = new wxMenu();
 
     menuTools->Append(ID_MENU_OPTIONS, _guilang.get("GUI_MENU_OPTIONS"));
@@ -4829,13 +4963,24 @@ void NumeReWindow::UpdateMenuBar()
     menuTools->Append(ID_MENU_CREATE_DOCUMENTATION, _guilang.get("GUI_MENU_CREATE_DOCUMENTATION"), _guilang.get("GUI_MENU_CREATE_DOCUMENTATION_TTP"));
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_LATEX"), menuLaTeX);
     menuTools->Append(ID_MENU_EXPORT_AS_HTML, _guilang.get("GUI_MENU_EXPORT_AS_HTML"), _guilang.get("GUI_MENU_EXPORT_AS_HTML_TTP"));
-    menuTools->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
+
     menuTools->AppendSeparator();
     menuTools->Append(wxID_ANY, _guilang.get("GUI_MENU_ANALYSIS"), menuAnalyzer);
     m_menuItems[ID_MENU_TOGGLE_DEBUGGER] = menuTools->Append(ID_MENU_TOGGLE_DEBUGGER, _guilang.get("GUI_MENU_DEBUGGER"), _guilang.get("GUI_MENU_DEBUGGER_TTP"), wxITEM_CHECK);
 
     menuBar->Append(menuTools, _guilang.get("GUI_MENU_TOOLS"));
 
+    // Create packages menu
+    wxMenu* menuPackages = new wxMenu();
+
+    menuPackages->Append(ID_MENU_CREATE_PACKAGE, _guilang.get("GUI_MENU_CREATE_PACKAGE"), _guilang.get("GUI_MENU_CREATE_PACKAGE_TTP"));
+    menuPackages->Append(ID_MENU_PLUGINBROWSER, _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER"), _guilang.get("GUI_MENU_SHOW_PACKAGE_BROWSER_TTP"));
+    menuPackages->AppendSeparator();
+    wxMenuItem* item = menuPackages->Append(EVENTID_PLUGIN_MENU_END, _guilang.get("GUI_MENU_NO_PLUGINS_INSTALLED"));
+    item->Enable(false);
+    menuBar->Append(menuPackages, "Packages");
+
+    // Create help menu
     wxMenu *helpMenu = new wxMenu;
     helpMenu->Append(ID_MENU_HELP, _guilang.get("GUI_MENU_SHOWHELP"));
     helpMenu->Append(ID_MENU_ABOUT, _guilang.get("GUI_MENU_ABOUT"), _guilang.get("GUI_MENU_ABOUT_TTP"));
@@ -4864,6 +5009,58 @@ void NumeReWindow::UpdateMenuBar()
     m_menuItems[ID_MENU_TOGGLE_NOTEBOOK_MULTIROW]->Check(m_multiRowState);
     m_menuItems[ID_MENU_TOGGLE_DEBUGGER]->Check(m_terminal->getKernelSettings().useDebugger());
 
+    // Update now the package menu (avoids code duplication)
+    UpdatePackageMenu();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Updates the package menu after an
+/// installation.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::UpdatePackageMenu()
+{
+    int id = GetMenuBar()->FindMenu("Packages");
+
+    if (id == wxNOT_FOUND)
+        return;
+
+    // Get menu
+    wxMenu* menuPackages = GetMenuBar()->GetMenu(id);
+
+    // Remove all entries
+    if (m_pluginMenuMap.size())
+    {
+        for (auto iter : m_pluginMenuMap)
+            menuPackages->Delete(iter.first);
+
+        m_pluginMenuMap.clear();
+    }
+    else
+        menuPackages->Delete(EVENTID_PLUGIN_MENU_END);
+
+    // Get new map
+    std::map<std::string,std::string> mMenuMap = m_terminal->getMenuMap();
+
+    // Fill the menu with new entries
+    if (mMenuMap.size())
+    {
+        size_t id = EVENTID_PLUGIN_MENU_START;
+
+        for (auto iter = mMenuMap.begin(); iter != mMenuMap.end(); ++iter, id++)
+        {
+            menuPackages->Append(id, removeMaskedStrings(iter->first));
+            m_pluginMenuMap[id] = iter->second;
+        }
+    }
+    else
+    {
+        wxMenuItem* item = menuPackages->Append(EVENTID_PLUGIN_MENU_END, _guilang.get("GUI_MENU_NO_PLUGINS_INSTALLED"));
+        item->Enable(false);
+    }
 }
 
 
@@ -5422,7 +5619,7 @@ void NumeReWindow::OnTreeItemRightClick(wxTreeEvent& event)
         wxTreeItemId clickedItem = event.GetItem();
         m_clickedTreeItem = clickedItem;
         wxMenu popupMenu;
-        wxString editableExt = ".dat;.txt;.nscr;.nprc;.dx;.jcm;.jdx;.csv;.log;.tex;";
+        wxString editableExt = ".dat;.txt;.nscr;.nprc;.dx;.jcm;.jdx;.csv;.log;.tex;.xml;.nhlp;.npkp;.cpp;.cxx;.c;.hpp;.hxx;.h;.m;.nlyt;";
         wxString loadableExt = ".dat;.txt;.dx;.jcm;.jdx;.xls;.xlsx;.ods;.ndat;.labx;.ibw;.csv;";
         wxString showableImgExt = ".png;.jpeg;.jpg;.gif;.bmp;";
 
@@ -6131,6 +6328,31 @@ wxIcon NumeReWindow::getStandardIcon()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Notifies all instances of the
+/// PackagRepoBrowser to refresh its internal
+/// list of installed packages and refreshes the
+/// package menu.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void NumeReWindow::notifyInstallationDone()
+{
+    UpdatePackageMenu();
+
+    wxWindowList& winlist = GetChildren();
+
+    for (size_t win = 0; win < winlist.GetCount(); win++)
+    {
+        if (winlist[win]->IsShown() && winlist[win]->GetLabel() == PACKAGE_REPO_BROWSER_TITLE)
+        {
+            static_cast<PackageRepoBrowser*>(winlist[win])->DetectInstalledPackages();
+        }
+    }
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private OnSplitterDoubleClick
 ///  Cancels the ability to "close" a split window by double-clicking the splitter bar
@@ -6247,6 +6469,9 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
         if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
             command.erase(0, vPaths[SCRIPTPATH].length());
 
+        if (command.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
+            command = "<procpath>" + command.substr(vPaths[PROCPATH].length());
+
         while (command.front() == '/')
             command.erase(0, 1);
 
@@ -6297,22 +6522,26 @@ void NumeReWindow::OnCalculateDependencies()
 /// package creator dialog and creates the install
 /// file, if the user confirms his selection.
 ///
+/// \param projectFile const wxString&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReWindow::OnCreatePackage()
+void NumeReWindow::OnCreatePackage(const wxString& projectFile)
 {
     try
     {
         PackageDialog dlg(this, m_terminal, m_iconManager);
 
-        if (m_currentEd->getFileType() == FILE_NPRC)
+        if (projectFile.length())
+            dlg.loadProjectFile(projectFile);
+        else if (m_currentEd->getFileType() == FILE_NPRC
+            || (m_currentEd->getFileType() == FILE_NSCR && m_currentEd->GetFileName().GetExt() == "nlyt"))
             dlg.setMainFile(m_currentEd->GetFileNameAndPath());
 
         if (dlg.ShowModal() == wxID_OK)
         {
             wxString installinfo = dlg.getInstallInfo();
-            wxString identifier = (dlg.isPlugin() ? "plgn_" : "pkg_") + dlg.getPackageIdentifier();
+            wxString identifier = dlg.getPackageIdentifier();
             wxArrayString procedures = dlg.getProcedures();
             string sProcPath = m_terminal->getPathSettings()[PROCPATH];
 
@@ -6321,32 +6550,53 @@ void NumeReWindow::OnCreatePackage()
             if (!procedures.size())
                 return;
 
-            NewFile(FILE_NSCR, identifier);
+            NewFile(FILE_NSCR, "packages/" + identifier);
 
-            m_currentEd->AddText("<install>\n" + installinfo + "\n");
+            m_currentEd->AddText("<install>\r\n" + installinfo + "\r\n");
 
             for (size_t i = 0; i < procedures.size(); i++)
             {
-                vector<string> procContents = getProcedureFileForInstaller(procedures[i].ToStdString(), sProcPath);
+                std::vector<std::string> contents;
 
-                for (size_t j = 0; j < procContents.size(); j++)
+                // Get the file's contents
+                if (procedures[i].rfind(".nlyt") == std::string::npos)
+                    contents = getProcedureFileForInstaller(procedures[i].ToStdString(), sProcPath);
+                else
+                    contents = getLayoutFileForInstaller(procedures[i].ToStdString());
+
+                // Insert the prepared contents
+                for (size_t j = 0; j < contents.size(); j++)
                 {
-                    if (procContents[j].length() && procContents[j].find_first_not_of(" \t") != string::npos)
-                        m_currentEd->AddText("\t" + procContents[j] + "\n");
+                    if (contents[j].length() && contents[j].find_first_not_of(" \t") != string::npos)
+                        m_currentEd->AddText("\t" + contents[j] + "\r\n");
                 }
 
-                m_currentEd->AddText("\n");
+                m_currentEd->AddText("\r\n");
             }
 
             if (dlg.includeDocs())
             {
-                m_currentEd->AddText("\t<helpindex>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" idxkey=\"" + dlg.getPackageIdentifier()
-                                     + "\" />\n\t\t\t<keywords>\n\t\t\t\t<keyword>" + dlg.getPackageIdentifier() + "</keyword>\n\t\t\t</keywords>\n\t\t</article>\n\t</helpindex>\n\n");
-                m_currentEd->AddText("\t<helpfile>\n\t\t<article id=\"" + identifier + "\">\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" />\n\t\t\t(...)\n\t\t</article>\n\t</helpfile>\n\n");
+                m_currentEd->AddText("\t<helpindex>\r\n\t\t<article id=\"" + identifier + "\">\r\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" idxkey=\"" + dlg.getPackageIdentifier()
+                                     + "\" />\r\n\t\t\t<keywords>\r\n\t\t\t\t<keyword>" + dlg.getPackageIdentifier() + "</keyword>\r\n\t\t\t</keywords>\r\n\t\t</article>\r\n\t</helpindex>\r\n\r\n");
+                m_currentEd->AddText("\t<helpfile>\r\n\t\t<article id=\"" + identifier + "\">\r\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" />\r\n\t\t\t(...)\r\n\t\t</article>\r\n\t</helpfile>\r\n\r\n");
+            }
+            else if (dlg.getDocFile().length())
+            {
+                wxFile docfile(dlg.getDocFile());
+                wxString fcontents;
+
+                if (docfile.ReadAll(&fcontents))
+                    m_currentEd->AddText(fcontents);
             }
 
-            m_currentEd->AddText("\treturn;\n<endinstall>\n");
-            m_currentEd->AddText("\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\n");
+            m_currentEd->AddText("\treturn;\r\n<endinstall>\r\n");
+            m_currentEd->AddText("\r\nwarn \"" + _guilang.get("GUI_PKGDLG_INSTALLERWARNING", identifier.ToStdString()) + "\"\r\n");
+            m_currentEd->UpdateSyntaxHighlighting(true);
+            m_currentEd->ApplyAutoIndentation(0, m_currentEd->GetNumberOfLines());
+
+            // Deactivate the indent on type in this case
+            if (m_currentEd->getEditorSetting(NumeReEditor::SETTING_INDENTONTYPE))
+                m_currentEd->ToggleSettings(NumeReEditor::SETTING_INDENTONTYPE);
         }
     }
     catch (SyntaxError& e)

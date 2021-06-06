@@ -19,13 +19,19 @@
 #include "packagedialog.hpp"
 #include "../compositions/grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/ui/winlayout.hpp"
 #include "../../kernel/core/utils/tools.hpp"
+#include "../../kernel/core/utils/tinyxml2.h"
 #include "../../kernel/core/procedure/dependency.hpp"
+#include "../../common/vcsmanager.hpp"
+#include "../../common/filerevisions.hpp"
 #include "../../common/datastructures.h"
 
 #include <set>
+#include <memory>
 
-#define INCLUDEDOCS "includedocs"
+#define INCLUDEDOCS "_doctemplate"
+#define DOCFILE "_docfile"
 
 extern Language _guilang;
 
@@ -34,6 +40,12 @@ BEGIN_EVENT_TABLE(PackageDialog, wxDialog)
     EVT_BUTTON(ID_PKGDLG_ADD, PackageDialog::OnAddItems)
     EVT_BUTTON(ID_PKGDLG_REMOVE, PackageDialog::OnRemoveItems)
     EVT_BUTTON(ID_PKGDLG_AUTODETECT, PackageDialog::OnAutoDetect)
+    EVT_BUTTON(ID_PKGDLG_LOADPROJECT, PackageDialog::OnLoadProjectFile)
+    EVT_BUTTON(ID_PKGDLG_SAVEPROJECT, PackageDialog::OnSaveProjectFile)
+    EVT_BUTTON(ID_PKGDLG_CREATEPACKAGE, PackageDialog::OnCreatePackage)
+    EVT_BUTTON(ID_PKGDLG_ABORT, PackageDialog::OnAbort)
+    EVT_PG_CHANGED(-1, PackageDialog::OnPropGridChange)
+    EVT_CLOSE(PackageDialog::OnClose)
 END_EVENT_TABLE()
 
 
@@ -45,12 +57,13 @@ END_EVENT_TABLE()
 /// \param icons IconManager*
 ///
 /////////////////////////////////////////////////
-PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : wxDialog(parent, wxID_ANY, _guilang.get("GUI_PKGDLG_HEAD"), wxDefaultPosition, wxSize(600, 570), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : wxDialog(parent, wxID_ANY, _guilang.get("GUI_PKGDLG_HEAD") + " [New Project]", wxDefaultPosition, wxSize(600, 800), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
     m_packageProperties = nullptr;
     m_fileList = nullptr;
     m_terminal = terminal;
     m_icons = icons;
+    m_isAutoIncrement = false;
 
     wxBoxSizer* vsizer = new wxBoxSizer(wxVERTICAL);
 
@@ -62,7 +75,8 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
 
     // Create a property grid containing the package
     // properties
-    m_packageProperties = new wxPropertyGrid(group->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPG_THEME_BORDER | wxPG_TOOLTIPS | wxPG_SPLITTER_AUTO_CENTER);
+    m_packageProperties = new wxPropertyGrid(group->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(-1, 260), wxPG_THEME_BORDER | wxPG_TOOLTIPS | wxPG_SPLITTER_AUTO_CENTER);
+    m_packageProperties->Append(new wxPropertyCategory(_guilang.get("GUI_PKGDLG_GENERAL_CATEGORY")));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PACKAGENAME"), "-name"));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_AUTHOR"), "-author"));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_VERSION"), "-version", "<AUTO>"));
@@ -74,56 +88,94 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
     m_packageProperties->Append(new wxEnumProperty(_guilang.get("GUI_PKGDLG_FLAGS"), "-flags", flags));
 
     wxArrayString type;
-    type.Add("TYPE_UNSPECIFIED");
+    type.Add("TYPE_PACKAGE");
     type.Add("TYPE_PLUGIN");
     type.Add("TYPE_PLUGIN_WITH_RETURN_VALUE");
+    type.Add("TYPE_GUI_PLUGIN");
     m_packageProperties->Append(new wxEnumProperty(_guilang.get("GUI_PKGDLG_TYPE"), "-type", type));
+
+    // Add a license field
+    wxArrayString license;
+    license.Add("Apache-2.0");
+    license.Add("BSD-2-Clause");
+    license.Add("BSD-3-Clause");
+    license.Add("CC-BY-4.0");
+    license.Add("CC-BY-ND-4.0");
+    license.Add("CC-BY-SA-4.0");
+    license.Add("CC-BY-SA-ND-4.0");
+    license.Add("EPL-2.0");
+    license.Add("GPL-2.0-only");
+    license.Add("GPL-2.0-or-later");
+    license.Add("GPL-3.0-only");
+    license.Add("GPL-3.0-or-later");
+    license.Add("LGPL-2.0-only");
+    license.Add("LGPL-2.0-or-later");
+    license.Add("LGPL-3.0-only");
+    license.Add("LGPL-3.0-or-later");
+    license.Add("MIT");
+    license.Add("MPL-2.0");
+    m_packageProperties->Append(new wxEditEnumProperty(_guilang.get("GUI_PKGDLG_LICENSE"), "-license", license, wxArrayInt(), license[0]));
+    m_packageProperties->Append(new wxLongStringProperty(_guilang.get("GUI_PKGDLG_PLUGINDESC"), "-desc"));
+    m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_DEPENDENCIES"), "-requirepackages"));
 
     // Add a validator to the package command to enssure that the user
     // only uses alphanumeric characters as command string
+    wxPGProperty* pluginsCategory = m_packageProperties->Append(new wxPropertyCategory(_guilang.get("GUI_PKGDLG_PLUGIN_CATEGORY")));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINCOMMAND"), "-plugincommand"));
     m_packageProperties->SetPropertyValidator("-plugincommand", wxTextValidator(wxFILTER_ALPHANUMERIC));
+    m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINMENUENTRY"), "-pluginmenuentry"));
+    m_packageProperties->SetPropertyValidator("-pluginmenuentry", wxTextValidator(wxFILTER_ALPHANUMERIC));
 
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINMAIN"), "-pluginmain"));
-    m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PLUGINDESC"), "-plugindesc"));
+
+    wxPGProperty* docsCategory = m_packageProperties->Append(new wxPropertyCategory(_guilang.get("GUI_PKGDLG_DOCS_CATEGORY")));
     m_packageProperties->Append(new wxBoolProperty(_guilang.get("GUI_PKGDLG_INCLUDEDOCUMENTATION"), INCLUDEDOCS));
+    wxFileProperty* docfile = new wxFileProperty(_guilang.get("GUI_PKGDLG_DOCUMENTATION"), DOCFILE);
+    docfile->SetAttribute(wxPG_FILE_DIALOG_STYLE, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    docfile->SetAttribute(wxPG_FILE_WILDCARD, "Doc files (*.xml,*.nhlp)|*.xml;*.nhlp|Text files (*.txt)|*.txt|All files (*.*)|*.*");
+    docfile->SetAttribute(wxPG_FILE_DIALOG_TITLE, _guilang.get("GUI_DLG_OPEN"));
+    m_packageProperties->Append(docfile);
 
     // Apply some general settings to the whole property grid
     m_packageProperties->SetPropertyAttributeAll(wxPG_BOOL_USE_CHECKBOX, true);
     m_packageProperties->SetValidationFailureBehavior(wxPG_VFB_MARK_CELL | wxPG_VFB_STAY_IN_PROPERTY);
 
-    group->Add(m_packageProperties, 0, wxEXPAND | wxALL, 5);
+    // Fold the non-general categories
+    m_packageProperties->Collapse(wxPGPropArg(pluginsCategory));
+    m_packageProperties->Collapse(wxPGPropArg(docsCategory));
+
+    group->Add(m_packageProperties, 1, wxEXPAND | wxALL, 5);
 
     // Create the files group
     group = panel->createGroup(_guilang.get("GUI_PKGDLG_FILES"));
 
-    // Create a list view for the files and add the image list
-    // to display the file icons
-    m_fileList = panel->CreateListView(group->GetStaticBox(), group, wxLC_LIST | wxLC_ALIGN_LEFT, wxSize(-1, 150));
-    m_fileList->SetImageList(icons->GetImageList(), wxIMAGE_LIST_SMALL);
+    // Add a special horizontal sizer for the buttons
+    wxBoxSizer* buttonSizer = panel->createGroup(wxHORIZONTAL, group);
 
     // Create the add, remove and autodetect buttons
-    wxButton* addButton = new wxButton(group->GetStaticBox(), ID_PKGDLG_ADD, _guilang.get("GUI_PKGDLG_ADDFILES"));
-    wxButton* removeButton = new wxButton(group->GetStaticBox(), ID_PKGDLG_REMOVE, _guilang.get("GUI_PKGDLG_REMOVEFILES"));
-    wxButton* autoButton = new wxButton(group->GetStaticBox(), ID_PKGDLG_AUTODETECT, _guilang.get("GUI_PKGDLG_AUTODETECTFILES"));
+    panel->CreateButton(group->GetStaticBox(), buttonSizer, _guilang.get("GUI_PKGDLG_ADDFILES"), ID_PKGDLG_ADD);
+    panel->CreateButton(group->GetStaticBox(), buttonSizer, _guilang.get("GUI_PKGDLG_REMOVEFILES"), ID_PKGDLG_REMOVE);
+    panel->CreateButton(group->GetStaticBox(), buttonSizer, _guilang.get("GUI_PKGDLG_AUTODETECTFILES"), ID_PKGDLG_AUTODETECT);
 
-    // Add the buttons to a special horizontal sizer
-    wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
+    // Create a list view for the files and add the image list
+    // to display the file icons
+    m_fileList = panel->CreateListView(group->GetStaticBox(), group, wxLC_LIST | wxLC_ALIGN_LEFT, wxSize(-1, 330));
+    m_fileList->SetImageList(icons->GetImageList(), wxIMAGE_LIST_SMALL);
 
-    buttonSizer->Add(addButton, 1, wxALL | wxFIXED_MINSIZE, 5);
-    buttonSizer->Add(removeButton, 1, wxALL | wxFIXED_MINSIZE, 5);
-    buttonSizer->Add(autoButton, 1, wxALL | wxFIXED_MINSIZE, 5);
+    // Create a special horizontal sizer for the project buttons
+    wxBoxSizer* projectButtonSizer = panel->createGroup(wxHORIZONTAL);
 
-    // Add the button sizer to the panel
-    group->Add(buttonSizer, 0, wxFIXED_MINSIZE | wxSHRINK | wxALIGN_CENTER_HORIZONTAL);
+    // Create the project buttons
+    panel->CreateButton(panel, projectButtonSizer, _guilang.get("GUI_PKGDLG_SAVE_PROJECT"), ID_PKGDLG_SAVEPROJECT);
+    panel->CreateButton(panel, projectButtonSizer, _guilang.get("GUI_PKGDLG_LOAD_PROJECT"), ID_PKGDLG_LOADPROJECT);
+    panel->CreateButton(panel, projectButtonSizer, _guilang.get("GUI_PKGDLG_CREATE_PACKAGE"), ID_PKGDLG_CREATEPACKAGE);
+    panel->CreateButton(panel, projectButtonSizer, _guilang.get("GUI_BUTTON_CANCEL"), ID_PKGDLG_ABORT);
 
     // Activate scroll bars
     panel->SetScrollbars(0, 20, 0, 200);
 
-    // Add the panel to the vertical sizer of the dialog and
-    // add the standard buttons to the dialog as well
+    // Add the panel to the vertical sizer of the dialog
     vsizer->Add(panel, 1, wxEXPAND, 0);
-    vsizer->Add(CreateButtonSizer(wxOK | wxCANCEL), 0, wxEXPAND | wxALL, 5);
 
     SetSizer(vsizer);
 }
@@ -163,7 +215,7 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
 {
     // Create a file dialog focused on procedure files. The user may
     // select multiple files
-    wxFileDialog dlg(this, _guilang.get("GUI_PKGDLG_SELECT_FILES"), m_terminal->getPathSettings()[PROCPATH], wxEmptyString, _guilang.get("COMMON_FILETYPE_NPRC") + " (*.nprc)|*.nprc", wxFD_MULTIPLE);
+    wxFileDialog dlg(this, _guilang.get("GUI_PKGDLG_SELECT_FILES"), m_terminal->getPathSettings()[PROCPATH], wxEmptyString, _guilang.get("GUI_FILTER_INSTALLABLES") + " (*.nprc, *.nlyt)|*.nprc;*.nlyt|" + _guilang.get("COMMON_FILETYPE_NPRC") + " (*.nprc)|*.nprc|" + _guilang.get("COMMON_FILETYPE_NLYT") + " (*.nlyt)|*.nlyt", wxFD_MULTIPLE);
 
     if (dlg.ShowModal() == wxID_OK)
     {
@@ -175,8 +227,15 @@ void PackageDialog::OnAddItems(wxCommandEvent& event)
         for (size_t i = 0; i < files.size(); i++)
         {
             if (m_fileList->FindItem(-1, replacePathSeparator(files[i].ToStdString()), false) == -1)
-                m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(".nprc"));
+            {
+                if (files[i].rfind(".nlyt") == std::string::npos)
+                    m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(".nprc"));
+                else
+                    m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(files[i].ToStdString()), m_icons->GetIconIndex(".nlyt"));
+            }
         }
+
+        markUnsaved();
     }
 }
 
@@ -199,6 +258,143 @@ void PackageDialog::OnRemoveItems(wxCommandEvent& event)
         m_fileList->DeleteItem(selected);
         selected = m_fileList->GetFirstSelected();
     }
+
+    markUnsaved();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Button event handler to load an
+/// existing project file.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::OnLoadProjectFile(wxCommandEvent& event)
+{
+    if (!isSaved())
+    {
+        int res = wxMessageBox(_guilang.get("GUI_UNSAVEDFILE_CLOSE"), _guilang.get("GUI_SAVE_QUESTION"), wxYES_NO);
+
+        if (res == wxYES)
+        {
+            wxFileDialog dialog(this, _guilang.get("GUI_DLG_SAVE"), m_terminal->getPathSettings()[SCRIPTPATH] + "/packages", getPackageIdentifier() + ".npkp", _guilang.get("GUI_FILTER_NPKP") + " (*.npkp)|*.npkp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+            if (dialog.ShowModal() == wxID_OK)
+                saveProjectFile(dialog.GetPath());
+        }
+    }
+
+    wxFileDialog dialog(this, _guilang.get("GUI_DLG_OPEN"), m_terminal->getPathSettings()[SCRIPTPATH] + "/packages", wxEmptyString, _guilang.get("GUI_FILTER_NPKP") + " (*.npkp)|*.npkp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+    if (dialog.ShowModal() == wxID_OK)
+        loadProjectFile(dialog.GetPath());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Button event handler to save a
+/// prepared package setting to a project file.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::OnSaveProjectFile(wxCommandEvent& event)
+{
+    wxFileDialog dialog(this, _guilang.get("GUI_DLG_SAVE"), m_terminal->getPathSettings()[SCRIPTPATH] + "/packages", getPackageIdentifier() + ".npkp", _guilang.get("GUI_FILTER_NPKP") + " (*.npkp)|*.npkp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+    if (dialog.ShowModal() == wxID_OK)
+        saveProjectFile(dialog.GetPath());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Called upon clicking on "Create
+/// package" button. Will ask for saving the
+/// project.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::OnCreatePackage(wxCommandEvent& event)
+{
+    SaveOnClose();
+    EndModal(wxID_OK);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Called upon clicking on "Cancel"
+/// button. Will ask for saving the project.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::OnAbort(wxCommandEvent& event)
+{
+    SaveOnClose();
+    EndModal(wxID_CANCEL);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler for all property grid
+/// changes.
+///
+/// \param event wxPropertyGridEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::OnPropGridChange(wxPropertyGridEvent& event)
+{
+    if (isSaved())
+        SetTitle(GetTitle().insert(GetTitle().find("[")+1, "*"));
+
+    event.GetProperty()->SetTextColour(*wxRED);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler, which is called, when
+/// the user closes the dialog.
+///
+/// \param event wxCloseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::OnClose(wxCloseEvent& event)
+{
+    SaveOnClose();
+    EndModal(wxCANCEL);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Evaluates, whether the current project
+/// has been saved and prompt the user a saving
+/// dialog, if not.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::SaveOnClose()
+{
+    if (!isSaved())
+    {
+        int res = wxMessageBox(_guilang.get("GUI_UNSAVEDFILE_CLOSE"), _guilang.get("GUI_SAVE_QUESTION"), wxYES_NO);
+
+        if (res == wxYES)
+        {
+            wxFileDialog dialog(this, _guilang.get("GUI_DLG_SAVE"), m_terminal->getPathSettings()[SCRIPTPATH] + "/packages", getPackageIdentifier() + ".npkp", _guilang.get("GUI_FILTER_NPKP") + " (*.npkp)|*.npkp", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+            if (dialog.ShowModal() == wxID_OK)
+                saveProjectFile(dialog.GetPath());
+        }
+    }
 }
 
 
@@ -218,9 +414,17 @@ void PackageDialog::autoDetect(const wxArrayString& mainfiles)
     std::set<std::string> fileSet;
 
     // Call followBranch() for every file name in the array
-    // of strings
+    // of strings (except of layout files)
     for (size_t i = 0; i < mainfiles.size(); i++)
-        followBranch(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
+    {
+        if (mainfiles[i].substr(0, 4) == "(!) ")
+            continue;
+
+        if (mainfiles[i].rfind(".nlyt") == std::string::npos)
+            followBranch(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
+        else
+            findLayoutDependencies(replacePathSeparator(mainfiles[i].ToStdString()), fileSet);
+    }
 
     // Insert only unique file names into the list view
     for (auto iter = fileSet.begin(); iter != fileSet.end(); ++iter)
@@ -228,6 +432,8 @@ void PackageDialog::autoDetect(const wxArrayString& mainfiles)
         if (m_fileList->FindItem(-1, *iter, false) == -1)
             m_fileList->InsertItem(m_fileList->GetItemCount(), *iter, m_icons->GetIconIndex(".nprc"));
     }
+
+    markUnsaved();
 }
 
 
@@ -266,6 +472,244 @@ void PackageDialog::followBranch(const string& sFile, set<string>& fileSet)
 
 
 /////////////////////////////////////////////////
+/// \brief This member function uses the event
+/// procedures of a window layout file to create
+/// a dependency tree for this layout.
+///
+/// \param sFile const std::string&
+/// \param fileSet std::set<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::findLayoutDependencies(const std::string& sFile, std::set<std::string>& fileSet)
+{
+    // Get a list of all event procedures
+    std::vector<std::string> vProcs = getEventProcedures(sFile);
+
+    // Get the tree for every not already examined
+    // procedure
+    for (size_t i = 0; i < vProcs.size(); i++)
+    {
+        if (fileSet.find(vProcs[i]) == fileSet.end())
+            followBranch(vProcs[i], fileSet);
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Loads a NumeRe package project file to
+/// memory and updates the UI correspondingly.
+///
+/// \param filename const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::loadProjectFile(const wxString& filename)
+{
+    tinyxml2::XMLDocument project;
+    project.LoadFile(filename.c_str());
+    tinyxml2::XMLElement* root = project.FirstChildElement("project");
+    bool allFilesFound = true;
+
+    // Ensure that the file is readable and that the version
+    // is known
+    if (!root || !root->Attribute("version.npkp", "1"))
+        return;
+
+    tinyxml2::XMLElement* info = root->FirstChildElement("info");
+    tinyxml2::XMLElement* files = root->FirstChildElement("files");
+
+    if (!info || !files)
+        return;
+
+    m_isAutoIncrement = false;
+
+    // Get an iterator for the properties grid and iterate
+    // through it
+    for (auto iter = m_packageProperties->GetIterator(); !iter.AtEnd(); iter++)
+    {
+        wxPGProperty* prop = *iter;
+        prop->SetTextColour(*wxBLACK);
+        tinyxml2::XMLElement* infoitem = info->FirstChildElement(prop->GetName().substr(1).c_str());
+
+        if (!infoitem || !infoitem->GetText())
+            continue;
+
+        if (prop->GetName() == "-version")
+        {
+            if (infoitem->BoolAttribute("autoincrement"))
+            {
+                prop->SetValueFromString(incrementVersion(infoitem->GetText()));
+                prop->SetTextColour(*wxRED);
+                m_isAutoIncrement = true;
+                continue;
+            }
+        }
+        else if (prop->GetName() == DOCFILE && !fileExists(infoitem->GetText()))
+        {
+            allFilesFound = false;
+            continue;
+        }
+
+        prop->SetValueFromString(infoitem->GetText());
+    }
+
+    m_fileList->DeleteAllItems();
+
+    tinyxml2::XMLElement* file = files->FirstChildElement();
+
+    // Load all files to the table
+    while (file)
+    {
+        if (!fileExists(file->GetText()))
+        {
+            allFilesFound = false;
+
+            m_fileList->InsertItem(m_fileList->GetItemCount(), "(!) " + std::string(file->GetText()), m_icons->GetIconIndex(""));
+        }
+        else
+            m_fileList->InsertItem(m_fileList->GetItemCount(), file->GetText(), std::string(file->GetText()).find(".nprc") != std::string::npos ? m_icons->GetIconIndex(".nprc") : m_icons->GetIconIndex(".nlyt"));
+
+
+        file = file->NextSiblingElement();
+    }
+
+    // Update the window title to reflect the loaded project
+    wxFileName fname(filename);
+    SetTitle(_guilang.get("GUI_PKGDLG_HEAD") + " [" + fname.GetFullName() + "]");
+
+    if (m_isAutoIncrement)
+        markUnsaved();
+
+    if (!allFilesFound)
+        wxMessageBox(_guilang.get("GUI_PKGDLG_NOTALLFILESFOUND"), _guilang.get("GUI_PKGDLG_NOTALLFILESFOUND_HEAD"), wxOK, this);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Saves a prepared package configuration
+/// as a NumeRe package project file to the HDD.
+///
+/// \param filename const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::saveProjectFile(const wxString& filename)
+{
+    VersionControlSystemManager manager(static_cast<NumeReWindow*>(GetParent()));
+    std::unique_ptr<FileRevisions> revisions(manager.getRevisions(filename));
+
+    // Ensure that the revisions are complete
+    if (revisions.get())
+    {
+        if (!revisions->getRevisionCount() && wxFileExists(filename))
+        {
+            wxFile tempfile(filename);
+            wxString contents;
+            tempfile.ReadAll(&contents);
+            revisions->addRevision(contents);
+        }
+    }
+
+    tinyxml2::XMLDocument project;
+    tinyxml2::XMLElement* root = project.NewElement("project");
+    tinyxml2::XMLElement* info = project.NewElement("info");
+    tinyxml2::XMLElement* files = project.NewElement("files");
+
+    root->SetAttribute("version.npkp", "1");
+    root->SetAttribute("version.numere", sVersion.c_str());
+
+    project.InsertFirstChild(root);
+    root->InsertFirstChild(info);
+    root->InsertEndChild(files);
+
+    // Get an iterator for the properties grid and iterate
+    // through it
+    for (auto iter = m_packageProperties->GetIterator(); !iter.AtEnd(); iter++)
+    {
+        wxPGProperty* prop = *iter;
+        prop->SetTextColour(*wxBLACK);
+        tinyxml2::XMLElement* infoitem = project.NewElement(prop->GetName().substr(1).c_str());
+
+        if (prop->GetName() == "-version" && (prop->GetValueAsString() == "<AUTO>" || m_isAutoIncrement))
+        {
+            if (prop->GetValueAsString() == "<AUTO>")
+                infoitem->SetText("0.0.1");
+            else
+                infoitem->SetText(prop->GetValueAsString().ToStdString().c_str());
+
+            infoitem->SetAttribute("autoincrement", true);
+        }
+        else
+            infoitem->SetText(prop->GetValueAsString().ToStdString().c_str());
+
+        info->InsertEndChild(infoitem);
+    }
+
+    files->SetAttribute("count", m_fileList->GetItemCount());
+
+    // Write all files to the project file
+    for (int i = 0; i < m_fileList->GetItemCount(); i++)
+    {
+        tinyxml2::XMLElement* file = project.NewElement("file");
+        std::string sFile = m_fileList->GetItemText(i).ToStdString();
+
+        if (sFile.substr(0, 4) == "(!) ")
+            sFile.erase(0, 4);
+
+        file->SetText(sFile.c_str());
+        files->InsertEndChild(file);
+    }
+
+    project.SaveFile(filename.c_str());
+
+    // Read the written XML file and store it in
+    // the list of revisions
+    if (revisions.get())
+    {
+        if (wxFileExists(filename))
+        {
+            wxFile tempfile(filename);
+            wxString contents;
+            tempfile.ReadAll(&contents);
+            revisions->addRevision(contents);
+        }
+    }
+
+    wxFileName fname(filename);
+
+    // Update the window title to reflect the loaded project
+    SetTitle(_guilang.get("GUI_PKGDLG_HEAD") + " [" + fname.GetFullName() + "]");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Marks the current project as modified.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageDialog::markUnsaved()
+{
+    if (isSaved())
+        SetTitle(GetTitle().insert(GetTitle().find("[")+1, "*"));
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if the current project
+/// is in a saved state.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool PackageDialog::isSaved()
+{
+    return GetTitle().find("[*") == std::string::npos;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function can be used to insert
 /// the current mainfile to the dialog. Used by
 /// the main window, if the user clicks on
@@ -277,7 +721,12 @@ void PackageDialog::followBranch(const string& sFile, set<string>& fileSet)
 /////////////////////////////////////////////////
 void PackageDialog::setMainFile(const wxString& mainfile)
 {
-    m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(mainfile.ToStdString()), m_icons->GetIconIndex(".nprc"));
+    if (mainfile.rfind(".nlyt") == std::string::npos)
+        m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(mainfile.ToStdString()), m_icons->GetIconIndex(".nprc"));
+    else
+        m_fileList->InsertItem(m_fileList->GetItemCount(), replacePathSeparator(mainfile.ToStdString()), m_icons->GetIconIndex(".nlyt"));
+
+    markUnsaved();
 }
 
 
@@ -313,7 +762,7 @@ wxArrayString PackageDialog::getProcedures()
 /////////////////////////////////////////////////
 wxString PackageDialog::getInstallInfo()
 {
-    wxString installInfo = "\t<info>\n";
+    wxString installInfo = "\t<info>\r\n";
 
     // Has the user selected a plugin type as package type?
     bool isplugin = isPlugin();
@@ -327,20 +776,34 @@ wxString PackageDialog::getInstallInfo()
         // "-type" and "-flag" don't need quoation marks
         if (prop->GetName() == "-type" || prop->GetName() == "-flags")
         {
-            installInfo += "\t\t" + prop->GetName() + "=" + prop->GetValueAsString() + "\n";
+            installInfo += "\t\t" + prop->GetName() + "=" + prop->GetValueAsString() + "\r\n";
             continue;
         }
-        else if ((prop->GetName().substr(0, 7) == "-plugin" && !isplugin) || prop->GetName()[0] != '-')
+        else if ((prop->GetName().substr(0, 7) == "-plugin" && (!isplugin || !prop->GetValueAsString().length())) || prop->GetName()[0] != '-')
+            continue;
+        else if (prop->GetName() == "-name")
+        {
+            installInfo += "\t\t-name=\"" + getPackageName() + "\"\r\n";
+            continue;
+        }
+        else if (prop->GetName() == "-version" && prop->GetValueAsString() == "<AUTO>")
+        {
+            installInfo += "\t\t-version=\"0.0.1\"\r\n";
+            continue;
+        }
+        else if (prop->GetName() == "-requirepackages" && !prop->GetValueAsString().length())
             continue;
 
         // Add the current property to the set
-        installInfo += "\t\t" + prop->GetName() + "=\"" + prop->GetValueAsString() + "\"\n";
+        wxString value = prop->GetValueAsString();
+        value.Replace("\"", "\\\"");
+        installInfo += "\t\t" + prop->GetName() + "=\"" + value + "\"\r\n";
     }
 
     // Add the require version property to the current install
     // information
-    installInfo += "\t\t-requireversion=\"" + sVersion.substr(0, sVersion.find(' ')) + "\"\n";
-    installInfo += "\t<endinfo>\n";
+    installInfo += "\t\t-requireversion=\"" + sVersion.substr(0, sVersion.find(' ')) + "\"\r\n";
+    installInfo += "\t<endinfo>\r\n";
 
     return installInfo;
 }
@@ -387,7 +850,23 @@ wxString PackageDialog::getPackageIdentifier()
             identifier[i] = '_';
     }
 
-    return identifier;
+    if (isPlugin())
+        return "plgn_" + identifier;
+
+    return "pkg_" + identifier;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the user-chosen documentation
+/// file.
+///
+/// \return wxString
+///
+/////////////////////////////////////////////////
+wxString PackageDialog::getDocFile()
+{
+    return m_packageProperties->GetPropertyByName(DOCFILE)->GetValueAsString();
 }
 
 
@@ -414,7 +893,7 @@ bool PackageDialog::includeDocs()
 /////////////////////////////////////////////////
 bool PackageDialog::isPlugin()
 {
-    return m_packageProperties->GetPropertyByName("-type")->GetValueAsString().find("TYPE_PLUGIN") != std::string::npos;
+    return m_packageProperties->GetPropertyByName("-type")->GetValueAsString().find("PLUGIN") != std::string::npos;
 }
 
 

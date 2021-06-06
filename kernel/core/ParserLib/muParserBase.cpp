@@ -521,8 +521,11 @@ namespace mu
     /////////////////////////////////////////////////
 	MutableStringView ParserBase::PreEvaluateVectors(MutableStringView sExpr)
 	{
+	    bool isPaused = bPauseLoopByteCode && bMakeLoopByteCode;
+
 	    // Pause the loop mode if it is active
-		PauseLoopMode();
+	    if (!isPaused)
+            PauseLoopMode();
 
 		vector<double> vResults;
 
@@ -618,7 +621,8 @@ namespace mu
 		}
 
 		// Re-enable the loop mode if it is used in the moment
-		PauseLoopMode(false);
+		if (!isPaused)
+            PauseLoopMode(false);
 
 		return sExpr;
 	}
@@ -649,6 +653,17 @@ namespace mu
                     singletons += ",";
 
                 singletons += args[n].to_string();
+
+                // Is it the last one, then evaluate
+                // the singleton directly
+                if (n+1 == args.size())
+                {
+                    SetExpr(singletons);
+                    v = Eval(nResults);
+                    vResults.insert(vResults.end(), v, v+nResults);
+                    break;
+                }
+
                 continue;
             }
             else if (singletons.length())
@@ -739,7 +754,7 @@ namespace mu
 		vResults.push_back(dFirst);
 
 		// Depending on the relation of the first and last value, change the expansion algorithm
-		if (dFirst < dLast)
+		if (dFirst <= dLast)
 		{
 		    // Avoid rounding errors by allowing a little bit larger values than the last one
 			while (dFirst + dIncrement <= dLast + 1e-10 * dIncrement)
@@ -847,7 +862,7 @@ namespace mu
 				std::string sFunc = sExpr.subview(nSep, i - nSep).to_string();
 
 				// Exclude the following functions
-				if (sFunc == "polynomial")
+				if (sFunc == "polynomial" || sFunc == "perlin")
                     continue;
 
 				// Compare the function with the set of known multi-argument functions
@@ -1201,7 +1216,8 @@ namespace mu
 	{
 	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
         {
-            iter->second[0] = *(m_VarDef.find(iter->first)->second);
+            if (m_VarDef.find(iter->first) != m_VarDef.end()) // FIX needed because both maps do not have to be identical
+                iter->second[0] = *(m_VarDef.find(iter->first)->second);
         }
 
 	    return mVectorVars;

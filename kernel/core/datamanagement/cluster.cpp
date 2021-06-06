@@ -1508,7 +1508,7 @@ namespace NumeRe
         auto iter = mapStringViewFind(sCluster);
 
         if (iter == mClusterMap.end())
-            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster.to_string(), SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster.to_string(), sCluster.to_string());
 
         return iter->second;
     }
@@ -1520,7 +1520,7 @@ namespace NumeRe
         auto iter = mClusterMap.find(sCluster);
 
         if (iter == mClusterMap.end())
-            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, sCluster);
 
         return iter->second;
     }
@@ -1533,7 +1533,7 @@ namespace NumeRe
         auto iter = mClusterMap.find(sCluster);
 
         if (iter == mClusterMap.end())
-            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::CLUSTER_DOESNT_EXIST, sCluster, sCluster);
 
         return iter->second;
     }

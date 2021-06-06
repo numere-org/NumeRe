@@ -66,6 +66,7 @@ class Script : public FileSystem
         bool handleInstallInformation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
         string extractDocumentationIndex(string& sScriptCommand);
         void writeDocumentationArticle(string& sScriptCommand);
+        void writeLayout(std::string& sScriptCommand);
         void evaluateInstallInformation(bool& bFirstPassedInstallCommand);
         string getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand);
         string getNextScriptCommandFromInclude();
@@ -124,8 +125,12 @@ class Script : public FileSystem
             }
         inline bool installProcedures() const
             {return bInstallProcedures;}
-        inline string getInstallInfoString() const
-            {return sInstallInfoString;}
+        inline string getInstallInfoString()
+            {
+                std::string cp = sInstallInfoString;
+                sInstallInfoString.clear();
+                return cp;
+            }
 };
 
 #endif

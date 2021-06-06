@@ -192,14 +192,42 @@ NumeReTerminal::~NumeReTerminal()
 /// \brief Returns the standard paths as a STL
 /// vector.
 ///
-/// \return vector<string>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> NumeReTerminal::getPathSettings()
+std::vector<std::string> NumeReTerminal::getPathSettings()
 {
 	wxCriticalSectionLocker lock(m_kernelCS);
 	vector<string> vPaths = _kernel.getPathSettings();
 	return vPaths;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the installed plugins as a
+/// STL vector.
+///
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> NumeReTerminal::getInstalledPackages()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getInstalledPackages();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the menu map of the installed
+/// plugins as a STL map.
+///
+/// \return std::map<std::string, std::string>
+///
+/////////////////////////////////////////////////
+std::map<std::string, std::string> NumeReTerminal::getMenuMap()
+{
+    wxCriticalSectionLocker lock(m_kernelCS);
+    return _kernel.getMenuMap();
 }
 
 
@@ -651,6 +679,9 @@ void NumeReTerminal::OnThreadUpdate(wxThreadEvent& event)
                 break;
             case NumeReKernel::NUMERE_CLOSE_WINDOWS:
                 m_wxParent->closeWindows((WindowType)task.nLine);
+                break;
+            case NumeReKernel::NUMERE_INSTALLATION_DONE:
+                m_wxParent->notifyInstallationDone();
                 break;
         }
     }

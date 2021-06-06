@@ -35,8 +35,9 @@ struct ProcedureViewerData
     int ID;
     wxString procedureDefinition;
     wxString procedureFlags;
+    wxString procedureReturnVal;
 
-    ProcedureViewerData(int nID, const wxString& procDef, const wxString& flags) : ID(nID), procedureDefinition(procDef), procedureFlags(flags) {}
+    ProcedureViewerData(int nID, const wxString& procDef, const wxString& flags, const wxString& retVal = "") : ID(nID), procedureDefinition(procDef), procedureFlags(flags), procedureReturnVal(retVal) {}
 };
 
 // Sorting callback function. Will use the selected column and the data
@@ -64,6 +65,12 @@ int wxCALLBACK ProcedureViewerCompare(wxIntPtr item1, wxIntPtr item2, wxIntPtr p
                 return 0;
             return 1;
         case 2:
+            if (viewer->vData[item1].procedureReturnVal < viewer->vData[item2].procedureReturnVal)
+                return -1;
+            else if (viewer->vData[item1].procedureReturnVal == viewer->vData[item2].procedureReturnVal)
+                return 0;
+            return 1;
+        case 3:
             if (toLowerCase(viewer->vData[item1].procedureDefinition.ToStdString()) < toLowerCase(viewer->vData[item2].procedureDefinition.ToStdString()))
                 return -1;
             else if (toLowerCase(viewer->vData[item1].procedureDefinition.ToStdString()) == toLowerCase(viewer->vData[item2].procedureDefinition.ToStdString()))
@@ -102,7 +109,7 @@ void ProcedureViewer::emptyControl()
     }
 
     InsertItem(0, "--");
-    SetItem(0, 2, _guilang.get("GUI_PROCEDUREVIEWER_EMPTY"));
+    SetItem(0, 3, _guilang.get("GUI_PROCEDUREVIEWER_EMPTY"));
     SetItemData(0, 0);
 
     // Make the message grey and printed in italics
@@ -121,6 +128,7 @@ ProcedureViewer::ProcedureViewer(wxWindow* parent) : wxListView(parent, wxID_ANY
     vData = vector<ProcedureViewerData>();
     AppendColumn("ID");
     AppendColumn("Flags");
+    AppendColumn("Returns");
     AppendColumn(_guilang.get("GUI_PROCEDUREVIEWER_SIGNATURE"));
 
     // Create an empty control
@@ -176,12 +184,14 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
 
     wxString procdef;
     wxString flags;
+    wxString returns;
 
     // Go through the list
     for (size_t i = 0; i < vProcedures.size(); i++)
     {
         // Get the current definition
         procdef = vProcedures[i];
+        returns.clear();
 
         // Split the definition at the flags (if available)
         // and at the definition string (if available)
@@ -192,6 +202,12 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
 
             if (flags.find("\n") != string::npos)
                 flags.erase(flags.find("\n"));
+
+            if (flags.find("->") != std::string::npos)
+            {
+                returns = flags.substr(flags.find("->")+2);
+                flags.erase(flags.find("->"));
+            }
         }
         else
         {
@@ -199,20 +215,28 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
 
             if (procdef.find("\n") != string::npos)
                 procdef.erase(procdef.find("\n"));
+
+            if (procdef.find("->") != std::string::npos)
+            {
+                returns = procdef.substr(procdef.find("->")+2);
+                procdef.erase(procdef.find("->"));
+            }
         }
 
         // Remove obsolete whitespaces
         this->stripSpaces(flags);
         this->stripSpaces(procdef);
+        this->stripSpaces(returns);
 
         // Create a new data object in the buffer
-        vData.push_back(ProcedureViewerData(i, procdef, flags));
+        vData.push_back(ProcedureViewerData(i, procdef, flags, returns));
 
         // Create the new list item and store
         // a pointer to the current data object
         InsertItem(i, toString(i+1));
         SetItem(i, 1, flags);
-        SetItem(i, 2, procdef);
+        SetItem(i, 2, returns);
+        SetItem(i, 3, procdef);
         //SetItemPtrData(i, (wxUIntPtr)&vData[vData.size()-1]);
         SetItemData(i, i);
 
@@ -236,13 +260,26 @@ void ProcedureViewer::updateProcedureList(const vector<wxString>& vProcedures)
     {
         SetColumnWidth(0, wxLIST_AUTOSIZE);
         SetColumnWidth(1, wxLIST_AUTOSIZE);
+
+        if (GetColumnWidth(1) < 50)
+            SetColumnWidth(1, 50);
+
         SetColumnWidth(2, wxLIST_AUTOSIZE);
+
+        if (GetColumnWidth(2) < 55)
+            SetColumnWidth(2, 55);
+
+        SetColumnWidth(3, wxLIST_AUTOSIZE);
+
+        if (GetColumnWidth(3) < 250)
+            SetColumnWidth(3, 250);
     }
     else
     {
         SetColumnWidth(0, wxLIST_AUTOSIZE_USEHEADER);
         SetColumnWidth(1, wxLIST_AUTOSIZE_USEHEADER);
-        SetColumnWidth(2, wxLIST_AUTOSIZE);
+        SetColumnWidth(2, wxLIST_AUTOSIZE_USEHEADER);
+        SetColumnWidth(3, wxLIST_AUTOSIZE);
     }
 }
 

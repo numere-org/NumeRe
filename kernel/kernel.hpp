@@ -125,7 +125,8 @@ class NumeReKernel
             NUMERE_ANSWER_READ,
             NUMERE_SHOW_WINDOW,
             NUMERE_REFRESH_FUNCTIONTREE,
-            NUMERE_CLOSE_WINDOWS
+            NUMERE_CLOSE_WINDOWS,
+            NUMERE_INSTALLATION_DONE
         };
 
         enum DebuggerCodes
@@ -140,6 +141,7 @@ class NumeReKernel
         string sCommandLine;
         string sAnswer;
         string sPlotCompose;
+        bool installing;
 
         static NumeReKernel* kernelInstance;
 
@@ -229,11 +231,13 @@ class NumeReKernel
         static string formatResultOutput(int nNum, value_type* v);
         static string formatResultOutput(const vector<string>& vStringResults);
         static void issueWarning(string sWarningMessage);
+        static void failMessage(string sFailMessage);
         static int numberOfNumbersPerLine();
         static void progressBar(int nStep, int nFirstStep, int nFinalStep, const string& sType);
         static void getline(string& sLine);
         static void gotoLine(const string& sFile, unsigned int nLine = 0);
         static void setDocumentation(const string& _sDocumentation);
+        static void installationDone();
         static bool GetAsyncCancelState();
         static void showTable(NumeRe::Table _table, string __name, bool openeditable = false);
         static void showStringTable(NumeRe::Container<string> _stringtable, string __name, bool openeditable = false);
@@ -350,7 +354,9 @@ class NumeReKernel
         void saveData();
         Settings getKernelSettings();
         void setKernelSettings(const Settings& _settings);
-        vector<string> getPathSettings() const;
+        std::vector<std::string> getPathSettings() const;
+        std::vector<std::string> getInstalledPackages() const;
+        std::map<std::string, std::string> getMenuMap() const;
         void printVersionInfo();
         void updateLineLenght(int nLength);
         void sendErrorNotification();

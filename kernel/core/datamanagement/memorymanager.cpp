@@ -47,7 +47,7 @@ MemoryManager::MemoryManager() : NumeRe::FileAdapter(), StringMemory(), NumeRe::
 	sUserdefinedFuncs = "";
 	sPredefinedCommands =  ";abort;about;audio;break;compose;cont;cont3d;continue;copy;credits;data;datagrid;define;delete;dens;dens3d;diff;draw;draw3d;edit;else;endcompose;endfor;endif;endprocedure;endwhile;eval;explicit;export;extrema;fft;find;fit;for;get;global;grad;grad3d;graph;graph3d;help;hist;hline;if;ifndef;ifndefined;imread;implot;info;integrate;list;load;matop;mesh;mesh3d;move;mtrxop;namespace;new;odesolve;plot;plot3d;procedure;pulse;quit;random;read;readline;regularize;remove;rename;replaceline;resample;return;save;script;set;smooth;sort;stats;stfa;str;surf;surf3d;swap;taylor;throw;undef;undefine;var;vect;vect3d;while;write;zeroes;";
 	sPluginCommands = "";
-	mCachesMap["table"] = 0;
+	mCachesMap["table"] = std::make_pair(0u, 0u);
 	vMemory.push_back(new Memory());
 
 	tableColumnsCount = 0.0;
@@ -93,7 +93,7 @@ void MemoryManager::removeTablesFromMemory()
 		vMemory.clear();
 		bSaveMutex = false;
 		mCachesMap.clear();
-		mCachesMap["table"] = 0;
+		mCachesMap["table"] = std::make_pair(0u, 0u);
 		vMemory.push_back(new Memory());
 	}
 }
@@ -245,7 +245,7 @@ vector<int> MemoryManager::sortElements(const string& sLine)
     if (findParameter(sLine, "index"))
         sSortingExpression += " index";
 
-    return vMemory[mCachesMap.at(sCache)]->sortElements(0, getLines(sCache, false)-1, 0, getCols(sCache, false)-1, sSortingExpression);
+    return vMemory[findTable(sCache)]->sortElements(0, getLines(sCache, false)-1, 0, getCols(sCache, false)-1, sSortingExpression);
 }
 
 
@@ -265,7 +265,7 @@ vector<int> MemoryManager::sortElements(const string& sLine)
 /////////////////////////////////////////////////
 vector<int> MemoryManager::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
 {
-    return vMemory[mCachesMap.at(sCache)]->sortElements(i1, i2, j1, j2, sSortingExpression);
+    return vMemory[findTable(sCache)]->sortElements(i1, i2, j1, j2, sSortingExpression);
 }
 
 
@@ -316,12 +316,12 @@ bool MemoryManager::saveToCacheFile()
         if (iter->first == "data")
             continue;
 
-        nLines = vMemory[iter->second]->getLines(false);
-        nCols = vMemory[iter->second]->getCols(false);
+        nLines = vMemory[iter->second.first]->getLines(false);
+        nCols = vMemory[iter->second.first]->getCols(false);
 
         cacheFile.setDimensions(nLines, nCols);
-        cacheFile.setColumnHeadings(vMemory[iter->second]->sHeadLine, nCols);
-        cacheFile.setData(vMemory[iter->second]->dMemTable, nLines, nCols);
+        cacheFile.setColumnHeadings(vMemory[iter->second.first]->sHeadLine, nCols);
+        cacheFile.setData(vMemory[iter->second.first]->dMemTable, nLines, nCols);
         cacheFile.setTableName(iter->first);
         cacheFile.setComment("NO COMMENT");
 
@@ -387,7 +387,7 @@ bool MemoryManager::loadFromNewCacheFile()
         {
             cacheFile.read();
 
-            mCachesMap[cacheFile.getTableName()] = vMemory.size();
+            mCachesMap[cacheFile.getTableName()] = std::make_pair(vMemory.size(), vMemory.size());
             vMemory.push_back(new Memory());
 
             vMemory.back()->resizeMemory(cacheFile.getRows(), cacheFile.getCols());
@@ -492,7 +492,7 @@ bool MemoryManager::loadFromLegacyCacheFile()
 
                 delete[] cCachesMap;
                 cCachesMap = 0;
-                mCachesMap[sTemp] = nLayerIndex;
+                mCachesMap[sTemp] = std::pair<size_t,size_t>(nLayerIndex, nLayerIndex);
                 vMemory.push_back(new Memory());
             }
         }
@@ -766,7 +766,7 @@ Memory* MemoryManager::getTable(const string& sTable)
     if (mCachesMap.find(sTable.substr(0, sTable.find('('))) == mCachesMap.end())
         return nullptr;
 
-    return vMemory[mCachesMap.at(sTable.substr(0, sTable.find('(')))];
+    return vMemory[findTable(sTable.substr(0, sTable.find('(')))];
 }
 
 /////////////////////////////////////////////////
@@ -791,14 +791,13 @@ void MemoryManager::melt(Memory* _mem, const string& sTable)
     if (mCachesMap.find(sTable) == mCachesMap.end())
     {
         // Append the new table
-        long long int nIndex = vMemory.size();
-        mCachesMap[sTable] = nIndex;
+        mCachesMap[sTable] = std::make_pair(vMemory.size(), vMemory.size());
         vMemory.push_back(_mem);
     }
     else
     {
         // Combine both tables
-        Memory* _existingMem = vMemory[mCachesMap[sTable]];
+        Memory* _existingMem = vMemory[mCachesMap[sTable].first];
 
         long long int nCols = _existingMem->getCols(false);
 
@@ -989,8 +988,7 @@ bool MemoryManager::addTable(const string& sCache, const Settings& _option)
         NumeReKernel::print(LineBreak(_lang.get("CACHE_WARNING_PLUGIN_OVERLAP"), _option));
 
     // Actually create the new table
-    long long int nIndex = vMemory.size();
-    mCachesMap[sCacheName] = nIndex;
+    mCachesMap[sCacheName] = std::make_pair(vMemory.size(), vMemory.size());
     vMemory.push_back(new Memory());
 
     return true;
@@ -1014,18 +1012,25 @@ bool MemoryManager::deleteTable(const string& sCache)
     {
         if (iter->first == sCache)
         {
-            if (vMemory.size() > iter->second)
+            if (vMemory.size() > iter->second.first)
             {
-                delete vMemory[iter->second];
-                vMemory.erase(vMemory.begin() + iter->second);
+                delete vMemory[iter->second.first];
+                vMemory.erase(vMemory.begin() + iter->second.first);
             }
             else
                 return false;
 
             for (auto iter2 = mCachesMap.begin(); iter2 != mCachesMap.end(); ++iter2)
             {
-                if (iter2->second > iter->second)
-                    mCachesMap[iter2->first] = iter2->second-1;
+                if (iter2->second.first > iter->second.first)
+                    iter2->second.first--;
+
+                if (iter2->second.second > iter->second.first)
+                    iter2->second.second--;
+                else if (iter2->second.second == iter->second.first)
+                    iter2->second.second = iter2->second.first;
+
+                mCachesMap[iter2->first] = iter2->second;
             }
 
             mCachesMap.erase(iter);
