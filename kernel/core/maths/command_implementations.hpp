@@ -37,7 +37,7 @@ bool integrate2d(CommandLineParser& cmdParser);
 bool differentiate(CommandLineParser& cmdParser);
 bool findExtrema(CommandLineParser& cmdParser);
 bool findZeroes(CommandLineParser& cmdParser);
-void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
+void taylor(CommandLineParser& cmdParser);
 bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool fastFourierTransform(CommandLineParser& cmdParser);
 bool fastWaveletTransform(CommandLineParser& cmdParser);

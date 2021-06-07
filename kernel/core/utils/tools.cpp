@@ -1618,29 +1618,51 @@ void openExternally(const string& sFile)
     }
 }
 
-// --> Eine Datei von einem Ort zum anderen Ort verschieben; kann auch zum umbenennen verwendet werden <--
+
+/////////////////////////////////////////////////
+/// \brief Move a file from one to another
+/// location. Can be used for renaming as well.
+///
+/// \param sFile const string&
+/// \param sNewFileName const string&
+/// \return void
+///
+/////////////////////////////////////////////////
 void moveFile(const string& sFile, const string& sNewFileName)
 {
-    // --> Dateien verschieben geht am einfachsten, wenn man ihren Inhalt in die Zieldatei kopiert <--
+    // Copy first
+    copyFile(sFile, sNewFileName);
+
+    // remove old file
+    remove(sFile.c_str());
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Copy the file's contents to another
+/// file.
+///
+/// \param sFile const string&
+/// \param sTarget const string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void copyFile(const string& sFile, const string& sTarget)
+{
+    // Open two file streams to copy the contents
     ifstream File(sFile.c_str(), ios_base::binary);
-    ofstream NewFile(sNewFileName.c_str(), ios_base::binary);
+    ofstream NewFile(sTarget.c_str(), ios_base::binary);
 
     if (!File.good())
         throw SyntaxError(SyntaxError::CANNOT_OPEN_SOURCE, "", SyntaxError::invalid_position, sFile);
+
     if (!NewFile.good())
-        throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, "", SyntaxError::invalid_position, sNewFileName);
+        throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, "", SyntaxError::invalid_position, sTarget);
 
-    // --> Schreibe den ReadBuffer in NewFile <--
+    // Copy the file
     NewFile << File.rdbuf();
-
-    // --> Schliesse NewFile und File <--
-    NewFile.close();
-    File.close();
-
-    // --> Loesche die alte Datei <--
-    remove(sFile.c_str());
-    return;
 }
+
 
 // --> Generiert eine TeX-Hauptdatei fuer eine gegebene TikZ-Plot-Datei <--
 void writeTeXMain(const string& sTeXFile)

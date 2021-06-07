@@ -2531,20 +2531,20 @@ static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, co
 /// \brief This function approximates the passed
 /// expression using Taylor's method.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _option const Settings&
-/// \param _functions Define&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /// The aproximated function is defined as a new
 /// custom function.
 /////////////////////////////////////////////////
-void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+void taylor(CommandLineParser& cmdParser)
 {
-    string sParams = "";
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    string sParams = cmdParser.getParameterList();
     string sVarName = "";
-    string sExpr = "";
+    string sExpr = cmdParser.getExprAsMathExpression();
     string sExpr_cpy = "";
     string sArg = "";
     string sTaylor = "Taylor";
@@ -2558,15 +2558,11 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
     long double** dDiffValues = 0;
 
     // We cannot approximate string expressions
-    if (containsStrings(sCmd))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "taylor");
+    if (containsStrings(sExpr))
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "taylor");
 
     // Extract the parameter list
-    if (sCmd.find("-set") != string::npos)
-        sParams = sCmd.substr(sCmd.find("-set"));
-    else if (sCmd.find("--") != string::npos)
-        sParams = sCmd.substr(sCmd.find("--"));
-    else
+    if (!sParams.length())
     {
         NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_TAYLOR_MISSINGPARAMS"), _option));
         return;
@@ -2607,10 +2603,7 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
 
         // Ensure that the location was chosen reasonable
         if (isinf(dVarValue) || isnan(dVarValue))
-        {
-            sCmd = "nan";
             return;
-        }
 
         // Create the string element, which is used
         // for the variable in the created funcction
@@ -2624,24 +2617,11 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
     }
 
     // Extract the expression
-    sExpr = sCmd.substr(sCmd.find(' ') + 1);
-
-    if (sExpr.find("-set") != string::npos)
-        sExpr = sExpr.substr(0, sExpr.find("-set"));
-    else
-        sExpr = sExpr.substr(0, sExpr.find("--"));
-
-    StripSpaces(sExpr);
-
     sExpr_cpy = sExpr;
 
     // Create a unique function name, if it is desired
     if (bUseUniqueName)
-        sTaylor += toString((int)nth_taylor) + "_" + sExpr;
-
-    // Ensure that the call to the custom function throws errors
-    if (!_functions.call(sExpr))
-        return;
+        sTaylor += toString((int)nth_taylor) + "_" + cmdParser.getExpr();
 
     StripSpaces(sExpr);
     _parser.SetExpr(sExpr);
@@ -2762,6 +2742,8 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
         NumeReKernel::print(LineBreak(sTaylor, _option, true, 0, 8));
 
     sTaylor += " " + _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString((int)nth_taylor));
+
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
     bool bDefinitionSuccess = false;
 
@@ -4741,8 +4723,6 @@ value_type parser_Random(value_type vRandMin, value_type vRandMax);
 void particleSwarmOptimizer(CommandLineParser& cmdParser)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    FunctionDefinitionManager& _define = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nGlobalBest = 0;
     size_t nNumParticles = 100;

@@ -749,25 +749,25 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Memo
 /// \brief This function removes one or multiple
 /// entries in the selected table or cluster.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool deleteCacheEntry(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+bool deleteCacheEntry(CommandLineParser& cmdParser)
 {
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
 	bool bSuccess = false;
 
 	// Remove the command from the command line
-	sCmd.erase(0, findCommand(sCmd).nPos + findCommand(sCmd).sString.length());
+	std::string sExpr = cmdParser.getExpr();
 
 	// As long as a next argument may be extracted
-	while (getNextArgument(sCmd, false).length())
+	while (sExpr.length())
 	{
 	    // Get the next argument
-		string sCache = getNextArgument(sCmd, true);
+		string sCache = getNextArgument(sExpr, true);
 
         // Try to find the current cache in the list of available caches
 		StripSpaces(sCache);
@@ -790,42 +790,31 @@ bool deleteCacheEntry(string& sCmd, Parser& _parser, MemoryManager& _data, const
 /// \brief This function copies whole chunks of
 /// data between tables.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CopyData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+bool CopyData(CommandLineParser& cmdParser)
 {
-	string sToCopy = "";
-	string sTarget = "";
-	bool bTranspose = false;
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
-	Indices _iCopyIndex;
+	bool bTranspose = cmdParser.hasParam("transpose");
 	Indices _iTargetIndex;
 
-	// Find the transpose flag
-	if (findParameter(sCmd, "transpose"))
-		bTranspose = true;
-
     // Get the target from the option or use the default one
-    sTarget = evaluateTargetOptionInCommand(sCmd, "table", _iTargetIndex, _parser, _data, _option);
-
-    // Isolate the expression
-	sToCopy = sCmd.substr(sCmd.find(' '));
+    std::string sTarget = cmdParser.getTargetTable(_iTargetIndex, "table");
 
 	// Get the actual source data name and the corresponding indices
-	sToCopy = getSourceForDataOperation(sToCopy, _iCopyIndex, _parser, _data, _option);
-	if (!sToCopy.length())
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+
+    if (!accessParser.getDataObject().length())
         return false;
 
     // Apply the transpose flag on the indices, if necessary
-	evaluateTransposeForDataOperation(sTarget, _iCopyIndex, _iTargetIndex, _data, bTranspose);
+	evaluateTransposeForDataOperation(sTarget, accessParser.getIndices(), _iTargetIndex, _data, bTranspose);
 
 	// Perform the actual data operation. Move is set to false
-	performDataOperation(sToCopy, sTarget, _iCopyIndex, _iTargetIndex, _data, false, bTranspose);
+	performDataOperation(accessParser.getDataObject(), sTarget, accessParser.getIndices(), _iTargetIndex, _data, false, bTranspose);
 
 	return true;
 }
@@ -835,47 +824,35 @@ bool CopyData(string& sCmd, Parser& _parser, MemoryManager& _data, const Setting
 /// \brief This function will move the selected
 /// part of a data table to a new location.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool moveData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+bool moveData(CommandLineParser& cmdParser)
 {
-	string sToMove = "";
-	string sTarget = "";
-	bool bTranspose = false;
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
-	Indices _iMoveIndex;
+	bool bTranspose = cmdParser.hasParam("transpose");
 	Indices _iTargetIndex;
 
-	// Find the transpose flag
-	if (findParameter(sCmd, "transpose"))
-		bTranspose = true;
-
     // Get the target expression from the option. The default one is empty and will raise an error
-	sTarget = evaluateTargetOptionInCommand(sCmd, "", _iTargetIndex, _parser, _data, _option);
+	std::string sTarget = cmdParser.getTargetTable(_iTargetIndex, "");
 
 	// If the target cache name is empty, raise an error
 	if (!sTarget.length())
         return false;
 
-    // Isolate the expression
-	sToMove = sCmd.substr(sCmd.find(' '));
-
 	// Get the actual source data name and the corresponding indices
-    sToMove = getSourceForDataOperation(sToMove, _iMoveIndex, _parser, _data, _option);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
 
-	if (!sToMove.length())
+    if (!accessParser.getDataObject().length())
         return false;
 
     // Apply the transpose flag on the indices, if necessary
-	evaluateTransposeForDataOperation(sTarget, _iMoveIndex, _iTargetIndex, _data, bTranspose);
+	evaluateTransposeForDataOperation(sTarget, accessParser.getIndices(), _iTargetIndex, _data, bTranspose);
 
 	// Perform the actual data operation. Move is set to true
-    performDataOperation(sToMove, sTarget, _iMoveIndex, _iTargetIndex, _data, true, bTranspose);
+    performDataOperation(accessParser.getDataObject(), sTarget, accessParser.getIndices(), _iTargetIndex, _data, true, bTranspose);
 
     return true;
 }

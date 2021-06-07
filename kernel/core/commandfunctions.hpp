@@ -53,6 +53,38 @@ string removeQuotationMarks(const string& sString);
 static size_t findSettingOption(const std::string& sCmd, const std::string& sOption);
 
 /////////////////////////////////////////////////
+/// \brief Performs the operation confirmation
+/// loop, if the user did not supply the ignore
+/// command line option.
+///
+/// \param sMessage const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool confirmOperation(const std::string& sMessage)
+{
+    NumeReKernel::print(sMessage);
+    std::string sArgument;
+
+    do
+    {
+        NumeReKernel::printPreFmt("|\n|<- ");
+        NumeReKernel::getline(sArgument);
+        StripSpaces(sArgument);
+    }
+    while (!sArgument.length());
+
+    if (sArgument.substr(0, 1) != _lang.YES())
+    {
+        NumeReKernel::print(_lang.get("COMMON_CANCEL"));
+        return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function returns a list of the
 /// current defined variables either as strings
 /// or as plain text.
@@ -3037,15 +3069,12 @@ static CommandReturnValues cmd_edit(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_taylor(string& sCmd)
 {
-    //Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "taylor", CommandLineParser::CMD_EXPR_set_PAR);
 
-    if (sCmd.length() > 7)
-        taylor(sCmd, _parser, _option, _functions);
+    if (cmdParser.getExpr().length())
+        taylor(cmdParser);
     else
-        doc_Help("taylor", _option);
+        doc_Help("taylor", NumeReKernel::getInstance()->getSettings());
 
     return COMMAND_PROCESSED;
 }
@@ -3112,76 +3141,42 @@ static CommandReturnValues cmd_odesolve(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_delete(string& sCmd)
 {
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
     int nArgument;
 
-    if (_data.containsTablesOrClusters(sCmd))
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+
+    if (_data.containsTablesOrClusters(cmdParser.getExpr()))
     {
-        if (!findParameter(sCmd, "ignore") && !findParameter(sCmd, "i"))
+        if (!cmdParser.hasParam("ignore") && !cmdParser.hasParam("i"))
         {
-            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"), _option));
-
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-                StripSpaces(sArgument);
-            }
-            while (!sArgument.length());
-
-            if (sArgument.substr(0, 1) != _lang.YES())
-            {
-                NumeReKernel::print(_lang.get("COMMON_CANCEL") );
+            if (!confirmOperation(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM")))
                 return COMMAND_PROCESSED;
-            }
         }
 
-        if (deleteCacheEntry(sCmd, _parser, _data, _option))
+        if (deleteCacheEntry(cmdParser))
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_SUCCESS"));
         }
         else
             throw SyntaxError(SyntaxError::CANNOT_DELETE_ELEMENTS, sCmd, SyntaxError::invalid_position);
-
     }
-    else if (sCmd.find("string()") != string::npos || sCmd.find("string(:)") != string::npos)
+    else if (accessParser.getDataObject() == "string")
     {
-        if (_data.removeStringElements(0))
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", "1"));
-        }
-        else
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", "1"));
-        }
-
-        return COMMAND_PROCESSED;
-    }
-    else if (sCmd.find(" string(", findCommand(sCmd).nPos) != string::npos)
-    {
-        _parser.SetExpr(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos) + 8, getMatchingParenthesis(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos) + 7)) - 1));
-        nArgument = (int)_parser.Eval() - 1;
+        nArgument = accessParser.getIndices().row.front();
 
         if (_data.removeStringElements(nArgument))
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", toString(nArgument + 1)));
         }
-        else
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", toString(nArgument + 1)));
-        }
 
         return COMMAND_PROCESSED;
-
     }
     else
         doc_Help("delete", _option);
@@ -3202,38 +3197,25 @@ static CommandReturnValues cmd_delete(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_clear(string& sCmd)
 {
+    CommandLineParser cmdParser(sCmd, "clear", CommandLineParser::CMD_DAT_PAR);
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     Match _mMatch = findCommand(sCmd);
 
-    if (findParameter(sCmd, "data") || sCmd.find(" data()", _mMatch.nPos) != string::npos)
+    if (_data.containsTables(cmdParser.getExpr()))
     {
-        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
-            remove_data(_data, _option, true);
-        else
-            remove_data(_data, _option);
-    }
-    else if (_data.matchTableAsParameter(sCmd).length()
-             || _data.containsTables(sCmd.substr(_mMatch.nPos+_mMatch.sString.length())))
-    {
-        string sCommand = "delete ";
+        string sCommand = "delete " + cmdParser.getExpr();
 
-        if (_data.matchTableAsParameter(sCmd).length())
-            sCommand += _data.matchTableAsParameter(sCmd) + "()";
-        else
-            sCommand += sCmd.substr(_mMatch.nPos+_mMatch.sString.length());
-
-        if (findParameter(sCmd, "ignore") || findParameter(sCmd, "i"))
+        if (cmdParser.hasParam("ignore") || cmdParser.hasParam("i"))
             sCommand += " -ignore";
-
 
         return cmd_delete(sCommand);
     }
-    else if (findParameter(sCmd, "memory"))
+    else if (cmdParser.hasParam("memory"))
     {
         // Clear all tables
-        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
+        if (cmdParser.hasParam("ignore") || cmdParser.hasParam("i"))
             clear_cache(_data, _option, true);
         else
             clear_cache(_data, _option);
@@ -3245,17 +3227,12 @@ static CommandReturnValues cmd_clear(string& sCmd)
         _data.clearAllClusters();
         _data.newCluster("ans").setDouble(0, NAN);
     }
-    else if (findParameter(sCmd, "string") || sCmd.find(" string()", _mMatch.nPos+_mMatch.sString.length()) != string::npos)
+    else if (cmdParser.getExpr() == "string()")
     {
         if (_data.clearStringElements())
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"));
-        }
-        else
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"));
         }
 
         return COMMAND_PROCESSED;
@@ -3377,13 +3354,13 @@ static CommandReturnValues cmd_install(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_copy(string& sCmd)
 {
+    CommandLineParser cmdParser(sCmd, "copy", CommandLineParser::CMD_DAT_PAR);
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (_data.containsTablesOrClusters(sCmd))
+    if (_data.containsTablesOrClusters(cmdParser.getExpr()))
     {
-        if (CopyData(sCmd, _parser, _data, _option))
+        if (CopyData(cmdParser))
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYDATA_SUCCESS"));
@@ -3391,23 +3368,16 @@ static CommandReturnValues cmd_copy(string& sCmd)
         else
             throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, sCmd, SyntaxError::invalid_position);
     }
-    else if ((findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '=')) && sCmd.length() > 5)
+    else if ((cmdParser.hasParam("target") || cmdParser.hasParam("t")) && cmdParser.getExpr().length())
     {
-        int nArgument;
-
-        if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
-            nArgument = 1;
-        else
-            nArgument = 0;
-
-        if (copyFile(sCmd, _parser, _data, _option))
+        if (copyFile(cmdParser))
         {
             if (_option.systemPrints())
             {
-                if (nArgument)
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_ALL_SUCCESS", sCmd));
+                if (cmdParser.hasParam("all") || cmdParser.hasParam("a"))
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_ALL_SUCCESS", cmdParser.getReturnValueStatement()));
                 else
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_SUCCESS", sCmd));
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_SUCCESS", cmdParser.getReturnValueStatement()));
             }
         }
         else
@@ -4401,17 +4371,15 @@ static CommandReturnValues cmd_help(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_move(string& sCmd)
 {
+    CommandLineParser cmdParser(sCmd, "move", CommandLineParser::CMD_DAT_PAR);
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    int nArgument;
-
-    if (sCmd.length() > 5)
+    if (cmdParser.getExpr().length())
     {
-        if (_data.containsTablesOrClusters(sCmd) && (findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '=')))
+        if (_data.containsTablesOrClusters(cmdParser.getExpr()))
         {
-            if (moveData(sCmd, _parser, _data, _option))
+            if (moveData(cmdParser))
             {
                 if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_MOVEDATA_SUCCESS"), _option) );
@@ -4421,19 +4389,14 @@ static CommandReturnValues cmd_move(string& sCmd)
         }
         else
         {
-            if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
-                nArgument = 1;
-            else
-                nArgument = 0;
-
-            if (moveFile(sCmd, _parser, _data, _option))
+            if (moveFile(cmdParser))
             {
                 if (_option.systemPrints())
                 {
-                    if (nArgument)
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_ALL_SUCCESS", sCmd));
+                    if (cmdParser.hasParam("all") || cmdParser.hasParam("a"))
+                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_ALL_SUCCESS", cmdParser.getReturnValueStatement()));
                     else
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_SUCCESS", sCmd));
+                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_SUCCESS", cmdParser.getReturnValueStatement()));
                 }
             }
             else

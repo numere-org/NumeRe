@@ -37,9 +37,9 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 void remove_data(MemoryManager& _data, Settings& _option, bool bIgnore = false);
 void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option);
 void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore = false);
-bool deleteCacheEntry(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool CopyData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool moveData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
+bool deleteCacheEntry(CommandLineParser& cmdParser);
+bool CopyData(CommandLineParser& cmdParser);
+bool moveData(CommandLineParser& cmdParser);
 bool sortData(CommandLineParser& cmdParser);
 bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option);
 bool readFromFile(CommandLineParser& cmdParser);

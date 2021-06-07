@@ -107,9 +107,15 @@ void CommandLineParser::parse(const std::string& sCommandString, CommandLinePars
 
             for (size_t i = 0; i < m_expr.length(); i++)
             {
+                // Handle parentheses
                 if (m_expr[i] == '(' || m_expr[i] == '{')
                     i += getMatchingParenthesis(m_expr.substr(i));
 
+                // Handle lists (will jump to the minus sign, if no list)
+                if ((m_expr[i] == ',' || m_expr[i] == ' ') && m_expr.find_first_not_of(", ", i) != std::string::npos)
+                    i = m_expr.find_first_not_of(", ", i);
+
+                // Extract params
                 if (m_expr[i] == ' ' || m_expr[i] == '-')
                 {
                     m_parlist = m_expr.substr(m_expr.find('-', i));

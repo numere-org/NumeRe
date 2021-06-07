@@ -22,6 +22,7 @@
 
 #include <string>
 #include <vector>
+#include "../commandlineparser.hpp"
 #include "../datamanagement/memorymanager.hpp"
 #include "../settings.hpp"
 #include "../ParserLib/muParser.h"
@@ -30,8 +31,8 @@ using namespace std;
 using namespace mu;
 
 bool removeFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool moveFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool copyFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
+bool moveFile(CommandLineParser& cmdParser);
+bool copyFile(CommandLineParser& cmdParser);
 bool generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option);
 
 
