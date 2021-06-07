@@ -30,9 +30,8 @@
 using namespace std;
 using namespace mu;
 
-bool removeFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool moveFile(CommandLineParser& cmdParser);
-bool copyFile(CommandLineParser& cmdParser);
+bool removeFile(CommandLineParser& cmdParser);
+bool moveOrCopyFiles(CommandLineParser& cmdParser);
 bool generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option);
 
 

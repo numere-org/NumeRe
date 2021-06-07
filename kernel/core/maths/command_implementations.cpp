@@ -4109,17 +4109,14 @@ bool analyzePulse(CommandLineParser& cmdParser)
 /// \brief This function performs the short-time
 /// fourier analysis on the passed data set.
 ///
-/// \param sCmd string&
-/// \param sTargetCache string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
 {
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
     Indices _target;
     mglData _real, _imag, _result;
     int nSamples = 0;
@@ -4127,32 +4124,16 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
     double dXmin = NAN, dXmax = NAN;
     double dFmin = 0.0, dFmax = 1.0;
     double dSampleSize = NAN;
-    sCmd.erase(0, findCommand(sCmd).nPos + 4);
 
-    // Strings parsen
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-    {
-        string sDummy = "";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-    }
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
 
-    // Funktionen aufrufen
-    if (!_functions.call(sCmd))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
+    if (vParVal.size())
+        nSamples = std::max(intCast(vParVal.front()), 0LL);
 
-    if (findParameter(sCmd, "samples", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7));
-        nSamples = _parser.Eval();
-
-        if (nSamples < 0)
-            nSamples = 0;
-    }
-
-    sTargetCache = evaluateTargetOptionInCommand(sCmd, "stfdat", _target, _parser, _data, _option);
+    std::string sTargetCache = cmdParser.getTargetTable(_target, "stfdat");
 
     // Indices lesen
-    DataAccessParser _accessParser(sCmd);
+    DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
     _accessParser.evalIndices();
     Indices& _idx = _accessParser.getIndices();
 
@@ -4222,6 +4203,8 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
         }
     }
 
+    cmdParser.clearReturnValue();
+    cmdParser.setReturnValue(sTargetCache);
     return true;
 }
 
@@ -4414,33 +4397,28 @@ void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, Function
 /// \brief This function approximates the passed
 /// data set using cubic splines.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /// The calculated spline polynomials are defined
 /// as new custom functions.
 /////////////////////////////////////////////////
-bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool calculateSplines(CommandLineParser& cmdParser)
 {
-    Indices _idx;
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+
     MemoryManager _cache;
     tk::spline _spline;
     vector<double> xVect, yVect;
-    string sTableName = sCmd.substr(sCmd.find(' '));
-    StripSpaces(sTableName);
 
-    getIndices(sTableName, _idx, _parser, _data, _option);
-    sTableName.erase(sTableName.find('('));
-    getData(sTableName, _idx, _data, _cache);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+
+    getData(accessParser.getDataObject(), accessParser.getIndices(), NumeReKernel::getInstance()->getMemoryManager(), _cache);
 
     long long int nLines = _cache.getLines("table", true) - _cache.getAppendedZeroes(0, "table");
 
     if (nLines < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, sTableName);
+        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), accessParser.getDataObject());
 
     for (long long int i = 0; i < nLines; i++)
     {
@@ -4479,7 +4457,7 @@ bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, Funct
             sDefinition += " + ";
     }
 
-    if (_option.systemPrints() && !NumeReKernel::bSupressAnswer)
+    if (NumeReKernel::getInstance()->getSettings().systemPrints() && !NumeReKernel::bSupressAnswer)
         NumeReKernel::print(sDefinition);
 
     bool bDefinitionSuccess = false;
@@ -4490,7 +4468,7 @@ bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, Funct
         bDefinitionSuccess = _functions.defineFunc(sDefinition);
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints() && !NumeReKernel::bSupressAnswer);
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), NumeReKernel::getInstance()->getSettings().systemPrints() && !NumeReKernel::bSupressAnswer);
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 

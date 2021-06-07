@@ -48,9 +48,9 @@ bool readAudioFile(CommandLineParser& cmdParser);
 bool seekInAudioFile(CommandLineParser& cmdParser);
 bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool analyzePulse(CommandLineParser& cmdParser);
-bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool shortTimeFourierAnalysis(CommandLineParser& cmdParser);
 void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool calculateSplines(CommandLineParser& cmdParser);
 void rotateTable(std::string& sCmd);
 void particleSwarmOptimizer(CommandLineParser& cmdParser);
 

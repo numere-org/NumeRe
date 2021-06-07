@@ -35,15 +35,15 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
 void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string sFileName = "");
 void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision, bool bData = false, bool bCache = false, bool bSave = false, bool bDefaultName = true);
 void remove_data(MemoryManager& _data, Settings& _option, bool bIgnore = false);
-void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option);
+void append_data(CommandLineParser& cmdParser);
 void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore = false);
 bool deleteCacheEntry(CommandLineParser& cmdParser);
 bool CopyData(CommandLineParser& cmdParser);
 bool moveData(CommandLineParser& cmdParser);
 bool sortData(CommandLineParser& cmdParser);
-bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option);
+bool writeToFile(CommandLineParser& cmdParser);
 bool readFromFile(CommandLineParser& cmdParser);
-bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option);
+bool readImage(CommandLineParser& cmdParser);
 
 
 #endif // DATAOPS_HPP

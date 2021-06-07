@@ -26,93 +26,75 @@ extern Language _lang;
 
 std::string removeQuotationMarks(const std::string&);
 
-bool removeFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+/////////////////////////////////////////////////
+/// \brief Removes one or more files from the
+/// disk.
+///
+/// \param cmdParser CommandLineParser&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool removeFile(CommandLineParser& cmdParser)
 {
-    if (sCmd.length() < 7)
+    if (!cmdParser.getExpr().length())
         return false;
-    bool bIgnore = false;
-    bool bAll = false;
+
+    bool bIgnore = cmdParser.hasParam("ignore") || cmdParser.hasParam("i");
+    bool bAll = cmdParser.hasParam("all") || cmdParser.hasParam("a");
     string _sCmd = "";
     FileSystem _fSys;
-    _fSys.setTokens(_option.getTokenPaths());
-    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    _fSys.initializeFromKernel();
 
-    sCmd = fromSystemCodePage(sCmd);
+    //sCmd = fromSystemCodePage(sCmd);
 
-    if (findParameter(sCmd, "ignore") || findParameter(sCmd, "i"))
-    {
-        if (findParameter(sCmd, "ignore"))
-            sCmd.erase(findParameter(sCmd, "ignore")-1,6);
-        else
-            sCmd.erase(findParameter(sCmd, "i")-1,1);
-        bIgnore = true;
-    }
-    if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
-    {
-        if (findParameter(sCmd, "all"))
-            sCmd.erase(findParameter(sCmd, "all")-1,3);
-        else
-            sCmd.erase(findParameter(sCmd, "a")-1,1);
-        bAll = true;
-    }
-    sCmd = sCmd.substr(sCmd.find("remove")+6);
-    sCmd = sCmd.substr(0, sCmd.rfind('-'));
-    StripSpaces(sCmd);
-    while (sCmd[sCmd.length()-1] == '-' && sCmd[sCmd.length()-2] == ' ')
-    {
-        sCmd.erase(sCmd.length()-1);
-        StripSpaces(sCmd);
-    }
+    // Get all relevant files
+    std::vector<std::string> vFiles = getFileList(cmdParser.parseExprAsString(), NumeReKernel::getInstance()->getSettings(), 1);
 
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-    {
-        string sDummy = "";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-    }
-    if (sCmd[0] == '"')
-        sCmd = sCmd.substr(1);
-    if (sCmd[sCmd.length()-1] == '"')
-        sCmd = sCmd.substr(0,sCmd.length()-1);
-    if (sCmd.length())
-        _sCmd = _fSys.ValidFileName(sCmd);
-    else
+    if (!vFiles.size())
         return false;
 
-    if (!fileExists(_sCmd))
-        return false;
-
-    while (_sCmd.length() && fileExists(_sCmd))
+    // Delete the first or every file
+    for (const std::string& sFile : vFiles)
     {
-        if (_sCmd.substr(_sCmd.rfind('.')) == ".exe"
-            || _sCmd.substr(_sCmd.rfind('.')) == ".dll"
-            || _sCmd.substr(_sCmd.rfind('.')) == ".vfm")
-        {
+        if (sFile.substr(sFile.rfind('.')) == ".exe"
+            || sFile.substr(sFile.rfind('.')) == ".dll"
+            || sFile.substr(sFile.rfind('.')) == ".sys"
+            || sFile.substr(sFile.rfind('.')) == ".vfm")
             return false;
-        }
+
         if (!bIgnore)
         {
             string c = "";
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_REMOVEFILE_CONFIRM", _sCmd), _option) );
+            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_REMOVEFILE_CONFIRM", _sCmd), NumeReKernel::getInstance()->getSettings()) );
             NumeReKernel::printPreFmt("|\n|<- ");
             NumeReKernel::getline(c);
 
             if (c != _lang.YES())
-            {
                 return false;
-            }
         }
-        remove(_sCmd.c_str());
-        if (!bAll || (sCmd.find('*') == string::npos && sCmd.find('?') == string::npos))
-            break;
-        else
-            _sCmd = _fSys.ValidFileName(sCmd);
+
+        // Delete it
+        remove(sFile.c_str());
+
+        // Delete only the first one
+        if (!bAll)
+            return true;
     }
 
     return true;
 }
 
 
-static bool moveOrCopyFile(CommandLineParser& cmdParser)
+/////////////////////////////////////////////////
+/// \brief Moves or copies files from one
+/// location to another. Supports also wildcards
+/// and file lists.
+///
+/// \param cmdParser CommandLineParser&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool moveOrCopyFiles(CommandLineParser& cmdParser)
 {
     if (!cmdParser.getExpr().length())
         return false;
@@ -133,6 +115,7 @@ static bool moveOrCopyFile(CommandLineParser& cmdParser)
 
     //sCmd = fromSystemCodePage(sCmd);
 
+    // Get the target
     if (cmdParser.hasParam("target") || cmdParser.hasParam("t"))
     {
         if (cmdParser.hasParam("target"))
@@ -145,6 +128,7 @@ static bool moveOrCopyFile(CommandLineParser& cmdParser)
     else
         throw SyntaxError(SyntaxError::NO_TARGET, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
+    // Clean source and target paths
     sSource = replacePathSeparator(sSource);
     sTarget = replacePathSeparator(sTarget);
 
@@ -153,11 +137,13 @@ static bool moveOrCopyFile(CommandLineParser& cmdParser)
 
     sSource = removeQuotationMarks(sSource);
 
+    // Get the source file list an validate
     vFileList = getFileList(sSource, NumeReKernel::getInstance()->getSettings(), 1);
 
     if (!vFileList.size())
         return false;
 
+    // Operate on each file in the list
     for (unsigned int nFile = 0; nFile < vFileList.size(); nFile++)
     {
         _sTarget = sTarget;
@@ -171,6 +157,7 @@ static bool moveOrCopyFile(CommandLineParser& cmdParser)
                 _fSys.declareFileType(sExt);
         }
 
+        // Resolve the file name
         sFile = _fSys.ValidFileName(sFile);
 
         if (_sTarget[_sTarget.length()-1] == '*' && _sTarget[_sTarget.length()-2] == '/')
@@ -178,6 +165,7 @@ static bool moveOrCopyFile(CommandLineParser& cmdParser)
         else if (_sTarget[_sTarget.length()-1] == '/')
             _sTarget = _sTarget.substr(0, _sTarget.length()-1) + sFile.substr(sFile.rfind('/'));
 
+        // Prepare the file tags
         if (_sTarget.find('<') != string::npos && _sTarget.find('>', _sTarget.find('<')) != string::npos)
         {
             string sToken = "";
@@ -229,6 +217,7 @@ static bool moveOrCopyFile(CommandLineParser& cmdParser)
         if (_sTarget.substr(_sTarget.length()-2) == "/*")
             _sTarget.erase(_sTarget.length()-1);
 
+        // Validate target file name
         _sTarget = _fSys.ValidFileName(_sTarget);
 
         if (_sTarget.substr(_sTarget.rfind('.')-1) == "*.dat")
@@ -242,6 +231,7 @@ static bool moveOrCopyFile(CommandLineParser& cmdParser)
         if (!fileExists(sFile))
             continue;
 
+        // Perform the actual file operation
         if (cmdParser.getCommand() == "move")
             moveFile(sFile, _sTarget);
         else
@@ -260,18 +250,6 @@ static bool moveOrCopyFile(CommandLineParser& cmdParser)
     }
 
     return bSuccess;
-}
-
-
-bool moveFile(CommandLineParser& cmdParser)
-{
-    return moveOrCopyFile(cmdParser);
-}
-
-
-bool copyFile(CommandLineParser& cmdParser)
-{
-    return moveOrCopyFile(cmdParser);
 }
 
 

@@ -197,6 +197,19 @@ void CommandLineParser::setReturnValue(const std::vector<std::string>& vRetVal)
 
 
 /////////////////////////////////////////////////
+/// \brief Simply returns, whether the expression
+/// contains any data objects.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool CommandLineParser::exprContainsDataObjects() const
+{
+    return NumeReKernel::getInstance()->getMemoryManager().containsTablesOrClusters(m_expr);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Converts the expression to a file name
 /// and removes the surrounding quotation marks,
 /// if any. The passed extension is used to
@@ -251,6 +264,9 @@ std::string CommandLineParser::getExprAsFileName(std::string sFileExt) const
     {
         throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, m_commandLine, SyntaxError::invalid_position, sFileExt);
     }
+
+    if (!sFileExt.length())
+        return _fSys.ValidFolderName(sFileName);
 
     // Declare the extension
     _fSys.declareFileType(sFileExt);
@@ -314,6 +330,38 @@ std::string CommandLineParser::getExprAsMathExpression(bool parseDataObjects) co
         convertVectorToExpression(sExpr, instance->getSettings());
 
     StripSpaces(sExpr);
+
+    return sExpr;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Prepares the expression by handling
+/// all string operations and removing the
+/// surrounding quotation marks.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string CommandLineParser::parseExprAsString() const
+{
+    NumeReKernel* instance = NumeReKernel::getInstance();
+    // Make a copy
+    std::string sExpr = m_expr;
+
+    // Call functions first
+    if (!instance->getDefinitions().call(sExpr))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_commandLine, sExpr);
+
+    if (sExpr.find("??") != string::npos)
+        sExpr = promptForUserInput(sExpr);
+
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpr))
+    {
+        sExpr += " -nq";
+        string sDummy;
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpr, sDummy, true);
+    }
 
     return sExpr;
 }

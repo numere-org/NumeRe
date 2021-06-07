@@ -143,9 +143,11 @@ class CommandLineParser
             return m_commandLine;
         }
 
+        bool exprContainsDataObjects() const;
         std::string getExprAsFileName(std::string sFileExt) const;
         DataAccessParser getExprAsDataObject() const;
         std::string getExprAsMathExpression(bool parseDataObjects = false) const;
+        std::string parseExprAsString() const;
         std::vector<double> parseExprAsNumericalValues() const;
         std::vector<double> parseIntervals(bool bErase = false);
         std::string getTargetTable(Indices& _targetIndices, const std::string& sDefaultTableName);
