@@ -46,12 +46,12 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryM
 bool writeAudioFile(CommandLineParser& cmdParser);
 bool readAudioFile(CommandLineParser& cmdParser);
 bool seekInAudioFile(CommandLineParser& cmdParser);
-bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool regularizeDataSet(CommandLineParser& cmdParser);
 bool analyzePulse(CommandLineParser& cmdParser);
 bool shortTimeFourierAnalysis(CommandLineParser& cmdParser);
-void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+void boneDetection(CommandLineParser& cmdParser);
 bool calculateSplines(CommandLineParser& cmdParser);
-void rotateTable(std::string& sCmd);
+void rotateTable(CommandLineParser& cmdParser);
 void particleSwarmOptimizer(CommandLineParser& cmdParser);
 
 #endif // COMMAND_IMPLEMENTATIONS_HPP

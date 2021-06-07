@@ -3950,54 +3950,29 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
 /// of a defined x-y-data array such that DeltaX
 /// is equal for every x.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param CommandLineParser& cmdParser
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool regularizeDataSet(CommandLineParser& cmdParser)
 {
-    int nSamples = 100;
-    string sDataset = "";
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    int nSamples = 0;
     string sColHeaders[2] = {"", ""};
-    Indices _idx;
     double dXmin, dXmax;
-    sCmd.erase(0, findCommand(sCmd).nPos + findCommand(sCmd).sString.length()); // Kommando entfernen
-
-    // Strings parsen
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-    {
-        string sDummy = "";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-    }
-
-    // Funktionen aufrufen
-    if (!_functions.call(sCmd))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
     // Samples lesen
-    if (findParameter(sCmd, "samples", '='))
-    {
-        string sSamples = getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7);
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
 
-        if (_data.containsTablesOrClusters(sSamples))
-            getDataElements(sSamples, _parser, _data, _option);
-
-        _parser.SetExpr(sSamples);
-
-        if (!isnan(_parser.Eval()) && !isinf(_parser.Eval()) && _parser.Eval() >= 1)
-            nSamples = (int)_parser.Eval();
-    }
+    if (vParVal.size())
+        nSamples = intCast(vParVal.front());
 
     // Indices lesen
-    getIndices(sCmd, _idx, _parser, _data, _option);
-    sDataset = sCmd.substr(0, sCmd.find('('));
-    StripSpaces(sDataset);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    Indices& _idx = accessParser.getIndices();
+
     MemoryManager _cache;
-    getData(sDataset, _idx, _data, _cache);
+    getData(accessParser.getDataObject(), _idx, _data, _cache);
 
     _cache.sortElements("sort -table cols=1[2]");
 
@@ -4013,20 +3988,20 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, Func
     tk::spline _spline;
     _spline.set_points(_cache.getElement(VectorIndex(0, nLines-1), VectorIndex(0), "table"), _cache.getElement(VectorIndex(0, nLines-1), VectorIndex(1), "table"), false);
 
-    if (!findParameter(sCmd, "samples", '='))
+    if (!nSamples)
         nSamples = nLines;
 
-    long long int nLastCol = _data.getCols(sDataset, false);
+    long long int nLastCol = _data.getCols(accessParser.getDataObject(), false);
 
     // Interpolate the data points
     for (long long int i = 0; i < nSamples; i++)
     {
-        _data.writeToTable(i, nLastCol, sDataset, dXmin + i * (dXmax-dXmin) / (nSamples-1));
-        _data.writeToTable(i, nLastCol + 1, sDataset, _spline(dXmin + i*(dXmax-dXmin) / (nSamples-1)));
+        _data.writeToTable(i, nLastCol, accessParser.getDataObject(), dXmin + i * (dXmax-dXmin) / (nSamples-1));
+        _data.writeToTable(i, nLastCol + 1, accessParser.getDataObject(), _spline(dXmin + i*(dXmax-dXmin) / (nSamples-1)));
     }
 
-    _data.setHeadLineElement(nLastCol, sDataset, sColHeaders[0]);
-    _data.setHeadLineElement(nLastCol + 1, sDataset, sColHeaders[1]);
+    _data.setHeadLineElement(nLastCol, accessParser.getDataObject(), sColHeaders[0]);
+    _data.setHeadLineElement(nLastCol + 1, accessParser.getDataObject(), sColHeaders[1]);
     return true;
 }
 
@@ -4254,86 +4229,59 @@ static double interpolateToGrid(const std::vector<double>& vAxis, double dInterp
 /// \brief This function is the implementation of
 /// the detect command.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data MemoryManager&
-/// \param _functions FunctionDefinitionManager&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+void boneDetection(CommandLineParser& cmdParser)
 {
-    string sDataset = "";
-    std::string sTargetCache;
-    Indices _idx, _target;
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     mglData _mData;
     double dLevel = NAN, dAttrX = 0.0, dAttrY = 1.0, dMinLen = 0.0;
 
-    sCmd.erase(0, findCommand(sCmd).nPos + 6);
-
-    // Strings parsen
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-    {
-        string sDummy = "";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-    }
-
-    // Funktionen aufrufen
-    if (!_functions.call(sCmd))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
-
     // detect TABLE() -set minval=LVL attract={x,y} minlen=MIN target=TARGET()
-    if (findParameter(sCmd, "minval", '='))
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("minval");
+
+    if (vParVal.size())
+        dLevel = vParVal.front();
+
+    vParVal = cmdParser.getParameterValueAsNumericalValue("attract");
+
+    if (vParVal.size() > 1)
     {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "minval", '=') + 6));
-        dLevel = _parser.Eval();
+        dAttrX = fabs(vParVal[0]);
+        dAttrY = fabs(vParVal[1]);
     }
+    else if (vParVal.size())
+        dAttrY = fabs(vParVal[0]);
 
-    if (findParameter(sCmd, "attract", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "attract", '=') + 7));
-        value_type* v;
-        int nRes;
-        v = _parser.Eval(nRes);
+    vParVal = cmdParser.getParameterValueAsNumericalValue("minlen");
 
-        if (nRes > 1)
-        {
-            dAttrX = fabs(v[0]);
-            dAttrY = fabs(v[1]);
-        }
-        else if (nRes == 1)
-            dAttrY = fabs(v[0]);
-    }
+    if (vParVal.size())
+        dMinLen = fabs(vParVal.front());
 
-    if (findParameter(sCmd, "minlen", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "minlen", '=') + 6));
-        dMinLen = fabs(_parser.Eval());
-    }
-
-    sTargetCache = evaluateTargetOptionInCommand(sCmd, "detectdat", _target, _parser, _data, _option);
+    Indices _target;
+    std::string sTargetCache = cmdParser.getTargetTable(_target, "detectdat");
 
     // Indices lesen
-    getIndices(sCmd, _idx, _parser, _data, _option);
-    sDataset = sCmd.substr(0, sCmd.find('('));
-    StripSpaces(sDataset);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    Indices& _idx = accessParser.getIndices();
 
     if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _data.getLines(sDataset)-1);
+        _idx.row.setRange(0, _data.getLines(accessParser.getDataObject())-1);
 
     if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + _data.getLines(sDataset, true) - _data.getAppendedZeroes(_idx.col[1], sDataset) + 1);
+        _idx.col.setRange(0, _idx.col.front() + _data.getLines(accessParser.getDataObject(), true) - _data.getAppendedZeroes(_idx.col[1], accessParser.getDataObject()) + 1);
 
     // Get x and y axis for the final scaling
-    std::vector<double> vX = _data.getElement(_idx.row, _idx.col.subidx(0, 1), sDataset);
-    std::vector<double> vY = _data.getElement(_idx.row, _idx.col.subidx(1, 1), sDataset);
+    std::vector<double> vX = _data.getElement(_idx.row, _idx.col.subidx(0, 1), accessParser.getDataObject());
+    std::vector<double> vY = _data.getElement(_idx.row, _idx.col.subidx(1, 1), accessParser.getDataObject());
 
     _idx.col = _idx.col.subidx(2);
 
     // Get the data
     MemoryManager _cache;
-    getData(sDataset, _idx, _data, _cache, 100, false);
+    getData(accessParser.getDataObject(), _idx, _data, _cache, 100, false);
 
     long long int nLines = _cache.getLines("table", false);
     long long int nCols = _cache.getCols("table", false);
@@ -4388,7 +4336,7 @@ void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, Function
     _data.setHeadLineElement(_target.col[0], sTargetCache, "Structure_x");
     _data.setHeadLineElement(_target.col[1], sTargetCache, "Structure_y");
 
-    if (_option.systemPrints())
+    if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DETECT_SUCCESS", sTargetCache));
 }
 
@@ -4494,19 +4442,15 @@ static double rotRound(double d)
 /// \brief This function rotates a table, an
 /// image or a datagrid around a specified angle.
 ///
-/// \param sCmd std::string&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void rotateTable(std::string& sCmd)
+void rotateTable(CommandLineParser& cmdParser)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    StringView _sTable(sCmd);
-    Match _mMatch = findCommand(sCmd);
-    DataAccessParser _accessParser(_sTable.subview(_mMatch.nPos + _mMatch.sString.length()));
+    DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
 
-    std::string sTargetTable = "rotdata";
     Indices _idx;
     double dAlpha = 0.0; // radians
 
@@ -4514,21 +4458,20 @@ void rotateTable(std::string& sCmd)
     std::vector<double> source_y;
 
     // Find the target of this operation
-    sTargetTable = evaluateTargetOptionInCommand(sCmd, sTargetTable, _idx, _parser, _data, NumeReKernel::getInstance()->getSettings());
+    std::string sTargetTable = cmdParser.getTargetTable(_idx, "rotdata");
 
-    if (findParameter(sCmd, "alpha", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "alpha", '=') + 5));
-        dAlpha = -_parser.Eval() / 180.0 * M_PI; // deg2rad and change orientation for mathematical positive rotation
-    }
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("alpha");
+
+    if (vParVal.size())
+        dAlpha = -vParVal.front() / 180.0 * M_PI; // deg2rad and change orientation for mathematical positive rotation
 
     _accessParser.getIndices().row.setOpenEndIndex(_data.getLines(_accessParser.getDataObject())-1);
     _accessParser.getIndices().col.setOpenEndIndex(_data.getCols(_accessParser.getDataObject())-1);
 
     // Handle the image and datagrid cases
-    if (_mMatch.sString == "imrot" || _mMatch.sString == "gridrot")
+    if (cmdParser.getCommand() == "imrot" || cmdParser.getCommand() == "gridrot")
     {
-        if (_mMatch.sString == "gridrot")
+        if (cmdParser.getCommand() == "gridrot")
         {
             source_x = _data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(0, 1), _accessParser.getDataObject());
             source_y = _data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(1, 1), _accessParser.getDataObject());
@@ -4588,7 +4531,7 @@ void rotateTable(std::string& sCmd)
     left -= (ceil(rotRound(right) - rotRound(left))- (right - left)) / 2.0;
 
     // Insert the axes, if necessary
-    if (_mMatch.sString == "imrot")
+    if (cmdParser.getCommand() == "imrot")
     {
         // Write the x axis
         for (int i = 0; i < rows; i++)
@@ -4610,7 +4553,7 @@ void rotateTable(std::string& sCmd)
 
         _idx.col = _idx.col.subidx(2);
     }
-    else if (_mMatch.sString == "gridrot")
+    else if (cmdParser.getCommand() == "gridrot")
     {
         Point origin_axis(interpolateToGrid(source_x, origin.x, true), interpolateToGrid(source_y, origin.y, true));
 

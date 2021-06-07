@@ -1860,64 +1860,18 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
 	if (!_option.executeEnabled())
 		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
 
+    CommandLineParser cmdParser(sCmd, "execute", CommandLineParser::CMD_EXPR_set_PAR);
+
 	sCmd = evaluateParameterValues(sCmd);
 	FileSystem _fSys;
 	_fSys.setTokens(_option.getTokenPaths());
 	_fSys.setPath(_option.getExePath(), false, _option.getExePath());
 	_fSys.declareFileType(".exe");
-	string sParams = "";
-	string sWorkpath = "";
-	string sObject = "";
+	string sParams = cmdParser.getParameterValueAsString("params", "");
+	string sWorkpath = cmdParser.getParameterValueAsString("wp", "");
+	string sObject = cmdParser.parseExprAsString();
 	int nRetVal = 0;
-	bool bWaitForTermination = false;
-
-	// Extract command line parameters
-	if (findParameter(sCmd, "params", '='))
-		sParams = "\"" + getArgAtPos(sCmd, findParameter(sCmd, "params", '=') + 6) + "\"";
-
-    // Extract target working path
-	if (findParameter(sCmd, "wp", '='))
-		sWorkpath = "\"" + getArgAtPos(sCmd, findParameter(sCmd, "wp", '=') + 2) + "\"";
-
-    // Extract, whether we shall wait for the process to terminate
-	if (findParameter(sCmd, "wait"))
-		bWaitForTermination = true;
-
-    // Extract the actual command line command
-	sObject = sCmd.substr(findCommand(sCmd).sString.length());
-
-	if (sParams.length() || bWaitForTermination || sWorkpath.length())
-	{
-		if (sCmd.find("-set") != string::npos && sObject.find("-set") != string::npos && !isInQuotes(sCmd, sCmd.find("-set")))
-			sObject.erase(sObject.find("-set"));
-		else if (sCmd.find("--") != string::npos && sObject.find("--") != string::npos && !isInQuotes(sCmd, sCmd.find("--")))
-			sObject.erase(sObject.find("--"));
-		else
-			throw SyntaxError(SyntaxError::EXECUTE_COMMAND_UNSUCCESSFUL, sCmd, "execute"); // throw an unsuccessful, if the parameters are not clearly identified
-	}
-
-	// Resolve strings in the extracted command line objects
-	NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
-
-	if (_stringParser.isStringExpression(sObject))
-	{
-		string sDummy = "";
-		_stringParser.evalAndFormat(sObject, sDummy, true);
-	}
-
-	if (_stringParser.isStringExpression(sParams))
-	{
-		string sDummy = "";
-		sParams += " -nq";
-		_stringParser.evalAndFormat(sParams, sDummy, true);
-	}
-
-	if (_stringParser.isStringExpression(sWorkpath))
-	{
-		string sDummy = "";
-		sWorkpath += " -nq";
-		_stringParser.evalAndFormat(sWorkpath, sDummy, true);
-	}
+	bool bWaitForTermination = cmdParser.hasParam("wait");
 
 	// Resolve path placeholders
 	if (sObject.find('<') != string::npos && sObject.find('>', sObject.find('<') + 1) != string::npos)
@@ -1929,7 +1883,6 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
 			sParams = "\"" + _fSys.ValidFileName(sParams.substr(1));
 		else
 			sParams = _fSys.ValidFileName(sParams);
-
 	}
 
 	if (sWorkpath.find('<') != string::npos && sWorkpath.find('>', sWorkpath.find('<') + 1) != string::npos)
@@ -4564,46 +4517,22 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         if (_access.getIndices().col.isOpenEnd())
             _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
 
+        MemoryManager::AppDir dir = MemoryManager::ALL;
+
         if (findParameter(sCmd, "grid"))
-        {
-            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::GRID))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
-        else if (!findParameter(sCmd, "lines") && !findParameter(sCmd, "cols"))
-        {
-            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::ALL))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
+            dir = MemoryManager::GRID;
         else if (findParameter(sCmd, "lines"))
-        {
-            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::LINES))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_LINES")), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
+            dir = MemoryManager::LINES;
         else if (findParameter(sCmd, "cols"))
+            dir = MemoryManager::COLS;
+
+        if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, dir))
         {
-            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::COLS))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+            if (_option.systemPrints())
+                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
         }
+        else
+            throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
     }
     else
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
@@ -4622,12 +4551,10 @@ static CommandReturnValues cmd_retouch(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_regularize(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "regularize", CommandLineParser::CMD_DAT_PAR);
 
-    if (!regularizeDataSet(sCmd, _parser, _data, _functions, _option))
+    if (!regularizeDataSet(cmdParser))
         throw SyntaxError(SyntaxError::CANNOT_REGULARIZE_CACHE, sCmd, SyntaxError::invalid_position);
     else if (_option.systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REGULARIZE"));
@@ -4725,11 +4652,8 @@ static CommandReturnValues cmd_datagrid(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_detect(string& sCmd)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    boneDetection(sCmd, _parser, _data, _functions, _option);
+    CommandLineParser cmdParser(sCmd, "detect", CommandLineParser::CMD_EXPR_set_PAR);
+    boneDetection(cmdParser);
 
     return COMMAND_PROCESSED;
 }
@@ -5077,66 +5001,30 @@ static CommandReturnValues cmd_execute(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_progress(string& sCmd)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    CommandLineParser cmdParser(sCmd, "progress", CommandLineParser::CMD_EXPR_set_PAR);
 
-    string sArgument;
-    int nArgument;
-    value_type* vVals = 0;
-    string sExpr;
-
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        sCmd = evaluateParameterValues(sCmd);
-
-    if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
-    {
-        if (sCmd.find("-set") != string::npos)
-            sArgument = sCmd.substr(sCmd.find("-set"));
-        else
-            sArgument = sCmd.substr(sCmd.find("--"));
-
-        sCmd.erase(sCmd.find(sArgument));
-
-        if (findParameter(sArgument, "first", '='))
-            sExpr = getArgAtPos(sArgument, findParameter(sArgument, "first", '=') + 5) + ",";
-        else
-            sExpr = "1,";
-
-        if (findParameter(sArgument, "last", '='))
-            sExpr += getArgAtPos(sArgument, findParameter(sArgument, "last", '=') + 4);
-        else
-            sExpr += "100";
-
-        if (findParameter(sArgument, "type", '='))
-        {
-            sArgument = getArgAtPos(sArgument, findParameter(sArgument, "type", '=') + 4);
-
-            if (containsStrings(sArgument))
-            {
-                if (sArgument.front() != '"')
-                    sArgument = "\"" + sArgument + "\" -nq";
-
-                string sDummy;
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, true);
-            }
-        }
-        else
-            sArgument = "std";
-    }
-    else
-    {
-        sArgument = "std";
-        sExpr = "1,100";
-    }
-
-    while (sCmd.length() && (sCmd.back() == ' ' || sCmd.back() == '-'))
-        sCmd.pop_back();
-
-    if (!sCmd.length())
+    if (!cmdParser.getExpr().length())
         return COMMAND_PROCESSED;
 
-    _parser.SetExpr(sCmd.substr(findCommand(sCmd).nPos + 8) + "," + sExpr);
-    vVals = _parser.Eval(nArgument);
-    make_progressBar((int)vVals[0], (int)vVals[1], (int)vVals[2], sArgument);
+    string sArgument;
+    int frst = 1, lst = 100;
+
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("first");
+
+    if (vParVal.size())
+        frst = intCast(vParVal.front());
+
+    vParVal = cmdParser.getParameterValueAsNumericalValue("last");
+
+    if (vParVal.size())
+        lst = intCast(vParVal.front());
+
+    sArgument = cmdParser.getParameterValueAsString("type", "std");
+
+    auto vVal = cmdParser.parseExprAsNumericalValues();
+
+    if (vVal.size())
+        make_progressBar(intCast(vVal.front()), frst, lst, sArgument);
 
     return COMMAND_PROCESSED;
 }
@@ -5169,7 +5057,8 @@ static CommandReturnValues cmd_print(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_rotate(string& sCmd)
 {
-    rotateTable(sCmd);
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_EXPR_set_PAR);
+    rotateTable(cmdParser);
 
     return COMMAND_PROCESSED;
 }
