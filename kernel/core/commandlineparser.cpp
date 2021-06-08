@@ -353,6 +353,8 @@ std::string CommandLineParser::parseExprAsString() const
     if (!instance->getDefinitions().call(sExpr))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, m_commandLine, sExpr);
 
+    StripSpaces(sExpr);
+
     if (sExpr.find("??") != string::npos)
         sExpr = promptForUserInput(sExpr);
 
@@ -508,7 +510,7 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
 
     if (sFileName.length())
     {
-        if (sFileName.find('/') == std::string::npos && sFileName.find('\\') == std::string::npos)
+        if (sFileName.find("//") == std::string::npos && sFileName.find(':') == std::string::npos)
             sFileName.insert(0, sBaseFolder + "/");
 
         if (sFileName.find('.') != std::string::npos)

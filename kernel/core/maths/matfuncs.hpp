@@ -2625,14 +2625,15 @@ static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& err
     // Prepare the return value
     Matrix selected = createFilledMatrix(std::max(funcData.mat2.size(), funcData.mat3.size()), std::max(funcData.mat2[0].size(), funcData.mat3[0].size()), NAN);
 
-    double row,col;
+    long long int row = 0;
+    long long int col = 0;
 
     // Store the scalar values
     if (isScalar[0])
-        row = funcData.mat2[0][0]-1;
+        row = intCast(funcData.mat2[0][0])-1;
 
     if (isScalar[1])
-        col = funcData.mat3[0][0]-1;
+        col = intCast(funcData.mat3[0][0])-1;
 
     for (size_t i = 0; i < selected.size(); i++)
     {
@@ -2640,10 +2641,10 @@ static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& err
         {
             // Get the values, if they are no scalars
             if (!isScalar[0])
-                row = funcData.mat2[i][j]-1;
+                row = intCast(funcData.mat2[i][j])-1;
 
             if (!isScalar[1])
-                col = funcData.mat3[i][j]-1;
+                col = intCast(funcData.mat3[i][j])-1;
 
             // Extract the selected value
             if (row >= 0 && row < funcData.mat1.size() && col >= 0 && col < funcData.mat1[0].size())

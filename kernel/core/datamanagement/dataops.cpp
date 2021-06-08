@@ -546,10 +546,10 @@ void append_data(CommandLineParser& cmdParser)
                 nArgument = intCast(vPar.front());
         }
 
-        info = _data.openFile(cmdParser.getExprAsFileName(""), false, nArgument);
+        info = _data.openFile(sFileList, false, nArgument);
     }
     else
-        info = _data.openFile(cmdParser.getExprAsFileName(""));
+        info = _data.openFile(sFileList);
 
         // Inform the user
     if (!_data.isEmpty("data") && _option.systemPrints())
@@ -801,6 +801,7 @@ bool CopyData(CommandLineParser& cmdParser)
 
 	// Get the actual source data name and the corresponding indices
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    accessParser.evalIndices();
 
     if (!accessParser.getDataObject().length())
         return false;
@@ -839,6 +840,7 @@ bool moveData(CommandLineParser& cmdParser)
 
 	// Get the actual source data name and the corresponding indices
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    accessParser.evalIndices();
 
     if (!accessParser.getDataObject().length())
         return false;
@@ -1430,7 +1432,7 @@ bool readImage(CommandLineParser& cmdParser)
 	std::string sFileName = cmdParser.getExprAsFileName(".bmp");
 
 	if (cmdParser.hasParam("channels"))
-        sChannels = cmdParser.getParameterValue("channels");
+        sChannels = cmdParser.getParameterValueAsString("channels", "grey");
 
 	// Ensure that a filename is present
 	if (!sFileName.length())

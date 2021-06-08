@@ -1862,7 +1862,6 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
 
     CommandLineParser cmdParser(sCmd, "execute", CommandLineParser::CMD_EXPR_set_PAR);
 
-	sCmd = evaluateParameterValues(sCmd);
 	FileSystem _fSys;
 	_fSys.setTokens(_option.getTokenPaths());
 	_fSys.setPath(_option.getExePath(), false, _option.getExePath());
@@ -3468,7 +3467,7 @@ static CommandReturnValues cmd_seek(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_imread(string& sCmd)
 {
-    CommandLineParser cmdParser(sCmd, "imread", CommandLineParser::CMD_EXPR_set_PAR);
+    CommandLineParser cmdParser(sCmd, "imread", CommandLineParser::CMD_DAT_PAR);
 
     readImage(cmdParser);
 
@@ -4400,7 +4399,7 @@ static CommandReturnValues cmd_remove(string& sCmd)
     else if (cmdParser.getExpr().length())
     {
         if (!removeFile(cmdParser))
-            throw SyntaxError(SyntaxError::CANNOT_REMOVE_FILE, sCmd, SyntaxError::invalid_position, sCmd);
+            throw SyntaxError(SyntaxError::CANNOT_REMOVE_FILE, sCmd, SyntaxError::invalid_position, cmdParser.parseExprAsString());
         else if (_option.systemPrints())
         {
             if (cmdParser.hasParam("all") || cmdParser.hasParam("a"))

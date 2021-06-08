@@ -224,7 +224,7 @@ namespace NumeRe
         if (!info.nCols || !info.nRows)
         {
             delete file;
-            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, _sFile, SyntaxError::invalid_position, _sFile);
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFile, SyntaxError::invalid_position, sFile);
         }
 
         Memory* _mem = new Memory(info.nRows, info.nCols);
@@ -266,7 +266,7 @@ namespace NumeRe
         {
             delete file;
             delete _mem;
-            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, _sFile, SyntaxError::invalid_position, _sFile);
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFile, SyntaxError::invalid_position, sFile);
         }
 
         if (!loadToCache)

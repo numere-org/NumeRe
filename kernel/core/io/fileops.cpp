@@ -50,8 +50,9 @@ bool removeFile(CommandLineParser& cmdParser)
     // Get all relevant files
     std::vector<std::string> vFiles = getFileList(cmdParser.parseExprAsString(), NumeReKernel::getInstance()->getSettings(), 1);
 
+    // No files -> No deletion needed
     if (!vFiles.size())
-        return false;
+        return bIgnore; // return true, if ignored, false otherwise
 
     // Delete the first or every file
     for (const std::string& sFile : vFiles)

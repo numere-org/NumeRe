@@ -1768,7 +1768,7 @@ bool findExtrema(CommandLineParser& cmdParser)
             }
         }
     }
-    else if (_data.containsTablesOrClusters(sExpr))
+    else if (cmdParser.exprContainsDataObjects())
         return findExtremaInData(cmdParser, sExpr, nOrder, nMode);
     else
         throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
@@ -2111,10 +2111,6 @@ bool findZeroes(CommandLineParser& cmdParser)
     if (!_data.containsTablesOrClusters(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
         throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    // Isolate the expression
-    StripSpaces(sExpr);
-    sExpr = sExpr.substr(findCommand(sExpr).sString.length());
-
     // Ensure that the expression is not empty
     // and that the custom functions don't throw
     // any errors
@@ -2217,7 +2213,7 @@ bool findZeroes(CommandLineParser& cmdParser)
             }
         }
     }
-    else if (_data.containsTablesOrClusters(sExpr))
+    else if (cmdParser.exprContainsDataObjects())
         return findZeroesInData(cmdParser, sExpr, nMode);
     else
         throw SyntaxError(SyntaxError::NO_ZEROES_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
