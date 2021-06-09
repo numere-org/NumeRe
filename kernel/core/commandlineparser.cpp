@@ -510,7 +510,7 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
 
     if (sFileName.length())
     {
-        if (sFileName.find("//") == std::string::npos && sFileName.find(':') == std::string::npos)
+        if (sFileName.find("//") == std::string::npos && sFileName.find(':') == std::string::npos && sFileName.find('<') == std::string::npos)
             sFileName.insert(0, sBaseFolder + "/");
 
         if (sFileName.find('.') != std::string::npos)

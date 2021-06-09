@@ -113,6 +113,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
 
     FileSystem _fSys;
     _fSys.initializeFromKernel();
+    cmdParser.clearReturnValue();
 
     //sCmd = fromSystemCodePage(sCmd);
 
@@ -137,6 +138,11 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         NumeReKernel::getInstance()->getStringParser().evalAndFormat(sSource, sDummy, true);
 
     sSource = removeQuotationMarks(sSource);
+
+    // In 'all' case it is necessary to set the return value
+    // from the source string
+    if (bAll)
+        cmdParser.setReturnValue(sSource);
 
     // Get the source file list an validate
     vFileList = getFileList(sSource, NumeReKernel::getInstance()->getSettings(), 1);
@@ -242,7 +248,7 @@ bool moveOrCopyFiles(CommandLineParser& cmdParser)
         bSuccess = true;
 
         if (!bAll
-            || (cmdParser.getCommandLine().find('*') == string::npos && cmdParser.getCommandLine().find('?') == string::npos)
+            || (cmdParser.getCommandLine().find_first_of("?*") == std::string::npos)
             || (sTarget.find('*') == string::npos && (sTarget[sTarget.length()-1] != '/' && sTarget.substr(sTarget.length()-2) != "/\"") && sTarget.find("<#") == string::npos && sTarget.find("<fname>") == string::npos))
         {
             cmdParser.setReturnValue(sFile);

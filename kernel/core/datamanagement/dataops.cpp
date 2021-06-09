@@ -37,77 +37,6 @@ extern Language _lang;
 
 
 /////////////////////////////////////////////////
-/// \brief This function exports the passed data
-/// into an Excel 97-2003 worksheet.
-///
-/// \param _data Datafile&
-/// \param _option Settings&
-/// \param sCache const string&
-/// \param sFileName const string&
-/// \return void
-///
-/////////////////////////////////////////////////
-void export_excel(MemoryManager& _data, Settings& _option, const string& sCache, const string& sFileName)
-{
-	using namespace YExcel;
-
-	BasicExcel _excel;
-	BasicExcelWorksheet* _sheet;
-	BasicExcelCell* _cell;
-
-	string sHeadLine;
-
-	// Create a new sheet
-	_excel.New(1);
-
-	// Rename it so that it fits the cache name
-	_excel.RenameWorksheet(0u, sCache.c_str());
-
-	// Get a pointer to this sheet
-	_sheet = _excel.GetWorksheet(0u);
-
-	// Write the headlines in the first row
-	for (long long int j = 0; j < _data.getCols(sCache); j++)
-	{
-	    // Get the current cell and the headline string
-		_cell = _sheet->Cell(0u, j);
-		sHeadLine = _data.getHeadLineElement(j, sCache);
-
-		// Replace newlines with the corresponding character code
-		while (sHeadLine.find("\\n") != string::npos)
-			sHeadLine.replace(sHeadLine.find("\\n"), 2, 1, (char)10);
-
-        // Write the headline
-		_cell->SetString(sHeadLine.c_str());
-	}
-
-	// Now write the actual table
-	for (long long int i = 0; i < _data.getLines(sCache); i++)
-	{
-		for (long long int j = 0; j < _data.getCols(sCache); j++)
-		{
-		    // Get the current cell (skip over the first row, because it contains the headline)
-			_cell = _sheet->Cell(1 + i, j);
-
-			// Write the cell contents, if the data table contains valid data
-			// otherwise clear the cell
-			if (_data.isValidElement(i, j, sCache))
-				_cell->SetDouble(_data.getElement(i, j, sCache));
-			else
-				_cell->EraseContents();
-		}
-	}
-
-	// Save the excel file with the target filename
-	_excel.SaveAs(sFileName.c_str());
-
-	// Inform the user
-	if (_option.systemPrints())
-		NumeReKernel::print(LineBreak(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString((_data.getLines(sCache) + 1)*_data.getCols(sCache)), sFileName), _option));
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function is a wrapper for the
 /// Datafile object. It will simply do the whole
 /// UI stuff and let the Datafile object do the
@@ -203,14 +132,10 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 /// \param _option Settings&
 /// \param _sCache const string&
 /// \param nPrecision size_t
-/// \param bData bool
-/// \param bCache bool
-/// \param bSave bool
-/// \param bDefaultName bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision, bool bData, bool bCache, bool bSave, bool bDefaultName)
+void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision)
 {
 	string sCache = _sCache;
 	string sFileName;
@@ -218,7 +143,7 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 	// Do only stuff, if data is available
 	if (_data.isValid())		// Sind ueberhaupt Daten vorhanden?
 	{
-		if (_option.useExternalDocWindow() && !bSave)
+		if (_option.useExternalDocWindow())
         {
             NumeReKernel::showTable(_data.extractTable(sCache), sCache.substr(sCache.front() == '*' ? 1 : 0));
 			return;
@@ -228,59 +153,8 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 		long long int nCol = 0;
 		int nHeadlineCount = 0;
 
-		// If the user wants to save the data
-		if (bSave && bData)
-		{
-		    // If the user wants a default file name, create it here
-			if (bDefaultName)
-			{
-			    // Get the stored data file name
-				sFileName = _data.getDataFileName(sCache);
-
-				// Remove the path part
-				if (sFileName.find_last_of("/") != string::npos)
-					sFileName = sFileName.substr(sFileName.find_last_of("/") + 1);
-				if (sFileName.find_last_of("\\") != string::npos)
-					sFileName = sFileName.substr(sFileName.find_last_of("\\") + 1);
-
-				// Create the file name
-				sFileName = _out.getPath() + "/copy_of_" + sFileName;
-
-				// we are not able to write a LABX file, so we simply replace it with "dat"
-				if (sFileName.length() > 5 && sFileName.substr(sFileName.length() - 5, 5) == ".labx")
-					sFileName = sFileName.substr(0, sFileName.length() - 5) + ".dat";
-
-				if (_option.isDeveloperMode())
-					NumeReKernel::print("DEBUG: sFileName = " + sFileName );
-
-                // Set the file name
-				_out.setFileName(sFileName);
-			}
-			_out.setStatus(true);
-		}
-		else if (bSave && bCache)
-		{
-		    // Save the cache
-			if (bDefaultName)
-			{
-			    // set up the output class correspondingly
-				_out.setPrefix(sCache);
-				_out.generateFileName();
-			}
-			_out.setStatus(true);
-		}
-
-		// Handle Excel outputs
-		if (bSave && _out.getFileName().substr(_out.getFileName().rfind('.')) == ".xls")
-		{
-		    // Pass the control and return afterwards
-			export_excel(_data, _option, sCache, _out.getFileName());
-			_out.reset();
-			return;
-		}
-
 		// Get the string matrix
-		string** sOut = make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, nPrecision, bSave);// = new string*[nLine];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
+		string** sOut = make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, nPrecision, false);
 
         // Remove the possible asterisk at the front of the cache name
 		if (sCache.front() == '*')
@@ -288,52 +162,33 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 
         _out.setPrefix(sCache);
 
-			if (_out.isFile())
-				_out.generateFileName();
-
-
 		// Set the "plugin origin"
 		_out.setPluginName("Datenanzeige der Daten aus " + _data.getDataFileName(sCache)); // Anzeige-Plugin-Parameter: Nur Kosmetik
 
-        if (!_out.isFile())
-        {
-            // Print the table to the console: write the headline
-            NumeReKernel::toggleTableStatus();
-            make_hline();
-            NumeReKernel::print("NUMERE: " + toUpperCase(sCache) + "()");
-            make_hline();
-        }
+        // Print the table to the console: write the headline
+        NumeReKernel::toggleTableStatus();
+        make_hline();
+        NumeReKernel::print("NUMERE: " + toUpperCase(sCache) + "()");
+        make_hline();
 
         // Format the table (either for the console or for the target file)
-        _out.format(sOut, nCol, nLine, _option, (bData || bCache), nHeadlineCount);		// Eigentliche Ausgabe
+        _out.format(sOut, nCol, nLine, _option, true, nHeadlineCount);		// Eigentliche Ausgabe
+        _out.reset();
 
-        if (!_out.isFile())
-        {
-            // Print the table to the console: write the footer
-            NumeReKernel::toggleTableStatus();
-            make_hline();
-        }
-        _out.reset();						// Ggf. bFile in der Klasse = FALSE setzen
-
+        // Print the table to the console: write the footer
+        NumeReKernel::toggleTableStatus();
+        make_hline();
 
         // Clear the created memory
         for (long long int i = 0; i < nLine; i++)
         {
             delete[] sOut[i];		// WICHTIG: Speicher immer freigeben!
         }
+
         delete[] sOut;
-
-
-		// Reset the Outfile and the Datafile class
 	}
-	else		// Offenbar sind gar keine Daten geladen. Was soll ich also anzeigen?
-	{
-        // Throw, if no data is available
-		if (bCache)
-			throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
-		else
-			throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, "", SyntaxError::invalid_position);
-	}
+	else
+        throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
 }
 
 
@@ -558,46 +413,6 @@ void append_data(CommandLineParser& cmdParser)
 
 
 /////////////////////////////////////////////////
-/// \brief This function frees the passed
-/// Datafile object.
-///
-/// \param
-/// \param
-/// \return
-///
-/////////////////////////////////////////////////
-void remove_data(MemoryManager& _data, Settings& _option, bool bIgnore)
-{
-    // Only if data is available
-	if (!_data.isEmpty("data"))
-	{
-	    // If the flag "ignore" is not set, ask the user for confirmation
-		if (!bIgnore)
-		{
-			string c = "";
-			NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_CONFIRM"), _option));
-			NumeReKernel::printPreFmt("|\n|<- ");
-			NumeReKernel::getline(c);
-
-			if (c != _lang.YES())
-			{
-				NumeReKernel::print(_lang.get("COMMON_CANCEL"));
-				return;
-			}
-		}
-
-		    // simply remove the data and inform the user, if the output is allowed
-			_data.removeData();
-
-			if (_option.systemPrints())
-                NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_SUCCESS"), _option));
-		}
-	else if (_option.systemPrints())
-		NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_NO_DATA"), _option));
-	}
-
-
-/////////////////////////////////////////////////
 /// \brief This function removes all allocated
 /// tables and frees the assigned memory.
 ///
@@ -632,13 +447,13 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 			}
 		}
 
-			string sAutoSave = _option.getSavePath() + "/cache.tmp";
-			string sCache_file = _option.getExePath() + "/numere.cache";
+        string sAutoSave = _option.getSavePath() + "/cache.tmp";
+        string sCache_file = _option.getExePath() + "/numere.cache";
 
-			// Clear the complete cache and remove the cache files
+        // Clear the complete cache and remove the cache files
         _data.removeTablesFromMemory();
-			remove(sAutoSave.c_str());
-			remove(sCache_file.c_str());
+        remove(sAutoSave.c_str());
+        remove(sCache_file.c_str());
 
 		// Inform the user, if printing is allowed
 		if (_option.systemPrints())
@@ -646,7 +461,7 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 	}
 	else if (_option.systemPrints())
 		NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_EMPTY"), _option));
-	}
+}
 
 
 /////////////////////////////////////////////////
@@ -1316,7 +1131,7 @@ bool writeToFile(CommandLineParser& cmdParser)
 bool readFromFile(CommandLineParser& cmdParser)
 {
 	string sInput = "";
-	string sCommentEscapeSequence = cmdParser.getParameterValue("comments");
+	string sCommentEscapeSequence = cmdParser.getParameterValueAsString("comments", "");
 	ifstream fFile;
 
 	bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");

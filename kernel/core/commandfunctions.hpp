@@ -3990,7 +3990,7 @@ static CommandReturnValues cmd_show(string& sCmd)
             _cache.renameTable("table", "*" + _accessParser.getDataObject(), true);
 
             // Redirect the control
-            show_data(_cache, _out, _option, "*" + _accessParser.getDataObject(), _option.getPrecision(), false, true);
+            show_data(_cache, _out, _option, "*" + _accessParser.getDataObject(), _option.getPrecision());
             return COMMAND_PROCESSED;
         }
     }
@@ -5018,7 +5018,10 @@ static CommandReturnValues cmd_progress(string& sCmd)
     if (vParVal.size())
         lst = intCast(vParVal.front());
 
-    sArgument = cmdParser.getParameterValueAsString("type", "std");
+    sArgument = cmdParser.getParameterValue("type");
+
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sArgument))
+        sArgument = cmdParser.getParameterValueAsString("type", "std");
 
     auto vVal = cmdParser.parseExprAsNumericalValues();
 
