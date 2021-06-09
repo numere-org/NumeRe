@@ -3143,25 +3143,36 @@ bool evalPoints(CommandLineParser& cmdParser)
     // Extract the interval definition
     if (!vInterval.size() && cmdParser.getParameterList().find('=') != string::npos)
     {
-        int nPos = cmdParser.getParameterList().find('=');
-        sInterval = getArgAtPos(cmdParser.getParameterList(), nPos + 1);
+        std::vector<std::string> vParams = cmdParser.getAllParametersWithValues();
 
-        if (sInterval.front() == '[' && sInterval.back() == ']')
+        for (const std::string& sPar : vParams)
         {
-            sInterval.pop_back();
-            sInterval.erase(0, 1);
+            if (sPar != "samples")
+            {
+                sVar = sPar;
+                sInterval = cmdParser.getParameterValue(sPar);
+
+                if (sInterval.front() == '[' && sInterval.back() == ']')
+                {
+                    sInterval.pop_back();
+                    sInterval.erase(0, 1);
+                }
+
+                auto indices = getAllIndices(sInterval);
+
+                _parser.SetExpr(indices[0] + "," + indices[1]);
+                int nIndices;
+                double* res = _parser.Eval(nIndices);
+                vInterval.assign(res, res+2);
+
+                break;
+            }
         }
-
-        sVar = " " + cmdParser.getParameterList().substr(0, nPos);
-        sVar = sVar.substr(sVar.rfind(' '));
-        StripSpaces(sVar);
-
-        auto indices = getAllIndices(sInterval);
-
-        _parser.SetExpr(indices[0] + "," + indices[1]);
-        int nIndices;
-        double* res = _parser.Eval(nIndices);
-        vInterval.assign(res, res+2);
+    }
+    else
+    {
+        dLeft = vInterval[0];
+        dRight = vInterval[1];
     }
 
     if (isNotEmptyExpression(sExpr))
@@ -3174,9 +3185,6 @@ bool evalPoints(CommandLineParser& cmdParser)
 
     if (!dVar)
         throw SyntaxError(SyntaxError::EVAL_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
-
-    dLeft = vInterval[0];
-    dRight = vInterval[1];
 
     if (isnan(dLeft) && isnan(dRight))
     {

@@ -632,7 +632,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
             else if (state == HIDDEN)
                 textctrl->Show(false);
         }
-        else if (string(currentChild->Value()) == "text")
+        else if (string(currentChild->Value()) == "statictext" || string(currentChild->Value()) == "text")
         {
             // Add a static test
             wxStaticText* statictext = _groupPanel->AddStaticText(currParent, currSizer, removeQuotationMarks(text), id, alignment);
@@ -1212,7 +1212,7 @@ bool CustomWindow::getItemParameters(int windowItemID, WindowItemParams& params)
 
             break;
         case CustomWindow::TEXT:
-            params.type = "text";
+            params.type = "statictext";
             params.value = convertToCodeString(static_cast<wxStaticText*>(object.second)->GetLabel());
             params.label = params.value;
             params.color = toWxString(static_cast<wxStaticText*>(object.second)->GetForegroundColour());

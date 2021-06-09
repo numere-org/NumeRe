@@ -252,7 +252,7 @@ namespace NumeRe
                 return m_customWindow->getWindowItems(CustomWindow::GAUGE);
             else if (_selection == "spinbut")
                 return m_customWindow->getWindowItems(CustomWindow::SPINCTRL);
-            else if (_selection == "text")
+            else if (_selection == "statictext" || _selection == "text")
                 return m_customWindow->getWindowItems(CustomWindow::TEXT);
             else if (_selection == "grapher")
                 return m_customWindow->getWindowItems(CustomWindow::GRAPHER);

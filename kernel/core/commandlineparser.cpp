@@ -102,32 +102,54 @@ void CommandLineParser::parse(const std::string& sCommandString, CommandLinePars
 
         // Command-dataobject-parameter sequence
         case CMD_DAT_PAR:
+        {
             m_expr = sCommandString.substr(m_cmd.length()+1);
             StripSpaces(m_expr);
 
+            size_t nQuotes = 0;
+
             for (size_t i = 0; i < m_expr.length(); i++)
             {
-                // Handle parentheses
-                if (m_expr[i] == '(' || m_expr[i] == '{')
-                    i += getMatchingParenthesis(m_expr.substr(i));
-
-                // Handle lists (will jump to the minus sign, if no list)
-                if ((m_expr[i] == ',' || m_expr[i] == ' ') && m_expr.find_first_not_of(", ", i) != std::string::npos)
-                    i = m_expr.find_first_not_of(", ", i);
-
-                // Extract params
-                if (m_expr[i] == ' ' || m_expr[i] == '-')
+                if (m_expr[i] == '"' && (!i || m_expr[i-1] != '\\'))
                 {
-                    m_parlist = m_expr.substr(m_expr.find('-', i));
-                    m_expr.erase(i);
-                    break;
+                    nQuotes++;
+                    continue;
+                }
+
+                if (!(nQuotes % 2))
+                {
+                    // Handle parentheses
+                    if (m_expr[i] == '(' || m_expr[i] == '{')
+                        i += getMatchingParenthesis(m_expr.substr(i));
+
+                    // Handle lists (will jump to the minus sign or
+                    // a possible following expression part, if no list)
+                    if ((m_expr[i] == ',' || m_expr[i] == ' ' || m_expr[i] == '+') && m_expr.find_first_not_of(",+ ", i) != std::string::npos)
+                        i = m_expr.find_first_not_of(",+ ", i);
+
+                    // If this is a quotation mark, increment the
+                    // counter and continue
+                    if (m_expr[i] == '"')
+                    {
+                        nQuotes++;
+                        continue;
+                    }
+
+                    // Extract params
+                    if (m_expr[i] == ' ' || m_expr[i] == '-')
+                    {
+                        m_parlist = m_expr.substr(m_expr.find('-', i));
+                        m_expr.erase(i);
+                        break;
+                    }
                 }
             }
 
             break;
-
+        }
         // Command-expression-set-parameter sequence
         case CMD_EXPR_set_PAR:
+        {
             m_expr = sCommandString.substr(m_cmd.length()+1);
             StripSpaces(m_expr);
 
@@ -157,12 +179,56 @@ void CommandLineParser::parse(const std::string& sCommandString, CommandLinePars
                     }
                 }
             }
-
+        }
     }
 
     // Strip obsolete spaces
     StripSpaces(m_expr);
     StripSpaces(m_parlist);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Common method to convert a prepared
+/// string into a valid file or folder name.
+///
+/// \param sFileName std::string&
+/// \param sFileExt std::string&
+/// \param sBasePath const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string CommandLineParser::parseFileName(std::string& sFileName, std::string& sFileExt, const std::string& sBasePath) const
+{
+    FileSystem _fSys;
+    _fSys.initializeFromKernel();
+
+    if (sBasePath.length() && sFileName.find("//") == std::string::npos && sFileName.find(':') == std::string::npos && sFileName.find('<') == std::string::npos)
+        sFileName.insert(0, sBasePath + "/");
+
+    // If the filename contains a extension, extract it here and declare it as a valid file type
+    if (sFileName.find('.') != std::string::npos)
+    {
+        size_t nPos = sFileName.find_last_of("/\\");
+
+        if (sFileName.find('.', nPos) != std::string::npos)
+            sFileExt = sFileName.substr(sFileName.rfind('.'));
+    }
+
+    // There are some protected ones
+    if (sFileExt == ".exe" || sFileExt == ".dll" || sFileExt == ".sys")
+    {
+        throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, m_commandLine, SyntaxError::invalid_position, sFileExt);
+    }
+
+    if (!sFileExt.length())
+        return _fSys.ValidFolderName(sFileName);
+
+    // Declare the extension
+    _fSys.declareFileType(sFileExt);
+
+	// Get a valid file name
+    return _fSys.ValidFileName(sFileName, sFileExt);
 }
 
 
@@ -216,15 +282,14 @@ bool CommandLineParser::exprContainsDataObjects() const
 /// validate the file name.
 ///
 /// \param sFileExt std::string
+/// \param sBasePath const std::string&
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string CommandLineParser::getExprAsFileName(std::string sFileExt) const
+std::string CommandLineParser::getExprAsFileName(std::string sFileExt, const std::string& sBasePath) const
 {
     // Make a copy
     std::string sFileName = m_expr;
-    FileSystem _fSys;
-    _fSys.initializeFromKernel();
 
     // Call functions first
     if (!NumeReKernel::getInstance()->getDefinitions().call(sFileName))
@@ -250,29 +315,8 @@ std::string CommandLineParser::getExprAsFileName(std::string sFileExt) const
         NumeReKernel::getInstance()->getStringParser().evalAndFormat(sFileName, sDummy, true);
     }
 
-    // If the filename contains a extension, extract it here and declare it as a valid file type
-    if (sFileName.find('.') != std::string::npos)
-    {
-        size_t nPos = sFileName.find_last_of("/\\");
-
-        if (sFileName.find('.', nPos) != std::string::npos)
-            sFileExt = sFileName.substr(sFileName.rfind('.'));
-    }
-
-    // There are some protected ones
-    if (sFileExt == ".exe" || sFileExt == ".dll" || sFileExt == ".sys")
-    {
-        throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, m_commandLine, SyntaxError::invalid_position, sFileExt);
-    }
-
-    if (!sFileExt.length())
-        return _fSys.ValidFolderName(sFileName);
-
-    // Declare the extension
-    _fSys.declareFileType(sFileExt);
-
-	// Get a valid file name
-    return _fSys.ValidFileName(sFileName, sFileExt);
+    // Parse the prepared file path
+    return parseFileName(sFileName, sFileExt, sBasePath);
 }
 
 
@@ -446,6 +490,40 @@ std::string CommandLineParser::getTargetTable(Indices& _targetIndices, const std
 
 
 /////////////////////////////////////////////////
+/// \brief Returns a vector containing all
+/// parameters with values in the current
+/// parameter list. Does not return parameters,
+/// which do not have any value.
+///
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> CommandLineParser::getAllParametersWithValues() const
+{
+    size_t pos = 0;
+    std::vector<std::string> vParams;
+
+    while ((pos = m_parlist.find('=', pos)) != std::string::npos)
+    {
+        if (!isInQuotes(m_parlist, pos))
+        {
+            size_t lastChar = m_parlist.find_last_not_of(" =", pos);
+
+            if (lastChar)
+            {
+                size_t firstChar = m_parlist.find_last_of(" -", lastChar) + 1;
+                vParams.push_back(m_parlist.substr(firstChar, lastChar + 1 - firstChar));
+            }
+        }
+
+        pos++;
+    }
+
+    return vParams;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Simply returns the parameter value or
 /// an empty string. Does not do any parsing
 /// steps.
@@ -508,31 +586,9 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
         instance->getStringParser().evalAndFormat(sFileName, dummy, true);
     }
 
+    // If a filename had been found, parse it here
     if (sFileName.length())
-    {
-        if (sFileName.find("//") == std::string::npos && sFileName.find(':') == std::string::npos && sFileName.find('<') == std::string::npos)
-            sFileName.insert(0, sBaseFolder + "/");
-
-        if (sFileName.find('.') != std::string::npos)
-        {
-            size_t nPos = sFileName.find_last_of("\\/");
-
-            if (sFileName.find('.', nPos) != std::string::npos)
-                sFileExt = sFileName.substr(sFileName.rfind('.'));
-
-        }
-
-        // There are some protected ones
-        if (sFileExt == ".exe" || sFileExt == ".dll" || sFileExt == ".sys")
-        {
-            throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, m_commandLine, SyntaxError::invalid_position, sFileExt);
-        }
-
-        // Declare the extension
-        _fSys.declareFileType(sFileExt);
-
-        return _fSys.ValidFileName(removeQuotationMarks(sFileName), sFileExt);
-    }
+        return parseFileName(sFileName, sFileExt, sBaseFolder);
 
     return _fSys.ValidFileName(removeQuotationMarks(sDefaultName), sFileExt);
 }

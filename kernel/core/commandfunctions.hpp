@@ -3888,7 +3888,7 @@ static CommandReturnValues cmd_start(string& sCmd)
     if (_script.isOpen())
         throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, "start");
 
-    std::string sFileName = cmdParser.getExprAsFileName(".nscr");
+    std::string sFileName = cmdParser.getExprAsFileName(".nscr", "<scriptpath>");
 
     if (!sFileName.length())
     {
