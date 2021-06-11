@@ -310,10 +310,11 @@ std::string CommandLineParser::getExprAsFileName(std::string sFileExt, const std
     // If there's a string in the file name, parse it here
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFileName))
     {
-        sFileName += " -nq";
         string sDummy;
         NumeReKernel::getInstance()->getStringParser().evalAndFormat(sFileName, sDummy, true);
     }
+
+    sFileName = removeQuotationMarks(sFileName);
 
     // Parse the prepared file path
     return parseFileName(sFileName, sFileExt, sBasePath);
@@ -585,6 +586,8 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
         std::string dummy;
         instance->getStringParser().evalAndFormat(sFileName, dummy, true);
     }
+
+    sFileName = removeQuotationMarks(sFileName);
 
     // If a filename had been found, parse it here
     if (sFileName.length())

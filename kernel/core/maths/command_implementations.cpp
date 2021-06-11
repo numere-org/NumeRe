@@ -4229,6 +4229,7 @@ static double interpolateToGrid(const std::vector<double>& vAxis, double dInterp
     return NAN;
 }
 
+
 /////////////////////////////////////////////////
 /// \brief This function is the implementation of
 /// the detect command.
