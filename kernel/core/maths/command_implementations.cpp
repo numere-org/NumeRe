@@ -161,8 +161,8 @@ static void integrationstep_simpson(double& x, double dx, double upperBoundary, 
 /////////////////////////////////////////////////
 static vector<double> integrateSingleDimensionData(CommandLineParser& cmdParser)
 {
-    bool bReturnFunctionPoints = false;
-    bool bCalcXvals = false;
+    bool bReturnFunctionPoints = cmdParser.hasParam("points");
+    bool bCalcXvals = cmdParser.hasParam("xvals");
 
     vector<double> vResult;
 
@@ -170,14 +170,6 @@ static vector<double> integrateSingleDimensionData(CommandLineParser& cmdParser)
 
     // Extract the integration interval
     std::vector<double> vInterval = cmdParser.parseIntervals(false);
-
-    // Are the samples of the integral desired?
-    if (findParameter(cmdParser.getParameterList(), "points"))
-        bReturnFunctionPoints = true;
-
-    // Are the corresponding x values desired?
-    if (findParameter(cmdParser.getParameterList(), "xvals"))
-        bCalcXvals = true;
 
     // Get table name and the corresponding indices
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
@@ -282,7 +274,6 @@ bool integrate(CommandLineParser& cmdParser)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
-    string sParams = cmdParser.getParameterList();
     string sIntegrationExpression = cmdParser.getExprAsMathExpression();
     value_type* v = 0;
     int nResults = 0;
@@ -290,8 +281,8 @@ bool integrate(CommandLineParser& cmdParser)
     vector<double> vFunctionValues; // Werte an der Stelle n und n+1
     bool bNoIntVar = false;     // Boolean: TRUE, wenn die Funktion eine Konstante der Integration ist
     bool bLargeInterval = false;    // Boolean: TRUE, wenn ueber ein grosses Intervall integriert werden soll
-    bool bReturnFunctionPoints = false;
-    bool bCalcXvals = false;
+    bool bReturnFunctionPoints = cmdParser.hasParam("points");
+    bool bCalcXvals = cmdParser.hasParam("xvals");
     int nSign = 1;              // Vorzeichen, falls die Integrationsgrenzen getauscht werden muessen
     unsigned int nMethod = TRAPEZOIDAL;    // 1 = trapezoidal, 2 = simpson
 
@@ -316,7 +307,7 @@ bool integrate(CommandLineParser& cmdParser)
             && getMatchingParenthesis(sIntegrationExpression) != string::npos
             && sIntegrationExpression.find_first_not_of(' ', getMatchingParenthesis(sIntegrationExpression) + 1) == string::npos) // xvals
     {
-        cmdParser.setReturnValue(_parser.CreateTempVectorVar(integrateSingleDimensionData(cmdParser)));
+        cmdParser.setReturnValue(integrateSingleDimensionData(cmdParser));
         return true;
     }
 
@@ -373,39 +364,16 @@ bool integrate(CommandLineParser& cmdParser)
         return false;
     }
 
-    if (sParams.length())
-    {
-        int nPos = 0;
+    std::string sParVal = cmdParser.getParameterValue("method");
 
+    if (!sParVal.length())
+        sParVal = cmdParser.getParameterValue("m");
 
-        if (findParameter(sParams, "method", '='))
-        {
-            nPos = findParameter(sParams, "method", '=') + 6;
+    if (sParVal == "trapezoidal")
+        nMethod = TRAPEZOIDAL;
+    else if (sParVal == "simpson")
+        nMethod = SIMPSON;
 
-            if (getArgAtPos(sParams, nPos) == "trapezoidal")
-                nMethod = TRAPEZOIDAL;
-
-            if (getArgAtPos(sParams, nPos) == "simpson")
-                nMethod = SIMPSON;
-        }
-
-        if (findParameter(sParams, "m", '='))
-        {
-            nPos = findParameter(sParams, "m", '=') + 1;
-
-            if (getArgAtPos(sParams, nPos) == "trapezoidal")
-                nMethod = TRAPEZOIDAL;
-
-            if (getArgAtPos(sParams, nPos) == "simpson")
-                nMethod = SIMPSON;
-        }
-
-        if (findParameter(sParams, "points"))
-            bReturnFunctionPoints = true;
-
-        if (findParameter(sParams, "xvals"))
-            bCalcXvals = true;
-    }
 
     // Check, whether the expression actual depends
     // upon the integration variable
@@ -458,7 +426,7 @@ bool integrate(CommandLineParser& cmdParser)
                 vResult.push_back(x);
             }
 
-            cmdParser.setReturnValue(_parser.CreateTempVectorVar(vResult));
+            cmdParser.setReturnValue(vResult);
 
             return true;
         }
@@ -535,7 +503,7 @@ bool integrate(CommandLineParser& cmdParser)
     if (_option.systemPrints() && bLargeInterval)
         NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 100 %: " + _lang.get("COMMON_SUCCESS") + "!\n");
 
-    cmdParser.setReturnValue(_parser.CreateTempVectorVar(vResult));
+    cmdParser.setReturnValue(vResult);
     return true;
 }
 
@@ -576,7 +544,6 @@ bool integrate2d(CommandLineParser& cmdParser)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
-    string sParams = cmdParser.getParameterList();            // Parameter-string
     string sIntegrationExpression = cmdParser.getExprAsMathExpression();                // string fuer die zu integrierende Funktion
     value_type* v = 0;
     int nResults = 0;
@@ -667,32 +634,16 @@ bool integrate2d(CommandLineParser& cmdParser)
         return false;
     }
 
-    if (sParams.length())
-    {
-        int nPos = 0;
 
-        if (findParameter(sParams, "method", '='))
-        {
-            nPos = findParameter(sParams, "method", '=') + 6;
+    std::string sParVal = cmdParser.getParameterValue("method");
 
-            if (getArgAtPos(sParams, nPos) == "trapezoidal")
-                nMethod = TRAPEZOIDAL;
+    if (!sParVal.length())
+        sParVal = cmdParser.getParameterValue("m");
 
-            if (getArgAtPos(sParams, nPos) == "simpson")
-                nMethod = SIMPSON;
-        }
-
-        if (findParameter(sParams, "m", '='))
-        {
-            nPos = findParameter(sParams, "m", '=') + 1;
-
-            if (getArgAtPos(sParams, nPos) == "trapezoidal")
-                nMethod = TRAPEZOIDAL;
-
-            if (getArgAtPos(sParams, nPos) == "simpson")
-                nMethod = SIMPSON;
-        }
-    }
+    if (sParVal == "trapezoidal")
+        nMethod = TRAPEZOIDAL;
+    else if (sParVal == "simpson")
+        nMethod = SIMPSON;
 
     // Check, whether the expression depends upon one or both
     // integration variables
@@ -1081,7 +1032,7 @@ bool integrate2d(CommandLineParser& cmdParser)
         NumeReKernel::printPreFmt(": " + _lang.get("COMMON_SUCCESS") + "!\n");
 
     // --> Fertig! Zurueck zur aufrufenden Funkton! <--
-    cmdParser.setReturnValue(_parser.CreateTempVectorVar(vResult[0]));
+    cmdParser.setReturnValue(vResult[0]);
     return true;
 }
 
@@ -1298,7 +1249,7 @@ bool differentiate(CommandLineParser& cmdParser)
             _cache.sortElements("sort -table c=1[2]");
 
             // Shall the x values be calculated?
-            if (findParameter(cmdParser.getParameterList(), "xvals"))
+            if (cmdParser.hasParam("xvals"))
             {
                 // The x values are approximated to be in the
                 // middle of the two samplex
@@ -1337,7 +1288,7 @@ bool differentiate(CommandLineParser& cmdParser)
         throw SyntaxError(SyntaxError::NO_DIFF_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
     }
 
-    cmdParser.setReturnValue(_parser.CreateTempVectorVar(vResult));
+    cmdParser.setReturnValue(vResult);
     return true;
 }
 
@@ -1392,7 +1343,7 @@ static string getIntervalForSearchFunctions(const string& sParams, string& sVar)
 /// a multi-result expression, i.e. an expression
 /// containing a table or similar.
 ///
-/// \param sCmd string&
+/// \param cmdParser CommandLineParser&
 /// \param sExpr string&
 /// \param sInterval string&
 /// \param nOrder int
@@ -1400,7 +1351,7 @@ static string getIntervalForSearchFunctions(const string& sParams, string& sVar)
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInterval, int nOrder, int nMode)
+static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr, string& sInterval, int nOrder, int nMode)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
@@ -1431,8 +1382,8 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
     else
         return false;
 
-    sCmd = "sort -table cols=1[2]";
-    _cache.sortElements(sCmd);
+    std::string sSortingExpr = "sort -table cols=1[2]";
+    _cache.sortElements(sSortingExpr);
 
     double dMedian = 0.0, dExtremum = 0.0;
     double* data = new double[nOrder];
@@ -1531,8 +1482,7 @@ static bool findExtremaInMultiResult(string& sCmd, string& sExpr, string& sInter
         vResults.push_back(NAN);
 
     delete[] data;
-    sCmd = "_~extrema[~_~]";
-    _parser.SetVectorVar("_~extrema[~_~]", vResults);
+    cmdParser.setReturnValue(vResults);
     return true;
 }
 
@@ -1574,14 +1524,14 @@ static double calculateMedian(value_type* v, int nResults, int start, int nOrder
 /// \brief This static function finds extrema in
 /// the selected data sets.
 ///
-/// \param sCmd string&
+/// \param cmdParser CommandLineParser&
 /// \param sExpr string&
 /// \param nOrder int
 /// \param nMode int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode)
+static bool findExtremaInData(CommandLineParser& cmdParser, string& sExpr, int nOrder, int nMode)
 {
     value_type* v;
     int nResults = 0;
@@ -1659,12 +1609,11 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
         if (!vResults.size())
             vResults.push_back(NAN);
 
-        sCmd = "_~extrema[~_~]";
-        _parser.SetVectorVar("_~extrema[~_~]", vResults);
+        cmdParser.setReturnValue(vResults);
         return true;
     }
     else
-        throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 }
 
 
@@ -1673,16 +1622,16 @@ static bool findExtremaInData(string& sCmd, string& sExpr, int nOrder, int nMode
 /// actual extrema localisation function
 /// localizeExtremum() further below.
 ///
-/// \param sCmd string&
-/// \param _data Datafile&
-/// \param _parser Parser&
-/// \param _option const Settings&
-/// \param _functions Define&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+bool findExtrema(CommandLineParser& cmdParser)
 {
+    NumeReKernel* instance = NumeReKernel::getInstance();
+    MemoryManager& _data = instance->getMemoryManager();
+    Parser& _parser = instance->getParser();
+
     unsigned int nSamples = 21;
     int nOrder = 5;
     double dVal[2];
@@ -1695,24 +1644,11 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
     string sVar = "";
 
     // We cannot search extrema in strings
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "extrema");
+    if (instance->getStringParser().isStringExpression(cmdParser.getExpr()))
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "extrema");
 
-    // Separate expression and parameter string
-    if (sCmd.find("-set") != string::npos)
-    {
-        sExpr = sCmd.substr(0, sCmd.find("-set"));
-        sParams = sCmd.substr(sCmd.find("-set"));
-    }
-    else if (sCmd.find("--") != string::npos)
-    {
-        sExpr = sCmd.substr(0, sCmd.find("--"));
-        sParams = sCmd.substr(sCmd.find("--"));
-    }
-    else if (!_data.containsTablesOrClusters(sCmd))
-        throw SyntaxError(SyntaxError::NO_EXTREMA_OPTIONS, sCmd, SyntaxError::invalid_position);
-    else
-        sExpr = sCmd;
+    if (!_data.containsTablesOrClusters(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
+        throw SyntaxError(SyntaxError::NO_EXTREMA_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Isolate the expression
     StripSpaces(sExpr);
@@ -1721,10 +1657,13 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
     // Ensure that the expression is not empty
     // and that the custom functions don't throw
     // any errors
-    if (!isNotEmptyExpression(sExpr) || !_functions.call(sExpr))
+    sExpr = cmdParser.getExpr();
+    sParams = cmdParser.getParameterList();
+
+    if (!isNotEmptyExpression(sExpr) || !instance->getDefinitions().call(sExpr))
         return false;
 
-    if (!_functions.call(sParams))
+    if (!instance->getDefinitions().call(sParams))
         return false;
 
     StripSpaces(sParams);
@@ -1732,10 +1671,10 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
     // If the expression or the parameter list contains
     // data elements, get their values here
     if (_data.containsTablesOrClusters(sExpr))
-        getDataElements(sExpr, _parser, _data, _option, false);
+        getDataElements(sExpr, _parser, _data, instance->getSettings(), false);
 
     if (_data.containsTablesOrClusters(sParams))
-        getDataElements(sParams, _parser, _data, _option, false);
+        getDataElements(sParams, _parser, _data, instance->getSettings(), false);
 
     // Evaluate the parameters
     if (findParameter(sParams, "min"))
@@ -1785,19 +1724,19 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
         _parser.Eval(nResults);
 
         if (nResults > 1)
-            return findExtremaInMultiResult(sCmd, sExpr, sInterval, nOrder, nMode);
+            return findExtremaInMultiResult(cmdParser, sExpr, sInterval, nOrder, nMode);
         else
         {
             if (!isVariableInAssignedExpression(_parser, sVar))
             {
-                sCmd = "nan";
+                cmdParser.setReturnValue("nan");
                 return true;
             }
 
             dVar = getPointerToVariable(sVar, _parser);
 
             if (!dVar)
-                throw SyntaxError(SyntaxError::EXTREMA_VAR_NOT_FOUND, sCmd, sVar, sVar);
+                throw SyntaxError(SyntaxError::EXTREMA_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
 
             if (sInterval.find(':') == string::npos || sInterval.length() < 3)
                 return false;
@@ -1813,7 +1752,7 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
 
                     if (isinf(dBoundaries[i]) || isnan(dBoundaries[i]))
                     {
-                        sCmd = "nan";
+                        cmdParser.setReturnValue("nan");
                         return false;
                     }
                 }
@@ -1829,10 +1768,10 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
             }
         }
     }
-    else if (_data.containsTablesOrClusters(sCmd))
-        return findExtremaInData(sCmd, sExpr, nOrder, nMode);
+    else if (cmdParser.exprContainsDataObjects())
+        return findExtremaInData(cmdParser, sExpr, nOrder, nMode);
     else
-        throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_EXTREMA_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Calculate the number of samples depending on
     // the interval width
@@ -1846,7 +1785,6 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
     // Set the expression and evaluate it once
     _parser.SetExpr(sExpr);
     _parser.Eval();
-    sCmd = "";
     vector<double> vResults;
     dVal[0] = _parser.Diff(dVar, dBoundaries[0], 1e-7);
 
@@ -1866,7 +1804,7 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
                     || (nMode == -1 && (dVal[0] < 0 && dVal[1] > 0)))
             {
                 // Examine the current interval in more detail
-                vResults.push_back(localizeExtremum(sExpr, dVar, _parser, _option, dBoundaries[0] + (i - 1) * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
+                vResults.push_back(localizeExtremum(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] + (i - 1) * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
             }
         }
         else if (dVal[0]*dVal[1] == 0.0)
@@ -1896,7 +1834,7 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
                 }
 
                 // Store the current location
-                vResults.push_back(localizeExtremum(sExpr, dVar, _parser, _option, dBoundaries[0] + nTemp * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
+                vResults.push_back(localizeExtremum(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] + nTemp * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
             }
         }
         dVal[0] = dVal[1];
@@ -1904,17 +1842,18 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
 
     // If we didn't find any results
     // examine the boundaries for possible extremas
-    if (!sCmd.length() && !vResults.size())
+    if (!vResults.size())
     {
         dVal[0] = _parser.Diff(dVar, dBoundaries[0]);
         dVal[1] = _parser.Diff(dVar, dBoundaries[1]);
+        std::string sRetVal;
 
         // Examine the left boundary
         if (dVal[0]
                 && (!nMode
                     || (dVal[0] < 0 && nMode == 1)
                     || (dVal[0] > 0 && nMode == -1)))
-            sCmd = toString(dBoundaries[0], _option);
+            sRetVal = toString(dBoundaries[0], instance->getSettings());
 
         // Examine the right boundary
         if (dVal[1]
@@ -1922,20 +1861,21 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
                     || (dVal[1] < 0 && nMode == -1)
                     || (dVal[1] > 0 && nMode == 1)))
         {
-            if (sCmd.length())
-                sCmd += ", ";
+            if (sRetVal.length())
+                sRetVal += ", ";
 
-            sCmd += toString(dBoundaries[1], _option);
+            sRetVal += toString(dBoundaries[1], instance->getSettings());
         }
 
         // Still nothing found?
         if (!dVal[0] && ! dVal[1])
-            sCmd = "nan";
+            sRetVal = "nan";
+
+        cmdParser.setReturnValue(sRetVal);
     }
     else
     {
-        sCmd = "_~extrema[~_~]";
-        _parser.SetVectorVar("_~extrema[~_~]", vResults);
+        cmdParser.setReturnValue(vResults);
     }
 
     return true;
@@ -1947,14 +1887,14 @@ bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Sett
 /// a multi-result expression, i.e. an expression
 /// containing a table or similar.
 ///
-/// \param sCmd string&
+/// \param cmdParser CommandLineParser&
 /// \param sExpr string&
 /// \param sInterval string&
 /// \param nMode int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterval, int nMode)
+static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr, string& sInterval, int nMode)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
@@ -1984,8 +1924,8 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
     else
         return false;
 
-    sCmd = "sort -table cols=1[2]";
-    _cache.sortElements(sCmd);
+    std::string sSortingExpr = "sort -table cols=1[2]";
+    _cache.sortElements(sSortingExpr);
 
     for (long long int i = 1; i < _cache.getLines("table", false); i++)
     {
@@ -2043,8 +1983,7 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
     if (!vResults.size())
         vResults.push_back(NAN);
 
-    sCmd = "_~zeroes[~_~]";
-    _parser.SetVectorVar("_~zeroes[~_~]", vResults);
+    cmdParser.setReturnValue(vResults);
     return true;
 }
 
@@ -2053,13 +1992,13 @@ static bool findZeroesInMultiResult(string& sCmd, string& sExpr, string& sInterv
 /// \brief This static function finds zeroes in
 /// the selected data set.
 ///
-/// \param sCmd string&
+/// \param cmdParser CommandLineParser&
 /// \param sExpr string&
 /// \param nMode int
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool findZeroesInData(string& sCmd, string& sExpr, int nMode)
+static bool findZeroesInData(CommandLineParser& cmdParser, string& sExpr, int nMode)
 {
     value_type* v;
     int nResults = 0;
@@ -2131,12 +2070,11 @@ static bool findZeroesInData(string& sCmd, string& sExpr, int nMode)
         if (!vResults.size())
             vResults.push_back(NAN);
 
-        sCmd = "_~zeroes[~_~]";
-        _parser.SetVectorVar("_~zeroes[~_~]", vResults);
+        cmdParser.setReturnValue(vResults);
         return true;
     }
     else
-        throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_ZEROES_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 }
 
 
@@ -2145,16 +2083,16 @@ static bool findZeroesInData(string& sCmd, string& sExpr, int nMode)
 /// actual zeros localisation function
 /// localizeZero() further below.
 ///
-/// \param sCmd string&
-/// \param _data Datafile&
-/// \param _parser Parser&
-/// \param _option const Settings&
-/// \param _functions Define&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+bool findZeroes(CommandLineParser& cmdParser)
 {
+    NumeReKernel* instance = NumeReKernel::getInstance();
+    MemoryManager& _data = instance->getMemoryManager();
+    Parser& _parser = instance->getParser();
+
     unsigned int nSamples = 21;
     double dVal[2];
     double dBoundaries[2] = {0.0, 0.0};
@@ -2166,36 +2104,23 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
     string sInterval = "";
     string sVar = "";
 
-    // We cannot find zeroes in strings
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "zeroes");
+    // We cannot search zeroes in strings
+    if (instance->getStringParser().isStringExpression(cmdParser.getExpr()))
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "zeroes");
 
-    // Separate expression and the parameter list
-    if (sCmd.find("-set") != string::npos)
-    {
-        sExpr = sCmd.substr(0, sCmd.find("-set"));
-        sParams = sCmd.substr(sCmd.find("-set"));
-    }
-    else if (sCmd.find("--") != string::npos)
-    {
-        sExpr = sCmd.substr(0, sCmd.find("--"));
-        sParams = sCmd.substr(sCmd.find("--"));
-    }
-    else if (!_data.containsTablesOrClusters(sCmd))
-        throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, sCmd, SyntaxError::invalid_position);
-    else
-        sExpr = sCmd;
+    if (!_data.containsTablesOrClusters(cmdParser.getExpr()) && !cmdParser.getParameterList().length())
+        throw SyntaxError(SyntaxError::NO_ZEROES_OPTIONS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    // Isolate the expression
-    StripSpaces(sExpr);
-    sExpr = sExpr.substr(findCommand(sExpr).sString.length());
+    // Ensure that the expression is not empty
+    // and that the custom functions don't throw
+    // any errors
+    sExpr = cmdParser.getExpr();
+    sParams = cmdParser.getParameterList();
 
-    // Ensure that custom functions don't throw any
-    // errors and that the expression is not empty
-    if (!isNotEmptyExpression(sExpr) || !_functions.call(sExpr))
+    if (!isNotEmptyExpression(sExpr) || !instance->getDefinitions().call(sExpr))
         return false;
 
-    if (!_functions.call(sParams))
+    if (!instance->getDefinitions().call(sParams))
         return false;
 
     StripSpaces(sParams);
@@ -2203,10 +2128,10 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
     // If the expression or the parameter list contains
     // data elements, get their values here
     if (_data.containsTablesOrClusters(sExpr))
-        getDataElements(sExpr, _parser, _data, _option, false);
+        getDataElements(sExpr, _parser, _data, NumeReKernel::getInstance()->getSettings(), false);
 
     if (_data.containsTablesOrClusters(sParams))
-        getDataElements(sParams, _parser, _data, _option, false);
+        getDataElements(sParams, _parser, _data, NumeReKernel::getInstance()->getSettings(), false);
 
     // Evaluate the parameter list
     if (findParameter(sParams, "min") || findParameter(sParams, "down"))
@@ -2244,19 +2169,19 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
         _parser.Eval(nResults);
 
         if (nResults > 1)
-            return findZeroesInMultiResult(sCmd, sExpr, sInterval, nMode);
+            return findZeroesInMultiResult(cmdParser, sExpr, sInterval, nMode);
         else
         {
             if (!isVariableInAssignedExpression(_parser, sVar))
             {
-                sCmd = "nan";
+                cmdParser.setReturnValue("nan");
                 return true;
             }
 
             dVar = getPointerToVariable(sVar, _parser);
 
             if (!dVar)
-                throw SyntaxError(SyntaxError::ZEROES_VAR_NOT_FOUND, sCmd, sVar, sVar);
+                throw SyntaxError(SyntaxError::ZEROES_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
 
             if (sInterval.find(':') == string::npos || sInterval.length() < 3)
                 return false;
@@ -2272,7 +2197,7 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
 
                     if (isinf(dBoundaries[i]) || isnan(dBoundaries[i]))
                     {
-                        sCmd = "nan";
+                        cmdParser.setReturnValue("nan");
                         return false;
                     }
                 }
@@ -2288,10 +2213,10 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
             }
         }
     }
-    else if (_data.containsTablesOrClusters(sCmd))
-        return findZeroesInData(sCmd, sExpr, nMode);
+    else if (cmdParser.exprContainsDataObjects())
+        return findZeroesInData(cmdParser, sExpr, nMode);
     else
-        throw SyntaxError(SyntaxError::NO_ZEROES_VAR, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::NO_ZEROES_VAR, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Calculate the interval
     if ((int)(dBoundaries[1] - dBoundaries[0]))
@@ -2305,7 +2230,7 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
     // Set the expression and evaluate it once
     _parser.SetExpr(sExpr);
     _parser.Eval();
-    sCmd = "";
+
     dTemp = *dVar;
 
     *dVar = dBoundaries[0];
@@ -2321,7 +2246,7 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
         dVal[1] = _parser.Eval();
 
         if (dVal[0]*dVal[1] < 0 && (nMode * dVal[0] <= 0.0))
-            vResults.push_back(localizeExtremum(sExpr, dVar, _parser, _option, dBoundaries[0] - 1e-10, dBoundaries[0]));
+            vResults.push_back(localizeExtremum(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] - 1e-10, dBoundaries[0]));
     }
 
     // Evaluate all samples. We try to find
@@ -2340,7 +2265,7 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
                     || (nMode == 1 && (dVal[0] < 0 && dVal[1] > 0)))
             {
                 // Examine the current interval
-                vResults.push_back((localizeZero(sExpr, dVar, _parser, _option, dBoundaries[0] + (i - 1) * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1))));
+                vResults.push_back((localizeZero(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] + (i - 1) * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1))));
             }
         }
         else if (dVal[0]*dVal[1] == 0.0)
@@ -2373,7 +2298,7 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
                 }
 
                 // Store the result
-                vResults.push_back(localizeZero(sExpr, dVar, _parser, _option, dBoundaries[0] + nTemp * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
+                vResults.push_back(localizeZero(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[0] + nTemp * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1), dBoundaries[0] + i * (dBoundaries[1] - dBoundaries[0]) / (double)(nSamples - 1)));
             }
         }
 
@@ -2388,21 +2313,15 @@ bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
         dVal[1] = _parser.Eval();
 
         if (dVal[0]*dVal[1] < 0 && nMode * dVal[0] <= 0.0)
-            vResults.push_back(localizeZero(sExpr, dVar, _parser, _option, dBoundaries[1], dBoundaries[1] + 1e-10));
+            vResults.push_back(localizeZero(sExpr, dVar, _parser, instance->getSettings(), dBoundaries[1], dBoundaries[1] + 1e-10));
     }
 
     *dVar = dTemp;
 
-    if (!sCmd.length() && !vResults.size())
-    {
-        // Still nothing found?
-        sCmd = "nan";
-    }
+    if (!vResults.size())
+        cmdParser.setReturnValue("nan");
     else
-    {
-        sCmd = "_~zeroes[~_~]";
-        _parser.SetVectorVar("_~zeroes[~_~]", vResults);
-    }
+        cmdParser.setReturnValue(vResults);
 
     return true;
 }
@@ -2608,20 +2527,20 @@ static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, co
 /// \brief This function approximates the passed
 /// expression using Taylor's method.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _option const Settings&
-/// \param _functions Define&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /// The aproximated function is defined as a new
 /// custom function.
 /////////////////////////////////////////////////
-void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+void taylor(CommandLineParser& cmdParser)
 {
-    string sParams = "";
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    string sParams = cmdParser.getParameterList();
     string sVarName = "";
-    string sExpr = "";
+    string sExpr = cmdParser.getExprAsMathExpression();
     string sExpr_cpy = "";
     string sArg = "";
     string sTaylor = "Taylor";
@@ -2635,15 +2554,11 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
     long double** dDiffValues = 0;
 
     // We cannot approximate string expressions
-    if (containsStrings(sCmd))
-        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, sCmd, SyntaxError::invalid_position, "taylor");
+    if (containsStrings(sExpr))
+        throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "taylor");
 
     // Extract the parameter list
-    if (sCmd.find("-set") != string::npos)
-        sParams = sCmd.substr(sCmd.find("-set"));
-    else if (sCmd.find("--") != string::npos)
-        sParams = sCmd.substr(sCmd.find("--"));
-    else
+    if (!sParams.length())
     {
         NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_TAYLOR_MISSINGPARAMS"), _option));
         return;
@@ -2684,10 +2599,7 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
 
         // Ensure that the location was chosen reasonable
         if (isinf(dVarValue) || isnan(dVarValue))
-        {
-            sCmd = "nan";
             return;
-        }
 
         // Create the string element, which is used
         // for the variable in the created funcction
@@ -2701,24 +2613,11 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
     }
 
     // Extract the expression
-    sExpr = sCmd.substr(sCmd.find(' ') + 1);
-
-    if (sExpr.find("-set") != string::npos)
-        sExpr = sExpr.substr(0, sExpr.find("-set"));
-    else
-        sExpr = sExpr.substr(0, sExpr.find("--"));
-
-    StripSpaces(sExpr);
-
     sExpr_cpy = sExpr;
 
     // Create a unique function name, if it is desired
     if (bUseUniqueName)
-        sTaylor += toString((int)nth_taylor) + "_" + sExpr;
-
-    // Ensure that the call to the custom function throws errors
-    if (!_functions.call(sExpr))
-        return;
+        sTaylor += toString((int)nth_taylor) + "_" + cmdParser.getExpr();
 
     StripSpaces(sExpr);
     _parser.SetExpr(sExpr);
@@ -2840,6 +2739,8 @@ void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefi
 
     sTaylor += " " + _lang.get("PARSERFUNCS_TAYLOR_DEFINESTRING", sExpr_cpy, sVarName, toString(dVarValue, 4), toString((int)nth_taylor));
 
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+
     bool bDefinitionSuccess = false;
 
     if (_functions.isDefined(sTaylor.substr(0, sTaylor.find(":="))))
@@ -2876,57 +2777,34 @@ static bool detectPhaseOverflow(std::complex<double> cmplx[3])
 /// \brief This function calculates the fast
 /// fourier transform of the passed data set.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /// The user may switch between complex or phase-
 /// amplitude layout and whether an inverse
 /// transform shall be calculated.
 /////////////////////////////////////////////////
-bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+bool fastFourierTransform(CommandLineParser& cmdParser)
 {
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+
     mglDataC _fftData;
     Indices _idx;
 
     double dNyquistFrequency = 1.0;
     double dTimeInterval = 0.0;
     double dPhaseOffset = 0.0;
-    bool bInverseTrafo = false;
-    bool bComplex = false;
+    bool bInverseTrafo = cmdParser.hasParam("inverse");
+    bool bComplex = cmdParser.hasParam("complex");
     string sTargetTable = "fftdata";
 
-    if (findParameter(sCmd, "inverse"))
-        bInverseTrafo = true;
-
-    if (findParameter(sCmd, "complex"))
-        bComplex = true;
-
     // search for explicit "target" options and select the target cache
-    sTargetTable = evaluateTargetOptionInCommand(sCmd, sTargetTable, _idx, _parser, _data, _option);
-
-    if (findParameter(sCmd, "inverse") || findParameter(sCmd, "complex"))
-    {
-        for (unsigned int i = 0; i < sCmd.length(); i++)
-        {
-            if (sCmd[i] == '(')
-                i += getMatchingParenthesis(sCmd.substr(i));
-
-            if (sCmd[i] == '-')
-            {
-                sCmd.erase(i);
-                break;
-            }
-        }
-    }
-
-    sCmd = sCmd.substr(sCmd.find(' ', sCmd.find("fft")));
-    StripSpaces(sCmd);
+    sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
 
     // get the data from the data object
-    NumeRe::Table _table = parser_extractData(sCmd, _parser, _data, _option);
+    NumeRe::Table _table = parser_extractData(cmdParser.getExpr(), _parser, _data, _option);
 
     dNyquistFrequency = _table.getLines() / (_table.getValue(_table.getLines() - 1, 0) - _table.getValue(0, 0)) / 2.0;
     dTimeInterval = (_table.getLines() - 1) / (_table.getValue(_table.getLines() - 1, 0));
@@ -3058,10 +2936,7 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, c
 /// \brief This function calculates the fast
 /// wavelet transform of the passed data set.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /// The user may select the wavelet type from a
@@ -3069,57 +2944,38 @@ bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, c
 /// whether an inverse transform shall be
 /// calculated.
 /////////////////////////////////////////////////
-bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+bool fastWaveletTransform(CommandLineParser& cmdParser)
 {
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+
     vector<double> vWaveletData;
     vector<double> vAxisData;
     Indices _idx;
 
-    bool bInverseTrafo = false;
-    bool bTargetGrid = false;
+    bool bInverseTrafo = cmdParser.hasParam("inverse");
+    bool bTargetGrid = cmdParser.hasParam("grid");
     string sTargetTable = "fwtdata";
     string sType = "d"; // d = daubechies, cd = centered daubechies, h = haar, ch = centered haar, b = bspline, cb = centered bspline
     int k = 4;
 
-    if (findParameter(sCmd, "inverse"))
-        bInverseTrafo = true;
+    std::string sParVal = cmdParser.getParameterValue("type");
 
-    if (findParameter(sCmd, "grid"))
-        bTargetGrid = true;
+    if (sParVal.length())
+        sType = sParVal;
 
-    if (findParameter(sCmd, "type", '='))
-        sType = getArgAtPos(sCmd, findParameter(sCmd, "type", '=') + 4);
+    std::vector<double> vParVal = cmdParser.getParameterValueAsNumericalValue("k");
 
-    if (findParameter(sCmd, "k", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "k", '=') + 1));
-        k = (int)_parser.Eval();
-    }
+    if (vParVal.size())
+        k = intCast(vParVal.front());
 
 
     // search for explicit "target" options and select the target cache
-    sTargetTable = evaluateTargetOptionInCommand(sCmd, sTargetTable, _idx, _parser, _data, _option);
-
-    if (findParameter(sCmd, "inverse") || findParameter(sCmd, "type", '=') || findParameter(sCmd, "k", '='))
-    {
-        for (unsigned int i = 0; i < sCmd.length(); i++)
-        {
-            if (sCmd[i] == '(')
-                i += getMatchingParenthesis(sCmd.substr(i));
-
-            if (sCmd[i] == '-')
-            {
-                sCmd.erase(i);
-                break;
-            }
-        }
-    }
-
-    sCmd = sCmd.substr(sCmd.find(' ', sCmd.find("fwt")));
-    StripSpaces(sCmd);
+    sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
 
     // get the data from the data object
-    NumeRe::Table _table = parser_extractData(sCmd, _parser, _data, _option);
+    NumeRe::Table _table = parser_extractData(cmdParser.getExpr(), _parser, _data, _option);
 
     if (_option.systemPrints())
     {
@@ -3247,160 +3103,103 @@ bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, c
 /// \brief This function samples a defined
 /// expression in an array of discrete values.
 ///
-/// \param sCmd string&
-/// \param _data Datafile&
-/// \param _parser Parser&
-/// \param _option const Settings&
-/// \param _functions Define&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions)
+bool evalPoints(CommandLineParser& cmdParser)
 {
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     unsigned int nSamples = 100;
     double dLeft = 0.0;
     double dRight = 0.0;
     double* dVar = 0;
     double dTemp = 0.0;
-    string sExpr = "";
+    string sExpr = cmdParser.getExprAsMathExpression();
     string sParams = "";
     string sInterval = "";
     string sVar = "x";
     static string zero = "0.0";
-    bool bLogarithmic = false;
-
-    // Separate expression and parameters
-    if (sCmd.find("-set") != string::npos)
-    {
-        sExpr = sCmd.substr(0, sCmd.find("-set"));
-        sParams = sCmd.substr(sCmd.find("-set"));
-    }
-    else if (sCmd.find("--") != string::npos)
-    {
-        sExpr = sCmd.substr(0, sCmd.find("--"));
-        sParams = sCmd.substr(sCmd.find("--"));
-    }
-    else
-        sExpr = sCmd;
-
-    StripSpaces(sExpr);
-    sExpr = sExpr.substr(findCommand(sExpr).sString.length());
-
-    if (!_functions.call(sExpr) || !_functions.call(sParams))
-        return false;
-
-    StripSpaces(sParams);
+    bool bLogarithmic = cmdParser.hasParam("logscale");
 
     // Evaluate calls in the expression
     // to any table or cluster
     if (_data.containsTablesOrClusters(sExpr))
     {
-        getDataElements(sExpr, _parser, _data, _option);
+        getDataElements(sExpr, _parser, _data, NumeReKernel::getInstance()->getSettings());
 
         if (sExpr.find("{") != string::npos)
-            convertVectorToExpression(sExpr, _option);
+            convertVectorToExpression(sExpr, NumeReKernel::getInstance()->getSettings());
     }
 
-    // Evaluate calls in the parameters
-    // to any table or cluster
-    if (_data.containsTablesOrClusters(sParams))
-    {
-        getDataElements(sParams, _parser, _data, _option);
+    std::vector<double> vSamples = cmdParser.getParameterValueAsNumericalValue("samples");
 
-        if (sParams.find("{") != string::npos && NumeReKernel::getInstance()->getStringParser().isStringExpression(sParams))
-            convertVectorToExpression(sParams, _option);
-    }
+    if (vSamples.size())
+        nSamples = intCast(vSamples.front());
 
-    // Evaluate samples
-    if (findParameter(sParams, "samples", '='))
-    {
-        sParams += " ";
-
-        if (isNotEmptyExpression(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7)))
-        {
-            _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
-            nSamples = (unsigned int)_parser.Eval();
-        }
-
-        sParams.erase(findParameter(sParams, "samples", '=') - 1, 8);
-    }
-
-    // Evaluate logscale parameter
-    if (findParameter(sParams, "logscale"))
-    {
-        bLogarithmic = true;
-        sParams.erase(findParameter(sParams, "logscale") - 1, 8);
-    }
+    std::vector<double> vInterval = cmdParser.parseIntervals();
 
     // Extract the interval definition
-    if (sParams.find('=') != string::npos
-            || (sParams.find('[') != string::npos
-                && sParams.find(']', sParams.find('['))
-                && sParams.find(':', sParams.find('['))))
+    if (!vInterval.size() && cmdParser.getParameterList().find('=') != string::npos)
     {
-        if (sParams.substr(0, 2) == "--")
-            sParams = sParams.substr(2);
-        else if (sParams.substr(0, 4) == "-set")
-            sParams = sParams.substr(4);
+        std::vector<std::string> vParams = cmdParser.getAllParametersWithValues();
 
-        vector<double> vInterval = readAndParseIntervals(sParams, _parser, _data, _functions, _option, false);
-
-        if (!vInterval.size() && sParams.find('=') != string::npos)
+        for (const std::string& sPar : vParams)
         {
-            int nPos = sParams.find('=');
-            sInterval = getArgAtPos(sParams, nPos + 1);
-
-            if (sInterval.front() == '[' && sInterval.back() == ']')
+            if (sPar != "samples")
             {
-                sInterval.pop_back();
-                sInterval.erase(0, 1);
+                sVar = sPar;
+                sInterval = cmdParser.getParameterValue(sPar);
+
+                if (sInterval.front() == '[' && sInterval.back() == ']')
+                {
+                    sInterval.pop_back();
+                    sInterval.erase(0, 1);
+                }
+
+                auto indices = getAllIndices(sInterval);
+
+                _parser.SetExpr(indices[0] + "," + indices[1]);
+                int nIndices;
+                double* res = _parser.Eval(nIndices);
+                vInterval.assign(res, res+2);
+
+                break;
             }
-
-            sVar = " " + sParams.substr(0, nPos);
-            sVar = sVar.substr(sVar.rfind(' '));
-            StripSpaces(sVar);
-
-            auto indices = getAllIndices(sInterval);
-
-            _parser.SetExpr(indices[0] + "," + indices[1]);
-            int nIndices;
-            double* res = _parser.Eval(nIndices);
-            vInterval.assign(res, res+2);
         }
-
-        if (vInterval.size() > 4)
-            sVar = "z";
-        else if (vInterval.size() > 2)
-            sVar = "y";
-
-        if (isNotEmptyExpression(sExpr))
-            _parser.SetExpr(sExpr);
-        else
-            _parser.SetExpr(sVar);
-
-        _parser.Eval();
-        dVar = getPointerToVariable(sVar, _parser);
-
-        if (!dVar)
-            throw SyntaxError(SyntaxError::EVAL_VAR_NOT_FOUND, sCmd, sVar, sVar);
-
+    }
+    else
+    {
         dLeft = vInterval[0];
         dRight = vInterval[1];
-
-        if (isnan(dLeft) && isnan(dRight))
-        {
-            dLeft = -10.0;
-            dRight = 10.0;
-        }
-        else if (isnan(dLeft) || isnan(dRight) || isinf(dLeft) || isinf(dRight))
-        {
-            sCmd = "nan";
-            return false;
-        }
-
-        if (bLogarithmic && (dLeft <= 0.0 || dRight <= 0.0))
-            throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, sCmd, SyntaxError::invalid_position);
     }
+
+    if (isNotEmptyExpression(sExpr))
+        _parser.SetExpr(sExpr);
+    else
+        _parser.SetExpr(sVar);
+
+    _parser.Eval();
+    dVar = getPointerToVariable(sVar, _parser);
+
+    if (!dVar)
+        throw SyntaxError(SyntaxError::EVAL_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
+
+    if (isnan(dLeft) && isnan(dRight))
+    {
+        dLeft = -10.0;
+        dRight = 10.0;
+    }
+    else if (isnan(dLeft) || isnan(dRight) || isinf(dLeft) || isinf(dRight))
+    {
+        cmdParser.setReturnValue("nan");
+        return false;
+    }
+
+    if (bLogarithmic && (dLeft <= 0.0 || dRight <= 0.0))
+        throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, cmdParser.getCommandLine(), SyntaxError::invalid_position);
+
 
     // Set the corresponding expression
     if (isNotEmptyExpression(sExpr))
@@ -3411,7 +3210,6 @@ bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
         _parser.SetExpr(zero);
 
     _parser.Eval();
-    sCmd = "";
     vector<double> vResults;
 
     // Evaluate the selected expression at
@@ -3441,9 +3239,7 @@ bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Setti
             vResults.push_back(_parser.Eval());
     }
 
-    sCmd = "_~evalpnts[~_~]";
-    _parser.SetVectorVar("_~evalpnts[~_~]", vResults);
-
+    cmdParser.setReturnValue(vResults);
     return true;
 }
 
@@ -4071,7 +3867,7 @@ bool readAudioFile(CommandLineParser& cmdParser)
             (nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).min()+1 : _targetIdx.col.front()+1),
             (nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1)};
 
-        cmdParser.setReturnValue(NumeReKernel::getInstance()->getParser().CreateTempVectorVar(vIndices));
+        cmdParser.setReturnValue(vIndices);
     }
     else
     {
@@ -4088,7 +3884,7 @@ bool readAudioFile(CommandLineParser& cmdParser)
         // Create the metadata
         std::vector<double> vMetaData = {nLen, nChannels, nSampleRate, nLen / (double)nSampleRate};
 
-        cmdParser.setReturnValue(NumeReKernel::getInstance()->getParser().CreateTempVectorVar(vMetaData));
+        cmdParser.setReturnValue(vMetaData);
     }
 
     return true;
@@ -4158,54 +3954,29 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
 /// of a defined x-y-data array such that DeltaX
 /// is equal for every x.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param CommandLineParser& cmdParser
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool regularizeDataSet(CommandLineParser& cmdParser)
 {
-    int nSamples = 100;
-    string sDataset = "";
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    int nSamples = 0;
     string sColHeaders[2] = {"", ""};
-    Indices _idx;
     double dXmin, dXmax;
-    sCmd.erase(0, findCommand(sCmd).nPos + findCommand(sCmd).sString.length()); // Kommando entfernen
-
-    // Strings parsen
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-    {
-        string sDummy = "";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-    }
-
-    // Funktionen aufrufen
-    if (!_functions.call(sCmd))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
 
     // Samples lesen
-    if (findParameter(sCmd, "samples", '='))
-    {
-        string sSamples = getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7);
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
 
-        if (_data.containsTablesOrClusters(sSamples))
-            getDataElements(sSamples, _parser, _data, _option);
-
-        _parser.SetExpr(sSamples);
-
-        if (!isnan(_parser.Eval()) && !isinf(_parser.Eval()) && _parser.Eval() >= 1)
-            nSamples = (int)_parser.Eval();
-    }
+    if (vParVal.size())
+        nSamples = intCast(vParVal.front());
 
     // Indices lesen
-    getIndices(sCmd, _idx, _parser, _data, _option);
-    sDataset = sCmd.substr(0, sCmd.find('('));
-    StripSpaces(sDataset);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    Indices& _idx = accessParser.getIndices();
+
     MemoryManager _cache;
-    getData(sDataset, _idx, _data, _cache);
+    getData(accessParser.getDataObject(), _idx, _data, _cache);
 
     _cache.sortElements("sort -table cols=1[2]");
 
@@ -4221,20 +3992,20 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, Func
     tk::spline _spline;
     _spline.set_points(_cache.getElement(VectorIndex(0, nLines-1), VectorIndex(0), "table"), _cache.getElement(VectorIndex(0, nLines-1), VectorIndex(1), "table"), false);
 
-    if (!findParameter(sCmd, "samples", '='))
+    if (!nSamples)
         nSamples = nLines;
 
-    long long int nLastCol = _data.getCols(sDataset, false);
+    long long int nLastCol = _data.getCols(accessParser.getDataObject(), false);
 
     // Interpolate the data points
     for (long long int i = 0; i < nSamples; i++)
     {
-        _data.writeToTable(i, nLastCol, sDataset, dXmin + i * (dXmax-dXmin) / (nSamples-1));
-        _data.writeToTable(i, nLastCol + 1, sDataset, _spline(dXmin + i*(dXmax-dXmin) / (nSamples-1)));
+        _data.writeToTable(i, nLastCol, accessParser.getDataObject(), dXmin + i * (dXmax-dXmin) / (nSamples-1));
+        _data.writeToTable(i, nLastCol + 1, accessParser.getDataObject(), _spline(dXmin + i*(dXmax-dXmin) / (nSamples-1)));
     }
 
-    _data.setHeadLineElement(nLastCol, sDataset, sColHeaders[0]);
-    _data.setHeadLineElement(nLastCol + 1, sDataset, sColHeaders[1]);
+    _data.setHeadLineElement(nLastCol, accessParser.getDataObject(), sColHeaders[0]);
+    _data.setHeadLineElement(nLastCol + 1, accessParser.getDataObject(), sColHeaders[1]);
     return true;
 }
 
@@ -4243,11 +4014,7 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, Func
 /// \brief This function performs a pulse
 /// analysis on the selected data set.
 ///
-/// \param _sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /// The function calculates the maximal amplitude,
@@ -4255,33 +4022,20 @@ bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, Func
 /// maximal amplitude (which is different from
 /// the FWHM) and the energy in the pulse.
 /////////////////////////////////////////////////
-bool analyzePulse(string& _sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool analyzePulse(CommandLineParser& cmdParser)
 {
-    string sDataset = "";
-    Indices _idx;
     mglData _v;
     vector<double> vPulseProperties;
     double dXmin = NAN, dXmax = NAN;
     double dSampleSize = NAN;
-    string sCmd = _sCmd.substr(findCommand(_sCmd, "pulse").nPos + 5);
-
-    // Strings parsen
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-    {
-        string sDummy = "";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-    }
-
-    // Funktionen aufrufen
-    if (!_functions.call(sCmd))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, _sCmd, SyntaxError::invalid_position);
 
     // Indices lesen
-    getIndices(sCmd, _idx, _parser, _data, _option);
-    sDataset = sCmd.substr(0, sCmd.find('('));
-    StripSpaces(sDataset);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    Indices& _idx = accessParser.getIndices();
+    std::string sDataset = accessParser.getDataObject();
+
     MemoryManager _cache;
-    getData(sDataset, _idx, _data, _cache);
+    getData(sDataset, _idx, NumeReKernel::getInstance()->getMemoryManager(), _cache);
 
     long long int nLines = _cache.getLines("table", false);
 
@@ -4306,15 +4060,12 @@ bool analyzePulse(string& _sCmd, Parser& _parser, MemoryManager& _data, Function
     }
     else
     {
-        vPulseProperties.push_back(NAN);
-        _sCmd.replace(findCommand(_sCmd, "pulse").nPos, string::npos, "_~pulse[~_~]");
-        _parser.SetVectorVar("_~pulse[~_~]", vPulseProperties);
-
+        cmdParser.setReturnValue("nan");
         return true;
     }
 
     // Ausgabe
-    if (_option.systemPrints())
+    if (NumeReKernel::getInstance()->getSettings().systemPrints())
     {
         NumeReKernel::toggleTableStatus();
         make_hline();
@@ -4322,15 +4073,13 @@ bool analyzePulse(string& _sCmd, Parser& _parser, MemoryManager& _data, Function
         make_hline();
 
         for (unsigned int i = 0; i < vPulseProperties.size(); i++)
-            NumeReKernel::printPreFmt("|   " + _lang.get("PARSERFUNCS_PULSE_TABLE_" + toString((int)i + 1) + "_*", toString(vPulseProperties[i], _option)) + "\n");
+            NumeReKernel::printPreFmt("|   " + _lang.get("PARSERFUNCS_PULSE_TABLE_" + toString((int)i + 1) + "_*", toString(vPulseProperties[i], NumeReKernel::getInstance()->getSettings())) + "\n");
 
         NumeReKernel::toggleTableStatus();
         make_hline();
     }
 
-    _sCmd.replace(findCommand(_sCmd, "pulse").nPos, string::npos, "_~pulse[~_~]");
-    _parser.SetVectorVar("_~pulse[~_~]", vPulseProperties);
-
+    cmdParser.setReturnValue(vPulseProperties);
     return true;
 }
 
@@ -4339,17 +4088,14 @@ bool analyzePulse(string& _sCmd, Parser& _parser, MemoryManager& _data, Function
 /// \brief This function performs the short-time
 /// fourier analysis on the passed data set.
 ///
-/// \param sCmd string&
-/// \param sTargetCache string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
 {
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
     Indices _target;
     mglData _real, _imag, _result;
     int nSamples = 0;
@@ -4357,32 +4103,16 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
     double dXmin = NAN, dXmax = NAN;
     double dFmin = 0.0, dFmax = 1.0;
     double dSampleSize = NAN;
-    sCmd.erase(0, findCommand(sCmd).nPos + 4);
 
-    // Strings parsen
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-    {
-        string sDummy = "";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-    }
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
 
-    // Funktionen aufrufen
-    if (!_functions.call(sCmd))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
+    if (vParVal.size())
+        nSamples = std::max(intCast(vParVal.front()), 0LL);
 
-    if (findParameter(sCmd, "samples", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7));
-        nSamples = _parser.Eval();
-
-        if (nSamples < 0)
-            nSamples = 0;
-    }
-
-    sTargetCache = evaluateTargetOptionInCommand(sCmd, "stfdat", _target, _parser, _data, _option);
+    std::string sTargetCache = cmdParser.getTargetTable(_target, "stfdat");
 
     // Indices lesen
-    DataAccessParser _accessParser(sCmd);
+    DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
     _accessParser.evalIndices();
     Indices& _idx = _accessParser.getIndices();
 
@@ -4452,6 +4182,8 @@ bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parse
         }
     }
 
+    cmdParser.clearReturnValue();
+    cmdParser.setReturnValue(sTargetCache);
     return true;
 }
 
@@ -4497,90 +4229,64 @@ static double interpolateToGrid(const std::vector<double>& vAxis, double dInterp
     return NAN;
 }
 
+
 /////////////////////////////////////////////////
 /// \brief This function is the implementation of
 /// the detect command.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data MemoryManager&
-/// \param _functions FunctionDefinitionManager&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+void boneDetection(CommandLineParser& cmdParser)
 {
-    string sDataset = "";
-    std::string sTargetCache;
-    Indices _idx, _target;
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     mglData _mData;
     double dLevel = NAN, dAttrX = 0.0, dAttrY = 1.0, dMinLen = 0.0;
 
-    sCmd.erase(0, findCommand(sCmd).nPos + 6);
-
-    // Strings parsen
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-    {
-        string sDummy = "";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-    }
-
-    // Funktionen aufrufen
-    if (!_functions.call(sCmd))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
-
     // detect TABLE() -set minval=LVL attract={x,y} minlen=MIN target=TARGET()
-    if (findParameter(sCmd, "minval", '='))
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("minval");
+
+    if (vParVal.size())
+        dLevel = vParVal.front();
+
+    vParVal = cmdParser.getParameterValueAsNumericalValue("attract");
+
+    if (vParVal.size() > 1)
     {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "minval", '=') + 6));
-        dLevel = _parser.Eval();
+        dAttrX = fabs(vParVal[0]);
+        dAttrY = fabs(vParVal[1]);
     }
+    else if (vParVal.size())
+        dAttrY = fabs(vParVal[0]);
 
-    if (findParameter(sCmd, "attract", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "attract", '=') + 7));
-        value_type* v;
-        int nRes;
-        v = _parser.Eval(nRes);
+    vParVal = cmdParser.getParameterValueAsNumericalValue("minlen");
 
-        if (nRes > 1)
-        {
-            dAttrX = fabs(v[0]);
-            dAttrY = fabs(v[1]);
-        }
-        else if (nRes == 1)
-            dAttrY = fabs(v[0]);
-    }
+    if (vParVal.size())
+        dMinLen = fabs(vParVal.front());
 
-    if (findParameter(sCmd, "minlen", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "minlen", '=') + 6));
-        dMinLen = fabs(_parser.Eval());
-    }
-
-    sTargetCache = evaluateTargetOptionInCommand(sCmd, "detectdat", _target, _parser, _data, _option);
+    Indices _target;
+    std::string sTargetCache = cmdParser.getTargetTable(_target, "detectdat");
 
     // Indices lesen
-    getIndices(sCmd, _idx, _parser, _data, _option);
-    sDataset = sCmd.substr(0, sCmd.find('('));
-    StripSpaces(sDataset);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    Indices& _idx = accessParser.getIndices();
 
     if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _data.getLines(sDataset)-1);
+        _idx.row.setRange(0, _data.getLines(accessParser.getDataObject())-1);
 
     if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + _data.getLines(sDataset, true) - _data.getAppendedZeroes(_idx.col[1], sDataset) + 1);
+        _idx.col.setRange(0, _idx.col.front() + _data.getLines(accessParser.getDataObject(), true) - _data.getAppendedZeroes(_idx.col[1], accessParser.getDataObject()) + 1);
 
     // Get x and y axis for the final scaling
-    std::vector<double> vX = _data.getElement(_idx.row, _idx.col.subidx(0, 1), sDataset);
-    std::vector<double> vY = _data.getElement(_idx.row, _idx.col.subidx(1, 1), sDataset);
+    std::vector<double> vX = _data.getElement(_idx.row, _idx.col.subidx(0, 1), accessParser.getDataObject());
+    std::vector<double> vY = _data.getElement(_idx.row, _idx.col.subidx(1, 1), accessParser.getDataObject());
 
     _idx.col = _idx.col.subidx(2);
 
     // Get the data
     MemoryManager _cache;
-    getData(sDataset, _idx, _data, _cache, 100, false);
+    getData(accessParser.getDataObject(), _idx, _data, _cache, 100, false);
 
     long long int nLines = _cache.getLines("table", false);
     long long int nCols = _cache.getCols("table", false);
@@ -4635,7 +4341,7 @@ void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, Function
     _data.setHeadLineElement(_target.col[0], sTargetCache, "Structure_x");
     _data.setHeadLineElement(_target.col[1], sTargetCache, "Structure_y");
 
-    if (_option.systemPrints())
+    if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DETECT_SUCCESS", sTargetCache));
 }
 
@@ -4644,33 +4350,28 @@ void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, Function
 /// \brief This function approximates the passed
 /// data set using cubic splines.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /// The calculated spline polynomials are defined
 /// as new custom functions.
 /////////////////////////////////////////////////
-bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool calculateSplines(CommandLineParser& cmdParser)
 {
-    Indices _idx;
+    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+
     MemoryManager _cache;
     tk::spline _spline;
     vector<double> xVect, yVect;
-    string sTableName = sCmd.substr(sCmd.find(' '));
-    StripSpaces(sTableName);
 
-    getIndices(sTableName, _idx, _parser, _data, _option);
-    sTableName.erase(sTableName.find('('));
-    getData(sTableName, _idx, _data, _cache);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+
+    getData(accessParser.getDataObject(), accessParser.getIndices(), NumeReKernel::getInstance()->getMemoryManager(), _cache);
 
     long long int nLines = _cache.getLines("table", true) - _cache.getAppendedZeroes(0, "table");
 
     if (nLines < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, sTableName);
+        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), accessParser.getDataObject());
 
     for (long long int i = 0; i < nLines; i++)
     {
@@ -4709,7 +4410,7 @@ bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, Funct
             sDefinition += " + ";
     }
 
-    if (_option.systemPrints() && !NumeReKernel::bSupressAnswer)
+    if (NumeReKernel::getInstance()->getSettings().systemPrints() && !NumeReKernel::bSupressAnswer)
         NumeReKernel::print(sDefinition);
 
     bool bDefinitionSuccess = false;
@@ -4720,7 +4421,7 @@ bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, Funct
         bDefinitionSuccess = _functions.defineFunc(sDefinition);
 
     if (bDefinitionSuccess)
-        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), _option.systemPrints() && !NumeReKernel::bSupressAnswer);
+        NumeReKernel::print(_lang.get("DEFINE_SUCCESS"), NumeReKernel::getInstance()->getSettings().systemPrints() && !NumeReKernel::bSupressAnswer);
     else
         NumeReKernel::issueWarning(_lang.get("DEFINE_FAILURE"));
 
@@ -4746,19 +4447,15 @@ static double rotRound(double d)
 /// \brief This function rotates a table, an
 /// image or a datagrid around a specified angle.
 ///
-/// \param sCmd std::string&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void rotateTable(std::string& sCmd)
+void rotateTable(CommandLineParser& cmdParser)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    StringView _sTable(sCmd);
-    Match _mMatch = findCommand(sCmd);
-    DataAccessParser _accessParser(_sTable.subview(_mMatch.nPos + _mMatch.sString.length()));
+    DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
 
-    std::string sTargetTable = "rotdata";
     Indices _idx;
     double dAlpha = 0.0; // radians
 
@@ -4766,21 +4463,20 @@ void rotateTable(std::string& sCmd)
     std::vector<double> source_y;
 
     // Find the target of this operation
-    sTargetTable = evaluateTargetOptionInCommand(sCmd, sTargetTable, _idx, _parser, _data, NumeReKernel::getInstance()->getSettings());
+    std::string sTargetTable = cmdParser.getTargetTable(_idx, "rotdata");
 
-    if (findParameter(sCmd, "alpha", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "alpha", '=') + 5));
-        dAlpha = -_parser.Eval() / 180.0 * M_PI; // deg2rad and change orientation for mathematical positive rotation
-    }
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("alpha");
+
+    if (vParVal.size())
+        dAlpha = -vParVal.front() / 180.0 * M_PI; // deg2rad and change orientation for mathematical positive rotation
 
     _accessParser.getIndices().row.setOpenEndIndex(_data.getLines(_accessParser.getDataObject())-1);
     _accessParser.getIndices().col.setOpenEndIndex(_data.getCols(_accessParser.getDataObject())-1);
 
     // Handle the image and datagrid cases
-    if (_mMatch.sString == "imrot" || _mMatch.sString == "gridrot")
+    if (cmdParser.getCommand() == "imrot" || cmdParser.getCommand() == "gridrot")
     {
-        if (_mMatch.sString == "gridrot")
+        if (cmdParser.getCommand() == "gridrot")
         {
             source_x = _data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(0, 1), _accessParser.getDataObject());
             source_y = _data.getElement(_accessParser.getIndices().row, _accessParser.getIndices().col.subidx(1, 1), _accessParser.getDataObject());
@@ -4840,7 +4536,7 @@ void rotateTable(std::string& sCmd)
     left -= (ceil(rotRound(right) - rotRound(left))- (right - left)) / 2.0;
 
     // Insert the axes, if necessary
-    if (_mMatch.sString == "imrot")
+    if (cmdParser.getCommand() == "imrot")
     {
         // Write the x axis
         for (int i = 0; i < rows; i++)
@@ -4862,7 +4558,7 @@ void rotateTable(std::string& sCmd)
 
         _idx.col = _idx.col.subidx(2);
     }
-    else if (_mMatch.sString == "gridrot")
+    else if (cmdParser.getCommand() == "gridrot")
     {
         Point origin_axis(interpolateToGrid(source_x, origin.x, true), interpolateToGrid(source_y, origin.y, true));
 
@@ -4946,66 +4642,35 @@ value_type parser_Random(value_type vRandMin, value_type vRandMax);
 /// velocity part, reducing the overall position
 /// variation of the particles over time.
 ///
-/// \param sCmd std::string&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void particleSwarmOptimizer(std::string& sCmd)
+void particleSwarmOptimizer(CommandLineParser& cmdParser)
 {
     Parser& _parser = NumeReKernel::getInstance()->getParser();
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    FunctionDefinitionManager& _define = NumeReKernel::getInstance()->getDefinitions();
 
     size_t nGlobalBest = 0;
     size_t nNumParticles = 100;
     size_t nMaxIterations = 100;
     size_t nDims = 1;
 
-    // TODO
-    // Find the expression
-    Match _mMatch = findCommand(sCmd);
-
-    size_t pos = std::min(sCmd.find("-set", _mMatch.nPos), sCmd.find("--", _mMatch.nPos));
-    std::string sParams;
-    std::string sExpr;
-
-    if (pos != std::string::npos)
-    {
-        sParams = sCmd.substr(pos);
-        sExpr = sCmd.substr(_mMatch.nPos + _mMatch.sString.length(), pos - _mMatch.nPos - _mMatch.sString.length());
-    }
-    else
-        sExpr = sCmd.substr(_mMatch.nPos + _mMatch.sString.length());
-
     // Extract the interval information
-    std::vector<double> vInterval = readAndParseIntervals(sParams, _parser, _data, _define, NumeReKernel::getInstance()->getSettings(), false);
+    std::vector<double> vInterval = cmdParser.parseIntervals(false);
 
     // Handle parameters
-    if (sParams.length())
-    {
-        if (findParameter(sParams, "particles", '='))
-        {
-            _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "particles", '=') + 9));
-            nNumParticles = intCast(_parser.Eval());
-        }
+    std::vector<double> vParVal = cmdParser.getParameterValueAsNumericalValue("particles");
 
-        if (findParameter(sParams, "iter", '='))
-        {
-            _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "iter", '=') + 4));
-            nMaxIterations = intCast(_parser.Eval());
-        }
-    }
+    if (vParVal.size())
+        nNumParticles = intCast(vParVal.front());
 
-    // Call functions
-    if (!_define.call(sExpr))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sExpr, sExpr);
+    vParVal = cmdParser.getParameterValueAsNumericalValue("iter");
 
-    // Get data elements, if necessary
-    if (_data.containsTablesOrClusters(sExpr))
-        getDataElements(sExpr, _parser, _data, NumeReKernel::getInstance()->getSettings());
+    if (vParVal.size())
+        nMaxIterations = intCast(vParVal.front());
 
     // Set the expression
-    _parser.SetExpr(sExpr);
+    _parser.SetExpr(cmdParser.getExprAsMathExpression(true));
 
     // Determine intervals and dimensionality
     if (vInterval.size() < 2)
@@ -5113,8 +4778,6 @@ void particleSwarmOptimizer(std::string& sCmd)
     }
 
     // Create return value
-    sCmd.clear();
-
     std::vector<double> vRes;
 
     for (size_t j = 0; j < nDims; j++)
@@ -5123,7 +4786,7 @@ void particleSwarmOptimizer(std::string& sCmd)
     }
 
     // Create a temporary vector variable
-    sCmd = _parser.CreateTempVectorVar(vRes);
+    cmdParser.setReturnValue(vRes);
 }
 
 

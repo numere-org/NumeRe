@@ -24,233 +24,208 @@
 
 extern Language _lang;
 
-bool removeFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+std::string removeQuotationMarks(const std::string&);
+
+/////////////////////////////////////////////////
+/// \brief Removes one or more files from the
+/// disk.
+///
+/// \param cmdParser CommandLineParser&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool removeFile(CommandLineParser& cmdParser)
 {
-    if (sCmd.length() < 7)
+    if (!cmdParser.getExpr().length())
         return false;
-    bool bIgnore = false;
-    bool bAll = false;
+
+    bool bIgnore = cmdParser.hasParam("ignore") || cmdParser.hasParam("i");
+    bool bAll = cmdParser.hasParam("all") || cmdParser.hasParam("a");
     string _sCmd = "";
     FileSystem _fSys;
-    _fSys.setTokens(_option.getTokenPaths());
-    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    _fSys.initializeFromKernel();
 
-    sCmd = fromSystemCodePage(sCmd);
+    //sCmd = fromSystemCodePage(sCmd);
 
-    if (findParameter(sCmd, "ignore") || findParameter(sCmd, "i"))
-    {
-        if (findParameter(sCmd, "ignore"))
-            sCmd.erase(findParameter(sCmd, "ignore")-1,6);
-        else
-            sCmd.erase(findParameter(sCmd, "i")-1,1);
-        bIgnore = true;
-    }
-    if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
-    {
-        if (findParameter(sCmd, "all"))
-            sCmd.erase(findParameter(sCmd, "all")-1,3);
-        else
-            sCmd.erase(findParameter(sCmd, "a")-1,1);
-        bAll = true;
-    }
-    sCmd = sCmd.substr(sCmd.find("remove")+6);
-    sCmd = sCmd.substr(0, sCmd.rfind('-'));
-    StripSpaces(sCmd);
-    while (sCmd[sCmd.length()-1] == '-' && sCmd[sCmd.length()-2] == ' ')
-    {
-        sCmd.erase(sCmd.length()-1);
-        StripSpaces(sCmd);
-    }
+    // Get all relevant files
+    std::vector<std::string> vFiles = getFileList(cmdParser.parseExprAsString(), NumeReKernel::getInstance()->getSettings(), 1);
 
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-    {
-        string sDummy = "";
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-    }
-    if (sCmd[0] == '"')
-        sCmd = sCmd.substr(1);
-    if (sCmd[sCmd.length()-1] == '"')
-        sCmd = sCmd.substr(0,sCmd.length()-1);
-    if (sCmd.length())
-        _sCmd = _fSys.ValidFileName(sCmd);
-    else
-        return false;
+    // No files -> No deletion needed
+    if (!vFiles.size())
+        return bIgnore; // return true, if ignored, false otherwise
 
-    if (!fileExists(_sCmd))
-        return false;
-
-    while (_sCmd.length() && fileExists(_sCmd))
+    // Delete the first or every file
+    for (const std::string& sFile : vFiles)
     {
-        if (_sCmd.substr(_sCmd.rfind('.')) == ".exe"
-            || _sCmd.substr(_sCmd.rfind('.')) == ".dll"
-            || _sCmd.substr(_sCmd.rfind('.')) == ".vfm")
-        {
+        if (sFile.substr(sFile.rfind('.')) == ".exe"
+            || sFile.substr(sFile.rfind('.')) == ".dll"
+            || sFile.substr(sFile.rfind('.')) == ".sys"
+            || sFile.substr(sFile.rfind('.')) == ".vfm")
             return false;
-        }
+
         if (!bIgnore)
         {
             string c = "";
-            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_REMOVEFILE_CONFIRM", _sCmd), _option) );
+            NumeReKernel::print(LineBreak( _lang.get("BUILTIN_REMOVEFILE_CONFIRM", _sCmd), NumeReKernel::getInstance()->getSettings()) );
             NumeReKernel::printPreFmt("|\n|<- ");
             NumeReKernel::getline(c);
 
             if (c != _lang.YES())
-            {
                 return false;
-            }
         }
-        remove(_sCmd.c_str());
-        if (!bAll || (sCmd.find('*') == string::npos && sCmd.find('?') == string::npos))
-            break;
-        else
-            _sCmd = _fSys.ValidFileName(sCmd);
+
+        // Delete it
+        remove(sFile.c_str());
+
+        // Delete only the first one
+        if (!bAll)
+            return true;
     }
 
     return true;
 }
 
-bool moveFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+
+/////////////////////////////////////////////////
+/// \brief Moves or copies files from one
+/// location to another. Supports also wildcards
+/// and file lists.
+///
+/// \param cmdParser CommandLineParser&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool moveOrCopyFiles(CommandLineParser& cmdParser)
 {
-    if (sCmd.length() < 5)
+    if (!cmdParser.getExpr().length())
         return false;
 
+    std::string sSource = cmdParser.getExpr();
     string sTarget = "";
     string _sTarget = "";
     string sDummy = "";
     string sFile = "";
-    string _sCmd = "";
     vector<string> vFileList;
 
     unsigned int nthFile = 1;
-    bool bAll = false;
+    bool bAll = cmdParser.hasParam("all") || cmdParser.hasParam("a");
     bool bSuccess = false;
 
     FileSystem _fSys;
-    _fSys.setTokens(_option.getTokenPaths());
-    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
+    _fSys.initializeFromKernel();
+    cmdParser.clearReturnValue();
 
-    sCmd = fromSystemCodePage(sCmd);
+    //sCmd = fromSystemCodePage(sCmd);
 
-    if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
+    // Get the target
+    if (cmdParser.hasParam("target") || cmdParser.hasParam("t"))
     {
-        bAll = true;
-        if (findParameter(sCmd, "all"))
-            sCmd.erase(findParameter(sCmd, "all")-1,3);
+        if (cmdParser.hasParam("target"))
+            sTarget = cmdParser.getParameterValueAsString("target", "");
         else
-            sCmd.erase(findParameter(sCmd, "a")-1,1);
-    }
-    if (findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '='))
-    {
-        unsigned int nPos = 0;
-        if (findParameter(sCmd, "target", '='))
-            nPos = findParameter(sCmd, "target", '=')+6;
-        else
-            nPos = findParameter(sCmd, "t", '=')+1;
-        sTarget = getArgAtPos(sCmd, nPos);
+            sTarget = cmdParser.getParameterValueAsString("t", "");
+
         StripSpaces(sTarget);
-        sCmd = sCmd.substr(0, sCmd.rfind('-', nPos));
-        sCmd = sCmd.substr(sCmd.find(' ')+1);
-        StripSpaces(sCmd);
     }
     else
-    {
-        throw SyntaxError(SyntaxError::NO_TARGET, sCmd, SyntaxError::invalid_position);
-    }
+        throw SyntaxError(SyntaxError::NO_TARGET, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    StripSpaces(sCmd);
-    while (sCmd[sCmd.length()-1] == '-' && sCmd[sCmd.length()-2] == ' ')
-    {
-        sCmd.erase(sCmd.length()-1);
-        StripSpaces(sCmd);
-    }
-
-    sCmd = replacePathSeparator(sCmd);
+    // Clean source and target paths
+    sSource = replacePathSeparator(sSource);
     sTarget = replacePathSeparator(sTarget);
 
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sSource))
+        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sSource, sDummy, true);
 
-    if (sCmd[0] == '"')
-        sCmd = sCmd.substr(1);
-    if (sCmd[sCmd.length()-1] == '"')
-        sCmd = sCmd.substr(0,sCmd.length()-1);
-    /*if (sTarget[0] == '"')
-        sTarget = sTarget.substr(1);
-    if (sTarget[sTarget.length()-1] == '"')
-        sTarget = sTarget.substr(0,sTarget.length()-1);*/
+    sSource = removeQuotationMarks(sSource);
 
-    vFileList = getFileList(sCmd, _option);
+    // In 'all' case it is necessary to set the return value
+    // from the source string
+    if (bAll)
+        cmdParser.setReturnValue(sSource);
+
+    // Get the source file list an validate
+    vFileList = getFileList(sSource, NumeReKernel::getInstance()->getSettings(), 1);
 
     if (!vFileList.size())
         return false;
 
-    _sCmd = sCmd.substr(0,sCmd.rfind('/')) + "/";
-
+    // Operate on each file in the list
     for (unsigned int nFile = 0; nFile < vFileList.size(); nFile++)
     {
         _sTarget = sTarget;
-        sFile = _sCmd + vFileList[nFile];
+        sFile = vFileList[nFile];
+
         if (sFile.find('.') != string::npos)
         {
             string sExt = sFile.substr(sFile.rfind('.'));
+
             if (sExt != ".exe" && sExt != ".sys" && sExt != ".dll")
                 _fSys.declareFileType(sExt);
         }
+
+        // Resolve the file name
         sFile = _fSys.ValidFileName(sFile);
 
         if (_sTarget[_sTarget.length()-1] == '*' && _sTarget[_sTarget.length()-2] == '/')
             _sTarget = _sTarget.substr(0, _sTarget.length()-2) + sFile.substr(sFile.rfind('/'));
         else if (_sTarget[_sTarget.length()-1] == '/')
             _sTarget = _sTarget.substr(0, _sTarget.length()-1) + sFile.substr(sFile.rfind('/'));
+
+        // Prepare the file tags
         if (_sTarget.find('<') != string::npos && _sTarget.find('>', _sTarget.find('<')) != string::npos)
         {
             string sToken = "";
+
             for (unsigned int i = 0; i < _sTarget.length(); i++)
             {
                 if (_sTarget[i] == '<')
                 {
                     if (_sTarget.find('>', i) == string::npos)
                         break;
+
                     sToken = _sTarget.substr(i, _sTarget.find('>', i)+1-i);
+
                     if (sToken.find('#') != string::npos)
                     {
-
                         unsigned int nLength = 1;
+
                         if (sToken.find('~') != string::npos)
                             nLength = sToken.rfind('~')-sToken.find('#')+1;
+
                         sToken.clear();
+
                         if (nLength > toString((int)nthFile).length())
                             sToken.append(nLength-toString((int)(nthFile)).length(),'0');
-                        sToken += toString((int)(nthFile));
 
+                        sToken += toString((int)(nthFile));
                         _sTarget.replace(i,_sTarget.find('>',i)+1-i,sToken);
                         i += sToken.length();
                     }
                     else if (sToken == "<fname>")
                     {
                         sToken = sDummy.substr(sDummy.rfind('/')+1, sDummy.rfind('.')-1-sDummy.rfind('/'));
-
                         _sTarget.replace(i,_sTarget.find('>',i)+1-i,sToken);
                         i += sToken.length();
                     }
                 }
+
                 if (_sTarget.find('<',i) == string::npos)
                     break;
             }
         }
+
         if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_sTarget))
             NumeReKernel::getInstance()->getStringParser().evalAndFormat(_sTarget, sDummy, true);
 
-        if (_sTarget[0] == '"')
-            _sTarget.erase(0,1);
-        if (_sTarget[_sTarget.length()-1] == '"')
-            _sTarget.erase(_sTarget.length()-1);
+        _sTarget = removeQuotationMarks(_sTarget);
         StripSpaces(_sTarget);
 
         if (_sTarget.substr(_sTarget.length()-2) == "/*")
             _sTarget.erase(_sTarget.length()-1);
+
+        // Validate target file name
         _sTarget = _fSys.ValidFileName(_sTarget);
-        //NumeReKernel::print(_sTarget );
 
         if (_sTarget.substr(_sTarget.rfind('.')-1) == "*.dat")
             _sTarget = _sTarget.substr(0,_sTarget.rfind('/')) + sFile.substr(sFile.rfind('/'));
@@ -258,25 +233,25 @@ bool moveFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Setting
             _sTarget = _sTarget.substr(0, _sTarget.rfind('/')) + sFile.substr(sFile.rfind('/'));
 
         if (_sTarget.substr(_sTarget.rfind('.')) != sFile.substr(sFile.rfind('.')))
-        {
             _sTarget = _sTarget.substr(0, _sTarget.rfind('.')) + sFile.substr(sFile.rfind('.'));
-        }
 
         if (!fileExists(sFile))
             continue;
 
-        //NumeReKernel::print(sFile );
-        //NumeReKernel::print(_sTarget );
-
-        moveFile(sFile, _sTarget);
+        // Perform the actual file operation
+        if (cmdParser.getCommand() == "move")
+            moveFile(sFile, _sTarget);
+        else
+            copyFile(sFile, _sTarget);
 
         nthFile++;
         bSuccess = true;
+
         if (!bAll
-            || (sCmd.find('*') == string::npos && sCmd.find('?') == string::npos)
+            || (cmdParser.getCommandLine().find_first_of("?*") == std::string::npos)
             || (sTarget.find('*') == string::npos && (sTarget[sTarget.length()-1] != '/' && sTarget.substr(sTarget.length()-2) != "/\"") && sTarget.find("<#") == string::npos && sTarget.find("<fname>") == string::npos))
         {
-            sCmd = sFile;
+            cmdParser.setReturnValue(sFile);
             break;
         }
     }
@@ -284,197 +259,6 @@ bool moveFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Setting
     return bSuccess;
 }
 
-bool copyFile(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
-{
-    if (sCmd.length() < 5)
-        return false;
-
-    string sTarget = "";
-    string _sTarget = "";
-    string _sCmd = "";
-    string sDummy = "";
-    string sFile = "";
-    vector<string> vFileList;
-
-    unsigned int nthFile = 1;
-    bool bAll = false;
-    bool bSuccess = false;
-    ifstream File;
-    ofstream Target;
-    FileSystem _fSys;
-    _fSys.setTokens(_option.getTokenPaths());
-    _fSys.setPath(_option.getExePath(), false, _option.getExePath());
-
-    sCmd = fromSystemCodePage(sCmd);
-
-    if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
-    {
-        bAll = true;
-        if (findParameter(sCmd, "all"))
-            sCmd.erase(findParameter(sCmd, "all")-1,3);
-        else
-            sCmd.erase(findParameter(sCmd, "a")-1,3);
-        StripSpaces(sCmd);
-        while (sCmd[sCmd.length()-1] == '-' && sCmd[sCmd.length()-2] == ' ')
-        {
-            sCmd.erase(sCmd.length()-1);
-            StripSpaces(sCmd);
-        }
-    }
-    if (findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '='))
-    {
-        unsigned int nPos = 0;
-        if (findParameter(sCmd, "target", '='))
-            nPos = findParameter(sCmd, "target", '=')+6;
-        else
-            nPos = findParameter(sCmd, "t", '=')+1;
-        sTarget = sCmd.substr(nPos);
-        StripSpaces(sTarget);
-        sCmd = sCmd.substr(0, sCmd.rfind('-', nPos));
-        sCmd = sCmd.substr(sCmd.find(' ')+1);
-        StripSpaces(sCmd);
-    }
-    else
-    {
-        throw SyntaxError(SyntaxError::NO_TARGET, sCmd, SyntaxError::invalid_position);
-    }
-    StripSpaces(sCmd);
-    while (sCmd[sCmd.length()-1] == '-' && sCmd[sCmd.length()-2] == ' ')
-    {
-        sCmd.erase(sCmd.length()-1);
-        StripSpaces(sCmd);
-    }
-
-    sCmd = replacePathSeparator(sCmd);
-    sTarget = replacePathSeparator(sTarget);
-
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCmd, sDummy, true);
-
-    if (sCmd[0] == '"')
-        sCmd = sCmd.substr(1);
-    if (sCmd[sCmd.length()-1] == '"')
-        sCmd = sCmd.substr(0,sCmd.length()-1);
-
-    vFileList = getFileList(sCmd, _option);
-
-    if (!vFileList.size())
-        return false;
-
-    _sCmd = sCmd.substr(0,sCmd.rfind('/')) + "/";
-
-    for (unsigned int nFile = 0; nFile < vFileList.size(); nFile++)
-    {
-        _sTarget = sTarget;
-        sFile = _sCmd + vFileList[nFile];
-        if (sFile.find('.') != string::npos)
-        {
-            string sExt = sFile.substr(sFile.rfind('.'));
-            if (sExt != ".exe" && sExt != ".sys" && sExt != ".dll")
-                _fSys.declareFileType(sExt);
-        }
-        sFile = _fSys.ValidFileName(sFile);
-
-        if (_sTarget[_sTarget.length()-1] == '*' && _sTarget[_sTarget.length()-2] == '/')
-            _sTarget = _sTarget.substr(0, _sTarget.length()-2) + sFile.substr(sFile.rfind('/'));
-        else if (_sTarget[_sTarget.length()-1] == '/')
-            _sTarget = _sTarget.substr(0, _sTarget.length()-1) + sFile.substr(sFile.rfind('/'));
-        if (_sTarget.find('<') != string::npos && _sTarget.find('>', _sTarget.find('<')) != string::npos)
-        {
-            string sToken = "";
-            for (unsigned int i = 0; i < _sTarget.length(); i++)
-            {
-                if (_sTarget[i] == '<')
-                {
-                    if (_sTarget.find('>', i) == string::npos)
-                        break;
-                    sToken = _sTarget.substr(i, _sTarget.find('>', i)+1-i);
-                    if (sToken.find('#') != string::npos)
-                    {
-
-                        unsigned int nLength = 1;
-                        if (sToken.find('~') != string::npos)
-                            nLength = sToken.rfind('~')-sToken.find('#')+1;
-                        sToken.clear();
-                        if (nLength > toString((int)nthFile).length())
-                            sToken.append(nLength-toString((int)(nthFile)).length(),'0');
-                        sToken += toString((int)(nthFile));
-
-                        _sTarget.replace(i,_sTarget.find('>',i)+1-i,sToken);
-                        i += sToken.length();
-                    }
-                    else if (sToken == "<fname>")
-                    {
-                        sToken = sDummy.substr(sDummy.rfind('/')+1, sDummy.rfind('.')-1-sDummy.rfind('/'));
-
-                        _sTarget.replace(i,_sTarget.find('>',i)+1-i,sToken);
-                        i += sToken.length();
-                    }
-                }
-                if (_sTarget.find('<',i) == string::npos)
-                    break;
-            }
-        }
-        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(_sTarget))
-            NumeReKernel::getInstance()->getStringParser().evalAndFormat(_sTarget, sDummy, true);
-
-        if (_sTarget[0] == '"')
-            _sTarget.erase(0,1);
-        if (_sTarget[_sTarget.length()-1] == '"')
-            _sTarget.erase(_sTarget.length()-1);
-        StripSpaces(_sTarget);
-
-        if (_sTarget.substr(_sTarget.length()-2) == "/*")
-            _sTarget.erase(_sTarget.length()-1);
-        _sTarget = _fSys.ValidFileName(_sTarget);
-        //NumeReKernel::print(_sTarget );
-
-        if (_sTarget.substr(_sTarget.rfind('.')-1) == "*.dat")
-            _sTarget = _sTarget.substr(0,_sTarget.rfind('/')) + sFile.substr(sFile.rfind('/'));
-        else if (_sTarget.substr(_sTarget.rfind('.')-1) == "/.dat")
-            _sTarget = _sTarget.substr(0, _sTarget.rfind('/')) + sFile.substr(sFile.rfind('/'));
-
-        if (_sTarget.substr(_sTarget.rfind('.')) != sFile.substr(sFile.rfind('.')))
-        {
-            _sTarget = _sTarget.substr(0, _sTarget.rfind('.')) + sFile.substr(sFile.rfind('.'));
-        }
-
-        if (!fileExists(sFile))
-            continue;
-
-        //NumeReKernel::print(sFile );
-        //NumeReKernel::print(_sTarget );
-
-        File.open(sFile.c_str(), ios_base::binary);
-        if (File.fail())
-        {
-            File.close();
-            continue;
-        }
-        Target.open(_sTarget.c_str(), ios_base::binary);
-        if (Target.fail())
-        {
-            Target.close();
-            continue;
-        }
-
-        Target << File.rdbuf();
-        File.close();
-        Target.close();
-
-        nthFile++;
-        bSuccess = true;
-        if (!bAll
-            || (sCmd.find('*') == string::npos && sCmd.find('?') == string::npos)
-            || (sTarget.find('*') == string::npos && (sTarget[sTarget.length()-1] != '/' && sTarget.substr(sTarget.length()-2) != "/\"") && sTarget.find("<#") == string::npos && sTarget.find("<fname>") == string::npos))
-        {
-            sCmd = sFile;
-            break;
-        }
-    }
-
-    return bSuccess;
-}
 
 bool generateTemplate(const string& sFile, const string& sTempl, const vector<string>& vTokens, Settings& _option)
 {

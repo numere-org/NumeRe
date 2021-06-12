@@ -35,24 +35,24 @@ using namespace mu;
 bool integrate(CommandLineParser& cmdParser);
 bool integrate2d(CommandLineParser& cmdParser);
 bool differentiate(CommandLineParser& cmdParser);
-bool findExtrema(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
-bool findZeroes(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
-void taylor(string& sCmd, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
+bool findExtrema(CommandLineParser& cmdParser);
+bool findZeroes(CommandLineParser& cmdParser);
+void taylor(CommandLineParser& cmdParser);
 bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool fastFourierTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool fastWaveletTransform(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool evalPoints(string& sCmd, MemoryManager& _data, Parser& _parser, const Settings& _option, FunctionDefinitionManager& _functions);
+bool fastFourierTransform(CommandLineParser& cmdParser);
+bool fastWaveletTransform(CommandLineParser& cmdParser);
+bool evalPoints(CommandLineParser& cmdParser);
 bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
 bool writeAudioFile(CommandLineParser& cmdParser);
 bool readAudioFile(CommandLineParser& cmdParser);
 bool seekInAudioFile(CommandLineParser& cmdParser);
-bool regularizeDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool analyzePulse(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool shortTimeFourierAnalysis(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-void boneDetection(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-bool calculateSplines(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-void rotateTable(std::string& sCmd);
-void particleSwarmOptimizer(std::string& sCmd);
+bool regularizeDataSet(CommandLineParser& cmdParser);
+bool analyzePulse(CommandLineParser& cmdParser);
+bool shortTimeFourierAnalysis(CommandLineParser& cmdParser);
+void boneDetection(CommandLineParser& cmdParser);
+bool calculateSplines(CommandLineParser& cmdParser);
+void rotateTable(CommandLineParser& cmdParser);
+void particleSwarmOptimizer(CommandLineParser& cmdParser);
 
 #endif // COMMAND_IMPLEMENTATIONS_HPP
 

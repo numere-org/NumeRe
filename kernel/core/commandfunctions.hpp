@@ -53,6 +53,38 @@ string removeQuotationMarks(const string& sString);
 static size_t findSettingOption(const std::string& sCmd, const std::string& sOption);
 
 /////////////////////////////////////////////////
+/// \brief Performs the operation confirmation
+/// loop, if the user did not supply the ignore
+/// command line option.
+///
+/// \param sMessage const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool confirmOperation(const std::string& sMessage)
+{
+    NumeReKernel::print(sMessage);
+    std::string sArgument;
+
+    do
+    {
+        NumeReKernel::printPreFmt("|\n|<- ");
+        NumeReKernel::getline(sArgument);
+        StripSpaces(sArgument);
+    }
+    while (!sArgument.length());
+
+    if (sArgument.substr(0, 1) != _lang.YES())
+    {
+        NumeReKernel::print(_lang.get("COMMON_CANCEL"));
+        return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function returns a list of the
 /// current defined variables either as strings
 /// or as plain text.
@@ -1828,64 +1860,17 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
 	if (!_option.executeEnabled())
 		throw SyntaxError(SyntaxError::EXECUTE_COMMAND_DISABLED, sCmd, "execute");
 
-	sCmd = evaluateParameterValues(sCmd);
+    CommandLineParser cmdParser(sCmd, "execute", CommandLineParser::CMD_EXPR_set_PAR);
+
 	FileSystem _fSys;
 	_fSys.setTokens(_option.getTokenPaths());
 	_fSys.setPath(_option.getExePath(), false, _option.getExePath());
 	_fSys.declareFileType(".exe");
-	string sParams = "";
-	string sWorkpath = "";
-	string sObject = "";
+	string sParams = cmdParser.getParameterValueAsString("params", "");
+	string sWorkpath = cmdParser.getParameterValueAsString("wp", "");
+	string sObject = cmdParser.parseExprAsString();
 	int nRetVal = 0;
-	bool bWaitForTermination = false;
-
-	// Extract command line parameters
-	if (findParameter(sCmd, "params", '='))
-		sParams = "\"" + getArgAtPos(sCmd, findParameter(sCmd, "params", '=') + 6) + "\"";
-
-    // Extract target working path
-	if (findParameter(sCmd, "wp", '='))
-		sWorkpath = "\"" + getArgAtPos(sCmd, findParameter(sCmd, "wp", '=') + 2) + "\"";
-
-    // Extract, whether we shall wait for the process to terminate
-	if (findParameter(sCmd, "wait"))
-		bWaitForTermination = true;
-
-    // Extract the actual command line command
-	sObject = sCmd.substr(findCommand(sCmd).sString.length());
-
-	if (sParams.length() || bWaitForTermination || sWorkpath.length())
-	{
-		if (sCmd.find("-set") != string::npos && sObject.find("-set") != string::npos && !isInQuotes(sCmd, sCmd.find("-set")))
-			sObject.erase(sObject.find("-set"));
-		else if (sCmd.find("--") != string::npos && sObject.find("--") != string::npos && !isInQuotes(sCmd, sCmd.find("--")))
-			sObject.erase(sObject.find("--"));
-		else
-			throw SyntaxError(SyntaxError::EXECUTE_COMMAND_UNSUCCESSFUL, sCmd, "execute"); // throw an unsuccessful, if the parameters are not clearly identified
-	}
-
-	// Resolve strings in the extracted command line objects
-	NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
-
-	if (_stringParser.isStringExpression(sObject))
-	{
-		string sDummy = "";
-		_stringParser.evalAndFormat(sObject, sDummy, true);
-	}
-
-	if (_stringParser.isStringExpression(sParams))
-	{
-		string sDummy = "";
-		sParams += " -nq";
-		_stringParser.evalAndFormat(sParams, sDummy, true);
-	}
-
-	if (_stringParser.isStringExpression(sWorkpath))
-	{
-		string sDummy = "";
-		sWorkpath += " -nq";
-		_stringParser.evalAndFormat(sWorkpath, sDummy, true);
-	}
+	bool bWaitForTermination = cmdParser.hasParam("wait");
 
 	// Resolve path placeholders
 	if (sObject.find('<') != string::npos && sObject.find('>', sObject.find('<') + 1) != string::npos)
@@ -1897,7 +1882,6 @@ static bool executeCommand(string& sCmd, Parser& _parser, MemoryManager& _data, 
 			sParams = "\"" + _fSys.ValidFileName(sParams.substr(1));
 		else
 			sParams = _fSys.ValidFileName(sParams);
-
 	}
 
 	if (sWorkpath.find('<') != string::npos && sWorkpath.find('>', sWorkpath.find('<') + 1) != string::npos)
@@ -2051,11 +2035,7 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
 
     // Copy the target data to a new table
-    if (_accessParser.getIndices().row.isOpenEnd())
-        _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
-
-    if (_accessParser.getIndices().col.isOpenEnd())
-        _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
+    _accessParser.evalIndices();
 
     _cache.resizeTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "table");
 
@@ -2194,25 +2174,20 @@ static CommandReturnValues saveDataObject(string& sCmd)
     // Get references to the main objects
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
 
-	string sArgument;
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
 
     size_t nPrecision = _option.getPrecision();
 
     // Update the precision, if the user selected any
-    if (findParameter(sCmd, "precision", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "precision", '=')));
-        nPrecision = _parser.Eval();
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
 
-        if (nPrecision > 14)
-            nPrecision = _option.getPrecision();
-    }
+    if (vParVal.size())
+        nPrecision = std::min(14LL, intCast(vParVal.front()));
 
     // Copy the selected data into another datafile instance and
     // save the copied data
-    DataAccessParser _access(sCmd);
+    DataAccessParser _access = cmdParser.getExprAsDataObject();
 
     if (_access.getDataObject().length())
     {
@@ -2234,18 +2209,16 @@ static CommandReturnValues saveDataObject(string& sCmd)
         if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
             NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
 
-        if (findParameter(sCmd, "file", '='))
-            addArgumentQuotes(sCmd, "file");
+        std::string sFileName;
 
-        // Try to extract the file name, if it was passed
-        if (containsStrings(sCmd) && extractFirstParameterStringValue(sCmd.substr(findParameter(sCmd, "file", '=')), sArgument))
+        if (cmdParser.getCommand() == "export")
+            sFileName = cmdParser.getFileParameterValue(".dat", "<savepath>", "");
+        else
+            sFileName = cmdParser.getFileParameterValue(".ndat", "<savepath>", "");
+
+        if (sFileName.length())
         {
-            if (findCommand(sCmd).sString == "export")
-                sArgument = _cache.ValidFileName(sArgument, ".dat");
-            else
-                sArgument = _cache.ValidFileName(sArgument, ".ndat");
-
-            if (_cache.saveFile(_access.getDataObject(), sArgument, nPrecision))
+            if (_cache.saveFile(_access.getDataObject(), sFileName, nPrecision))
             {
                 if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
@@ -2253,7 +2226,7 @@ static CommandReturnValues saveDataObject(string& sCmd)
                 return COMMAND_PROCESSED;
             }
             else
-                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sArgument, sArgument);
+                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sFileName, sFileName);
         }
         else
             _cache.setPrefix(_access.getDataObject());
@@ -2313,8 +2286,6 @@ static CommandReturnValues cmd_find(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_integrate(string& sCmd)
 {
-    //sCmd = evaluateParameterValues(sCmd);
-
     CommandLineParser cmdParser(sCmd, "integrate", CommandLineParser::CMD_EXPR_set_PAR);
 
     if (cmdParser.getCommand().substr(0, 10) == "integrate2"
@@ -2330,11 +2301,6 @@ static CommandReturnValues cmd_integrate(string& sCmd)
         sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
     }
-    /*else
-    {
-        doc_Help("integrate", _option);
-        return COMMAND_PROCESSED;
-    }*/
 }
 
 
@@ -2373,33 +2339,14 @@ static CommandReturnValues cmd_diff(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_extrema(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    CommandLineParser cmdParser(sCmd, "extrema", CommandLineParser::CMD_EXPR_set_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    size_t nPos = findCommand(sCmd, "extrema").nPos;
-    string sArgument;
-
-    if (nPos)
+    if (cmdParser.getExpr().length())
     {
-        sArgument = sCmd;
-        sCmd = extractCommandString(sCmd, findCommand(sCmd, "extrema"));
-        sArgument.replace(nPos, sCmd.length(), "<<ans>>");
-    }
-    else
-        sArgument = "<<ans>>";
-
-    if (sCmd.length() > 8)
-    {
-        if (findExtrema(sCmd, _data, _parser, _option, _functions))
+        if (findExtrema(cmdParser))
         {
-            if (sCmd[0] != '"')
-            {
-                sArgument.replace(sArgument.find("<<ans>>"), 7, sCmd);
-                sCmd = sArgument;
-            }
-
+            sCmd = cmdParser.getReturnValueStatement();
             return COMMAND_HAS_RETURNVALUE;
         }
         else
@@ -2424,16 +2371,15 @@ static CommandReturnValues cmd_extrema(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_pulse(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "pulse", CommandLineParser::CMD_DAT_PAR);
 
-    if (!analyzePulse(sCmd, _parser, _data, _functions, _option))
+    if (!analyzePulse(cmdParser))
     {
-        doc_Help("pulse", _option);
+        doc_Help("pulse", NumeReKernel::getInstance()->getSettings());
         return COMMAND_PROCESSED;
     }
+
+    sCmd = cmdParser.getReturnValueStatement();
 
     return COMMAND_HAS_RETURNVALUE;
 }
@@ -2449,35 +2395,15 @@ static CommandReturnValues cmd_pulse(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_eval(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "eval", CommandLineParser::CMD_EXPR_set_PAR);
 
-    size_t nPos = findCommand(sCmd, "eval").nPos;
-    string sArgument;
-
-    if (nPos)
+    if (evalPoints(cmdParser))
     {
-        sArgument = sCmd;
-        sCmd = extractCommandString(sCmd, findCommand(sCmd, "eval"));
-        sArgument.replace(nPos, sCmd.length(), "<<ans>>");
-    }
-    else
-        sArgument = "<<ans>>";
-
-    if (evalPoints(sCmd, _data, _parser, _option, _functions))
-    {
-        if (sCmd[0] != '"')
-        {
-            sArgument.replace(sArgument.find("<<ans>>"), 7, sCmd);
-            sCmd = sArgument;
-        }
-
+        sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
     }
     else
-        doc_Help("eval", _option);
+        doc_Help("eval", NumeReKernel::getInstance()->getSettings());
 
     return COMMAND_PROCESSED;
 }
@@ -2493,33 +2419,14 @@ static CommandReturnValues cmd_eval(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_zeroes(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    CommandLineParser cmdParser(sCmd, "zeroes", CommandLineParser::CMD_EXPR_set_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    size_t nPos = findCommand(sCmd, "zeroes").nPos;
-    string sArgument;
-
-    if (nPos)
+    if (cmdParser.getExpr().length())
     {
-        sArgument = sCmd;
-        sCmd = extractCommandString(sCmd, findCommand(sCmd, "zeroes"));
-        sArgument.replace(nPos, sCmd.length(), "<<ans>>");
-    }
-    else
-        sArgument = "<<ans>>";
-
-    if (sCmd.length() > 7)
-    {
-        if (findZeroes(sCmd, _data, _parser, _option, _functions))
+        if (findZeroes(cmdParser))
         {
-            if (sCmd[0] != '"')
-            {
-                sArgument.replace(sArgument.find("<<ans>>"), 7, sCmd);
-                sCmd = sArgument;
-            }
-
+            sCmd = cmdParser.getReturnValueStatement();
             return COMMAND_HAS_RETURNVALUE;
         }
         else
@@ -2542,29 +2449,13 @@ static CommandReturnValues cmd_zeroes(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_sort(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "sort", CommandLineParser::CMD_EXPR_set_PAR);
 
-    size_t nPos = findCommand(sCmd, "sort").nPos;
-    string sArgument;
+    sortData(cmdParser);
 
-    if (nPos)
+    if (cmdParser.getReturnValueStatement().length())
     {
-        sArgument = sCmd;
-        sCmd = extractCommandString(sCmd, findCommand(sCmd, "sort"));
-        sArgument.replace(nPos, sCmd.length(), "<<ans>>");
-    }
-    else
-        sArgument = "<<ans>>";
-
-    sortData(sCmd, _parser, _data, _functions, _option);
-
-    if (sCmd.length())
-    {
-        sArgument.replace(sArgument.find("<<ans>>"), 7, sCmd);
-        sCmd = sArgument;
+        sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
     }
 
@@ -2603,13 +2494,12 @@ static CommandReturnValues cmd_dialog(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_pso(string& sCmd)
 {
-    size_t pos = findCommand(sCmd).nPos;
-    std::string sPso = sCmd.substr(pos);
+    CommandLineParser cmdParser(sCmd, "pso", CommandLineParser::CMD_EXPR_set_PAR);
 
     // Call the optimizer
-    particleSwarmOptimizer(sPso);
+    particleSwarmOptimizer(cmdParser);
 
-    sCmd.replace(pos, std::string::npos, sPso);
+    sCmd = cmdParser.getReturnValueStatement();
 
     return COMMAND_HAS_RETURNVALUE;
 }
@@ -2709,11 +2599,9 @@ static CommandReturnValues cmd_fit(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_fft(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    CommandLineParser cmdParser(sCmd, "fft", CommandLineParser::CMD_DAT_PAR);
 
-    fastFourierTransform(sCmd, _parser, _data, _option);
+    fastFourierTransform(cmdParser);
     return COMMAND_PROCESSED;
 }
 
@@ -2728,11 +2616,9 @@ static CommandReturnValues cmd_fft(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_fwt(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    CommandLineParser cmdParser(sCmd, "fwt", CommandLineParser::CMD_DAT_PAR);
 
-    fastWaveletTransform(sCmd, _parser, _data, _option);
+    fastWaveletTransform(cmdParser);
     return COMMAND_PROCESSED;
 }
 
@@ -2941,40 +2827,22 @@ static CommandReturnValues cmd_undefine(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_readline(string& sCmd)
 {
+    CommandLineParser cmdParser(sCmd, "readline", CommandLineParser::CMD_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    size_t nPos = findCommand(sCmd, "readline").nPos;
-    string sCommand = extractCommandString(sCmd, findCommand(sCmd, "readline"));
-    string sDefault = "";
-    string sArgument;
+    std::string sDefault = cmdParser.getParameterValueAsString("dflt", "");
+    std::string sMessage = cmdParser.getParameterValueAsString("msg", "");
+    std::string sArgument;
 
-    if (findParameter(sCmd, "msg", '='))
-    {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd, nPos);
-
-        sCmd = sCmd.replace(nPos, sCommand.length(), evaluateParameterValues(sCommand));
-        sCommand = evaluateParameterValues(sCommand);
-    }
-
-    if (findParameter(sCmd, "dflt", '='))
-    {
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd, nPos);
-
-        sCmd = sCmd.replace(nPos, sCommand.length(), evaluateParameterValues(sCommand));
-        sCommand = evaluateParameterValues(sCommand);
-        sDefault = getArgAtPos(sCmd, findParameter(sCmd, "dflt", '=') + 4);
-    }
 
     while (!sArgument.length())
     {
         string sLastLine = "";
         NumeReKernel::printPreFmt("|-> ");
 
-        if (findParameter(sCmd, "msg", '='))
+        if (sMessage.length())
         {
-            sLastLine = LineBreak(getArgAtPos(sCmd, findParameter(sCmd, "msg", '=') + 3), _option, false, 4);
+            sLastLine = LineBreak(sMessage, _option, false, 4);
             NumeReKernel::printPreFmt(sLastLine);
 
             if (sLastLine.find('\n') != string::npos)
@@ -2997,10 +2865,12 @@ static CommandReturnValues cmd_readline(string& sCmd)
             sArgument = sDefault;
     }
 
-    if (findParameter(sCmd, "asstr") && sArgument[0] != '"' && sArgument[sArgument.length() - 1] != '"')
-        sCmd = sCmd.replace(nPos, sCommand.length(), "\"" + sArgument + "\"");
+    if (cmdParser.hasParam("asstr") && sArgument[0] != '"' && sArgument[sArgument.length() - 1] != '"')
+        cmdParser.setReturnValue("\"" + sArgument + "\"");
     else
-        sCmd = sCmd.replace(nPos, sCommand.length(), sArgument);
+        cmdParser.setReturnValue(sArgument);
+
+    sCmd = cmdParser.getReturnValueStatement();
 
     GetAsyncKeyState(VK_ESCAPE);
     return COMMAND_HAS_RETURNVALUE;
@@ -3017,18 +2887,13 @@ static CommandReturnValues cmd_readline(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_read(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    CommandLineParser cmdParser(sCmd, "read", CommandLineParser::CMD_DAT_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
 
-    size_t nPos = findCommand(sCmd, "read").nPos;
-    string sArgument = extractCommandString(sCmd, findCommand(sCmd, "read"));
-    string sCommand = sArgument;
-
-    if (sArgument.length() > 5)
+    if (cmdParser.getExpr().length())
     {
-        readFromFile(sArgument, _parser, _data, _option);
-        sCmd.replace(nPos, sCommand.length(), sArgument);
+        readFromFile(cmdParser);
+        sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
     }
     else
@@ -3145,15 +3010,12 @@ static CommandReturnValues cmd_edit(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_taylor(string& sCmd)
 {
-    //Datafile& _data = NumeReKernel::getInstance()->getData();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "taylor", CommandLineParser::CMD_EXPR_set_PAR);
 
-    if (sCmd.length() > 7)
-        taylor(sCmd, _parser, _option, _functions);
+    if (cmdParser.getExpr().length())
+        taylor(cmdParser);
     else
-        doc_Help("taylor", _option);
+        doc_Help("taylor", NumeReKernel::getInstance()->getSettings());
 
     return COMMAND_PROCESSED;
 }
@@ -3220,76 +3082,42 @@ static CommandReturnValues cmd_odesolve(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_delete(string& sCmd)
 {
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     string sArgument;
     int nArgument;
 
-    if (_data.containsTablesOrClusters(sCmd))
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+
+    if (_data.containsTablesOrClusters(cmdParser.getExpr()))
     {
-        if (!findParameter(sCmd, "ignore") && !findParameter(sCmd, "i"))
+        if (!cmdParser.hasParam("ignore") && !cmdParser.hasParam("i"))
         {
-            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM"), _option));
-
-            do
-            {
-                NumeReKernel::printPreFmt("|\n|<- ");
-                NumeReKernel::getline(sArgument);
-                StripSpaces(sArgument);
-            }
-            while (!sArgument.length());
-
-            if (sArgument.substr(0, 1) != _lang.YES())
-            {
-                NumeReKernel::print(_lang.get("COMMON_CANCEL") );
+            if (!confirmOperation(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_CONFIRM")))
                 return COMMAND_PROCESSED;
-            }
         }
 
-        if (deleteCacheEntry(sCmd, _parser, _data, _option))
+        if (deleteCacheEntry(cmdParser))
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETE_SUCCESS"));
         }
         else
             throw SyntaxError(SyntaxError::CANNOT_DELETE_ELEMENTS, sCmd, SyntaxError::invalid_position);
-
     }
-    else if (sCmd.find("string()") != string::npos || sCmd.find("string(:)") != string::npos)
+    else if (accessParser.getDataObject() == "string")
     {
-        if (_data.removeStringElements(0))
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", "1"));
-        }
-        else
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", "1"));
-        }
-
-        return COMMAND_PROCESSED;
-    }
-    else if (sCmd.find(" string(", findCommand(sCmd).nPos) != string::npos)
-    {
-        _parser.SetExpr(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos) + 8, getMatchingParenthesis(sCmd.substr(sCmd.find(" string(", findCommand(sCmd).nPos) + 7)) - 1));
-        nArgument = (int)_parser.Eval() - 1;
+        nArgument = accessParser.getIndices().row.front();
 
         if (_data.removeStringElements(nArgument))
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_SUCCESS", toString(nArgument + 1)));
         }
-        else
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DELETESTRINGS_EMPTY", toString(nArgument + 1)));
-        }
 
         return COMMAND_PROCESSED;
-
     }
     else
         doc_Help("delete", _option);
@@ -3310,38 +3138,25 @@ static CommandReturnValues cmd_delete(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_clear(string& sCmd)
 {
+    CommandLineParser cmdParser(sCmd, "clear", CommandLineParser::CMD_DAT_PAR);
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
     Match _mMatch = findCommand(sCmd);
 
-    if (findParameter(sCmd, "data") || sCmd.find(" data()", _mMatch.nPos) != string::npos)
+    if (_data.containsTables(cmdParser.getExpr()))
     {
-        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
-            remove_data(_data, _option, true);
-        else
-            remove_data(_data, _option);
-    }
-    else if (_data.matchTableAsParameter(sCmd).length()
-             || _data.containsTables(sCmd.substr(_mMatch.nPos+_mMatch.sString.length())))
-    {
-        string sCommand = "delete ";
+        string sCommand = "delete " + cmdParser.getExpr();
 
-        if (_data.matchTableAsParameter(sCmd).length())
-            sCommand += _data.matchTableAsParameter(sCmd) + "()";
-        else
-            sCommand += sCmd.substr(_mMatch.nPos+_mMatch.sString.length());
-
-        if (findParameter(sCmd, "ignore") || findParameter(sCmd, "i"))
+        if (cmdParser.hasParam("ignore") || cmdParser.hasParam("i"))
             sCommand += " -ignore";
-
 
         return cmd_delete(sCommand);
     }
-    else if (findParameter(sCmd, "memory"))
+    else if (cmdParser.hasParam("memory"))
     {
         // Clear all tables
-        if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore"))
+        if (cmdParser.hasParam("ignore") || cmdParser.hasParam("i"))
             clear_cache(_data, _option, true);
         else
             clear_cache(_data, _option);
@@ -3353,17 +3168,12 @@ static CommandReturnValues cmd_clear(string& sCmd)
         _data.clearAllClusters();
         _data.newCluster("ans").setDouble(0, NAN);
     }
-    else if (findParameter(sCmd, "string") || sCmd.find(" string()", _mMatch.nPos+_mMatch.sString.length()) != string::npos)
+    else if (cmdParser.getExpr() == "string()")
     {
         if (_data.clearStringElements())
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_SUCCESS"));
-        }
-        else
-        {
-            if (_option.systemPrints())
-                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_CLEARSTRINGS_EMPTY"));
         }
 
         return COMMAND_PROCESSED;
@@ -3485,13 +3295,12 @@ static CommandReturnValues cmd_install(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_copy(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    CommandLineParser cmdParser(sCmd, "copy", CommandLineParser::CMD_DAT_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    if (_data.containsTablesOrClusters(sCmd))
+    if (cmdParser.exprContainsDataObjects())
     {
-        if (CopyData(sCmd, _parser, _data, _option))
+        if (CopyData(cmdParser))
         {
             if (_option.systemPrints())
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYDATA_SUCCESS"));
@@ -3499,23 +3308,16 @@ static CommandReturnValues cmd_copy(string& sCmd)
         else
             throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, sCmd, SyntaxError::invalid_position);
     }
-    else if ((findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '=')) && sCmd.length() > 5)
+    else if ((cmdParser.hasParam("target") || cmdParser.hasParam("t")) && cmdParser.getExpr().length())
     {
-        int nArgument;
-
-        if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
-            nArgument = 1;
-        else
-            nArgument = 0;
-
-        if (copyFile(sCmd, _parser, _data, _option))
+        if (moveOrCopyFiles(cmdParser))
         {
             if (_option.systemPrints())
             {
-                if (nArgument)
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_ALL_SUCCESS", sCmd));
+                if (cmdParser.hasParam("all") || cmdParser.hasParam("a"))
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_ALL_SUCCESS", cmdParser.getReturnValueStatement()));
                 else
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_SUCCESS", sCmd));
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_COPYFILE_SUCCESS", cmdParser.getReturnValueStatement()));
             }
         }
         else
@@ -3570,56 +3372,19 @@ static CommandReturnValues cmd_credits(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_append(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    CommandLineParser cmdParser(sCmd, "append", CommandLineParser::CMD_DAT_PAR);
 
-    if (sCmd.length() > findCommand(sCmd, "append").nPos + 7 && sCmd.find_first_not_of(' ', findCommand(sCmd, "append").nPos + 7) != string::npos)
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
+    if (cmdParser.getExpr().length())
     {
         NumeReKernel::printPreFmt("\r");
 
-        Match _match = findCommand(sCmd, "append");
         double j1 = _data.getCols("data") + 1;
-        string sExpr = sCmd;
+        append_data(cmdParser);
+        cmdParser.setReturnValue(std::vector<double>({1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")}));
 
-        sExpr.replace(_match.nPos, string::npos, "_~append[~_~]");
-        sCmd.erase(0, _match.nPos);
-
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        if (sCmd[sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7)] != '"' && sCmd.find("string(") == string::npos)
-        {
-            sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7), 1, '"');
-
-            if (findParameter(sCmd, "slice")
-                    || findParameter(sCmd, "keepdim")
-                    || findParameter(sCmd, "complete")
-                    || findParameter(sCmd, "ignore")
-                    || findParameter(sCmd, "i")
-                    || findParameter(sCmd, "head")
-                    || findParameter(sCmd, "h")
-                    || findParameter(sCmd, "all"))
-            {
-                size_t nPos = string::npos;
-
-                while (sCmd.find_last_of('-', nPos) != string::npos
-                        && sCmd.find_last_of('-', nPos) > sCmd.find_first_of(' ', sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7)))
-                    nPos = sCmd.find_last_of('-', nPos) - 1;
-
-                nPos = sCmd.find_last_not_of(' ', nPos);
-                sCmd.insert(nPos + 1, 1, '"');
-            }
-            else
-                sCmd.insert(sCmd.find_last_not_of(' ') + 1, 1, '"');
-        }
-
-        sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 7), "-app=");
-        append_data(sCmd, _data, _option);
-
-        sCmd = sExpr;
-
-        _parser.SetVectorVar("_~append[~_~]", {1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")});
+        sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
     }
 
@@ -3702,11 +3467,11 @@ static CommandReturnValues cmd_seek(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_imread(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    CommandLineParser cmdParser(sCmd, "imread", CommandLineParser::CMD_DAT_PAR);
 
-    readImage(sCmd, _parser, _data, _option);
+    readImage(cmdParser);
+
+    sCmd = cmdParser.getReturnValueStatement();
     return COMMAND_HAS_RETURNVALUE;
 }
 
@@ -3721,14 +3486,12 @@ static CommandReturnValues cmd_imread(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_write(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    //Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
+    CommandLineParser cmdParser(sCmd, "write", CommandLineParser::CMD_EXPR_set_PAR);
 
-    if (sCmd.length() > 6 && findParameter(sCmd, "file", '='))
-        writeToFile(sCmd, _data, _option);
+    if (cmdParser.getExpr().length() && cmdParser.hasParam("file"))
+        writeToFile(cmdParser);
     else
-        doc_Help("write", _option);
+        doc_Help("write", NumeReKernel::getInstance()->getSettings());
 
     return COMMAND_PROCESSED;
 }
@@ -3744,34 +3507,13 @@ static CommandReturnValues cmd_write(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_workpath(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    CommandLineParser cmdParser(sCmd, "workpath", CommandLineParser::CMD_EXPR_set_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    string sArgument;
-
-    if (sCmd.length() <= 8)
+    if (!cmdParser.getExpr().length())
         return NO_COMMAND;
 
-    if (sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 8) == string::npos)
-        return NO_COMMAND;
-
-    if (sCmd.find('"') == string::npos)
-    {
-        sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 8), 1, '"');
-        StripSpaces(sCmd);
-        sCmd += '"';
-    }
-
-    while (sCmd.find('\\') != string::npos)
-        sCmd[sCmd.find('\\')] = '/';
-
-    if (!extractFirstParameterStringValue(sCmd, sArgument))
-        return COMMAND_PROCESSED;
-
-    FileSystem _fSys;
-    _fSys.setTokens(_option.getTokenPaths());
-    _fSys.setPath(sArgument, true, _data.getProgramPath());
-    _option.getSetting(SETTING_S_WORKPATH).stringval() = _fSys.getPath();
+    _option.getSetting(SETTING_S_WORKPATH).stringval() = cmdParser.getExprAsFileName("");
 
     if (_option.systemPrints())
         NumeReKernel::print(toSystemCodePage(_lang.get("BUILTIN_CHECKKEYWORD_SET_PATH")));
@@ -3790,34 +3532,33 @@ static CommandReturnValues cmd_workpath(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_warn(string& sCmd)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    CommandLineParser cmdParser(sCmd, "warn", CommandLineParser::CMD_EXPR_set_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    string sArgument;
+    std::string sMessage = cmdParser.getExpr();
 
-    if (sCmd.length() > 5)
+    if (sMessage.length())
     {
-        if (!extractFirstParameterStringValue(sCmd, sArgument))
+        if (!NumeReKernel::getInstance()->getStringParser().isStringExpression(sMessage))
         {
-            sArgument = sCmd.substr(sCmd.find("warn")+5);
-            _parser.SetExpr(sArgument);
-            int nResults = 0;
-            value_type* v = _parser.Eval(nResults);
+            auto vVals = cmdParser.parseExprAsNumericalValues();
 
-            if (nResults > 1)
+            if (vVals.size() > 1)
             {
-                sArgument = "{";
-                for (int i = 0; i < nResults; i++)
-                    sArgument += " " + toString(v[i], _option) + ",";
+                sMessage = "{";
 
-                sArgument.pop_back();
-                sArgument += "}";
+                for (size_t i = 0; i < vVals.size(); i++)
+                    sMessage += " " + toString(vVals[i], _option) + ",";
+
+                sMessage.back() = '}';
             }
             else
-                sArgument = toString(v[0], _option);
+                sMessage = toString(vVals.front(), _option);
         }
+        else
+            sMessage = cmdParser.parseExprAsString();
 
-        NumeReKernel::issueWarning(sArgument);
+        NumeReKernel::issueWarning(sMessage);
     }
     else
         doc_Help("warn", _option);
@@ -3890,17 +3631,12 @@ static CommandReturnValues cmd_stats(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_stfa(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "stfa", CommandLineParser::CMD_DAT_PAR);
 
-    string sArgument;
-
-    if (!shortTimeFourierAnalysis(sCmd, sArgument, _parser, _data, _functions, _option))
-        doc_Help("stfa", _option);
-    else if (_option.systemPrints())
-        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_STFA_SUCCESS", sArgument));
+    if (!shortTimeFourierAnalysis(cmdParser))
+        doc_Help("stfa", NumeReKernel::getInstance()->getSettings());
+    else if (NumeReKernel::getInstance()->getSettings().systemPrints())
+        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_STFA_SUCCESS", cmdParser.getReturnValueStatement()));
 
     return COMMAND_PROCESSED;
 }
@@ -3916,12 +3652,11 @@ static CommandReturnValues cmd_stfa(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_spline(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "spline", CommandLineParser::CMD_DAT_PAR);
 
-    if (!calculateSplines(sCmd, _parser, _data, _functions, _option))
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    if (!calculateSplines(cmdParser))
         doc_Help("spline", _option);
 
     return COMMAND_PROCESSED;
@@ -4147,34 +3882,25 @@ static CommandReturnValues cmd_set(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_start(string& sCmd)
 {
+    CommandLineParser cmdParser(sCmd, "start", CommandLineParser::CMD_DAT_PAR);
     Script& _script = NumeReKernel::getInstance()->getScript();
-
-    string sArgument;
 
     if (_script.isOpen())
         throw SyntaxError(SyntaxError::CANNOT_CALL_SCRIPT_RECURSIVELY, sCmd, SyntaxError::invalid_position, "start");
 
-    if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-        NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
+    std::string sFileName = cmdParser.getExprAsFileName(".nscr", "<scriptpath>");
 
-    if (containsStrings(sCmd))
-        extractFirstParameterStringValue(sCmd, sArgument);
-    else
-        sArgument = sCmd.substr(findCommand(sCmd).nPos + 6);
-
-    StripSpaces(sArgument);
-
-    if (!sArgument.length())
+    if (!sFileName.length())
     {
         if (_script.getScriptFileName().length())
             _script.openScript();
         else
-            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sArgument, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
+            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sFileName, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
 
         return COMMAND_PROCESSED;
     }
 
-    _script.openScript(sArgument);
+    _script.openScript(sFileName);
 
     return COMMAND_PROCESSED;
 }
@@ -4196,120 +3922,81 @@ static CommandReturnValues cmd_show(string& sCmd)
     Output& _out = NumeReKernel::getInstance()->getOutput();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_DAT_PAR);
+
     // Handle the compact mode (probably not needed any more)
-    if (sCmd.substr(0, 5) == "showf")
+    if (cmdParser.getCommand().substr(0, 5) == "showf")
         _out.setCompact(false);
     else
         _out.setCompact(_option.createCompactTables());
 
-    // Determine the correct data object
-    if (_data.matchTableAsParameter(sCmd).length())
-    {
-        // a cache as object, passed as parameter
-        show_data(_data, _out, _option, _data.matchTableAsParameter(sCmd), _option.getPrecision(), false, true);
-    }
-    else
-    {
-        DataAccessParser _accessParser(sCmd);
+    DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
+    _accessParser.evalIndices();
 
-        if (_accessParser.getDataObject().length())
+    if (_accessParser.getDataObject().length())
+    {
+        if (_accessParser.isCluster())
         {
-            if (_accessParser.isCluster())
+            NumeRe::Cluster& cluster = _data.getCluster(_accessParser.getDataObject());
+
+            // Create the target container
+            NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), 1);
+
+            // Copy the data to the new container
+            for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
             {
-                NumeRe::Cluster& cluster = _data.getCluster(_accessParser.getDataObject());
+                if (cluster.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
+                    _stringTable.set(i, 0, cluster.getString(_accessParser.getIndices().row[i]));
+                else
+                    _stringTable.set(i, 0, toString(cluster.getDouble(_accessParser.getIndices().row[i]), 5));
+            }
 
-                if (_accessParser.getIndices().row.isOpenEnd())
-                    _accessParser.getIndices().row.setRange(0, cluster.size()-1);
+            // Redirect control
+            NumeReKernel::showStringTable(_stringTable, _accessParser.getDataObject() + "{}");
 
-                // Create the target container
-                NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), 1);
+            return COMMAND_PROCESSED;
+        }
+        else if (_accessParser.getDataObject() == "string")
+        {
+            // Create the target container
+            NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size());
 
-                // Copy the data to the new container
+            // Copy the data to the new container and add surrounding
+            // quotation marks
+            for (size_t j = 0; j < _accessParser.getIndices().col.size(); j++)
+            {
                 for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
                 {
-                    if (cluster.getType(i) == NumeRe::ClusterItem::ITEMTYPE_STRING)
-                        _stringTable.set(i, 0, cluster.getString(_accessParser.getIndices().row[i]));
-                    else
-                        _stringTable.set(i, 0, toString(cluster.getDouble(_accessParser.getIndices().row[i]), 5));
+                    if (_data.getStringElements(_accessParser.getIndices().col[j]) <= _accessParser.getIndices().row[i])
+                        break;
+
+                    _stringTable.set(i, j, "\"" + _data.readString(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j]) + "\"");
                 }
-
-                // Redirect control
-                NumeReKernel::showStringTable(_stringTable, _accessParser.getDataObject() + "{}");
-
-                return COMMAND_PROCESSED;
             }
-            else if (_accessParser.getDataObject() == "string")
-            {
-                if (_accessParser.getIndices().row.isOpenEnd())
-                    _accessParser.getIndices().row.setRange(0, _data.getStringElements()-1);
 
-                if (_accessParser.getIndices().col.isOpenEnd())
-                    _accessParser.getIndices().col.setRange(0, _data.getStringCols()-1);
-
-                // Create the target container
-                NumeRe::Container<string> _stringTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size());
-
-                // Copy the data to the new container and add surrounding
-                // quotation marks
-                for (size_t j = 0; j < _accessParser.getIndices().col.size(); j++)
-                {
-                    for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
-                    {
-                        if (_data.getStringElements(_accessParser.getIndices().col[j]) <= _accessParser.getIndices().row[i])
-                            break;
-
-                        _stringTable.set(i, j, "\"" + _data.readString(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j]) + "\"");
-                    }
-                }
-
-                // Redirect control
-                NumeReKernel::showStringTable(_stringTable, "string()");
-            }
-            else
-            {
-                MemoryManager _cache;
-
-                // Validize the obtained index sets
-                if (!isValidIndexSet(_accessParser.getIndices()))
-                    throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
-
-                // Copy the target data to a new table
-                if (_accessParser.getIndices().row.isOpenEnd())
-                    _accessParser.getIndices().row.setRange(0, _data.getLines(_accessParser.getDataObject(), false)-1);
-
-                if (_accessParser.getIndices().col.isOpenEnd())
-                    _accessParser.getIndices().col.setRange(0, _data.getCols(_accessParser.getDataObject(), false)-1);
-
-                _cache.resizeTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "table");
-                _cache.renameTable("table", "*" + _accessParser.getDataObject(), true);
-
-                for (unsigned int i = 0; i < _accessParser.getIndices().row.size(); i++)
-                {
-                    for (unsigned int j = 0; j < _accessParser.getIndices().col.size(); j++)
-                    {
-                        if (!i)
-                        {
-                            _cache.setHeadLineElement(j, "*" + _accessParser.getDataObject(), _data.getHeadLineElement(_accessParser.getIndices().col[j], _accessParser.getDataObject()));
-                        }
-
-                        if (_data.isValidElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()))
-                            _cache.writeToTable(i, j, "*" + _accessParser.getDataObject(), _data.getElement(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j], _accessParser.getDataObject()));
-                    }
-                }
-
-                if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-                    NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-                // Redirect the control
-                show_data(_cache, _out, _option, "*" + _accessParser.getDataObject(), _option.getPrecision(), false, true);
-                return COMMAND_PROCESSED;
-            }
+            // Redirect control
+            NumeReKernel::showStringTable(_stringTable, "string()");
         }
         else
         {
-            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
-        }
+            MemoryManager _cache;
 
+            // Validize the obtained index sets
+            if (!isValidIndexSet(_accessParser.getIndices()))
+                throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
+
+            // Copy the target data to a new table
+            copyDataToTemporaryTable(sCmd, _accessParser, _data, _cache);
+            _cache.renameTable("table", "*" + _accessParser.getDataObject(), true);
+
+            // Redirect the control
+            show_data(_cache, _out, _option, "*" + _accessParser.getDataObject(), _option.getPrecision());
+            return COMMAND_PROCESSED;
+        }
+    }
+    else
+    {
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
     }
 
     return COMMAND_PROCESSED;
@@ -4326,9 +4013,10 @@ static CommandReturnValues cmd_show(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_smooth(string& sCmd)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    CommandLineParser cmdParser(sCmd, "smooth", CommandLineParser::CMD_DAT_PAR);
 
     string sArgument;
     int nWindowSize = 1;
@@ -4337,53 +4025,25 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     MemoryManager::AppDir dir = MemoryManager::ALL;
 
     // Find the window size
-    if (findParameter(sCmd, "order", '='))
-    {
-        nWindowSize = findParameter(sCmd, "order", '=') + 5;
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("order");
 
-        if (_data.containsTablesOrClusters(sCmd.substr(nWindowSize)))
-        {
-            sArgument = sCmd.substr(nWindowSize);
-            getDataElements(sArgument, _parser, _data, _option);
-
-            if (sArgument.find("{") != string::npos)
-                convertVectorToExpression(sArgument, _option);
-
-            sCmd = sCmd.substr(0, nWindowSize) + sArgument;
-        }
-
-        _parser.SetExpr(getArgAtPos(sCmd, nWindowSize));
-        nWindowSize = intCast(_parser.Eval());
-    }
+    if (vParVal.size())
+        nWindowSize = intCast(vParVal.front());
 
     // Ensure that the windowsize is odd (we don't need even window sizes)
     nWindowSize = 2 * nWindowSize + 1;
 
     // Find the window shape (used for type=gaussian)
-    if (findParameter(sCmd, "alpha", '='))
-    {
-        size_t pos = findParameter(sCmd, "alpha", '=') + 5;
+    vParVal = cmdParser.getParameterValueAsNumericalValue("alpha");
 
-        if (_data.containsTablesOrClusters(sCmd.substr(pos)))
-        {
-            sArgument = sCmd.substr(pos);
-            getDataElements(sArgument, _parser, _data, _option);
-
-            if (sArgument.find("{") != string::npos)
-                convertVectorToExpression(sArgument, _option);
-
-            sCmd = sCmd.substr(0, pos) + sArgument;
-        }
-
-        _parser.SetExpr(getArgAtPos(sCmd, pos));
-        dAlpha = _parser.Eval();
-    }
+    if (vParVal.size())
+        dAlpha = vParVal.front();
 
     // Find the smoothing filter type
-    if (findParameter(sCmd, "type", '='))
-    {
-        string sFilterType = getArgAtPos(sCmd, findParameter(sCmd, "type", '=')+4);
+    std::string sFilterType = cmdParser.getParameterValue("type");
 
+    if (sFilterType.length())
+    {
         if (sFilterType == "weightedlinear")
             _type = NumeRe::FilterSettings::FILTER_WEIGHTED_LINEAR;
         else if (sFilterType == "gaussian")
@@ -4393,28 +4053,24 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     }
 
     // Find the app dir
-    if (findParameter(sCmd, "grid"))
+    if (cmdParser.hasParam("grid"))
         dir = MemoryManager::GRID;
-    else if (findParameter(sCmd, "lines"))
+    else if (cmdParser.hasParam("lines"))
         dir = MemoryManager::LINES;
-    else if (findParameter(sCmd, "cols"))
+    else if (cmdParser.hasParam("cols"))
         dir = MemoryManager::COLS;
 
-    if (!_data.containsTablesOrClusters(sCmd))
+    if (!cmdParser.exprContainsDataObjects())
         return COMMAND_PROCESSED;
 
-    DataAccessParser _access(sCmd);
+    DataAccessParser _access = cmdParser.getExprAsDataObject();
 
     if (_access.getDataObject().length())
     {
         if (!isValidIndexSet(_access.getIndices()))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getIndexString());
 
-        if (_access.getIndices().row.isOpenEnd())
-            _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
-
-        if (_access.getIndices().col.isOpenEnd())
-            _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
+        _access.evalIndices();
 
         bool success = false;
 
@@ -4509,17 +4165,14 @@ static CommandReturnValues cmd_help(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_move(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    CommandLineParser cmdParser(sCmd, "move", CommandLineParser::CMD_DAT_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    int nArgument;
-
-    if (sCmd.length() > 5)
+    if (cmdParser.getExpr().length())
     {
-        if (_data.containsTablesOrClusters(sCmd) && (findParameter(sCmd, "target", '=') || findParameter(sCmd, "t", '=')))
+        if (cmdParser.exprContainsDataObjects())
         {
-            if (moveData(sCmd, _parser, _data, _option))
+            if (moveData(cmdParser))
             {
                 if (_option.systemPrints())
                     NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_MOVEDATA_SUCCESS"), _option) );
@@ -4529,19 +4182,14 @@ static CommandReturnValues cmd_move(string& sCmd)
         }
         else
         {
-            if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
-                nArgument = 1;
-            else
-                nArgument = 0;
-
-            if (moveFile(sCmd, _parser, _data, _option))
+            if (moveOrCopyFiles(cmdParser))
             {
                 if (_option.systemPrints())
                 {
-                    if (nArgument)
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_ALL_SUCCESS", sCmd));
+                    if (cmdParser.hasParam("all") || cmdParser.hasParam("a"))
+                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_ALL_SUCCESS", cmdParser.getReturnValueStatement()));
                     else
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_SUCCESS", sCmd));
+                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_MOVEFILE_SUCCESS", cmdParser.getReturnValueStatement()));
                 }
             }
             else
@@ -4651,90 +4299,47 @@ static CommandReturnValues cmd_redefine(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_resample(string& sCmd)
 {
+    CommandLineParser cmdParser(sCmd, "resample", CommandLineParser::CMD_DAT_PAR);
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    string sArgument;
-    int nArgument;
+    int nSamples;
 
-    if (!_data.containsTablesOrClusters(sCmd))
+    if (!cmdParser.exprContainsDataObjects())
         return COMMAND_PROCESSED;
 
-    DataAccessParser _access(sCmd);
+    DataAccessParser _access = cmdParser.getExprAsDataObject();
 
     if (_access.getDataObject().length())
     {
-        if (findParameter(sCmd, "samples", '='))
-        {
-            nArgument = findParameter(sCmd, "samples", '=') + 7;
+        auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
 
-            if (_data.containsTablesOrClusters(getArgAtPos(sCmd, nArgument)))
-            {
-                sArgument = getArgAtPos(sCmd, nArgument);
-                getDataElements(sArgument, _parser, _data, _option);
-
-                if (sArgument.find("{") != string::npos)
-                    convertVectorToExpression(sArgument, _option);
-
-                sCmd.replace(nArgument, getArgAtPos(sCmd, nArgument).length(), sArgument);
-            }
-
-            _parser.SetExpr(getArgAtPos(sCmd, nArgument));
-            nArgument = intCast(_parser.Eval());
-        }
+        if (vParVal.size())
+            nSamples = intCast(vParVal.front());
         else
-            nArgument = _data.getLines(_access.getDataObject(), false);
+            nSamples = _data.getLines(_access.getDataObject(), false);
 
         if (!isValidIndexSet(_access.getIndices()))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getIndexString());
 
-        if (_access.getIndices().row.isOpenEnd())
-            _access.getIndices().row.setRange(0, _data.getLines(_access.getDataObject(), false)-1);
+        _access.evalIndices();
 
-        if (_access.getIndices().col.isOpenEnd())
-            _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
+        MemoryManager::AppDir dir = MemoryManager::ALL;
 
-        if (findParameter(sCmd, "grid"))
+        if (cmdParser.hasParam("grid"))
+            dir = MemoryManager::GRID;
+        else if (cmdParser.hasParam("cols"))
+            dir = MemoryManager::COLS;
+        else if (cmdParser.hasParam("lines"))
+            dir = MemoryManager::LINES;
+
+        if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nSamples, dir))
         {
-            if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::GRID))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + _access.getDataObject() + "\""), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+            if (_option.systemPrints())
+                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) );
         }
-        else if (!findParameter(sCmd, "lines") && !findParameter(sCmd, "cols"))
-        {
-            if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::ALL))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", "\"" + _access.getDataObject() + "\""), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
-        else if (findParameter(sCmd, "cols"))
-        {
-            if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::COLS))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_COLS")), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
-        else if (findParameter(sCmd, "lines"))
-        {
-            if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nArgument, MemoryManager::LINES))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
+        else
+            throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
     }
     else
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
@@ -4754,50 +4359,50 @@ static CommandReturnValues cmd_resample(string& sCmd)
 static CommandReturnValues cmd_remove(string& sCmd)
 {
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    string sArgument;
-    int nArgument;
+    CommandLineParser cmdParser(sCmd, "remove", CommandLineParser::CMD_DAT_PAR);
 
-    if (_data.containsTables(sCmd))
+    std::string sReturnStatement;
+
+    if (cmdParser.exprContainsDataObjects())
     {
-        while (_data.containsTables(sCmd))
+        std::string sTableList = cmdParser.getExpr();
+
+        while (_data.containsTables(sTableList) && sTableList.length())
         {
+            std::string sTable = getNextArgument(sTableList, true);
+
             for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
             {
-                size_t nPos = sCmd.find(iter->first + "()");
+                size_t nPos = sTable.find(iter->first + "()");
 
-                if (nPos != string::npos && (!nPos || isDelimiter(sCmd[nPos-1])) && iter->first != "table")
+                if (nPos != string::npos && (!nPos || isDelimiter(sTable[nPos-1])) && iter->first != "table")
                 {
-                    string sObj = iter->first;
+                    sTable = iter->first;
+
                     if (_data.deleteTable(iter->first))
                     {
-                        if (sArgument.length())
-                            sArgument += ", ";
+                        if (sReturnStatement.length())
+                            sReturnStatement += ", ";
 
-                        sArgument += "\"" + sObj + "()\"";
+                        sReturnStatement += "\"" + sTable + "()\"";
                         break;
                     }
                 }
             }
         }
 
-        if (sArgument.length() && _option.systemPrints())
-            NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REMOVECACHE", sArgument));
+        if (sReturnStatement.length() && _option.systemPrints())
+            NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REMOVECACHE", sReturnStatement));
     }
-    else if (sCmd.length() > 7)
+    else if (cmdParser.getExpr().length())
     {
-        if (findParameter(sCmd, "all") || findParameter(sCmd, "a"))
-            nArgument = 1;
-        else
-            nArgument = 0;
-
-        if (!removeFile(sCmd, _parser, _data, _option))
-            throw SyntaxError(SyntaxError::CANNOT_REMOVE_FILE, sCmd, SyntaxError::invalid_position, sCmd);
+        if (!removeFile(cmdParser))
+            throw SyntaxError(SyntaxError::CANNOT_REMOVE_FILE, sCmd, SyntaxError::invalid_position, cmdParser.parseExprAsString());
         else if (_option.systemPrints())
         {
-            if (nArgument)
+            if (cmdParser.hasParam("all") || cmdParser.hasParam("a"))
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REMOVE_ALL_FILE"));
             else
                 NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REMOVE_FILE"));
@@ -4911,46 +4516,22 @@ static CommandReturnValues cmd_retouch(string& sCmd)
         if (_access.getIndices().col.isOpenEnd())
             _access.getIndices().col.setRange(0, _data.getCols(_access.getDataObject())-1);
 
+        MemoryManager::AppDir dir = MemoryManager::ALL;
+
         if (findParameter(sCmd, "grid"))
-        {
-            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::GRID))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
-        else if (!findParameter(sCmd, "lines") && !findParameter(sCmd, "cols"))
-        {
-            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::ALL))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", "\"" + _access.getDataObject() + "\""), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
+            dir = MemoryManager::GRID;
         else if (findParameter(sCmd, "lines"))
-        {
-            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::LINES))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_LINES")), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
-        }
+            dir = MemoryManager::LINES;
         else if (findParameter(sCmd, "cols"))
+            dir = MemoryManager::COLS;
+
+        if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, dir))
         {
-            if (_data.retouch(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, MemoryManager::COLS))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
+            if (_option.systemPrints())
+                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RETOQUE", _lang.get("COMMON_COLS")), _option) );
         }
+        else
+            throw SyntaxError(SyntaxError::CANNOT_RETOQUE_CACHE, sCmd, _access.getDataObject(), _access.getDataObject());
     }
     else
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
@@ -4969,12 +4550,10 @@ static CommandReturnValues cmd_retouch(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_regularize(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
+    CommandLineParser cmdParser(sCmd, "regularize", CommandLineParser::CMD_DAT_PAR);
 
-    if (!regularizeDataSet(sCmd, _parser, _data, _functions, _option))
+    if (!regularizeDataSet(cmdParser))
         throw SyntaxError(SyntaxError::CANNOT_REGULARIZE_CACHE, sCmd, SyntaxError::invalid_position);
     else if (_option.systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_REGULARIZE"));
@@ -5072,11 +4651,8 @@ static CommandReturnValues cmd_datagrid(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_detect(string& sCmd)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
-    Settings& _option = NumeReKernel::getInstance()->getSettings();
-    boneDetection(sCmd, _parser, _data, _functions, _option);
+    CommandLineParser cmdParser(sCmd, "detect", CommandLineParser::CMD_EXPR_set_PAR);
+    boneDetection(cmdParser);
 
     return COMMAND_PROCESSED;
 }
@@ -5198,7 +4774,8 @@ static CommandReturnValues cmd_load(string& sCmd)
     Settings& _option = NumeReKernel::getInstance()->getSettings();
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    string sArgument;
+    CommandLineParser cmdParser(sCmd, "load", CommandLineParser::CMD_DAT_PAR);
+
     int nArgument;
 
     if (findParameter(sCmd, "define"))
@@ -5208,110 +4785,67 @@ static CommandReturnValues cmd_load(string& sCmd)
         else
             NumeReKernel::print( _lang.get("BUILTIN_CHECKKEYWORD_DEF_EMPTY") );
     }
-    else if (sCmd.length() > findCommand(sCmd, "load").nPos + 5 && sCmd.find_first_not_of(' ', findCommand(sCmd, "load").nPos + 5) != string::npos)
+    else if (cmdParser.getExpr().length())
     {
-        Match _match = findCommand(sCmd, "load");
-        string sExpr = sCmd;
-
-        sExpr.replace(_match.nPos, string::npos, "_~load[~_~]");
-        sCmd.erase(0, _match.nPos);
-
-        if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-            NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        // Add quotation marks around the object, if there aren't any
-        if (sCmd[sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5)] != '"' && sCmd.find("string(") == string::npos)
-        {
-            if (findParameter(sCmd, "slice")
-                    || findParameter(sCmd, "keepdim")
-                    || findParameter(sCmd, "complete")
-                    || findParameter(sCmd, "ignore")
-                    || findParameter(sCmd, "tocache")
-                    || findParameter(sCmd, "totable")
-                    || findParameter(sCmd, "i")
-                    || findParameter(sCmd, "head")
-                    || findParameter(sCmd, "h")
-                    || findParameter(sCmd, "app")
-                    || findParameter(sCmd, "all"))
-            {
-                sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5), 1, '"');
-                nArgument = string::npos;
-
-                while (sCmd.find_last_of('-', nArgument) != string::npos
-                    && sCmd.find_last_of('-', nArgument) > sCmd.find_first_of(' ', sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5)))
-                    nArgument = sCmd.find_last_of('-', nArgument) - 1;
-
-                nArgument = sCmd.find_last_not_of(' ', nArgument);
-                sCmd.insert(nArgument + 1, 1, '"');
-            }
-            else
-            {
-                sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5), 1, '"');
-                sCmd.insert(sCmd.find_last_not_of(' ') + 1, 1, '"');
-            }
-        }
-
-        if (findParameter(sCmd, "app"))
+        if (cmdParser.hasParam("app"))
         {
             double j1 = _data.getCols("data") + 1;
-
-            sCmd.insert(sCmd.find_first_not_of(' ', findCommand(sCmd).nPos + 5), "-app=");
-            append_data(sCmd, _data, _option);
-
-            sCmd = sExpr;
-
-            _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")});
+            append_data(cmdParser);
+            cmdParser.setReturnValue(std::vector<double>({1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")}));
+            sCmd = cmdParser.getReturnValueStatement();
 
             return COMMAND_HAS_RETURNVALUE;
         }
 
-        if (extractFirstParameterStringValue(sCmd, sArgument))
+        std::string sFileName = cmdParser.parseExprAsString();
+
+        if (sFileName.length())
         {
-            if (findParameter(sCmd, "slice", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slice", '=') + 5) == "xz")
+            std::string sSlicingParam = cmdParser.getParameterValue("slice");
+
+            if (sSlicingParam == "xz")
                 nArgument = -1;
-            else if (findParameter(sCmd, "slice", '=') && getArgAtPos(sCmd, findParameter(sCmd, "slice", '=') + 5) == "yz")
+            else if (sSlicingParam == "yz")
                 nArgument = -2;
             else
                 nArgument = 0;
 
-            if (findParameter(sCmd, "keepdim") || findParameter(sCmd, "complete"))
-                _data.setbLoadEmptyColsInNextFile(true);
+            _data.setbLoadEmptyColsInNextFile(cmdParser.hasParam("keepdim") || cmdParser.hasParam("complete"));
 
-            if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && !findParameter(sCmd, "all"))
+            if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable")) && !cmdParser.hasParam("all"))
             {
                 // Single file directly to cache
-                NumeRe::FileHeaderInfo info = _data.openFile(sArgument, true, nArgument, getTargetTable(sCmd));
+                NumeRe::FileHeaderInfo info = _data.openFile(sFileName, true, nArgument, getTargetTable(cmdParser.getParameterList()));
 
                 if (!_data.isEmpty(info.sTableName))
                 {
                     if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
 
-                    sCmd = sExpr;
-
-                    _parser.SetVectorVar("_~load[~_~]", {1, info.nRows, _data.getCols(info.sTableName)-info.nCols+1, _data.getCols(info.sTableName)});
+                    cmdParser.setReturnValue(std::vector<double>({1, info.nRows, _data.getCols(info.sTableName)-info.nCols+1, _data.getCols(info.sTableName)}));
+                    sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
                 }
 
                 return COMMAND_PROCESSED;
             }
-            else if ((findParameter(sCmd, "tocache") || findParameter(sCmd, "totable")) && findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+            else if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable")) && cmdParser.hasParam("all") && (sFileName.find('*') != string::npos || sFileName.find('?') != string::npos))
             {
                 // multiple files directly to cache
-                if (sArgument.find('/') == string::npos)
-                    sArgument = "<loadpath>/" + sArgument;
+                if (sFileName.find('/') == string::npos)
+                    sFileName = "<loadpath>/" + sFileName;
 
-                vector<string> vFilelist = getFileList(sArgument, _option, 1);
+                vector<string> vFilelist = getFileList(sFileName, _option, 1);
 
                 if (!vFilelist.size())
-                    throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
+                    throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
 
                 for (size_t i = 0; i < vFilelist.size(); i++)
-                    vFilelist[i] = _data.openFile(vFilelist[i], true, nArgument, getTargetTable(sCmd)).sTableName;
+                    vFilelist[i] = _data.openFile(vFilelist[i], true, nArgument, getTargetTable(cmdParser.getParameterList())).sTableName;
 
                 if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints())
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sArgument));
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sFileName));
 
                 // Returning of indices not possible due to multiple
                 // table targets
@@ -5319,21 +4853,21 @@ static CommandReturnValues cmd_load(string& sCmd)
                 return COMMAND_PROCESSED;
             }
 
-            if (findParameter(sCmd, "i") || findParameter(sCmd, "ignore") || _data.isEmpty("data"))
+            if (cmdParser.hasParam("i") || cmdParser.hasParam("ignore") || _data.isEmpty("data"))
             {
                 if (!_data.isEmpty("data"))
                     _data.removeData();
 
                 // multiple files
-                if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
+                if (cmdParser.hasParam("all") && (sFileName.find('*') != string::npos || sFileName.find('?') != string::npos))
                 {
-                    if (sArgument.find('/') == string::npos)
-                        sArgument = "<loadpath>/" + sArgument;
+                    if (sFileName.find('/') == string::npos)
+                        sFileName = "<loadpath>/" + sFileName;
 
-                    vector<string> vFilelist = getFileList(sArgument, _option, 1);
+                    vector<string> vFilelist = getFileList(sFileName, _option, 1);
 
                     if (!vFilelist.size())
-                        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sArgument, sArgument);
+                        throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
 
                     for (size_t i = 0; i < vFilelist.size(); i++)
                     {
@@ -5342,10 +4876,10 @@ static CommandReturnValues cmd_load(string& sCmd)
                     }
 
                     if (!_data.isEmpty("data") && _option.systemPrints())
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
+                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sFileName, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
-                    _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", false), 1, _data.getCols("data", false)});
-                    sCmd = sExpr;
+                    cmdParser.setReturnValue(std::vector<double>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
                 }
@@ -5353,32 +4887,33 @@ static CommandReturnValues cmd_load(string& sCmd)
                 NumeRe::FileHeaderInfo info;
 
                 // Provide headline
-                if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-                {
-                    if (findParameter(sCmd, "head", '='))
-                        nArgument = findParameter(sCmd, "head", '=') + 4;
-                    else
-                        nArgument = findParameter(sCmd, "h", '=') + 1;
+                auto vParList = cmdParser.getParameterValueAsNumericalValue("head");
 
-                    nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-                    info = _data.openFile(sArgument, false, nArgument);
-                }
+                if (vParList.size())
+                    nArgument = intCast(vParList.front());
                 else
-                    info = _data.openFile(sArgument, false, nArgument);
+                {
+                    vParList = cmdParser.getParameterValueAsNumericalValue("h");
+
+                    if (vParList.size())
+                        nArgument = intCast(vParList.front());
+                }
+
+                info = _data.openFile(sFileName, false, nArgument);
 
                 if (!_data.isEmpty("data"))
                 {
                     if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
 
-                    _parser.SetVectorVar("_~load[~_~]", {1, _data.getLines("data", false), 1, _data.getCols("data", false)});
-                    sCmd = sExpr;
+                    cmdParser.setReturnValue(std::vector<double>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
                 }
             }
             else
-                load_data(_data, _option, _parser, sArgument);
+                load_data(_data, _option, _parser, sFileName);
         }
         else
             load_data(_data, _option, _parser);
@@ -5465,66 +5000,33 @@ static CommandReturnValues cmd_execute(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_progress(string& sCmd)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    CommandLineParser cmdParser(sCmd, "progress", CommandLineParser::CMD_EXPR_set_PAR);
 
-    string sArgument;
-    int nArgument;
-    value_type* vVals = 0;
-    string sExpr;
-
-    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCmd))
-        sCmd = evaluateParameterValues(sCmd);
-
-    if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
-    {
-        if (sCmd.find("-set") != string::npos)
-            sArgument = sCmd.substr(sCmd.find("-set"));
-        else
-            sArgument = sCmd.substr(sCmd.find("--"));
-
-        sCmd.erase(sCmd.find(sArgument));
-
-        if (findParameter(sArgument, "first", '='))
-            sExpr = getArgAtPos(sArgument, findParameter(sArgument, "first", '=') + 5) + ",";
-        else
-            sExpr = "1,";
-
-        if (findParameter(sArgument, "last", '='))
-            sExpr += getArgAtPos(sArgument, findParameter(sArgument, "last", '=') + 4);
-        else
-            sExpr += "100";
-
-        if (findParameter(sArgument, "type", '='))
-        {
-            sArgument = getArgAtPos(sArgument, findParameter(sArgument, "type", '=') + 4);
-
-            if (containsStrings(sArgument))
-            {
-                if (sArgument.front() != '"')
-                    sArgument = "\"" + sArgument + "\" -nq";
-
-                string sDummy;
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, true);
-            }
-        }
-        else
-            sArgument = "std";
-    }
-    else
-    {
-        sArgument = "std";
-        sExpr = "1,100";
-    }
-
-    while (sCmd.length() && (sCmd.back() == ' ' || sCmd.back() == '-'))
-        sCmd.pop_back();
-
-    if (!sCmd.length())
+    if (!cmdParser.getExpr().length())
         return COMMAND_PROCESSED;
 
-    _parser.SetExpr(sCmd.substr(findCommand(sCmd).nPos + 8) + "," + sExpr);
-    vVals = _parser.Eval(nArgument);
-    make_progressBar((int)vVals[0], (int)vVals[1], (int)vVals[2], sArgument);
+    string sArgument;
+    int frst = 1, lst = 100;
+
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("first");
+
+    if (vParVal.size())
+        frst = intCast(vParVal.front());
+
+    vParVal = cmdParser.getParameterValueAsNumericalValue("last");
+
+    if (vParVal.size())
+        lst = intCast(vParVal.front());
+
+    sArgument = cmdParser.getParameterValue("type");
+
+    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sArgument))
+        sArgument = cmdParser.getParameterValueAsString("type", "std");
+
+    auto vVal = cmdParser.parseExprAsNumericalValues();
+
+    if (vVal.size())
+        make_progressBar(intCast(vVal.front()), frst, lst, sArgument);
 
     return COMMAND_PROCESSED;
 }
@@ -5557,7 +5059,8 @@ static CommandReturnValues cmd_print(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_rotate(string& sCmd)
 {
-    rotateTable(sCmd);
+    CommandLineParser cmdParser(sCmd, CommandLineParser::CMD_EXPR_set_PAR);
+    rotateTable(cmdParser);
 
     return COMMAND_PROCESSED;
 }

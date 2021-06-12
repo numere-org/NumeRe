@@ -105,15 +105,20 @@ bool Sorter::qSortImplementation(int* nIndex, int nElements, int nColumn, long l
 
     // Catch the cases, where the distance between the left
     // and the right border equals to one
-	if (nRight - nLeft <= 1 && (nSign * compare(nIndex[nLeft], nIndex[nRight], nColumn) <= 0 || !isValue(nIndex[nRight], nColumn)))
+	if (nRight - nLeft <= 1 && (nSign * compare(nIndex[nLeft], nIndex[nRight], nColumn) <= 0))
 		return true;
-	else if (nRight - nLeft <= 1 && (nSign * compare(nIndex[nLeft], nIndex[nRight], nColumn) >= 0 || !isValue(nIndex[nLeft], nColumn)))
+	else if (nRight - nLeft <= 1 && (nSign * compare(nIndex[nLeft], nIndex[nRight], nColumn) >= 0))
 	{
 		int nTemp = nIndex[nLeft];
 		nIndex[nLeft] = nIndex[nRight];
 		nIndex[nRight] = nTemp;
 		return true;
 	}
+
+	// Move the middle element to the right
+    int nTemp = nIndex[nRight];
+    nIndex[nRight] = nIndex[(nRight+nLeft)/2];
+    nIndex[(nRight+nLeft)/2] = nTemp;
 
 	// Define pivot and running indices
 	int nPivot = nRight;
@@ -126,11 +131,11 @@ bool Sorter::qSortImplementation(int* nIndex, int nElements, int nColumn, long l
 	do
 	{
 	    // Jump over all values, which are smaller
-		while ((nSign * compare(nIndex[i], nIndex[nPivot], nColumn) <= 0 && isValue(nIndex[i], nColumn)) && i < nRight)
+		while (i < nRight && (nSign * compare(nIndex[i], nIndex[nPivot], nColumn) <= 0))
 			i++;
 
         // Jump over all values, which are larger
-		while ((nSign * compare(nIndex[j], nIndex[nPivot], nColumn) >= 0 || !isValue(nIndex[j], nColumn)) && j > nLeft)
+		while (j > nLeft && (nSign * compare(nIndex[j], nIndex[nPivot], nColumn) >= 0))
 			j--;
 
         // Did we find two candidates, which are on the wrong side?
@@ -145,20 +150,11 @@ bool Sorter::qSortImplementation(int* nIndex, int nElements, int nColumn, long l
 	while (i < j);
 
 	// Move the pivot element to its correct position
-	if (nSign * compare(nIndex[i], nIndex[nPivot], nColumn) > 0 || !isValue(nIndex[i], nColumn))
+	if (nSign * compare(nIndex[i], nIndex[nPivot], nColumn) > 0)
 	{
 		int nTemp = nIndex[i];
 		nIndex[i] = nIndex[nRight];
 		nIndex[nRight] = nTemp;
-	}
-
-	// Move all invalid values to the right end
-	while (!isValue(nIndex[nRight - 1], nColumn) && isValue(nIndex[nRight], nColumn))
-	{
-		int nTemp = nIndex[nRight - 1];
-		nIndex[nRight - 1] = nIndex[nRight];
-		nIndex[nRight] = nTemp;
-		nRight--;
 	}
 
 	// Call this algorithm recursively for the left and

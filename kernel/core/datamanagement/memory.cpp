@@ -3374,6 +3374,10 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
     // Delete the resampler: it is not used any more
     delete _resampler;
 
+    // Reset the calculated lines and columns
+    nCalcCols = -1;
+    nCalcLines = -1;
+
     // Block unter dem resampleten kopieren
     if (_vLine.size() < nSamples && (Direction == ALL || Direction == GRID || Direction == COLS))
     {

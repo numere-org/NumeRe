@@ -524,7 +524,7 @@ namespace NumeRe
         if (vClusterArray.size() > i)
             return vClusterArray[i]->getString();
 
-        return "";
+        return "\"\"";
     }
 
     // This member function assigns a string as data for

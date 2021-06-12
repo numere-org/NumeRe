@@ -53,6 +53,7 @@ class CommandLineParser
         std::string m_commandLine;
 
         void parse(const std::string& sCommandString, CommandSignature signature);
+        std::string parseFileName(std::string& sFileName, std::string& sFileExt, const std::string& sBasePath) const;
 
     public:
         CommandLineParser(const std::string& sCommandLine, CommandSignature signature);
@@ -117,6 +118,20 @@ class CommandLineParser
             m_returnValueStatement += sRetVal;
         }
 
+        void setReturnValue(const std::vector<double>& vRetVal);
+        void setReturnValue(const std::vector<std::string>& vRetVal);
+
+        /////////////////////////////////////////////////
+        /// \brief Removes the return value statement.
+        ///
+        /// \return void
+        ///
+        /////////////////////////////////////////////////
+        inline void clearReturnValue()
+        {
+            m_returnValueStatement.clear();
+        }
+
         /////////////////////////////////////////////////
         /// \brief Returns the command line used for
         /// constructing this instance (e.g. for errors).
@@ -129,15 +144,20 @@ class CommandLineParser
             return m_commandLine;
         }
 
-        std::string getExprAsFileName(const std::string& sFileExt) const;
+        bool exprContainsDataObjects() const;
+        std::string getExprAsFileName(std::string sFileExt, const std::string& sBasePath = "") const;
         DataAccessParser getExprAsDataObject() const;
-        std::string getExprAsMathExpression() const;
+        std::string getExprAsMathExpression(bool parseDataObjects = false) const;
+        std::string parseExprAsString() const;
         std::vector<double> parseExprAsNumericalValues() const;
         std::vector<double> parseIntervals(bool bErase = false);
         std::string getTargetTable(Indices& _targetIndices, const std::string& sDefaultTableName);
-        std::string getFileParameterValue(const std::string& sFileExt, const std::string& sBaseFolder = "", const std::string& sDefaultName = "") const;
+        std::vector<std::string> getAllParametersWithValues() const;
+        std::string getParameterValue(const std::string& sParameter) const;
+        std::string getFileParameterValue(std::string sFileExt, const std::string& sBaseFolder = "", const std::string& sDefaultName = "") const;
         std::string getParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue) const;
         std::vector<double> getParameterValueAsNumericalValue(const std::string& sParameter) const;
+        bool hasParam(const std::string& sParameter) const;
 };
 
 #endif // COMMANDLINEPARSER_HPP

@@ -163,6 +163,7 @@ string extractCommandString(const string& sCmd, const Match& _mMatch);
 void removeArgSep(string&);
 void openExternally(const string&);
 void moveFile(const string&, const string&);
+void copyFile(const string&, const string&);
 void writeTeXMain(const string&);
 string addControlSymbols(const string&);
 

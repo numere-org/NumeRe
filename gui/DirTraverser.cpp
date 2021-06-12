@@ -96,7 +96,7 @@ wxDirTraverseResult DirTraverser::OnFile(const wxString& filename)
             if (filename.length() < 4)
                 return wxDIR_CONTINUE;
 
-            filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;*.pdf;*.m;*.cpp;*.cxx;*.c;*.hpp;*.hxx;*.h;*.xml;";
+            filespec = "*.ndat;*.dat;*.xls;*.xlsx;*.ods;*.csv;*.txt;*.labx;*.ibw;*.jdx;*.jcm;*.dx;*.png;*.log;*.tex;*.pdf;*.m;*.cpp;*.cxx;*.c;*.hpp;*.hxx;*.h;*.xml;*.wav;";
 
             if (filespec.find("*."+extension + ";") == string::npos)
                 return wxDIR_CONTINUE;

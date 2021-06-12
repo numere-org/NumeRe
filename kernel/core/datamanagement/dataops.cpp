@@ -29,83 +29,11 @@
 #include "../maths/parser_functions.hpp"
 
 
-static string getSourceForDataOperation(const string& sExpression, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option);
+
 static void evaluateTransposeForDataOperation(const string& sTarget, Indices& _iSourceIndex, Indices& _iTargetIndex, const MemoryManager& _data, bool bTranspose);
 static void performDataOperation(const string& sSource, const string& sTarget, const Indices& _iSourceIndex, const Indices& _iTargetIndex, MemoryManager& _data, bool bMove, bool bTranspose);
-static string getFilenameFromCommandString(string& sCmd, string& sParams, const string& sDefExt, Parser& _parser, MemoryManager& _data, Settings& _option);
 
 extern Language _lang;
-
-
-/////////////////////////////////////////////////
-/// \brief This function exports the passed data
-/// into an Excel 97-2003 worksheet.
-///
-/// \param _data Datafile&
-/// \param _option Settings&
-/// \param sCache const string&
-/// \param sFileName const string&
-/// \return void
-///
-/////////////////////////////////////////////////
-void export_excel(MemoryManager& _data, Settings& _option, const string& sCache, const string& sFileName)
-{
-	using namespace YExcel;
-
-	BasicExcel _excel;
-	BasicExcelWorksheet* _sheet;
-	BasicExcelCell* _cell;
-
-	string sHeadLine;
-
-	// Create a new sheet
-	_excel.New(1);
-
-	// Rename it so that it fits the cache name
-	_excel.RenameWorksheet(0u, sCache.c_str());
-
-	// Get a pointer to this sheet
-	_sheet = _excel.GetWorksheet(0u);
-
-	// Write the headlines in the first row
-	for (long long int j = 0; j < _data.getCols(sCache); j++)
-	{
-	    // Get the current cell and the headline string
-		_cell = _sheet->Cell(0u, j);
-		sHeadLine = _data.getHeadLineElement(j, sCache);
-
-		// Replace newlines with the corresponding character code
-		while (sHeadLine.find("\\n") != string::npos)
-			sHeadLine.replace(sHeadLine.find("\\n"), 2, 1, (char)10);
-
-        // Write the headline
-		_cell->SetString(sHeadLine.c_str());
-	}
-
-	// Now write the actual table
-	for (long long int i = 0; i < _data.getLines(sCache); i++)
-	{
-		for (long long int j = 0; j < _data.getCols(sCache); j++)
-		{
-		    // Get the current cell (skip over the first row, because it contains the headline)
-			_cell = _sheet->Cell(1 + i, j);
-
-			// Write the cell contents, if the data table contains valid data
-			// otherwise clear the cell
-			if (_data.isValidElement(i, j, sCache))
-				_cell->SetDouble(_data.getElement(i, j, sCache));
-			else
-				_cell->EraseContents();
-		}
-	}
-
-	// Save the excel file with the target filename
-	_excel.SaveAs(sFileName.c_str());
-
-	// Inform the user
-	if (_option.systemPrints())
-		NumeReKernel::print(LineBreak(_lang.get("OUTPUT_FORMAT_SUMMARY_FILE", toString((_data.getLines(sCache) + 1)*_data.getCols(sCache)), sFileName), _option));
-}
 
 
 /////////////////////////////////////////////////
@@ -166,7 +94,8 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 		else if (c == _lang.YES())		// Anhaengen?
 		{
 		    // append the data -> hand the control over to the corresponding function
-			append_data("data -app=\"" + sFileName + "\" i", _data, _option);
+		    CommandLineParser appCmdParser("append \"" + sFileName + "\"", "append", CommandLineParser::CMD_DAT_PAR);
+			append_data(appCmdParser);
 		}
 		else				// Nein? Dann vielleicht ueberschreiben?
 		{
@@ -203,14 +132,10 @@ void load_data(MemoryManager& _data, Settings& _option, Parser& _parser, string 
 /// \param _option Settings&
 /// \param _sCache const string&
 /// \param nPrecision size_t
-/// \param bData bool
-/// \param bCache bool
-/// \param bSave bool
-/// \param bDefaultName bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision, bool bData, bool bCache, bool bSave, bool bDefaultName)
+void show_data(MemoryManager& _data, Output& _out, Settings& _option, const string& _sCache, size_t nPrecision)
 {
 	string sCache = _sCache;
 	string sFileName;
@@ -218,7 +143,7 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 	// Do only stuff, if data is available
 	if (_data.isValid())		// Sind ueberhaupt Daten vorhanden?
 	{
-		if (_option.useExternalDocWindow() && !bSave)
+		if (_option.useExternalDocWindow())
         {
             NumeReKernel::showTable(_data.extractTable(sCache), sCache.substr(sCache.front() == '*' ? 1 : 0));
 			return;
@@ -228,59 +153,8 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 		long long int nCol = 0;
 		int nHeadlineCount = 0;
 
-		// If the user wants to save the data
-		if (bSave && bData)
-		{
-		    // If the user wants a default file name, create it here
-			if (bDefaultName)
-			{
-			    // Get the stored data file name
-				sFileName = _data.getDataFileName(sCache);
-
-				// Remove the path part
-				if (sFileName.find_last_of("/") != string::npos)
-					sFileName = sFileName.substr(sFileName.find_last_of("/") + 1);
-				if (sFileName.find_last_of("\\") != string::npos)
-					sFileName = sFileName.substr(sFileName.find_last_of("\\") + 1);
-
-				// Create the file name
-				sFileName = _out.getPath() + "/copy_of_" + sFileName;
-
-				// we are not able to write a LABX file, so we simply replace it with "dat"
-				if (sFileName.length() > 5 && sFileName.substr(sFileName.length() - 5, 5) == ".labx")
-					sFileName = sFileName.substr(0, sFileName.length() - 5) + ".dat";
-
-				if (_option.isDeveloperMode())
-					NumeReKernel::print("DEBUG: sFileName = " + sFileName );
-
-                // Set the file name
-				_out.setFileName(sFileName);
-			}
-			_out.setStatus(true);
-		}
-		else if (bSave && bCache)
-		{
-		    // Save the cache
-			if (bDefaultName)
-			{
-			    // set up the output class correspondingly
-				_out.setPrefix(sCache);
-				_out.generateFileName();
-			}
-			_out.setStatus(true);
-		}
-
-		// Handle Excel outputs
-		if (bSave && _out.getFileName().substr(_out.getFileName().rfind('.')) == ".xls")
-		{
-		    // Pass the control and return afterwards
-			export_excel(_data, _option, sCache, _out.getFileName());
-			_out.reset();
-			return;
-		}
-
 		// Get the string matrix
-		string** sOut = make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, nPrecision, bSave);// = new string*[nLine];		// die eigentliche Ausgabematrix. Wird spaeter gefuellt an Output::format(string**,int,int,Output&) uebergeben
+		string** sOut = make_stringmatrix(_data, _out, _option, sCache, nLine, nCol, nHeadlineCount, nPrecision, false);
 
         // Remove the possible asterisk at the front of the cache name
 		if (sCache.front() == '*')
@@ -288,52 +162,33 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 
         _out.setPrefix(sCache);
 
-			if (_out.isFile())
-				_out.generateFileName();
-
-
 		// Set the "plugin origin"
 		_out.setPluginName("Datenanzeige der Daten aus " + _data.getDataFileName(sCache)); // Anzeige-Plugin-Parameter: Nur Kosmetik
 
-        if (!_out.isFile())
-        {
-            // Print the table to the console: write the headline
-            NumeReKernel::toggleTableStatus();
-            make_hline();
-            NumeReKernel::print("NUMERE: " + toUpperCase(sCache) + "()");
-            make_hline();
-        }
+        // Print the table to the console: write the headline
+        NumeReKernel::toggleTableStatus();
+        make_hline();
+        NumeReKernel::print("NUMERE: " + toUpperCase(sCache) + "()");
+        make_hline();
 
         // Format the table (either for the console or for the target file)
-        _out.format(sOut, nCol, nLine, _option, (bData || bCache), nHeadlineCount);		// Eigentliche Ausgabe
+        _out.format(sOut, nCol, nLine, _option, true, nHeadlineCount);		// Eigentliche Ausgabe
+        _out.reset();
 
-        if (!_out.isFile())
-        {
-            // Print the table to the console: write the footer
-            NumeReKernel::toggleTableStatus();
-            make_hline();
-        }
-        _out.reset();						// Ggf. bFile in der Klasse = FALSE setzen
-
+        // Print the table to the console: write the footer
+        NumeReKernel::toggleTableStatus();
+        make_hline();
 
         // Clear the created memory
         for (long long int i = 0; i < nLine; i++)
         {
             delete[] sOut[i];		// WICHTIG: Speicher immer freigeben!
         }
+
         delete[] sOut;
-
-
-		// Reset the Outfile and the Datafile class
 	}
-	else		// Offenbar sind gar keine Daten geladen. Was soll ich also anzeigen?
-	{
-        // Throw, if no data is available
-		if (bCache)
-			throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
-		else
-			throw SyntaxError(SyntaxError::NO_DATA_AVAILABLE, "", SyntaxError::invalid_position);
-	}
+	else
+        throw SyntaxError(SyntaxError::NO_CACHED_DATA, "", SyntaxError::invalid_position);
 }
 
 
@@ -483,123 +338,78 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
 /// \brief This function handles appending data
 /// sets to already existing data.
 ///
-/// \param __sCmd const string&
-/// \param _data Datafile&
-/// \param _option Settings&
+/// \param cmdParser CommandLineParser&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void append_data(const string& __sCmd, MemoryManager& _data, Settings& _option)
+void append_data(CommandLineParser& cmdParser)
 {
-	string sCmd = __sCmd;
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
 	// Copy the default path and the path tokens
-	int nArgument;
-	string sArgument;
+	int nArgument = 0;
+	std::string sFileList = cmdParser.parseExprAsString();
 
-	// Get string variable values, if needed
-	if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-		NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
+    // If the command expression contains the parameter "all" and the
+    // argument (i.e. the filename) contains wildcards
+    if (cmdParser.hasParam("all") && (sFileList.find('*') != string::npos || sFileList.find('?') != string::npos))
+    {
+        // Insert the default loadpath, if no path is passed
+        if (sFileList.find('/') == string::npos)
+            sFileList = "<loadpath>/" + sFileList;
 
-    // Add quotation marks around the argument
-    // Assuming that "app" is the relevant parameter in the command expression
-	addArgumentQuotes(sCmd, "app");
+        // Get the file list, which fulfills the file path scheme
+        vector<string> vFilelist = getFileList(sFileList, _option, true);
 
-	// Parse the arguments if they contain strings. The argument is returned
-	// in the corresponding passed argument string variable
-	if (extractFirstParameterStringValue(sCmd, sArgument))
-	{
-	    // If the command expression contains the parameter "all" and the
-	    // argument (i.e. the filename) contains wildcards
-		if (findParameter(sCmd, "all") && (sArgument.find('*') != string::npos || sArgument.find('?') != string::npos))
-		{
-		    // Insert the default loadpath, if no path is passed
-			if (sArgument.find('/') == string::npos)
-				sArgument = "<loadpath>/" + sArgument;
+        // Ensure that at least one file exists
+        if (!vFilelist.size())
+            throw SyntaxError(SyntaxError::FILE_NOT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position, sFileList);
 
-            // Get the file list, which fulfills the file path scheme
-			vector<string> vFilelist = getFileList(sArgument, _option, true);
-
-			// Ensure that at least one file exists
-			if (!vFilelist.size())
-				throw SyntaxError(SyntaxError::FILE_NOT_EXIST, __sCmd, SyntaxError::invalid_position, sArgument);
-
-			// Go through all elements in the vFilelist list
-			for (unsigned int i = 0; i < vFilelist.size(); i++)
-			{
-			    // Load the data. The melting of multiple files
-			    // is processed automatically
-                _data.openFile(vFilelist[i]);
-				}
-
-			// Inform the user and return
-			if (!_data.isEmpty("data") && _option.systemPrints())
-				NumeReKernel::print(LineBreak(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sArgument, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))), _option));
-
-			return;
-		}
-
-		NumeRe::FileHeaderInfo info;
-
-        // Simply load the data directly -> Melting is done automatically
-			if (findParameter(sCmd, "head", '=') || findParameter(sCmd, "h", '='))
-			{
-				if (findParameter(sCmd, "head", '='))
-					nArgument = findParameter(sCmd, "head", '=') + 4;
-				else
-					nArgument = findParameter(sCmd, "h", '=') + 1;
-				nArgument = StrToInt(getArgAtPos(sCmd, nArgument));
-            info = _data.openFile(sArgument, false, nArgument);
-			}
-			else
-            info = _data.openFile(sArgument);
-
-			// Inform the user
-        if (!_data.isEmpty("data") && _option.systemPrints())
-            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)), _option));
-
+        // Go through all elements in the vFilelist list
+        for (size_t i = 0; i < vFilelist.size(); i++)
+        {
+            // Load the data. The melting of multiple files
+            // is processed automatically
+            _data.openFile(vFilelist[i]);
         }
-	}
 
+        // Inform the user and return
+        if (!_data.isEmpty("data") && _option.systemPrints())
+            NumeReKernel::print(LineBreak(_lang.get("BUILTIN_APPENDDATA_ALL_SUCCESS", toString((int)vFilelist.size()), sFileList, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))), _option));
 
-/////////////////////////////////////////////////
-/// \brief This function frees the passed
-/// Datafile object.
-///
-/// \param
-/// \param
-/// \return
-///
-/////////////////////////////////////////////////
-void remove_data(MemoryManager& _data, Settings& _option, bool bIgnore)
-{
-    // Only if data is available
-	if (!_data.isEmpty("data"))
-	{
-	    // If the flag "ignore" is not set, ask the user for confirmation
-		if (!bIgnore)
-		{
-			string c = "";
-			NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_CONFIRM"), _option));
-			NumeReKernel::printPreFmt("|\n|<- ");
-			NumeReKernel::getline(c);
+        return;
+    }
 
-			if (c != _lang.YES())
-			{
-				NumeReKernel::print(_lang.get("COMMON_CANCEL"));
-				return;
-			}
-		}
+    NumeRe::FileHeaderInfo info;
 
-		    // simply remove the data and inform the user, if the output is allowed
-			_data.removeData();
+    // Simply load the data directly -> Melting is done automatically
+    if (cmdParser.hasParam("head") || cmdParser.hasParam("h"))
+    {
+        if (cmdParser.hasParam("head"))
+        {
+            auto vPar = cmdParser.getParameterValueAsNumericalValue("head");
 
-			if (_option.systemPrints())
-                NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_SUCCESS"), _option));
-		}
-	else if (_option.systemPrints())
-		NumeReKernel::print(LineBreak(_lang.get("BUILTIN_REMOVEDATA_NO_DATA"), _option));
-	}
+            if (vPar.size())
+                nArgument = intCast(vPar.front());
+        }
+        else
+        {
+            auto vPar = cmdParser.getParameterValueAsNumericalValue("h");
+
+            if (vPar.size())
+                nArgument = intCast(vPar.front());
+        }
+
+        info = _data.openFile(sFileList, false, nArgument);
+    }
+    else
+        info = _data.openFile(sFileList);
+
+        // Inform the user
+    if (!_data.isEmpty("data") && _option.systemPrints())
+        NumeReKernel::print(LineBreak(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)), _option));
+}
 
 
 /////////////////////////////////////////////////
@@ -637,13 +447,13 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 			}
 		}
 
-			string sAutoSave = _option.getSavePath() + "/cache.tmp";
-			string sCache_file = _option.getExePath() + "/numere.cache";
+        string sAutoSave = _option.getSavePath() + "/cache.tmp";
+        string sCache_file = _option.getExePath() + "/numere.cache";
 
-			// Clear the complete cache and remove the cache files
+        // Clear the complete cache and remove the cache files
         _data.removeTablesFromMemory();
-			remove(sAutoSave.c_str());
-			remove(sCache_file.c_str());
+        remove(sAutoSave.c_str());
+        remove(sCache_file.c_str());
 
 		// Inform the user, if printing is allowed
 		if (_option.systemPrints())
@@ -651,7 +461,7 @@ void clear_cache(MemoryManager& _data, Settings& _option, bool bIgnore)
 	}
 	else if (_option.systemPrints())
 		NumeReKernel::print(LineBreak(_lang.get("BUILTIN_CLEARCACHE_EMPTY"), _option));
-	}
+}
 
 
 /////////////////////////////////////////////////
@@ -749,25 +559,25 @@ static bool searchAndDeleteCluster(const string& sCluster, Parser& _parser, Memo
 /// \brief This function removes one or multiple
 /// entries in the selected table or cluster.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool deleteCacheEntry(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+bool deleteCacheEntry(CommandLineParser& cmdParser)
 {
+    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
 	bool bSuccess = false;
 
 	// Remove the command from the command line
-	sCmd.erase(0, findCommand(sCmd).nPos + findCommand(sCmd).sString.length());
+	std::string sExpr = cmdParser.getExpr();
 
 	// As long as a next argument may be extracted
-	while (getNextArgument(sCmd, false).length())
+	while (sExpr.length())
 	{
 	    // Get the next argument
-		string sCache = getNextArgument(sCmd, true);
+		string sCache = getNextArgument(sExpr, true);
 
         // Try to find the current cache in the list of available caches
 		StripSpaces(sCache);
@@ -790,42 +600,32 @@ bool deleteCacheEntry(string& sCmd, Parser& _parser, MemoryManager& _data, const
 /// \brief This function copies whole chunks of
 /// data between tables.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool CopyData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+bool CopyData(CommandLineParser& cmdParser)
 {
-	string sToCopy = "";
-	string sTarget = "";
-	bool bTranspose = false;
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
-	Indices _iCopyIndex;
+	bool bTranspose = cmdParser.hasParam("transpose");
 	Indices _iTargetIndex;
 
-	// Find the transpose flag
-	if (findParameter(sCmd, "transpose"))
-		bTranspose = true;
-
     // Get the target from the option or use the default one
-    sTarget = evaluateTargetOptionInCommand(sCmd, "table", _iTargetIndex, _parser, _data, _option);
-
-    // Isolate the expression
-	sToCopy = sCmd.substr(sCmd.find(' '));
+    std::string sTarget = cmdParser.getTargetTable(_iTargetIndex, "table");
 
 	// Get the actual source data name and the corresponding indices
-	sToCopy = getSourceForDataOperation(sToCopy, _iCopyIndex, _parser, _data, _option);
-	if (!sToCopy.length())
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    accessParser.evalIndices();
+
+    if (!accessParser.getDataObject().length())
         return false;
 
     // Apply the transpose flag on the indices, if necessary
-	evaluateTransposeForDataOperation(sTarget, _iCopyIndex, _iTargetIndex, _data, bTranspose);
+	evaluateTransposeForDataOperation(sTarget, accessParser.getIndices(), _iTargetIndex, _data, bTranspose);
 
 	// Perform the actual data operation. Move is set to false
-	performDataOperation(sToCopy, sTarget, _iCopyIndex, _iTargetIndex, _data, false, bTranspose);
+	performDataOperation(accessParser.getDataObject(), sTarget, accessParser.getIndices(), _iTargetIndex, _data, false, bTranspose);
 
 	return true;
 }
@@ -835,89 +635,38 @@ bool CopyData(string& sCmd, Parser& _parser, MemoryManager& _data, const Setting
 /// \brief This function will move the selected
 /// part of a data table to a new location.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool moveData(string& sCmd, Parser& _parser, MemoryManager& _data, const Settings& _option)
+bool moveData(CommandLineParser& cmdParser)
 {
-	string sToMove = "";
-	string sTarget = "";
-	bool bTranspose = false;
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
-	Indices _iMoveIndex;
+	bool bTranspose = cmdParser.hasParam("transpose");
 	Indices _iTargetIndex;
 
-	// Find the transpose flag
-	if (findParameter(sCmd, "transpose"))
-		bTranspose = true;
-
     // Get the target expression from the option. The default one is empty and will raise an error
-	sTarget = evaluateTargetOptionInCommand(sCmd, "", _iTargetIndex, _parser, _data, _option);
+	std::string sTarget = cmdParser.getTargetTable(_iTargetIndex, "");
 
 	// If the target cache name is empty, raise an error
 	if (!sTarget.length())
         return false;
 
-    // Isolate the expression
-	sToMove = sCmd.substr(sCmd.find(' '));
-
 	// Get the actual source data name and the corresponding indices
-    sToMove = getSourceForDataOperation(sToMove, _iMoveIndex, _parser, _data, _option);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+    accessParser.evalIndices();
 
-	if (!sToMove.length())
+    if (!accessParser.getDataObject().length())
         return false;
 
     // Apply the transpose flag on the indices, if necessary
-	evaluateTransposeForDataOperation(sTarget, _iMoveIndex, _iTargetIndex, _data, bTranspose);
+	evaluateTransposeForDataOperation(sTarget, accessParser.getIndices(), _iTargetIndex, _data, bTranspose);
 
 	// Perform the actual data operation. Move is set to true
-    performDataOperation(sToMove, sTarget, _iMoveIndex, _iTargetIndex, _data, true, bTranspose);
+    performDataOperation(accessParser.getDataObject(), sTarget, accessParser.getIndices(), _iTargetIndex, _data, true, bTranspose);
 
     return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function gets the source for a
-/// data operation like copy and move.
-///
-/// \param sExpression const string&
-/// \param _idx Indices&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
-/// \return string
-///
-/////////////////////////////////////////////////
-static string getSourceForDataOperation(const string& sExpression, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option)
-{
-    string sSourceForFileOperation = "";
-
-    // Try to find the corresponding data table in the set of available ones
-    DataAccessParser _accessParser(sExpression);
-
-    if (_accessParser.getDataObject().length())
-    {
-        sSourceForFileOperation = _accessParser.getDataObject();
-        _idx = _accessParser.getIndices();
-
-        if (!isValidIndexSet(_idx) || _accessParser.isCluster())
-            return "";
-
-        // Evaluate the indices
-        if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getLines(sSourceForFileOperation, false)-1);
-
-        if (_idx.col.isOpenEnd())
-            _idx.col.setRange(0, _data.getCols(sSourceForFileOperation, false)-1);
-    }
-
-	// Return the name of the table
-    return sSourceForFileOperation;
 }
 
 
@@ -1074,16 +823,15 @@ static void performDataOperation(const string& sSource, const string& sTarget, c
 /// is called by sortData, if the selected data
 /// object equals "string".
 ///
-/// \param sCmd string&
+/// \param cmdParser CommandLineParser&
 /// \param _idx Indices&
-/// \param _parser Parser&
-/// \param _data Datafile&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, MemoryManager& _data)
+static bool sortStrings(CommandLineParser& cmdParser, Indices& _idx)
 {
     vector<int> vSortIndex;
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Evalulate special index values
 	if (_idx.row.isOpenEnd())
@@ -1094,7 +842,7 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, MemoryMana
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = _data.sortStringElements(_idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), sCmd.substr(11));
+	vSortIndex = _data.sortStringElements(_idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), cmdParser.getParameterList());
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1106,11 +854,10 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, MemoryMana
 			vDoubleSortIndex.push_back(vSortIndex[i]);
 
         // Set the vector name and set the vector for the parser
-		sCmd = "_~sortIndex[]";
-		_parser.SetVectorVar(sCmd, vDoubleSortIndex);
+		cmdParser.setReturnValue(vDoubleSortIndex);
 	}
 	else
-		sCmd.clear(); // simply clear, if the user didn't request a sorting index
+		cmdParser.clearReturnValue(); // simply clear, if the user didn't request a sorting index
 
     // Return true
 	return true;
@@ -1122,18 +869,16 @@ static bool sortStrings(string& sCmd, Indices& _idx, Parser& _parser, MemoryMana
 /// and is called by sortData, if the selected
 /// data object equals a cluster identifier.
 ///
-/// \param sCmd string&
+/// \param cmdParser CommandLineParser&
 /// \param sCluster const string&
 /// \param _idx Indices&
-/// \param _parser Parser&
-/// \param _data Datafile&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Parser& _parser, MemoryManager& _data)
+static bool sortClusters(CommandLineParser& cmdParser, const string& sCluster, Indices& _idx)
 {
     vector<int> vSortIndex;
-    NumeRe::Cluster& cluster = _data.getCluster(sCluster);
+    NumeRe::Cluster& cluster = NumeReKernel::getInstance()->getMemoryManager().getCluster(sCluster);
 
     // Evalulate special index values
 	if (_idx.row.isOpenEnd())
@@ -1141,7 +886,7 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = cluster.sortElements(_idx.row.front(), _idx.row.back(), sCmd.substr(5 + sCluster.length()));
+	vSortIndex = cluster.sortElements(_idx.row.front(), _idx.row.back(), cmdParser.getParameterList());
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1153,11 +898,10 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 			vDoubleSortIndex.push_back(vSortIndex[i]);
 
         // Set the vector name and set the vector for the parser
-		sCmd = "_~sortIndex[]";
-		_parser.SetVectorVar(sCmd, vDoubleSortIndex);
+		cmdParser.setReturnValue(vDoubleSortIndex);
 	}
 	else
-		sCmd.clear(); // simply clear, if the user didn't request a sorting index
+		cmdParser.clearReturnValue(); // simply clear, if the user didn't request a sorting index
 
     // Return true
 	return true;
@@ -1169,40 +913,38 @@ static bool sortClusters(string& sCmd, const string& sCluster, Indices& _idx, Pa
 /// corresponding member function of the Datafile
 /// object.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool sortData(CommandLineParser& cmdParser)
 {
 	vector<int> vSortIndex;
-	DataAccessParser _accessParser(sCmd);
+	DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
 
 	if (!_accessParser.getDataObject().length())
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
 	// Get the indices
 	Indices& _idx = _accessParser.getIndices();
 
 	// Ensure that the indices are reasonable
 	if (!isValidIndexSet(_idx))
-		throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, "", _idx.row.to_string() + ", " + _idx.col.to_string());
+		throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), "", _idx.row.to_string() + ", " + _idx.col.to_string());
 
 	// If the current cache equals to "string", leave the function at
 	// this point and redirect the control to the string sorting
 	// function
 	if (_accessParser.getDataObject() == "string")
-        return sortStrings(sCmd, _idx, _parser, _data);
+        return sortStrings(cmdParser, _idx);
 
     // If the current cache equals a cluster, leave the function at
 	// this point and redirect the control to the cluster sorting
 	// function
 	if (_accessParser.isCluster())
-        return sortClusters(sCmd, _accessParser.getDataObject(), _idx, _parser, _data);
+        return sortClusters(cmdParser, _accessParser.getDataObject(), _idx);
+
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
 	// Evalulate special index values
 	if (_idx.row.isOpenEnd())
@@ -1212,7 +954,7 @@ bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefin
 
     // Perform the actual sorting operation
     // The member function will be able to handle the remaining command line parameters by itself
-	vSortIndex = _data.sortElements(_accessParser.getDataObject(), _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), sCmd.substr(5 + _accessParser.getDataObject().length()));
+	vSortIndex = _data.sortElements(_accessParser.getDataObject(), _idx.row.front(), _idx.row.back(), _idx.col.front(), _idx.col.back(), cmdParser.getParameterList());
 
 	// If the sorting index contains elements, the user had requested them
 	if (vSortIndex.size())
@@ -1223,11 +965,10 @@ bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefin
 			vDoubleSortIndex.push_back(vSortIndex[i]);
 
         // Set the vector name and set the vector for the parser
-		sCmd = "_~sortIndex[]";
-		_parser.SetVectorVar(sCmd, vDoubleSortIndex);
+		cmdParser.setReturnValue(vDoubleSortIndex);
 	}
 	else
-		sCmd.clear(); // simply clear, if the user didn't request a sorting index
+		cmdParser.clearReturnValue(); // simply clear, if the user didn't request a sorting index
 
     // Return true
 	return true;
@@ -1238,71 +979,29 @@ bool sortData(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDefin
 /// \brief This function writes the string
 /// contents in the command to a file.
 ///
-/// \param sCmd string&
-/// \param _data Datafile&
-/// \param _option Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
+bool writeToFile(CommandLineParser& cmdParser)
 {
 	fstream fFile;
 	string sFileName;
-	string sExpression;
-	string sParams;
-	string sArgument;
+
 	bool bAppend = false;
 	bool bTrunc = true;
-	bool bNoQuotes = false;
-	bool bKeepEmptyLines = false;
+	bool bNoQuotes = cmdParser.hasParam("nq") || cmdParser.hasParam("noquotes");
+	bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");
 	FileSystem _fSys;
-
-	// Set default tokens and default path
-	_fSys.setTokens(_option.getTokenPaths());
-	_fSys.setPath(_option.getExePath(), false, _option.getExePath());
+	_fSys.initializeFromKernel();
 
 	// Try to find the parameter string
-	if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
+	if (cmdParser.getParameterList().length())
 	{
-	    // Extract the parameters
-		if (sCmd.find("-set") != string::npos)
-		{
-			sParams = sCmd.substr(sCmd.find("-set"));
-			sCmd.erase(sCmd.find("-set"));
-		}
-		else
-		{
-			sParams = sCmd.substr(sCmd.find("--"));
-			sCmd.erase(sCmd.find("--"));
-		}
-
 		// Get the file name
-		if (findParameter(sParams, "file", '='))
+		if (cmdParser.hasParam("file"))
 		{
-			if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))
-				NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
-
-			addArgumentQuotes(sParams, "file");
-			extractFirstParameterStringValue(sParams, sFileName);
-			StripSpaces(sFileName);
-
-			if (!sFileName.length())
-				return false;
-
-			string sExt = "";
-
-			if (sFileName.find('.') != string::npos)
-				sExt = sFileName.substr(sFileName.rfind('.'));
-
-			// Some file extensions are protected
-			if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
-				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sExt);
-
-			// Declare the current file extension as valid for the current process
-			_fSys.declareFileType(sExt);
-
-			// Create a valid file name
-			sFileName = _fSys.ValidFileName(sFileName, sExt);
+		    sFileName = cmdParser.getFileParameterValue(".txt", "<savepath>", "");
 
 			// Scripts, procedures and data files may not be written directly
 			// this avoids reloads during the execution and other unexpected
@@ -1318,27 +1017,20 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 				else if (sFileName.substr(sFileName.rfind('.')) == ".ndat")
 					sErrorToken = "NumeRe-Datenfile";
 
-				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sErrorToken);
+				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, cmdParser.getCommandLine(), SyntaxError::invalid_position, sErrorToken);
 			}
 		}
 
-		// Avoid quotation marks
-		if (findParameter(sParams, "noquotes") || findParameter(sParams, "nq"))
-			bNoQuotes = true;
-
-        if (findParameter(sParams, "keepdim") || findParameter(sParams, "k"))
-            bKeepEmptyLines = true;
-
         // Get the file open mode
-		if (findParameter(sParams, "mode", '='))
+        std::string sMode = cmdParser.getParameterValue("mode");
+
+		if (sMode.length())
 		{
-			if (getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "append"
-					|| getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "app")
+			if (sMode == "append" || sMode == "app")
 				bAppend = true;
-			else if (getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "trunc")
+			else if (sMode == "trunc")
 				bTrunc = true;
-			else if (getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "override"
-					 || getArgAtPos(sParams, findParameter(sParams, "mode", '=') + 4) == "overwrite")
+			else if (sMode == "override" || sMode == "overwrite")
 			{
 				bAppend = false;
 				bTrunc = false;
@@ -1350,20 +1042,21 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 
 	// Ensure that a filename is available
 	if (!sFileName.length())
-		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
+		throw SyntaxError(SyntaxError::NO_FILENAME, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Extract the expression
-	sExpression = sCmd.substr(findCommand(sCmd).nPos + findCommand(sCmd).sString.length());
+	std::string sExpression = cmdParser.getExpr();
 
 	// Parse the expression, which should be a string
-	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpression) || _data.containsClusters(sExpression))
+	if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sExpression)
+        || NumeReKernel::getInstance()->getMemoryManager().containsClusters(sExpression))
 	{
 		sExpression += " -komq";
 		string sDummy = "";
 		NumeReKernel::getInstance()->getStringParser().evalAndFormat(sExpression, sDummy, true);
 	}
 	else
-		throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, sCmd, SyntaxError::invalid_position);
+		throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
 	// Open the file in the selected mode
 	if (bAppend)
@@ -1380,18 +1073,18 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 
 	// Ensure that the file is read- and writable
 	if (fFile.fail())
-		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position, sFileName);
+		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, cmdParser.getCommandLine(), SyntaxError::invalid_position, sFileName);
 
 	// Ensure that the expression has a length and is not only an empty quotation marks pair
 	if ((!sExpression.length() || sExpression == "\"\"") && !bKeepEmptyLines)
-		throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, sCmd, SyntaxError::invalid_position);
+		throw SyntaxError(SyntaxError::NO_STRING_FOR_WRITING, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Write the expression linewise
     // Add linebreaks after each subexpression
 	while (sExpression.length())
 	{
 	    // get the next argument
-		sArgument = getNextArgument(sExpression, true);
+		std::string sArgument = getNextArgument(sExpression, true);
 		StripSpaces(sArgument);
 
 		// Remove quotation marks if desired
@@ -1421,6 +1114,7 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 	// close the file stream if it is open and return
 	if (fFile.is_open())
 		fFile.close();
+
 	return true;
 }
 
@@ -1430,59 +1124,35 @@ bool writeToFile(string& sCmd, MemoryManager& _data, Settings& _option)
 /// file as strings and copies them to a
 /// temporary string vector variable.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
+bool readFromFile(CommandLineParser& cmdParser)
 {
-	string sFileName = "";
 	string sInput = "";
-	string sCommentEscapeSequence = "";
-	string sParams = "";
+	string sCommentEscapeSequence = cmdParser.getParameterValueAsString("comments", "");
 	ifstream fFile;
 
-	bool bKeepEmptyLines = false;
+	bool bKeepEmptyLines = cmdParser.hasParam("keepdim") || cmdParser.hasParam("k");
 
-	// Get the parameter list
-	if (sCmd.rfind('-') != string::npos && !isInQuotes(sCmd, sCmd.rfind('-')))
-	{
-		sParams = sCmd.substr(sCmd.rfind('-'));
-		sCmd.erase(sCmd.rfind('-'));
-	}
-
-	// Find the comment escape sequence in the parameter list if available
-	if (findParameter(sParams, "comments", '='))
-	{
-		sCommentEscapeSequence = getArgAtPos(sParams, findParameter(sParams, "comments", '=') + 8);
-		if (sCommentEscapeSequence != " ")
-			StripSpaces(sCommentEscapeSequence);
-		while (sCommentEscapeSequence.find("\\t") != string::npos)
-			sCommentEscapeSequence.replace(sCommentEscapeSequence.find("\\t"), 2, "\t");
-	}
-
-	// Determine, whether empty lines shall be kept
-	if (findParameter(sParams, "keepdim") || findParameter(sParams, "k"))
-        bKeepEmptyLines = true;
+    if (sCommentEscapeSequence != " ")
+        StripSpaces(sCommentEscapeSequence);
+    while (sCommentEscapeSequence.find("\\t") != string::npos)
+        sCommentEscapeSequence.replace(sCommentEscapeSequence.find("\\t"), 2, "\t");
 
 	// Get the source file name from the command string or the parameter list
-	sFileName = getFilenameFromCommandString(sCmd, sParams, ".txt", _parser, _data, _option);
+    std::string sFileName = cmdParser.getExprAsFileName(".txt");
 
 	// Ensure that a filename is present
 	if (!sFileName.length())
-		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
-
-    // Clear the command line (it will contain the contents of the read file)
-	sCmd.clear();
+		throw SyntaxError(SyntaxError::NO_FILENAME, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
 	// Open the file and ensure that it is readable
 	fFile.open(sFileName.c_str());
 
 	if (fFile.fail())
-		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sFileName);
+		throw SyntaxError(SyntaxError::CANNOT_READ_FILE, cmdParser.getCommandLine(), SyntaxError::invalid_position, sFileName);
 
 	// create a new vector for the file's contents
 	vector<string> vFileContents;
@@ -1542,9 +1212,9 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
     // Create a new temporary variable, if we actually
     // read something from the file
     if (vFileContents.size())
-        sCmd = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(vFileContents);
+        cmdParser.setReturnValue(vFileContents);
 	else
-		sCmd = "\"\"";
+		cmdParser.setReturnValue("\"\"");
 
     // Close the file
 	fFile.close();
@@ -1558,49 +1228,30 @@ bool readFromFile(string& sCmd, Parser& _parser, MemoryManager& _data, Settings&
 /// \brief This function reads image data from an
 /// image file and stores it as a cache table.
 ///
-/// \param sCmd string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option Settings&
+/// \param CommandLineParser& cmdParser
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _option)
+bool readImage(CommandLineParser& cmdParser)
 {
-	string sFileName;
-	string sInput;
-	string sParams;
-	string sTargetCache = "image";
-	string sChannels = "grey";
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
+	std::string sChannels = "grey";
 	Indices _idx;
-	vector<double> vIndices;
-
-	string sExpr = sCmd;
-
-	Match _match = findCommand(sCmd, "imread");
-
-	sExpr.replace(_match.nPos, string::npos, "_~imread[~_~]");
-	sCmd.erase(0, _match.nPos);
+	std::vector<double> vIndices;
 
 	// Get the target cache from the command line or use the default one
-	sTargetCache = evaluateTargetOptionInCommand(sCmd, "image", _idx, _parser, _data, _option);
-
-	// Separate the parameter list from the command expression
-	if (sCmd.rfind('-') != string::npos && !isInQuotes(sCmd, sCmd.rfind('-')))
-	{
-		sParams = sCmd.substr(sCmd.rfind('-'));
-		sCmd.erase(sCmd.rfind('-'));
-	}
+	std::string sTargetCache = cmdParser.getTargetTable(_idx, "image");
 
 	// Get the file name from the command line or the parameter list
-	sFileName = getFilenameFromCommandString(sCmd, sParams, ".bmp", _parser, _data, _option);
+	std::string sFileName = cmdParser.getExprAsFileName(".bmp");
 
-	if (findParameter(sParams, "channels", '='))
-        sChannels = getArgAtPos(sParams, findParameter(sParams, "channels", '=')+8);
+	if (cmdParser.hasParam("channels"))
+        sChannels = cmdParser.getParameterValueAsString("channels", "grey");
 
 	// Ensure that a filename is present
 	if (!sFileName.length())
-		throw SyntaxError(SyntaxError::NO_FILENAME, sCmd, SyntaxError::invalid_position);
+		throw SyntaxError(SyntaxError::NO_FILENAME, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Initialize all wxWidgets image handlers (should already be available, though)
 	wxInitAllImageHandlers();
@@ -1711,132 +1362,9 @@ bool readImage(string& sCmd, Parser& _parser, MemoryManager& _data, Settings& _o
 		}
 	}
 
-	_parser.SetVectorVar("_~imread[~_~]", vIndices);
-	sCmd = sExpr;
+	cmdParser.setReturnValue(vIndices);
 
     // return true
 	return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function extracts the filename
-/// from a given (and already separated) command
-/// string and returns it as a valid file name.
-///
-/// \param sCmd string&
-/// \param sParams string&
-/// \param sDefExt const string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option Settings&
-/// \return string
-///
-/////////////////////////////////////////////////
-static string getFilenameFromCommandString(string& sCmd, string& sParams, const string& sDefExt, Parser& _parser, MemoryManager& _data, Settings& _option)
-{
-    string sFileName;
-    string sExt = sDefExt;
-    FileSystem _fSys;
-	_fSys.setTokens(_option.getTokenPaths());
-	_fSys.setPath(_option.getExePath(), false, _option.getExePath());
-
-    // If the parameter list contains "file", use its value
-    // Otherwise use the expression from the command line
-	if (findParameter(sParams, "file", '='))
-	{
-	    // Parameter available
-		if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sParams))
-			NumeReKernel::getInstance()->getStringParser().getStringValues(sParams);
-
-        if (_data.containsTablesOrClusters(sParams))
-        if (_data.containsTablesOrClusters(sParams))
-            getDataElements(sParams, _parser, _data, _option);
-		addArgumentQuotes(sParams, "file");
-
-		// Parse the string argument and return it in the second argument
-		extractFirstParameterStringValue(sParams, sFileName);
-
-		// Strip the spaces and ensure that there are other characters
-		StripSpaces(sFileName);
-		if (!sFileName.length())
-			return "";
-
-        // If the filename contains a extension, extract it here and declare it as a valid file type
-		if (sFileName.find('.') != string::npos)
-		{
-			unsigned int nPos = sFileName.find_last_of('/');
-			if (nPos == string::npos)
-				nPos = 0;
-			if (sFileName.find('\\', nPos) != string::npos)
-				nPos = sFileName.find_last_of('\\');
-			if (sFileName.find('.', nPos) != string::npos)
-				sExt = sFileName.substr(sFileName.rfind('.'));
-
-            // There are some protected ones
-			if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
-			{
-				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sExt);
-			}
-
-			// Declare the extension
-			_fSys.declareFileType(sExt);
-		}
-	}
-	else
-	{
-	    // Use the expression
-		if (NumeReKernel::getInstance()->getStringParser().containsStringVars(sCmd))
-			NumeReKernel::getInstance()->getStringParser().getStringValues(sCmd);
-
-        if (_data.containsTablesOrClusters(sCmd))
-            getDataElements(sCmd, _parser, _data, _option);
-
-		// Get the expression
-		if (sCmd.find(' ') != string::npos)
-            sFileName = sCmd.substr(sCmd.find_first_not_of(' ', sCmd.find(' ')));
-        else
-            sFileName = sCmd;
-
-		// Strip the spaces and ensure that there's something left
-		StripSpaces(sFileName);
-		if (!sFileName.length())
-			return "";
-
-        // If there's a string in the file name, parse it here
-		if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sFileName))
-		{
-			sFileName += " -nq";
-			string sDummy;
-			NumeReKernel::getInstance()->getStringParser().evalAndFormat(sFileName, sDummy, true);
-		}
-
-		// If the filename contains a extension, extract it here and declare it as a valid file type
-		if (sFileName.find('.') != string::npos)
-		{
-			unsigned int nPos = sFileName.find_last_of('/');
-			if (nPos == string::npos)
-				nPos = 0;
-			if (sFileName.find('\\', nPos) != string::npos)
-				nPos = sFileName.find_last_of('\\');
-			if (sFileName.find('.', nPos) != string::npos)
-				sExt = sFileName.substr(sFileName.rfind('.'));
-
-            // There are some protected ones
-			if (sExt == ".exe" || sExt == ".dll" || sExt == ".sys")
-			{
-				throw SyntaxError(SyntaxError::FILETYPE_MAY_NOT_BE_WRITTEN, sCmd, SyntaxError::invalid_position, sExt);
-			}
-
-			// Declare the extension
-			_fSys.declareFileType(sExt);
-		}
-	}
-
-	// Get a valid file name
-    sFileName = _fSys.ValidFileName(sFileName, sExt);
-
-    // Return the file name
-    return sFileName;
 }
 
