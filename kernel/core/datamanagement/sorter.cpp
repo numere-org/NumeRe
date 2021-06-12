@@ -145,8 +145,6 @@ bool Sorter::qSortImplementation(int* nIndex, int nElements, int nColumn, long l
 			int nTemp = nIndex[i];
 			nIndex[i] = nIndex[j];
 			nIndex[j] = nTemp;
-			i++;
-			j--;
 		}
 	}
 	while (i < j);

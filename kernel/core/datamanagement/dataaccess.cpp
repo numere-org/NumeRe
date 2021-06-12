@@ -522,7 +522,9 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 		    // If the cluster contains only doubles,
 		    // create a vector, otherwise insert the
 		    // mixed vector representation
-		    if (cluster.isDouble())
+		    if (!cluster.size())
+                vEntityContents.push_back(NAN);
+		    else if (cluster.isDouble())
             {
                 // Create the vector using the indices
                 for (size_t i = 0; i < _idx.row.size(); i++)
