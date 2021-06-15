@@ -23,10 +23,238 @@
 #include "../../kernel/core/utils/tools.hpp"
 #include "../../common/datastructures.h"
 #include "../../common/http.h"
+#include "../controls/searchctrl.hpp"
 
 #include <fstream>
 #include <vector>
 #include <algorithm>
+
+
+#define WINDOWWIDTH 1000
+#define CTRLWIDTH WINDOWWIDTH-50
+#define WINDOWHEIGHT 600
+
+
+
+/////////////////////////////////////////////////
+/// \brief This class specializes the generic
+/// search control to interact with the package
+/// list of the package repository browser.
+/////////////////////////////////////////////////
+class PackageListSearchCtrl : public SearchCtrl
+{
+    private:
+        wxcode::wxTreeListCtrl* m_associatedCtrl;
+
+    protected:
+        // Interaction functions with the wxTreeCtrl
+        virtual bool selectItem(const wxString& value) override;
+        wxTreeItemId findItem(const wxString& value, wxTreeItemId node);
+        virtual wxArrayString getCandidates(const wxString& enteredText) override;
+        wxArrayString getChildCandidates(const wxString& enteredText, wxTreeItemId node);
+
+    public:
+        PackageListSearchCtrl(wxWindow* parent, wxWindowID id, const wxString& hint = wxEmptyString, const wxString& calltip = wxEmptyString, wxcode::wxTreeListCtrl* associatedCtrl = nullptr) : SearchCtrl(parent, id, wxEmptyString), m_associatedCtrl(associatedCtrl)
+        {
+            // Provide a neat hint to the user, what he
+            // may expect from this control
+            SetHint(hint);
+            wxArrayInt sizes;
+            sizes.Add(450, 1);
+            sizes.Add(200, 1);
+            sizes.Add(CTRLWIDTH-650, 1);
+
+            popUp->SetCallTips(calltip);
+            popUp->SetColSizes(sizes);
+        }
+
+};
+
+
+/////////////////////////////////////////////////
+/// \brief This method searches and selects the
+/// item with the passed label in the associated
+/// tree.
+///
+/// \param value const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool PackageListSearchCtrl::selectItem(const wxString& value)
+{
+    // Ensure that a tree as associated
+    if (m_associatedCtrl)
+    {
+        // Get the root node and the first child
+        wxTreeItemIdValue cookie;
+        wxTreeItemId root = m_associatedCtrl->GetRootItem();
+        wxTreeItemId child = m_associatedCtrl->GetFirstChild(root, cookie);
+
+        // If the child exists, try to find the passed string
+        // in the labels of all childs
+        if (child.IsOk())
+        {
+            wxTreeItemId match = findItem(value[0] == ' ' ? value.substr(1).Lower() : value.Lower(), child);
+
+            // If a label was found, ensure it is visible
+            // and select it
+            if (match.IsOk())
+            {
+                m_associatedCtrl->EnsureVisible(match);
+                m_associatedCtrl->SelectItem(match);
+
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method searches for the tree
+/// item, whose label corresponds to the passed
+/// string.
+///
+/// \param value const wxString&
+/// \param node wxTreeItemId
+/// \return wxTreeItemId
+///
+/////////////////////////////////////////////////
+wxTreeItemId PackageListSearchCtrl::findItem(const wxString& value, wxTreeItemId node)
+{
+    // Go through all siblings
+    do
+    {
+        // Return the current node, if it
+        // corresponds to the passed string
+        if (m_associatedCtrl->GetItemText(node).Lower() == value)
+            return node;
+
+        // Search the first child
+        wxTreeItemIdValue cookie;
+        wxTreeItemId child = m_associatedCtrl->GetFirstChild(node, cookie);
+
+        // If the child exists, try to find the
+        // passed string in its or its siblings
+        // labels
+        if (child.IsOk())
+        {
+            wxTreeItemId match = findItem(value, child);
+
+            // Return the id, if it exists
+            if (match.IsOk())
+                return match;
+        }
+    }
+    while ((node = m_associatedCtrl->GetNextSibling(node)).IsOk());
+
+    // Return an invalid tree item id, if
+    // nothing had been found
+    return wxTreeItemId();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method returns an array of
+/// strings containing possible candidates for
+/// the passed search string.
+///
+/// \param enteredText const wxString&
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
+wxArrayString PackageListSearchCtrl::getCandidates(const wxString& enteredText)
+{
+    // Ensure that a tree control was associated
+    if (m_associatedCtrl)
+    {
+        // Find root node and its child
+        wxTreeItemIdValue cookie;
+        wxTreeItemId root = m_associatedCtrl->GetRootItem();
+        wxTreeItemId child = m_associatedCtrl->GetFirstChild(root, cookie);
+
+        // If the child exists, get all labels of its
+        // siblings and their childs, which are candidates
+        // for the passed string
+        if (child.IsOk())
+            return getChildCandidates(enteredText.Lower(), child);
+    }
+
+    // Return an empty string otherwise
+    return wxArrayString();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This method returns an array of
+/// strings containing possible candiates for the
+/// passed search string, which correspond to the
+/// current tree node, its siblings and its
+/// childs.
+///
+/// \param enteredText const wxString&
+/// \param node wxTreeItemId
+/// \return wxArrayString
+///
+/////////////////////////////////////////////////
+wxArrayString PackageListSearchCtrl::getChildCandidates(const wxString& enteredText, wxTreeItemId node)
+{
+    wxArrayString stringArray;
+    wxArrayString enteredWords = wxStringTokenize(enteredText);
+
+    // Go through all siblings
+    do
+    {
+        size_t nCount = 0;
+        // Append the current label, if it contains the
+        // searched string
+        for (size_t i = 0; i < enteredWords.size(); i++)
+        {
+            if ((m_associatedCtrl->GetItemBold(node) && m_associatedCtrl->GetItemText(node).Lower().find(enteredWords[i]) != std::string::npos)
+                || m_associatedCtrl->GetItemText(node, 1).Lower().find(enteredWords[i]) != std::string::npos
+                || m_associatedCtrl->GetItemText(node, 2).Lower().find(enteredWords[i]) != std::string::npos)
+                nCount++;
+        }
+
+        wxString match;
+
+        // Only add the headline if we had found at least
+        // half of the number of keywords
+        // (otherwise the list will get longer and longer)
+        if (nCount && nCount >= std::rint(2*enteredWords.size() / 3.0))
+            match = m_associatedCtrl->GetItemText(node) + "~" + m_associatedCtrl->GetItemText(node, 1) + "~" + m_associatedCtrl->GetItemText(node, 2);
+
+        // Find the first child of the current node
+        wxTreeItemIdValue cookie;
+        wxTreeItemId child = m_associatedCtrl->GetFirstChild(node, cookie);
+
+        // If the child exists, find the candidates in
+        // its siblings and childs
+        if (child.IsOk())
+        {
+            wxArrayString childArray = getChildCandidates(enteredText, child);
+
+            // If the child array reports a size
+            // we'll add the parent line here
+            if (childArray.size())
+                match = m_associatedCtrl->GetItemText(node) + "~" + m_associatedCtrl->GetItemText(node, 1) + "~" + m_associatedCtrl->GetItemText(node, 2);
+        }
+
+        if (match.length())
+            stringArray.Add(match);
+    }
+    while ((node = m_associatedCtrl->GetNextSibling(node)).IsOk());
+
+    return stringArray;
+}
+
+
+
+
+
+
 
 #define REPO_LOCATION "http://svn.code.sf.net/p/numere/plugins/repository/"
 #define REPO_URL "Repository URL"
@@ -81,7 +309,7 @@ static std::string getTagValue(const std::string& sTaggedString, const std::stri
 /////////////////////////////////////////////////
 PackageRepoBrowser::PackageRepoBrowser(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : ViewerFrame(parent, PACKAGE_REPO_BROWSER_TITLE)
 {
-    SetSize(1000, 600);
+    SetSize(WINDOWWIDTH, WINDOWHEIGHT);
     m_terminal = terminal;
     m_icons = icons;
     m_scriptPath = m_terminal->getPathSettings()[SCRIPTPATH];
@@ -94,6 +322,9 @@ PackageRepoBrowser::PackageRepoBrowser(wxWindow* parent, NumeReTerminal* termina
     m_listCtrl->AddColumn("Packages", 300);
     m_listCtrl->AddColumn("Repository", 500);
     m_listCtrl->AddColumn("Installed", 150);
+
+    PackageListSearchCtrl* treesearch = new PackageListSearchCtrl(panel, wxID_ANY, "Search packages ...", wxEmptyString, m_listCtrl);
+    panel->getMainSizer()->Prepend(treesearch, 0, wxALL | wxEXPAND, 5);
 
     m_statusText = panel->AddStaticText(panel, panel->getMainSizer(), "", wxID_ANY, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT);
     m_progress = panel->CreateGauge(panel, panel->getMainSizer(), wxGA_HORIZONTAL);

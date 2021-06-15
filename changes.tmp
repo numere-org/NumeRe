@@ -30,3 +30,4 @@ Applied	The internal command line parsing structure was farly unified. Command l
 Fixed	Resolved a runtime issue when sorting large, already sorted data sets.
 New	The command "url" can be used to access online resources and to even upload files to a remote FTP server.
 Fixed	The Package Repository Browser can now safely be closed during a transmission operation. Closing might take some seconds until the current operation terminates or times out.
+Added	The Package Repository Browser has now a search functionality.

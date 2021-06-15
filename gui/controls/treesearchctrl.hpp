@@ -22,6 +22,7 @@
 #include "searchctrl.hpp"
 #include <wx/wx.h>
 #include <wx/treectrl.h>
+#include "treelistctrl.h"
 
 
 /////////////////////////////////////////////////
@@ -50,7 +51,6 @@ class TreeSearchCtrl : public SearchCtrl
         }
 
 };
-
 
 #endif // TREESEARCHCTRL_HPP
 
