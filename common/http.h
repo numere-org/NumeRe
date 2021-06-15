@@ -23,10 +23,10 @@
 #include <string>
 #include <exception>
 
-namespace http
+namespace url
 {
     /////////////////////////////////////////////////
-    /// \brief A class for HTTP exceptions.
+    /// \brief A class for URL exceptions.
     /////////////////////////////////////////////////
     class Error : public std::exception
     {
@@ -41,7 +41,8 @@ namespace http
             }
     };
 
-    std::string get(const std::string& url);
+    std::string get(const std::string& sUrl, const std::string& sUserName = "", const std::string& sPassWord = "");
+    size_t put(const std::string& sUrl, const std::string& sFileName, const std::string& sUserName = "", const std::string& sPassWord = "");
 }
 
 #endif // HTTP_H

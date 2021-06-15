@@ -235,7 +235,7 @@ wxThread::ExitCode PackageRepoBrowser::Entry()
                 m_statusText->SetLabel("Status: One or more packages could not be downloaded.");
         }
     }
-    catch (http::Error& e)
+    catch (url::Error& e)
     {
         m_statusText->SetLabel("HTTP Error: " + std::string(e.what()));
         m_progress->SetRange(100);
@@ -294,7 +294,7 @@ void PackageRepoBrowser::OnThreadUpdate(wxThreadEvent& event)
 std::vector<std::string> PackageRepoBrowser::getRepoList(const std::string& sRepoUrl)
 {
     std::vector<std::string> vRepoContents;
-    std::string sRepoContents = http::get(sRepoUrl + createSalt());
+    std::string sRepoContents = url::get(sRepoUrl + createSalt());
     sRepoContents = sRepoContents.substr(sRepoContents.find("<ul>")+4);
     sRepoContents.erase(sRepoContents.find("</ul>"));
 
@@ -355,7 +355,7 @@ void PackageRepoBrowser::populatePackageList(const std::string& sUrl)
     if (sUrl.find(".nscr") == std::string::npos)
         return;
 
-    std::string sCurrentPackage = http::get(sUrl + createSalt());
+    std::string sCurrentPackage = url::get(sUrl + createSalt());
 
     // Get the information
     std::string sInfo = sCurrentPackage.substr(sCurrentPackage.find("<info>"), sCurrentPackage.find("<endinfo>") - sCurrentPackage.find("<info>"));
@@ -695,7 +695,7 @@ void PackageRepoBrowser::resolveDependencies(std::string sDepList, std::vector<s
 /////////////////////////////////////////////////
 bool PackageRepoBrowser::getFileFromRepo(const std::string& sUrl)
 {
-    std::string contents = http::get(sUrl);
+    std::string contents = url::get(sUrl);
     std::string filename = sUrl;
     filename.erase(0, filename.rfind('/')+1);
 

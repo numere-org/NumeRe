@@ -604,10 +604,11 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
 ///
 /// \param sParameter const std::string&
 /// \param sDefaultValue const std::string&
+/// \param stripAlways bool Always strip quotation marks
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string CommandLineParser::getParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue) const
+std::string CommandLineParser::getParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue, bool stripAlways) const
 {
     int nParPos = findParameter(m_parlist, sParameter, '=');
 
@@ -617,7 +618,7 @@ std::string CommandLineParser::getParameterValueAsString(const std::string& sPar
     std::string arg = getArgAtPos(m_parlist, nParPos+sParameter.length(), ARGEXTRACT_PARSED);
     StripSpaces(arg);
 
-    if (arg.find(",") != std::string::npos && arg.find("\"") != std::string::npos)
+    if (!stripAlways && arg.find(",") != std::string::npos && arg.find("\"") != std::string::npos)
         return arg;
     else if (arg.front() == '"' && arg.back() == '"')
         return removeQuotationMarks(arg);

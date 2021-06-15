@@ -183,7 +183,13 @@ wxTreeItemId VariableViewer::AppendVariable(wxTreeItemId rootNode, std::string s
     SetItemText(currentItem, VALUECOLUMN, " " + sVar.substr(0, sVar.find('\t')));
 
     // Create the tooltip and set it
-    tooltip += " = " + sVar.substr(0, sVar.find('\t'));
+    size_t pos = sVar.find('\t');
+
+    if (pos < 1e3)
+        tooltip += " = " + sVar.substr(0, pos);
+    else
+        tooltip += " = " + sVar.substr(0, 500) + "[...]" + sVar.substr(pos-500, pos);
+
     SetItemToolTip(currentItem, tooltip);
 
     // Set the internal variable's name as a

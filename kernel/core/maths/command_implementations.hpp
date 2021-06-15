@@ -53,6 +53,7 @@ void boneDetection(CommandLineParser& cmdParser);
 bool calculateSplines(CommandLineParser& cmdParser);
 void rotateTable(CommandLineParser& cmdParser);
 void particleSwarmOptimizer(CommandLineParser& cmdParser);
+void urlExecute(CommandLineParser& cmdParser);
 
 #endif // COMMAND_IMPLEMENTATIONS_HPP
 

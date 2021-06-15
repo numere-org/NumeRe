@@ -5066,6 +5066,16 @@ static CommandReturnValues cmd_rotate(string& sCmd)
 }
 
 
+static CommandReturnValues cmd_url(string& sCmd)
+{
+    CommandLineParser cmdParser(sCmd, "url", CommandLineParser::CMD_DAT_PAR);
+    urlExecute(cmdParser);
+    sCmd = cmdParser.getReturnValueStatement();
+
+    return COMMAND_HAS_RETURNVALUE;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This static function returns a map of
 /// commands linked to their function
@@ -5208,6 +5218,7 @@ static map<string,CommandFunc> getCommandFunctionsWithReturnValues()
     mCommandFuncMap["seek"] = cmd_seek;
     mCommandFuncMap["sort"] = cmd_sort;
     mCommandFuncMap["stats"] = cmd_stats;
+    mCommandFuncMap["url"] = cmd_url;
     mCommandFuncMap["window"] = cmd_window;
     mCommandFuncMap["zeroes"] = cmd_zeroes;
 

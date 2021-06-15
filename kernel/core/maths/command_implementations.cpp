@@ -28,6 +28,7 @@
 #include "wavelet.hpp"
 #include "../AudioLib/audiofile.hpp"
 #include "../../kernel.hpp"
+#include "../../../common/http.h"
 
 #define TRAPEZOIDAL 1
 #define SIMPSON 2
@@ -4787,6 +4788,83 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
 
     // Create a temporary vector variable
     cmdParser.setReturnValue(vRes);
+}
+
+
+// Forward declaration for urlExecute
+std::string removeQuotationMarks(const std::string&);
+
+
+/////////////////////////////////////////////////
+/// \brief This function implements the url
+/// command providing an interface to http(s) and
+/// (s)ftp URLs.
+///
+/// \param cmdParser CommandLineParser&
+/// \return void
+///
+/////////////////////////////////////////////////
+void urlExecute(CommandLineParser& cmdParser)
+{
+    // Try to get the contents of the desired URL
+    try
+    {
+        // Get URL, username and password
+        std::string sUrl = cmdParser.parseExprAsString();
+        std::string sUserName = cmdParser.getParameterValueAsString("usr", "", true);
+        std::string sPassword = cmdParser.getParameterValueAsString("pwd", "", true);
+
+        // Push the response into a file, if necessary
+        if (cmdParser.hasParam("file"))
+        {
+            std::string sFileName = sUrl.substr(sUrl.rfind("/"));
+
+            if (!sFileName.length())
+                sFileName = "index.html";
+
+            // Get the file parameter value
+            sFileName = cmdParser.getFileParameterValue(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
+
+            if (cmdParser.hasParam("up"))
+            {
+                // Upload the file
+                size_t bytes = url::put(sUrl, sFileName, sUserName, sPassword);
+                cmdParser.setReturnValue(toString(bytes));
+            }
+            else
+            {
+                // Get the response from the server
+                std::string sUrlResponse = url::get(sUrl, sUserName, sPassword);
+
+                // Open the file binary and clean it
+                std::ofstream file(sFileName.c_str(), std::ios_base::trunc | std::ios_base::binary);
+
+                // Stream the response to the file
+                if (file.good())
+                {
+                    file << sUrlResponse;
+                    cmdParser.setReturnValue(toString(sUrlResponse.length()));
+                }
+                else
+                    throw SyntaxError(SyntaxError::CANNOT_OPEN_TARGET, cmdParser.getCommandLine(), sFileName, sFileName);
+            }
+        }
+        else
+        {
+            // Get the response from the server
+            std::string sUrlResponse = url::get(sUrl, sUserName, sPassword);
+
+            // Replace all masked characters in the return value
+            replaceAll(sUrlResponse, "\r\n", "\n");
+            replaceAll(sUrlResponse, "\\", "\\ ");
+            replaceAll(sUrlResponse, "\"", "\\\"");
+            cmdParser.setReturnValue("\"" + sUrlResponse + "\"");
+        }
+    }
+    catch (url::Error& e)
+    {
+        throw SyntaxError(SyntaxError::URL_ERROR, cmdParser.getCommandLine(), cmdParser.parseExprAsString(), e.what());
+    }
 }
 
 

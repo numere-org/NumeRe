@@ -28,3 +28,4 @@ Added	The command "audioread" can read the metadata of or a whole audio file.
 Added	The command "seek" can extract sections of audio files.
 Applied	The internal command line parsing structure was farly unified. Command line parsing issues should now be trackable and resolvable more easily.
 Fixed	Resolved a runtime issue when sorting large, already sorted data sets.
+New	The command "url" can be used to access online resources and to even upload files to a remote FTP server.
