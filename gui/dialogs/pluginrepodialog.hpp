@@ -64,6 +64,7 @@ class PackageRepoBrowser : public ViewerFrame, public wxThreadHelper
         void StartThread(ThreadTask task);
         virtual wxThread::ExitCode Entry();
         void OnThreadUpdate(wxThreadEvent& event);
+        void OnClose(wxCloseEvent& event);
         // End threading part
 
         std::vector<std::string> getRepoList(const std::string& sRepoUrl);

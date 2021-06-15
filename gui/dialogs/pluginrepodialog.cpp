@@ -46,6 +46,7 @@ BEGIN_EVENT_TABLE(PackageRepoBrowser, ViewerFrame)
     EVT_BUTTON(ID_REPODLG_UNINSTALL, PackageRepoBrowser::OnUninstall)
     EVT_TREE_SEL_CHANGED(-1, PackageRepoBrowser::OnItemSelect)
     EVT_THREAD(-1, PackageRepoBrowser::OnThreadUpdate)
+    EVT_CLOSE(PackageRepoBrowser::OnClose)
 END_EVENT_TABLE()
 
 
@@ -205,6 +206,13 @@ wxThread::ExitCode PackageRepoBrowser::Entry()
 
             for (size_t i = 0; i < vRepoContents.size(); i++)
             {
+                // Test, whether the user wants to close the window
+                if (GetThread()->TestDestroy())
+                {
+                    m_task = TASK_NONE;
+                    return (wxThread::ExitCode)0;
+                }
+
                 populatePackageList(vRepoContents[i]);
                 m_progress->SetValue(i+1);
             }
@@ -223,6 +231,13 @@ wxThread::ExitCode PackageRepoBrowser::Entry()
 
             for (size_t i = 0; i < m_vUrls.size(); i++)
             {
+                // Test, wether the user wants to close the window
+                if (GetThread()->TestDestroy())
+                {
+                    m_task = TASK_NONE;
+                    return (wxThread::ExitCode)0;
+                }
+
                 success = success && getFileFromRepo(m_vUrls[i]);
                 m_progress->SetValue(i+1);
             }
@@ -278,6 +293,26 @@ void PackageRepoBrowser::OnThreadUpdate(wxThreadEvent& event)
 
         m_terminal->pass_command("install \"packages/" + m_fileNameToInstall + "\"", false);
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief OnClose event handler. Will terminate
+/// the thread, if it's running.
+///
+/// \param event wxCloseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void PackageRepoBrowser::OnClose(wxCloseEvent& event)
+{
+    if (m_task != TASK_NONE && GetThread() && GetThread()->IsRunning())
+    {
+        if (GetThread()->Delete() != wxTHREAD_NO_ERROR && event.CanVeto())
+            event.Veto();
+    }
+
+    Destroy();
 }
 
 

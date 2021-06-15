@@ -25,6 +25,9 @@
 #include <curl/curl.h>
 #include <fstream>
 
+// Further possible features enabled in cURL:
+// DICT FILE FTPS GOPHER GOPHERS IMAP IMAPS LDAP MQTT POP3 POP3S RTSP SCP SFTP SMB SMBS SMTP SMTPS TELNET TFTP
+
 namespace url
 {
     /////////////////////////////////////////////////
