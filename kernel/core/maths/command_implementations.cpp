@@ -170,7 +170,7 @@ static vector<double> integrateSingleDimensionData(CommandLineParser& cmdParser)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Extract the integration interval
-    std::vector<double> vInterval = cmdParser.parseIntervals(false);
+    IntervalSet ivl = cmdParser.parseIntervals(false);
 
     // Get table name and the corresponding indices
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
@@ -231,10 +231,10 @@ static vector<double> integrateSingleDimensionData(CommandLineParser& cmdParser)
             if (!_cache.isValidElement(i + j, 0, "table") || !_cache.isValidElement(i + j, 1, "table"))
                 break;
 
-            if (vInterval.size() >= 2 && vInterval[0] > _cache.getElement(i, 0, "table"))
+            if (ivl.intervals.size() >= 2 && ivl.intervals[0].front() > _cache.getElement(i, 0, "table"))
                 continue;
 
-            if (vInterval.size() >= 2 && vInterval[1] < _cache.getElement(i + j, 0, "table"))
+            if (ivl.intervals.size() >= 2 && ivl.intervals[0].back() < _cache.getElement(i + j, 0, "table"))
                 break;
 
             // Calculate either the integral, its samples or the corresponding x values
@@ -313,7 +313,7 @@ bool integrate(CommandLineParser& cmdParser)
     }
 
     // Evaluate the parameters
-    std::vector<double> vParVal = cmdParser.parseIntervals(false);
+    std::vector<double> vParVal = cmdParser.parseIntervals(false).convert();
 
     if (vParVal.size() >= 2)
     {
@@ -514,20 +514,19 @@ bool integrate(CommandLineParser& cmdParser)
 /// boundary expression and updates the internal
 /// variables correspondingly.
 ///
-/// \param cmdParser CommandLineParser&
+/// \param ivl IntervalSet&
 /// \param y0 double&
 /// \param y1 double&
 /// \param sIntegrationExpression const string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void refreshBoundaries(CommandLineParser& cmdParser, double& y0, double& y1, const string& sIntegrationExpression)
+static void refreshBoundaries(IntervalSet& ivl, double& y0, double& y1, const string& sIntegrationExpression)
 {
     // Refresh the y boundaries, if necessary
-    std::vector<double> vInts = cmdParser.parseIntervals(false);
-
-    y0 = vInts[2];
-    y1 = vInts[3];
+    ivl[1].refresh();
+    y0 = ivl[1].front();
+    y1 = ivl[1].back();
 
     NumeReKernel::getInstance()->getParser().SetExpr(sIntegrationExpression);
 }
@@ -578,22 +577,22 @@ bool integrate2d(CommandLineParser& cmdParser)
         throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Evaluate the parameters
-    std::vector<double> vParVal = cmdParser.parseIntervals(false);
+    IntervalSet ivl = cmdParser.parseIntervals(false);
 
-    if (vParVal.size() >= 4)
+    if (ivl.intervals.size() >= 2)
     {
-        x0 = vParVal[0];
-        x1 = vParVal[1];
-        y0 = vParVal[2];
-        y1 = vParVal[3];
+        x0 = ivl[0].front();
+        x1 = ivl[0].back();
+        y0 = ivl[1].front();
+        y1 = ivl[1].back();
 
-        if (x0 == x1 || y0 == y1)
+        if (ivl[0].front() == ivl[0].back() || ivl[1].front() == ivl[1].back())
             throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
     }
     else
         throw SyntaxError(SyntaxError::NO_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
-    vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
+    std::vector<double> vParVal = cmdParser.getParameterValueAsNumericalValue("precision");
 
     if (vParVal.size())
         dx = dy = vParVal.front();
@@ -686,9 +685,8 @@ bool integrate2d(CommandLineParser& cmdParser)
         nSign *= -1;
     }
 
-    // FIXME
-    //if (findVariableInExpression(sBoundariesY[0] + " + " + sBoundariesY[1], _defVars.sName[0]) != string::npos)
-    //    bRenewBoundaries = true;    // Ja? Setzen wir den bool entsprechend
+    if (ivl[1].contains(_defVars.sName[0]))
+        bRenewBoundaries = true;    // Ja? Setzen wir den bool entsprechend
 
     // Does the expression depend upon at least one integration
     // variable?
@@ -793,7 +791,7 @@ bool integrate2d(CommandLineParser& cmdParser)
 
                 // Refresh the y boundaries, if necessary
                 if (bRenewBoundaries)
-                    refreshBoundaries(cmdParser, y0, y1, sIntegrationExpression);
+                    refreshBoundaries(ivl, y0, y1, sIntegrationExpression);
 
                 // --> Setzen wir "y" auf den Wert, der von der unteren y-Grenze vorgegeben wird <--
                 y = y0;
@@ -837,7 +835,7 @@ bool integrate2d(CommandLineParser& cmdParser)
 
                     // Refresh the y boundaries, if necessary
                     if (bRenewBoundaries)
-                        refreshBoundaries(cmdParser, y0, y1, sIntegrationExpression);
+                        refreshBoundaries(ivl, y0, y1, sIntegrationExpression);
 
                     // Set y to the first position
                     y = y0;
@@ -961,7 +959,7 @@ bool integrate2d(CommandLineParser& cmdParser)
                 x += dx; // x + dx
 
                 // --> Erneuere die Werte der x- und y-Grenzen <--
-                refreshBoundaries(cmdParser, y0, y1, sIntegrationExpression);
+                refreshBoundaries(ivl, y0, y1, sIntegrationExpression);
                 // --> Setze "y" wieder auf die untere Grenze <--
                 y = y0;
 
@@ -989,7 +987,7 @@ bool integrate2d(CommandLineParser& cmdParser)
                     x += dx / 2.0; // x + dx
 
                     // --> Erneuere die Werte der x- und y-Grenzen <--
-                    refreshBoundaries(cmdParser, y0, y1, sIntegrationExpression);
+                    refreshBoundaries(ivl, y0, y1, sIntegrationExpression);
                     // --> Setze "y" wieder auf die untere Grenze <--
                     y = y0;
 
@@ -3113,8 +3111,6 @@ bool evalPoints(CommandLineParser& cmdParser)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     unsigned int nSamples = 100;
-    double dLeft = 0.0;
-    double dRight = 0.0;
     double* dVar = 0;
     double dTemp = 0.0;
     string sExpr = cmdParser.getExprAsMathExpression();
@@ -3134,15 +3130,10 @@ bool evalPoints(CommandLineParser& cmdParser)
             convertVectorToExpression(sExpr, NumeReKernel::getInstance()->getSettings());
     }
 
-    std::vector<double> vSamples = cmdParser.getParameterValueAsNumericalValue("samples");
-
-    if (vSamples.size())
-        nSamples = intCast(vSamples.front());
-
-    std::vector<double> vInterval = cmdParser.parseIntervals();
+    IntervalSet ivl = cmdParser.parseIntervals();
 
     // Extract the interval definition
-    if (!vInterval.size() && cmdParser.getParameterList().find('=') != string::npos)
+    if (!ivl.size() && cmdParser.getParameterList().find('=') != string::npos)
     {
         std::vector<std::string> vParams = cmdParser.getAllParametersWithValues();
 
@@ -3164,17 +3155,19 @@ bool evalPoints(CommandLineParser& cmdParser)
                 _parser.SetExpr(indices[0] + "," + indices[1]);
                 int nIndices;
                 double* res = _parser.Eval(nIndices);
-                vInterval.assign(res, res+2);
+                ivl.intervals.push_back(Interval(res[0], res[1]));
 
                 break;
             }
         }
     }
-    else
-    {
-        dLeft = vInterval[0];
-        dRight = vInterval[1];
-    }
+
+    std::vector<double> vSamples = cmdParser.getParameterValueAsNumericalValue("samples");
+
+    if (vSamples.size())
+        nSamples = intCast(vSamples.front());
+    else if (ivl[0].getSamples())
+        nSamples = ivl[0].getSamples();
 
     if (isNotEmptyExpression(sExpr))
         _parser.SetExpr(sExpr);
@@ -3187,18 +3180,15 @@ bool evalPoints(CommandLineParser& cmdParser)
     if (!dVar)
         throw SyntaxError(SyntaxError::EVAL_VAR_NOT_FOUND, cmdParser.getCommandLine(), sVar, sVar);
 
-    if (isnan(dLeft) && isnan(dRight))
-    {
-        dLeft = -10.0;
-        dRight = 10.0;
-    }
-    else if (isnan(dLeft) || isnan(dRight) || isinf(dLeft) || isinf(dRight))
+    if (isnan(ivl[0].front()) && isnan(ivl[0].back()))
+        ivl[0] = Interval(-10.0, 10.0);
+    else if (isnan(ivl[0].front()) || isnan(ivl[0].back()) || isinf(ivl[0].front()) || isinf(ivl[0].back()))
     {
         cmdParser.setReturnValue("nan");
         return false;
     }
 
-    if (bLogarithmic && (dLeft <= 0.0 || dRight <= 0.0))
+    if (bLogarithmic && (ivl[0].min() <= 0.0))
         throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
 
@@ -3218,16 +3208,16 @@ bool evalPoints(CommandLineParser& cmdParser)
     if (dVar)
     {
         dTemp = *dVar;
-        *dVar = dLeft;
+        *dVar = ivl[0](0);
         vResults.push_back(_parser.Eval());
 
         for (unsigned int i = 1; i < nSamples; i++)
         {
             // Is a logarithmic distribution needed?
             if (bLogarithmic)
-                *dVar = pow(10.0, log10(dLeft) + i * (log10(dRight) - log10(dLeft)) / (double)(nSamples - 1));
+                *dVar = ivl[0].log(i, nSamples);
             else
-                *dVar = dLeft + i * (dRight - dLeft) / (double)(nSamples - 1);
+                *dVar = ivl[0](i, nSamples);
 
             vResults.push_back(_parser.Eval());
         }
@@ -4657,7 +4647,7 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     size_t nDims = 1;
 
     // Extract the interval information
-    std::vector<double> vInterval = cmdParser.parseIntervals(false);
+    IntervalSet ivl = cmdParser.parseIntervals(false);
 
     // Handle parameters
     std::vector<double> vParVal = cmdParser.getParameterValueAsNumericalValue("particles");
@@ -4674,26 +4664,22 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     _parser.SetExpr(cmdParser.getExprAsMathExpression(true));
 
     // Determine intervals and dimensionality
-    if (vInterval.size() < 2)
-    {
-        vInterval.push_back(-10.0);
-        vInterval.push_back(10.0);
-    }
+    if (!ivl.size())
+        ivl.intervals.push_back(Interval(-10.0, 10.0));
 
-    if (vInterval.size() > 2 * nDims)
-        nDims = vInterval.size() / 2;
+    nDims = ivl.size();
 
     // Restrict to 4 dimensions, because there are
     // only 4 default variables
     nDims = std::min(4u, nDims);
 
     // Determine the random range for the velocity vector
-    double minRange = fabs(vInterval[1] - vInterval[0]);
+    double minRange = fabs(ivl[0].max() - ivl[0].min());
 
     for (size_t i = 1; i < nDims; i++)
     {
-        if (fabs(vInterval[2*i+1] - vInterval[2*i]) < minRange)
-            minRange = fabs(vInterval[2*i+1] - vInterval[2*i]);
+        if (fabs(ivl[i].max() - ivl[i].min()) < minRange)
+            minRange = fabs(ivl[i].max() - ivl[i].min());
     }
 
     // The random range is a 10th of the smallest interval
@@ -4716,8 +4702,8 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     {
         for (size_t j = 0; j < nDims; j++)
         {
-            vPos[j].push_back(parser_Random(vInterval[2*j], vInterval[2*j+1]));
-            vVel[j].push_back(parser_Random(vInterval[2*j], vInterval[2*j+1])/5.0);
+            vPos[j].push_back(parser_Random(ivl[j].min(), ivl[j].max()));
+            vVel[j].push_back(parser_Random(ivl[j].min(), ivl[j].max())/5.0);
 
             _defVars.vValue[j][0] = vPos[j].back();
         }
@@ -4753,7 +4739,7 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
                 vPos[n][j] += fAdaptiveVelFactor * vVel[n][j];
 
                 // Restrict to interval boundaries
-                vPos[n][j] = std::max(vInterval[2*n], std::min(vPos[n][j], vInterval[2*n+1]));
+                vPos[n][j] = std::max(ivl[n].min(), std::min(vPos[n][j], ivl[n].max()));
 
                 // Update the corresponding default variable
                 _defVars.vValue[n][0] = vPos[n][j];

@@ -462,13 +462,13 @@ std::vector<double> CommandLineParser::parseExprAsNumericalValues() const
 /// readAndParseIntervals().
 ///
 /// \param bErase bool
-/// \return std::vector<double>
+/// \return IntervalSet
 ///
 /////////////////////////////////////////////////
-std::vector<double> CommandLineParser::parseIntervals(bool bErase)
+IntervalSet CommandLineParser::parseIntervals(bool bErase)
 {
     NumeReKernel* instance = NumeReKernel::getInstance();
-    return readAndParseIntervals(m_parlist, instance->getParser(), instance->getMemoryManager(), instance->getDefinitions(), instance->getSettings(), bErase);
+    return IntervalSet(m_parlist);
 }
 
 
