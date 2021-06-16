@@ -25,6 +25,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include "interval.hpp"
 
 using namespace std;
 
