@@ -38,9 +38,9 @@
 #include <csignal>
 #include <boost/math/common_factor.hpp>
 #include <gsl/gsl_sf.h>
-#include <boost/math/distributions/students_t.hpp>
 #include <noise/noise.h>
 
+#include "student_t.hpp"
 #include "../datamanagement/memorymanager.hpp"
 #include "../utils/tools.hpp"
 #include "../version.h"
@@ -2270,8 +2270,7 @@ value_type parser_studentFactor(value_type vFreedoms, value_type vAlpha)
     if (vAlpha >= 1.0 || vAlpha <= 0.0 || vFreedoms < 2.0)
         return NAN;
 
-    boost::math::students_t dist(intCast(vFreedoms)-1);
-    return boost::math::quantile(boost::math::complement(dist, (1.0-vAlpha)/2.0));
+    return student_t(intCast(vFreedoms), vAlpha);
 }
 
 
