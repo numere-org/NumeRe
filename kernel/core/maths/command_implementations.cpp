@@ -287,7 +287,6 @@ bool integrate(CommandLineParser& cmdParser)
     unsigned int nMethod = TRAPEZOIDAL;    // 1 = trapezoidal, 2 = simpson
     size_t nSamples = 1e3;
 
-    _defVars.vValue[0][3] = 1e-3;
     double& x = _defVars.vValue[0][0];
     double range;
 
@@ -404,7 +403,7 @@ bool integrate(CommandLineParser& cmdParser)
     _parser.SetExpr(sIntegrationExpression);
 
     // Is it a large interval (then it will need more time)
-    if (nSamples >= 9.9e6)
+    if ((nMethod == TRAPEZOIDAL && nSamples >= 9.9e6) || (nMethod == SIMPSON && nSamples >= 1e4))
         bLargeInterval = true;
 
     // Do not allow a very high number of integration steps
@@ -418,7 +417,7 @@ bool integrate(CommandLineParser& cmdParser)
     v = _parser.Eval(nResults);
     vFunctionValues.assign(v, v+nResults);
 
-    double dx = range / nSamples;
+    double dx = range / (nSamples-1);
 
     // Perform the actual numerical integration
     for (size_t i = 1; i < nSamples; i++)
@@ -427,13 +426,13 @@ bool integrate(CommandLineParser& cmdParser)
         if (nMethod == TRAPEZOIDAL)
             integrationstep_trapezoidal(x, ivl[0](i, nSamples), dx, vResult, vFunctionValues, bReturnFunctionPoints);
         else if (nMethod == SIMPSON)
-            integrationstep_simpson(x, ivl[0](2*i, 2*nSamples), ivl[0](2*i+1, 2*nSamples), dx, vResult, vFunctionValues, bReturnFunctionPoints);
+            integrationstep_simpson(x, ivl[0](2*i-1, 2*nSamples-1), ivl[0](2*i, 2*nSamples-1), dx, vResult, vFunctionValues, bReturnFunctionPoints);
 
         // Print a status value, if needed
         if (_option.systemPrints() && bLargeInterval)
         {
             if ((int)(i / (double)nSamples * 100) > (int)((i-1) / (double)nSamples * 100))
-                NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)(i / (double)nSamples * 100) + " %"));
+                NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)(i / (double)nSamples * 100)) + " %");
 
             if (NumeReKernel::GetAsyncCancelState())
             {
@@ -589,8 +588,8 @@ bool integrate2d(CommandLineParser& cmdParser)
     if (ivl[1].contains(_defVars.sName[0]))
         bRenewBoundaries = true;    // Ja? Setzen wir den bool entsprechend
 
-    double dx = (ivl[0].max() - ivl[0].min()) / nSamples;
-    double dy = (ivl[0].max() - ivl[0].min()) / nSamples;
+    double dx = (ivl[0].max() - ivl[0].min()) / (nSamples-1);
+    double dy = (ivl[1].max() - ivl[1].min()) / (nSamples-1);
 
     // Ensure that the precision is reasonble
     // If the precision is invalid, we guess a reasonable value here
@@ -602,7 +601,7 @@ bool integrate2d(CommandLineParser& cmdParser)
     }
 
     // Is it a very slow integration?
-    if (nSamples*nSamples >= 1e6)
+    if ((nMethod == TRAPEZOIDAL && nSamples*nSamples >= 1e8) || (nMethod == SIMPSON && nSamples*nSamples >= 1e6))
         bLargeArray = true;
 
     // Avoid calculation with too many steps
@@ -610,7 +609,7 @@ bool integrate2d(CommandLineParser& cmdParser)
         throw SyntaxError(SyntaxError::INVALID_INTEGRATION_PRECISION, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // --> Kleine Info an den Benutzer, dass der Code arbeitet <--
-    if (_option.systemPrints())
+    if (_option.systemPrints() && bLargeArray)
         NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 0 %");
 
     // --> Setzen wir "x" und "y" auf ihre Startwerte <--
@@ -629,7 +628,7 @@ bool integrate2d(CommandLineParser& cmdParser)
         if (nMethod == TRAPEZOIDAL)
             integrationstep_trapezoidal(y, ivl[1](j, nSamples), dy, vResult[1], fx_n[1][0], false);
         else if (nMethod == SIMPSON)
-            integrationstep_simpson(y, ivl[1](2*j, 2*nSamples), ivl[1](2*j+1, 2*nSamples), dy, vResult[1], fx_n[1][0], false);
+            integrationstep_simpson(y, ivl[1](2*j-1, 2*nSamples-1), ivl[1](2*j, 2*nSamples-1), dy, vResult[1], fx_n[1][0], false);
     }
 
     fx_n[0][0] = vResult[1];
@@ -672,7 +671,7 @@ bool integrate2d(CommandLineParser& cmdParser)
         {
             for (size_t n = 1; n <= 2; n++)
             {
-                x = ivl[0](2*i+n-1, 2*nSamples);
+                x = ivl[0](2*i+n-2, 2*nSamples-1);
 
                 // Refresh the y boundaries, if necessary
                 if (bRenewBoundaries)
@@ -691,7 +690,7 @@ bool integrate2d(CommandLineParser& cmdParser)
                 vResult[n].assign(nResults, 0.0);
 
                 for (size_t j = 1; j < nSamples; j++)
-                    integrationstep_simpson(y, ivl[1](2*j, 2*nSamples), ivl[1](2*j+1, 2*nSamples), dy, vResult[n], fx_n[1][0], false);
+                    integrationstep_simpson(y, ivl[1](2*j-1, 2*nSamples-1), ivl[1](2*j, 2*nSamples-1), dy, vResult[n], fx_n[1][0], false);
 
                 // --> Weise das Ergebnis der y-Integration an die zweite Stuetzstelle der x-Integration zu <--
                 for (int i = 0; i < nResults; i++)
@@ -711,12 +710,7 @@ bool integrate2d(CommandLineParser& cmdParser)
         // Show some progress
         if (_option.systemPrints())
         {
-            if (!bLargeArray)
-            {
-                if ((int)(i / (double)nSamples * 20) > (int)((i-1) / (double)nSamples * 20))
-                    NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)(i / (double)nSamples * 20) * 5) + " %");
-            }
-            else
+            if (bLargeArray)
             {
                 if ((int)(i / (double)nSamples * 100) > (int)((i-1) / (double)nSamples * 100))
                     NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... " + toString((int)(i / (double)nSamples * 100)) + " %");
@@ -731,12 +725,8 @@ bool integrate2d(CommandLineParser& cmdParser)
     }
 
     // Show a success message
-    if (_option.systemPrints())
-        NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 100 %");
-
-    // --> FERTIG! Teilen wir dies dem Benutzer mit <--
-    if (_option.systemPrints())
-        NumeReKernel::printPreFmt(": " + _lang.get("COMMON_SUCCESS") + "!\n");
+    if (_option.systemPrints() && bLargeArray)
+        NumeReKernel::printPreFmt("\r|INTEGRATE> " + _lang.get("COMMON_EVALUATING") + " ... 100 %: " + _lang.get("COMMON_SUCCESS") + "!\n");
 
     // --> Fertig! Zurueck zur aufrufenden Funkton! <--
     cmdParser.setReturnValue(vResult[0]);
