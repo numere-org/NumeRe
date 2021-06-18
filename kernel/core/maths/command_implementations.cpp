@@ -2235,14 +2235,13 @@ void taylor(CommandLineParser& cmdParser)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    string sParams = cmdParser.getParameterList();
     string sVarName = "";
     string sExpr = cmdParser.getExprAsMathExpression();
     string sExpr_cpy = "";
     string sArg = "";
     string sTaylor = "Taylor";
     string sPolynom = "";
-    bool bUseUniqueName = false;
+    bool bUseUniqueName = cmdParser.hasParam("unique") || cmdParser.hasParam("u");
     size_t nth_taylor = 6;
     size_t nSamples = 0;
     size_t nMiddle = 0;
@@ -2255,58 +2254,43 @@ void taylor(CommandLineParser& cmdParser)
         throw SyntaxError(SyntaxError::STRINGS_MAY_NOT_BE_EVALUATED_WITH_CMD, cmdParser.getCommandLine(), SyntaxError::invalid_position, "taylor");
 
     // Extract the parameter list
-    if (!sParams.length())
+    if (!cmdParser.getParameterList().length())
     {
         NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_TAYLOR_MISSINGPARAMS"), _option));
         return;
     }
 
     // Evaluate the parameters
-    if (findParameter(sParams, "n", '='))
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("n");
+
+    if (vParVal.size())
+        nth_taylor = abs(intCast(vParVal.front()));
+
+    std::vector<std::string> vParams = cmdParser.getAllParametersWithValues();
+
+    for (const std::string& sPar : vParams)
     {
-        _parser.SetExpr(sParams.substr(findParameter(sParams, "n", '=') + 1, sParams.find(' ', findParameter(sParams, "n", '=') + 1) - findParameter(sParams, "n", '=') - 1));
-        nth_taylor = (unsigned int)_parser.Eval();
+        if (sPar != "n")
+        {
+            sVarName = sPar;
+            dVarValue = cmdParser.getParameterValueAsNumericalValue(sVarName).front();
 
-        if (isinf(_parser.Eval()) || isnan(_parser.Eval()))
-            nth_taylor = 6;
+            // Ensure that the location was chosen reasonable
+            if (isinf(dVarValue) || isnan(dVarValue))
+                return;
 
-        sParams = sParams.substr(0, findParameter(sParams, "n", '=') - 1) + sParams.substr(findParameter(sParams, "n", '=') - 1 + _parser.GetExpr().length());
-    }
+            // Create the string element, which is used
+            // for the variable in the created funcction
+            // string
+            if (!dVarValue)
+                sArg = "x";
+            else if (dVarValue < 0)
+                sArg = "x+" + toString(-dVarValue, _option.getPrecision());
+            else
+                sArg = "x-" + toString(dVarValue, _option.getPrecision());
 
-    if (findParameter(sParams, "unique") || findParameter(sParams, "u"))
-        bUseUniqueName = true;
-
-    // Extract the variable and the approximation location
-    if (sParams.find('=') == string::npos)
-        return;
-    else
-    {
-        if (sParams.substr(0, 2) == "-s")
-            sParams = sParams.substr(4);
-        else
-            sParams = sParams.substr(2);
-
-        // Get the variable name
-        sVarName = sParams.substr(0, sParams.find('='));
-        StripSpaces(sVarName);
-
-        // Get the current value of the variable
-        _parser.SetExpr(sParams.substr(sParams.find('=') + 1, sParams.find(' ', sParams.find('=')) - sParams.find('=') - 1));
-        dVarValue = _parser.Eval();
-
-        // Ensure that the location was chosen reasonable
-        if (isinf(dVarValue) || isnan(dVarValue))
-            return;
-
-        // Create the string element, which is used
-        // for the variable in the created funcction
-        // string
-        if (!dVarValue)
-            sArg = "x";
-        else if (dVarValue < 0)
-            sArg = "x+" + toString(-dVarValue, _option.getPrecision());
-        else
-            sArg = "x-" + toString(dVarValue, _option.getPrecision());
+            break;
+        }
     }
 
     // Extract the expression
@@ -2812,8 +2796,6 @@ bool evalPoints(CommandLineParser& cmdParser)
     double* dVar = 0;
     double dTemp = 0.0;
     string sExpr = cmdParser.getExprAsMathExpression();
-    string sParams = "";
-    string sInterval = "";
     string sVar = "x";
     static string zero = "0.0";
     bool bLogarithmic = cmdParser.hasParam("logscale");
@@ -2840,7 +2822,7 @@ bool evalPoints(CommandLineParser& cmdParser)
             if (sPar != "samples")
             {
                 sVar = sPar;
-                sInterval = cmdParser.getParameterValue(sPar);
+                std::string sInterval = cmdParser.getParameterValue(sPar);
 
                 if (sInterval.front() == '[' && sInterval.back() == ']')
                 {
@@ -2888,7 +2870,6 @@ bool evalPoints(CommandLineParser& cmdParser)
 
     if (bLogarithmic && (ivl[0].min() <= 0.0))
         throw SyntaxError(SyntaxError::WRONG_PLOT_INTERVAL_FOR_LOGSCALE, cmdParser.getCommandLine(), SyntaxError::invalid_position);
-
 
     // Set the corresponding expression
     if (isNotEmptyExpression(sExpr))
