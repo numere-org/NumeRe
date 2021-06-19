@@ -467,7 +467,6 @@ std::vector<double> CommandLineParser::parseExprAsNumericalValues() const
 /////////////////////////////////////////////////
 IntervalSet CommandLineParser::parseIntervals(bool bErase)
 {
-    NumeReKernel* instance = NumeReKernel::getInstance();
     return IntervalSet(m_parlist);
 }
 

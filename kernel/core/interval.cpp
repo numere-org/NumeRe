@@ -142,7 +142,7 @@ double Interval::operator()(size_t n, size_t nSamples) const
 /////////////////////////////////////////////////
 double Interval::log(size_t n, size_t nSamples) const
 {
-    std::pow(10.0, std::log10(front()) + n * (std::log10(back()) - std::log10(front())) / (double)(nSamples - 1));
+    return std::pow(10.0, std::log10(front()) + n * (std::log10(back()) - std::log10(front())) / (double)(nSamples - 1));
 }
 
 

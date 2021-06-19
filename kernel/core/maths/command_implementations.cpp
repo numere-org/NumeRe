@@ -36,9 +36,9 @@
 DefaultVariables _defVars;
 static double localizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
-static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option);
+static std::vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t nSamples);
 static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option);
-static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
+static void expandVectorToDatagrid(IntervalSet& ivl, std::vector<std::vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
 
 /////////////////////////////////////////////////
@@ -2842,6 +2842,9 @@ bool evalPoints(CommandLineParser& cmdParser)
         }
     }
 
+    if (!ivl.size())
+        ivl.intervals.push_back(Interval(-10.0, 10.0));
+
     std::vector<double> vSamples = cmdParser.getParameterValueAsNumericalValue("samples");
 
     if (vSamples.size())
@@ -2918,153 +2921,71 @@ bool evalPoints(CommandLineParser& cmdParser)
 /// \brief This function calculates a datagrid
 /// from passed functions or (x-y-z) data values.
 ///
-/// \param sCmd string&
-/// \param sTargetCache string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _functions Define&
-/// \param _option const Settings&
+/// \param cmdParser CommandLineParser&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option)
+bool createDatagrid(CommandLineParser& cmdParser)
 {
     unsigned int nSamples = 100;
-    string sXVals = "";
-    string sYVals = "";
-    string sZVals = "";
+    bool bTranspose = cmdParser.hasParam("transpose");
 
     Indices _iTargetIndex;
-
-    bool bTranspose = false;
-
-    vector<double> vXVals;
-    vector<double> vYVals;
     vector<vector<double> > vZVals;
 
-
-    // Extract the z expression from the command line
-    if (sCmd.find("-set") != string::npos || sCmd.find("--") != string::npos)
-    {
-        sZVals = sCmd.substr(findCommand(sCmd).sString.length() + findCommand(sCmd).nPos);
-
-        if (sCmd.find("-set") != string::npos)
-        {
-            sCmd.erase(0, sCmd.find("-set"));
-            sZVals.erase(sZVals.find("-set"));
-        }
-        else
-        {
-            sCmd.erase(0, sCmd.find("--"));
-            sZVals.erase(sZVals.find("--"));
-        }
-
-        StripSpaces(sZVals);
-    }
-
-    if (_data.containsTablesOrClusters(sZVals) && !_data.isValid())
-        throw SyntaxError(SyntaxError::NO_CACHED_DATA, sZVals, SyntaxError::invalid_position);
-
-    // Get the intervals
-    if (sCmd.find('[') != string::npos && sCmd.find(']', sCmd.find('[')) != string::npos)
-    {
-        sXVals = sCmd.substr(sCmd.find('[') + 1, sCmd.find(']', sCmd.find('[')) - sCmd.find('[') - 1);
-        StripSpaces(sXVals);
-
-        if (sXVals.find(',') != string::npos)
-        {
-            auto args = getAllArguments(sXVals);
-            sXVals = args[0];
-            sYVals = args[1];
-        }
-
-        if (sXVals == ":")
-            sXVals = "-10:10";
-
-        if (sYVals == ":")
-            sYVals = "-10:10";
-    }
-
-    // Validate the intervals
-    if ((!findParameter(sCmd, "x", '=') && !sXVals.length()) || (!findParameter(sCmd, "y", '=') && !sYVals.length()) || (!findParameter(sCmd, "z", '=') && !sZVals.length()))
-        throw SyntaxError(SyntaxError::TOO_FEW_ARGS, sCmd, SyntaxError::invalid_position, "datagrid");
-
-    // Get the number of samples from the option list
-    if (findParameter(sCmd, "samples", '='))
-    {
-        _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7));
-        nSamples = (unsigned int)_parser.Eval();
-
-        if (nSamples < 2)
-            throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
-
-        sCmd.erase(sCmd.find(getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7), findParameter(sCmd, "samples", '=') - 1), getArgAtPos(sCmd, findParameter(sCmd, "samples", '=') + 7).length());
-        sCmd.erase(findParameter(sCmd, "samples", '=') - 1, 8);
-    }
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // search for explicit "target" options and select the target cache
-    sTargetCache = evaluateTargetOptionInCommand(sCmd, sTargetCache, _iTargetIndex, _parser, _data, _option);
+    std::string sTargetCache = cmdParser.getTargetTable(_iTargetIndex, "grid");
 
-    // read the transpose option
-    if (findParameter(sCmd, "transpose"))
+    cmdParser.clearReturnValue();
+    cmdParser.setReturnValue(sTargetCache);
+
+    // Get the intervals
+    IntervalSet ivl = cmdParser.parseIntervals();
+
+    // Add missing intervals
+    while (ivl.size() < 2)
     {
-        bTranspose = true;
-        sCmd.erase(findParameter(sCmd, "transpose") - 1, 9);
+        ivl.intervals.push_back(Interval(-10.0, 10.0));
     }
 
-    // Read the interval definitions from the option list, if they are included
-    // Remove them from the command expression
-    if (!sXVals.length())
-    {
-        sXVals = getArgAtPos(sCmd, findParameter(sCmd, "x", '=') + 1);
-        sCmd.erase(sCmd.find(getArgAtPos(sCmd, findParameter(sCmd, "x", '=') + 1), findParameter(sCmd, "x", '=') - 1), getArgAtPos(sCmd, findParameter(sCmd, "x", '=') + 1).length());
-        sCmd.erase(findParameter(sCmd, "x", '=') - 1, 2);
-    }
+    // Get the number of samples from the option list
+    auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
 
-    if (!sYVals.length())
-    {
-        sYVals = getArgAtPos(sCmd, findParameter(sCmd, "y", '=') + 1);
-        sCmd.erase(sCmd.find(getArgAtPos(sCmd, findParameter(sCmd, "y", '=') + 1), findParameter(sCmd, "y", '=') - 1), getArgAtPos(sCmd, findParameter(sCmd, "y", '=') + 1).length());
-        sCmd.erase(findParameter(sCmd, "y", '=') - 1, 2);
-    }
+    if (vParVal.size())
+        nSamples = abs(intCast(vParVal.front()));
 
-    if (!sZVals.length())
-    {
-        while (sCmd[sCmd.length() - 1] == ' ' || sCmd[sCmd.length() - 1] == '=' || sCmd[sCmd.length() - 1] == '-')
-            sCmd.erase(sCmd.length() - 1);
-        sZVals = getArgAtPos(sCmd, findParameter(sCmd, "z", '=') + 1);
-    }
-
-    // Try to call the functions
-    if (!_functions.call(sZVals))
-        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sZVals, sZVals);
+    if (nSamples < 2)
+        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Get the samples
-    vector<size_t> vSamples = getSamplesForDatagrid(sCmd, sZVals, nSamples, _parser, _data, _option);
+    std::vector<size_t> vSamples = getSamplesForDatagrid(cmdParser, nSamples);
 
-    //>> X-Vector (Switch the samples depending on the "transpose" command line option)
-    vXVals = extractVectorForDatagrid(sCmd, sXVals, sZVals, vSamples[bTranspose], _parser, _data, _option);
+    // extract samples from the interval set
+    if (ivl[0].getSamples())
+        vSamples[bTranspose] = ivl[0].getSamples();
 
-    //>> Y-Vector (Switch the samples depending on the "transpose" command line option)
-    vYVals = extractVectorForDatagrid(sCmd, sYVals, sZVals, vSamples[1 - bTranspose], _parser, _data, _option);
+    if (ivl[1].getSamples())
+        vSamples[1-bTranspose] = ivl[1].getSamples();
 
     //>> Z-Matrix
-    if (_data.containsTablesOrClusters(sZVals))
+    if (cmdParser.exprContainsDataObjects())
     {
         // Get the datagrid from another table
-        DataAccessParser _accessParser(sZVals);
+        DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
 
         if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
-            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sZVals, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
         Indices& _idx = _accessParser.getIndices();
 
         // identify the table
-        string& szDatatable = _accessParser.getDataObject();
+        std::string& szDatatable = _accessParser.getDataObject();
 
         // Check the indices
         if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
         // the indices are vectors
         vector<double> vVector;
@@ -3105,25 +3026,27 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryM
 
         // Check the content of the z matrix
         if (!vZVals.size() || (vZVals.size() == 1 && vZVals[0].size() == 1))
-            throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
         // Expand the z vector into a matrix for the datagrid if necessary
-        expandVectorToDatagrid(vXVals, vYVals, vZVals, vSamples[bTranspose], vSamples[1 - bTranspose]);
+        expandVectorToDatagrid(ivl, vZVals, vSamples[bTranspose], vSamples[1 - bTranspose]);
     }
     else
     {
+        Parser& _parser = NumeReKernel::getInstance()->getParser();
+
         // Calculate the grid from formula
-        _parser.SetExpr(sZVals);
+        _parser.SetExpr(cmdParser.getExprAsMathExpression());
 
         vector<double> vVector;
 
-        for (unsigned int x = 0; x < vXVals.size(); x++)
+        for (unsigned int x = 0; x < vSamples[bTranspose]; x++)
         {
-            _defVars.vValue[0][0] = vXVals[x];
+            _defVars.vValue[0][0] = ivl[0](x, vSamples[bTranspose]);
 
-            for (unsigned int y = 0; y < vYVals.size(); y++)
+            for (unsigned int y = 0; y < vSamples[1-bTranspose]; y++)
             {
-                _defVars.vValue[1][0] = vYVals[y];
+                _defVars.vValue[1][0] = ivl[1](y, vSamples[1-bTranspose]);
                 vVector.push_back(_parser.Eval());
             }
 
@@ -3134,20 +3057,20 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryM
 
     // Store the results in the target cache
     if (_iTargetIndex.row.isOpenEnd())
-        _iTargetIndex.row.setRange(0, _iTargetIndex.row.front() + vXVals.size() - 1);
+        _iTargetIndex.row.setRange(0, _iTargetIndex.row.front() + vSamples[bTranspose] - 1);
 
     if (_iTargetIndex.col.isOpenEnd())
-        _iTargetIndex.col.setRange(0, _iTargetIndex.col.front() + vYVals.size() + 1);
+        _iTargetIndex.col.setRange(0, _iTargetIndex.col.front() + vSamples[1-bTranspose] + 1);
 
     // Write the x axis
-    for (size_t i = 0; i < vXVals.size(); i++)
-        _data.writeToTable(i, _iTargetIndex.col[0], sTargetCache, vXVals[i]);
+    for (size_t i = 0; i < vSamples[bTranspose]; i++)
+        _data.writeToTable(i, _iTargetIndex.col[0], sTargetCache, ivl[0](i, vSamples[bTranspose]));
 
     _data.setHeadLineElement(_iTargetIndex.col[0], sTargetCache, "x");
 
     // Write the y axis
-    for (size_t i = 0; i < vYVals.size(); i++)
-        _data.writeToTable(i, _iTargetIndex.col[1], sTargetCache, vYVals[i]);
+    for (size_t i = 0; i < vSamples[1-bTranspose]; i++)
+        _data.writeToTable(i, _iTargetIndex.col[1], sTargetCache, ivl[1](i, vSamples[1-bTranspose]));
 
     _data.setHeadLineElement(_iTargetIndex.col[1], sTargetCache, "y");
 
@@ -3177,34 +3100,32 @@ bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryM
 /// \brief This function will obtain the samples
 /// of the datagrid for each spatial direction.
 ///
-/// \param sCmd const string&
-/// \param sZVals const string&
+/// \param cmdParser CommandLineParser&
 /// \param nSamples size_t
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
 /// \return vector<size_t>
 ///
 /////////////////////////////////////////////////
-static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZVals, size_t nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option)
+static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t nSamples)
 {
     vector<size_t> vSamples;
 
     // If the z vals are inside of a table then obtain the correct number of samples here
-    if (_data.containsTablesOrClusters(sZVals))
+    if (cmdParser.exprContainsDataObjects())
     {
+        MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+
         // Get the indices and identify the table name
-        DataAccessParser _accessParser(sZVals);
+        DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
 
         if (!_accessParser.getDataObject().length() || _accessParser.isCluster())
-            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sZVals, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
         Indices& _idx = _accessParser.getIndices();
-        string& sZDatatable = _accessParser.getDataObject();
+        std::string& sZDatatable = _accessParser.getDataObject();
 
         // Check the indices
         if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
+            throw SyntaxError(SyntaxError::INVALID_INDEX, cmdParser.getCommandLine(), SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
         // The indices are vectors
         if (_idx.col.isOpenEnd())
@@ -3237,7 +3158,7 @@ static vector<size_t> getSamplesForDatagrid(const string& sCmd, const string& sZ
     }
 
     if (vSamples.size() < 2 || vSamples[0] < 2 || vSamples[1] < 2)
-        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     return vSamples;
 }
@@ -3343,29 +3264,28 @@ static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVect
 /// \brief This function will expand the z vector
 /// into a z matrix using triangulation.
 ///
-/// \param vXVals vector<double>&
-/// \param vYVals vector<double>&
+/// \param ivl IntervalSet&
 /// \param vZVals vector<vector<double>>&
 /// \param nSamples_x size_t
 /// \param nSamples_y size_t
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVals, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y)
+static void expandVectorToDatagrid(IntervalSet& ivl, vector<vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y)
 {
-    vector<double> vVector;
-
     // Only if a dimension is a singleton
     if (vZVals.size() == 1 || vZVals[0].size() == 1)
     {
+        vector<double> vVector;
+
         // construct the needed MGL objects
         mglData _mData[4];
         mglGraph _graph;
 
         // Prepare the memory
         _mData[0].Create(nSamples_x, nSamples_y);
-        _mData[1].Create(vXVals.size());
-        _mData[2].Create(vYVals.size());
+        _mData[1].Create(nSamples_x);
+        _mData[2].Create(nSamples_y);
 
         if (vZVals.size() != 1)
             _mData[3].Create(vZVals.size());
@@ -3373,10 +3293,11 @@ static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVal
             _mData[3].Create(vZVals[0].size());
 
         // copy the x and y vectors
-        for (unsigned int i = 0; i < vXVals.size(); i++)
-            _mData[1].a[i] = vXVals[i];
-        for (unsigned int i = 0; i < vYVals.size(); i++)
-            _mData[2].a[i] = vYVals[i];
+        for (unsigned int i = 0; i < nSamples_x; i++)
+            _mData[1].a[i] = ivl[0](i, nSamples_x);
+
+        for (unsigned int i = 0; i < nSamples_y; i++)
+            _mData[2].a[i] = ivl[1](i, nSamples_y);
 
         // copy the z vector
         if (vZVals.size() != 1)
@@ -3392,19 +3313,15 @@ static void expandVectorToDatagrid(vector<double>& vXVals, vector<double>& vYVal
 
         // Set the ranges needed for the DataGrid function
         _graph.SetRanges(_mData[1], _mData[2], _mData[3]);
+
         // Calculate the data grid using a triangulation
         _graph.DataGrid(_mData[0], _mData[1], _mData[2], _mData[3]);
 
-        vXVals.clear();
-        vYVals.clear();
         vZVals.clear();
 
         // Refill the x and y vectors
-        for (unsigned int i = 0; i < nSamples_x; i++)
-            vXVals.push_back(_mData[1].Minimal() + (_mData[1].Maximal() - _mData[1].Minimal()) / (double)(nSamples_x - 1)*i);
-
-        for (unsigned int i = 0; i < nSamples_y; i++)
-            vYVals.push_back(_mData[2].Minimal() + (_mData[2].Maximal() - _mData[2].Minimal()) / (double)(nSamples_y - 1)*i);
+        ivl[0] = Interval(_mData[1].Minimal(), _mData[1].Maximal());
+        ivl[1] = Interval(_mData[2].Minimal(), _mData[2].Maximal());
 
         // Copy the z matrix
         for (unsigned int i = 0; i < nSamples_x; i++)
