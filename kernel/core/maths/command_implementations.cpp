@@ -37,7 +37,6 @@ DefaultVariables _defVars;
 static double localizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps = 1e-10, int nRecursion = 0);
 static std::vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t nSamples);
-static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static void expandVectorToDatagrid(IntervalSet& ivl, std::vector<std::vector<double>>& vZVals, size_t nSamples_x, size_t nSamples_y);
 
 
@@ -67,23 +66,21 @@ static void integrationstep_trapezoidal(double& x, double x0, double dx, vector<
     {
         if (isnan(v[i]))
             v[i] = 0.0;
+    }
 
-        // Now calculate the area below the curve
-        if (!bReturnFunctionPoints)
-        {
-            for (int i = 0; i < nResults; i++)
-                vResult[i] += dx * (vFunctionValues[i] + v[i]) * 0.5;
-        }
+    // Now calculate the area below the curve
+    if (!bReturnFunctionPoints)
+    {
+        for (int i = 0; i < nResults; i++)
+            vResult[i] += dx * (vFunctionValues[i] + v[i]) * 0.5;
+    }
+    else
+    {
+        // Calculate the integral
+        if (vResult.size())
+            vResult.push_back(dx * (vFunctionValues[0] + v[0]) * 0.5 + vResult.back());
         else
-        {
-            // Calculate the integral
-            if (vResult.size())
-                vResult.push_back(dx * (vFunctionValues[0] + v[0]) * 0.5 + vResult.back());
-            else
-                vResult.push_back(dx * (vFunctionValues[0] + v[0]) * 0.5);
-
-            break;
-        }
+            vResult.push_back(dx * (vFunctionValues[0] + v[0]) * 0.5);
     }
 
     // Set the last sample as the first one
@@ -129,23 +126,21 @@ static void integrationstep_simpson(double& x, double x0, double x1, double dx, 
     {
         if (isnan(v[i]))
             v[i] = 0.0;
+    }
 
-        // Now calculate the area below the curve
-        if (!bReturnFunctionPoints)
-        {
-            for (int i = 0; i < nResults; i++)
-                vResult[i] += dx / 6.0 * (vFunctionValues[i] + 4.0 * vInter[i] + v[i]); // b-a/6*(f(a)+4f(a+b/2)+f(b))
-        }
+    // Now calculate the area below the curve
+    if (!bReturnFunctionPoints)
+    {
+        for (int i = 0; i < nResults; i++)
+            vResult[i] += dx / 6.0 * (vFunctionValues[i] + 4.0 * vInter[i] + v[i]); // b-a/6*(f(a)+4f(a+b/2)+f(b))
+    }
+    else
+    {
+        // Calculate the integral at the current x position
+        if (vResult.size())
+            vResult.push_back(dx / 6.0 * (vFunctionValues[0] + 4.0 * vInter[0] + v[0]) + vResult.back());
         else
-        {
-            // Calculate the integral at the current x position
-            if (vResult.size())
-                vResult.push_back(dx / 6.0 * (vFunctionValues[0] + 4.0 * vInter[0] + v[0]) + vResult.back());
-            else
-                vResult.push_back(dx / 6.0 * (vFunctionValues[0] + 4.0 * vInter[0] + v[0]));
-
-            break;
-        }
+            vResult.push_back(dx / 6.0 * (vFunctionValues[0] + 4.0 * vInter[0] + v[0]));
     }
 
     // Set the last sample as the first one
@@ -171,7 +166,7 @@ static vector<double> integrateSingleDimensionData(CommandLineParser& cmdParser)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
     // Extract the integration interval
-    IntervalSet ivl = cmdParser.parseIntervals(false);
+    IntervalSet ivl = cmdParser.parseIntervals();
 
     // Get table name and the corresponding indices
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
@@ -232,10 +227,10 @@ static vector<double> integrateSingleDimensionData(CommandLineParser& cmdParser)
             if (!_cache.isValidElement(i + j, 0, "table") || !_cache.isValidElement(i + j, 1, "table"))
                 break;
 
-            if (ivl.intervals.size() >= 2 && ivl.intervals[0].front() > _cache.getElement(i, 0, "table"))
+            if (ivl.intervals.size() >= 1 && ivl.intervals[0].front() > _cache.getElement(i, 0, "table"))
                 continue;
 
-            if (ivl.intervals.size() >= 2 && ivl.intervals[0].back() < _cache.getElement(i + j, 0, "table"))
+            if (ivl.intervals.size() >= 1 && ivl.intervals[0].back() < _cache.getElement(i + j, 0, "table"))
                 break;
 
             // Calculate either the integral, its samples or the corresponding x values
@@ -310,7 +305,7 @@ bool integrate(CommandLineParser& cmdParser)
     }
 
     // Evaluate the parameters
-    IntervalSet ivl = cmdParser.parseIntervals(false);
+    IntervalSet ivl = cmdParser.parseIntervals();
 
     if (ivl.size())
     {
@@ -509,7 +504,7 @@ bool integrate2d(CommandLineParser& cmdParser)
         throw SyntaxError(SyntaxError::NO_INTEGRATION_FUNCTION, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
     // Evaluate the parameters
-    IntervalSet ivl = cmdParser.parseIntervals(false);
+    IntervalSet ivl = cmdParser.parseIntervals();
 
     if (ivl.intervals.size() >= 2)
     {
@@ -3165,102 +3160,6 @@ static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t
 
 
 /////////////////////////////////////////////////
-/// \brief This function will extract the x or y
-/// vectors which are needed as axes for the
-/// datagrid.
-///
-/// \param sCmd const string&
-/// \param sVectorVals string&
-/// \param sZVals const string&
-/// \param nSamples size_t&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
-/// \return vector<double>
-///
-/////////////////////////////////////////////////
-static vector<double> extractVectorForDatagrid(const string& sCmd, string& sVectorVals, const string& sZVals, size_t& nSamples, Parser& _parser, MemoryManager& _data, const Settings& _option)
-{
-    vector<double> vVectorVals;
-
-    // Data direct from the table, not an index pair
-    if (_data.containsTablesOrClusters(sVectorVals) && sVectorVals.find(':', getMatchingParenthesis(sVectorVals.substr(sVectorVals.find('('))) + sVectorVals.find('(')) == string::npos)
-    {
-        // Get the indices
-        Indices _idx = getIndices(sVectorVals, _parser, _data, _option);
-
-        // Identify the table
-        string sDatatable = "data";
-
-        if (_data.containsTablesOrClusters(sVectorVals))
-        {
-            for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); ++iter)
-            {
-                if (sVectorVals.find(iter->first + "(") != string::npos
-                        && (!sVectorVals.find(iter->first + "(")
-                            || (sVectorVals.find(iter->first + "(") && checkDelimiter(sVectorVals.substr(sVectorVals.find(iter->first + "(") - 1, (iter->first).length() + 2)))))
-                {
-                    sDatatable = iter->first;
-                    break;
-                }
-            }
-        }
-
-        if (!_data.isValid())
-            throw SyntaxError(SyntaxError::NO_CACHED_DATA, sCmd, sDatatable);
-
-        // Check the indices
-        if (!isValidIndexSet(_idx))
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
-
-        // The indices are vectors
-        if (_idx.col.isOpenEnd())
-            _idx.col.setRange(0, _data.getCols(sDatatable)-1);
-
-        if (_idx.row.isOpenEnd() && _idx.col.size() > 1)
-            throw SyntaxError(SyntaxError::NO_MATRIX, sCmd, SyntaxError::invalid_position);
-
-        if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _data.getLines(sDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sDatatable)-1);
-
-        // Copy the values from the table and update the
-        // corresponding samples setting
-        vVectorVals = _data.getElement(_idx.row, _idx.col, sDatatable);
-        nSamples = vVectorVals.size();
-    }
-    else if (sVectorVals.find(':') != string::npos)
-    {
-        // Index pair - If the index pair contains data elements, get their values now
-        if (_data.containsTablesOrClusters(sVectorVals))
-            getDataElements(sVectorVals, _parser, _data, _option);
-
-        if (sVectorVals.find("{") != string::npos)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, sVectorVals);
-
-        // Replace the colon with a comma and parse the vector vals
-        sVectorVals.replace(sVectorVals.find(':'), 1, ",");
-        _parser.SetExpr(sVectorVals);
-
-        // Get the results
-        double* dResult = 0;
-        int nNumResults = 0;
-        dResult = _parser.Eval(nNumResults);
-
-        if (nNumResults < 2)
-            throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, SyntaxError::invalid_position, sVectorVals);
-
-        // Fill the vector vals with the needed number of samples
-        for (unsigned int i = 0; i < nSamples; i++)
-            vVectorVals.push_back(dResult[0] + (dResult[1] - dResult[0]) / double(nSamples - 1)*i);
-    }
-    else
-        throw SyntaxError(SyntaxError::SEPARATOR_NOT_FOUND, sCmd, SyntaxError::invalid_position);
-
-    return vVectorVals;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function will expand the z vector
 /// into a z matrix using triangulation.
 ///
@@ -4243,7 +4142,7 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     size_t nDims = 1;
 
     // Extract the interval information
-    IntervalSet ivl = cmdParser.parseIntervals(false);
+    IntervalSet ivl = cmdParser.parseIntervals();
 
     // Handle parameters
     std::vector<double> vParVal = cmdParser.getParameterValueAsNumericalValue("particles");

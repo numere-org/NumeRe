@@ -2289,7 +2289,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
     CommandLineParser cmdParser(sCmd, "integrate", CommandLineParser::CMD_EXPR_set_PAR);
 
     if (cmdParser.getCommand().substr(0, 10) == "integrate2"
-        || (findParameter(sCmd, "x", '=') && findParameter(sCmd, "y", '=')))
+        || cmdParser.parseIntervals().size() == 2)
     {
         integrate2d(cmdParser);
         sCmd = cmdParser.getReturnValueStatement();

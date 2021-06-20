@@ -53,7 +53,7 @@ void Interval::assign(const Interval& ivl)
 double Interval::getSample(size_t n, size_t nSamples) const
 {
     if (m_vInterval.size() == 2)
-        return m_vInterval.front() + (m_vInterval.back() - m_vInterval.front()) * n / (double)(nSamples-1);
+        return m_vInterval.front() + (m_vInterval.back() - m_vInterval.front()) / (double)(nSamples-1) * n;
     else if (m_vInterval.size() > n)
         return m_vInterval[n];
     else
@@ -262,16 +262,24 @@ void Interval::refresh()
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Parser& _parser = NumeReKernel::getInstance()->getParser();
 
+    // Examine the number of indices. If only one value then it
+    // might be a singleton or a data object as interval
     if (indices.size() == 1)
     {
+        // Get the data elements
         if (_data.containsTablesOrClusters(indices.front()))
             getDataElements(indices.front(), _parser, _data, NumeReKernel::getInstance()->getSettings());
 
+        // Parse the index
         _parser.SetExpr(indices.front());
         value_type* v;
         int nResults;
+
+        // Get the return values
         v = _parser.Eval(nResults);
 
+        // Assign the values depending on their
+        // number
         if (nResults == 1)
             m_vInterval.assign(2, v[0]);
         else
@@ -281,8 +289,13 @@ void Interval::refresh()
     {
         m_vInterval.clear();
 
+        // Parse every index
         for (size_t i = 0; i < indices.size(); i++)
         {
+            // Get possible data elements
+            if (_data.containsTablesOrClusters(indices[i]))
+                getDataElements(indices[i], _parser, _data, NumeReKernel::getInstance()->getSettings());
+
             _parser.SetExpr(indices[i]);
             m_vInterval.push_back(_parser.Eval());
         }

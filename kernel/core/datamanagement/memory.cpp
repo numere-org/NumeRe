@@ -2836,28 +2836,6 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
 
 
 /////////////////////////////////////////////////
-/// \brief Static helper function t return a
-/// column from the buffer deque.
-///
-/// \param currentWindowElements const std::deque<std::vector>&
-/// \param col size_t
-/// \return std::vector<double>
-///
-/////////////////////////////////////////////////
-static std::vector<double> getColumnFromDeque(const std::deque<std::vector<double>>& currentWindowElements, size_t col)
-{
-    std::vector<double> vCol;
-
-    for (size_t i = 0; i < currentWindowElements.size(); i++)
-    {
-        vCol.push_back(currentWindowElements.at(i).at(col));
-    }
-
-    return vCol;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This private member function realizes
 /// the application of a smoothing window to 2D
 /// data sets.
