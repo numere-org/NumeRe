@@ -52,12 +52,45 @@ void Interval::assign(const Interval& ivl)
 /////////////////////////////////////////////////
 double Interval::getSample(size_t n, size_t nSamples) const
 {
+    // Too few samples are not reasonable
+    if (nSamples < 2)
+        throw SyntaxError(SyntaxError::INVALID_INDEX, m_sDefinition, SyntaxError::invalid_position, m_sDefinition);
+
+    // Depending on the number of elements in the internal
+    // interval, we'll interpret the interval access different
     if (m_vInterval.size() == 2)
+        // Usual interval access using the two values as start
+        // and end of the interval
         return m_vInterval.front() + (m_vInterval.back() - m_vInterval.front()) / (double)(nSamples-1) * n;
-    else if (m_vInterval.size() > n)
-        return m_vInterval[n];
+    else if (m_vInterval.size() == nSamples)
+    {
+        // In this case we have more than two values in
+        // the internal array and the selected number of
+        // samples corresponds to the array length - we
+        // simply return the corresponding array entries
+        if (m_vInterval.size() > n)
+            return m_vInterval[n];
+        else
+            return m_vInterval.back();
+    }
     else
-        return m_vInterval.back();
+    {
+        // In this case we have more than two values in
+        // the internal array but the selected number of
+        // samples is different from the array length.
+        // We use linear interpolation between the array
+        // values to handle this
+        double val = (m_vInterval.size()-1) / (double)(nSamples-1) * n;
+        size_t nIdx = (size_t)val;
+        val -= nIdx;
+
+        if (nIdx < m_vInterval.size()+1)
+            return m_vInterval[nIdx] + val * (m_vInterval[nIdx+1] - m_vInterval[nIdx]);
+        else if (nIdx < m_vInterval.size())
+            return m_vInterval[nIdx] + val * (m_vInterval[nIdx] - m_vInterval[nIdx-1]);
+        else
+            return m_vInterval.back() + (val + nIdx - m_vInterval.size() + 1) * (m_vInterval.back() - m_vInterval[m_vInterval.size()-2]);
+    }
 }
 
 
