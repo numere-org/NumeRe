@@ -32,3 +32,4 @@ New	The command "url" can be used to access online resources and to even upload 
 Fixed	The Package Repository Browser can now safely be closed during a transmission operation. Closing might take some seconds until the current operation terminates or times out.
 Added	The Package Repository Browser has now a search functionality.
 Fixed	The refresh-boundary issue of 2D integrals was resolved.
+Fixed	Goto procedure definition now may also find relative namespaces referenced by "this" namespace.

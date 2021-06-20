@@ -5463,6 +5463,9 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
         // Get the current namespace and replace it
         wxString thispath = GetFileNameAndPath();
         pathname.replace(pathname.find("$this~"), 6, thispath.substr(0, thispath.rfind('\\') + 1));
+
+        while (pathname.find('~') != string::npos)
+			pathname[pathname.find('~')] = '\\';
     }
     else if (pathname.find("$thisfile~") != string::npos)
     {
