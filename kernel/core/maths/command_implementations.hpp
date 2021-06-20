@@ -42,7 +42,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 bool fastFourierTransform(CommandLineParser& cmdParser);
 bool fastWaveletTransform(CommandLineParser& cmdParser);
 bool evalPoints(CommandLineParser& cmdParser);
-bool createDatagrid(string& sCmd, string& sTargetCache, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
+bool createDatagrid(CommandLineParser& cmdParser);
 bool writeAudioFile(CommandLineParser& cmdParser);
 bool readAudioFile(CommandLineParser& cmdParser);
 bool seekInAudioFile(CommandLineParser& cmdParser);

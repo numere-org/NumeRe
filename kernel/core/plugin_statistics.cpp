@@ -17,10 +17,10 @@
 ******************************************************************************/
 
 #include <vector>
-#include <boost/math/distributions/students_t.hpp>
 
 #include "plugins.hpp"
 #include "maths/parser_functions.hpp"
+#include "maths/student_t.hpp"
 #include "../kernel.hpp"
 
 /*
@@ -136,8 +136,7 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
 
         // Use BOOST to calculate the Student-t value for
         // the current number of freedoms
-        boost::math::students_t dist(vStats[STATS_NUM][j]);
-        vStats[STATS_S_T].push_back(boost::math::quantile(boost::math::complement(dist, 0.025)));
+        vStats[STATS_S_T].push_back(student_t(vStats[STATS_NUM][j], 0.95));
     }
 
     return vStats;

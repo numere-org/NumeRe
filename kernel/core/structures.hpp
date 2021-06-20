@@ -25,6 +25,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include "interval.hpp"
 
 using namespace std;
 
@@ -836,11 +837,13 @@ class VectorIndex
 template<class T>
 class EndlessVector : public vector<T>
 {
+    private:
+        T m_fallback;
     public:
         /////////////////////////////////////////////////
         /// \brief Default constructor
         /////////////////////////////////////////////////
-        EndlessVector() : vector<T>() {}
+        EndlessVector() : vector<T>(), m_fallback() {}
 
         /////////////////////////////////////////////////
         /// \brief Copy constructor from same.
@@ -848,7 +851,7 @@ class EndlessVector : public vector<T>
         /// \param vec const EndlessVector&
         ///
         /////////////////////////////////////////////////
-        EndlessVector(const EndlessVector& vec) : vector<T>(vec) {}
+        EndlessVector(const EndlessVector& vec) : vector<T>(vec), m_fallback() {}
 
         /////////////////////////////////////////////////
         /// \brief Assignment operator overload from
@@ -871,15 +874,15 @@ class EndlessVector : public vector<T>
         /// position beyond the internal array.
         ///
         /// \param n size_t
-        /// \return T
+        /// \return T&
         ///
         /////////////////////////////////////////////////
-        T operator[](size_t n)
+        T& operator[](size_t n)
         {
             if (n < vector<T>::size())
                 return vector<T>::operator[](n);
 
-            return T();
+            return m_fallback;
         }
 };
 

@@ -150,7 +150,7 @@ class CommandLineParser
         std::string getExprAsMathExpression(bool parseDataObjects = false) const;
         std::string parseExprAsString() const;
         std::vector<double> parseExprAsNumericalValues() const;
-        std::vector<double> parseIntervals(bool bErase = false);
+        IntervalSet parseIntervals(bool bErase = false);
         std::string getTargetTable(Indices& _targetIndices, const std::string& sDefaultTableName);
         std::vector<std::string> getAllParametersWithValues() const;
         std::string getParameterValue(const std::string& sParameter) const;

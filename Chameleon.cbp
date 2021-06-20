@@ -450,6 +450,8 @@
 		<Unit filename="kernel/core/documentation/docgen.hpp" />
 		<Unit filename="kernel/core/documentation/documentation.cpp" />
 		<Unit filename="kernel/core/documentation/documentation.hpp" />
+		<Unit filename="kernel/core/interval.cpp" />
+		<Unit filename="kernel/core/interval.hpp" />
 		<Unit filename="kernel/core/io/file.cpp" />
 		<Unit filename="kernel/core/io/file.hpp" />
 		<Unit filename="kernel/core/io/fileops.cpp" />
@@ -481,6 +483,8 @@
 		<Unit filename="kernel/core/maths/resampler.cpp" />
 		<Unit filename="kernel/core/maths/resampler.h" />
 		<Unit filename="kernel/core/maths/spline.h" />
+		<Unit filename="kernel/core/maths/student_t.cpp" />
+		<Unit filename="kernel/core/maths/student_t.hpp" />
 		<Unit filename="kernel/core/maths/wavelet.cpp" />
 		<Unit filename="kernel/core/maths/wavelet.hpp" />
 		<Unit filename="kernel/core/plotting/graph_helper.cpp" />

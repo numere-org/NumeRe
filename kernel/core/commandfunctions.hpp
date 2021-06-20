@@ -2289,7 +2289,7 @@ static CommandReturnValues cmd_integrate(string& sCmd)
     CommandLineParser cmdParser(sCmd, "integrate", CommandLineParser::CMD_EXPR_set_PAR);
 
     if (cmdParser.getCommand().substr(0, 10) == "integrate2"
-        || (findParameter(sCmd, "x", '=') && findParameter(sCmd, "y", '=')))
+        || cmdParser.parseIntervals().size() == 2)
     {
         integrate2d(cmdParser);
         sCmd = cmdParser.getReturnValueStatement();
@@ -4625,17 +4625,13 @@ static CommandReturnValues cmd_define(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_datagrid(string& sCmd)
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
+    CommandLineParser cmdParser(sCmd, "datagrid", CommandLineParser::CMD_EXPR_set_PAR);
     Settings& _option = NumeReKernel::getInstance()->getSettings();
-    FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    string sArgument = "grid";
-
-    if (!createDatagrid(sCmd, sArgument, _parser, _data, _functions, _option))
+    if (!createDatagrid(cmdParser))
         doc_Help("datagrid", _option);
     else if (_option.systemPrints())
-        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DATAGRID_SUCCESS", sArgument));
+        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_DATAGRID_SUCCESS", cmdParser.getReturnValueStatement()));
 
     return COMMAND_PROCESSED;
 }

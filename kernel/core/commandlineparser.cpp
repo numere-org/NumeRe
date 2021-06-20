@@ -19,7 +19,7 @@
 #include "commandlineparser.hpp"
 #include "../kernel.hpp"
 #include "utils/tools.hpp"            // For findCommand, extractCommandString and getMatchingParenthesis
-#include "maths/parser_functions.hpp" // For evaluateTargetOptionInCommand and readAndParseIntervals -> shall be moved here
+#include "maths/parser_functions.hpp" // For evaluateTargetOptionInCommand
 
 // Prototype needed for file name conversion
 std::string removeQuotationMarks(const std::string& sString);
@@ -458,17 +458,15 @@ std::vector<double> CommandLineParser::parseExprAsNumericalValues() const
 /// \brief Parses intervals in the parameter list
 /// and returns them as a vector. The interval
 /// may be deleted, if the corresponding flag is
-/// set to true. Only wraps
-/// readAndParseIntervals().
+/// set to true.
 ///
 /// \param bErase bool
-/// \return std::vector<double>
+/// \return IntervalSet
 ///
 /////////////////////////////////////////////////
-std::vector<double> CommandLineParser::parseIntervals(bool bErase)
+IntervalSet CommandLineParser::parseIntervals(bool bErase)
 {
-    NumeReKernel* instance = NumeReKernel::getInstance();
-    return readAndParseIntervals(m_parlist, instance->getParser(), instance->getMemoryManager(), instance->getDefinitions(), instance->getSettings(), bErase);
+    return IntervalSet(m_parlist);
 }
 
 
