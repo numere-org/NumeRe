@@ -508,7 +508,7 @@ bool integrate2d(CommandLineParser& cmdParser)
 
     if (ivl.intervals.size() >= 2)
     {
-        if (ivl[0].front() == ivl[0].back() || ivl[1].front() == ivl[1].back())
+        if (ivl[0].front() == ivl[0].back())
             throw SyntaxError(SyntaxError::INVALID_INTEGRATION_RANGES, cmdParser.getCommandLine(), SyntaxError::invalid_position);
 
         if (isinf(ivl[0].front()) || isnan(ivl[0].front())
@@ -583,9 +583,6 @@ bool integrate2d(CommandLineParser& cmdParser)
     if (ivl[1].contains(_defVars.sName[0]))
         bRenewBoundaries = true;    // Ja? Setzen wir den bool entsprechend
 
-    double dx = (ivl[0].max() - ivl[0].min()) / (nSamples-1);
-    double dy = (ivl[1].max() - ivl[1].min()) / (nSamples-1);
-
     // Ensure that the precision is reasonble
     // If the precision is invalid, we guess a reasonable value here
     if (!nSamples)
@@ -609,7 +606,15 @@ bool integrate2d(CommandLineParser& cmdParser)
 
     // --> Setzen wir "x" und "y" auf ihre Startwerte <--
     x = ivl[0](0); // x = x_0
+
+    // y might depend on the starting value
+    if (bRenewBoundaries)
+        refreshBoundaries(ivl, sIntegrationExpression);
+
     y = ivl[1](0); // y = y_0
+
+    double dx = (ivl[0].max() - ivl[0].min()) / (nSamples-1);
+    double dy = (ivl[1].max() - ivl[1].min()) / (nSamples-1);
 
     // --> Werte mit den Startwerten die erste Stuetzstelle fuer die y-Integration aus <--
     v = _parser.Eval(nResults);
@@ -640,7 +645,10 @@ bool integrate2d(CommandLineParser& cmdParser)
 
             // Refresh the y boundaries, if necessary
             if (bRenewBoundaries)
+            {
                 refreshBoundaries(ivl, sIntegrationExpression);
+                dy = (ivl[1].max() - ivl[1].min()) / (nSamples-1);
+            }
 
             // --> Setzen wir "y" auf den Wert, der von der unteren y-Grenze vorgegeben wird <--
             y = ivl[1](0);
@@ -670,7 +678,10 @@ bool integrate2d(CommandLineParser& cmdParser)
 
                 // Refresh the y boundaries, if necessary
                 if (bRenewBoundaries)
+                {
                     refreshBoundaries(ivl, sIntegrationExpression);
+                    dy = (ivl[1].max() - ivl[1].min()) / (nSamples-1);
+                }
 
                 // Set y to the first position
                 y = ivl[1](0);
