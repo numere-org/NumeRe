@@ -69,7 +69,7 @@ void doc_Help(const string& __sTopic, Settings& _option)
         FileSystem _fSys;
         _fSys.setTokens(_option.getTokenPaths());
         _fSys.setPath("docs/htmlexport", true, _option.getExePath());
-        string sFilename = "<>/docs/htmlexport/"+_option.getHelpArtclID(sTopic) + ".html";
+        string sFilename = "<>/docs/htmlexport/"+_option.getHelpArticleID(sTopic) + ".html";
         _option.declareFileType(".html");
         sFilename = _option.ValidFileName(sFilename,".html");
 

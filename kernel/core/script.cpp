@@ -21,6 +21,7 @@
 
 #include "script.hpp"
 #include "../kernel.hpp"
+#include "utils/tinyxml2.h"
 
 #include <algorithm>
 
@@ -607,104 +608,94 @@ string Script::extractDocumentationIndex(string& sScriptCommand)
 /// file.
 ///
 /// \param sScriptCommand string&
-/// \return void
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-void Script::writeDocumentationArticle(string& sScriptCommand)
+std::string Script::writeDocumentationArticle(string& sScriptCommand)
 {
-    // Ensure that the article ID is already present
-    if (!sHelpID.length())
-    {
-        throw SyntaxError(SyntaxError::HLPIDX_ENTRY_IS_MISSING, sScriptCommand, SyntaxError::invalid_position);
-    }
-
-    // create a valid file name
-    string sHelpfileName = "<>/docs/plugins/" + sHelpID + ".nhlp";
-    sHelpfileName = FileSystem::ValidFileName(sHelpfileName, ".nhlp");
-    ofstream fHelpfile;
+    tinyxml2::XMLDocument doc;
 
     // Depending on whether the whole file was written in
     // one line or multiple script lines
-    if (sScriptCommand.find("</helpfile>") != string::npos)
+    if (sScriptCommand.find("</helpfile>") != std::string::npos)
     {
         sScriptCommand.erase(sScriptCommand.find("</helpfile>")+11);
+        sScriptCommand.erase(0, 10);
 
-        fHelpfile.open(sHelpfileName.c_str());
-
-        // Write the contents to the documentation article file
-        if (!fHelpfile.fail())
-            fHelpfile << sScriptCommand.substr(10, sScriptCommand.find("</helpfile>")) << endl;
-        else
-        {
-            fHelpfile.close();
-            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sHelpfileName);
-        }
-        fHelpfile.close();
+        doc.Parse(sScriptCommand.c_str(), sScriptCommand.length());
     }
     else
     {
-        fHelpfile.open(sHelpfileName.c_str());
+        std::string sBuffer = sScriptCommand.substr(10) + "\n";
+        std::string sTemp;
 
-        // Write the contents linewise to the documentation article file
-        if (!fHelpfile.fail())
+        // Read the contents linewise from the script
+        while (!fScript.eof())
         {
-            // Ensure that the article ID starts with the correct prefix
-            if (sScriptCommand.length() > 10 && sScriptCommand.find("<article") != string::npos)
+            std::getline(fScript, sTemp);
+            nLine++;
+            StripSpaces(sTemp);
+
+            if (sTemp.find("##") != std::string::npos)
+                sTemp = stripLineComments(sTemp);
+
+            // Try to find the end of the current documentation article
+            if (sTemp.find("</helpfile>") == std::string::npos)
+                sBuffer += sTemp + "\n";
+            else
             {
-                string sArticleID = getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3);
-
-                if (sArticleID.substr(0, 5) != "plgn_" && "plgn_"+sArticleID == sHelpID)
-                    sScriptCommand.insert(sScriptCommand.find(getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3)), "plgn_");
-                else if (sArticleID.substr(0, 4) != "pkg_" && "pkg_"+sArticleID == sHelpID)
-                    sScriptCommand.insert(sScriptCommand.find(getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3)), "pkg_");
-            }
-
-            if (sScriptCommand.length() > 10)
-                fHelpfile << sScriptCommand.substr(10) << endl;
-
-            string sTemp;
-
-            // Read the contents linewise from the script
-            while (!fScript.eof())
-            {
-                getline(fScript, sTemp);
-                nLine++;
-                StripSpaces(sTemp);
-                if (sTemp.find("##") != string::npos)
-                    sTemp = stripLineComments(sTemp);
-
-                // Try to find the end of the current documentation article
-                if (sTemp.find("</helpfile>") == string::npos)
-                {
-                    if (sTemp.length() > 10 && sTemp.find("<article") != string::npos)
-                    {
-                        string sArticleID = getArgAtPos(sTemp, sTemp.find("id=")+3);
-
-                        if (sArticleID.substr(0, 5) != "plgn_" && "plgn_"+sArticleID == sHelpID)
-                            sTemp.insert(sTemp.find(getArgAtPos(sTemp, sTemp.find("id=")+3)), "plgn_");
-                        else if (sArticleID.substr(0, 4) != "pkg_" && "pkg_"+sArticleID == sHelpID)
-                            sTemp.insert(sTemp.find(getArgAtPos(sTemp, sTemp.find("id=")+3)), "pkg_");
-                    }
-
-                    // Write the current line
-                    fHelpfile << sTemp << endl;
-                }
-                else
-                {
-                    // Write the last line
-                    fHelpfile << sTemp.substr(0,sTemp.find("</helpfile>")) << endl;
-                    break;
-                }
+                // Append the last line
+                sBuffer += sTemp.substr(0,sTemp.find("</helpfile>"));
+                break;
             }
         }
-        else
-        {
-            fHelpfile.close();
-            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sHelpfileName);
-        }
-        fHelpfile.close();
+
+        doc.Parse(sBuffer.c_str(), sBuffer.length());
     }
-    sScriptCommand.clear();
+
+    tinyxml2::XMLElement* article = doc.FirstChildElement("article");
+
+    while (article)
+    {
+        if (!sHelpID.length())
+        {
+            sHelpID = article->Attribute("id");
+
+            // Ensure that the article ID start with the plugin prefix
+            if (sHelpID.substr(0, 5) != "plgn_" && sHelpID.substr(0, 4) != "pkg_")
+                sHelpID = "plgn_" + sHelpID;
+        }
+
+        std::string sId = article->Attribute("id");
+
+        if (sId.substr(0, 5) != "plgn_" && sId.substr(0, 4) != "pkg_")
+        {
+            sId = "plgn_" + sId;
+            article->SetAttribute("id", sId.c_str());
+        }
+
+        tinyxml2::XMLElement* keywords = article->FirstChildElement("keywords");
+
+        if (!keywords)
+        {
+            keywords = doc.NewElement("keywords");
+            tinyxml2::XMLElement* keyword = doc.NewElement("keywords");
+            keyword->SetText(sInstallID.c_str());
+            keywords->InsertFirstChild(keyword);
+            article->InsertFirstChild(keywords);
+        }
+
+        article = article->NextSiblingElement();
+    }
+
+    // create a valid file name
+    std::string sHelpfileName = "<>/docs/plugins/" + sHelpID + ".nhlp";
+    sHelpfileName = FileSystem::ValidFileName(sHelpfileName, ".nhlp");
+
+    if (doc.SaveFile(sHelpfileName.c_str(), false) != tinyxml2::XML_SUCCESS)
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sHelpfileName);
+
+    return sInstallID + " <<>><helpindex id=\"" + sHelpID + "\" file=\"" + sHelpfileName + "\" />";
 }
 
 
@@ -994,16 +985,15 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         }
 
         // Extract the documentation index
-        if (sScriptCommand.substr(0,11) == "<helpindex>" && bInstallProcedures)
+        /*if (sScriptCommand.substr(0,11) == "<helpindex>" && bInstallProcedures)
         {
             return extractDocumentationIndex(sScriptCommand);
-        }
+        }*/
 
         // Write the documentation articles to their corresponding files
         if (sScriptCommand.substr(0,10) == "<helpfile>" && bInstallProcedures)
         {
-            writeDocumentationArticle(sScriptCommand);
-            continue;
+            return writeDocumentationArticle(sScriptCommand);
         }
 
         // Write window layouts

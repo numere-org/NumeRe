@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
+#include <fstream>
 
 #include "doc_helper.hpp"
 #include "../version.h"
@@ -22,7 +23,7 @@
 #include "../../kernel.hpp"
 #include <algorithm>
 
-bool fileExists(const string&);
+bool fileExists(const std::string&);
 
 /////////////////////////////////////////////////
 /// \brief This structure defines a single entry
@@ -37,13 +38,206 @@ struct DocumentationEntry
 };
 
 
+
+
+/////////////////////////////////////////////////
+/// \brief Strips comments from the documentation
+/// article file.
+///
+/// \param sLine std::string&
+/// \param fDocument std::ifstream&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void stripComments(std::string& sLine, std::ifstream& fDocument)
+{
+    while (sLine.find("<!--") != std::string::npos)
+    {
+        if (sLine.find("-->", sLine.find("<!--")+4) != std::string::npos)
+            sLine.erase(sLine.find("<!--"), sLine.find("-->", sLine.find("<!--")+4)+3 - sLine.find("<!--"));
+        else
+        {
+            sLine.erase(sLine.find("<!--"));
+            std::string sLineTemp = "";
+
+            while (!fDocument.eof())
+            {
+                std::getline(fDocument, sLineTemp);
+                StripSpaces(sLineTemp);
+
+                if (!sLineTemp.length())
+                    continue;
+
+                if (sLineTemp.find("-->") != std::string::npos)
+                {
+                    sLine += sLineTemp.substr(sLineTemp.find("-->")+3);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Searches an article in a file by the
+/// selected ID.
+///
+/// \param sLine std::string&
+/// \param sArticleID const std::string&
+/// \param fDocument std::ifstream&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void findArticleById(std::string& sLine, const std::string& sArticleID, std::ifstream& fDocument)
+{
+    while (sLine.find("<article ") != std::string::npos && !fDocument.eof())
+    {
+        // Does the article contain the necessary ID?
+        if (Documentation::getArgAtPos(sLine, sLine.find("id=")+3) != sArticleID)
+        {
+            while (!fDocument.eof())
+            {
+                std::getline(fDocument, sLine);
+                StripSpaces(sLine);
+
+                // Remove comments
+                if (sLine.find("<!--") != std::string::npos)
+                    stripComments(sLine, fDocument);
+
+                if (!sLine.length())
+                    continue;
+
+                // The next article starts
+                if (sLine.find("<article") != std::string::npos)
+                    break;
+            }
+        }
+        else
+        {
+            sLine.erase(0, sLine.find('>', sLine.find("<article "))+1);
+            StripSpaces(sLine);
+            return;
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function loads and
+/// prepares the selected documentation article.
+///
+/// \param sFileName const std::string&
+/// \param sArticleID const std::string&
+/// \return vector<string>
+///
+/////////////////////////////////////////////////
+static std::vector<std::string> loadDocumentationArticle(const std::string& sFileName, const std::string& sArticleID)
+{
+    std::ifstream fDocument;
+    fDocument.open(sFileName.c_str(), std::ios_base::in);
+
+    if (fDocument.fail())
+    {
+        fDocument.close();
+        throw SyntaxError(SyntaxError::HLP_FILE_MISSING, "", SyntaxError::invalid_position, sFileName);
+    }
+
+    std::string sLine;
+    std::vector<std::string> vReturn;
+
+    while (!fDocument.eof())
+    {
+        std::getline(fDocument, sLine);
+        StripSpaces(sLine);
+
+        // Remove comments
+        if (sLine.find("<!--") != std::string::npos)
+            stripComments(sLine, fDocument);
+
+        if (!sLine.length())
+            continue;
+
+        // Find the selected article
+        if (sLine.find("<article ") != std::string::npos)
+        {
+            findArticleById(sLine, sArticleID, fDocument);
+
+            if (fDocument.eof())
+            {
+                vReturn.push_back("NO_ENTRY_FOUND");
+                return vReturn;
+            }
+
+            if (!sLine.length())
+                continue;
+        }
+
+        // Extract the title
+        if (sLine.find("<title ") != std::string::npos)
+        {
+            vReturn.push_back(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7));
+            sLine.erase(0, sLine.find("/>", sLine.find("<title "))+2);
+            StripSpaces(sLine);
+
+            if (!sLine.length())
+                continue;
+        }
+
+        // Extract the contents
+        if (sLine.find("<contents>") != std::string::npos)
+        {
+            sLine.erase(0, sLine.find("<contents>")+10);
+
+            if (sLine.length())
+                vReturn.push_back(sLine);
+
+            while (!fDocument.eof())
+            {
+                std::getline(fDocument, sLine);
+                StripSpaces(sLine);
+
+                if (!sLine.length())
+                    continue;
+
+                if (sLine.find("<!--") != std::string::npos)
+                    stripComments(sLine, fDocument);
+
+                if (sLine.find("</contents>") != std::string::npos)
+                {
+                    sLine.erase(sLine.find("</contents>"));
+
+                    if (sLine.length())
+                        vReturn.push_back(sLine);
+
+                    return vReturn;
+                }
+
+                vReturn.push_back(sLine);
+            }
+        }
+    }
+
+    fDocument.close();
+
+    if (!vReturn.size())
+        vReturn.push_back("NO_ENTRY_FOUND");
+
+    return vReturn;
+}
+
+
+
+
+
+
+
 /////////////////////////////////////////////////
 /// \brief The default constructor
 /////////////////////////////////////////////////
 Documentation::Documentation() : FileSystem()
 {
     vDocIndexTable.reserve(128);
-    sDocIndexFile = "<>/numere.hlpidx";
 }
 
 
@@ -53,8 +247,6 @@ Documentation::Documentation() : FileSystem()
 /////////////////////////////////////////////////
 Documentation::~Documentation()
 {
-    if (fDocument.is_open())
-        fDocument.close();
 }
 
 
@@ -65,11 +257,11 @@ Documentation::~Documentation()
 /// overwritten.
 ///
 /// \param entry const DocumentationEntry&
-/// \param sKeyWords std::string
+/// \param keyWords tinyxml2::XMLElement*
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Documentation::addEntry(const DocumentationEntry& entry, std::string sKeyWords)
+void Documentation::addEntry(const DocumentationEntry& entry, tinyxml2::XMLElement* keyWords)
 {
     EndlessVector<std::string> keys = getAllArguments(entry.sIdxKeys);
     int nIndex = findPositionUsingIdxKeys(entry.sIdxKeys);
@@ -95,184 +287,48 @@ void Documentation::addEntry(const DocumentationEntry& entry, std::string sKeyWo
 
     // Insert the keywords to the map and use the
     // identified index as reference
-    while (sKeyWords.find("<keyword>") != string::npos)
+    while (keyWords)
     {
-        std::string sKeyWord = sKeyWords.substr(sKeyWords.find('>')+1, sKeyWords.find("</keyword>")-1-sKeyWords.find('>'));
-        bool bDelete = sKeyWords.substr(0, sKeyWords.find('>')).find("delete=\"true\"") != string::npos;
-        sKeyWords.erase(0, sKeyWords.find("</keyword>")+10);
-
-        EndlessVector<std::string> keywords = getAllArguments(sKeyWord);
-
-        for (const std::string& keyword : keywords)
-        {
-            if (bDelete && mDocumentationIndex.find(keyword) != mDocumentationIndex.end())
-                mDocumentationIndex.erase(mDocumentationIndex.find(keyword));
-            else
-                mDocumentationIndex[keyword] = nIndex;
-        }
+        std::string sKeyWord = keyWords->GetText();
+        mDocumentationIndex[sKeyWord] = nIndex;
+        keyWords = keyWords->NextSiblingElement();
     }
 }
 
 
 /////////////////////////////////////////////////
-/// \brief This private member function updates
-/// the documentation index file after an update
-/// or an installation of a plugin.
+/// \brief Parses a documentation file using
+/// TinyXML-2 to extract the necessary
+/// for the documentation index.
 ///
+/// \param element tinyxml2::XMLElement*
+/// \param sFileName const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Documentation::updateIndexFile()
+void Documentation::parseDocumentationFile(tinyxml2::XMLElement* element, const std::string& sFileName)
 {
-    if (!vDocIndexTable.size())
-        throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
-
-    // Create a valid file name if it still contains
-    // a path placeholder
-    if (sDocIndexFile.find("<>") != string::npos)
-        sDocIndexFile = FileSystem::ValidFileName(sDocIndexFile, ".hlpidx");
-
-    if (fDocument.is_open())
-        fDocument.close();
-
-    // Open the documentation index file and truncate its
-    // contents
-    fDocument.open(sDocIndexFile.c_str(), ios_base::out | ios_base::trunc);
-
-    if (fDocument.fail())
+    while (element)
     {
-        fDocument.close();
-        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "", SyntaxError::invalid_position, sDocIndexFile);
-    }
+        tinyxml2::XMLElement* title = element->FirstChildElement("title");
+        tinyxml2::XMLElement* keywords = element->FirstChildElement("keywords");
 
-    // Write the copyright comment
-    fDocument << "<!--\n";
-    fDocument << "  NumeRe: Framework fuer Numerische Rechnungen\n"
-              << "  Copyright (C) " << AutoVersion::YEAR << "  Erik Haenel et al.\n\n"
-              << "  This program is free software: you can redistribute it and/or modify\n"
-              << "  it under the terms of the GNU General Public License as published by\n"
-              << "  the Free Software Foundation, either version 3 of the License, or\n"
-              << "  (at your option) any later version.\n\n"
-              << "  This program is distributed in the hope that it will be useful,\n"
-              << "  but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-              << "  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-              << "  GNU General Public License for more details.\n\n"
-              << "  You should have received a copy of the GNU General Public License\n"
-              << "  along with this program.  If not, see <http://www.gnu.org/licenses/>.\n";
-    fDocument << "-->" << endl << endl;
-
-    fDocument << "<helpindex>" << endl;
-
-    // Write the single documentation index entries
-    for (size_t i = 0; i < vDocIndexTable.size(); i++)
-    {
-        fDocument << "\t<article id=\"" << vDocIndexTable[i].sArticleId << "\">\n";
-        fDocument << "\t\t<file path=\"" << vDocIndexTable[i].sDocFilePath << "\" />\n";
-        fDocument << "\t\t<title string=\"" << vDocIndexTable[i].sTitle << "\" idxkey=\"" << vDocIndexTable[i].sIdxKeys << "\" />\n";
-        fDocument << "\t\t<keywords>\n";
-
-        // Write the keywords, which correspond to the
-        // current article
-        for (auto mDocIndexIterator = mDocumentationIndex.begin(); mDocIndexIterator != mDocumentationIndex.end(); ++mDocIndexIterator)
+        if (title && keywords && element->Attribute("id") && title->Attribute("string") && element->FirstChildElement("contents"))
         {
-            if (mDocIndexIterator->second == (int)i)
-                fDocument << "\t\t\t<keyword>" << mDocIndexIterator->first << "</keyword>\n";
+            DocumentationEntry entry;
+            entry.sArticleId = element->Attribute("id");
+            entry.sDocFilePath = sFileName;
+            entry.sTitle = title->Attribute("string");
+
+            if (title->Attribute("idxkey"))
+                entry.sIdxKeys = title->Attribute("idxkey");
+
+            if (keywords)
+                addEntry(entry, keywords->FirstChildElement());
         }
 
-        fDocument << "\t\t</keywords>\n";
-        fDocument << "\t</article>\n";
+        element = element->NextSiblingElement();
     }
-
-    fDocument << "</helpindex>" << endl;
-    fDocument.close();
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function opens the passed
-/// index file and reads its contents to memory.
-///
-/// \param sIndexFile const string&
-/// \return bool
-///
-/// If any of the read article IDs is already in
-/// internal storage, it's links and keywords are
-/// update.
-/////////////////////////////////////////////////
-bool Documentation::loadIndexFile(const string& sIndexFile)
-{
-    // Open the documentation index file for reading
-    fDocument.open(FileSystem::ValidFileName(sIndexFile, ".hlpidx").c_str(), ios_base::in);
-
-    if (fDocument.fail())
-    {
-        fDocument.close();
-        return false;
-    }
-
-    string sLine;
-    string sDocIndex;
-    string sKeyWord;
-    vector<string> vEntry;
-
-    // Read the index file's contents completely to memory
-    while (!fDocument.eof())
-    {
-        getline(fDocument, sLine);
-        StripSpaces(sLine);
-
-        if (sLine.length())
-            sDocIndex += sLine;
-    }
-
-    fDocument.close();
-
-    // Ignore comment blocks
-    while (sDocIndex.length() && sDocIndex.find("<!--") != string::npos)
-    {
-        unsigned int nEndPos = sDocIndex.find("-->", sDocIndex.find("<!--")+4);
-
-        if (nEndPos == string::npos)
-            sDocIndex.erase(sDocIndex.find("<!--"));
-        else
-            sDocIndex.erase(sDocIndex.find("<!--"), nEndPos - sDocIndex.find("<!--")+3);
-    }
-
-    if (!sDocIndex.length())
-        return false;
-
-    while (sDocIndex.length() > 26)
-    {
-        if (sDocIndex.find("<article ") == string::npos || sDocIndex.find("</article>") == string::npos)
-            break;
-
-        sLine = sDocIndex.substr(sDocIndex.find("<article "), sDocIndex.find("</article>")-sDocIndex.find("<article "));
-        sDocIndex.erase(0, sDocIndex.find("</article>")+10);
-
-        // Shall this entry be deleted?
-        if (sLine.substr(0, sLine.find('>')).find("delete=\"true\"") != string::npos)
-        {
-            removeFromDocIndex(getArgAtPos(sLine, sLine.find("id=")+3), false);
-            continue;
-        }
-
-        if (sLine.find("<file ") == string::npos || sLine.find("<keywords>") == string::npos)
-            continue;
-
-        DocumentationEntry entry;
-
-        entry.sArticleId = getArgAtPos(sLine, sLine.find("id=")+3);
-        entry.sDocFilePath = getArgAtPos(sLine, sLine.find("path=")+5);
-        entry.sTitle = getArgAtPos(sLine, sLine.find("string=")+7);
-        entry.sIdxKeys = getArgAtPos(sLine, sLine.find("idxkey=")+7);
-
-        addEntry(entry, sLine.substr(sLine.find("<keywords>")+10));
-
-        if (sDocIndex == "</helpindex>")
-            break;
-    }
-
-    return true;
 }
 
 
@@ -281,11 +337,11 @@ bool Documentation::loadIndexFile(const string& sIndexFile)
 /// the position of the queried topic in the
 /// documentation index table.
 ///
-/// \param sTopic const string&
+/// \param sTopic const std::string&
 /// \return int
 ///
 /////////////////////////////////////////////////
-int Documentation::findPositionInDocumentationIndex(const string& sTopic) const
+int Documentation::findPositionInDocumentationIndex(const std::string& sTopic) const
 {
     int nIndex = -1;
     auto iter = mDocumentationIndex.begin();
@@ -368,133 +424,17 @@ int Documentation::findPositionUsingIdxKeys(const std::string& sIdxKeys) const
 
 
 /////////////////////////////////////////////////
-/// \brief This private member function loads and
-/// prepares the selected documentation article.
-///
-/// \param sFileName const string&
-/// \param sArticleID const string&
-/// \return vector<string>
-///
-/////////////////////////////////////////////////
-vector<string> Documentation::loadDocumentationArticle(const string& sFileName, const string& sArticleID)
-{
-    fDocument.open(sFileName.c_str(), ios_base::in);
-
-    if (fDocument.fail())
-    {
-        fDocument.close();
-        throw SyntaxError(SyntaxError::HLP_FILE_MISSING, "", SyntaxError::invalid_position, sFileName);
-    }
-
-    string sLine;
-    vector<string> vReturn;
-
-    while (!fDocument.eof())
-    {
-        getline(fDocument, sLine);
-        StripSpaces(sLine);
-
-        if (!sLine.length())
-            continue;
-
-        while (sLine.find("<!--") != string::npos)
-        {
-            if (sLine.find("-->", sLine.find("<!--")+4) != string::npos)
-                sLine.erase(sLine.find("<!--"), sLine.find("-->", sLine.find("<!--")+4)+3 - sLine.find("<!--"));
-            else
-            {
-                sLine.erase(sLine.find("<!--"));
-                string sLineTemp = "";
-
-                while (!fDocument.eof())
-                {
-                    getline(fDocument, sLineTemp);
-                    StripSpaces(sLineTemp);
-
-                    if (!sLineTemp.length())
-                        continue;
-
-                    if (sLineTemp.find("-->") != string::npos)
-                    {
-                        sLine += sLineTemp.substr(sLineTemp.find("-->")+3);
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (!sLine.length())
-            continue;
-
-        if (sLine.find("<article ") != string::npos)
-        {
-            if (getArgAtPos(sLine, sLine.find("id=")+3) != sArticleID)
-            {
-                while (!fDocument.eof())
-                {
-                    getline(fDocument, sLine);
-                    StripSpaces(sLine);
-
-                    if (!sLine.length())
-                        continue;
-
-                    if (sLine.find("</article>") != string::npos)
-                        break;
-                }
-
-                continue;
-            }
-
-            sLine.erase(0, sLine.find('>', sLine.find("<article "))+1);
-            StripSpaces(sLine);
-
-            if (!sLine.length())
-                continue;
-        }
-
-        if (sLine.find("<title ") != string::npos)
-        {
-            vReturn.push_back(getArgAtPos(sLine, sLine.find("string=", sLine.find("<title "))+7));
-            sLine.erase(0, sLine.find("/>", sLine.find("<title "))+2);
-            StripSpaces(sLine);
-
-            if (!sLine.length())
-                continue;
-        }
-
-        if (sLine.find("</article>") != string::npos)
-        {
-            sLine.erase(sLine.find("</article>"));
-            StripSpaces(sLine);
-
-            if (!sLine.length())
-                break;
-        }
-
-        vReturn.push_back(sLine);
-    }
-
-    fDocument.close();
-
-    if (!vReturn.size())
-        vReturn.push_back("NO_ENTRY_FOUND");
-
-    return vReturn;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This static member is a fallback for
 /// the XML-parsing logic-stuff.
 ///
-/// \param sCmd const string&
+/// \param sCmd const std::string&
 /// \param nPos unsigned int
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string Documentation::getArgAtPos(const string& sCmd, unsigned int nPos)
+std::string Documentation::getArgAtPos(const std::string& sCmd, unsigned int nPos)
 {
-    string sArgument = "";
+    std::string sArgument = "";
 
     // If the position is greater than the string length
     // return an empty string
@@ -566,53 +506,36 @@ string Documentation::getArgAtPos(const string& sCmd, unsigned int nPos)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Documentation::loadDocIndex(bool bLoadUserLangFiles)
+void Documentation::createDocumentationIndex(bool bLoadUserLangFiles)
 {
-    if (sDocIndexFile.find("<>") != string::npos)
-        sDocIndexFile = FileSystem::ValidFileName(sDocIndexFile, ".hlpidx");
+    Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    // Add standard documentation files
+    std::vector<std::string> vFiles = getFileList(ValidFolderName("<>") + "docs/*.nhlp", _option, 1);
+
+    for (const std::string& file : vFiles)
+    {
+        addFileToDocumentationIndex(file);
+    }
+
+    // Add plugin documentation files
+    vFiles = getFileList(ValidFolderName("<>") + "docs/plugins/*.nhlp", _option, 1);
+
+    for (const std::string& file : vFiles)
+    {
+        addFileToDocumentationIndex(file);
+    }
 
     if (!bLoadUserLangFiles)
+        return;
+
+    // Add user documentation files
+    vFiles = getFileList(ValidFolderName("<>") + "user/docs/*.nhlp", _option, 1);
+
+    for (const std::string& file : vFiles)
     {
-        if (!loadIndexFile(sDocIndexFile))
-        {
-            if (fileExists(FileSystem::ValidFileName("<>/update.hlpidx", ".hlpidx")))
-                loadIndexFile("<>/update.hlpidx");
-        }
+        addFileToDocumentationIndex(file);
     }
-    else if (fileExists(FileSystem::ValidFileName("<>/user/numere.hlpidx", ".hlpidx")))
-        loadIndexFile("<>/user/numere.hlpidx");
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function updates the
-/// documentation index file based upon the
-/// passed update file.
-///
-/// \param _sFilename string
-/// \return void
-///
-/////////////////////////////////////////////////
-void Documentation::updateDocIndex(string _sFilename)
-{
-    _sFilename = FileSystem::ValidFileName(_sFilename, ".hlpidx");
-
-    // Load the updated help index file
-    loadIndexFile(_sFilename);
-
-    try
-    {
-        // update the own index file and remove the
-        // update file
-        updateIndexFile();
-        remove(_sFilename.c_str());
-    }
-    catch (...)
-    {
-        NumeReKernel::print(" ERROR: Documentation could not be written.");
-    }
-
-    return;
 }
 
 
@@ -621,63 +544,27 @@ void Documentation::updateDocIndex(string _sFilename)
 /// documentation index entries to the index
 /// during a plugin or package installation.
 ///
-/// \param _sIndexToAdd string&
-/// \param bUseUserLangFiles bool
+/// \param sFileName const std::string&
+/// \param sFileContents const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
+void Documentation::addFileToDocumentationIndex(const std::string& sFileName, const std::string& sFileContents)
 {
-    if (!vDocIndexTable.size())
-        throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
+    if (!sFileContents.length() && !sFileName.length())
+        return;
 
-    // Load default documentation index, if the user uses
-    // custom language files
-    if (bUseUserLangFiles)
-    {
-        vDocIndexTable.clear();
-        mDocumentationIndex.clear();
-        loadDocIndex(false);
-    }
+    tinyxml2::XMLDocument doc;
 
-    if (!vDocIndexTable.size())
-        throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
+    // Either parse the contents or open the file
+    if (sFileContents.length())
+        doc.Parse(sFileContents.c_str(), sFileContents.length());
+    else
+        doc.LoadFile(sFileName.c_str());
 
-    string sKeyWord;
-    string sLine;
-
-    // Parse the added documentation index entry and
-    // insert it in the index
-    while (_sIndexToAdd.length() > 26)
-    {
-        if (_sIndexToAdd.find("<article ") == string::npos || _sIndexToAdd.find("</article>") == string::npos)
-            break;
-
-        sLine = _sIndexToAdd.substr(_sIndexToAdd.find("<article "), _sIndexToAdd.find("</article>")-_sIndexToAdd.find("<article "));
-        _sIndexToAdd.erase(0,_sIndexToAdd.find("</article>")+10);
-
-        if (sLine.find("<keywords>") == string::npos)
-            continue;
-
-        DocumentationEntry entry;
-
-        entry.sArticleId = getArgAtPos(sLine, sLine.find("id=")+3);
-        entry.sDocFilePath = "<>/docs/plugins/" + entry.sArticleId;
-        entry.sTitle = getArgAtPos(sLine, sLine.find("string=")+7);
-        entry.sIdxKeys = getArgAtPos(sLine, sLine.find("idxkey=")+7);
-
-        addEntry(entry, sLine.substr(sLine.find("<keywords>")+10));
-
-        if (_sIndexToAdd == "</helpindex>")
-            break;
-    }
-
-    // Update the index file with the new content
-    updateIndexFile();
-
-    // Load custom language files, if necessary
-    if (bUseUserLangFiles)
-        loadDocIndex(true);
+    // Parse the file and add it to the documentation
+    // index
+    parseDocumentationFile(doc.FirstChildElement(), sFileName);
 }
 
 
@@ -687,26 +574,16 @@ void Documentation::addToDocIndex(string& _sIndexToAdd, bool bUseUserLangFiles)
 /// documentation index.
 ///
 /// \param _sID const string&
-/// \param bUseUserLangFiles bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFiles)
+void Documentation::removeFromDocIndex(const string& _sID)
 {
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
 
     if (_sID == "<<NO_HLP_ENTRY>>")
         return;
-
-    // Load default index file, if the user
-    // uses custom language files
-    if (bUseUserLangFiles)
-    {
-        vDocIndexTable.clear();
-        mDocumentationIndex.clear();
-        loadDocIndex(false);
-    }
 
     // Search the documentation ID in the documentation
     // index table
@@ -732,17 +609,11 @@ void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFile
                 }
             }
 
+            remove(vDocIndexTable[i].sDocFilePath.c_str());
             vDocIndexTable.erase(vDocIndexTable.begin()+i);
             break;
         }
     }
-
-    // Update the file after the removal
-    updateIndexFile();
-
-    // Load custom languge files, if necessary
-    if (bUseUserLangFiles)
-        loadDocIndex(true);
 }
 
 
@@ -752,13 +623,13 @@ void Documentation::removeFromDocIndex(const string& _sID, bool bUseUserLangFile
 /// the passed documentation topic of the the
 /// whole documentation index in readable form.
 ///
-/// \param sTopic const string&
-/// \return vector<string>
+/// \param sTopic const std::string&
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> Documentation::getHelpArticle(const string& sTopic)
+std::vector<std::string> Documentation::getHelpArticle(const std::string& sTopic)
 {
-    vector<string> vReturn;
+    std::vector<std::string> vReturn;
 
     if (!vDocIndexTable.size())
         throw SyntaxError(SyntaxError::INVALID_HLPIDX, "", SyntaxError::invalid_position);
@@ -772,10 +643,7 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
 
         if (nIndex != -1)
         {
-            if (fDocument.is_open())
-                fDocument.close();
-
-            if (vDocIndexTable[nIndex].sDocFilePath.find("<>") != string::npos)
+            if (vDocIndexTable[nIndex].sDocFilePath.find("<>") != std::string::npos)
                 vDocIndexTable[nIndex].sDocFilePath = FileSystem::ValidFileName(vDocIndexTable[nIndex].sDocFilePath, ".nhlp");
 
             return loadDocumentationArticle(vDocIndexTable[nIndex].sDocFilePath, vDocIndexTable[nIndex].sArticleId);
@@ -787,7 +655,7 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
     {
         string sKeyList;
         vReturn.push_back("Index");
-        map<string,string> mIdx;
+        std::map<std::string,std::string> mIdx;
 
         for (size_t i = 0; i < vDocIndexTable.size(); i++)
         {
@@ -821,10 +689,10 @@ vector<string> Documentation::getHelpArticle(const string& sTopic)
 /// for the corresponding tree in the
 /// documentation browser.
 ///
-/// \return vector<string>
+/// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-vector<string> Documentation::getDocIndex() const
+std::vector<std::string> Documentation::getDocIndex() const
 {
     std::vector<std::string> vReturn;
 
@@ -851,21 +719,21 @@ vector<string> Documentation::getDocIndex() const
 /// \brief This member function returns an index
 /// key, which corresponds to the queried topic.
 ///
-/// \param sTopic const string&
-/// \return string
+/// \param sTopic const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string Documentation::getHelpIdxKey(const string& sTopic)
+std::string Documentation::getHelpIdxKey(const std::string& sTopic)
 {
     int nIndex = findPositionInDocumentationIndex(sTopic);
-    string sReturn = "";
+    std::string sReturn = "";
 
     if (nIndex == -1)
         return "<<NONE>>";
 
     sReturn = vDocIndexTable[nIndex].sIdxKeys;
 
-    if (sReturn.find(',') != string::npos)
+    if (sReturn.find(',') != std::string::npos)
         sReturn.erase(sReturn.find(','));
 
     return sReturn;
@@ -876,11 +744,11 @@ string Documentation::getHelpIdxKey(const string& sTopic)
 /// \brief This member function returns the
 /// article ID corresponding to the queried topic.
 ///
-/// \param sTopic const string&
-/// \return string
+/// \param sTopic const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string Documentation::getHelpArtclID(const string& sTopic)
+std::string Documentation::getHelpArticleID(const std::string& sTopic)
 {
     int nIndex = findPositionInDocumentationIndex(sTopic);
 
@@ -896,11 +764,11 @@ string Documentation::getHelpArtclID(const string& sTopic)
 /// documentation article title corresponding to
 /// the queried index key.
 ///
-/// \param _sIdxKey const string&
-/// \return string
+/// \param _sIdxKey const std::string&
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string Documentation::getHelpArticleTitle(const string& _sIdxKey)
+std::string Documentation::getHelpArticleTitle(const std::string& _sIdxKey)
 {
     int nIndex = findPositionInDocumentationIndex(_sIdxKey);
 

@@ -65,7 +65,7 @@ class Script : public FileSystem
         bool startInstallation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
         bool handleInstallInformation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
         string extractDocumentationIndex(string& sScriptCommand);
-        void writeDocumentationArticle(string& sScriptCommand);
+        std::string writeDocumentationArticle(string& sScriptCommand);
         void writeLayout(std::string& sScriptCommand);
         void evaluateInstallInformation(bool& bFirstPassedInstallCommand);
         string getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand);
@@ -134,3 +134,4 @@ class Script : public FileSystem
 };
 
 #endif
+

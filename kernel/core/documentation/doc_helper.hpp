@@ -21,13 +21,13 @@
 #ifndef DOC_HELPER_HPP
 #define DOC_HELPER_HPP
 
-#include <fstream>
 #include <string>
 #include <vector>
 #include <map>
 
 #include "../io/filesystem.hpp"
 #include "../ui/error.hpp"
+#include "../utils/tinyxml2.h"
 
 void StripSpaces(std::string&);
 std::string toUpperCase(const std::string&);
@@ -43,30 +43,25 @@ struct DocumentationEntry;
 class Documentation : public FileSystem
 {
     private:
-        std::fstream fDocument;
         std::map<std::string,int> mDocumentationIndex;
         std::vector<DocumentationEntry> vDocIndexTable;
-        std::string sDocIndexFile;
 
-        void addEntry(const DocumentationEntry& entry, std::string sKeyWords);
-        void updateIndexFile();
-        bool loadIndexFile(const std::string& sIndexFile);
+        void addEntry(const DocumentationEntry& entry, tinyxml2::XMLElement* keyWords);
+        void parseDocumentationFile(tinyxml2::XMLElement* element, const std::string& sFileName);
         int findPositionInDocumentationIndex(const std::string& sTopic) const;
         int findPositionUsingIdxKeys(const std::string& sIdxKeys) const;
-        std::vector<std::string> loadDocumentationArticle(const std::string& sFileName, const std::string& sArticleID);
 
     public:
         Documentation();
         ~Documentation();
 
-        void loadDocIndex(bool bLoadUserLangFiles = true);
-        void updateDocIndex(std::string _sFilename = "<>/update.hlpidx");
-        void addToDocIndex(std::string& _sIndexToAdd, bool bUseUserLangFiles);
-        void removeFromDocIndex(const std::string& _sID, bool bUseUserLangFiles);
+        void createDocumentationIndex(bool bLoadUserLangFiles = true);
+        void addFileToDocumentationIndex(const std::string& sFileName, const std::string& sFileContents = "");
+        void removeFromDocIndex(const std::string& _sID);
         std::vector<std::string> getHelpArticle(const std::string& sTopic);
         std::vector<std::string> getDocIndex() const;
         std::string getHelpIdxKey(const std::string& sTopic);
-        std::string getHelpArtclID(const std::string& sTopic);
+        std::string getHelpArticleID(const std::string& sTopic);
         std::string getHelpArticleTitle(const std::string& _sIdxKey);
         static std::string getArgAtPos(const std::string& sCmd, unsigned int pos);
 };

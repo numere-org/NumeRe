@@ -263,23 +263,8 @@ void NumeReKernel::StartUp(NumeReTerminal* _parent, const string& __sPath, const
     addToLog("> SYSTEM: File system was verified.");
 
     // Load the documentation index file
-    _option.loadDocIndex(false);
+    _option.createDocumentationIndex(_option.useCustomLangFiles());
     addToLog("> SYSTEM: Documentation index was loaded.");
-
-    // Update the documentation index file
-    if (fileExists(_option.getExePath() + "/update.hlpidx"))
-    {
-        _option.updateDocIndex();
-        addToLog("> SYSTEM: Documentation index was updated.");
-    }
-
-    // Load custom language files
-    if (_option.useCustomLangFiles())
-    {
-        // Load the custom documentation index
-        _option.loadDocIndex(_option.useCustomLangFiles());
-        addToLog("> SYSTEM: User Documentation index was loaded.");
-    }
 
     // Load the language strings
     _lang.loadStrings(_option.useCustomLangFiles());
@@ -1285,11 +1270,11 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
         if (!sLine.length() || sLine[0] == '@')
             return false;
 
-        if (sLine.find("<helpindex>") != string::npos && sLine.find("</helpindex>") != string::npos)
+        if (sLine.find("<helpindex ") != string::npos)
         {
             _procedure.addHelpIndex(sLine.substr(0, sLine.find("<<>>")), Documentation::getArgAtPos(sLine, sLine.find("id=") + 3));
             sLine.erase(0, sLine.find("<<>>") + 4);
-            _option.addToDocIndex(sLine, _option.useCustomLangFiles());
+            _option.addFileToDocumentationIndex(Documentation::getArgAtPos(sLine, sLine.find("file=")+5));
             return false;
         }
 
@@ -1657,7 +1642,7 @@ bool NumeReKernel::uninstallPlugin(const string& sLine, const string& sCurrentCo
                 while (sPlugin.length())
                 {
                     // Remove the reference from the help index
-                    _option.removeFromDocIndex(getNextArgument(sPlugin, true), _option.useCustomLangFiles());
+                    _option.removeFromDocIndex(getNextArgument(sPlugin, true));
                 }
             }
 
