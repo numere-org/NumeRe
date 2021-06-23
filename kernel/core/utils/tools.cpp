@@ -59,9 +59,9 @@ string toString(size_t nNumber)
 }
 
 // time_t to string - Will convert a time into a time string
-string toString(time_t tTime, int timeStampFlags)
+string toString(__time64_t tTime, int timeStampFlags)
 {
-    tm* ltm = localtime(&tTime);
+    tm* ltm = _localtime64(&tTime);
     ostringstream timeStream;
 
     if (!(timeStampFlags & GET_ONLY_TIME))
@@ -2698,7 +2698,7 @@ void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue)
 // This function simple returns the current time as a default timestamp
 string getTimeStamp(bool bGetStamp)
 {
-    return toString(time(0), bGetStamp ? GET_AS_TIMESTAMP : GET_WITH_TEXT);
+    return toString(_time64(0), bGetStamp ? GET_AS_TIMESTAMP : GET_WITH_TEXT);
 }
 
 // This function resolves the possibility to select multiple paths at once by inserting something
@@ -3619,7 +3619,7 @@ string getFileInfo(const string& sFileName)
         return "";
     }
 
-    sFileInfo = toString(file.getTimeStamp()) + " (v" + file.getVersionString() + ") | " + toString(file.getRows()) + " x " + toString(file.getCols()) + " | \"" + file.getTableName() + "()\"";
+    sFileInfo = toString(file.getTimeStamp(), 0) + " (v" + file.getVersionString() + ") | " + toString(file.getRows()) + " x " + toString(file.getCols()) + " | \"" + file.getTableName() + "()\"";
 
     // Return the read file meta information
     return sFileInfo;

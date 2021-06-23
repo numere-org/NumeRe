@@ -84,12 +84,12 @@ string toString(int);
 
 /** \brief Transforms a time_t into a string (formatted as time)
  *
- * \param tTime time_t
+ * \param tTime __time64_t
  * \param timeStampFlags int
  * \return string
  *
  */
-string toString(time_t tTime, int timeStampFlags = 0);
+string toString(__time64_t tTime, int timeStampFlags);
 
 /** \brief Macht aus einem Int ein String (ohne Praezision)
  *

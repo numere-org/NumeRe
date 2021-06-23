@@ -572,8 +572,10 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
 
     int nParPos = findParameter(sParams, "file", '=');
 
-    if (!nParPos)
+    if (!nParPos && sDefaultName.length())
         return _fSys.ValidFileName(removeQuotationMarks(sDefaultName), sFileExt);
+    else if (!nParPos)
+        return "";
 
     std::string sFileName = getArgAtPos(sParams, nParPos+4, ARGEXTRACT_NONE);
     NumeReKernel* instance = NumeReKernel::getInstance();
@@ -590,8 +592,10 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
     // If a filename had been found, parse it here
     if (sFileName.length())
         return parseFileName(sFileName, sFileExt, sBaseFolder);
+    else if (sDefaultName.length())
+        return _fSys.ValidFileName(removeQuotationMarks(sDefaultName), sFileExt);
 
-    return _fSys.ValidFileName(removeQuotationMarks(sDefaultName), sFileExt);
+    return "";
 }
 
 

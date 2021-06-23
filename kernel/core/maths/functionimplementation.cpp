@@ -2403,7 +2403,7 @@ value_type parser_is_string(value_type v)
 /////////////////////////////////////////////////
 value_type parser_time()
 {
-    return time(0);
+    return _time64(0);
 }
 
 

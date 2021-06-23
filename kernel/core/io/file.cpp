@@ -850,8 +850,9 @@ namespace NumeRe
         // for further changes. They may be filled
         // in future versions and will be ignored
         // in older versions of NumeRe
-        writeStringField("FTYPE=DOUBLE");
-        writeNumBlock<double>(nullptr, 0);
+        writeStringField("FTYPE=LLINT");
+        long long int t = _time64(0);
+        writeNumBlock<long long int>(&t, 1);
         writeStringField("FTYPE=DOUBLE");
         writeNumBlock<double>(nullptr, 0);
         writeStringField("FTYPE=DOUBLE");
@@ -934,7 +935,7 @@ namespace NumeRe
         versionMajor = readNumField<long int>();
         versionMinor = readNumField<long int>();
         versionBuild = readNumField<long int>();
-        timeStamp = readNumField<time_t>();
+        time_t oldTime = readNumField<time_t>();
 
         // Detect, whether this file was created in
         // legacy format (earlier than v1.1.2)
@@ -943,6 +944,7 @@ namespace NumeRe
             isLegacy = true;
             nRows = readNumField<long long int>();
             nCols = readNumField<long long int>();
+            timeStamp = oldTime;
             return;
         }
 
@@ -972,6 +974,13 @@ namespace NumeRe
         long long int size;
         string type;
         void* data = readGenericField(type, size);
+
+        // Version 2.1 introduces 64 bit time stamps
+        if (fileVerMinor >= fileVersionMinor && type == "LLINT" && size == 1u)
+            timeStamp = *(long long int*)data;
+        else
+            timeStamp = oldTime;
+
         deleteGenericData(data, type);
 
         data = readGenericField(type, size);

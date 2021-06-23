@@ -824,8 +824,8 @@ static string strfnc_to_time(StringFuncArgs& funcArgs)
     string sPattern = funcArgs.sArg1 + " ";
     if (sTime.length() != sPattern.length())
         return "nan";
-    time_t timeVal = time(nullptr);
-    tm timeStruct = *localtime(&timeVal);
+    __time64_t timeVal = _time64(nullptr);
+    tm timeStruct = *_localtime64(&timeVal);
     timeStruct.tm_isdst = 0;
     TIME_ZONE_INFORMATION timezone;
     GetTimeZoneInformation(&timezone);

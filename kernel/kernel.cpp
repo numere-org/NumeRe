@@ -37,7 +37,7 @@ Language _lang;
 mglGraph _fontData;
 extern value_type vAns;
 extern DefaultVariables _defVars;
-time_t tTimeZero = time(0);
+__time64_t tTimeZero = _time64(0);
 
 // Initialization of the static member variables
 NumeReKernel* NumeReKernel::kernelInstance = nullptr;
@@ -3497,7 +3497,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 void NumeReKernel::addToLog(const string& sLogMessage)
 {
     if (oLogFile.is_open())
-        oLogFile << toString(time(0) - tTimeZero, true) << "> " << sLogMessage << endl;
+        oLogFile << toString(_time64(0) - tTimeZero, 1) << "> " << sLogMessage << endl;
 }
 
 

@@ -1460,13 +1460,13 @@ namespace NumeRe
     {
         protected:
             bool isLegacy;
-            time_t timeStamp;
+            __time64_t timeStamp;
             std::string sComment;
             long int versionMajor;
             long int versionMinor;
             long int versionBuild;
             const short fileVersionMajor = 2;
-            const short fileVersionMinor = 0;
+            const short fileVersionMinor = 1;
 
             void writeHeader();
             void writeDummyHeader();
@@ -1513,10 +1513,10 @@ namespace NumeRe
             /////////////////////////////////////////////////
             /// \brief Returns the file timestamp.
             ///
-            /// \return time_t
+            /// \return __time64_t
             ///
             /////////////////////////////////////////////////
-            time_t getTimeStamp()
+            __time64_t getTimeStamp()
             {
                 return timeStamp;
             }
