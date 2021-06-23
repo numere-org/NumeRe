@@ -2906,11 +2906,8 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
             GetFileContents(getProgramFolder() + "\\lang\\"+dummy, template_file, dummy);
 
         // Replace the tokens in the file
-        while (template_file.find("%%1%%") != string::npos)
-            template_file.replace(template_file.find("%%1%%"), 5, filename);
-
-        while (template_file.find("%%2%%") != string::npos)
-            template_file.replace(template_file.find("%%2%%"), 5, timestamp);
+        template_file.Replace("%%1%%", filename);
+        template_file.Replace("%%2%%", timestamp);
 
         // Determine the file extension
         if (_filetype == FILE_NSCR)
@@ -6576,9 +6573,16 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
 
             if (dlg.includeDocs())
             {
-                m_currentEd->AddText("\t<helpindex>\r\n\t\t<article id=\"" + identifier + "\">\r\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" idxkey=\"" + dlg.getPackageIdentifier()
-                                     + "\" />\r\n\t\t\t<keywords>\r\n\t\t\t\t<keyword>" + dlg.getPackageIdentifier() + "</keyword>\r\n\t\t\t</keywords>\r\n\t\t</article>\r\n\t</helpindex>\r\n\r\n");
-                m_currentEd->AddText("\t<helpfile>\r\n\t\t<article id=\"" + identifier + "\">\r\n\t\t\t<title string=\"" + dlg.getPackageName() + "\" />\r\n\t\t\t(...)\r\n\t\t</article>\r\n\t</helpfile>\r\n\r\n");
+                wxString template_file, dummy;
+                GetFileContents(getProgramFolder() + "\\lang\\tmpl_documentation.nlng", template_file, dummy);
+
+                // Replace the tokens in the file
+                template_file.Replace("%%IDENTIFIER%%", identifier);
+                template_file.Replace("%%PACKAGENAME%%", dlg.getPackageName());
+                template_file.Replace("%%IDXKEY%%", dlg.getPackageIdentifier());
+                template_file.Replace("%%KEYWORD%%", dlg.getPackageIdentifier());
+
+                m_currentEd->AddText(template_file + "\r\n");
             }
             else if (dlg.getDocFile().length())
             {
@@ -6586,7 +6590,7 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 wxString fcontents;
 
                 if (docfile.ReadAll(&fcontents))
-                    m_currentEd->AddText(fcontents);
+                    m_currentEd->AddText(fcontents + "\r\n");
             }
 
             m_currentEd->AddText("\treturn;\r\n<endinstall>\r\n");

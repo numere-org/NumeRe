@@ -33,3 +33,4 @@ Fixed	The Package Repository Browser can now safely be closed during a transmiss
 Added	The Package Repository Browser has now a search functionality.
 Fixed	The refresh-boundary issue of 2D integrals was resolved.
 Fixed	Goto procedure definition now may also find relative namespaces referenced by "this" namespace.
+Removed	The documentation index file was removed. The documentation index is now created at startup from the list of available documentation files. Documentation articles have been reworked and need now keywords, an idxkey and a contents block.
