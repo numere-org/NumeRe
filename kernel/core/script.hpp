@@ -53,7 +53,6 @@ class Script : public FileSystem
         bool bENABLE_FULL_LOGGING;
         bool bDISABLE_SCREEN_OUTPUT;
         bool bIsInstallingProcedure;
-        string sInstallInfoString;
         string sHelpID;
         string sInstallID;
         vector<string> vInstallPackages;
@@ -65,9 +64,9 @@ class Script : public FileSystem
         bool startInstallation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
         bool handleInstallInformation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
         string extractDocumentationIndex(string& sScriptCommand);
-        std::string writeDocumentationArticle(string& sScriptCommand);
+        void writeDocumentationArticle(string& sScriptCommand);
         void writeLayout(std::string& sScriptCommand);
-        void evaluateInstallInformation(bool& bFirstPassedInstallCommand);
+        void evaluateInstallInformation(std::string& sInstallInfoString, bool& bFirstPassedInstallCommand);
         string getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand);
         string getNextScriptCommandFromInclude();
         string handleIncludeSyntax(string& sScriptCommand);
@@ -125,12 +124,6 @@ class Script : public FileSystem
             }
         inline bool installProcedures() const
             {return bInstallProcedures;}
-        inline string getInstallInfoString()
-            {
-                std::string cp = sInstallInfoString;
-                sInstallInfoString.clear();
-                return cp;
-            }
 };
 
 #endif

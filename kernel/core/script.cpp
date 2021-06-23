@@ -33,7 +33,6 @@ Script::Script() : FileSystem(), _localDef(true)
 {
     sScriptFileName = "";
     sIncludeFileName = "";
-    sInstallInfoString = "";
     sHelpID = "";
     sInstallID = "";
     bValidScript = false;
@@ -210,7 +209,6 @@ void Script::openScript()
         bENABLE_FULL_LOGGING = false;
         bDISABLE_SCREEN_OUTPUT = false;
         bIsInstallingProcedure = false;
-        sInstallInfoString = "";
         sHelpID = "";
         sInstallID = "";
         nLine = 0;
@@ -391,9 +389,6 @@ bool Script::startInstallation(string& sScriptCommand, bool& bFirstPassedInstall
     // Write the first line
     fLogFile << "--- INSTALLATION " << getTimeStamp(false) << " ---" << endl;
 
-    // Define the default install information string and the installation ID
-    sInstallInfoString = "-flags=ENABLE_DEFAULTS -type=TYPE_UNSPECIFIED -name=<AUTO> -author=<AUTO>";
-    sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
     bFirstPassedInstallCommand = true;
 
     // Remove the install tag and strip the white spaces
@@ -469,7 +464,7 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
     }
 
     // Extract the install information string and the installation ID
-    sInstallInfoString = sScriptCommand.substr(sScriptCommand.find("<info>")+6, sScriptCommand.find("<endinfo>")-sScriptCommand.find("<info>")-6);
+    std::string sInstallInfoString = sScriptCommand.substr(sScriptCommand.find("<info>")+6, sScriptCommand.find("<endinfo>")-sScriptCommand.find("<info>")-6);
     sScriptCommand = sScriptCommand.substr(sScriptCommand.find("<endinfo>")+9);
     sInstallID = getArgAtPos(sInstallInfoString, sInstallInfoString.find("name=")+5);
 
@@ -538,6 +533,11 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
             return false;
         }
     }
+
+    evaluateInstallInformation(sInstallInfoString, bFirstPassedInstallCommand);
+
+    if (sInstallInfoString.length())
+        NumeReKernel::getInstance()->getProcedureInterpreter().declareNewPackage(sInstallInfoString);
 
     if (!sScriptCommand.length())
         return false;
@@ -608,10 +608,10 @@ string Script::extractDocumentationIndex(string& sScriptCommand)
 /// file.
 ///
 /// \param sScriptCommand string&
-/// \return std::string
+/// \return void
 ///
 /////////////////////////////////////////////////
-std::string Script::writeDocumentationArticle(string& sScriptCommand)
+void Script::writeDocumentationArticle(string& sScriptCommand)
 {
     tinyxml2::XMLDocument doc;
 
@@ -695,7 +695,9 @@ std::string Script::writeDocumentationArticle(string& sScriptCommand)
     if (doc.SaveFile(sHelpfileName.c_str(), false) != tinyxml2::XML_SUCCESS)
         throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sScriptCommand, SyntaxError::invalid_position, sHelpfileName);
 
-    return sInstallID + " <<>><helpindex id=\"" + sHelpID + "\" file=\"" + sHelpfileName + "\" />";
+    NumeReKernel::getInstance()->getProcedureInterpreter().addHelpIndex(sInstallID, sHelpID);
+    NumeReKernel::getInstance()->getSettings().addFileToDocumentationIndex(sHelpfileName);
+    sScriptCommand.clear();
 }
 
 
@@ -805,15 +807,13 @@ void Script::writeLayout(std::string& sScriptCommand)
 /// flags from the installation information
 /// string and also removes unnecessary comments.
 ///
+/// \param sInstallInfoString std::string&
 /// \param bFirstPassedInstallCommand bool&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Script::evaluateInstallInformation(bool& bFirstPassedInstallCommand)
+void Script::evaluateInstallInformation(std::string& sInstallInfoString, bool& bFirstPassedInstallCommand)
 {
-    //if (sInstallInfoString.length() && !bFirstPassedInstallCommand)
-    //    sInstallInfoString = "";
-
     if (sInstallInfoString.length())
     {
         // Remove block comments
@@ -993,7 +993,8 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         // Write the documentation articles to their corresponding files
         if (sScriptCommand.substr(0,10) == "<helpfile>" && bInstallProcedures)
         {
-            return writeDocumentationArticle(sScriptCommand);
+            writeDocumentationArticle(sScriptCommand);
+            continue;
         }
 
         // Write window layouts
@@ -1002,9 +1003,6 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
             writeLayout(sScriptCommand);
             continue;
         }
-
-        // Evaluate the installation information
-        evaluateInstallInformation(bFirstPassedInstallCommand);
 
         // End the installation
         if (sScriptCommand.substr(0,12) == "<endinstall>")

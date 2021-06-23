@@ -731,15 +731,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
 
             // Evaluate the install info string
             if (_script.isValid() && _script.isOpen() && _script.installProcedures())
-            {
                 installing = true;
-
-                std::string sInstInfo = _script.getInstallInfoString();
-
-                if (sInstInfo.length())
-                    _procedure.declareNewPackage(sInstInfo);
-
-            }
 
             // Get the current command
             sCurrentCommand = findCommand(sLine).sString;
@@ -1269,14 +1261,6 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
         // --> Keine Laenge? Ignorieren! <--
         if (!sLine.length() || sLine[0] == '@')
             return false;
-
-        if (sLine.find("<helpindex ") != string::npos)
-        {
-            _procedure.addHelpIndex(sLine.substr(0, sLine.find("<<>>")), Documentation::getArgAtPos(sLine, sLine.find("id=") + 3));
-            sLine.erase(0, sLine.find("<<>>") + 4);
-            _option.addFileToDocumentationIndex(Documentation::getArgAtPos(sLine, sLine.find("file=")+5));
-            return false;
-        }
 
         // --> Kommando "global" entfernen <--
         if (findCommand(sLine).sString == "global")
