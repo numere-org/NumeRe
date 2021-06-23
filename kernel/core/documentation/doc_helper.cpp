@@ -289,8 +289,7 @@ void Documentation::addEntry(const DocumentationEntry& entry, tinyxml2::XMLEleme
     // identified index as reference
     while (keyWords)
     {
-        std::string sKeyWord = keyWords->GetText();
-        mDocumentationIndex[sKeyWord] = nIndex;
+        mDocumentationIndex[keyWords->GetText()] = nIndex;
         keyWords = keyWords->NextSiblingElement();
     }
 }
