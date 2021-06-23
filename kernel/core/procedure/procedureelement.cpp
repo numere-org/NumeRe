@@ -157,9 +157,7 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
         // Avoid "install" and "script" calls
         if (sCurrentCommand == "install"
             || sCurrentCommand == "script")
-		{
-			throw SyntaxError(SyntaxError::INSTALL_CMD_FOUND, sProcCommandLine, SyntaxError::invalid_position);
-		}
+			throw SyntaxError(SyntaxError::INSTALL_CMD_FOUND, "@" + toString(i+1) + ": " + sProcCommandLine, sCurrentCommand);
 
         // skip empty lines
         if (!sProcCommandLine.length())
@@ -191,7 +189,16 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
         {
             if (!validateParenthesisNumber(sProcCommandLine))
             {
-                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, SyntaxError::invalid_position);
+                sProcCommandLine.insert(0, "@" + toString(i+1) + ": ");
+
+                for (size_t j = 0; j < sProcCommandLine.length(); j++)
+                {
+                    if ((sProcCommandLine[j] == '(' || sProcCommandLine[j] == '{' || sProcCommandLine[j] == '[')
+                         && getMatchingParenthesis(sProcCommandLine.substr(j)) == std::string::npos)
+                        throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, j);
+                }
+
+                throw SyntaxError(SyntaxError::UNMATCHED_PARENTHESIS, sProcCommandLine, sProcCommandLine.find_last_of(")}]"));
             }
         }
 
@@ -242,13 +249,16 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
 
                 // Ensure that the argument list is defined reasonable
                 if (findCommand(sArgumentList, "var").sString == "var")
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "var");
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, "@" + toString(i+1) + ": " + sProcCommandLine, "var", "var");
 
                 if (findCommand(sArgumentList, "str").sString == "str")
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "str");
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, "@" + toString(i+1) + ": " + sProcCommandLine, "str", "str");
 
                 if (findCommand(sArgumentList, "tab").sString == "tab")
-                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, sProcCommandLine, SyntaxError::invalid_position, "tab");
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, "@" + toString(i+1) + ": " + sProcCommandLine, "tab", "tab");
+
+                if (findCommand(sArgumentList, "cst").sString == "cst")
+                    throw SyntaxError(SyntaxError::WRONG_ARG_NAME, "@" + toString(i+1) + ": " + sProcCommandLine, "cst", "cst");
 
                 sArgumentList = sProcCommandLine.substr(sProcCommandLine.find('(')+1);
                 sArgumentList = " " + sArgumentList.erase(sArgumentList.rfind(')')) + " ";

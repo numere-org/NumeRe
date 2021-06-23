@@ -743,7 +743,8 @@ void Resampler::resample_x(Sample* Pdst, const Sample* Psrc)
 
 		for (j = Pclist->n, p = Pclist->p, total = 0; j > 0; j--, p++)
 		{
-			total += Psrc[p->pixel] * p->weight;
+		    if (!isnan(Psrc[p->pixel]))
+                total += Psrc[p->pixel] * p->weight;
 			//std::cout << Psrc[p->pixel] << "  "  << p->pixel <<  "  " << p->weight << "  ";
 		}
 		//std::cout << std::endl;

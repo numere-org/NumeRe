@@ -45,15 +45,7 @@ ProcedureElement* ProcedureLibrary::constructProcedureElement(const std::string&
 {
     if (fileExists(sProcedureFileName))
     {
-        try
-        {
-            ProcedureElement* element = new ProcedureElement(getFileContents(sProcedureFileName), sProcedureFileName);
-            return element;
-        }
-        catch(...)
-        {
-            return nullptr;
-        }
+        return new ProcedureElement(getFileContents(sProcedureFileName), sProcedureFileName);
     }
 
     return nullptr;
@@ -128,15 +120,22 @@ void ProcedureLibrary::updateLibrary()
     {
         delete (iter->second);
 
-        ProcedureElement* element = constructProcedureElement(iter->first);
-
-        if (element)
+        try
         {
-            iter->second = element;
-            iter++;
+            ProcedureElement* element = constructProcedureElement(iter->first);
+
+            if (element)
+            {
+                iter->second = element;
+                iter++;
+            }
+            else
+                iter = mLibraryEntries.erase(iter);
         }
-        else
+        catch (...)
+        {
             iter = mLibraryEntries.erase(iter);
+        }
     }
 }
 
