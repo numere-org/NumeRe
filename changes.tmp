@@ -36,3 +36,5 @@ Fixed	Goto procedure definition now may also find relative namespaces referenced
 Removed	The documentation index file was removed. The documentation index is now created at startup from the list of available documentation files. Documentation articles have been reworked and need now keywords, an idxkey and a contents block.
 Fixed	If a procedure has unmatched parentheses, it won't throw that it is unreadable anymore but rather the actual issue.
 Fixed	Introduced 64 bit time types. This required a NDAT file type update to version 2.1, which will contain the 64 bit types in the first of their placeholder fields.
+Applied	The "fft" command will now produce a two-sided spectrum, which will contain every frequency twice (negative and positive).
+Added	Using the parameter "axisshift" on "fft" will align the resulting spectrum around the y axis or rearrange the transformed spectrum for inverse transformation.

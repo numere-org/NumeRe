@@ -2461,6 +2461,58 @@ static bool detectPhaseOverflow(std::complex<double> cmplx[3])
 
 
 /////////////////////////////////////////////////
+/// \brief Calculates an axis index, which
+/// performs the necessary data flips used for
+/// the shifted fft axis.
+///
+/// \param nElements size_t
+/// \param inverseTrafo bool
+/// \return std::vector<size_t>
+///
+/////////////////////////////////////////////////
+static std::vector<size_t> getShiftedAxis(size_t nElements, bool inverseTrafo)
+{
+    bool isOdd = nElements % 2;
+    std::vector<size_t> vValues(nElements, 0u);
+    size_t nOddVal;
+
+    // Prepare the axis values
+    for (size_t i = 0; i < nElements; i++)
+    {
+        vValues[i] = i;
+    }
+
+    // Extract the special odd value, if the axis
+    // length is odd
+    if (isOdd)
+    {
+        if (inverseTrafo)
+        {
+            nOddVal = vValues.back();
+            vValues.pop_back();
+        }
+        else
+        {
+            nOddVal = vValues.front();
+            vValues.erase(vValues.begin());
+        }
+    }
+
+    // Create the actual axis: first part
+    std::vector<size_t> vAxis(vValues.begin() + nElements / 2+(isOdd && inverseTrafo), vValues.end());
+
+    // Insert the odd value, if necessay
+    if (isOdd)
+        vAxis.push_back(nOddVal);
+
+    // second part
+    vAxis.insert(vAxis.end(), vValues.begin(), vValues.begin() + nElements / 2+(isOdd && inverseTrafo));
+
+    return vAxis;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This function calculates the fast
 /// fourier transform of the passed data set.
 ///
@@ -2483,8 +2535,10 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     double dNyquistFrequency = 1.0;
     double dTimeInterval = 0.0;
     double dPhaseOffset = 0.0;
+    double dFrequencyOffset = 0.0;
     bool bInverseTrafo = cmdParser.hasParam("inverse");
     bool bComplex = cmdParser.hasParam("complex");
+    bool bShiftAxis = cmdParser.hasParam("axisshift");
     string sTargetTable = "fftdata";
 
     // search for explicit "target" options and select the target cache
@@ -2496,24 +2550,43 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     dNyquistFrequency = _table.getLines() / (_table.getValue(_table.getLines() - 1, 0) - _table.getValue(0, 0)) / 2.0;
     dTimeInterval = (_table.getLines() - 1) / (_table.getValue(_table.getLines() - 1, 0));
 
+    // Adapt the values for the shifted axis
+    if (bShiftAxis)
+    {
+        dFrequencyOffset = -dNyquistFrequency * (1 + (_table.getLines() % 2) * 1.0 / _table.getLines());
+        dTimeInterval *= 0.5 * (1 - 1.0 / _table.getLines() - (_table.getLines() % 2) * 1.0 / _table.getLines());
+    }
+
     if (_option.systemPrints())
     {
         if (!bInverseTrafo)
             NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(_table.getCols()), toString(dNyquistFrequency, 6)) + " ", _option, 0));
         else
-            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(_table.getCols()), toString(dNyquistFrequency, 6)) + " ", _option, 0));
+            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(_table.getCols()), toString(dTimeInterval, 6)) + " ", _option, 0));
     }
 
     _fftData.Create(_table.getLines());
 
+    std::vector<size_t> vAxis;
+
+    // Prepare the axis (shifted if necessary)
+    if (bShiftAxis && bInverseTrafo)
+        vAxis = getShiftedAxis(_table.getLines(), bInverseTrafo);
+    else
+    {
+        for (size_t i = 0; i < _table.getLines(); i++)
+            vAxis.push_back(i);
+    }
+
+    // Copy the data
     for (size_t i = 0; i < _table.getLines(); i++)
     {
         if (_table.getCols() == 2)
-            _fftData.a[i] = dual(_table.getValue(i, 1), 0.0);
+            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1), 0.0);
         else if (_table.getCols() == 3 && bComplex)
-            _fftData.a[i] = dual(_table.getValue(i, 1), _table.getValue(i, 2));
+            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1), _table.getValue(vAxis[i], 2));
         else if (_table.getCols() == 3 && !bComplex)
-            _fftData.a[i] = dual(_table.getValue(i, 1) * cos(_table.getValue(i, 2)), _table.getValue(i, 1) * sin(_table.getValue(i, 3)));
+            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1) * cos(_table.getValue(vAxis[i], 2)), _table.getValue(vAxis[i], 1) * sin(_table.getValue(vAxis[i], 2)));
     }
 
     // Calculate the actual transformation and apply some
@@ -2521,19 +2594,22 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     if (!bInverseTrafo)
     {
         _fftData.FFT("x");
-        _fftData.a[0] /= dual((double)_table.getLines(), 0.0);
-        _fftData.a[(int)round(_fftData.GetNx() / 2.0)] /= dual(2.0, 0.0);
+
+        double samples = _table.getLines()/2.0;
+
+        _fftData.a[0] /= dual(2*samples, 0.0);
 
         for (long long int i = 1; i < _fftData.GetNx(); i++)
-            _fftData.a[i] /= dual((double)_table.getLines() / 2.0, 0.0);
+            _fftData.a[i] /= dual(samples, 0.0);
     }
     else
     {
-        _fftData.a[0] *= dual(2.0, 0.0);
-        _fftData.a[_fftData.GetNx() - 1] *= dual(2.0, 0.0);
+        double samples = _fftData.GetNx()/2;
 
-        for (long long int i = 0; i < _fftData.GetNx(); i++)
-            _fftData.a[i] *= dual((double)(_fftData.GetNx() - 1), 0.0);
+        _fftData.a[0] *= dual(2*samples, 0.0);
+
+        for (long long int i = 1; i < _fftData.GetNx(); i++)
+            _fftData.a[i] *= dual(samples, 0.0);
 
         _fftData.FFT("ix");
     }
@@ -2541,23 +2617,28 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     if (_idx.col.isOpenEnd())
         _idx.col.setRange(0, _idx.col.front() + 3);
 
+    if (bShiftAxis && !bInverseTrafo)
+        vAxis = getShiftedAxis(_table.getLines(), bInverseTrafo);
+
     // Store the results of the transformation in the target
     // table
     if (!bInverseTrafo)
     {
-        if (_idx.row.isOpenEnd())
-            _idx.row.setRange(0, _idx.row.front() + (int)round(_fftData.GetNx() / 2.0) + 1);
+        long long int nElements = _fftData.GetNx();
 
-        for (long long int i = 0; i < (int)round(_fftData.GetNx() / 2.0) + 1; i++)
+        if (_idx.row.isOpenEnd())
+            _idx.row.setRange(0, _idx.row.front() + nElements);
+
+        for (long long int i = 0; i < nElements; i++)
         {
             if (i > _idx.row.size())
                 break;
 
-            _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable, 2.0 * (double)(i)*dNyquistFrequency / (double)(_fftData.GetNx()));
+            _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable, dFrequencyOffset + 2.0 * (double)(i)*dNyquistFrequency / (double)(_fftData.GetNx()));
 
             if (!bComplex)
             {
-                _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, std::abs(_fftData.a[i]));
+                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[1], sTargetTable, std::abs(_fftData.a[i]));
 
                 // Stitch phase overflows into a continous array
                 if (i > 2 && detectPhaseOverflow(&_fftData.a[i-2]))
@@ -2568,12 +2649,12 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
                         dPhaseOffset += 2 * M_PI;
                 }
 
-                _data.writeToTable(_idx.row[i], _idx.col[2], sTargetTable, std::arg(_fftData.a[i]) + dPhaseOffset);
+                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[2], sTargetTable, std::arg(_fftData.a[i]) + dPhaseOffset);
             }
             else
             {
-                _data.writeToTable(i, _idx.col[1], sTargetTable, _fftData.a[i].real());
-                _data.writeToTable(i, _idx.col[2], sTargetTable, _fftData.a[i].imag());
+                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[1], sTargetTable, _fftData.a[i].real());
+                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[2], sTargetTable, _fftData.a[i].imag());
             }
         }
 
