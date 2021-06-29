@@ -69,7 +69,7 @@ bool isVariableInAssignedExpression(Parser& _parser, const string_type& sVar)
 size_t findVariableInExpression(const string& sExpr, const string& sVarName)
 {
     size_t nMatch = 0;
-    const static string sDelimiter = "+-*/,^!%&|()?:{}[]#<>='";
+    const static string sDelimiter = "+-*/,^!%&|()?:{}[]#<>='; ";
 
     // search the first match of the token, which is surrounded by the
     // defined separator characters

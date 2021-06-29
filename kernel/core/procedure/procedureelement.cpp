@@ -18,6 +18,7 @@
 
 #include "procedureelement.hpp"
 #include "../utils/tools.hpp"
+#include "../symdef.hpp"
 #include "dependency.hpp"
 
 
@@ -37,6 +38,7 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
     std::string sCurrentLineCache;
     std::string sProcPlotCompose;
     bool bBlockComment = false;
+    SymDefManager _symdefs;
 
     // Examine the contents of each line
     for (size_t i = 0; i < vProcedureContents.size(); i++)
@@ -98,6 +100,18 @@ ProcedureElement::ProcedureElement(const std::vector<std::string>& vProcedureCon
 
         // get the current command, if any
         sCurrentCommand = findCommand(sProcCommandLine).sString;
+
+        // Resolve symbol macros
+        if (sCurrentCommand == SYMDEF_COMMAND)
+        {
+            _symdefs.createSymbol(sProcCommandLine.substr(sCurrentCommand.length()));
+            continue;
+        }
+        else
+        {
+            _symdefs.resolveSymbols(sProcCommandLine);
+            sCurrentCommand = findCommand(sProcCommandLine).sString;
+        }
 
         // clean the current line
         cleanCurrentLine(sProcCommandLine, sCurrentCommand, sFolderPath);

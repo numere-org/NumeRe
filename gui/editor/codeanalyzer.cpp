@@ -60,6 +60,7 @@ void CodeAnalyzer::run()
 
     // Clear all annotations
 	m_editor->AnnotationClearAll();
+	m_symdefs.clear();
 
 	// Clear the corresponding indicators
     m_editor->SetIndicatorCurrent(HIGHLIGHT_ANNOTATION);
@@ -807,8 +808,10 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     {
         // extract the definition and strip the spaces
         string sDefinition = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+
         while (sDefinition.back() == '\r' || sDefinition.back() == '\n')
             sDefinition.pop_back();
+
         StripSpaces(sDefinition);
 
         // If there is a declaration available
@@ -831,6 +834,24 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             m_nCurPos = m_editor->GetLineEndPosition(m_editor->LineFromPosition(m_nCurPos));
             return AnnotCount;
         }
+    }
+
+    // Examine symbol declarations
+    if (sSyntaxElement == SYMDEF_COMMAND)
+    {
+        // extract the declaration and strip the spaces
+        std::string sDefinition = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
+
+        while (sDefinition.back() == '\r' || sDefinition.back() == '\n')
+            sDefinition.pop_back();
+
+        m_symdefs.createSymbol(sDefinition);
+
+        // increment the position variable to the last position
+        // in the current line, so that we may jump over the definition
+        // in the following
+        m_nCurPos = m_editor->GetLineEndPosition(m_editor->LineFromPosition(m_nCurPos));
+        return AnnotCount;
     }
 
     // Examine the procedure / MATLAB function starting at m_editor position
@@ -1130,7 +1151,7 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
         wordend = m_editor->WordEndPosition(wordend + 1, true);
 
     // Get the corresponding syntax element
-    string sSyntaxElement = m_editor->GetTextRange(wordstart, wordend).ToStdString();
+    std::string sSyntaxElement = m_editor->GetTextRange(wordstart, wordend).ToStdString();
 
     // Warn about global variables
     if (m_options->GetAnalyzerOption(Options::GLOBAL_VARIABLES) && m_editor->m_fileType == FILE_NPRC)
@@ -1147,6 +1168,10 @@ AnnotationCount CodeAnalyzer::analyseIdentifiers()
                 break;
             }
         }
+
+        // Check in the symbol declarations
+        if (!bOK)
+            bOK = m_symdefs.isSymbol(sSyntaxElement);
 
         // nothing found
         if (!bOK)

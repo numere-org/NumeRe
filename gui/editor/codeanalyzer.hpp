@@ -23,6 +23,8 @@
 #include <vector>
 #include <utility>
 
+#include "../../kernel/core/symdef.hpp"
+
 using namespace std;
 
 /////////////////////////////////////////////////
@@ -60,6 +62,7 @@ class CodeAnalyzer
     private:
         NumeReEditor* m_editor;
         Options* m_options;
+        SymDefManager m_symdefs;
 
         string m_sNote;
         string m_sWarn;

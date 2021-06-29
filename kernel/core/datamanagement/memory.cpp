@@ -400,6 +400,35 @@ double Memory::readMem(long long int _nLine, long long int _nCol) const
 
 
 /////////////////////////////////////////////////
+/// \brief This static helper function calculates
+/// the average value respecting NaNs.
+///
+/// \param values const std::vector<double>&
+/// \return double
+///
+/////////////////////////////////////////////////
+static double nanAvg(const std::vector<double>& values)
+{
+    double sum = 0.0;
+    size_t c = 0;
+
+    for (double val : values)
+    {
+        if (!std::isnan(val))
+        {
+            sum += val;
+            c++;
+        }
+    }
+
+    if (c)
+        return sum / c;
+
+    return sum;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function returns a
 /// (bilinearily) interpolated element at the
 /// selected \c double positions.
@@ -429,14 +458,17 @@ double Memory::readMemInterpolated(double _dLine, double _dCol) const
     double f11 = readMem(nBaseLine+1, nBaseCol+1);
 
     // If all are NAN, return NAN
-    if (isnan(f00) && isnan(f01) && isnan(f10) && isnan(f11))
+    if (std::isnan(f00) && std::isnan(f01) && std::isnan(f10) && std::isnan(f11))
         return NAN;
 
+    // Get the average respecting NaNs
+    double dNanAvg = nanAvg({f00, f01, f10, f11});
+
     // Otherwise set NAN to zero
-    f00 = isnan(f00) ? 0.0 : f00;
-    f10 = isnan(f10) ? 0.0 : f10;
-    f01 = isnan(f01) ? 0.0 : f01;
-    f11 = isnan(f11) ? 0.0 : f11;
+    f00 = std::isnan(f00) ? dNanAvg : f00;
+    f10 = std::isnan(f10) ? dNanAvg : f10;
+    f01 = std::isnan(f01) ? dNanAvg : f01;
+    f11 = std::isnan(f11) ? dNanAvg : f11;
 
     //     f(0,0) (1-x) (1-y) + f(1,0) x (1-y) + f(0,1) (1-x) y + f(1,1) x y
     return f00*(1-x)*(1-y)    + f10*x*(1-y)    + f01*(1-x)*y    + f11*x*y;

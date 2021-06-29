@@ -29,6 +29,7 @@
 #include "utils/tools.hpp"
 #include "version.h"
 #include "maths/define.hpp"
+#include "symdef.hpp"
 
 using namespace std;
 
@@ -58,6 +59,7 @@ class Script : public FileSystem
         vector<string> vInstallPackages;
         unsigned int nCurrentPackage;
         FunctionDefinitionManager _localDef;
+        SymDefManager _symdefs;
 
         string stripLineComments(const string& sLine) const;
         string stripBlockComments(const string& sLine);

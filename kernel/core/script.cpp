@@ -214,6 +214,7 @@ void Script::openScript()
         nLine = 0;
         nIncludeLine = 0;
         _localDef.reset();
+        _symdefs.clear();
     }
     return;
 }
@@ -298,6 +299,7 @@ void Script::close()
         sInstallID = "";
         nLine = 0;
         _localDef.reset();
+        _symdefs.clear();
     }
 
     return;
@@ -314,6 +316,7 @@ void Script::close()
 void Script::restart()
 {
     _localDef.reset();
+    _symdefs.clear();
 
     if (bScriptOpen)
     {
@@ -1195,6 +1198,12 @@ string Script::getNextScriptCommandFromInclude()
             sScriptCommand.clear();
             continue;
         }
+        else if (nIncludeType == 3
+            && findCommand(sScriptCommand).sString != SYMDEF_COMMAND)
+        {
+            sScriptCommand.clear();
+            continue;
+        }
     }
 
     // If this is the last line, close the included file
@@ -1241,7 +1250,7 @@ string Script::handleIncludeSyntax(string& sScriptCommand)
             {
                 nIncludeType = 2;
             }
-            else if (sScriptCommand.find("procedures", sScriptCommand.find(':')+1) != string::npos)
+            else if (sScriptCommand.find("declarations", sScriptCommand.find(':')+1) != string::npos)
             {
                 nIncludeType = 3;
             }
@@ -1297,17 +1306,26 @@ string Script::handleIncludeSyntax(string& sScriptCommand)
 /////////////////////////////////////////////////
 bool Script::handleLocalDefinitions(string& sScriptCommand)
 {
+    std::string sCommand = findCommand(sScriptCommand).sString;
+
     // If the current command contains the command "lclfunc",
     // then this is a definition
-    if (findCommand(sScriptCommand).sString == "lclfunc")
+    if (sCommand == "lclfunc")
     {
-        _localDef.defineFunc(sScriptCommand.substr(7));
+        _localDef.defineFunc(sScriptCommand.substr(sCommand.length()));
+        sScriptCommand.clear();
+        return false;
+    }
+    else if (sCommand == SYMDEF_COMMAND)
+    {
+        _symdefs.createSymbol(sScriptCommand.substr(sCommand.length()));
         sScriptCommand.clear();
         return false;
     }
     else
     {
         // Simply replace the current call
+        _symdefs.resolveSymbols(sScriptCommand);
         return _localDef.call(sScriptCommand);
     }
 
