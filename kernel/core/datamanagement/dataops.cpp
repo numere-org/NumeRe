@@ -1001,7 +1001,7 @@ bool writeToFile(CommandLineParser& cmdParser)
 		// Get the file name
 		if (cmdParser.hasParam("file"))
 		{
-		    sFileName = cmdParser.getFileParameterValue(".txt", "<savepath>", "");
+		    sFileName = cmdParser.getFileParameterValueForSaving(".txt", "<savepath>", "");
 
 			// Scripts, procedures and data files may not be written directly
 			// this avoids reloads during the execution and other unexpected

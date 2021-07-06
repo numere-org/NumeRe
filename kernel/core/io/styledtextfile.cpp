@@ -31,7 +31,7 @@
 /////////////////////////////////////////////////
 void StyledTextFile::load()
 {
-    std::ifstream file(sFileName.c_str());
+    std::ifstream file(sFileName);
     std::string sLine;
 
     if (!file.good())
@@ -287,7 +287,7 @@ std::string StyledTextFile::getStrippedLine(size_t line) const
 /////////////////////////////////////////////////
 int StyledTextFile::getLastPosition() const
 {
-    return vFileContents.back().first + vFileContents.back().second.length();
+    return getLinesCount() ? vFileContents.back().first + vFileContents.back().second.length() : -1;
 }
 
 
@@ -374,6 +374,42 @@ int StyledTextFile::getLineStartPosition(size_t line) const
 
 
 /////////////////////////////////////////////////
+/// \brief Finds the first line of the current
+/// documentation comment or -1, if the current
+/// line does not contain any documentation
+/// comment.
+///
+/// \param line size_t
+/// \return int
+///
+/////////////////////////////////////////////////
+int StyledTextFile::findDocStartLine(size_t line) const
+{
+    size_t pos = vFileContents[line].second.find_first_not_of(" \t");
+
+    if (pos == std::string::npos
+        || (getStyleAt(pos + vFileContents[line].first) != COMMENT_DOC_BLOCK
+            && getStyleAt(pos + vFileContents[line].first) != COMMENT_DOC_LINE))
+        return -1;
+
+    long long int nPos = pos + vFileContents[line].first;
+    size_t nWhitespace = 0;
+
+    while (nPos >= 0 && (getStyleAt(nPos) == COMMENT_DOC_BLOCK || getStyleAt(nPos) == COMMENT_DOC_LINE || getCharAt(nPos) == ' ' || getCharAt(nPos) == '\t'))
+    {
+        if ((getStyleAt(nPos) != COMMENT_DOC_BLOCK && getStyleAt(nPos) != COMMENT_DOC_LINE) && (getCharAt(nPos) == ' ' || getCharAt(nPos) == '\t'))
+            nWhitespace++;
+        else
+            nWhitespace = 0;
+
+        nPos--;
+    }
+
+    return LineFromPosition(nPos+nWhitespace);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the style at the current
 /// selected character position.
 ///
@@ -389,6 +425,25 @@ StyledTextFile::Style StyledTextFile::getStyleAt(size_t pos) const
         return vStyles[line][pos - getLineStartPosition(line)];
 
     return STYLE_ERROR;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the character located at the
+/// position pos.
+///
+/// \param pos size_t
+/// \return char
+///
+/////////////////////////////////////////////////
+char StyledTextFile::getCharAt(size_t pos) const
+{
+    int line = LineFromPosition(pos);
+
+    if (line != -1)
+        return vFileContents[line].second[pos - vFileContents[line].first];
+
+    return '\0';
 }
 
 

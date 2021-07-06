@@ -458,6 +458,8 @@
 		<Unit filename="kernel/core/io/fileops.hpp" />
 		<Unit filename="kernel/core/io/filesystem.cpp" />
 		<Unit filename="kernel/core/io/filesystem.hpp" />
+		<Unit filename="kernel/core/io/logger.cpp" />
+		<Unit filename="kernel/core/io/logger.hpp" />
 		<Unit filename="kernel/core/io/output.cpp" />
 		<Unit filename="kernel/core/io/output.hpp" />
 		<Unit filename="kernel/core/io/styledtextfile.cpp" />

@@ -19,8 +19,10 @@
 
 // Implementation der Script-Klasse
 
+#include "version.h"
 #include "script.hpp"
 #include "../kernel.hpp"
+#include "utils/tools.hpp"
 #include "utils/tinyxml2.h"
 
 #include <algorithm>
@@ -31,20 +33,13 @@
 /////////////////////////////////////////////////
 Script::Script() : FileSystem(), _localDef(true)
 {
-    sScriptFileName = "";
-    sIncludeFileName = "";
-    sHelpID = "";
-    sInstallID = "";
+    m_script = nullptr;
+    m_include = nullptr;
+
     bValidScript = false;
-    bScriptOpen = false;
-    bReadFromInclude = false;
-    bAutoStart = false;
     bLastScriptCommand = false;
-    bBlockComment = false;
-    bInstallProcedures = false;
-    bENABLE_FULL_LOGGING = false;
-    bDISABLE_SCREEN_OUTPUT = false;
-    bIsInstallingProcedure = false;
+    isInstallMode = false;
+    nInstallModeFlags = ENABLE_DEFAULTS;
     nCurrentPackage = 0;
     nLine = 0;
     nIncludeLine = 0;
@@ -53,170 +48,14 @@ Script::Script() : FileSystem(), _localDef(true)
 
 
 /////////////////////////////////////////////////
-/// \brief Specialized constructor taking a
-/// script file name as argument.
-///
-/// \param _sScriptFileName const string&
-///
-/////////////////////////////////////////////////
-Script::Script(const string& _sScriptFileName) : Script()
-{
-    sScriptFileName = _sScriptFileName;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief Destructor
 /////////////////////////////////////////////////
 Script::~Script()
 {
-    if (bScriptOpen)
+    if (m_script)
     {
         Script::close();
     }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function removes line
-/// comments from a script line.
-///
-/// \param sLine const string&
-/// \return string
-///
-/// It does not remove documentation lines, if an
-/// install section is currently executed and
-/// we're inside of a procedure.
-/////////////////////////////////////////////////
-string Script::stripLineComments(const string& sLine) const
-{
-    // Comment signs are the only chars? -> return an empty string
-    if (sLine == "##")
-        return "";
-
-    size_t nQuotes = 0;
-
-    // Go through the current line and search for line comments,
-    // which are not masked by quotation marks
-    for (size_t i = 0; i < sLine.length(); i++)
-    {
-        if (sLine[i] == '"' && (!i || sLine[i-1] != '\\'))
-            nQuotes++;
-
-        // Found a documentation string
-        if (sLine.substr(i, 3) == "##!" && bInstallProcedures && bIsInstallingProcedure && !(nQuotes % 2))
-            return sLine;
-
-        // Found a line comment
-        if (sLine.substr(i, 2) == "##" && !(nQuotes % 2))
-            return sLine.substr(0,i);
-    }
-    return sLine;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function removes block
-/// comments from a script line.
-///
-/// \param sLine const string&
-/// \return string
-///
-/// It does not remove documentation lines, if an
-/// install section is currently executed and
-/// we're inside of a procedure.
-/////////////////////////////////////////////////
-string Script::stripBlockComments(const string& sLine)
-{
-    // Comment signs are the only chars? -> return an empty string
-    // and activate the block comment flag
-    if (sLine == "#*")
-    {
-        bBlockComment = true;
-        return "";
-    }
-
-    size_t nQuotes = 0;
-    string sReturn = sLine;
-
-    // Go through the current line and search for block comments,
-    // which are not masked by quotation marks
-    for (size_t i = 0; i < sReturn.length(); i++)
-    {
-        if (sReturn[i] == '"' && (!i || sReturn[i-1] != '\\'))
-            nQuotes++;
-
-        // Found a documentation string
-        if (sLine.substr(i, 3) == "#*!" && bInstallProcedures && bIsInstallingProcedure && !(nQuotes % 2))
-            return sLine;
-
-        // Found a block comment
-        if (sReturn.substr(i,2) == "#*" && !(nQuotes % 2))
-        {
-            // Search for the end
-            for (size_t j = i+2; j < sReturn.length(); j++)
-            {
-                if (sReturn.substr(j,2) == "*#")
-                {
-                    sReturn.erase(i,j+2-i);
-                    break;
-                }
-                if (j+1 == sReturn.length())
-                {
-                    sReturn.erase(i);
-                    bBlockComment = true;
-                    break;
-                }
-            }
-        }
-    }
-    return sReturn;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function opens a script
-/// with an already defined script file name.
-///
-/// \return void
-///
-/////////////////////////////////////////////////
-void Script::openScript()
-{
-    // Close an already opened script
-    if (fScript.is_open())
-        fScript.close();
-
-    // Open the script, if the script file name exists
-    if (sScriptFileName.length())
-    {
-        fScript.open(sScriptFileName.c_str(), ios_base::in);
-        bScriptOpen = true;
-
-        // Ensure that the script exists and is a valid file
-        if (fScript.fail())
-        {
-            string sErrorToken = sScriptFileName;
-            close();
-            sScriptFileName = "";
-            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, "", SyntaxError::invalid_position, sErrorToken);
-        }
-
-        // Set the defaults
-        bReadFromInclude = false;
-        bValidScript = true;
-        bAutoStart = false;
-        bENABLE_FULL_LOGGING = false;
-        bDISABLE_SCREEN_OUTPUT = false;
-        bIsInstallingProcedure = false;
-        sHelpID = "";
-        sInstallID = "";
-        nLine = 0;
-        nIncludeLine = 0;
-        _localDef.reset();
-        _symdefs.clear();
-    }
-    return;
 }
 
 
@@ -230,9 +69,35 @@ void Script::openScript()
 /////////////////////////////////////////////////
 void Script::openScript(string& _sScriptFileName)
 {
-    setScriptFileName(_sScriptFileName);
-    openScript();
-    return;
+    // Close an already opened script
+    if (m_script)
+        close();
+
+    _sScriptFileName = ValidFileName(_sScriptFileName, ".nscr");
+
+    // Open the script, if the script file name exists
+    if (_sScriptFileName.length())
+    {
+        m_script = new StyledTextFile(_sScriptFileName);
+
+        // Ensure that the script exists and is a valid file
+        if (m_script->getLastPosition() == -1)
+        {
+            close();
+            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, "", SyntaxError::invalid_position, _sScriptFileName);
+        }
+
+        // Set the defaults
+        sScriptFileName = _sScriptFileName;
+        bValidScript = true;
+        nInstallModeFlags = ENABLE_DEFAULTS;
+        sHelpID = "";
+        sInstallID = "";
+        nLine = 0;
+        nIncludeLine = 0;
+        _localDef.reset();
+        _symdefs.clear();
+    }
 }
 
 
@@ -246,20 +111,25 @@ void Script::openScript(string& _sScriptFileName)
 void Script::close()
 {
     // If a script is open
-    if (bScriptOpen)
+    if (m_script)
     {
         // Close the file streams
-        fScript.close();
-        if (fInclude.is_open())
-            fInclude.close();
+        delete m_script;
+        m_script = nullptr;
+
+        if (m_include)
+        {
+            delete m_include;
+            m_include = nullptr;
+        }
 
         // If the file stream of the installation log
         // is still open, add a installation failed message
         // to it and close it afterwards
-        if (fLogFile.is_open())
+        if (m_logger.is_open())
         {
-            fLogFile << "--- INSTALLATION FAILED ---" << endl << endl << endl;
-            fLogFile.close();
+            m_logger.push("--- INSTALLATION FAILED ---\n\n\n");
+            m_logger.close();
         }
 
         // If this is a chained installation (a.k.a. installing
@@ -285,61 +155,15 @@ void Script::close()
         nCurrentPackage = 0;
 
         // Reset the flags
-        bBlockComment = false;
-        bReadFromInclude = false;
-        bAutoStart = false;
-        bScriptOpen = false;
-        sIncludeFileName = "";
         bValidScript = false;
-        bInstallProcedures = false;
-        bENABLE_FULL_LOGGING = false;
-        bDISABLE_SCREEN_OUTPUT = false;
-        bIsInstallingProcedure = false;
-        sHelpID = "";
-        sInstallID = "";
+        isInstallMode = false;
+        nInstallModeFlags = ENABLE_DEFAULTS;
+        sHelpID.clear();
+        sInstallID.clear();
         nLine = 0;
         _localDef.reset();
         _symdefs.clear();
     }
-
-    return;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function restarts the
-/// currently opened script.
-///
-/// \return void
-///
-/////////////////////////////////////////////////
-void Script::restart()
-{
-    _localDef.reset();
-    _symdefs.clear();
-
-    if (bScriptOpen)
-    {
-        // If the script is already open,
-        // clear all flags, close the include
-        // and jump to the first glyph
-        fScript.clear();
-        if (fInclude.is_open())
-            fInclude.close();
-        fScript.seekg(0);
-    }
-    else if (sScriptFileName.length())
-    {
-        // If the script was not open
-        // but a file name exists, then
-        // open this file
-        openScript();
-        fScript.clear();
-        if (fInclude.is_open())
-            fInclude.close();
-        fScript.seekg(0);
-    }
-    return;
 }
 
 
@@ -355,15 +179,14 @@ void Script::restart()
 /////////////////////////////////////////////////
 void Script::returnCommand()
 {
-    if (bScriptOpen)
+    if (m_script)
     {
-        if (fLogFile.is_open())
+        if (m_logger.is_open())
         {
-            fLogFile << "--- INSTALLATION TERMINATED SUCCESSFULLY ---" << endl;
-            fLogFile << endl << endl;
-            fLogFile.close();
+            m_logger.push("--- INSTALLATION TERMINATED SUCCESSFULLY ---\n\n\n");
+            m_logger.close();
 
-            if (!bDISABLE_SCREEN_OUTPUT)
+            if (!(nInstallModeFlags & DISABLE_SCREEN_OUTPUT))
                 NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_INSTALL_SUCCESS")));
         }
 
@@ -377,22 +200,18 @@ void Script::returnCommand()
 /// current installation section.
 ///
 /// \param sScriptCommand string&
-/// \param bFirstPassedInstallCommand bool&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Script::startInstallation(string& sScriptCommand, bool& bFirstPassedInstallCommand)
+bool Script::startInstallation(string& sScriptCommand)
 {
     // Open the installation logfile
-    fLogFile.open((sTokens[0][1] + "\\install.log").c_str(), ios_base::in | ios_base::out | ios_base::app);
-
-    if (fLogFile.fail())
+    if (!m_logger.open(sTokens[0][1] + "\\install.log"))
         throw SyntaxError(SyntaxError::CANNOT_OPEN_LOGFILE, sScriptCommand, SyntaxError::invalid_position, sTokens[0][1] + "\\install.log");
 
     // Write the first line
-    fLogFile << "--- INSTALLATION " << getTimeStamp(false) << " ---" << endl;
-
-    bFirstPassedInstallCommand = true;
+    m_logger.push_line("--- INSTALLATION " + getTimeStamp(false) + " ---");
+    isInInstallSection = true;
 
     // Remove the install tag and strip the white spaces
     sScriptCommand = sScriptCommand.substr(9);
@@ -411,8 +230,9 @@ bool Script::startInstallation(string& sScriptCommand, bool& bFirstPassedInstall
     {
         // If the install information tags were found
         // handle them here
-        return handleInstallInformation(sScriptCommand, bFirstPassedInstallCommand);
+        return handleInstallInformation(sScriptCommand);
     }
+
     return true;
 }
 
@@ -423,32 +243,27 @@ bool Script::startInstallation(string& sScriptCommand, bool& bFirstPassedInstall
 /// installation section.
 ///
 /// \param sScriptCommand string&
-/// \param bFirstPassedInstallCommand bool&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassedInstallCommand)
+bool Script::handleInstallInformation(string& sScriptCommand)
 {
     unsigned int nNumereVersion = AutoVersion::MAJOR*100+AutoVersion::MINOR*10+AutoVersion::BUILD;
     unsigned int nRequiredVersion = nNumereVersion;
-    bFirstPassedInstallCommand = true;
 
     // If the current install information string is incomplete
     // (i.e. no "<endinfo>" tag), then search for the corresponding
     // tag in the next lines
     if (sScriptCommand.find("<endinfo>") == string::npos)
     {
-        string sTemp;
+        std::string sTemp;
 
         // Read lines from the script until the "<endinfo>" tag was found
-        while (!fScript.eof())
+        while (nLine < m_script->getLinesCount())
         {
-            getline(fScript, sTemp);
+            sTemp = m_script->getStrippedLine(nLine);
             nLine++;
             StripSpaces(sTemp);
-
-            if (sTemp.find("##") != string::npos)
-                sTemp = stripLineComments(sTemp);
 
             if (sTemp.find("<endinfo>") == string::npos)
                 sScriptCommand += " " + sTemp;
@@ -537,7 +352,7 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
         }
     }
 
-    evaluateInstallInformation(sInstallInfoString, bFirstPassedInstallCommand);
+    evaluateInstallInformation(sInstallInfoString);
 
     if (sInstallInfoString.length())
         NumeReKernel::getInstance()->getProcedureInterpreter().declareNewPackage(sInstallInfoString);
@@ -545,63 +360,6 @@ bool Script::handleInstallInformation(string& sScriptCommand, bool& bFirstPassed
     if (!sScriptCommand.length())
         return false;
     return true;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function extracts the
-/// documentation index entry from the
-/// installation section.
-///
-/// \param sScriptCommand string&
-/// \return string
-///
-/////////////////////////////////////////////////
-string Script::extractDocumentationIndex(string& sScriptCommand)
-{
-    // Extract or search for the documentation index entry
-    if (sScriptCommand.find("</helpindex>") != string::npos)
-    {
-        sScriptCommand.erase(sScriptCommand.find("</helpindex>")+12);
-    }
-    else
-    {
-        string sTemp = "";
-
-        // Extract lines until the closing tag of the
-        // documentation index entry was found
-        while (!fScript.eof())
-        {
-            getline(fScript, sTemp);
-            nLine++;
-            StripSpaces(sTemp);
-
-            if (sTemp.find("##") != string::npos)
-                sTemp = stripLineComments(sTemp);
-
-            if (sTemp.find("</helpindex>") == string::npos)
-                sScriptCommand += sTemp;
-            else
-            {
-                sScriptCommand += sTemp.substr(0,sTemp.find("</helpindex>")+12);
-                break;
-            }
-        }
-    }
-
-    // Extract the article ID
-    sHelpID = Documentation::getArgAtPos(sScriptCommand, sScriptCommand.find("id=")+3);
-    StripSpaces(sHelpID);
-
-    // Ensure that the article ID start with the plugin prefix
-    if (sHelpID.substr(0, 5) != "plgn_" && sHelpID.substr(0, 4) != "pkg_")
-    {
-        sScriptCommand.insert(sScriptCommand.find(sHelpID, sScriptCommand.find("id=")+3), "plgn_");
-        sHelpID = "plgn_" + sHelpID;
-    }
-
-    // Separate the install ID with doubled angles from the remaining string
-    return sInstallID + " <<>>" + sScriptCommand;
 }
 
 
@@ -633,14 +391,11 @@ void Script::writeDocumentationArticle(string& sScriptCommand)
         std::string sTemp;
 
         // Read the contents linewise from the script
-        while (!fScript.eof())
+        while (nLine < m_script->getLinesCount())
         {
-            std::getline(fScript, sTemp);
+            sTemp = m_script->getStrippedLine(nLine);
             nLine++;
             StripSpaces(sTemp);
-
-            if (sTemp.find("##") != std::string::npos)
-                sTemp = stripLineComments(sTemp);
 
             // Try to find the end of the current documentation article
             if (sTemp.find("</helpfile>") == std::string::npos)
@@ -717,7 +472,9 @@ void Script::writeLayout(std::string& sScriptCommand)
     // create a valid file name
     std::string sLayoutFileName = getArgAtPos(sScriptCommand, sScriptCommand.find_first_not_of(' ', 6));
     sLayoutFileName = FileSystem::ValidFileName(sLayoutFileName, ".nlyt");
-    ofstream fLayoutFile(sLayoutFileName.c_str());
+    ofstream fLayoutFile(sLayoutFileName);
+
+    m_logger.push_line(">> Installing layout: \"" + sLayoutFileName + "\" ...");
 
     // Remove the file name
     size_t nQuotes = 0;
@@ -744,7 +501,12 @@ void Script::writeLayout(std::string& sScriptCommand)
 
         // Write the contents to the documentation article file
         if (!fLayoutFile.fail())
+        {
+            if (nInstallModeFlags & ENABLE_FULL_LOGGING)
+                m_logger.push_line(">> >> Copying: " + sScriptCommand + " ...");
+
             fLayoutFile << sScriptCommand << endl;
+        }
         else
         {
             fLayoutFile.close();
@@ -758,17 +520,23 @@ void Script::writeLayout(std::string& sScriptCommand)
         // Write the contents linewise to the documentation article file
         if (!fLayoutFile.fail())
         {
+            if (nInstallModeFlags & ENABLE_FULL_LOGGING)
+                m_logger.push_line(">> >> Copying: " + sScriptCommand + " ...");
+
             fLayoutFile << sScriptCommand << endl;
 
             string sTemp;
             size_t nIndent = 1;
 
             // Read the contents linewise from the script
-            while (!fScript.eof())
+            while (nLine < m_script->getLinesCount())
             {
-                getline(fScript, sTemp);
+                sTemp = m_script->getLine(nLine);
                 nLine++;
                 StripSpaces(sTemp);
+
+                if (nInstallModeFlags & ENABLE_FULL_LOGGING)
+                    m_logger.push_line(">> >> Copying: " + sTemp + " ...");
 
                 if (sTemp.substr(0, 8) == "endgroup" || sTemp.substr(0, 9) == "endlayout")
                     nIndent--;
@@ -806,69 +574,150 @@ void Script::writeLayout(std::string& sScriptCommand)
 
 
 /////////////////////////////////////////////////
+/// \brief Writes a procedure including the
+/// comments to a procedure file.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void Script::writeProcedure()
+{
+    std::string sDocumentation;
+    Procedure& _procedure = NumeReKernel::getInstance()->getProcedureInterpreter();
+
+    // We detected the start of the procedure in
+    // the previous line. Let's compensate for
+    // this
+    nLine--;
+
+    if (nLine)
+    {
+        int line = m_script->findDocStartLine(nLine-1);
+
+        if (line > -1)
+        {
+            while (line < nLine)
+            {
+                std::string sLine = m_script->getLine(line);
+                StripSpaces(sLine);
+                sDocumentation += sLine + "\n";
+                line++;
+            }
+        }
+    }
+
+    // Write first line including prefixed documentation
+    std::string sLine = m_script->getLine(nLine);
+    StripSpaces(sLine);
+
+    m_logger.push_line(">> Installing: \"" + sLine.substr(sLine.find('$'), sLine.find('(', sLine.find('$'))-sLine.find('$')) + "\" ...");
+
+    if (!(nInstallModeFlags & DISABLE_SCREEN_OUTPUT))
+        NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_INSTALLING_PROC", sLine.substr(sLine.find('$'), sLine.find('(', sLine.find('$'))-sLine.find('$')))));
+
+    if (nInstallModeFlags & ENABLE_FULL_LOGGING)
+        m_logger.push_line(">> >> Copying: " + sLine + " ...");
+
+    _procedure.writeProcedure(sLine + sDocumentation);
+    nLine++;
+
+    // Write remaining lines
+    while (nLine < m_script->getLinesCount())
+    {
+        sLine = m_script->getLine(nLine);
+        nLine++;
+        StripSpaces(sLine);
+
+        if (nInstallModeFlags & ENABLE_FULL_LOGGING)
+            m_logger.push_line(">> >> Copying: " + sLine + " ...");
+
+        _procedure.writeProcedure(sLine);
+
+        if (findCommand(m_script->getStrippedLine(nLine-1)).sString == "endprocedure")
+            break;
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Writes the contents of a whole file to
+/// the target file, which has been specified by
+/// the XML-like tags.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool Script::writeWholeFile()
+{
+    std::string sStartLine = m_script->getStrippedLine(nLine-1);
+    size_t pos = sStartLine.find("<file ");
+
+    if (pos == std::string::npos || sStartLine.find("name=", pos) == std::string::npos)
+        return false;
+
+    std::string sFileName = ValidizeAndPrepareName(Documentation::getArgAtPos(sStartLine, sStartLine.find("name=", pos)+5), ".nscr");
+    std::ofstream wholeFile(sFileName);
+    m_logger.push_line(">> Writing file: \"" + sFileName + "\" ...");
+
+    while (nLine < m_script->getLinesCount())
+    {
+        std::string sLine = m_script->getLine(nLine);
+
+        if (nInstallModeFlags & ENABLE_FULL_LOGGING)
+            m_logger.push_line(">> >> Copying: " + sLine + " ...");
+
+        // Ignore first character (mostly a tab)
+        if (sLine.front() == '\t')
+            wholeFile << sLine.substr(1) + "\n";
+        else
+            wholeFile << sLine + "\n";
+
+        nLine++;
+
+        if (m_script->getStrippedLine(nLine).find("<endfile>") != std::string::npos)
+            break;
+    }
+
+    wholeFile.close();
+    nLine++;
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function evaluates the
 /// flags from the installation information
 /// string and also removes unnecessary comments.
 ///
 /// \param sInstallInfoString std::string&
-/// \param bFirstPassedInstallCommand bool&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Script::evaluateInstallInformation(std::string& sInstallInfoString, bool& bFirstPassedInstallCommand)
+void Script::evaluateInstallInformation(std::string& sInstallInfoString)
 {
     if (sInstallInfoString.length())
     {
-        // Remove block comments
-        if (sInstallInfoString.find("#*") != string::npos && sInstallInfoString.find("*#", sInstallInfoString.find("#*")+2) != string::npos)
-        {
-            for (unsigned int i = 0; i < sInstallInfoString.length(); i++)
-            {
-                if (sInstallInfoString.substr(i,2) == "#*")
-                {
-                    if (sInstallInfoString.find("*#", i+2) == string::npos)
-                    {
-                        sInstallInfoString.erase(i);
-                        break;
-                    }
-
-                    for (unsigned int j = i; j < sInstallInfoString.length(); j++)
-                    {
-                        if (sInstallInfoString.substr(j,2) == "*#")
-                        {
-                            sInstallInfoString.erase(i,j+2-i);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
         // Evaluate the flag list
         if (findParameter(sInstallInfoString, "flags", '='))
         {
             string sParam = getArgAtPos(sInstallInfoString, findParameter(sInstallInfoString, "flags", '=')+5);
 
             if (sParam.find("ENABLE_FULL_LOGGING") != string::npos)
-            {
-                bENABLE_FULL_LOGGING = true;
-            }
+                nInstallModeFlags |= ENABLE_FULL_LOGGING;
 
             if (sParam.find("DISABLE_SCREEN_OUTPUT") != string::npos)
-                bDISABLE_SCREEN_OUTPUT = true;
+                nInstallModeFlags |= DISABLE_SCREEN_OUTPUT;
         }
 
-        if (!bDISABLE_SCREEN_OUTPUT)
+        if (!(nInstallModeFlags & DISABLE_SCREEN_OUTPUT))
             NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_START_INSTALL")) + " ...");
     }
 
     // Write the installation information string to the
     // installation logfile
     if (sInstallInfoString.length())
-    {
-        fLogFile << "Installinfo: " << sInstallInfoString << endl;
-            bFirstPassedInstallCommand = false;
-    }
+        m_logger.push_line("Installinfo: " + sInstallInfoString);
 }
 
 
@@ -876,25 +725,23 @@ void Script::evaluateInstallInformation(std::string& sInstallInfoString, bool& b
 /// \brief This member function returns the next
 /// valid line from the currently opened script.
 ///
-/// \param bFirstPassedInstallCommand bool&
-/// \return string
+/// \return std::string
 ///
 /////////////////////////////////////////////////
-string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
+std::string Script::getNextScriptCommandFromScript()
 {
-    string sScriptCommand;
-    string sDocumentationBuffer;
+    std::string sScriptCommand;
 
     // Search for the next valid and non-empty line
     // in the current script
-    while (!fScript.eof() && !sScriptCommand.length())
+    while (nLine < m_script->getLinesCount() && !sScriptCommand.length())
     {
         string sCurrentLine;
 
         // Compose lines, which were broken using the "\\" operator
         do
         {
-            getline(fScript, sCurrentLine);
+            sCurrentLine = m_script->getStrippedLine(nLine);
             nLine++;
             StripSpaces(sCurrentLine);
 
@@ -907,65 +754,23 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
             if (NumeReKernel::getInstance()->getDebugger().getBreakpointManager().isBreakpoint(sScriptFileName, nLine-1) && sScriptCommand.substr(0,2) != "|>")
                 sScriptCommand.insert(0, "|> ");
         }
-        while (!fScript.eof() && sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\");
+        while (nLine < m_script->getLinesCount() && sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\");
 
         // Ignore empty lines
         if (!sScriptCommand.length())
             continue;
 
-        // Try to find the end of the current block comment
-        if (bBlockComment && sScriptCommand.find("*#") != string::npos)
-        {
-            // Append the block comment to the buffered documentation
-            if (sDocumentationBuffer.length())
-                sDocumentationBuffer += sScriptCommand.substr(0, sScriptCommand.find("*#")+2) + "\n";
-
-            bBlockComment = false;
-
-            if (sScriptCommand.find("*#") == sScriptCommand.length()-2)
-            {
-                sScriptCommand.clear();
-                continue;
-            }
-            else
-                sScriptCommand.erase(0, sScriptCommand.find("*#")+2);
-        }
-        else if (bBlockComment && sScriptCommand.find("*#") == string::npos)
-        {
-            // Append the block comment to the buffered documentation
-            if (sDocumentationBuffer.length())
-                sDocumentationBuffer += sScriptCommand + "\n";
-
-            sScriptCommand.clear();
-            continue;
-        }
-
-        // Remove line comments
-        if (sScriptCommand.find("##") != string::npos)
-        {
-            // Buffer documentation comments, which might probably
-            // be prefixed
-            if (bInstallProcedures && sScriptCommand.substr(0, 3) == "##!")
-                sDocumentationBuffer += sScriptCommand + "\n";
-            else
-                sDocumentationBuffer.clear();
-
-            sScriptCommand = stripLineComments(sScriptCommand);
-
-            if (!sScriptCommand.length())
-                continue;
-        }
-
         // If we find the installation section, then either jump over it
         // or execute it, if the user wants to do so
-        if (sScriptCommand.substr(0,9) == "<install>" && !bInstallProcedures)
+        if (sScriptCommand.substr(0,9) == "<install>" && !isInstallMode)
         {
             // jump over the installation section
-            while (!fScript.eof())
+            while (nLine < m_script->getLinesCount())
             {
-                getline(fScript, sScriptCommand);
+                sScriptCommand = m_script->getStrippedLine(nLine);
                 nLine++;
                 StripSpaces(sScriptCommand);
+
                 if (sScriptCommand.substr(0,12) == "<endinstall>")
                     break;
             }
@@ -976,109 +781,77 @@ string Script::getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand)
         else if (sScriptCommand.substr(0,9) == "<install>")
         {
             // Execute the installation section
-            if (!startInstallation(sScriptCommand, bFirstPassedInstallCommand))
+            if (!startInstallation(sScriptCommand))
                 continue;
         }
 
         // Get the installation information
-        if (sScriptCommand.substr(0,6) == "<info>" && bInstallProcedures)
+        if (sScriptCommand.substr(0,6) == "<info>" && isInstallMode && isInInstallSection)
         {
-            if (!handleInstallInformation(sScriptCommand, bFirstPassedInstallCommand))
+            if (!handleInstallInformation(sScriptCommand))
                 continue;
         }
 
-        // Extract the documentation index
-        /*if (sScriptCommand.substr(0,11) == "<helpindex>" && bInstallProcedures)
+        // Write a whole file from script to file
+        if (sScriptCommand.substr(0,6) == "<file " && isInstallMode && isInInstallSection)
         {
-            return extractDocumentationIndex(sScriptCommand);
-        }*/
+            if (writeWholeFile())
+            {
+                sScriptCommand.clear();
+                continue;
+            }
+        }
 
         // Write the documentation articles to their corresponding files
-        if (sScriptCommand.substr(0,10) == "<helpfile>" && bInstallProcedures)
+        if (sScriptCommand.substr(0,10) == "<helpfile>" && isInstallMode && isInInstallSection)
         {
             writeDocumentationArticle(sScriptCommand);
             continue;
         }
 
         // Write window layouts
-        if (sScriptCommand.substr(0, 7) == "layout ")
+        if (findCommand(sScriptCommand).sString == "layout" && isInstallMode && isInInstallSection)
         {
             writeLayout(sScriptCommand);
             continue;
         }
 
-        // End the installation
-        if (sScriptCommand.substr(0,12) == "<endinstall>")
+        // Write procedures
+        if (findCommand(sScriptCommand).sString == "procedure" && isInstallMode && isInInstallSection)
         {
-            if (fLogFile.is_open())
-            {
-                fLogFile << "--- INSTALLATION TERMINATED SUCCESSFULLY ---" << endl;
-                fLogFile << endl << endl;
-                fLogFile.close();
-                if (!bDISABLE_SCREEN_OUTPUT)
-                    NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_INSTALL_SUCCESS")));
-            }
-            bIsInstallingProcedure = false;
-            sScriptCommand = sScriptCommand.substr(12);
-            if (!sScriptCommand.length())
-                continue;
-        }
-
-        // Remove possible block comments
-        if (sScriptCommand.find("#*") != string::npos)
-        {
-            // Buffer documentation comments, which might probably
-            // be prefixed
-            if (bInstallProcedures && sScriptCommand.substr(0, 3) == "#*!")
-                sDocumentationBuffer += sScriptCommand + "\n";
-            else
-                sDocumentationBuffer.clear();
-
-            sScriptCommand = stripBlockComments(sScriptCommand);
-
-            if (!sScriptCommand.length())
-                continue;
-        }
-
-        // Try to find the end of the current block comment
-        if (bBlockComment && sScriptCommand.find("*#") != string::npos)
-        {
-            // Append the block comment to the buffered documentation
-            if (sDocumentationBuffer.length())
-                sDocumentationBuffer += sScriptCommand.substr(0, sScriptCommand.find("*#")+2) + "\n";
-
-            bBlockComment = false;
-
-            if (sScriptCommand.find("*#") == sScriptCommand.length()-2)
-            {
-                sScriptCommand.clear();
-                continue;
-            }
-            else
-                sScriptCommand = sScriptCommand.substr(sScriptCommand.find("*#")+2);
-        }
-        else if (bBlockComment && sScriptCommand.find("*#") == string::npos)
-        {
-            // Append the block comment to the buffered documentation
-            if (sDocumentationBuffer.length())
-                sDocumentationBuffer += sScriptCommand + "\n";
-
+            writeProcedure();
             sScriptCommand.clear();
             continue;
         }
+
+        // End the installation
+        if (sScriptCommand.substr(0, 12) == "<endinstall>" && isInstallMode && isInInstallSection)
+        {
+            if (m_logger.is_open())
+            {
+                m_logger.push("--- INSTALLATION TERMINATED SUCCESSFULLY ---\n\n\n");
+                m_logger.close();
+
+                if (!(nInstallModeFlags & DISABLE_SCREEN_OUTPUT))
+                    NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_INSTALL_SUCCESS")));
+            }
+
+            isInInstallSection = false;
+            sScriptCommand = sScriptCommand.substr(12);
+
+            if (!sScriptCommand.length())
+                continue;
+        }
+        else if (isInstallMode && isInInstallSection && (nInstallModeFlags & ENABLE_FULL_LOGGING))
+            m_logger.push_line(">> Evaluating: " + sScriptCommand + " ...");
     }
 
     // close the script, if this is the last command
-    if (fScript.eof())
+    if (nLine >= m_script->getLinesCount())
     {
         bLastScriptCommand = true;
         Script::close();
     }
-
-    // If the current command is the start of a procedure definition,
-    // append the buffered documentation strings
-    if (sScriptCommand.substr(0, 10) == "procedure ")
-        return sScriptCommand + sDocumentationBuffer;
 
     return sScriptCommand;
 }
@@ -1097,14 +870,14 @@ string Script::getNextScriptCommandFromInclude()
 
     // Search for the next valid and non-empty line
     // in the included script
-    while (!fInclude.eof() && !sScriptCommand.length())
+    while (nIncludeLine < m_include->getLinesCount() && !sScriptCommand.length())
     {
         string sCurrentLine;
 
         // Compose lines, which were broken using the "\\" operator
         do
         {
-            getline(fInclude, sCurrentLine);
+            sCurrentLine = m_include->getStrippedLine(nIncludeLine);
             nIncludeLine++;
             StripSpaces(sCurrentLine);
 
@@ -1113,7 +886,7 @@ string Script::getNextScriptCommandFromInclude()
 
             sScriptCommand += sCurrentLine;
         }
-        while (!fInclude.eof() && sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\");
+        while (nIncludeLine < m_include->getLinesCount() && sScriptCommand.length() > 2 && sScriptCommand.substr(sScriptCommand.length()-2) == "\\\\");
 
         // Ignore empty lines
         if (!sScriptCommand.length())
@@ -1123,9 +896,9 @@ string Script::getNextScriptCommandFromInclude()
         if (sScriptCommand.substr(0,9) == "<install>"
             || (findCommand(sScriptCommand).sString == "global" && sScriptCommand.find("<install>") != string::npos))
         {
-            while (!fInclude.eof())
+            while (nIncludeLine < m_include->getLinesCount())
             {
-                getline(fInclude, sScriptCommand);
+                sScriptCommand = m_include->getStrippedLine(nIncludeLine);
                 nIncludeLine++;
                 StripSpaces(sScriptCommand);
 
@@ -1135,34 +908,6 @@ string Script::getNextScriptCommandFromInclude()
             }
 
             sScriptCommand.clear();
-            continue;
-        }
-
-        // Handle block comments
-        if (sScriptCommand.find("#*") != string::npos)
-        {
-            sScriptCommand = stripBlockComments(sScriptCommand);
-
-            if (!sScriptCommand.length())
-                continue;
-        }
-
-        // Try to find the end of the current block comment
-        if (bBlockComment && sScriptCommand.find("*#") != string::npos)
-        {
-            bBlockComment = false;
-
-            if (sScriptCommand.find("*#") == sScriptCommand.length()-2)
-            {
-                sScriptCommand = "";
-                continue;
-            }
-            else
-                sScriptCommand = sScriptCommand.substr(sScriptCommand.find("*#")+2);
-        }
-        else if (bBlockComment && sScriptCommand.find("*#") == string::npos)
-        {
-            sScriptCommand = "";
             continue;
         }
 
@@ -1207,11 +952,11 @@ string Script::getNextScriptCommandFromInclude()
     }
 
     // If this is the last line, close the included file
-    if (fInclude.eof())
+    if (nIncludeLine >= m_include->getLinesCount())
     {
-        fInclude.close();
+        delete m_include;
+        m_include = nullptr;
         nIncludeLine = 0;
-        bReadFromInclude = false;
         nIncludeType = 0;
     }
 
@@ -1232,8 +977,10 @@ string Script::handleIncludeSyntax(string& sScriptCommand)
 {
     // Only accept the including syntax, if we're currently
     // not from another included file
-    if (!bReadFromInclude && sScriptCommand[0] == '@' && sScriptCommand[1] != ' ')
+    if (!m_include && sScriptCommand[0] == '@' && sScriptCommand[1] != ' ')
     {
+        std::string sIncludeFileName;
+
         if (sScriptCommand[1] == '"')
             sIncludeFileName = sScriptCommand.substr(2,sScriptCommand.find('"', 2)-2);
         else
@@ -1278,19 +1025,19 @@ string Script::handleIncludeSyntax(string& sScriptCommand)
             return "";
 
         // Open the include file
-        bReadFromInclude = true;
-        fInclude.clear();
-        fInclude.open(sIncludeFileName.c_str());
+        m_include = new StyledTextFile(sIncludeFileName);
 
         // Ensure that the file is valid
-        if (fInclude.fail())
+        if (m_include->getLastPosition() == -1)
         {
-            bReadFromInclude = false;
-            fInclude.close();
+            delete m_include;
+            m_include = nullptr;
             throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sScriptCommand, SyntaxError::invalid_position, sIncludeFileName);
         }
+
         return "";
     }
+
     return sScriptCommand;
 }
 
@@ -1343,16 +1090,15 @@ bool Script::handleLocalDefinitions(string& sScriptCommand)
 /////////////////////////////////////////////////
 string Script::getNextScriptCommand()
 {
-    string sScriptCommand = "";
-    bool bFirstPassedInstallCommand = false;
+    std::string sScriptCommand = "";
 
     // Get the next script command
-    if (bScriptOpen)
+    if (m_script)
     {
-        if (!bReadFromInclude)
+        if (!m_include)
         {
             // Get the next script command from the currently opened script
-            sScriptCommand = getNextScriptCommandFromScript(bFirstPassedInstallCommand);
+            sScriptCommand = getNextScriptCommandFromScript();
         }
         else
         {
@@ -1363,60 +1109,22 @@ string Script::getNextScriptCommand()
     else
         return "";
 
-    // Remove line comments from the script command
-    if (sScriptCommand.find("##") != string::npos && !bInstallProcedures)
-    {
-        sScriptCommand = stripLineComments(sScriptCommand);
-    }
-
-    // Remove block comments from the script command
-    if (sScriptCommand.find("#*") != string::npos && !bInstallProcedures)
-        sScriptCommand = stripBlockComments(sScriptCommand);
-
     // Replace "<this>" path tokens with the current script file path
     while (sScriptCommand.find("<this>") != string::npos)
-        sScriptCommand.replace(sScriptCommand.find("<this>"), 6, sScriptFileName.substr(0,sScriptFileName.rfind('/')));
+        sScriptCommand.replace(sScriptCommand.find("<this>"), 6, sScriptFileName.substr(0, sScriptFileName.rfind('/')));
 
     // Handle the include syntax ("@SOMESCRIPT") and everything, what
     // belongs to it
     sScriptCommand = handleIncludeSyntax(sScriptCommand);
 
     // Ensure that procedures are not written accidentally
-    if (!bInstallProcedures
+    if (!isInstallMode
         && sScriptCommand.find("procedure") != string::npos
         && sScriptCommand.find('$', sScriptCommand.find("procedure")) != string::npos)
         throw SyntaxError(SyntaxError::PROCEDURE_WITHOUT_INSTALL_FOUND, sScriptCommand, SyntaxError::invalid_position);
 
-    // If we're currently installing something, note that
-    // down in the log file and store, whether the current
-    // code section is a procedure or not
-    if (fLogFile.is_open() && bInstallProcedures)
-    {
-        if (sScriptCommand.find("procedure") != string::npos && sScriptCommand.find('$', sScriptCommand.find("procedure")) != string::npos)
-        {
-            bIsInstallingProcedure = true;
-            fLogFile << ">> Installing: \"" << sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')) << "\" ..." << endl;
-
-            if (!bDISABLE_SCREEN_OUTPUT)
-            {
-                NumeReKernel::print(toSystemCodePage(_lang.get("SCRIPT_INSTALLING_PROC", sScriptCommand.substr(sScriptCommand.find('$'), sScriptCommand.find('(', sScriptCommand.find('$'))-sScriptCommand.find('$')))));
-            }
-        }
-
-        if (bENABLE_FULL_LOGGING)
-        {
-            if (bIsInstallingProcedure)
-                fLogFile << ">> >> Copying: " << sScriptCommand << " ..." << endl;
-            else
-                fLogFile << ">> Evaluating: " << sScriptCommand << " ..." << endl;
-        }
-
-        if (sScriptCommand.find("endprocedure") != string::npos)
-            bIsInstallingProcedure = false;
-    }
-
     // If we're not installing, replace all local functions
-    if (!bInstallProcedures)
+    if (!isInstallMode)
     {
         if (!handleLocalDefinitions(sScriptCommand))
             return "";
@@ -1427,56 +1135,4 @@ string Script::getNextScriptCommand()
 }
 
 
-/////////////////////////////////////////////////
-/// \brief This member function sets the script
-/// file name in the internal buffer.
-///
-/// \param _sScriptFileName string&
-/// \return void
-///
-/////////////////////////////////////////////////
-void Script::setScriptFileName(string& _sScriptFileName)
-{
-    if (_sScriptFileName.length())
-        _sScriptFileName = FileSystem::ValidFileName(_sScriptFileName, ".nscr");
-    sScriptFileName = _sScriptFileName;
-    return;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Returns a shortened version of the
-/// current script file name.
-///
-/// \return string
-///
-/////////////////////////////////////////////////
-string Script::getScriptFileNameShort() const
-{
-    string sFileName = sScriptFileName;
-    unsigned int nPos = -1;
-    unsigned int nPos_2 = 0;
-    while (sFileName.find('\\') != string::npos)
-    {
-        sFileName[sFileName.find('\\')] = '/';
-    }
-    while (sFileName.rfind('/', nPos) != string::npos)
-    {
-        nPos = sFileName.rfind('/', nPos);
-        if (nPos != 0 && nPos-1 != ':')
-        {
-            nPos_2 = sFileName.rfind('/', nPos-1);
-            if (nPos_2 != string::npos)
-            {
-                sFileName = sFileName.substr(0,nPos_2+1) + ".." + sFileName.substr(nPos);
-                nPos = nPos_2;
-            }
-            else
-                break;
-        }
-        else
-            break;
-    }
-    return sFileName;
-}
 

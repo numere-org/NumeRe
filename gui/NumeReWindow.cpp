@@ -4038,118 +4038,65 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
 
 /////////////////////////////////////////////////
 /// \brief This member function obtains the
-/// contents of a procedure file and transforms
-/// them to be used by an installer script (i.e.
-/// prepending the target namespace).
-///
-/// \param sProcFileName const std::string&
-/// \param sDefaultPath const std::string&
-/// \return std::vector<std::string>
-///
-/////////////////////////////////////////////////
-std::vector<std::string> NumeReWindow::getProcedureFileForInstaller(const std::string& sProcFileName, const std::string& sDefaultPath)
-{
-    std::ifstream fProc;
-    std::string sNameSpace;
-    std::string sLine;
-    std::vector<std::string> vProc;
-    bool foundMainProcedure = false;
-
-    // Decode the procedure file name
-    if (sProcFileName.find(sDefaultPath) != std::string::npos)
-    {
-        sNameSpace = sProcFileName.substr(0, sProcFileName.rfind('/')+1);
-        sNameSpace.erase(sNameSpace.find(sDefaultPath), sDefaultPath.length());
-
-        while (sNameSpace.front() == '/')
-            sNameSpace.erase(0, 1);
-
-        while (sNameSpace.find('/') != std::string::npos)
-            sNameSpace[sNameSpace.find('/')] = '~';
-    }
-
-    // Open the procedure file
-    fProc.open(sProcFileName.c_str());
-
-    if (!fProc.good())
-        return vProc;
-
-    // Read the contents of the procedure file
-    while (!fProc.eof())
-    {
-        std::getline(fProc, sLine);
-
-        // Transform procedure heads
-        if (sLine.find_first_not_of(" \t") != std::string::npos && sLine.substr(sLine.find_first_not_of(" \t"), 10) == "procedure ")
-        {
-            std::string sProcName = sLine.substr(sLine.find('$'), sLine.find('(') - sLine.find('$'));
-
-            // Insert namespaces
-            if ("$" + sProcFileName.substr(sProcFileName.rfind('/')+1) == sProcName + ".nprc")
-            {
-                sLine.insert(sLine.find('$')+1, sNameSpace);
-                foundMainProcedure = true;
-            }
-            else
-            {
-                if (!foundMainProcedure)
-                {
-                    sLine.insert(sLine.find('$')+1, "unknownfile~");
-                    wxMessageBox(_guilang.get("GUI_PKGDLG_MISSING_MAINPROCEDURE", sProcName), _guilang.get("GUI_PKGDLG_MISSING_MAINPROCEDURE_HEAD"), wxOK | wxCENTRE | wxICON_WARNING, this);
-                }
-                else
-                    sLine.insert(sLine.find('$')+1, "thisfile~");
-            }
-        }
-
-        vProc.push_back(sLine);
-    }
-
-    return vProc;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member funciton obtains the
-/// contents of a window layout file and
+/// contents of a file and
 /// transforms it to be used by an installer
 /// script.
 ///
-/// \param sLayoutFileName const std::string&
+/// \param sFileName const std::string&
 /// \return std::vector<std::string>
 ///
 /////////////////////////////////////////////////
-std::vector<std::string> NumeReWindow::getLayoutFileForInstaller(const std::string& sLayoutFileName)
+std::vector<std::string> NumeReWindow::getFileForInstaller(const std::string& sFileName)
 {
-    std::ifstream layout(sLayoutFileName.c_str());
-    std::string sTargetFileName = sLayoutFileName;
+    std::ifstream file(sFileName.c_str());
+    std::string sTargetFileName = sFileName;
 
     std::vector<std::string> vPaths = m_terminal->getPathSettings();
-    std::vector<std::string> vLayout;
+    std::vector<std::string> vContents;
 
-    if (sTargetFileName.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
-        sTargetFileName = " \"<scriptpath>" + sTargetFileName.substr(vPaths[SCRIPTPATH].length()) + "\"";
+    for (size_t i = LOADPATH; i < PATH_LAST; i++)
+    {
+        if (sTargetFileName.substr(0, vPaths[i].length()) == vPaths[i])
+        {
+            switch (i)
+            {
+            case LOADPATH:
+                sTargetFileName = "<loadpath>" + sTargetFileName.substr(vPaths[i].length());
+                break;
+            case SAVEPATH:
+                sTargetFileName = "<savepath>" + sTargetFileName.substr(vPaths[i].length());
+                break;
+            case SCRIPTPATH:
+                sTargetFileName = "<scriptpath>" + sTargetFileName.substr(vPaths[i].length());
+                break;
+            case PROCPATH:
+                sTargetFileName = "<procpath>" + sTargetFileName.substr(vPaths[i].length());
+                break;
+            case PLOTPATH:
+                sTargetFileName = "<plotpath>" + sTargetFileName.substr(vPaths[i].length());
+                break;
+            }
 
-    if (sTargetFileName.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
-        sTargetFileName = " \"<procpath>" + sTargetFileName.substr(vPaths[PROCPATH].length()) + "\"";
+            break;
+        }
+    }
 
-    if (!layout.good())
-        return vLayout;
+    if (!file.good())
+        return vContents;
+
+    vContents.push_back("<file name=\"" + sTargetFileName + "\">");
 
     std::string currLine;
 
-    while (!layout.eof())
+    while (!file.eof())
     {
-        std::getline(layout, currLine);
-
-        // Transform layout definitions
-        if (currLine.find_first_not_of(" \t") != string::npos && currLine.substr(currLine.find_first_not_of(" \t"), 6) == "layout")
-            currLine.insert(6, sTargetFileName);
-
-        vLayout.push_back(currLine);
+        std::getline(file, currLine);
+        vContents.push_back(currLine);
     }
 
-    return vLayout;
+    vContents.push_back("<endfile>");
+
+    return vContents;
 }
 
 
@@ -6556,16 +6503,12 @@ void NumeReWindow::OnCreatePackage(const wxString& projectFile)
                 std::vector<std::string> contents;
 
                 // Get the file's contents
-                if (procedures[i].rfind(".nlyt") == std::string::npos)
-                    contents = getProcedureFileForInstaller(procedures[i].ToStdString(), sProcPath);
-                else
-                    contents = getLayoutFileForInstaller(procedures[i].ToStdString());
+                contents = getFileForInstaller(procedures[i].ToStdString());
 
                 // Insert the prepared contents
                 for (size_t j = 0; j < contents.size(); j++)
                 {
-                    if (contents[j].length() && contents[j].find_first_not_of(" \t") != string::npos)
-                        m_currentEd->AddText("\t" + contents[j] + "\r\n");
+                    m_currentEd->AddText("\t" + contents[j] + "\r\n");
                 }
 
                 m_currentEd->AddText("\r\n");

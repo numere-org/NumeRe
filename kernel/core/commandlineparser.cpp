@@ -600,6 +600,27 @@ std::string CommandLineParser::getFileParameterValue(std::string sFileExt, const
 
 
 /////////////////////////////////////////////////
+/// \brief Parses the value of the common "file"
+/// command line parameter and returns a valid
+/// filename. Ensures that the target folder
+/// actually exists.
+///
+/// \param sFileExt std::string
+/// \param sBaseFolder const std::string&
+/// \param sDefaultName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string CommandLineParser::getFileParameterValueForSaving(std::string sFileExt, const std::string& sBaseFolder, const std::string& sDefaultName) const
+{
+    FileSystem _fSys;
+    _fSys.initializeFromKernel();
+
+    return _fSys.ValidizeAndPrepareName(getFileParameterValue(sFileExt, sBaseFolder, sDefaultName), sFileExt);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Parses the selected parameter value as
 /// a string and returns it. If the parameter is
 /// not found, the default value is returned.

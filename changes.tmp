@@ -39,3 +39,4 @@ Fixed	Introduced 64 bit time types. This required a NDAT file type update to ver
 Applied	The "fft" command will now produce a two-sided spectrum, which will contain every frequency twice (negative and positive).
 Added	Using the parameter "axisshift" on "fft" will align the resulting spectrum around the y axis or rearrange the transformed spectrum for inverse transformation.
 Added	Using the command "declare" one may declare file-specific constants valid for the current procedure or script file.
+Added	Packages may now contain whole files using the "<file>...<endfile>" block

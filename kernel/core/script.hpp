@@ -21,100 +21,87 @@
 
 #ifndef SCRIPT_HPP
 #define SCRIPT_HPP
-#include <iostream>
+
 #include <string>
-#include <fstream>
 
 #include "io/filesystem.hpp"
-#include "utils/tools.hpp"
-#include "version.h"
+#include "io/styledtextfile.hpp"
+#include "io/logger.hpp"
 #include "maths/define.hpp"
 #include "symdef.hpp"
-
-using namespace std;
 
 class Script : public FileSystem
 {
     private:
-        fstream fScript;
-        fstream fInclude;
-        fstream fLogFile;
-        string sScriptFileName;
-        string sIncludeFileName;
-        bool bScriptOpen;
-        bool bReadFromInclude;
+        StyledTextFile* m_script;
+        StyledTextFile* m_include;
+
+        enum
+        {
+            ENABLE_DEFAULTS = 0x0,
+            ENABLE_FULL_LOGGING = 0x1,
+            DISABLE_SCREEN_OUTPUT = 0x2
+        };
+
+        Logger m_logger;
+        std::string sScriptFileName;
+
         bool bValidScript;
-        bool bAutoStart;
         bool bLastScriptCommand;
-        bool bBlockComment;
-        unsigned int nLine;
-        unsigned int nIncludeLine;
+        int nLine;
+        int nIncludeLine;
         int nIncludeType;
-        bool bInstallProcedures;
-        bool bENABLE_FULL_LOGGING;
-        bool bDISABLE_SCREEN_OUTPUT;
-        bool bIsInstallingProcedure;
-        string sHelpID;
-        string sInstallID;
-        vector<string> vInstallPackages;
+        int nInstallModeFlags;
+        bool isInstallMode;
+        bool isInInstallSection;
+
+        std::string sHelpID;
+        std::string sInstallID;
+
+        std::vector<std::string> vInstallPackages;
         unsigned int nCurrentPackage;
+
         FunctionDefinitionManager _localDef;
         SymDefManager _symdefs;
 
-        string stripLineComments(const string& sLine) const;
-        string stripBlockComments(const string& sLine);
-        bool startInstallation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
-        bool handleInstallInformation(string& sScriptCommand, bool& bFirstPassedInstallCommand);
-        string extractDocumentationIndex(string& sScriptCommand);
-        void writeDocumentationArticle(string& sScriptCommand);
+        bool startInstallation(std::string& sScriptCommand);
+        bool handleInstallInformation(std::string& sScriptCommand);
+        void writeDocumentationArticle(std::string& sScriptCommand);
         void writeLayout(std::string& sScriptCommand);
-        void evaluateInstallInformation(std::string& sInstallInfoString, bool& bFirstPassedInstallCommand);
-        string getNextScriptCommandFromScript(bool& bFirstPassedInstallCommand);
-        string getNextScriptCommandFromInclude();
-        string handleIncludeSyntax(string& sScriptCommand);
-        bool handleLocalDefinitions(string& sScriptCommand);
+        void writeProcedure();
+        bool writeWholeFile();
+        void evaluateInstallInformation(std::string& sInstallInfoString);
+        std::string getNextScriptCommandFromScript();
+        std::string getNextScriptCommandFromInclude();
+        std::string handleIncludeSyntax(std::string& sScriptCommand);
+        bool handleLocalDefinitions(std::string& sScriptCommand);
 
 
     public:
         Script();
-        Script(const string& _sScriptFileName);
         ~Script();
 
-
-        string getNextScriptCommand();
-        void setScriptFileName(string& _sScriptFileName);
-        inline string getScriptFileName() const
-            {return sScriptFileName;};
-        string getScriptFileNameShort() const;
-        inline void setPredefinedFuncs(const string& sPredefined)
+        std::string getNextScriptCommand();
+        inline std::string getScriptFileName() const
+            {return sScriptFileName;}
+        inline void setPredefinedFuncs(const std::string& sPredefined)
         {
             _localDef.setPredefinedFuncs(sPredefined);
         }
         inline unsigned int getCurrentLine() const
-            {return bReadFromInclude ? nIncludeLine : nLine;}
-        inline bool is_including() const
-            {return bReadFromInclude;}
-        inline void setAutoStart(bool _bAutoStart)
-            {
-                bAutoStart = _bAutoStart;
-                return;
-            }
-        void openScript();
-        void openScript(string& _sScriptFileName);
+            {return m_include ? nIncludeLine : nLine;}
+        void openScript(std::string& _sScriptFileName);
         void close();
-        void restart();
         void returnCommand();
         inline void setInstallProcedures(bool _bInstall = true)
             {
-                bInstallProcedures = _bInstall;
+                isInstallMode = _bInstall;
                 return;
             }
         inline bool isOpen() const
-            {return bScriptOpen;};
+            {return m_script;};
         inline bool isValid() const
             {return bValidScript;};
-        inline bool getAutoStart() const
-            {return bAutoStart;}
         inline bool wasLastCommand()
             {
                 if (bLastScriptCommand)
@@ -125,7 +112,7 @@ class Script : public FileSystem
                 return false;
             }
         inline bool installProcedures() const
-            {return bInstallProcedures;}
+            {return isInstallMode;}
 };
 
 #endif

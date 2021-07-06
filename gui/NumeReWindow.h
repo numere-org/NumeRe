@@ -334,9 +334,7 @@ class NumeReWindow : public wxFrame
 
         void LoadFilesToTree(wxString fromPath, FileFilterType fileType, wxTreeItemId treeid);
 
-
-        std::vector<std::string> getProcedureFileForInstaller(const std::string& sProcFileName, const std::string& sDefaultPath);
-        std::vector<std::string> getLayoutFileForInstaller(const std::string& sLayoutFileName);
+        std::vector<std::string> getFileForInstaller(const std::string& sLayoutFileName);
         wxString ConstructFilterString(FileFilterType filterType);
         int FindString(const wxString &findString, int start_pos = -1, int flags = -1, bool highlight = TRUE);
         int ReplaceAllStrings(const wxString &findString, const wxString &replaceString, int flags = -1);

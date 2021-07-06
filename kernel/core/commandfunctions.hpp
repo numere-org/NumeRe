@@ -3891,14 +3891,7 @@ static CommandReturnValues cmd_start(string& sCmd)
     std::string sFileName = cmdParser.getExprAsFileName(".nscr", "<scriptpath>");
 
     if (!sFileName.length())
-    {
-        if (_script.getScriptFileName().length())
-            _script.openScript();
-        else
-            throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sFileName, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
-
-        return COMMAND_PROCESSED;
-    }
+        throw SyntaxError(SyntaxError::SCRIPT_NOT_EXIST, sCmd, sFileName, "[" + _lang.get("BUILTIN_CHECKKEYWORD_START_ERRORTOKEN") + "]");
 
     _script.openScript(sFileName);
 
@@ -4725,7 +4718,7 @@ static CommandReturnValues cmd_list(string& sCmd)
         listDefinitions(_functions, _option);
     else if (findSettingOption(sCmd, "units"))
         listUnitConversions(_option);
-    else if (findSettingOption(sCmd, "plugins"))
+    else if (findSettingOption(sCmd, "plugins") || findSettingOption(sCmd, "packages"))
         listInstalledPlugins(_parser, _data, _option);
 
     return COMMAND_PROCESSED;

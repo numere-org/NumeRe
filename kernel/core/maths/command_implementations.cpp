@@ -3352,7 +3352,7 @@ bool writeAudioFile(CommandLineParser& cmdParser)
         nSamples = intCast(vVals.front());
 
     // Dateiname lesen
-    sAudioFileName = cmdParser.getFileParameterValue(".wav", "<savepath>", sAudioFileName);
+    sAudioFileName = cmdParser.getFileParameterValueForSaving(".wav", "<savepath>", sAudioFileName);
 
     // Indices lesen
     DataAccessParser _accessParser = cmdParser.getExprAsDataObject();
@@ -4395,11 +4395,11 @@ void urlExecute(CommandLineParser& cmdParser)
             if (!sFileName.length())
                 sFileName = "index.html";
 
-            // Get the file parameter value
-            sFileName = cmdParser.getFileParameterValue(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
-
             if (cmdParser.hasParam("up"))
             {
+                // Get the file parameter value
+                sFileName = cmdParser.getFileParameterValue(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
+
                 // Upload the file
                 size_t bytes = url::put(sUrl, sFileName, sUserName, sPassword);
                 cmdParser.setReturnValue(toString(bytes));
@@ -4409,8 +4409,11 @@ void urlExecute(CommandLineParser& cmdParser)
                 // Get the response from the server
                 std::string sUrlResponse = url::get(sUrl, sUserName, sPassword);
 
+                // Get the file parameter value
+                sFileName = cmdParser.getFileParameterValueForSaving(sFileName.substr(sFileName.rfind('.')), "<savepath>", sFileName);
+
                 // Open the file binary and clean it
-                std::ofstream file(sFileName.c_str(), std::ios_base::trunc | std::ios_base::binary);
+                std::ofstream file(sFileName, std::ios_base::trunc | std::ios_base::binary);
 
                 // Stream the response to the file
                 if (file.good())

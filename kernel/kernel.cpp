@@ -1237,13 +1237,6 @@ bool NumeReKernel::handleCommandLineSource(string& sLine, const string& sCmdCach
 {
     if (!sCmdCache.length())
     {
-        if (_script.getAutoStart())
-        {
-            print(LineBreak(_lang.get("PARSER_STARTINGSCRIPT", _script.getScriptFileName()), _option, true, 4));
-            addToLog("> SYSTEM: Starting Script " + _script.getScriptFileName());
-            _script.openScript();
-        }
-
         // --> Wenn gerade ein Script aktiv ist, lese dessen naechste Zeile, sonst nehme eine Zeile von std::cin <--
         if (_script.isValid() && _script.isOpen())
         {

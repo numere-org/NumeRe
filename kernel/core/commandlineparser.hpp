@@ -155,6 +155,7 @@ class CommandLineParser
         std::vector<std::string> getAllParametersWithValues() const;
         std::string getParameterValue(const std::string& sParameter) const;
         std::string getFileParameterValue(std::string sFileExt, const std::string& sBaseFolder = "", const std::string& sDefaultName = "") const;
+        std::string getFileParameterValueForSaving(std::string sFileExt, const std::string& sBaseFolder = "", const std::string& sDefaultName = "") const;
         std::string getParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue, bool stripAlways = false) const;
         std::vector<double> getParameterValueAsNumericalValue(const std::string& sParameter) const;
         bool hasParam(const std::string& sParameter) const;

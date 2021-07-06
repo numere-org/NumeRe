@@ -81,8 +81,10 @@ class StyledTextFile
         int LineFromPosition(size_t pos) const;
         int getLineEndPosition(size_t line) const;
         int getLineStartPosition(size_t line) const;
+        int findDocStartLine(size_t line) const;
 
         Style getStyleAt(size_t pos) const;
+        char getCharAt(size_t pos) const;
 
         void reStyle(const std::string& sComLine,
                      const std::string& sDocComLine,
