@@ -1554,6 +1554,69 @@ static string strfnc_locate(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the strunique()
+/// function.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_strunique(StringFuncArgs& funcArgs)
+{
+    // Set the default tolerance mode, if necessary
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = funcArgs.sMultiArg.size() > 1 ? 0 : 1;
+
+    std::string sUniqueStrings;
+
+    // Separate unique strings from unique chars
+    if (funcArgs.nArg1 == 0)
+    {
+        // Create a copy of all values (we do
+        // not need to remove the quotation marks here)
+        s_vect vFuncArgs = funcArgs.sMultiArg;
+
+        // Sort and isolate the unique values
+        std::sort(vFuncArgs.begin(), vFuncArgs.end());
+        auto iter = std::unique(vFuncArgs.begin(), vFuncArgs.end());
+
+        // Copy together
+        for (auto it = vFuncArgs.begin(); it != iter; ++it)
+        {
+            if (sUniqueStrings.length())
+                sUniqueStrings += NEWSTRING;
+
+            sUniqueStrings += "\"" + *it + "\"";
+        }
+    }
+    else
+    {
+        // Examine each value independently
+        for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+        {
+            // Get a quotation mark free copy
+            std::string sArg = removeMaskedStrings(funcArgs.sMultiArg[i]);
+
+            // Sort and isolate the unique chars
+            std::sort(sArg.begin(), sArg.end());
+            auto iter = std::unique(sArg.begin(), sArg.end());
+
+            // Append a comma
+            if (sUniqueStrings.length())
+                sUniqueStrings += NEWSTRING;
+
+            // Append the string with unique characters
+            sUniqueStrings += "\"";
+            sUniqueStrings.append(sArg.begin(), iter);
+            sUniqueStrings += "\"";
+        }
+    }
+
+    return sUniqueStrings;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Implementation of the getkeyval()
 /// function.
 ///
@@ -2085,6 +2148,7 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["strmatchall"]         = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_strmatchall, false);
     mHandleTable["strrfnd"]             = StringFuncHandle(STR_STR_VALOPT, strfnc_strrfnd, false);
     mHandleTable["strrmatch"]           = StringFuncHandle(STR_STR_VALOPT, strfnc_strrmatch, false);
+    mHandleTable["strunique"]           = StringFuncHandle(STR_VALOPT, strfnc_strunique, true);
     mHandleTable["sum"]                 = StringFuncHandle(STR, strfnc_sum, true);
     mHandleTable["substr"]              = StringFuncHandle(STR_VAL_VALOPT, strfnc_substr, false);
     mHandleTable["textparse"]           = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_textparse, false);
