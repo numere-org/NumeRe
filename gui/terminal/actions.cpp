@@ -7,6 +7,9 @@
 // For efficiency, this grabs all printing characters from buffer, up to
 // the end of the line or end of buffer
 
+// Forward declaration
+std::string toLowerCase(const std::string&);
+
 //////////////////////////////////////////////////////////////////////////////
 ///  private normal_input
 ///  Handles most of the input stuff for the GenericTerminal
@@ -143,7 +146,7 @@ string GenericTerminal::getProcNameSpace()
 		nNameSpacePos--;
 
 	// Get the text between the start and the current autocompletion start
-	sNameSpace = tm.GetTextRange(termCursor.y, nNameSpacePos, nTabStartPos);
+	sNameSpace = toLowerCase(tm.GetTextRange(termCursor.y, nNameSpacePos, nTabStartPos));
 
 	// If the obtained namespace contains the (possible) procedure
 	// name, then erase this part, because we only want to have the
@@ -216,7 +219,7 @@ void GenericTerminal::tab()
 		nTabStartPos = termCursor.x;
 
 		// Get the word start from the terminal
-		sAutoCompWordStart = tm.GetWordStartAt(termCursor.y, termCursor.x);
+		sAutoCompWordStart = toLowerCase(tm.GetWordStartAt(termCursor.y, termCursor.x));
 
 		// There are different autocompletion lists for procedures and every other syntax element
 		if (((tm.GetColorAdjusted(termCursor.y, termCursor.x - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
@@ -248,14 +251,15 @@ void GenericTerminal::tab()
 			else
 				sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
 		}
-
-		// clear the completed part and move the cursor to the tab start position
-		clear_area(nTabStartPos, termCursor.y, termCursor.x, termCursor.y);
-		move_cursor(nTabStartPos, termCursor.y);
 	}
 
+	// clear the word start and move the cursor back to the word start
+	// (word start cleared to avoid character case issues)
+    clear_area(nTabStartPos-sAutoCompWordStart.length(), termCursor.y, termCursor.x, termCursor.y);
+    move_cursor(nTabStartPos-sAutoCompWordStart.length(), termCursor.y);
+
 	// Get the next autocompletion proposal, store it as input and remove it from the list
-	sInput_Data = sAutoCompList.substr(sAutoCompWordStart.length(), sAutoCompList.find('?') - sAutoCompWordStart.length());
+	sInput_Data = sAutoCompList.substr(0, sAutoCompList.find('?'));
 	data_len = sInput_Data.length();
 	sAutoCompList.erase(0, sAutoCompList.find(' ') + 1);
 

@@ -739,6 +739,9 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
     else
         sProcName = sFirstChars;
 
+    sFirstChars = toLowerCase(sFirstChars);
+    sProcName = toLowerCase(sProcName);
+
     string sAutoCompList = " ";
 
     // If no namespace was pre-selected, provide the standard namespaces
@@ -757,7 +760,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
     for (size_t i = 0; i < vProcedureTree.size(); i++)
     {
         // If the procedure in the tree corresponds to the passed procedure fragment
-        if (vProcedureTree[i].substr(0, sProcName.length()) == sProcName)
+        if (toLowerCase(vProcedureTree[i].substr(0, sProcName.length())) == sProcName)
         {
             // Only add the namespace if it's needed
             if (sSelectedNameSpace.length())
@@ -780,7 +783,7 @@ string NumeReSyntax::getProcAutoCompList(string sFirstChars, string sBaseNameSpa
             // Remove the base namespace, if it is available in the current token
             if (!sSelectedNameSpace.length())
             {
-                if (sToken.substr(0, sBaseNameSpace.length()) == sBaseNameSpace)
+                if (toLowerCase(sToken.substr(0, sBaseNameSpace.length())) == toLowerCase(sBaseNameSpace))
                     sToken.erase(0, sBaseNameSpace.length());
 
                 if (sToken.front() == '~')
