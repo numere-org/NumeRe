@@ -2554,7 +2554,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     if (bShiftAxis)
     {
         dFrequencyOffset = -dNyquistFrequency * (1 + (_table.getLines() % 2) * 1.0 / _table.getLines());
-        dTimeInterval *= 0.5 * (1 - 1.0 / _table.getLines() - (_table.getLines() % 2) * 1.0 / _table.getLines());
+        dTimeInterval = fabs((_table.getLines() + (_table.getLines() % 2)) / (_table.getValue(0, 0))) * 0.5;
     }
 
     if (_option.systemPrints())
