@@ -5055,6 +5055,14 @@ static CommandReturnValues cmd_rotate(string& sCmd)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static function implements the
+/// "url" command.
+///
+/// \param sCmd string&
+/// \return CommandReturnValues
+///
+/////////////////////////////////////////////////
 static CommandReturnValues cmd_url(string& sCmd)
 {
     CommandLineParser cmdParser(sCmd, "url", CommandLineParser::CMD_DAT_PAR);
