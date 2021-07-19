@@ -1925,13 +1925,21 @@ bool NumeReKernel::handleFlowControls(string& sLine, const string& sCmdCache, co
         if (_script.isOpen())
         {
             _script.returnCommand();
-            print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
 
-            if (installing)
+            // Only signal finishing if the script was not
+            // already re-opened due to chained installations.
+            if (!_script.isOpen())
             {
-                installing = false;
-                installationDone();
+                print(LineBreak(_lang.get("PARSER_SCRIPT_FINISHED", _script.getScriptFileName()), _option, true, 4));
+
+                if (installing)
+                {
+                    installing = false;
+                    installationDone();
+                }
             }
+            else
+                return true;
         }
 
         nReturnVal = NUMERE_DONE_KEYWORD;

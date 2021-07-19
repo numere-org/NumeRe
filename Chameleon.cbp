@@ -446,6 +446,8 @@
 		<Unit filename="kernel/core/debugger/debugger.hpp" />
 		<Unit filename="kernel/core/documentation/doc_helper.cpp" />
 		<Unit filename="kernel/core/documentation/doc_helper.hpp" />
+		<Unit filename="kernel/core/documentation/docfile.cpp" />
+		<Unit filename="kernel/core/documentation/docfile.hpp" />
 		<Unit filename="kernel/core/documentation/docgen.cpp" />
 		<Unit filename="kernel/core/documentation/docgen.hpp" />
 		<Unit filename="kernel/core/documentation/documentation.cpp" />

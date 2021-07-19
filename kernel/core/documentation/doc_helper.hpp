@@ -27,7 +27,6 @@
 
 #include "../io/filesystem.hpp"
 #include "../ui/error.hpp"
-#include "../utils/tinyxml2.h"
 
 void StripSpaces(std::string&);
 std::string toUpperCase(const std::string&);
@@ -46,8 +45,7 @@ class Documentation : public FileSystem
         std::map<std::string,int> mDocumentationIndex;
         std::vector<DocumentationEntry> vDocIndexTable;
 
-        void addEntry(const DocumentationEntry& entry, tinyxml2::XMLElement* keyWords);
-        void parseDocumentationFile(tinyxml2::XMLElement* element, const std::string& sFileName);
+        void addEntry(const DocumentationEntry& entry, const std::vector<std::string>& keyWords);
         int findPositionInDocumentationIndex(const std::string& sTopic) const;
         int findPositionUsingIdxKeys(const std::string& sIdxKeys) const;
 
@@ -56,7 +54,7 @@ class Documentation : public FileSystem
         ~Documentation();
 
         void createDocumentationIndex(bool bLoadUserLangFiles = true);
-        void addFileToDocumentationIndex(const std::string& sFileName, const std::string& sFileContents = "");
+        void addFileToDocumentationIndex(const std::string& sFileName);
         void removeFromDocIndex(const std::string& _sID);
         std::vector<std::string> getHelpArticle(const std::string& sTopic);
         std::vector<std::string> getDocIndex() const;

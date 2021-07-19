@@ -18,25 +18,13 @@
 #include <fstream>
 
 #include "doc_helper.hpp"
+#include "docfile.hpp"
 #include "../version.h"
 #include "../utils/tools.hpp"
 #include "../../kernel.hpp"
 #include <algorithm>
 
 bool fileExists(const std::string&);
-
-/////////////////////////////////////////////////
-/// \brief This structure defines a single entry
-/// in the documentation index.
-/////////////////////////////////////////////////
-struct DocumentationEntry
-{
-    std::string sArticleId;
-    std::string sDocFilePath;
-    std::string sTitle;
-    std::string sIdxKeys;
-};
-
 
 
 
@@ -257,11 +245,11 @@ Documentation::~Documentation()
 /// overwritten.
 ///
 /// \param entry const DocumentationEntry&
-/// \param keyWords tinyxml2::XMLElement*
+/// \param keyWords const std::vector<std::string>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Documentation::addEntry(const DocumentationEntry& entry, tinyxml2::XMLElement* keyWords)
+void Documentation::addEntry(const DocumentationEntry& entry, const std::vector<std::string>& keyWords)
 {
     EndlessVector<std::string> keys = getAllArguments(entry.sIdxKeys);
     int nIndex = findPositionUsingIdxKeys(entry.sIdxKeys);
@@ -287,47 +275,8 @@ void Documentation::addEntry(const DocumentationEntry& entry, tinyxml2::XMLEleme
 
     // Insert the keywords to the map and use the
     // identified index as reference
-    while (keyWords)
-    {
-        mDocumentationIndex[keyWords->GetText()] = nIndex;
-        keyWords = keyWords->NextSiblingElement();
-    }
-}
-
-
-/////////////////////////////////////////////////
-/// \brief Parses a documentation file using
-/// TinyXML-2 to extract the necessary
-/// for the documentation index.
-///
-/// \param element tinyxml2::XMLElement*
-/// \param sFileName const std::string&
-/// \return void
-///
-/////////////////////////////////////////////////
-void Documentation::parseDocumentationFile(tinyxml2::XMLElement* element, const std::string& sFileName)
-{
-    while (element)
-    {
-        tinyxml2::XMLElement* title = element->FirstChildElement("title");
-        tinyxml2::XMLElement* keywords = element->FirstChildElement("keywords");
-
-        if (title && keywords && element->Attribute("id") && title->Attribute("string") && element->FirstChildElement("contents"))
-        {
-            DocumentationEntry entry;
-            entry.sArticleId = element->Attribute("id");
-            entry.sDocFilePath = sFileName;
-            entry.sTitle = title->Attribute("string");
-
-            if (title->Attribute("idxkey"))
-                entry.sIdxKeys = title->Attribute("idxkey");
-
-            if (keywords)
-                addEntry(entry, keywords->FirstChildElement());
-        }
-
-        element = element->NextSiblingElement();
-    }
+    for (const std::string& kw : keyWords)
+        mDocumentationIndex[kw] = nIndex;
 }
 
 
@@ -544,26 +493,23 @@ void Documentation::createDocumentationIndex(bool bLoadUserLangFiles)
 /// during a plugin or package installation.
 ///
 /// \param sFileName const std::string&
-/// \param sFileContents const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Documentation::addFileToDocumentationIndex(const std::string& sFileName, const std::string& sFileContents)
+void Documentation::addFileToDocumentationIndex(const std::string& sFileName)
 {
-    if (!sFileContents.length() && !sFileName.length())
+    if (!sFileName.length())
         return;
 
-    tinyxml2::XMLDocument doc;
-
-    // Either parse the contents or open the file
-    if (sFileContents.length())
-        doc.Parse(sFileContents.c_str(), sFileContents.length());
-    else
-        doc.LoadFile(sFileName.c_str());
+    DocumentationFile docFile(sFileName);
 
     // Parse the file and add it to the documentation
     // index
-    parseDocumentationFile(doc.FirstChildElement(), sFileName);
+    for (DocumentationArticle& article : docFile.getArticles())
+    {
+        if (article.m_keywords.size())
+            addEntry(article.m_docEntry, article.m_keywords);
+    }
 }
 
 
