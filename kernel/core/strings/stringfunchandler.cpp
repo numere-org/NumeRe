@@ -1290,7 +1290,7 @@ namespace NumeRe
             string sToString = getFunctionArgumentList("valtostr(", sLine, nStartPosition, nEndPosition);
             string sExpr = getNextArgument(sToString, true);
             string sChar = "";
-            unsigned int nCount = 0;
+            std::vector<double> vCounts;
 
             if (sToString.length())
             {
@@ -1311,8 +1311,14 @@ namespace NumeRe
 
                 if (sCnt.length())
                 {
+                    if (_data.containsTablesOrClusters(sCnt))
+                        getDataElements(sCnt, _parser, _data, _option);
+
                     _parser.SetExpr(sCnt);
-                    nCount = (unsigned int)fabs(_parser.Eval());
+                    int nCount;
+                    value_type* v;
+                    v = _parser.Eval(nCount);
+                    vCounts.assign(v, v+nCount);
                 }
             }
 
@@ -1328,6 +1334,7 @@ namespace NumeRe
                 v = _parser.Eval(nResults);
                 vector<string> vToString;
                 string sElement = "";
+                size_t nLen = 0;
 
                 for (int n = 0; n < nResults; n++)
                 {
@@ -1336,7 +1343,10 @@ namespace NumeRe
                     else
                         sElement = toString(v[n], _option);
 
-                    while (sElement.length() < nCount && sChar.length())
+                    if (n < vCounts.size())
+                        nLen = intCast(fabs(vCounts[n]));
+
+                    while (sElement.length() < nLen && sChar.length())
                         sElement.insert(0, sChar);
 
                     vToString.push_back("\"" + sElement + "\"");
@@ -1347,13 +1357,17 @@ namespace NumeRe
             else
             {
                 StringResult strRes = eval(sExpr, "");
+                size_t nLen = 0;
 
                 if (!strRes.vResult.size())
                     throw SyntaxError(SyntaxError::STRING_ERROR, sLine, SyntaxError::invalid_position);
 
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
                 {
-                    while (strRes.vResult[i].length() < nCount && sChar.length())
+                    if (i < vCounts.size())
+                        nLen = intCast(fabs(vCounts[i]));
+
+                    while (strRes.vResult[i].length() < nLen && sChar.length())
                         strRes.vResult[i].insert(0, sChar);
 
                     // add quotation marks, if they are missing

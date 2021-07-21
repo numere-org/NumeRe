@@ -659,6 +659,24 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
 
 
 /////////////////////////////////////////////////
+/// \brief Determines, whether the user has
+/// passed a complete cluster or a cluster with
+/// some indices.
+///
+/// \param sArgumentValue StringView
+/// \param _dataRef MemoryManager*
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isCompleteCluster(StringView sArgumentValue, MemoryManager* _dataRef)
+{
+    size_t pos = sArgumentValue.find('{');
+
+    return _dataRef->isCluster(sArgumentValue) && (sArgumentValue.subview(pos, 2) == "{}" || sArgumentValue.subview(pos, 3) == "{:}");
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This memberfunction will evaluate the
 /// passed procedure arguments and convert them
 /// to local variables if necessary.
@@ -717,7 +735,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(const std::string& sArgumen
         {
             sArgumentMap[i][0].pop_back();
 
-            if (isRef && !_dataRef->isCluster(sArgumentMap[i][1]))
+            if (isRef && !isCompleteCluster(sArgumentMap[i][1], _dataRef))
             {
                 _debugger.gatherInformations(this, sArgumentMap[i][1], _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                 _debugger.throwException(SyntaxError(SyntaxError::CANNOT_PASS_LITERAL_PER_REFERENCE, sArgumentMap[i][1], "", sArgumentMap[i][0]));
@@ -728,8 +746,8 @@ void ProcedureVarFactory::evaluateProcedureArguments(const std::string& sArgumen
                 std::string sNewArgName = "_~"+sProcName+"_~A_"+toString((int)nth_procedure)+"_"+sArgumentMap[i][0].substr(0, sArgumentMap[i][0].length()-1);
                 NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
 
-                // Copy, if it is already a cluster
-                if (_dataRef->isCluster(sArgumentMap[i][1]))
+                // Copy, if it is already a (complete!) cluster
+                if (isCompleteCluster(sArgumentMap[i][1], _dataRef))
                     newCluster = _dataRef->getCluster(sArgumentMap[i][1].substr(0, sArgumentMap[i][1].find('{')));
                 else
                 {
