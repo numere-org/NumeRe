@@ -1,6 +1,7 @@
 #include "IconManager.h"
 
 #include <string>
+#include <vector>
 
 #include <wx/icon.h>
 #include <wx/iconloc.h>
@@ -15,6 +16,8 @@
 
 IconManager::IconManager(const wxString& programPath)
 {
+    m_imageScaleFactor = 1.0;
+
 	m_images = new wxImageList(16, 16);
 
 
@@ -175,7 +178,31 @@ bool IconManager::AddIconToList(wxString iconInfo)
 
         while (fullname.find('"') != std::string::npos)
             fullname.erase(fullname.find('"'),1);
-		fileIcon.LoadFile(fullname, wxBITMAP_TYPE_ICO, 16, 16);
+
+        bool res = false;
+
+		if (!(res = fileIcon.LoadFile(fullname, wxBITMAP_TYPE_ICO, std::rint(16*m_imageScaleFactor), std::rint(16*m_imageScaleFactor))))
+        {
+            // Hack-try-detect-DPIs
+            if (m_imageScaleFactor == 1.0)
+            {
+                // Somewhat the most common scaling factors
+                std::vector<double> scaleFactors = {1.2, 1.25, 1.4, 1.5, 1.75, 1.8, 2.0};
+
+                // Try to find the fitting factor
+                for (auto scale : scaleFactors)
+                {
+                    if ((res = fileIcon.LoadFile(fullname, wxBITMAP_TYPE_ICO, std::rint(16*scale), std::rint(16*scale))))
+                    {
+                        m_imageScaleFactor = scale;
+                        break;
+                    }
+                }
+            }
+
+            if (!res)
+                return false;
+        }
 
 		int newIconIndex = m_images->GetImageCount();
 		m_images->Add(fileIcon);

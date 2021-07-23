@@ -26,6 +26,7 @@ private:
 
 	StringIntHashmap m_iconExtensionMapping;
 	wxImageList* m_images;
+	double m_imageScaleFactor;
 
 };
 
