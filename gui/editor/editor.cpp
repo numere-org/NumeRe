@@ -8297,6 +8297,15 @@ void NumeReEditor::Transpose(int nFirstLine, int nLastLine)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Extracts the selected lines as pre-
+/// formatted HTML.
+///
+/// \param nFirstLine int
+/// \param nLastLine int
+/// \return void
+///
+/////////////////////////////////////////////////
 void NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
 {
     wxString sHtml = "<pre style=\"display: block; overflow-x: auto; padding: 0.5em; background-color: rgb(244, 244, 244); color: rgb(0, 0, 0); font-family: consolas, monospace;\">";
@@ -8323,6 +8332,11 @@ void NumeReEditor::ExtractAsHTML(int nFirstLine, int nLastLine)
                 textRange = GetTextRange(nLastStatePosition, i+1);
             else
                 textRange = GetTextRange(nLastStatePosition, i);
+
+            // Replace less and greater characters with the
+            // HTML entities
+            textRange.Replace("<", "&lt;");
+            textRange.Replace(">", "&gt;");
 
             if (textRange.find_first_not_of(" \r\t\n") == std::string::npos)
             {
