@@ -73,6 +73,7 @@ string toString(double dNumber, const Settings& _option);
  *
  */
 string toString(double dNumber, int nPrecision);
+string toString(std::complex<double> dNumber, int nPrecision);
 
 /** \brief Transforms an integer into a string
  *

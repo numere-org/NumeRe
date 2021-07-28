@@ -46,6 +46,14 @@ string toString(double dNumber, int nPrecision)
     return Temp.str();
 }
 
+string toString(std::complex<double> dNumber, int nPrecision)
+{
+    ostringstream Temp;
+    Temp.precision(nPrecision);
+    Temp << dNumber;
+    return Temp.str();
+}
+
 // Integer to string without the Settings bloat
 string toString(int nNumber)
 {

@@ -44,9 +44,10 @@
 using namespace std;
 
 // Helper prototypes e.g. for the MAF implementations in this class
-string toString(int);
-string toString(double, int);
-string toHexString(int nNumber);
+std::string toString(int);
+std::string toString(double, int);
+std::string toString(std::complex<double>, int);
+std::string toHexString(int nNumber);
 
 unsigned int getMatchingParenthesis(const StringView&);
 mu::value_type parser_Num(const mu::value_type*, int);
@@ -714,9 +715,9 @@ namespace mu
             {
                 // This is an expansion. There are two possible cases
                 if (nResults == 2)
-                    expandVector(v[0], v[1], (v[0] < v[1] ? 1.0 : -1.0), vResults);
+                    expandVector(v[0].real(), v[1].real(), (v[0].real() < v[1].real() ? 1.0 : -1.0), vResults);
                 else if (nResults == 3)
-                    expandVector(v[0], v[2], v[1], vResults);
+                    expandVector(v[0].real(), v[2].real(), v[1].real(), vResults);
             }
             else
             {
@@ -729,16 +730,16 @@ namespace mu
 
     /** \brief This function expands the vector.
      *
-     * \param dFirst mu::value_type
-     * \param dLast mu::value_type
-     * \param dIncrement mu::value_type
+     * \param dFirst double
+     * \param dLast double
+     * \param dIncrement double
      * \param vResults vector<mu::value_type>&
      * \return void
      *
      * This function expands the vector. Private member used by ParserBase::evaluateVectorExpansion()
      *
      */
-	void ParserBase::expandVector(mu::value_type dFirst, mu::value_type dLast, mu::value_type dIncrement, vector<mu::value_type>& vResults)
+	void ParserBase::expandVector(double dFirst, double dLast, double dIncrement, vector<mu::value_type>& vResults)
 	{
 		// ignore impossible combinations. Store only
 		// the accessible value
@@ -1399,7 +1400,7 @@ namespace mu
 			token_type vVal1 = a_stVal.pop();
 			token_type vExpr = a_stVal.pop();
 
-			a_stVal.push( (vExpr.GetVal() != 0) ? vVal1 : vVal2);
+			a_stVal.push( (vExpr.GetVal() != 0.0) ? vVal1 : vVal2);
 
 			token_type opIf = a_stOpt.pop();
 			MUP_ASSERT(opElse.GetCode() == cmELSE);
@@ -1536,11 +1537,11 @@ namespace mu
 					// built in binary operators
 					case  cmLE:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] <= Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
 						continue;
 					case  cmGE:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] >= Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
 						continue;
 					case  cmNEQ:
 						--sidx;
@@ -1552,11 +1553,11 @@ namespace mu
 						continue;
 					case  cmLT:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] < Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
 						continue;
 					case  cmGT:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] > Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
 						continue;
 					case  cmADD:
 						--sidx;
@@ -1587,11 +1588,11 @@ namespace mu
 
 					case  cmLAND:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] && Stack[sidx + 1];
+						Stack[sidx]  = std::abs(Stack[sidx]) && std::abs(Stack[sidx + 1]);
 						continue;
 					case  cmLOR:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] || Stack[sidx + 1];
+						Stack[sidx]  = std::abs(Stack[sidx]) || std::abs(Stack[sidx + 1]);
 						continue;
 
 					case  cmASSIGN:
@@ -1605,7 +1606,7 @@ namespace mu
 					//      continue;
 
 					case  cmIF:
-						if (Stack[sidx--] == 0)
+						if (Stack[sidx--] == 0.0)
 							pTok += pTok->Oprt.offset;
 						continue;
 
@@ -1817,11 +1818,11 @@ namespace mu
 					// built in binary operators
 					case  cmLE:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] <= Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
 						continue;
 					case  cmGE:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] >= Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
 						continue;
 					case  cmNEQ:
 						--sidx;
@@ -1833,11 +1834,11 @@ namespace mu
 						continue;
 					case  cmLT:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] < Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
 						continue;
 					case  cmGT:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] > Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
 						continue;
 					case  cmADD:
 						--sidx;
@@ -1868,11 +1869,11 @@ namespace mu
 
 					case  cmLAND:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] && Stack[sidx + 1];
+						Stack[sidx]  = std::abs(Stack[sidx]) && std::abs(Stack[sidx + 1]);
 						continue;
 					case  cmLOR:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] || Stack[sidx + 1];
+						Stack[sidx]  = std::abs(Stack[sidx]) || std::abs(Stack[sidx + 1]);
 						continue;
 
 					case  cmASSIGN:
@@ -1886,7 +1887,7 @@ namespace mu
 					//      continue;
 
 					case  cmIF:
-						if (Stack[sidx--] == 0)
+						if (Stack[sidx--] == 0.0)
 							pTok += pTok->Oprt.offset;
 						continue;
 

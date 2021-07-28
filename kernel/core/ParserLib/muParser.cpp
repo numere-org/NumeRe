@@ -81,7 +81,7 @@ namespace mu
     }
     value_type Parser::ATan2(value_type v1, value_type v2)
     {
-        return MathImpl<value_type>::ATan2(v1, v2);
+        return MathImpl<double>::ATan2(v1.real(), v2.real());
     }
     value_type Parser::Sinh(value_type v)
     {
@@ -131,7 +131,7 @@ namespace mu
     }
     value_type Parser::Abs(value_type v)
     {
-        return MathImpl<value_type>::Abs(v);
+        return std::abs(v); //MathImpl<value_type>::Abs(v);
     }
     value_type Parser::Sqrt(value_type v)
     {
@@ -139,11 +139,11 @@ namespace mu
     }
     value_type Parser::Rint(value_type v)
     {
-        return MathImpl<value_type>::Rint(v);
+        return value_type(MathImpl<double>::Rint(v.real()), MathImpl<double>::Rint(v.imag()));
     }
     value_type Parser::Sign(value_type v)
     {
-        return MathImpl<value_type>::Sign(v);
+        return value_type(MathImpl<double>::Sign(v.real()), MathImpl<double>::Sign(v.imag()));
     }
 
     //---------------------------------------------------------------------------
@@ -391,20 +391,20 @@ namespace mu
 
         // Backwards compatible calculation of epsilon inc case the user doesnt provide
         // his own epsilon
-        if (fEpsilon == 0)
-            fEpsilon = (a_fPos == 0) ? (value_type)1e-10 : (value_type)1e-7 * a_fPos;
+        if (fEpsilon == 0.0)
+            fEpsilon = (a_fPos == 0.0) ? (value_type)1e-10 : (value_type)1e-7 * a_fPos;
 
-        *a_Var = a_fPos + 2 * fEpsilon;
+        *a_Var = a_fPos + 2.0 * fEpsilon;
         f[0] = Eval();
-        *a_Var = a_fPos + 1 * fEpsilon;
+        *a_Var = a_fPos + 1.0 * fEpsilon;
         f[1] = Eval();
-        *a_Var = a_fPos - 1 * fEpsilon;
+        *a_Var = a_fPos - 1.0 * fEpsilon;
         f[2] = Eval();
-        *a_Var = a_fPos - 2 * fEpsilon;
+        *a_Var = a_fPos - 2.0 * fEpsilon;
         f[3] = Eval();
         *a_Var = fBuf; // restore variable
 
-        fRes = (-f[0] + 8 * f[1] - 8 * f[2] + f[3]) / (12 * fEpsilon);
+        fRes = (-f[0] + 8.0 * f[1] - 8.0 * f[2] + f[3]) / (12.0 * fEpsilon);
         return fRes;
     }
 } // namespace mu

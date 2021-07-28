@@ -71,6 +71,8 @@ namespace mu
 				int offset;
 			} Oprt;
 		};
+
+		SToken() {Cmd = cmUNKNOWN; Val.ptr = nullptr;}
 	};
 
 
