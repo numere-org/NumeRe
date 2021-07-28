@@ -181,6 +181,7 @@ void NumeReDebugger::throwException(SyntaxError error)
 /////////////////////////////////////////////////
 int NumeReDebugger::showBreakPoint()
 {
+    sErrorMessage.clear();
     int nDebuggerCode = showEvent(_lang.get("DBG_HEADLINE"));
     resetBP();
 
