@@ -58,7 +58,7 @@ static void integrationstep_trapezoidal(double& x, double x0, double dx, vector<
 {
     x = x0;
     int nResults;
-    value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
 
     // Evaluate the current integration step for each of the
     // defined functions
@@ -108,7 +108,7 @@ static void integrationstep_simpson(double& x, double x0, double x1, double dx, 
     // Evaluate the intermediate function value
     x = x0;
     int nResults;
-    value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
+    mu::value_type* v = NumeReKernel::getInstance()->getParser().Eval(nResults);
 
     for (int i = 0; i < nResults; i++)
     {
@@ -156,12 +156,12 @@ static void integrationstep_simpson(double& x, double x0, double x1, double dx, 
 /// \return vector<double>
 ///
 /////////////////////////////////////////////////
-static vector<double> integrateSingleDimensionData(CommandLineParser& cmdParser)
+static vector<mu::value_type> integrateSingleDimensionData(CommandLineParser& cmdParser)
 {
     bool bReturnFunctionPoints = cmdParser.hasParam("points");
     bool bCalcXvals = cmdParser.hasParam("xvals");
 
-    vector<double> vResult;
+    vector<mu::value_type> vResult;
 
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
 
@@ -272,18 +272,18 @@ bool integrate(CommandLineParser& cmdParser)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
     string sIntegrationExpression = cmdParser.getExprAsMathExpression();
-    value_type* v = 0;
+    mu::value_type* v = 0;
     int nResults = 0;
-    vector<double> vResult;   // Ausgabe-Wert
-    vector<double> vFunctionValues; // Werte an der Stelle n und n+1
+    vector<mu::value_type> vResult;   // Ausgabe-Wert
+    vector<mu::value_type> vFunctionValues; // Werte an der Stelle n und n+1
     bool bLargeInterval = false;    // Boolean: TRUE, wenn ueber ein grosses Intervall integriert werden soll
     bool bReturnFunctionPoints = cmdParser.hasParam("points");
     bool bCalcXvals = cmdParser.hasParam("xvals");
     unsigned int nMethod = TRAPEZOIDAL;    // 1 = trapezoidal, 2 = simpson
     size_t nSamples = 1e3;
 
-    double& x = _defVars.vValue[0][0];
-    double range;
+    mu::value_type& x = _defVars.vValue[0][0];
+    mu::value_type range;
 
     // It's not possible to calculate the integral of a string expression
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sIntegrationExpression))
@@ -480,20 +480,20 @@ bool integrate2d(CommandLineParser& cmdParser)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
     string sIntegrationExpression = cmdParser.getExprAsMathExpression();                // string fuer die zu integrierende Funktion
-    value_type* v = 0;
+    mu::value_type* v = 0;
     int nResults = 0;
-    vector<double> vResult[3];      // value_type-Array, wobei vResult[0] das eigentliche Ergebnis speichert
+    vector<mu::value_type> vResult[3];      // value_type-Array, wobei vResult[0] das eigentliche Ergebnis speichert
     // und vResult[1] fuer die Zwischenergebnisse des inneren Integrals ist
-    vector<double> fx_n[2][3];          // value_type-Array fuer die jeweiligen Stuetzstellen im inneren und aeusseren Integral
+    vector<mu::value_type> fx_n[2][3];          // value_type-Array fuer die jeweiligen Stuetzstellen im inneren und aeusseren Integral
     bool bRenewBoundaries = false;      // bool, der speichert, ob die Integralgrenzen von x oder y abhaengen
     bool bLargeArray = false;       // bool, der TRUE fuer viele Datenpunkte ist;
     unsigned int nMethod = TRAPEZOIDAL;       // trapezoidal = 1, simpson = 2
     size_t nSamples = 1e3;
 
-    double& x = _defVars.vValue[0][0];
-    double& y = _defVars.vValue[1][0];
+    mu::value_type& x = _defVars.vValue[0][0];
+    mu::value_type& y = _defVars.vValue[1][0];
 
-    double range;
+    mu::value_type range;
 
     // Strings may not be integrated
     if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sIntegrationExpression))
@@ -760,7 +760,7 @@ bool differentiate(CommandLineParser& cmdParser)
     double dEps = 0.0;
     double dPos = 0.0;
     double* dVar = 0;
-    value_type* v = 0;
+    mu::value_type* v = 0;
     int nResults = 0;
     int nSamples = 100;
     vector<double> vInterval;
@@ -1059,7 +1059,7 @@ static bool findExtremaInMultiResult(CommandLineParser& cmdParser, string& sExpr
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
     int nResults;
-    value_type* v = _parser.Eval(nResults);
+    mu::value_type* v = _parser.Eval(nResults);
     vector<double> vResults;
     int nResults_x = 0;
     MemoryManager _cache;
@@ -1236,7 +1236,7 @@ static double calculateMedian(value_type* v, int nResults, int start, int nOrder
 /////////////////////////////////////////////////
 static bool findExtremaInData(CommandLineParser& cmdParser, string& sExpr, int nOrder, int nMode)
 {
-    value_type* v;
+    mu::value_type* v;
     int nResults = 0;
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
@@ -1337,10 +1337,10 @@ bool findExtrema(CommandLineParser& cmdParser)
 
     unsigned int nSamples = 21;
     int nOrder = 5;
-    double dVal[2];
-    double dBoundaries[2] = {0.0, 0.0};
+    mu::value_type dVal[2];
+    mu::value_type dBoundaries[2] = {0.0, 0.0};
     int nMode = 0;
-    double* dVar = 0;
+    mu::value_type* dVar = 0;
     string sExpr = "";
     string sParams = "";
     string sInterval = "";
@@ -1389,7 +1389,7 @@ bool findExtrema(CommandLineParser& cmdParser)
     if (findParameter(sParams, "samples", '='))
     {
         _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
-        nSamples = (unsigned int)_parser.Eval();
+        nSamples = intCast(_parser.Eval());
 
         if (nSamples < 21)
             nSamples = 21;
@@ -1400,7 +1400,7 @@ bool findExtrema(CommandLineParser& cmdParser)
     if (findParameter(sParams, "points", '='))
     {
         _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "points", '=') + 6));
-        nOrder = (int)_parser.Eval();
+        nOrder = intCast(_parser.Eval());
 
         if (nOrder <= 3)
             nOrder = 3;
@@ -1602,7 +1602,7 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
     int nResults;
-    value_type* v = _parser.Eval(nResults);
+    mu::value_type* v = _parser.Eval(nResults);
     MemoryManager _cache;
 
     vector<double> vResults;
@@ -1703,7 +1703,7 @@ static bool findZeroesInMultiResult(CommandLineParser& cmdParser, string& sExpr,
 /////////////////////////////////////////////////
 static bool findZeroesInData(CommandLineParser& cmdParser, string& sExpr, int nMode)
 {
-    value_type* v;
+    mu::value_type* v;
     int nResults = 0;
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     _parser.SetExpr(sExpr);
@@ -1797,11 +1797,11 @@ bool findZeroes(CommandLineParser& cmdParser)
     Parser& _parser = instance->getParser();
 
     unsigned int nSamples = 21;
-    double dVal[2];
-    double dBoundaries[2] = {0.0, 0.0};
+    mu::value_type dVal[2];
+    mu::value_type dBoundaries[2] = {0.0, 0.0};
     int nMode = 0;
-    double* dVar = 0;
-    double dTemp = 0.0;
+    mu::value_type* dVar = 0;
+    mu::value_type dTemp = 0.0;
     string sExpr = "";
     string sParams = "";
     string sInterval = "";
@@ -1845,7 +1845,7 @@ bool findZeroes(CommandLineParser& cmdParser)
     if (findParameter(sParams, "samples", '='))
     {
         _parser.SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=') + 7));
-        nSamples = (int)_parser.Eval();
+        nSamples = intCast(_parser.Eval());
 
         if (nSamples < 21)
             nSamples = 21;
@@ -1937,7 +1937,7 @@ bool findZeroes(CommandLineParser& cmdParser)
     dTemp = *dVar;
 
     *dVar = dBoundaries[0];
-    vector<double> vResults;
+    vector<mu::value_type> vResults;
     dVal[0] = _parser.Eval();
 
     // Find near zeros to the left of the boundary
@@ -2036,23 +2036,23 @@ bool findZeroes(CommandLineParser& cmdParser)
 /// in the selected interval.
 ///
 /// \param sCmd string&
-/// \param dVarAdress double*
+/// \param dVarAdress mu::value_type*
 /// \param _parser Parser&
 /// \param _option const Settings&
 /// \param dLeft double
 /// \param dRight double
 /// \param dEps double
 /// \param nRecursion int
-/// \return double
+/// \return mu::value_type
 ///
 /// The expression has to be setted in advance.
 /// The function performs recursions until the
 /// defined precision is reached.
 /////////////////////////////////////////////////
-static double localizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
+static mu::value_type localizeExtremum(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
 {
     const unsigned int nSamples = 101;
-    double dVal[2];
+    mu::value_type dVal[2];
 
     if (_parser.GetExpr() != sCmd)
     {
@@ -2132,23 +2132,23 @@ static double localizeExtremum(string& sCmd, double* dVarAdress, Parser& _parser
 /// located in the selected interval.
 ///
 /// \param sCmd string&
-/// \param dVarAdress double*
+/// \param dVarAdress mu::value_type*
 /// \param _parser Parser&
 /// \param _option const Settings&
 /// \param dLeft double
 /// \param dRight double
 /// \param dEps double
 /// \param nRecursion int
-/// \return double
+/// \return mu::value_type
 ///
 /// The expression has to be setted in advance.
 /// The function performs recursions until the
 /// defined precision is reached.
 /////////////////////////////////////////////////
-static double localizeZero(string& sCmd, double* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
+static mu::value_type localizeZero(string& sCmd, mu::value_type* dVarAdress, Parser& _parser, const Settings& _option, double dLeft, double dRight, double dEps, int nRecursion)
 {
     const unsigned int nSamples = 101;
-    double dVal[2];
+    mu::value_type dVal[2];
 
     if (_parser.GetExpr() != sCmd)
     {
@@ -2251,9 +2251,9 @@ void taylor(CommandLineParser& cmdParser)
     size_t nth_taylor = 6;
     size_t nSamples = 0;
     size_t nMiddle = 0;
-    double* dVar = 0;
-    double dVarValue = 0.0;
-    long double** dDiffValues = 0;
+    mu::value_type* dVar = 0;
+    mu::value_type dVarValue = 0.0;
+    long mu::value_type** dDiffValues = 0;
 
     // We cannot approximate string expressions
     if (containsStrings(sExpr))
@@ -2880,8 +2880,8 @@ bool evalPoints(CommandLineParser& cmdParser)
     Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     unsigned int nSamples = 100;
-    double* dVar = 0;
-    double dTemp = 0.0;
+    mu::value_type* dVar = 0;
+    mu::value_type dTemp = 0.0;
     string sExpr = cmdParser.getExprAsMathExpression();
     string sVar = "x";
     static string zero = "0.0";
@@ -2921,7 +2921,7 @@ bool evalPoints(CommandLineParser& cmdParser)
 
                 _parser.SetExpr(indices[0] + "," + indices[1]);
                 int nIndices;
-                double* res = _parser.Eval(nIndices);
+                mu::value_type* res = _parser.Eval(nIndices);
                 ivl.intervals.push_back(Interval(res[0], res[1]));
 
                 break;
@@ -2970,7 +2970,7 @@ bool evalPoints(CommandLineParser& cmdParser)
         _parser.SetExpr(zero);
 
     _parser.Eval();
-    vector<double> vResults;
+    vector<mu::value_type> vResults;
 
     // Evaluate the selected expression at
     // the selected samples
@@ -3125,7 +3125,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
         // Calculate the grid from formula
         _parser.SetExpr(cmdParser.getExprAsMathExpression());
 
-        vector<double> vVector;
+        vector<mu::value_type> vVector;
 
         for (unsigned int x = 0; x < vSamples[bTranspose]; x++)
         {
@@ -4274,11 +4274,11 @@ void particleSwarmOptimizer(CommandLineParser& cmdParser)
     // compared to the interval range.
     double fRandRange = minRange / 10.0;
 
-    std::vector<std::vector<double>> vPos;
-    std::vector<std::vector<double>> vBest;
-    std::vector<std::vector<double>> vVel;
-    std::vector<double> vFunctionValues;
-    std::vector<double> vBestValues;
+    std::vector<std::vector<mu::value_type>> vPos;
+    std::vector<std::vector<mu::value_type>> vBest;
+    std::vector<std::vector<mu::value_type>> vVel;
+    std::vector<mu::value_type> vFunctionValues;
+    std::vector<mu::value_type> vBestValues;
 
     vPos.resize(nDims);
     vBest.resize(nDims);

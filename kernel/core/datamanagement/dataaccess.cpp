@@ -818,7 +818,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 			{
 				// cmp() is more difficult
 				_parser.DisableAccessCaching();
-				double dRef = 0.0;
+				mu::value_type dRef = 0.0;
 				int nType = 0;
 				string sArg = "";
 				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
@@ -845,7 +845,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 			{
 				// pct() is more difficult
 				_parser.DisableAccessCaching();
-				double dPct = 0.5;
+				mu::value_type dPct = 0.5;
 				string sArg = "";
 				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
 				sArg = getNextArgument(sLeft, true);

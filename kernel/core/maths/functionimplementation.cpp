@@ -2581,10 +2581,10 @@ value_type parser_cot(value_type x)
 value_type* parser_AddVariable(const char_type* a_szName, void* a_pUserData)
 {
     // Cast the passed void pointer to a the data storage list
-    std::list<double*>* m_lDataStorage = static_cast<std::list<double*>* >(a_pUserData);
+    std::list<mu::value_type*>* m_lDataStorage = static_cast<std::list<mu::value_type*>* >(a_pUserData);
 
     // Create the storage for a new variable
-    m_lDataStorage->push_back(new double);
+    m_lDataStorage->push_back(new mu::value_type);
     *(m_lDataStorage->back()) = 0.0;
 
     // Return the address of the newly created storage

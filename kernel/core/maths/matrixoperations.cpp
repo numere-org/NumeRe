@@ -243,7 +243,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
     size_t pos_back = 0;
     size_t iter_start = 0;
     vector<Matrix> vReturnedMatrices;
-    value_type* v = 0;
+    mu::value_type* v = 0;
     int nResults = 0;
     static std::map<std::string, MatFuncDef> mMatrixFunctions = getMatrixFunctions();
 

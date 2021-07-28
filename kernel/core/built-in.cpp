@@ -348,7 +348,7 @@ string evaluateParameterValues(const string& sCmd)
 				getDataElements(sTemp, _parser, _data, _option);
 
             int nResult = 0;
-            value_type* v = nullptr;
+            mu::value_type* v = nullptr;
 
             // If the string contains a colon operator,
             // replace it with a comma

@@ -71,7 +71,7 @@ Odesolver::~Odesolver()
 int Odesolver::odeFunction(double x, const double y[], double dydx[], void* params)
 {
     int nResults = 0;
-    value_type* v = 0;
+    mu::value_type* v = 0;
 
     // Variablen zuweisen
     _defVars.vValue[0][0] = x;
@@ -117,7 +117,7 @@ bool Odesolver::solve(const string& sCmd)
     double dAbsTolerance = 0.0;
     int nSamples = 100;
     int nLyapuSamples = 100;
-    value_type* v = 0;
+    mu::value_type* v = 0;
     vector<double> vInterval;
     vector<double> vStartValues;
 
@@ -275,7 +275,7 @@ bool Odesolver::solve(const string& sCmd)
     if (findParameter(sParams, "samples", '='))
     {
         _odeParser->SetExpr(getArgAtPos(sParams, findParameter(sParams, "samples", '=')+7));
-        nSamples = (int)_odeParser->Eval();
+        nSamples = intCast(_odeParser->Eval());
         if (nSamples <= 0)
             nSamples = 100;
     }

@@ -1816,7 +1816,7 @@ static void parseArg(std::string& sArg, bool bAsInt)
 
     int results;
     int nPrec = instance->getSettings().getPrecision();
-    value_type* v = instance->getParser().Eval(results);
+    mu::value_type* v = instance->getParser().Eval(results);
 
     sArg.clear();
 

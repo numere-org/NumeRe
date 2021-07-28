@@ -32,7 +32,7 @@ class Interval
 {
     private:
         std::string m_sDefinition;
-        std::vector<double> m_vInterval;
+        std::vector<mu::value_type> m_vInterval;
 
         void assign(const Interval& ivl);
         double getSample(size_t n, size_t nSamples) const;

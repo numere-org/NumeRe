@@ -305,7 +305,7 @@ void Interval::refresh()
 
         // Parse the index
         _parser.SetExpr(indices.front());
-        value_type* v;
+        mu::value_type* v;
         int nResults;
 
         // Get the return values

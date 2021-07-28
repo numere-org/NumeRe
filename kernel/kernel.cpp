@@ -607,7 +607,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     string sCmdCache = "";      // Die vorherige Zeile wird hierin zwischengespeichert
     string sLine = "";          // The actual line
     string sCurrentCommand = "";// The current command
-    value_type* v = 0;          // Ergebnisarray
+    mu::value_type* v = 0;          // Ergebnisarray
     int& nDebuggerCode = _procedure.getDebuggerCode();
     int nNum = 0;               // Zahl der Ergebnisse in value_type* v
     nLastStatusVal = -1;

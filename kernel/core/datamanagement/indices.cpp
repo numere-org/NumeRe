@@ -288,7 +288,7 @@ static void extractIndexList(StringView sCols, vector<StringView>& vLines, vecto
 /////////////////////////////////////////////////
 static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex)
 {
-    value_type* v;
+    mu::value_type* v;
     int nResults;
 
     if (!sIndex.length())
@@ -420,7 +420,7 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
     {
         _parser.SetExpr(sIndexExpressions);
 		int nResults;
-        value_type* v = _parser.Eval(nResults);
+        mu::value_type* v = _parser.Eval(nResults);
 
         // check whether the number of the results is matching
         if ((size_t)nResults != vIndexNumbers.size())

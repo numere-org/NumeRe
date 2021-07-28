@@ -97,8 +97,8 @@ namespace mu
 			/** \brief Maximum number of threads spawned by OpenMP when using the bulk mode. */
 			static const int s_MaxNumOpenMPThreads = 4;
 
-			mutable std::map<std::string, std::vector<double> > mVectorVars;
-			mutable std::map<std::string, std::vector<double>* > mNonSingletonVectorVars;
+			mutable std::map<std::string, std::vector<mu::value_type> > mVectorVars;
+			mutable std::map<std::string, std::vector<mu::value_type>* > mNonSingletonVectorVars;
 
 			mutable varmap_type mTargets;
 			mutable string_type sTargets;
@@ -107,8 +107,8 @@ namespace mu
 
 			void replaceLocalVars(std::string& sLine);
 			bool checkDelimiter(StringView sLine);
-			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<double>& vResults);
-			void expandVector(double dFirst, double dLast, double dIncrement, std::vector<double>& vResults);
+			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<mu::value_type>& vResults);
+			void expandVector(mu::value_type dFirst, mu::value_type dLast, mu::value_type dIncrement, std::vector<mu::value_type>& vResults);
 			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults);
 
 		public:
@@ -120,7 +120,7 @@ namespace mu
 			typedef ParserError exception_type;
 
 			mutable std::map<std::string, std::string>* mVarMapPntr;
-			mutable std::list<double*> m_lDataStorage;
+			mutable std::list<mu::value_type*> m_lDataStorage;
 
 			// Bytecode caching and loop caching interface section
 			void ActivateLoopMode(unsigned int _nLoopLength);
@@ -213,7 +213,7 @@ namespace mu
 			const valmap_type& GetConst() const;
 			const string_type& GetExpr() const;
 			const funmap_type& GetFunDef() const;
-			const std::map<std::string, std::vector<double> >& GetVectors() const;
+			const std::map<std::string, std::vector<mu::value_type> >& GetVectors() const;
 			string_type GetVersion(EParserVersionInfo eInfo = pviFULL) const;
 
 			const char_type** GetOprtDef() const;
@@ -236,9 +236,9 @@ namespace mu
 						int a_iPos = (int)mu::string_type::npos,
 						const string_type& a_strTok = string_type() ) const;
 
-			string_type CreateTempVectorVar(const std::vector<double>& vVar);
-			void SetVectorVar(const std::string& sVarName, const std::vector<double>& vVar, bool bAddVectorType = false);
-			std::vector<double>* GetVectorVar(const std::string& sVarName);
+			string_type CreateTempVectorVar(const std::vector<mu::value_type>& vVar);
+			void SetVectorVar(const std::string& sVarName, const std::vector<mu::value_type>& vVar, bool bAddVectorType = false);
+			std::vector<mu::value_type>* GetVectorVar(const std::string& sVarName);
 			void UpdateVectorVar(const std::string& sVarName);
 			void ClearVectorVars(bool bIgnoreProcedureVects = false);
 			bool ContainsVectorVars(StringView sExpr, bool ignoreSingletons);

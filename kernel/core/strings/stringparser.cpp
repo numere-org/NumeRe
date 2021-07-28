@@ -516,7 +516,7 @@ namespace NumeRe
                     _parser.SetExpr(sLineToParsed.substr(0, getPositionOfFirstDelimiter(sLineToParsed.substr(n_pos))));
 
                 int nResults = 0;
-                value_type* v = 0;
+                mu::value_type* v = 0;
                 vector<string> vResults;
                 string sElement = "";
 
@@ -618,7 +618,7 @@ namespace NumeRe
         {
             // Write the return values to the cluster with
             // parsing them
-            value_type* v = nullptr;
+            mu::value_type* v = nullptr;
             int nResults = 0;
             int nthComponent = 0;
             NumeRe::Cluster& cluster = _data.getCluster(sTableName);
@@ -679,7 +679,7 @@ namespace NumeRe
         {
             // Write the return values to the data table with
             // parsing them
-            value_type* v = nullptr;
+            mu::value_type* v = nullptr;
             int nResults = 0;
             int nthComponent = 0;
             string sExpr;
@@ -858,7 +858,7 @@ namespace NumeRe
                     {
                         // Parse and store it
                         int nResults = 0;
-                        value_type* v = 0;
+                        mu::value_type* v = 0;
                         _parser.SetExpr(sObject + " = " + strRes.vResult[nCurrentComponent]);
                         v = _parser.Eval(nResults);
 
@@ -1064,7 +1064,7 @@ namespace NumeRe
             {
                 _parser.SetExpr(vFinal[j]);
                 int nResults = 0;
-                value_type* v = _parser.Eval(nResults);
+                mu::value_type* v = _parser.Eval(nResults);
                 string stres;
 
                 for (int k = 0; k < nResults-1; k++)
@@ -1165,7 +1165,7 @@ namespace NumeRe
                 {
                     _parser.SetExpr(strRes.vResult[j]);
                     int nResults = 0;
-                    value_type* v = _parser.Eval(nResults);
+                    mu::value_type* v = _parser.Eval(nResults);
                     string stres;
 
                     for (int k = 0; k < nResults-1; k++)
@@ -1228,7 +1228,7 @@ namespace NumeRe
                     _parser.SetExpr(vStringResult[j]);
                     vStringResult.pop_back();
                     int nResults = 0;
-                    value_type* v = _parser.Eval(nResults);
+                    mu::value_type* v = _parser.Eval(nResults);
 
                     for (int k = 0; k < nResults-1; k++)
                     {
@@ -1575,7 +1575,7 @@ namespace NumeRe
             if (strExpr.sLine.find_first_not_of("+-*/:?!.,;%&<>=^ ") != string::npos && bParseNumericals)
             {
                 int nResults = 0;
-                value_type* v = 0;
+                mu::value_type* v = 0;
 
                 // Parse the epression
                 if (strExpr.sAssignee.length())
@@ -1743,11 +1743,11 @@ namespace NumeRe
                             // vector expansion
                             _parser.SetExpr("{" + sVectorTemp + "}");
                             int nRes = 0;
-                            double* res = _parser.Eval(nRes);
+                            mu::value_type* res = _parser.Eval(nRes);
 
                             // Store the result in a vector and
                             // create a temporary vector variable
-                            vector<double> vRes(res, res + nRes);
+                            vector<mu::value_type> vRes(res, res + nRes);
                             strExpr.sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
 
                             continue;
@@ -1762,11 +1762,11 @@ namespace NumeRe
                         // vector expansion
                         _parser.SetExpr(sVectorTemp);
                         int nRes = 0;
-                        double* res = _parser.Eval(nRes);
+                        mu::value_type* res = _parser.Eval(nRes);
 
                         // Store the result in a vector and
                         // create a temporary vector variable
-                        vector<double> vRes(res, res + nRes);
+                        vector<mu::value_type> vRes(res, res + nRes);
                         strExpr.sLine.replace(i, nmatching+1, _parser.CreateTempVectorVar(vRes));
 
                         continue;
@@ -1788,11 +1788,11 @@ namespace NumeRe
                     {
                         _parser.SetExpr("{" + tempres.vResult.front() + "}");
                         int nRes = 0;
-                        double* res = _parser.Eval(nRes);
+                        mu::value_type* res = _parser.Eval(nRes);
 
                         // Store the result in a vector and
                         // create a temporary vector variable
-                        vector<double> vRes(res, res + nRes);
+                        vector<mu::value_type> vRes(res, res + nRes);
                         sVectorTemp = _parser.CreateTempVectorVar(vRes);
                     }
                     // TODO: What happens in the remaining case of multiple

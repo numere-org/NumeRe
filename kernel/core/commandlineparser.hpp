@@ -149,7 +149,7 @@ class CommandLineParser
         DataAccessParser getExprAsDataObject() const;
         std::string getExprAsMathExpression(bool parseDataObjects = false) const;
         std::string parseExprAsString() const;
-        std::vector<double> parseExprAsNumericalValues() const;
+        std::vector<mu::value_type> parseExprAsNumericalValues() const;
         IntervalSet parseIntervals(bool bErase = false);
         std::string getTargetTable(Indices& _targetIndices, const std::string& sDefaultTableName);
         std::vector<std::string> getAllParametersWithValues() const;
@@ -157,7 +157,7 @@ class CommandLineParser
         std::string getFileParameterValue(std::string sFileExt, const std::string& sBaseFolder = "", const std::string& sDefaultName = "") const;
         std::string getFileParameterValueForSaving(std::string sFileExt, const std::string& sBaseFolder = "", const std::string& sDefaultName = "") const;
         std::string getParameterValueAsString(const std::string& sParameter, const std::string& sDefaultValue, bool stripAlways = false) const;
-        std::vector<double> getParameterValueAsNumericalValue(const std::string& sParameter) const;
+        std::vector<mu::value_type> getParameterValueAsNumericalValue(const std::string& sParameter) const;
         bool hasParam(const std::string& sParameter) const;
 };
 

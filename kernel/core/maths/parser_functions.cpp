@@ -671,13 +671,13 @@ bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data)
 /// \param sExpr string&
 /// \param sLegacyIntervalIdentifier const string&
 /// \param _parser Parser&6
-/// \param vInterval vector<double>&
+/// \param vInterval vector<mu::value_type>&
 /// \param nMinSize size_t
 /// \param bEraseInterval bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyIntervalIdentifier, Parser& _parser, vector<double>& vInterval, size_t nMinSize, bool bEraseInterval)
+static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyIntervalIdentifier, Parser& _parser, vector<mu::value_type>& vInterval, size_t nMinSize, bool bEraseInterval)
 {
     string sInterval = getArgAtPos(sExpr, findParameter(sExpr, sLegacyIntervalIdentifier, '=') + 1);
     EndlessVector<string> indices;

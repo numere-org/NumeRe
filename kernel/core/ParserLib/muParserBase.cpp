@@ -302,7 +302,7 @@ namespace mu
 			if (mVectorVars.find(pExpr->substr(nStart, nEnd - nStart)) != mVectorVars.end())
 				return;
 
-			std::vector<double> vVar;
+			std::vector<mu::value_type> vVar;
 
 			if (GetVar().find(pExpr->substr(nStart, nEnd - nStart)) != GetVar().end())
 				vVar.push_back(*(GetVar().find(pExpr->substr(nStart, nEnd - nStart))->second));
@@ -527,7 +527,7 @@ namespace mu
 	    if (!isPaused)
             PauseLoopMode();
 
-		vector<double> vResults;
+		vector<mu::value_type> vResults;
 
 		// Resolve vectors, which are part of a multi-argument
 		// function's parentheses
@@ -633,11 +633,11 @@ namespace mu
     /// expansion, e.g. "{1:4}" = {1, 2, 3, 4}.
     ///
     /// \param sSubExpr MutableStringView
-    /// \param vResults vector<double>&
+    /// \param vResults vector<mu::value_type>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::evaluateVectorExpansion(MutableStringView sSubExpr, vector<double>& vResults)
+	void ParserBase::evaluateVectorExpansion(MutableStringView sSubExpr, vector<mu::value_type>& vResults)
 	{
 		int nResults = 0;
 		value_type* v = nullptr;
@@ -729,16 +729,16 @@ namespace mu
 
     /** \brief This function expands the vector.
      *
-     * \param dFirst double
-     * \param dLast double
-     * \param dIncrement double
-     * \param vResults vector<double>&
+     * \param dFirst mu::value_type
+     * \param dLast mu::value_type
+     * \param dIncrement mu::value_type
+     * \param vResults vector<mu::value_type>&
      * \return void
      *
      * This function expands the vector. Private member used by ParserBase::evaluateVectorExpansion()
      *
      */
-	void ParserBase::expandVector(double dFirst, double dLast, double dIncrement, vector<double>& vResults)
+	void ParserBase::expandVector(mu::value_type dFirst, mu::value_type dLast, mu::value_type dIncrement, vector<mu::value_type>& vResults)
 	{
 		// ignore impossible combinations. Store only
 		// the accessible value
@@ -799,7 +799,7 @@ namespace mu
             size_t nClosingParens = getMatchingParenthesis(sExpr.subview(nMultiArgParens)) + nMultiArgParens;
 
             // Set the argument of the function as expression and evaluate it recursively
-            vector<double> vResults;
+            vector<mu::value_type> vResults;
             int nResults;
             SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
             value_type* v = Eval(nResults);
@@ -1212,7 +1212,7 @@ namespace mu
 		return m_FunDef;
 	}
 
-	const std::map<std::string, std::vector<double> >& ParserBase::GetVectors() const
+	const std::map<std::string, std::vector<mu::value_type> >& ParserBase::GetVectors() const
 	{
 	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
         {
@@ -2138,7 +2138,7 @@ namespace mu
 							break;
                         }
 
-						std::vector<double> vVar;
+						std::vector<mu::value_type> vVar;
 						vVar.push_back(*(opt.GetVar()));
 						SetVectorVar(opt.GetAsString(), vVar, true);
 					}
@@ -2866,7 +2866,7 @@ namespace mu
 				// an arbitrary length used
 				if (nVectorlength)
 				{
-                    std::map<double*, double> mFirstVals;
+                    std::map<mu::value_type*, mu::value_type> mFirstVals;
                     valbuf_type buffer;
                     buffer.push_back(0.0); // erster Wert wird nicht mitgezaehlt
 
@@ -2959,7 +2959,7 @@ namespace mu
 			if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("_~TRGTVCT[~]") != vCurrentUsedVars.end()))
 			{
 				valbuf_type buffer;
-				std::map<double*, double> mFirstVals;
+				std::map<mu::value_type*, mu::value_type> mFirstVals;
 				buffer.push_back(0.0);
 
 				// Get the maximal size of the used vectors
@@ -3564,11 +3564,11 @@ namespace mu
     /// vector into the internal storage referencing
     /// it with a auto-generated variable name.
     ///
-    /// \param vVar const std::vector<double>&
+    /// \param vVar const std::vector<mu::value_type>&
     /// \return string_type
     ///
     /////////////////////////////////////////////////
-	string_type ParserBase::CreateTempVectorVar(const std::vector<double>& vVar)
+	string_type ParserBase::CreateTempVectorVar(const std::vector<mu::value_type>& vVar)
 	{
 	    string_type sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
 
@@ -3584,12 +3584,12 @@ namespace mu
     /// it with the passed name.
     ///
     /// \param sVarName const std::string&
-    /// \param vVar const std::vector<double>&
+    /// \param vVar const std::vector<mu::value_type>&
     /// \param bAddVectorType bool
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::SetVectorVar(const std::string& sVarName, const std::vector<double>& vVar, bool bAddVectorType)
+	void ParserBase::SetVectorVar(const std::string& sVarName, const std::vector<mu::value_type>& vVar, bool bAddVectorType)
 	{
 		if (!vVar.size())
 			return;
@@ -3597,7 +3597,7 @@ namespace mu
 		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end() && m_VarDef.find(sVarName) == m_VarDef.end())
 		{
 		    // Create the storage for a new variable
-		    m_lDataStorage.push_back(new double);
+		    m_lDataStorage.push_back(new mu::value_type);
 
 		    // Assign the first element of the vector
 		    // to this storage
@@ -3625,10 +3625,10 @@ namespace mu
     /// to the vector stored internally.
     ///
     /// \param sVarName const std::string&
-    /// \return std::vector<double>*
+    /// \return std::vector<mu::value_type>*
     ///
     /////////////////////////////////////////////////
-	std::vector<double>* ParserBase::GetVectorVar(const std::string& sVarName)
+	std::vector<mu::value_type>* ParserBase::GetVectorVar(const std::string& sVarName)
 	{
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return nullptr;
