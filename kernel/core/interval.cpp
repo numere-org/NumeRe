@@ -47,10 +47,10 @@ void Interval::assign(const Interval& ivl)
 ///
 /// \param n size_t
 /// \param nSamples size_t
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Interval::getSample(size_t n, size_t nSamples) const
+mu::value_type Interval::getSample(size_t n, size_t nSamples) const
 {
     // Too few samples are not reasonable
     if (nSamples < 2)
@@ -61,7 +61,7 @@ double Interval::getSample(size_t n, size_t nSamples) const
     if (m_vInterval.size() == 2)
         // Usual interval access using the two values as start
         // and end of the interval
-        return m_vInterval.front() + (m_vInterval.back() - m_vInterval.front()) / (double)(nSamples-1) * n;
+        return m_vInterval.front() + (m_vInterval.back() - m_vInterval.front()) / (mu::value_type)(nSamples-1) * n;
     else if (m_vInterval.size() == nSamples)
     {
         // In this case we have more than two values in
@@ -80,7 +80,7 @@ double Interval::getSample(size_t n, size_t nSamples) const
         // samples is different from the array length.
         // We use linear interpolation between the array
         // values to handle this
-        double val = (m_vInterval.size()-1) / (double)(nSamples-1) * n;
+        mu::value_type val = (m_vInterval.size()-1) / (mu::value_type)(nSamples-1) * n;
         size_t nIdx = (size_t)val;
         val -= nIdx;
 
@@ -114,11 +114,11 @@ Interval::Interval(const std::string& sDef) : Interval()
 /// \brief Constructor from the two interval
 /// boundaries.
 ///
-/// \param dFront double
-/// \param dBack double
+/// \param dFront mu::value_type
+/// \param dBack mu::value_type
 ///
 /////////////////////////////////////////////////
-Interval::Interval(double dFront, double dBack) : Interval()
+Interval::Interval(mu::value_type dFront, mu::value_type dBack) : Interval()
 {
     m_vInterval.push_back(dFront);
     m_vInterval.push_back(dBack);
@@ -156,10 +156,10 @@ Interval& Interval::operator=(const Interval& ivl)
 ///
 /// \param n size_t
 /// \param nSamples size_t
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Interval::operator()(size_t n, size_t nSamples) const
+mu::value_type Interval::operator()(size_t n, size_t nSamples) const
 {
     return getSample(n, nSamples);
 }
@@ -170,12 +170,12 @@ double Interval::operator()(size_t n, size_t nSamples) const
 ///
 /// \param n size_t
 /// \param nSamples size_t
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Interval::log(size_t n, size_t nSamples) const
+mu::value_type Interval::log(size_t n, size_t nSamples) const
 {
-    return std::pow(10.0, std::log10(front()) + n * (std::log10(back()) - std::log10(front())) / (double)(nSamples - 1));
+    return std::pow(10.0, std::log10(front()) + n * (std::log10(back()) - std::log10(front())) / (mu::value_type)(nSamples - 1));
 }
 
 
@@ -183,10 +183,10 @@ double Interval::log(size_t n, size_t nSamples) const
 /// \brief Return the first element in the
 /// interval.
 ///
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Interval::front() const
+mu::value_type Interval::front() const
 {
     return m_vInterval.front();
 }
@@ -196,10 +196,10 @@ double Interval::front() const
 /// \brief Return the last element in the
 /// interval.
 ///
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Interval::back() const
+mu::value_type Interval::back() const
 {
     return m_vInterval.back();
 }
@@ -209,10 +209,10 @@ double Interval::back() const
 /// \brief Return the minimal element in the
 /// interval.
 ///
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Interval::min() const
+mu::value_type Interval::min() const
 {
     return *std::min_element(m_vInterval.begin(), m_vInterval.end());
 }
@@ -222,10 +222,10 @@ double Interval::min() const
 /// \brief Return the maximal element in the
 /// interval.
 ///
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Interval::max() const
+mu::value_type Interval::max() const
 {
     return *std::max_element(m_vInterval.begin(), m_vInterval.end());
 }
@@ -235,11 +235,11 @@ double Interval::max() const
 /// \brief Checks, whether the passed value is
 /// part of this interval.
 ///
-/// \param val double
+/// \param val mu::value_type
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Interval::isInside(double val) const
+bool Interval::isInside(mu::value_type val) const
 {
     return (m_vInterval.size() == 2 && val >= m_vInterval.front() && val <= m_vInterval.back())
         || std::find(m_vInterval.begin(), m_vInterval.end(), val) != m_vInterval.end();
@@ -495,14 +495,14 @@ size_t IntervalSet::size() const
 
 /////////////////////////////////////////////////
 /// \brief Convert the new interval data types to
-/// the old plain double values.
+/// the old plain mu::value_type values.
 ///
-/// \return std::vector<double>
+/// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-std::vector<double> IntervalSet::convert()
+std::vector<mu::value_type> IntervalSet::convert()
 {
-    std::vector<double> vIntervals;
+    std::vector<mu::value_type> vIntervals;
 
     for (const Interval& ivl : intervals)
     {

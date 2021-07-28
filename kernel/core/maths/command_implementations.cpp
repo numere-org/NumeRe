@@ -2253,7 +2253,7 @@ void taylor(CommandLineParser& cmdParser)
     size_t nMiddle = 0;
     mu::value_type* dVar = 0;
     mu::value_type dVarValue = 0.0;
-    long mu::value_type** dDiffValues = 0;
+    mu::value_type** dDiffValues = 0;
 
     // We cannot approximate string expressions
     if (containsStrings(sExpr))
@@ -2377,13 +2377,13 @@ void taylor(CommandLineParser& cmdParser)
         nMiddle = 2 * nth_taylor;
 
         // Create the memory for the derivatives
-        dDiffValues = new long double*[nSamples];
+        dDiffValues = new mu::value_type*[nSamples];
         for (size_t i = 0; i < nSamples; i++)
-            dDiffValues[i] = new long double[2];
+            dDiffValues[i] = new mu::value_type[2];
 
         // Fill the first column with the x-axis values
         for (size_t i = 0; i < nSamples; i++)
-            dDiffValues[i][0] = dVarValue + ((double)i - (double)nMiddle) * 1e-1;
+            dDiffValues[i][0] = dVarValue + ((mu::value_type)i - (mu::value_type)nMiddle) * 1e-1;
 
         // Fill the second column with the first
         // order derivatives
@@ -2398,8 +2398,8 @@ void taylor(CommandLineParser& cmdParser)
             {
                 if (i == nMiddle)
                 {
-                    double dRight = (dDiffValues[nMiddle + 1][1] - dDiffValues[nMiddle][1]) / ((1.0 + (j - 1) * 0.5) * 1e-1);
-                    double dLeft = (dDiffValues[nMiddle][1] - dDiffValues[nMiddle - 1][1]) / ((1.0 + (j - 1) * 0.5) * 1e-1);
+                    mu::value_type dRight = (dDiffValues[nMiddle + 1][1] - dDiffValues[nMiddle][1]) / ((1.0 + (j - 1) * 0.5) * 1e-1);
+                    mu::value_type dLeft = (dDiffValues[nMiddle][1] - dDiffValues[nMiddle - 1][1]) / ((1.0 + (j - 1) * 0.5) * 1e-1);
                     dDiffValues[nMiddle][1] = (dLeft + dRight) / 2.0;
                 }
                 else
@@ -2409,7 +2409,7 @@ void taylor(CommandLineParser& cmdParser)
                 }
             }
 
-            sPolynom += toString((double)dDiffValues[nMiddle][1] / integralFactorial((int)j + 1), _option) + ",";
+            sPolynom += toString((mu::value_type)dDiffValues[nMiddle][1] / integralFactorial((int)j + 1), _option) + ",";
         }
 
         sTaylor += "polynomial(" + sArg + "," + sPolynom.substr(0, sPolynom.length()-1) + ")";

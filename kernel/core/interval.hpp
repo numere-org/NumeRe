@@ -23,6 +23,8 @@
 #include <vector>
 #include <string>
 
+#include "ParserLib/muParserDef.h"
+
 /////////////////////////////////////////////////
 /// \brief This class represents a single
 /// interval in code providing reading access
@@ -35,27 +37,27 @@ class Interval
         std::vector<mu::value_type> m_vInterval;
 
         void assign(const Interval& ivl);
-        double getSample(size_t n, size_t nSamples) const;
+        mu::value_type getSample(size_t n, size_t nSamples) const;
 
     public:
         std::string name;
 
         Interval() : m_sDefinition(), m_vInterval(), name() {}
         Interval(const std::string& sDef);
-        Interval(double dFront, double dBack);
+        Interval(mu::value_type dFront, mu::value_type dBack);
         Interval(const Interval& ivl);
 
         Interval& operator=(const Interval& ivl);
-        double operator()(size_t n, size_t nSamples = 100) const;
-        double log(size_t n, size_t nSamples = 100) const;
+        mu::value_type operator()(size_t n, size_t nSamples = 100) const;
+        mu::value_type log(size_t n, size_t nSamples = 100) const;
 
-        double front() const;
-        double back() const;
+        mu::value_type front() const;
+        mu::value_type back() const;
 
-        double min() const;
-        double max() const;
+        mu::value_type min() const;
+        mu::value_type max() const;
 
-        bool isInside(double val) const;
+        bool isInside(mu::value_type val) const;
         bool contains(const std::string& sVarName) const;
         size_t getSamples() const;
 
@@ -80,7 +82,7 @@ struct IntervalSet
 
     bool hasDependentIntervals() const;
     size_t size() const;
-    std::vector<double> convert();
+    std::vector<mu::value_type> convert();
 };
 
 #endif // INTERVAL_HPP
