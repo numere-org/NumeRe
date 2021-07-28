@@ -4392,7 +4392,7 @@ void urlExecute(CommandLineParser& cmdParser)
         {
             std::string sFileName = sUrl.substr(sUrl.rfind("/"));
 
-            if (!sFileName.length())
+            if (sFileName.find('.') == std::string::npos)
                 sFileName = "index.html";
 
             if (cmdParser.hasParam("up"))
