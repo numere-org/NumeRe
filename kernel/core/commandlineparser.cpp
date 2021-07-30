@@ -237,11 +237,11 @@ std::string CommandLineParser::parseFileName(std::string& sFileName, std::string
 /// variable creation functionality of the
 /// parser.
 ///
-/// \param vRetVal const std::vector<double>&
+/// \param vRetVal const std::vector<mu::value_type>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void CommandLineParser::setReturnValue(const std::vector<double>& vRetVal)
+void CommandLineParser::setReturnValue(const std::vector<mu::value_type>& vRetVal)
 {
     m_returnValueStatement += NumeReKernel::getInstance()->getParser().CreateTempVectorVar(vRetVal);
 }

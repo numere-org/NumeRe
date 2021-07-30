@@ -566,7 +566,7 @@ void windowCommand(CommandLineParser& cmdParser)
                     cmdParser.setReturnValue("nan");
                 else
                 {
-                    std::vector<double> vRes;
+                    std::vector<mu::value_type> vRes;
 
                     // Convert the ints to doubles
                     for (auto items : vItems)

@@ -352,9 +352,12 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
     {
         // Replace the value with its actual value and mark the
         // argument type as reference
-        double* address = _parser.GetVar().find(sArgumentValue)->second;
+        mu::value_type* address = _parser.GetVar().find(sArgumentValue)->second;
         sArgumentValue = toString(*address, 5);
-        //return "\t1 x 1\t(&) double @" + toHexString((int)address) + "\t";
+
+        if (address->imag())
+            return "\t1 x 1\t" + isRef + "complex\t";
+
         return "\t1 x 1\t" + isRef + "double\t";
     }
 
@@ -557,7 +560,7 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
 ///
 /// \param sLocalVars string**
 /// \param nLocalVarMapSize size_t
-/// \param dLocalVars double*
+/// \param dLocalVars mu::value_type*
 /// \param sLocalStrings string**
 /// \param nLocalStrMapSize size_t
 /// \param sLocalTables string**
@@ -572,7 +575,7 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, size_t nLocalStrMapSize, string** sLocalTables,
+void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, mu::value_type* dLocalVars, string** sLocalStrings, size_t nLocalStrMapSize, string** sLocalTables,
                                         size_t nLocalTableMapSize, string** sLocalClusters, size_t nLocalClusterMapSize, string** sArgumentMap, size_t nArgumentMapSize,
                                         const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
 {
@@ -714,13 +717,13 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
 /// \param _nLineNumber unsigned int
 /// \param map<string
 /// \param mVarMap string>&
-/// \param vVarArray double**
+/// \param vVarArray mu::value_type**
 /// \param sVarArray string*
 /// \param nVarArray int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string, string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray)
+void NumeReDebugger::gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string, string>& mVarMap, mu::value_type** vVarArray, string* sVarArray, int nVarArray)
 {
     if (!bDebuggerActive)
         return;
@@ -824,7 +827,10 @@ vector<string> NumeReDebugger::getNumVars()
 
     for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
     {
-        vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tdouble\t" + toString(iter->second, 7) + (iter->first).substr((iter->first).find('\t')));
+        if (iter->second.imag())
+            vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tcomplex\t" + toString(iter->second, 7) + (iter->first).substr((iter->first).find('\t')));
+        else
+            vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tdouble\t" + toString(iter->second, 7) + (iter->first).substr((iter->first).find('\t')));
     }
 
     return vNumVars;
@@ -972,7 +978,10 @@ vector<string> NumeReDebugger::getGlobals()
     {
         if (iter->first.substr(0, 2) != "_~")
         {
-            mGlobals[iter->first] = "1 x 1\tdouble\t" + toString(*iter->second, 5);
+            if ((*iter->second).imag())
+                mGlobals[iter->first] = "1 x 1\tcomplex\t" + toString(*iter->second, 5);
+            else
+                mGlobals[iter->first] = "1 x 1\tdouble\t" + toString(*iter->second, 5);
         }
     }
 

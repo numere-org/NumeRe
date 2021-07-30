@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+#include "../ParserLib/muParserDef.h"
+
 using namespace std;
 class Settings;
 
@@ -139,7 +141,7 @@ struct StringResult
 		bOnlyLogicals = _bOnlyLogicals;
 	}
 
-	StringResult(const string& sRet, double* vals, int nvals) : StringResult()
+	StringResult(const string& sRet, mu::value_type* vals, int nvals) : StringResult()
 	{
 	    bOnlyLogicals = true;
 	    vResult.push_back(sRet);
@@ -149,7 +151,7 @@ struct StringResult
 
 	vector<string> vResult;
 	vector<bool> vNoStringVal;
-	vector<double> vNumericalValues;
+	vector<mu::value_type> vNumericalValues;
 	bool bOnlyLogicals;
 };
 

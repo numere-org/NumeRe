@@ -227,7 +227,7 @@ bool fitDataSet(string& sCmd, Parser& _parser, MemoryManager& _data, FunctionDef
 
     for (auto iter = paramsMap.begin(); iter != paramsMap.end(); ++iter)
     {
-        vInitialVals.push_back(*(iter->second));
+        vInitialVals.push_back((*(iter->second)).real());
     }
 
     // If the user desires a chi^2 map, then it is calculated in the
@@ -565,7 +565,7 @@ static vector<double> evaluateFittingParams(FittingData& fitData, string& sCmd, 
         _parser.SetExpr(getArgAtPos(fitData.sFitFunction, findParameter(fitData.sFitFunction, "iter", '=') + 4));
         eraseToken(sCmd, "iter", true);
         eraseToken(fitData.sFitFunction, "iter", true);
-        fitData.nMaxIterations = abs(rint(_parser.Eval()));
+        fitData.nMaxIterations = abs(rint(_parser.Eval()).real());
 
         if (!fitData.nMaxIterations)
             fitData.nMaxIterations = 500;
@@ -836,7 +836,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 nDim = 3;
 
-                if (_idx.col.size() < _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)) + 2)
+                if (_idx.col.size() < _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)).real() + 2)
                     throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
         }
@@ -853,7 +853,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 nDim = 5;
 
-                if (_idx.col.size() < 3 * _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)) + 2)
+                if (_idx.col.size() < 3 * _data.num(sDataTable, _idx.row, _idx.col.subidx(1, 1)).real() + 2)
                     throw SyntaxError(SyntaxError::TOO_FEW_COLS, sCmd, SyntaxError::invalid_position);
             }
         }
@@ -865,12 +865,12 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
 
     if (isnan(fitData.dMin))
     {
-        fitData.dMin = _data.min(sDataTable, _idx.row, VectorIndex(_idx.col.front()));
+        fitData.dMin = _data.min(sDataTable, _idx.row, VectorIndex(_idx.col.front())).real();
     }
 
     if (isnan(fitData.dMax))
     {
-        fitData.dMax = _data.max(sDataTable, _idx.row, VectorIndex(_idx.col.front()));
+        fitData.dMax = _data.max(sDataTable, _idx.row, VectorIndex(_idx.col.front())).real();
     }
 
     if (fitData.dMax < fitData.dMin)
@@ -884,12 +884,12 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     {
         if (isnan(fitData.dMinY))
         {
-            fitData.dMinY = _data.min(sDataTable, _idx.row, VectorIndex(_idx.col[1]));
+            fitData.dMinY = _data.min(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real();
         }
 
         if (isnan(fitData.dMaxY))
         {
-            fitData.dMaxY = _data.max(sDataTable, _idx.row, VectorIndex(_idx.col[1]));
+            fitData.dMaxY = _data.max(sDataTable, _idx.row, VectorIndex(_idx.col[1])).real();
         }
 
         if (fitData.dMaxY < fitData.dMinY)
@@ -906,21 +906,21 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         {
             if (nColumns == 1)
             {
-                if (isValidValue(getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster)))
+                if (isValidValue(getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster).real()))
                 {
                     fitData.vx.push_back(_idx.row[i] + 1);
-                    fitData.vy.push_back(getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster));
+                    fitData.vy.push_back(getDataFromObject(sDataTable, _idx.row[i], _idx.col.front(), isCluster).real());
                 }
             }
             else
             {
                 if (_data.isValidElement(_idx.row[i], _idx.col.front(), sDataTable) && _data.isValidElement(_idx.row[i], _idx.col.last(), sDataTable))
                 {
-                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col.front(), sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col.front(), sDataTable) > fitData.dMax))
+                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col.front(), sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col.front(), sDataTable).real() > fitData.dMax))
                         continue;
 
-                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col.front(), sDataTable));
-                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col.last(), sDataTable));
+                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col.front(), sDataTable).real());
+                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col.last(), sDataTable).real());
                 }
             }
         }
@@ -943,27 +943,27 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
                 {
-                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
+                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() > fitData.dMax))
                         continue;
 
-                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
-                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
+                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
+                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
 
                     if (nErrorCols == 1)
                     {
                         if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
                     else
                     {
-                        if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable)))
-                            fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)) * fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable))));
-                        else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
-                        else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable)));
+                        if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real() && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()))
+                            fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()) * fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable).real())));
+                        else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable).real())
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
+                        else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real())
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
@@ -973,18 +973,18 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
             {
                 if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
                 {
-                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
+                    if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() > fitData.dMax))
                         continue;
 
-                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
-                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
+                    fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
+                    fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
 
-                    if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable)))
-                        fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)) * fabs(_data.getElement(i, _idx.col[3], sDataTable))));
-                    else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable))
-                        fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
-                    else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable))
-                        fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable)));
+                    if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && (_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real() && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()))
+                        fitData.vy_w.push_back(sqrt(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()) * fabs(_data.getElement(i, _idx.col[3], sDataTable).real())));
+                    else if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable) && _data.getElement(_idx.row[i], _idx.col[2], sDataTable).real())
+                        fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
+                    else if (_data.isValidElement(_idx.row[i], _idx.col[3], sDataTable) && _data.getElement(_idx.row[i], _idx.col[3], sDataTable).real())
+                        fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[3], sDataTable).real()));
                     else
                         fitData.vy_w.push_back(0.0);
                 }
@@ -995,15 +995,15 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     {
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            if (!_data.isValidElement(_idx.row[i], _idx.col[1], sDataTable) || _data.getElement(_idx.row[i], _idx.col[1], sDataTable) < fitData.dMinY || _data.getElement(_idx.row[i], _idx.col[1], sDataTable) > fitData.dMaxY)
+            if (!_data.isValidElement(_idx.row[i], _idx.col[1], sDataTable) || _data.getElement(_idx.row[i], _idx.col[1], sDataTable).real() < fitData.dMinY || _data.getElement(_idx.row[i], _idx.col[1], sDataTable).real() > fitData.dMaxY)
                 continue;
             else
-                fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
+                fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
 
-            if (!_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax)
+            if (!_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() > fitData.dMax)
                 continue;
             else
-                fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
+                fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
 
             for (size_t k = 2; k < _idx.col.size(); k++)
             {
@@ -1011,17 +1011,17 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
                     break;
 
                 if (!_data.isValidElement(_idx.row[k-2], _idx.col[1], sDataTable)
-                        || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable) < fitData.dMinY
-                        || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable) > fitData.dMaxY)
+                        || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable).real() < fitData.dMinY
+                        || _data.getElement(_idx.row[k-2], _idx.col[1], sDataTable).real() > fitData.dMaxY)
                     continue;
                 else
                 {
-                    vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable));
+                    vTempZ.push_back(_data.getElement(_idx.row[i], _idx.col[k], sDataTable).real());
 
                     if (fitData.bUseErrors)
                     {
                         if (_data.isValidElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable))
-                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable)));
+                            fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[k + _idx.row.size()], sDataTable).real()));
                         else
                             fitData.vy_w.push_back(0.0);
                     }
@@ -1044,14 +1044,14 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
         {
             if (_data.isValidElement(_idx.row[i], _idx.col[0], sDataTable) && _data.isValidElement(_idx.row[i], _idx.col[1], sDataTable))
             {
-                if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable) < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable) > fitData.dMax))
+                if (!isnan(fitData.dMin) && !isnan(fitData.dMax) && (_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() < fitData.dMin || _data.getElement(_idx.row[i], _idx.col[0], sDataTable).real() > fitData.dMax))
                     continue;
 
-                fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable));
-                fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable));
+                fitData.vx.push_back(_data.getElement(_idx.row[i], _idx.col[0], sDataTable).real());
+                fitData.vy.push_back(_data.getElement(_idx.row[i], _idx.col[1], sDataTable).real());
 
                 if (_data.isValidElement(_idx.row[i], _idx.col[2], sDataTable))
-                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable)));
+                    fitData.vy_w.push_back(fabs(_data.getElement(_idx.row[i], _idx.col[2], sDataTable).real()));
                 else
                     fitData.vy_w.push_back(0.0);
             }
@@ -1498,7 +1498,7 @@ static string getParameterTable(FittingData& fitData, mu::varmap_type& paramsMap
         // parameter name, initial and final value and errors
         sParameterTable += pItem->first + "    "
             + strfill(toString(vInitialVals[n], _option), (pItem->first.length() > (windowSize - 32) / 2 + windowSize % 2 ? 0u : (windowSize - 32) / 2 + windowSize % 2 - pItem->first.length()))
-            + strfill(toString(*(pItem->second), _option), (windowSize - 50) / 2)
+            + strfill(toString(*(pItem->second), _option.getPrecision()), (windowSize - 50) / 2)
             + strfill(sPMSign + " " + toString(sqrt(abs(fitData.vz_w[n][n])), 5), 16);
 
         // Append the percentage of error compared to the final

@@ -46,7 +46,7 @@ using namespace std;
 // Helper prototypes e.g. for the MAF implementations in this class
 std::string toString(int);
 std::string toString(double, int);
-std::string toString(std::complex<double>, int);
+std::string toString(const std::complex<double>&, int);
 std::string toHexString(int nNumber);
 
 unsigned int getMatchingParenthesis(const StringView&);
@@ -72,6 +72,51 @@ mu::value_type parser_Max(const mu::value_type*, int);
 
 namespace mu
 {
+    std::vector<double> real(const std::vector<value_type>& vVec)
+    {
+	    std::vector<double> vReal;
+
+	    for (const auto& val : vVec)
+            vReal.push_back(val.real());
+
+        return vReal;
+    }
+
+
+	std::vector<double> imag(const std::vector<value_type>& vVec)
+	{
+	    std::vector<double> vImag;
+
+	    for (const auto& val : vVec)
+            vImag.push_back(val.imag());
+
+        return vImag;
+	}
+
+
+	bool isinf(value_type v)
+	{
+	    return std::isinf(std::abs(v));
+	}
+
+
+	bool isnan(value_type v)
+	{
+	    return std::isnan(std::abs(v));
+	}
+
+
+	value_type rint(value_type v)
+	{
+	    return value_type(std::rint(v.real()), std::rint(v.imag()));
+	}
+
+
+
+
+
+
+
 	std::locale ParserBase::s_locale = std::locale(std::locale::classic(), new change_dec_sep<char_type>('.'));
 
 	bool ParserBase::g_DbgDumpCmdCode = false;

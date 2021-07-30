@@ -61,6 +61,15 @@ value_type parser_Gauss(value_type);
 value_type parser_Poise(value_type);
 value_type parser_mol(value_type);
 
+// Imaginary unit
+value_type parser_imaginaryUnit(value_type);
+value_type parser_real(value_type);
+value_type parser_imag(value_type);
+value_type parser_rect2polar(value_type);
+value_type parser_polar2rect(value_type);
+value_type parser_conj(value_type);
+value_type parser_complex(value_type, value_type);
+
 // Actual math functions
 value_type parser_Faculty(value_type);
 value_type parser_doubleFaculty(value_type);

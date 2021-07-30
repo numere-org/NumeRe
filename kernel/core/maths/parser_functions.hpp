@@ -38,7 +38,7 @@ bool isVariableInAssignedExpression(Parser&, const string_type&);
 size_t findVariableInExpression(const string& sExpr, const string& sVarName);
 void convertVectorToExpression(string&, const Settings&);
 string addMissingVectorComponent(const string&, const string&, const string&, bool);
-double* getPointerToVariable(const string& sVarName, Parser& _parser);
+mu::value_type* getPointerToVariable(const string& sVarName, Parser& _parser);
 string promptForUserInput(const string& __sCommand);
 int integralFactorial(int nNumber);
 bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data);

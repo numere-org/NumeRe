@@ -32,7 +32,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
 static size_t getPrevMatMultiOp(const string& sCmd, size_t nLastPos);
 static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, const string& sCmd, const string& sExpr, size_t position);
 static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _parser, MemoryManager& _data, FunctionDefinitionManager& _functions, const Settings& _option);
-static vector<double> calcDeltasForMatFill(const Matrix& _mMatrix, unsigned int nLine);
+static vector<mu::value_type> calcDeltasForMatFill(const Matrix& _mMatrix, unsigned int nLine);
 static void showMatrixResult(const Matrix& _mResult, const Settings& _option);
 static Indices getIndicesForMatrix(const string& sCmd, const vector<string>& vMatrixNames, const vector<Indices>& vIndices, const vector<Matrix>& vReturnedMatrices, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static bool containsMatrices(const string& sExpr, MemoryManager& _data);
@@ -335,7 +335,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                         _parser.SetExpr(sSubExpr);
                         v = _parser.Eval(nResults);
 
-                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), v[0], v[1]), errorInfo));
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), v[0], intCast(v[1])), errorInfo));
                         break;
                     }
                     case MATSIG_N_MOPT:
@@ -344,9 +344,9 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                         v = _parser.Eval(nResults);
 
                         if (nResults > 1)
-                            vReturnedMatrices.push_back(fIter->second.func(MatFuncData(v[0], v[1]), errorInfo));
+                            vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0]), intCast(v[1])), errorInfo));
                         else
-                            vReturnedMatrices.push_back(fIter->second.func(MatFuncData(v[0]), errorInfo));
+                            vReturnedMatrices.push_back(fIter->second.func(MatFuncData(intCast(v[0])), errorInfo));
 
                         break;
                     }
@@ -528,7 +528,7 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
         __sCmd += sCmd.substr(pos_back);
 
     vector<Indices> vIndices;
-    vector<double> vMatrixVector;
+    vector<mu::value_type> vMatrixVector;
     Matrix _mTarget;
     Matrix _mResult;
     vector<string> vMatrixNames;
@@ -925,8 +925,8 @@ static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, cons
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, sCmd, position);
 
     Matrix _mResult;
-    vector<double> vLine;
-    double dEntry = 0.0;
+    vector<mu::value_type> vLine;
+    mu::value_type dEntry = 0.0;
 
     if (_mRight.size() == 1 && _mRight[0].size() && _mLeft.size() == 1 && _mLeft[0].size() == _mRight[0].size())
     {
@@ -1071,10 +1071,10 @@ static Matrix createMatFromLines(string& sCmd, Parser& _parser, MemoryManager& _
     value_type* v = 0;
     int nResults = 0;
     unsigned int nLineLength = 0;
-    vector<double> vLine;
+    vector<mu::value_type> vLine;
     if (!sCmd.length())
     {
-        _matfl.push_back(vector<double>(1,NAN));
+        _matfl.push_back(vector<mu::value_type>(1,NAN));
     }
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
@@ -1097,7 +1097,7 @@ static Matrix createMatFromLines(string& sCmd, Parser& _parser, MemoryManager& _
     }
     if (!_matfl.size())
     {
-        _matfl.push_back(vector<double>(1,NAN));
+        _matfl.push_back(vector<mu::value_type>(1,NAN));
     }
 
     // Groesse ggf. korrigieren
@@ -1130,10 +1130,10 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
     value_type* v = 0;
     int nResults = 0;
     unsigned int nLineLength = 0;
-    vector<double> vLine;
+    vector<mu::value_type> vLine;
     if (!sCmd.length())
     {
-        _matfl.push_back(vector<double>(1,NAN));
+        _matfl.push_back(vector<mu::value_type>(1,NAN));
     }
     if (!_functions.call(sCmd))
         throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, SyntaxError::invalid_position);
@@ -1156,7 +1156,7 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
     }
     if (!_matfl.size())
     {
-        _matfl.push_back(vector<double>(1,NAN));
+        _matfl.push_back(vector<mu::value_type>(1,NAN));
     }
 
     // Groesse entsprechend der Logik korrigieren
@@ -1170,7 +1170,7 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
         }
         else
         {
-            vector<double> vDeltas = calcDeltasForMatFill(_matfl, i);
+            vector<mu::value_type> vDeltas = calcDeltasForMatFill(_matfl, i);
             while (_matfl[i].size() < nLineLength)
             {
                 _matfl[i].push_back(_matfl[i].back() + vDeltas[(_matfl[i].size()+1) % vDeltas.size()]);
@@ -1189,14 +1189,14 @@ static Matrix createMatFromLinesFilled(string& sCmd, Parser& _parser, MemoryMana
 ///
 /// \param _mMatrix const Matrix&
 /// \param nLine unsigned int
-/// \return vector<double>
+/// \return vector<mu::value_type>
 ///
 /// This function is used by the \c matf*f()
 /// functions to derive the filling logic.
 /////////////////////////////////////////////////
-static vector<double> calcDeltasForMatFill(const Matrix& _mMatrix, unsigned int nLine)
+static vector<mu::value_type> calcDeltasForMatFill(const Matrix& _mMatrix, unsigned int nLine)
 {
-    vector<double> vDeltas;
+    vector<mu::value_type> vDeltas;
     for (unsigned int j = 1; j < _mMatrix[nLine].size(); j++)
     {
         vDeltas.push_back(_mMatrix[nLine][j]-_mMatrix[nLine][j-1]);
@@ -1328,7 +1328,7 @@ static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
     else if (_mResult.size() == 1)
     {
         if (_mResult[0].size() == 1)
-            NumeReKernel::print("(" + toString(_mResult[0][0], _option) + ")");
+            NumeReKernel::print("(" + toString(_mResult[0][0], _option.getPrecision()) + ")");
         else
         {
             NumeReKernel::printPreFmt("|-> (");
@@ -1564,7 +1564,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
                 _parser.SetExpr(sI[n]);
                 _idx.row.setIndex(n, intCast(_parser.Eval())-1);
 
-                if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
+                if (isnan(_parser.Eval().real()) || isinf(_parser.Eval().real()) || _parser.Eval().real() <= 0)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position, sI[n]);
             }
 
@@ -1580,7 +1580,7 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
                 _parser.SetExpr(sJ[n]);
                 _idx.col.setIndex(n, intCast(_parser.Eval())-1);
 
-                if (isnan(_parser.Eval()) || isinf(_parser.Eval()) || _parser.Eval() <= 0)
+                if (isnan(_parser.Eval().real()) || isinf(_parser.Eval().real()) || _parser.Eval().real() <= 0)
                     throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position, sJ[n]);
             }
         }
@@ -1595,11 +1595,11 @@ Indices getIndices(const string& sCmd, const Matrix& _mMatrix, Parser& _parser, 
 /// parser_ShowMatrixResult() to be accessible
 /// from the outside.
 ///
-/// \param _mMatrix const vector<vector<double>>&
+/// \param _mMatrix const vector<vector<mu::value_type>>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void showMatrix(const vector<vector<double> >& _mMatrix)
+void showMatrix(const vector<vector<mu::value_type> >& _mMatrix)
 {
     showMatrixResult(_mMatrix, NumeReKernel::getInstance()->getSettings());
 }
@@ -1619,7 +1619,7 @@ static void parser_declareMatrixReturnValuesForIndices(const string& _sCmd, cons
 {
     for (unsigned int j = 0; j < vReturnedMatrices.size(); j++)
     {
-        vector<double> v;
+        vector<mu::value_type> v;
         if (vReturnedMatrices[j].size() == 1 && vReturnedMatrices[j][0].size() == 1)
         {
             v.push_back(vReturnedMatrices[j][0][0]);
@@ -1659,7 +1659,7 @@ static void parser_declareDataMatrixValuesForIndices(string& _sCmd, const vector
 {
     for (unsigned int j = 0; j < vIndices.size(); j++)
     {
-        vector<double> v;
+        vector<mu::value_type> v;
 
         // Get the values using the indices
         if (vIndices[j].row.size() > vIndices[j].col.size())

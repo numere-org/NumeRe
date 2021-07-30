@@ -206,7 +206,7 @@ namespace NumeRe
             // only strings
             if (strRes.bOnlyLogicals && strRes.vResult.size() > 1)
             {
-                vector<double> vIndices;
+                vector<mu::value_type> vIndices;
 
                 // Convert the strings to doubles
                 for (size_t i = 0; i < strRes.vResult.size(); i++)
@@ -527,9 +527,9 @@ namespace NumeRe
                 for (int n = 0; n < nResults; n++)
                 {
                     if (fabs(rint(v[n]) - v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
-                        sElement = toString((long long int)rint(v[n]));
+                        sElement = toString(intCast(v[n]));
                     else
-                        sElement = toString(v[n], _option);
+                        sElement = toString(v[n], _option.getPrecision());
                     while (sElement.length() < sPrefix.length() + 1)
                         sElement.insert(0, 1, '0');
                     vResults.push_back(addQuotationMarks(sElement));
@@ -876,7 +876,7 @@ namespace NumeRe
                             // Transform the results into a string
                             for (int n = 0; n < nResults; n++)
                             {
-                                sValues += toString(v[n], _option) + ",";
+                                sValues += toString(v[n], _option.getPrecision()) + ",";
                             }
                             sValues.pop_back();
 
@@ -1170,11 +1170,11 @@ namespace NumeRe
 
                     for (int k = 0; k < nResults-1; k++)
                     {
-                        stres = toString(v[k], _option);
+                        stres = toString(v[k], _option.getPrecision());
                         sConsoleOut += stres + ", ";
                     }
 
-                    stres = toString(v[nResults-1], _option);
+                    stres = toString(v[nResults-1], _option.getPrecision());
                     sConsoleOut += stres;
                 }
 
@@ -1232,10 +1232,10 @@ namespace NumeRe
 
                     for (int k = 0; k < nResults-1; k++)
                     {
-                        vStringResult.push_back(toString(v[k], _option));
+                        vStringResult.push_back(toString(v[k], _option.getPrecision()));
                     }
 
-                    vStringResult.push_back(toString(v[nResults-1], _option));
+                    vStringResult.push_back(toString(v[nResults-1], _option.getPrecision()));
 
                 }
 

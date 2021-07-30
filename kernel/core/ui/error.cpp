@@ -73,12 +73,12 @@ void Assertion::enable(const std::string& sExpr)
 /// \brief Checks the return value of a muParser
 /// evaluated result.
 ///
-/// \param v double*
+/// \param v mu::value_type*
 /// \param nNum int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Assertion::checkAssertion(double* v, int nNum)
+void Assertion::checkAssertion(mu::value_type* v, int nNum)
 {
     // Only do something, if the assertion mode is
     // active
@@ -88,7 +88,7 @@ void Assertion::checkAssertion(double* v, int nNum)
         {
             // If a single value is zero,
             // throw the assertion error
-            if (!v[i])
+            if (v[i] == 0.0)
                 assertionFail();
         }
 
@@ -100,24 +100,24 @@ void Assertion::checkAssertion(double* v, int nNum)
 /// \brief Checks the return value of the matrix
 /// operation.
 ///
-/// \param _mMatrix const std::vector<std::vector<double>>&
+/// \param _mMatrix const std::vector<std::vector<mu::value_type>>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Assertion::checkAssertion(const std::vector<std::vector<double>>& _mMatrix)
+void Assertion::checkAssertion(const std::vector<std::vector<mu::value_type>>& _mMatrix)
 {
     // Only do something, if the assertion mode is
     // active
     if (assertionMode)
     {
         // Matrices are two-dimensional
-        for (const std::vector<double>& vRow : _mMatrix)
+        for (const std::vector<mu::value_type>& vRow : _mMatrix)
         {
-            for (const double& val : vRow)
+            for (const mu::value_type& val : vRow)
             {
                 // If a single value is zero,
                 // throw the assertion error
-                if (!val)
+                if (val == 0.0)
                     assertionFail();
             }
         }
@@ -147,7 +147,7 @@ void Assertion::checkAssertion(const StringResult& strRes)
             {
                 NumeReKernel::getInstance()->getParser().SetExpr(strRes.vResult[i]);
 
-                if (!NumeReKernel::getInstance()->getParser().Eval())
+                if (NumeReKernel::getInstance()->getParser().Eval() == 0.0)
                     assertionFail();
             }
         }

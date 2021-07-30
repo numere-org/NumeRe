@@ -368,7 +368,7 @@ string evaluateParameterValues(const string& sCmd)
 
             // convert the doubles into strings and remove the trailing comma
             for (int i = 0; i < nResult; i++)
-                sTemp += toString(v[i], _option) + ":";
+                sTemp += toString(v[i], _option.getPrecision()) + ":";
 
             sTemp.pop_back();
 
@@ -439,7 +439,7 @@ bool parseCmdArg(const string& sCmd, size_t nPos, Parser& _parser, size_t& nArgu
 
     _parser.SetExpr(sArg);
 
-    if (isnan(_parser.Eval()) || isinf(_parser.Eval()))
+    if (isnan(_parser.Eval().real()) || isinf(_parser.Eval().real()))
         return false;
 
     nArgument = abs(intCast(_parser.Eval()));

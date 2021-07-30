@@ -104,18 +104,19 @@ class Memory : public Sorter
         // READ ACCESS METHODS
 		double readMem(long long int _nLine, long long int _nCol) const;
 		double readMemInterpolated(double _dLine, double _dCol) const;
-		std::vector<double> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		std::vector<mu::value_type> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		std::vector<double> readRealMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		Memory* extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		void copyElementsInto(std::vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		std::string getHeadLineElement(long long int _i) const;
 		std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol) const;
 		long long int getAppendedZeroes(long long int _i) const;
 		int getHeadlineCount() const;
 
 		// WRITE ACCESS METHODS
-		void writeSingletonData(Indices& _idx, double _dData);
-		void writeData(long long int _nLine, long long int _nCol, double _dData);
-		void writeData(Indices& _idx, double* _dData, unsigned int _nNum);
+		void writeSingletonData(Indices& _idx, mu::value_type _dData);
+		void writeData(long long int _nLine, long long int _nCol, mu::value_type _dData);
+		void writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum);
 		bool setHeadLineElement(long long int _i, std::string _sHead);
 
 		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision);
@@ -129,24 +130,24 @@ class Memory : public Sorter
         void importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols);
 
         // MAFIMPLEMENTATIONS
-        double std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double max(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double min(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double num(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef = 0.0, int _nType = 0) const;
-        double med(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-        double pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct = 0.5) const;
-        std::vector<double> size(const VectorIndex& _vIndex, int dir) const;
-        std::vector<double> minpos(const VectorIndex& _vIndex, int dir) const;
-        std::vector<double> maxpos(const VectorIndex& _vIndex, int dir) const;
+        mu::value_type std(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type max(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type min(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type num(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dRef = 0.0, int _nType = 0) const;
+        mu::value_type med(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+        mu::value_type pct(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dPct = 0.5) const;
+        std::vector<mu::value_type> size(const VectorIndex& _vIndex, int dir) const;
+        std::vector<mu::value_type> minpos(const VectorIndex& _vIndex, int dir) const;
+        std::vector<mu::value_type> maxpos(const VectorIndex& _vIndex, int dir) const;
 
         bool smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSettings _settings, AppDir Direction = ALL);
         bool retouch(VectorIndex _vLine, VectorIndex _vCol, AppDir Direction = ALL);

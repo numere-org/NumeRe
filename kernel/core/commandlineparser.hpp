@@ -118,7 +118,7 @@ class CommandLineParser
             m_returnValueStatement += sRetVal;
         }
 
-        void setReturnValue(const std::vector<double>& vRetVal);
+        void setReturnValue(const std::vector<mu::value_type>& vRetVal);
         void setReturnValue(const std::vector<std::string>& vRetVal);
 
         /////////////////////////////////////////////////

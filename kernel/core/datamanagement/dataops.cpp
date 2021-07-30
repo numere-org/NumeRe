@@ -305,14 +305,14 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
 			}
 
 			// Handle infinity
-			if (isinf(_data.getElement(i - nHeadlineCount, j, sCache)) && _data.getElement(i - nHeadlineCount, j, sCache) > 0)
+			if (isinf(abs(_data.getElement(i - nHeadlineCount, j, sCache))) && _data.getElement(i - nHeadlineCount, j, sCache).real() > 0)
             {
                 sOut[i][j] = "inf";
                 continue;
             }
 
             // Handle negative infinity
-			if (isinf(_data.getElement(i - nHeadlineCount, j, sCache)) && _data.getElement(i - nHeadlineCount, j, sCache) < 0)
+			if (isinf(abs(_data.getElement(i - nHeadlineCount, j, sCache))) && _data.getElement(i - nHeadlineCount, j, sCache).real() < 0)
             {
                 sOut[i][j] = "-inf";
                 continue;
@@ -322,9 +322,9 @@ string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option
 			// We use the C-style conversion function sprintf(), because it is 4 times faster than
 			// using the stringstream conversion way.
             if (_out.isCompact() && !bSave)
-                sprintf(cBuffer, "%.*g", 4, _data.getElement(i - nHeadlineCount, j, sCache));
+                sprintf(cBuffer, "%.*g", 4, _data.getElement(i - nHeadlineCount, j, sCache).real());
             else
-                sprintf(cBuffer, "%.*g", nPrecision, _data.getElement(i - nHeadlineCount, j, sCache));
+                sprintf(cBuffer, "%.*g", nPrecision, _data.getElement(i - nHeadlineCount, j, sCache).real());
 
             sOut[i][j] = cBuffer;
 		}
@@ -848,7 +848,7 @@ static bool sortStrings(CommandLineParser& cmdParser, Indices& _idx)
 	if (vSortIndex.size())
 	{
 	    // Transform the integer indices into doubles
-		vector<double> vDoubleSortIndex;
+		vector<mu::value_type> vDoubleSortIndex;
 
 		for (size_t i = 0; i < vSortIndex.size(); i++)
 			vDoubleSortIndex.push_back(vSortIndex[i]);
@@ -892,7 +892,7 @@ static bool sortClusters(CommandLineParser& cmdParser, const string& sCluster, I
 	if (vSortIndex.size())
 	{
 	    // Transform the integer indices into doubles
-		vector<double> vDoubleSortIndex;
+		vector<mu::value_type> vDoubleSortIndex;
 
 		for (size_t i = 0; i < vSortIndex.size(); i++)
 			vDoubleSortIndex.push_back(vSortIndex[i]);
@@ -960,7 +960,7 @@ bool sortData(CommandLineParser& cmdParser)
 	if (vSortIndex.size())
 	{
 	    // Transform the integer indices into doubles
-		vector<double> vDoubleSortIndex;
+		vector<mu::value_type> vDoubleSortIndex;
 		for (size_t i = 0; i < vSortIndex.size(); i++)
 			vDoubleSortIndex.push_back(vSortIndex[i]);
 
@@ -1238,7 +1238,7 @@ bool readImage(CommandLineParser& cmdParser)
 
 	std::string sChannels = "grey";
 	Indices _idx;
-	std::vector<double> vIndices;
+	std::vector<mu::value_type> vIndices;
 
 	// Get the target cache from the command line or use the default one
 	std::string sTargetCache = cmdParser.getTargetTable(_idx, "image");

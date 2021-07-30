@@ -964,7 +964,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
     nLocalVarMapSize = countVarListElements(sVarList);
 
     sLocalVars = new string*[nLocalVarMapSize];
-    dLocalVars = new double[nLocalVarMapSize];
+    dLocalVars = new mu::value_type[nLocalVarMapSize];
 
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalVarMapSize; i++)

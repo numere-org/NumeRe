@@ -84,9 +84,9 @@ class Fitcontroller
         double dChiSqr;
         string sExpr;
         FitMatrix vCovarianceMatrix;
-        static double* xvar;
-        static double* yvar;
-        static double* zvar;
+        static mu::value_type* xvar;
+        static mu::value_type* yvar;
+        static mu::value_type* zvar;
 
         bool fitctrl(const string& __sExpr, const string& __sRestrictions, FitData& _fData, double __dPrecision, int nMaxIterations);
         static void removeNANVals(gsl_vector* fvals, unsigned int nSize);

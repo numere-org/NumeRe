@@ -46,11 +46,27 @@ string toString(double dNumber, int nPrecision)
     return Temp.str();
 }
 
-string toString(std::complex<double> dNumber, int nPrecision)
+string toString(const std::complex<double>& dNumber, int nPrecision)
 {
     ostringstream Temp;
     Temp.precision(nPrecision);
-    Temp << dNumber;
+
+    if (dNumber.real() || !dNumber.imag())
+        Temp << dNumber.real();
+
+    if (dNumber.imag())
+    {
+        if (dNumber.imag() > 0.0 && dNumber.real() != 0.0)
+            Temp << "+";
+        /*else if (dNumber.imag() == -1.0)
+            Temp << "-";
+
+        if (fabs(dNumber.imag()) != 1.0)
+            Temp << dNumber.imag();*/
+
+        Temp << dNumber.imag() << "i";
+    }
+
     return Temp.str();
 }
 
@@ -148,6 +164,15 @@ string toString(bool bBoolean)
 
 // double into "full precision" string
 string toCmdString(double dNumber)
+{
+    ostringstream Temp;
+    Temp.precision(20);
+    Temp << dNumber;
+    return Temp.str();
+}
+
+
+string toCmdString(const std::complex<double>& dNumber)
 {
     ostringstream Temp;
     Temp.precision(20);
@@ -2040,6 +2065,12 @@ long long int intCast(double number)
     return static_cast<int>(number);
 }
 
+// Casts doubles to integers and avoids rounding errors
+long long int intCast(std::complex<double> number)
+{
+    return intCast(number.real());
+}
+
 // This function is a wrapper for the usual wcstombs function, which can handle wstrings
 string wcstombs(const wstring& wStr)
 {
@@ -3745,6 +3776,27 @@ double intPower(double dNumber, int nExponent)
     for (int i = abs(nExponent); i > 0; i--)
     {
         dResult *= (long double)dNumber;
+    }
+
+    // Apply the sign of the exponent
+    if (nExponent > 0)
+        return dResult;
+    else
+        return 1.0 / dResult;
+}
+
+std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent)
+{
+    std::complex<double> dResult = 1.0L;
+
+    // An exponent of zero returns always 1
+    if (!nExponent)
+        return 1.0;
+
+    // Calculuate the exponentation
+    for (int i = abs(nExponent); i > 0; i--)
+    {
+        dResult *= dNumber;
     }
 
     // Apply the sign of the exponent

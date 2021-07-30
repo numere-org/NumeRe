@@ -1034,7 +1034,7 @@ namespace NumeRe
             }
 
             _parser.SetExpr(sType);
-            nType = (int)_parser.Eval();
+            nType = intCast(_parser.Eval());
 
             if (nType < -1 || nType > 2)
                 nType = 0;
@@ -1105,7 +1105,7 @@ namespace NumeRe
             _accessParser.getIndices().row.linearize();
             _accessParser.getIndices().col.linearize();
 
-            vector<double> vIndices;
+            vector<mu::value_type> vIndices;
             vIndices.push_back(_accessParser.getIndices().row.front() + 1);
             vIndices.push_back(_accessParser.getIndices().row.last() + 1);
             vIndices.push_back(_accessParser.getIndices().col.front() + 1);
@@ -1290,7 +1290,7 @@ namespace NumeRe
             string sToString = getFunctionArgumentList("valtostr(", sLine, nStartPosition, nEndPosition);
             string sExpr = getNextArgument(sToString, true);
             string sChar = "";
-            std::vector<double> vCounts;
+            std::vector<mu::value_type> vCounts;
 
             if (sToString.length())
             {
@@ -1339,9 +1339,9 @@ namespace NumeRe
                 for (int n = 0; n < nResults; n++)
                 {
                     if (fabs(rint(v[n]) - v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
-                        sElement = toString((long long int)rint(v[n]));
+                        sElement = toString(intCast(v[n]));
                     else
-                        sElement = toString(v[n], _option);
+                        sElement = toString(v[n], _option.getPrecision());
 
                     if (n < vCounts.size())
                         nLen = intCast(fabs(vCounts[n]));

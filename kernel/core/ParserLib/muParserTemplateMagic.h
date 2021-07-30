@@ -4,6 +4,7 @@
 #include <cmath>
 #include "muParserError.h"
 
+std::complex<double> intPower(const std::complex<double>&, int);
 
 namespace mu
 {
@@ -106,7 +107,7 @@ namespace mu
     static T Sqrt(T v)  { return sqrt(v);  }
     static T Rint(T v)  { return floor(v + (T)0.5); }
     static T Sign(T v)  { return (T)((v<0.0) ? -1.0 : (v>0.0) ? 1.0 : 0.0); }
-    static T Pow(T v1, T v2) { return std::pow(v1, v2); }
+    static T Pow(T v1, T v2) { return v2.imag() == 0.0 && v2.real() == (int)v2.real() ? intPower(v1, v2.real()) : std::pow(v1, v2); }
   };
 
   // Create (mostly) dummy math function definitions for integer types. They are mostly

@@ -531,7 +531,7 @@ string promptForUserInput(const string& __sCommand)
 /// \return double*
 ///
 /////////////////////////////////////////////////
-double* getPointerToVariable(const string& sVarName, Parser& _parser)
+mu::value_type* getPointerToVariable(const string& sVarName, Parser& _parser)
 {
     // Get the map of declared variables
 	mu::varmap_type Vars = _parser.GetVar();
@@ -671,13 +671,13 @@ bool evaluateIndices(const string& sCache, Indices& _idx, MemoryManager& _data)
 /// \param sExpr string&
 /// \param sLegacyIntervalIdentifier const string&
 /// \param _parser Parser&6
-/// \param vInterval vector<mu::value_type>&
+/// \param vInterval vector<double>&
 /// \param nMinSize size_t
 /// \param bEraseInterval bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyIntervalIdentifier, Parser& _parser, vector<mu::value_type>& vInterval, size_t nMinSize, bool bEraseInterval)
+static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyIntervalIdentifier, Parser& _parser, vector<double>& vInterval, size_t nMinSize, bool bEraseInterval)
 {
     string sInterval = getArgAtPos(sExpr, findParameter(sExpr, sLegacyIntervalIdentifier, '=') + 1);
     EndlessVector<string> indices;
@@ -704,7 +704,7 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
         if (isNotEmptyExpression(indices[i]))
         {
             _parser.SetExpr(indices[i]);
-            vInterval.push_back(_parser.Eval());
+            vInterval.push_back(_parser.Eval().real());
         }
         else
             vInterval.push_back(NAN);
@@ -797,7 +797,7 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManag
                     if (isNotEmptyExpression(indices[j]))
                     {
                         _parser.SetExpr(indices[j]);
-                        vInterval.push_back(_parser.Eval());
+                        vInterval.push_back(_parser.Eval().real());
                     }
                     else
                         vInterval.push_back(NAN);

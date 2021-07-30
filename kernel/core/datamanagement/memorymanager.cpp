@@ -685,13 +685,13 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) co
 ///
 /// \param sTableName string& const
 /// \param sDir string
-/// \param MAF (double*)
-/// \return vector<double>
+/// \param MAF (mu::value_type*)
+/// \return vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-vector<double> MemoryManager::resolveMAF(const string& sTableName, string sDir, double (MemoryManager::*MAF)(const string&, long long int, long long int, long long int, long long int) const) const
+vector<mu::value_type> MemoryManager::resolveMAF(const string& sTableName, string sDir, mu::value_type (MemoryManager::*MAF)(const string&, long long int, long long int, long long int, long long int) const) const
 {
-    vector<double> vResults;
+    vector<mu::value_type> vResults;
     long long int nlines = getLines(sTableName, false);
     long long int ncols = getCols(sTableName, false);
 

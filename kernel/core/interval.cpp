@@ -50,7 +50,7 @@ void Interval::assign(const Interval& ivl)
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-mu::value_type Interval::getSample(size_t n, size_t nSamples) const
+double Interval::getSample(size_t n, size_t nSamples) const
 {
     // Too few samples are not reasonable
     if (nSamples < 2)
@@ -61,7 +61,7 @@ mu::value_type Interval::getSample(size_t n, size_t nSamples) const
     if (m_vInterval.size() == 2)
         // Usual interval access using the two values as start
         // and end of the interval
-        return m_vInterval.front() + (m_vInterval.back() - m_vInterval.front()) / (mu::value_type)(nSamples-1) * n;
+        return m_vInterval.front() + (m_vInterval.back() - m_vInterval.front()) / (double)((nSamples-1) * n);
     else if (m_vInterval.size() == nSamples)
     {
         // In this case we have more than two values in
@@ -80,7 +80,7 @@ mu::value_type Interval::getSample(size_t n, size_t nSamples) const
         // samples is different from the array length.
         // We use linear interpolation between the array
         // values to handle this
-        mu::value_type val = (m_vInterval.size()-1) / (mu::value_type)(nSamples-1) * n;
+        double val = (m_vInterval.size()-1) / (double)(nSamples-1) * n;
         size_t nIdx = (size_t)val;
         val -= nIdx;
 
@@ -120,8 +120,8 @@ Interval::Interval(const std::string& sDef) : Interval()
 /////////////////////////////////////////////////
 Interval::Interval(mu::value_type dFront, mu::value_type dBack) : Interval()
 {
-    m_vInterval.push_back(dFront);
-    m_vInterval.push_back(dBack);
+    m_vInterval.push_back(dFront.real());
+    m_vInterval.push_back(dBack.real());
 }
 
 
@@ -175,7 +175,7 @@ mu::value_type Interval::operator()(size_t n, size_t nSamples) const
 /////////////////////////////////////////////////
 mu::value_type Interval::log(size_t n, size_t nSamples) const
 {
-    return std::pow(10.0, std::log10(front()) + n * (std::log10(back()) - std::log10(front())) / (mu::value_type)(nSamples - 1));
+    return std::pow(10.0, std::log10(front()) + (double)n * (std::log10(back()) - std::log10(front())) / (double)(nSamples - 1));
 }
 
 
@@ -241,8 +241,8 @@ mu::value_type Interval::max() const
 /////////////////////////////////////////////////
 bool Interval::isInside(mu::value_type val) const
 {
-    return (m_vInterval.size() == 2 && val >= m_vInterval.front() && val <= m_vInterval.back())
-        || std::find(m_vInterval.begin(), m_vInterval.end(), val) != m_vInterval.end();
+    return (m_vInterval.size() == 2 && val.real() >= m_vInterval.front() && val.real() <= m_vInterval.back())
+        || std::find(m_vInterval.begin(), m_vInterval.end(), val.real()) != m_vInterval.end();
 }
 
 
@@ -314,9 +314,14 @@ void Interval::refresh()
         // Assign the values depending on their
         // number
         if (nResults == 1)
-            m_vInterval.assign(2, v[0]);
+            m_vInterval.assign(2, v[0].real());
         else
-            m_vInterval.assign(v, v+nResults);
+        {
+            m_vInterval.clear();
+
+            for (int i = 0; i < nResults; i++)
+                m_vInterval.push_back(v[i].real());
+        }
     }
     else
     {
@@ -330,7 +335,7 @@ void Interval::refresh()
                 getDataElements(indices[i], _parser, _data, NumeReKernel::getInstance()->getSettings());
 
             _parser.SetExpr(indices[i]);
-            m_vInterval.push_back(_parser.Eval());
+            m_vInterval.push_back(_parser.Eval().real());
         }
     }
 }

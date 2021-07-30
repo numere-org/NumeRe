@@ -367,6 +367,7 @@ void NumeReKernel::defineOperators()
     _parser.DefinePostfixOprt("'mol", parser_mol);
     _parser.DefinePostfixOprt("!", parser_Faculty);
     _parser.DefinePostfixOprt("!!", parser_doubleFaculty);
+    _parser.DefinePostfixOprt("i", parser_imaginaryUnit);
 
     // --> Logisches NICHT <--
     _parser.DefineInfixOprt("!", parser_Not);
@@ -436,6 +437,7 @@ void NumeReKernel::defineConst()
     _parser.DefineConst("nan", NAN);
     _parser.DefineConst("inf", INFINITY);
     _parser.DefineConst("void", NAN);
+    _parser.DefineConst("I", mu::value_type(0.0, 1.0));
 }
 
 
@@ -532,6 +534,12 @@ void NumeReKernel::defineFunctions()
     _parser.DefineFun("psi_n", parser_polygamma, true);                         // psi_n(n,x)
     _parser.DefineFun("Li2", parser_dilogarithm, true);                         // Li2(x)
     _parser.DefineFun("log_b", parser_log_b, true);                             // log_b(b,x)
+    _parser.DefineFun("real", parser_real, true);                               // real(x)
+    _parser.DefineFun("imag", parser_imag, true);                               // imag(x)
+    _parser.DefineFun("to_rect", parser_polar2rect, true);                      // to_rect(x)
+    _parser.DefineFun("to_polar", parser_rect2polar, true);                     // to_polar(x)
+    _parser.DefineFun("conj", parser_conj, true);                               // conj(x)
+    _parser.DefineFun("complex", parser_complex, true);                         // complex(re,im)
 
     /////////////////////////////////////////////////////////////////////
     // NOTE:
@@ -2332,7 +2340,11 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).substr(0, 2) == "_~")
             continue;
 
-        sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, 5) + "\t" + iter->first;
+        if ((*iter->second).imag())
+            sCurrentLine = iter->first + "\t1 x 1\tcomplex\t" + toString(*iter->second, 5) + "\t" + iter->first;
+        else
+            sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, 5) + "\t" + iter->first;
+
         vars.vVariables.push_back(sCurrentLine);
     }
 
@@ -2641,7 +2653,7 @@ string NumeReKernel::formatResultOutput(int nNum, value_type* v)
         // compose the result
         for (int i = 0; i < nNum; ++i)
         {
-            sAns += strfill(toString(v[i], _option), _option.getPrecision() + 7);
+            sAns += strfill(toString(v[i], _option.getPrecision()), _option.getPrecision() + 7);
 
             if (i < nNum - 1)
                 sAns += ", ";
@@ -2659,7 +2671,7 @@ string NumeReKernel::formatResultOutput(int nNum, value_type* v)
     {
         // Only one result
         // return the answer
-        return "ans = " + toString(v[0], _option);
+        return "ans = " + toString(v[0], _option.getPrecision());
     }
 
     // fallback
@@ -3342,7 +3354,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
 
     mu::varmap_type varmap;
     string** sLocalVars = nullptr;
-    double* dLocalVars = nullptr;
+    mu::value_type* dLocalVars = nullptr;
     size_t nLocalVarMapSize = 0;
     size_t nLocalVarMapSkip = 0;
     string** sLocalStrings = nullptr;
@@ -3360,7 +3372,7 @@ int NumeReKernel::evalDebuggerBreakPoint(const string& sCurrentCommand)
     varmap = _parser.GetVar();
     nLocalVarMapSize = varmap.size();
     sLocalVars = new string*[nLocalVarMapSize];
-    dLocalVars = new double[nLocalVarMapSize];
+    dLocalVars = new mu::value_type[nLocalVarMapSize];
     size_t i = 0;
 
     // Create the numerical variable set

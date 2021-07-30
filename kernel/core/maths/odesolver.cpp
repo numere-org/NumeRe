@@ -84,7 +84,7 @@ int Odesolver::odeFunction(double x, const double y[], double dydx[], void* para
     v = _odeParser->Eval(nResults);
     for (int i = 0; i < nResults; i++)
     {
-        dydx[i] = v[i];
+        dydx[i] = v[i].real();
     }
     return GSL_SUCCESS;
 }
@@ -242,13 +242,13 @@ bool Odesolver::solve(const string& sCmd)
         v = _odeParser->Eval(nRes);
         if (nRes > 1)
         {
-            dRelTolerance = v[0];
-            dAbsTolerance = v[1];
+            dRelTolerance = v[0].real();
+            dAbsTolerance = v[1].real();
         }
         else
         {
-            dRelTolerance = v[0];
-            dAbsTolerance = v[0];
+            dRelTolerance = v[0].real();
+            dAbsTolerance = v[0].real();
         }
     }
     else
@@ -269,7 +269,7 @@ bool Odesolver::solve(const string& sCmd)
         v = _odeParser->Eval(nRes);
         for (int i = 0; i < nRes; i++)
         {
-            vStartValues.push_back(v[i]);
+            vStartValues.push_back(v[i].real());
         }
     }
     if (findParameter(sParams, "samples", '='))

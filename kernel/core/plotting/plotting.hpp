@@ -78,8 +78,8 @@ class Plot
         void create3dPlot();
         void create3dVect();
         void create2dVect();
-        void create2dDrawing(vector<string>& vDrawVector, value_type* vResults, int& nFunctions);
-        void create3dDrawing(vector<string>& vDrawVector, value_type* vResults, int& nFunctions);
+        void create2dDrawing(vector<string>& vDrawVector, int& nFunctions);
+        void create3dDrawing(vector<string>& vDrawVector, int& nFunctions);
         void createStd3dPlot(vector<short>& vType, int& nStyle, size_t& nLegends, int nFunctions, size_t nPlotCompose, size_t nPlotComposeSize);
         bool plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType);
         bool checkMultiPlotArray(unsigned int nMultiPlot[2], unsigned int& nSubPlotMap, unsigned int nPlotPos, unsigned int nCols, unsigned int nLines);
@@ -120,9 +120,9 @@ class Plot
         string CoordFunc(const std::string& sFuncDef, double dPhiScale = 1.0, double dThetaScale = 1.0);
         string composeColoursForBarChart(long int nNum);
 
-        inline double validize(double d)
+        inline double validize(std::complex<double> d)
         {
-            return isValidValue(d) ? d : NAN;
+            return isValidValue(d.real()) ? d.real() : NAN;
         }
 
     public:

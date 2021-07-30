@@ -75,16 +75,16 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
     std::vector<std::vector<double>> vStats (STATS_FIELD_COUNT, std::vector<double>());
 
     // Calculate built-in statistical values (short-cuts)
-    vStats[STATS_AVG] = _data.avg(sTable, "cols");
-    vStats[STATS_STD] = _data.std(sTable, "cols");
-    vStats[STATS_MED] = _data.med(sTable, "cols");
-    vStats[STATS_Q1]  = _data.pct(sTable, "cols", 0.25);
-    vStats[STATS_Q3]  = _data.pct(sTable, "cols", 0.75);
-    vStats[STATS_MIN] = _data.min(sTable, "cols");
-    vStats[STATS_MAX] = _data.max(sTable, "cols");
-    vStats[STATS_NUM] = _data.num(sTable, "cols");
-    vStats[STATS_CNT] = _data.cnt(sTable, "cols");
-    vStats[STATS_RMS] = _data.norm(sTable, "cols");
+    vStats[STATS_AVG] = mu::real(_data.avg(sTable, "cols"));
+    vStats[STATS_STD] = mu::real(_data.std(sTable, "cols"));
+    vStats[STATS_MED] = mu::real(_data.med(sTable, "cols"));
+    vStats[STATS_Q1]  = mu::real(_data.pct(sTable, "cols", 0.25));
+    vStats[STATS_Q3]  = mu::real(_data.pct(sTable, "cols", 0.75));
+    vStats[STATS_MIN] = mu::real(_data.min(sTable, "cols"));
+    vStats[STATS_MAX] = mu::real(_data.max(sTable, "cols"));
+    vStats[STATS_NUM] = mu::real(_data.num(sTable, "cols"));
+    vStats[STATS_CNT] = mu::real(_data.cnt(sTable, "cols"));
+    vStats[STATS_RMS] = mu::real(_data.norm(sTable, "cols"));
 
     for (long long int j = 0; j < nCols; j++)
     {
@@ -116,8 +116,8 @@ static std::vector<std::vector<double>> calcStats(MemoryManager& _data, const st
             if (fabs(_data.getElement(i, j, sTable) - vStats[STATS_AVG][j]) <= vStats[STATS_STD][j])
                 vStats[STATS_CONFINT][j]++;
 
-            vStats[STATS_SKEW][j] += intPower(_data.getElement(i, j, sTable) - vStats[STATS_AVG][j], 3);
-            vStats[STATS_EXC][j] += intPower(_data.getElement(i, j, sTable) - vStats[STATS_AVG][j], 4);
+            vStats[STATS_SKEW][j] += intPower(_data.getElement(i, j, sTable).real() - vStats[STATS_AVG][j], 3);
+            vStats[STATS_EXC][j] += intPower(_data.getElement(i, j, sTable).real() - vStats[STATS_AVG][j], 4);
         }
 
         // Finalize the confidence interval count
@@ -263,7 +263,7 @@ static void createStatsFile(Output& _out, const std::vector<std::vector<double>>
                 continue;
             }
 
-            sOut[i + nHeadlines][j] = toString(_data.getElement(i,j, sTable), _option); // Kopieren der Matrix in die Ausgabe
+            sOut[i + nHeadlines][j] = toString(_data.getElement(i,j, sTable), _option.getPrecision()); // Kopieren der Matrix in die Ausgabe
         }
 
         // Write the calculated stats to the columns

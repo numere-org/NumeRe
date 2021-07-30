@@ -61,7 +61,7 @@ namespace NumeRe
                 else
                 {
                     NumeReKernel::getInstance()->getParser().SetExpr(vTernary[0]);
-                    result = (bool)NumeReKernel::getInstance()->getParser().Eval();
+                    result = NumeReKernel::getInstance()->getParser().Eval() != 0.0;
                 }
 
                 // return the evaluated part of the string
@@ -346,7 +346,7 @@ namespace NumeRe
                     else
                     {
                         _parser.SetExpr(sLeft + " && " + sRight);
-                        return toString((bool)_parser.Eval());
+                        return toString(_parser.Eval() != 0.0);
                     }
                 }
             }
@@ -375,7 +375,7 @@ namespace NumeRe
                     else
                     {
                         _parser.SetExpr(sLeft + " ||| " + sRight);
-                        return toString((bool)_parser.Eval());
+                        return toString(_parser.Eval() != 0.0);
                     }
                 }
             }
@@ -404,7 +404,7 @@ namespace NumeRe
                     else
                     {
                         _parser.SetExpr(sLeft + " || " + sRight);
-                        return toString((bool)_parser.Eval());
+                        return toString(_parser.Eval() != 0.0);
                     }
                 }
             }

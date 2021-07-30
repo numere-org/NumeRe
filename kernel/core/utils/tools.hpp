@@ -73,7 +73,7 @@ string toString(double dNumber, const Settings& _option);
  *
  */
 string toString(double dNumber, int nPrecision);
-string toString(std::complex<double> dNumber, int nPrecision);
+string toString(const std::complex<double>& dNumber, int nPrecision);
 
 /** \brief Transforms an integer into a string
  *
@@ -115,6 +115,7 @@ string toString(size_t nNumber);
  *
  */
 string toCmdString(double dNumber);
+string toCmdString(const std::complex<double>& dNumber);
 
 /** \brief Macht aus einem bool einen String mit "true" oder "false"
  *
@@ -147,6 +148,7 @@ string truncString(const string& sText, size_t nMaxChars);
 
 
 long long int intCast(double number);
+long long int intCast(std::complex<double> number);
 string wcstombs(const wstring& wStr);
 void StripSpaces(string&);
 int findParameter(const string& sCmd, const string& sParam, const char cFollowing = ' ');
@@ -228,6 +230,7 @@ void addArgumentQuotes(string& sToAdd, size_t pos);
  *
  */
 double intPower(double dNumber, int nExponent);
+std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent);
 
 string getNextArgument(string& sArgList, bool bCut = true);
 string getNextIndex(string& sArgList, bool bCut = true);

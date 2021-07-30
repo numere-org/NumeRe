@@ -443,7 +443,7 @@ bool FunctionDefinition::convertToValues()
             {
                 if (sParsedDefinitionString.substr(i, (iter->first).length()) == iter->first && checkDelimiter(sParsedDefinitionString.substr(i-1, (iter->first).length()+2)))
                 {
-                    sParsedDefinitionString.replace(i, (iter->first).length(), toString(*iter->second, NumeReKernel::getInstance()->getSettings()));
+                    sParsedDefinitionString.replace(i, (iter->first).length(), toString(*iter->second, NumeReKernel::getInstance()->getSettings().getPrecision()));
                 }
             }
         }

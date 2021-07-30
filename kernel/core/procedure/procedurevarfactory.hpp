@@ -92,7 +92,7 @@ class ProcedureVarFactory
         string** sLocalTables;
         string** sLocalClusters;
 
-        double* dLocalVars;
+        mu::value_type* dLocalVars;
 
         size_t nArgumentMapSize;
         size_t nLocalVarMapSize;

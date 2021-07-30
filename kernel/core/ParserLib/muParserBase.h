@@ -50,6 +50,12 @@ namespace mu
 	    \brief This file contains the class definition of the muparser engine.
 	*/
 
+	std::vector<double> real(const std::vector<value_type>& vVec);
+	std::vector<double> imag(const std::vector<value_type>& vVec);
+	bool isinf(value_type v);
+	bool isnan(value_type v);
+	value_type rint(value_type v);
+
 	struct CachedDataAccess
 	{
 		std::string sAccessEquation; // Passed to parser_getIndices -> returns the indices for the current access
