@@ -24,6 +24,7 @@
 #include "core/datamanagement/database.hpp"
 
 #define KERNEL_PRINT_SLEEP 2
+#define TERMINAL_FORMAT_FIELD_LENOFFSET 16
 
 extern const string sVersion;
 /* --> STATUS: Versionsname des Programms; Aktuell "Ampere", danach "Angstroem". Ab 1.0 Namen mit "B",
@@ -2653,7 +2654,7 @@ string NumeReKernel::formatResultOutput(int nNum, value_type* v)
         // compose the result
         for (int i = 0; i < nNum; ++i)
         {
-            sAns += strfill(toString(v[i], _option.getPrecision()), _option.getPrecision() + 7);
+            sAns += strfill(toString(v[i], _option.getPrecision()), _option.getPrecision() + TERMINAL_FORMAT_FIELD_LENOFFSET);
 
             if (i < nNum - 1)
                 sAns += ", ";
@@ -2705,7 +2706,7 @@ string NumeReKernel::formatResultOutput(const vector<string>& vStringResults)
         // compose the result
         for (size_t i = 0; i < nNum; ++i)
         {
-            sAns += strfill(truncString(vStringResults[i], _option.getPrecision()+6), _option.getPrecision() + 7);
+            sAns += strfill(truncString(vStringResults[i], _option.getPrecision()+TERMINAL_FORMAT_FIELD_LENOFFSET-1), _option.getPrecision() + TERMINAL_FORMAT_FIELD_LENOFFSET);
 
             if (i < nNum - 1)
                 sAns += ", ";
@@ -2810,7 +2811,7 @@ int NumeReKernel::numberOfNumbersPerLine()
      * Links: 11 Zeichen bis [; rechts: vier Zeichen mit EOL;
      * Fuer jede Zahl: 1 Vorzeichen, 1 Dezimalpunkt, 5 Exponentenstellen, Praezision Ziffern, 1 Komma und 1 Leerstelle
      */
-    return (getInstance()->getSettings().getWindow() - 1 - 15) / (getInstance()->getSettings().getPrecision() + 9);
+    return (getInstance()->getSettings().getWindow() - 1 - 15) / (getInstance()->getSettings().getPrecision() + TERMINAL_FORMAT_FIELD_LENOFFSET+2);
 }
 
 

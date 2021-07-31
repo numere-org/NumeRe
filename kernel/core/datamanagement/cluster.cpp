@@ -799,7 +799,7 @@ namespace NumeRe
             else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 nInvalid++;
             else
-                dStd += (dAvg - vClusterArray[_vLine[i]]->getDouble()) * (dAvg - vClusterArray[_vLine[i]]->getDouble());
+                dStd += (dAvg - vClusterArray[_vLine[i]]->getDouble()) * conj(dAvg - vClusterArray[_vLine[i]]->getDouble());
         }
 
         if (nInvalid >= _vLine.size() - 1)

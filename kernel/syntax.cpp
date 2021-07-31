@@ -390,6 +390,7 @@ string NumeReSyntax::highlightLine(const string& sCommandLine)
                     || sCommandLine[i+nLen] == '.'
                     || sCommandLine[i+nLen] == 'e'
                     || sCommandLine[i+nLen] == 'E'
+                    || sCommandLine[i+nLen] == 'i'
                     || ((sCommandLine[i+nLen] == '-' || sCommandLine[i+nLen] == '+')
                         && (sCommandLine[i+nLen-1] == 'e' || sCommandLine[i+nLen-1] == 'E'))
                     )

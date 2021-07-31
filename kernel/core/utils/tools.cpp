@@ -46,25 +46,29 @@ string toString(double dNumber, int nPrecision)
     return Temp.str();
 }
 
+/////////////////////////////////////////////////
+/// \brief Converts a complex number into a
+/// printable string.
+///
+/// \param dNumber const std::complex<double>&
+/// \param nPrecision int
+/// \return string
+///
+/////////////////////////////////////////////////
 string toString(const std::complex<double>& dNumber, int nPrecision)
 {
     ostringstream Temp;
-    Temp.precision(nPrecision);
+    Temp.precision(std::rint(nPrecision / (dNumber.real() != 0.0 && dNumber.imag() != 0.0 && !isnan(dNumber.imag()) ? 2 : 1)));
 
     if (dNumber.real() || !dNumber.imag())
         Temp << dNumber.real();
 
     if (dNumber.imag())
     {
-        if (dNumber.imag() > 0.0 && dNumber.real() != 0.0)
+        if ((dNumber.imag() > 0.0 || isnan(dNumber.imag())) && dNumber.real() != 0.0)
             Temp << "+";
-        /*else if (dNumber.imag() == -1.0)
-            Temp << "-";
 
-        if (fabs(dNumber.imag()) != 1.0)
-            Temp << dNumber.imag();*/
-
-        Temp << dNumber.imag() << "i";
+        Temp << dNumber.imag() << (isnan(dNumber.imag()) || isinf(dNumber.imag()) ? " i" : "i");
     }
 
     return Temp.str();

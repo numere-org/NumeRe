@@ -1181,7 +1181,7 @@ static Matrix matrixStd(const MatFuncData& funcData, const MatFuncErrorInfo& err
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
             if (!isnan(funcData.mat1[i][j]))
-                _mReturn[0][0] += (funcData.mat1[i][j] - _mAvg[0][0])*(funcData.mat1[i][j] - _mAvg[0][0]);
+                _mReturn[0][0] += (funcData.mat1[i][j] - _mAvg[0][0])*conj(funcData.mat1[i][j] - _mAvg[0][0]);
         }
     }
 

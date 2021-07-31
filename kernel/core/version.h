@@ -4,7 +4,7 @@
 namespace AutoVersion{
 	
 	//Date Version Types
-	static const char DATE[] = "26";
+	static const char DATE[] = "31";
 	static const char MONTH[] = "07";
 	static const char YEAR[] = "2021";
 	static const char UBUNTU_VERSION_STYLE[] =  "21.07";
@@ -20,7 +20,7 @@ namespace AutoVersion{
 	static const long REVISION  = 673;
 	
 	//Miscellaneous Version Types
-	static const long BUILDS_COUNT  = 4505;
+	static const long BUILDS_COUNT  = 4718;
 	#define RC_FILEVERSION 1,1,3,673
 	#define RC_FILEVERSION_STRING "1, 1, 3, 673\0"
 	static const char FULLVERSION_STRING [] = "1.1.3.673";

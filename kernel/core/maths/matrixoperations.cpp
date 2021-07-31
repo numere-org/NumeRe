@@ -324,8 +324,9 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
 
                         _parser.SetExpr(sSubExpr);
                         v = _parser.Eval(nResults);
+                        mu::value_type fVal = v[0];
 
-                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), v[0]), errorInfo));
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), fVal), errorInfo));
                         break;
                     }
                     case MATSIG_MAT_F_N:
@@ -334,8 +335,10 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
 
                         _parser.SetExpr(sSubExpr);
                         v = _parser.Eval(nResults);
+                        mu::value_type fVal = v[0];
+                        int n = intCast(v[1]);
 
-                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), v[0], intCast(v[1])), errorInfo));
+                        vReturnedMatrices.push_back(fIter->second.func(MatFuncData(evalMatOp(sMatrix, _parser, _data, _functions, _option), fVal, n), errorInfo));
                         break;
                     }
                     case MATSIG_N_MOPT:
@@ -1247,6 +1250,34 @@ static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _
 }
 
 
+static std::string formatMatrixRow(const Matrix& _mResult, const Settings& _option, size_t row)
+{
+    const size_t FIELDLENGTH = 21;
+    const size_t FIELDLENGTH_W_FILLER = 23;
+    const size_t PRECISION = 7;
+
+    std::string sRow;
+
+    for (unsigned int col = 0; col < _mResult[row].size(); col++)
+    {
+        if (_mResult[row].size() > (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER
+            && (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 == col)
+        {
+            sRow += strfill("..., ", FIELDLENGTH_W_FILLER);
+            col = _mResult[row].size() - (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 - 1;
+            continue;
+        }
+
+        sRow += strfill(toString(_mResult[row][col], PRECISION), FIELDLENGTH);
+
+        if (col+1 < _mResult[row].size())
+            sRow += ", ";
+    }
+
+    return sRow;
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This static function formats and
 /// prints the calculated matrix to the terminal.
@@ -1260,67 +1291,53 @@ static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
 {
     if (!_option.systemPrints() || NumeReKernel::bSupressAnswer)
         return;
-    //(_option.getWindow()-1-15) / (_option.getPrecision()+9) _mResult.size() > (_option.getWindow()-1-15) / (4+9)
+
+    const size_t FIELDLENGTH = 21;
+    const size_t FIELDLENGTH_W_FILLER = 23;
+    const size_t PRECISION = 7;
+
     NumeReKernel::toggleTableStatus();
+
     if (_mResult.size() > 10)
     {
         for (unsigned int i = 0; i < _mResult.size(); i++)
         {
             if (!i)
-            {
                 NumeReKernel::printPreFmt("|   /");
-            }
             else if (i+1 == _mResult.size())
                 NumeReKernel::printPreFmt("|   \\");
             else if (i == 5)
                 NumeReKernel::printPreFmt("|-> |");
             else
                 NumeReKernel::printPreFmt("|   |");
+
             if (i == 5)
             {
                 for (unsigned int j = 0; j < _mResult[0].size(); j++)
                 {
-                    if (_mResult[0].size() > (_option.getWindow()-2-15) / (4+9)
-                        && (_option.getWindow()-2-15) / (4+9) / 2 == j)
+                    if (_mResult[0].size() > (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER
+                        && (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 == j)
                     {
-                        NumeReKernel::printPreFmt(strfill("..., ", 11));
-                        ///cerr << std::setfill(' ') << std::setw(11) << "..., ";
-                        j = _mResult[0].size() - (_option.getWindow()-2-15) / (4+9) / 2 - 1;
+                        NumeReKernel::printPreFmt(strfill("..., ", FIELDLENGTH_W_FILLER));
+                        j = _mResult[0].size() - (_option.getWindow()-2-15) / FIELDLENGTH_W_FILLER / 2 - 1;
                         continue;
                     }
-                    NumeReKernel::printPreFmt(strfill("...", 11));
-                    ///cerr << std::setfill(' ') << std::setw(11) << "...";
+
+                    NumeReKernel::printPreFmt(strfill("...", FIELDLENGTH));
+
                     if (j+1 < _mResult[0].size())
                         NumeReKernel::printPreFmt(", ");
-                        ///cerr << ", ";
                 }
+
                 i = _mResult.size()-6;
             }
             else
-            {
-                for (unsigned int j = 0; j < _mResult[0].size(); j++)
-                {
-                    if (_mResult[0].size() > (_option.getWindow()-2-15) / (4+9)
-                        && (_option.getWindow()-2-15) / (4+9) / 2 == j)
-                    {
-                        NumeReKernel::printPreFmt(strfill("..., ", 11));
-                        ///cerr << std::setfill(' ') << std::setw(11) << "..., ";
-                        j = _mResult[0].size() - (_option.getWindow()-2-15) / (4+9) / 2 - 1;
-                        continue;
-                    }
-                    NumeReKernel::printPreFmt(strfill(toString(_mResult[i][j], 4), 11));
-                    ///cerr << std::setfill(' ') << std::setw(11) << toString(_mResult[i][j],4);
-                    if (j+1 < _mResult[0].size())
-                        NumeReKernel::printPreFmt(", ");
-                        ///cerr << ", ";
-                }
-            }
+                NumeReKernel::printPreFmt(formatMatrixRow(_mResult, _option, i));
+
             if (!i)
                 NumeReKernel::printPreFmt(" \\\n");
             else if (i+1 == _mResult.size())
-            {
                 NumeReKernel::printPreFmt(" /\n");
-            }
             else
                 NumeReKernel::printPreFmt(" |\n");
         }
@@ -1330,33 +1347,12 @@ static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
         if (_mResult[0].size() == 1)
             NumeReKernel::print("(" + toString(_mResult[0][0], _option.getPrecision()) + ")");
         else
-        {
-            NumeReKernel::printPreFmt("|-> (");
-            for (unsigned int i = 0; i < _mResult[0].size(); i++)
-            {
-                if (_mResult[0].size() > (_option.getWindow()-2-15) / (4+9)
-                    && (_option.getWindow()-2-15) / (4+9) / 2 == i)
-                {
-                    NumeReKernel::printPreFmt(strfill("..., ", 11));
-                    ///cerr << std::setfill(' ') << std::setw(11) << "..., ";
-                    i = _mResult[0].size() - (_option.getWindow()-2-15) / (4+9) / 2 - 1;
-                    continue;
-                }
-                NumeReKernel::printPreFmt(strfill(toString(_mResult[0][i], 4), 11));
-                ///cerr << std::setfill(' ') << std::setw(11) << toString(_mResult[0][i],4);
-                if (i+1 < _mResult[0].size())
-                    NumeReKernel::printPreFmt(", ");
-                    ///cerr << ", ";
-            }
-            NumeReKernel::printPreFmt(" )\n");
-            ///cerr << " )" << endl;
-        }
+            NumeReKernel::print("(" + formatMatrixRow(_mResult, _option, 0) + " )");
     }
     else
     {
         for (unsigned int i = 0; i < _mResult.size(); i++)
         {
-
             if (!i && _mResult.size() == 2)
                 NumeReKernel::printPreFmt("|-> /");
             else if (!i)
@@ -1367,32 +1363,18 @@ static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
                 NumeReKernel::printPreFmt("|-> |");
             else
                 NumeReKernel::printPreFmt("|   |");
-            for (unsigned int j = 0; j < _mResult[0].size(); j++)
-            {
-                if (_mResult[0].size() > (_option.getWindow()-2-15) / (4+9)
-                    && ((_option.getWindow()-2-15) / (4+9)) / 2 == j)
-                {
-                    NumeReKernel::printPreFmt(strfill("..., ", 11));
-                    ///cerr << std::setfill(' ') << std::setw(11) << "..., ";
-                    j = _mResult[0].size() - (_option.getWindow()-2-15) / (4+9) / 2-1;
-                    continue;
-                }
-                NumeReKernel::printPreFmt(strfill(toString(_mResult[i][j], 4), 11));
-                ///cerr << std::setfill(' ') << std::setw(11) << toString(_mResult[i][j],4);
-                if (j+1 < _mResult[0].size())
-                    NumeReKernel::printPreFmt(", ");
-                    ///cerr << ", ";
-            }
+
+            NumeReKernel::printPreFmt(formatMatrixRow(_mResult, _option, i));
+
             if (!i)
                 NumeReKernel::printPreFmt(" \\\n");
             else if (i+1 == _mResult.size())
-            {
                 NumeReKernel::printPreFmt(" /\n");
-            }
             else
                 NumeReKernel::printPreFmt(" |\n");
         }
     }
+
     NumeReKernel::flush();
     NumeReKernel::toggleTableStatus();
     return;

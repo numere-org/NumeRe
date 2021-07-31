@@ -547,7 +547,7 @@ value_type parser_mol(value_type v)
 /////////////////////////////////////////////////
 value_type parser_imaginaryUnit(value_type v)
 {
-    return v * value_type(0, 1);
+    return value_type(v.imag() != 0.0 ? -v.imag() : 0.0, v.real());
 }
 
 
@@ -712,11 +712,11 @@ value_type parser_Binom(value_type v1, value_type v2)
         return NAN;
     else if (intCast(v2) > intCast(v1)) // v2 > v1 ==> binom = 0!
         return 0;
-    else if(intCast(v1) == intCast(v2) || (intCast(v1) != 0 && intCast(v2) == 0)) // v1 == v2 oder v2 == 0 und v1 != 0 ==> binom = 1!
+    else if (intCast(v1) == intCast(v2) || (intCast(v1) != 0 && intCast(v2) == 0)) // v1 == v2 oder v2 == 0 und v1 != 0 ==> binom = 1!
         return 1;
-    else if(intCast(v2) == 1 || intCast(v2) == intCast(v1)-1) // v2 == 1 oder v2 == v1-1 ==> binom = v1!
+    else if (intCast(v2) == 1 || intCast(v2) == intCast(v1)-1) // v2 == 1 oder v2 == v1-1 ==> binom = v1!
         return intCast(v1);
-    else if(intCast(v2) == 2 && intCast(v2) < intCast(v1)) // v2 == 2 und v2 < v1 ==> binom = v1*(v1-1) / v2!
+    else if (intCast(v2) == 2 && intCast(v2) < intCast(v1)) // v2 == 2 und v2 < v1 ==> binom = v1*(v1-1) / v2!
         return intCast(v1)*(intCast(v1)-1)/intCast(v2);
     else
     {
@@ -724,7 +724,7 @@ value_type parser_Binom(value_type v1, value_type v2)
          *     binom(v1,v2) = v1!/(v2!*(v1-v2)!) ausrechnen. Das machen wir, indem wir die Funktion
          *     parser_Faculty(value_type) aufrufen <--
          */
-        return parser_Faculty(v1) / (parser_Faculty(v2)*parser_Faculty( (value_type)( intCast(v1) - intCast(v2) ) ));
+        return parser_Faculty(v1) / (parser_Faculty(v2)*parser_Faculty(intCast(v1) - intCast(v2)));
     }
 }
 
@@ -786,11 +786,10 @@ value_type parser_Std(const value_type* vElements, int nElements)
     for (int i = 0; i < nElements; i++)
     {
         if (!isnan(vElements[i]))
-            vStd += (vElements[i] - vMean) * (vElements[i] - vMean);
+            vStd += (vElements[i] - vMean) * conj(vElements[i] - vMean);
     }
 
-    vStd = sqrt(vStd / (value_type)(parser_Num(vElements, nElements)-1.0));
-    return vStd;
+    return sqrt(vStd / (parser_Num(vElements, nElements)-1.0));
 }
 
 
@@ -1283,11 +1282,10 @@ value_type parser_round(value_type vToRound, value_type vDecimals)
     if (isinf(vToRound) || isinf(vDecimals) || isnan(vToRound) || isnan(vDecimals))
         return NAN;
 
-    double dDecimals = std::pow(10, -abs(intCast(vDecimals)));
+    double dDecimals = intPower(10, -abs(intCast(vDecimals)));
     vToRound = vToRound / dDecimals;
     vToRound = value_type(std::round(vToRound.real()), std::round(vToRound.imag()));
-    vToRound = vToRound * dDecimals;
-    return vToRound;
+    return vToRound * dDecimals;
 }
 
 
@@ -1338,10 +1336,10 @@ value_type parser_toDegree(value_type v)
 /////////////////////////////////////////////////
 value_type parser_SphericalHarmonics(value_type vl, value_type vm, value_type theta, value_type phi)
 {
-    if (isinf(vl) || isnan(vl)
-        || isinf(vm) || isnan(vm)
-        || isinf(theta) || isnan(theta)
-        || isinf(phi) || isnan(phi))
+    if (isinf(vl.real()) || isnan(vl.real())
+        || isinf(vm.real()) || isnan(vm.real())
+        || isinf(theta.real()) || isnan(theta.real())
+        || isinf(phi.real()) || isnan(phi.real()))
         return NAN;
 
     int l = intCast(fabs(vl));
@@ -1350,7 +1348,8 @@ value_type parser_SphericalHarmonics(value_type vl, value_type vm, value_type th
     if (abs(m) > l)
         return NAN;
     else
-        return sqrt((2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))*parser_AssociatedLegendrePolynomial(l,m,cos(theta.real()))*exp(value_type(0, m*phi.real()));
+        return sqrt((2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))
+            * parser_AssociatedLegendrePolynomial(l, m, cos(theta.real())) * exp(value_type(0, m*phi.real()));
 
     return 0.0;
 }
@@ -1369,10 +1368,10 @@ value_type parser_SphericalHarmonics(value_type vl, value_type vm, value_type th
 /////////////////////////////////////////////////
 value_type parser_imSphericalHarmonics(value_type vl, value_type vm, value_type theta, value_type phi)
 {
-    if (isinf(vl) || isnan(vl)
-        || isinf(vm) || isnan(vm)
-        || isinf(theta) || isnan(theta)
-        || isinf(phi) || isnan(phi))
+    if (isinf(vl.real()) || isnan(vl.real())
+        || isinf(vm.real()) || isnan(vm.real())
+        || isinf(theta.real()) || isnan(theta.real())
+        || isinf(phi.real()) || isnan(phi.real()))
         return NAN;
 
     int l = intCast(fabs(vl));
@@ -1381,7 +1380,8 @@ value_type parser_imSphericalHarmonics(value_type vl, value_type vm, value_type 
     if (abs(m) > l)
         return NAN;
     else
-        return sqrt((2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))*parser_AssociatedLegendrePolynomial(l,m,cos(theta.real()))*sin(m*phi.real());
+        return sqrt((2.0*l+1.0) * parser_Faculty(l-m) / (4.0 * M_PI * parser_Faculty(l+m)))
+            * parser_AssociatedLegendrePolynomial(l, m, cos(theta.real())) * sin(m*phi.real());
 
     return 0.0;
 }
@@ -1400,8 +1400,8 @@ value_type parser_imSphericalHarmonics(value_type vl, value_type vm, value_type 
 /////////////////////////////////////////////////
 value_type parser_Zernike(value_type vn, value_type vm, value_type rho, value_type phi)
 {
-    if (isinf(vn) || isnan(vn)
-        || isinf(vm) || isnan(vm)
+    if (isinf(vn.real()) || isnan(vn.real())
+        || isinf(vm.real()) || isnan(vm.real())
         || isinf(rho) || isnan(rho)
         || isinf(phi) || isnan(phi))
         return NAN;
@@ -1491,6 +1491,7 @@ value_type parser_SphericalBessel(value_type vn, value_type v)
     if (isinf(vn) || isinf(v) || isnan(vn) || isnan(v))
         return NAN;
     int n = intCast(fabs(vn));
+    v = v.real();
     if (!n && v == 0.0)
         return 1.0;
     else if (!n)
@@ -1539,6 +1540,7 @@ value_type parser_SphericalNeumann(value_type vn, value_type v)
     if (isinf(vn) || isnan(vn) || isinf(v) || isnan(v))
         return NAN;
     int n = intCast(fabs(vn));
+    v = v.real();
     if (v == 0.0)
         return INFINITY;
     else if (!n)
@@ -1723,7 +1725,7 @@ value_type parser_HermitePolynomial(value_type vn, value_type v)
 /////////////////////////////////////////////////
 value_type parser_BetheWeizsaecker(value_type vN, value_type vZ)
 {
-    if (isinf(vN) || isnan(vN) || isinf(vZ) || isnan(vZ))
+    if (isinf(vN.real()) || isnan(vN.real()) || isinf(vZ.real()) || isnan(vZ.real()))
         return NAN;
     // nan/inf
     double a_V = 15.67;
@@ -1766,7 +1768,7 @@ value_type parser_BetheWeizsaecker(value_type vN, value_type vZ)
 /////////////////////////////////////////////////
 value_type parser_Heaviside(value_type v)
 {
-    if (isinf(v) || isnan(v))
+    if (isinf(v.real()) || isnan(v.real()))
         return NAN;
 
     return v.real() >= 0.0;
@@ -1785,7 +1787,7 @@ value_type parser_Heaviside(value_type v)
 /////////////////////////////////////////////////
 value_type parser_phi(value_type x, value_type y)
 {
-    if (isinf(x) || isnan(x) || isinf(y) || isnan(y))
+    if (isinf(x.real()) || isnan(x.real()) || isinf(y.real()) || isnan(y.real()))
         return NAN;
     if (y.real() < 0)
         return M_PI+abs(M_PI + atan2(y.real(), x.real()));
@@ -1809,9 +1811,9 @@ value_type parser_theta(value_type x, value_type y, value_type z)
 {
     if (isinf(x) || isnan(x) || isinf(y) || isnan(y) || isinf(z) || isnan(z))
         return NAN;
-    if (!x.real() && !y.real() && !z.real())
+    if (x == 0.0 && y == 0.0 && z == 0.0)
         return M_PI/2;
-    return acos(z.real()/sqrt(x.real()*x.real()+y.real()*y.real()+z.real()*z.real()));
+    return acos(z/sqrt(x*conj(x)+y*conj(y)+z*conj(z)));
 }
 
 
@@ -1899,7 +1901,7 @@ value_type parser_gRandom(value_type vRandAvg, value_type vRandstd)
 /////////////////////////////////////////////////
 value_type parser_erf(value_type x)
 {
-    if (isinf(x) || isnan(x))
+    if (isinf(x.real()) || isnan(x.real()))
         return NAN;
     return erf(x.real());
 }
@@ -1915,7 +1917,7 @@ value_type parser_erf(value_type x)
 /////////////////////////////////////////////////
 value_type parser_erfc(value_type x)
 {
-    if (isinf(x) || isnan(x))
+    if (isinf(x.real()) || isnan(x.real()))
         return NAN;
     return erfc(x.real());
 }
@@ -1927,14 +1929,21 @@ value_type parser_erfc(value_type x)
 ///
 /// \param x value_type
 /// \return value_type
-/// \todo implement complex support
 ///
 /////////////////////////////////////////////////
 value_type parser_gamma(value_type x)
 {
     if (isinf(x) || isnan(x))
         return NAN;
-    return tgamma(x.real());
+
+    if (x.imag() == 0.0)
+        return tgamma(x.real());
+
+    gsl_sf_result lng;
+    gsl_sf_result arg;
+    gsl_sf_lngamma_complex_e(x.real(), x.imag(), &lng, &arg);
+
+    return std::polar(std::exp(lng.val), arg.val);
 }
 
 
@@ -2013,6 +2022,9 @@ value_type parser_IrregularCylBessel(value_type n, value_type x)
 /////////////////////////////////////////////////
 value_type parser_EllipticF(value_type phi, value_type k)
 {
+    k.imag(0);
+    phi.imag(0);
+
     if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi))
         return NAN;
 
@@ -2048,6 +2060,9 @@ value_type parser_EllipticF(value_type phi, value_type k)
 /////////////////////////////////////////////////
 value_type parser_EllipticE(value_type phi, value_type k)
 {
+    phi.imag(0);
+    k.imag(0);
+
     if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi))
         return NAN;
 
@@ -2084,6 +2099,10 @@ value_type parser_EllipticE(value_type phi, value_type k)
 /////////////////////////////////////////////////
 value_type parser_EllipticP(value_type phi, value_type n, value_type k)
 {
+    phi.imag(0);
+    n.imag(0);
+    k.imag(0);
+
     if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi) || isnan(n) || isinf(n))
         return NAN;
 
@@ -2120,6 +2139,10 @@ value_type parser_EllipticP(value_type phi, value_type n, value_type k)
 /////////////////////////////////////////////////
 value_type parser_EllipticD(value_type phi, value_type n, value_type k)
 {
+    phi.imag(0);
+    n.imag(0);
+    k.imag(0);
+
     if (isnan(k) || isnan(phi) || isinf(k) || isinf(phi) || isnan(n) || isinf(n))
         return NAN;
 
@@ -2155,6 +2178,9 @@ value_type parser_EllipticD(value_type phi, value_type n, value_type k)
 /////////////////////////////////////////////////
 value_type parser_beta(value_type a, value_type b)
 {
+    a.imag(0);
+    b.imag(0);
+
     if (isnan(a) || isnan(b) || isinf(a) || isinf(b))
         return NAN;
 
@@ -2175,6 +2201,8 @@ value_type parser_beta(value_type a, value_type b)
 /////////////////////////////////////////////////
 value_type parser_zeta(value_type n)
 {
+    n.imag(0);
+
     if (isnan(n) || isinf(n))
         return NAN;
 
@@ -2198,6 +2226,8 @@ value_type parser_zeta(value_type n)
 /////////////////////////////////////////////////
 value_type parser_clausen(value_type x)
 {
+    x.imag(0);
+
     if (isnan(x) || isinf(x))
         return NAN;
 
@@ -2215,6 +2245,8 @@ value_type parser_clausen(value_type x)
 /////////////////////////////////////////////////
 value_type parser_digamma(value_type x)
 {
+    x.imag(0);
+
     if (isnan(x) || isinf(x))
         return NAN;
 
@@ -2239,6 +2271,9 @@ value_type parser_digamma(value_type x)
 /////////////////////////////////////////////////
 value_type parser_polygamma(value_type n, value_type x)
 {
+    n.imag(0);
+    x.imag(0);
+
     if (isnan(n) || isnan(x) || isinf(n) || isinf(x) || x.real() <= 0 || n.real() < 0)
         return NAN;
 
@@ -2259,7 +2294,14 @@ value_type parser_dilogarithm(value_type x)
     if (isnan(x) || isinf(x))
         return NAN;
 
-    return gsl_sf_dilog(x.real());
+    if (x.imag() == 0.0)
+        return gsl_sf_dilog(x.real());
+
+    gsl_sf_result re;
+    gsl_sf_result im;
+
+    gsl_sf_complex_dilog_xy_e(x.real(), x.imag(), &re, &im);
+    return value_type(re.val, im.val);
 }
 
 
@@ -2415,6 +2457,8 @@ value_type parser_lcm(value_type n, value_type k)
 /////////////////////////////////////////////////
 value_type parser_Mod(value_type v1, value_type v2)
 {
+    v1.imag(0);
+    v2.imag(0);
     if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
         return NAN;
 
@@ -2436,7 +2480,7 @@ value_type parser_XOR(value_type v1, value_type v2)
     if (isinf(v1) || isnan(v1) || isinf(v2) || isnan(v2))
         return NAN;
 
-    return intCast(v1) xor intCast(v2);
+    return (v1 != 0.0) xor (v2 != 0.0);
 }
 
 
@@ -2546,6 +2590,8 @@ value_type parser_sleep(value_type milliseconds)
 /////////////////////////////////////////////////
 value_type parser_log_b(value_type b, value_type x)
 {
+    b.imag(0);
+
     if (isnan(b) || isnan(x) || isinf(b) || x.real() <= 0.0 || b.real() <= 0.0)
         return NAN;
 
@@ -2565,7 +2611,7 @@ value_type parser_log_b(value_type b, value_type x)
 /////////////////////////////////////////////////
 value_type parser_numereversion()
 {
-    return 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD;
+    return 100.0*AutoVersion::MAJOR+10.0*AutoVersion::MINOR + AutoVersion::BUILD + std::atof(AutoVersion::UBUNTU_VERSION_STYLE) / 100.0;
 }
 
 
