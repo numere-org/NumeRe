@@ -1338,10 +1338,7 @@ namespace NumeRe
 
                 for (int n = 0; n < nResults; n++)
                 {
-                    if (fabs(rint(v[n]) - v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
-                        sElement = toString(intCast(v[n]));
-                    else
-                        sElement = toString(v[n], _option.getPrecision());
+                    sElement = printValue(v[n]);
 
                     if (n < vCounts.size())
                         nLen = intCast(fabs(vCounts[n]));
@@ -1503,6 +1500,35 @@ namespace NumeRe
     string StringFuncHandler::getFunctionArgumentList(const string& sFunc, const string& sLine, size_t nStartPosition, size_t nEndPosition)
     {
         return sLine.substr(nStartPosition + sFunc.length(), nEndPosition - nStartPosition - sFunc.length());
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Prints a value to a string respecting
+    /// possible integer optimizations.
+    ///
+    /// \param value const mu::value_type&
+    /// \return std::string
+    ///
+    /////////////////////////////////////////////////
+    std::string StringFuncHandler::printValue(const mu::value_type& value)
+    {
+        // Is one of the components zero, then try to find an
+        // integer optimisation
+        if (value.imag() == 0.0)
+        {
+            if (fabs(rint(value.real()) - value.real()) < 1e-14 && fabs(value.real()) >= 1.0)
+                return toString(intCast(value.real()));
+        }
+        else if (value.real() == 0.0)
+        {
+            if (fabs(rint(value.imag()) - value.imag()) < 1e-14 && fabs(value.imag()) >= 1.0)
+                return toString(intCast(value.imag())) + "i";
+        }
+
+        // Otherwise do not optimize due to the fact that the
+        // precision will get halved in this case
+        return toString(value, NumeReKernel::getInstance()->getSettings().getPrecision());
     }
 
 }

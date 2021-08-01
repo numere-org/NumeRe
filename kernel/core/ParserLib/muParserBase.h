@@ -114,7 +114,7 @@ namespace mu
 			void replaceLocalVars(std::string& sLine);
 			bool checkDelimiter(StringView sLine);
 			void evaluateVectorExpansion(MutableStringView sSubExpr, std::vector<mu::value_type>& vResults);
-			void expandVector(double dFirst, double dLast, double dIncrement, std::vector<mu::value_type>& vResults);
+			void expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, std::vector<mu::value_type>& vResults);
 			void assignResultsToTarget(const varmap_type& varmap, int nFinalResults);
 
 		public:

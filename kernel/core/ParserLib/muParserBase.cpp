@@ -618,7 +618,7 @@ namespace mu
 
 					// Store the result in a new temporary vector
                     string sVectorVarName = CreateTempVectorVar(vResults);
-					sExpr.replace(i, j + 1 - i, sVectorVarName);
+					sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a:b}i
 				}
 				else
 				{
@@ -659,7 +659,7 @@ namespace mu
 						    // This is a usual vector
 						    // Store the vector result as a new temporary vector variable
                             string sVectorVarName = CreateTempVectorVar(vResults);
-							sExpr.replace(i, j + 1 - i, sVectorVarName);
+							sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a,b}i
 						}
 					}
 				}
@@ -760,9 +760,14 @@ namespace mu
             {
                 // This is an expansion. There are two possible cases
                 if (nResults == 2)
-                    expandVector(v[0].real(), v[1].real(), (v[0].real() < v[1].real() ? 1.0 : -1.0), vResults);
+                {
+                    mu::value_type diff = v[1] - v[0];
+                    diff.real(diff.real() > 0.0 ? 1.0 : (diff.real() < 0.0 ? -1.0 : 0.0));
+                    diff.imag(diff.imag() > 0.0 ? 1.0 : (diff.imag() < 0.0 ? -1.0 : 0.0));
+                    expandVector(v[0], v[1], diff, vResults);
+                }
                 else if (nResults == 3)
-                    expandVector(v[0].real(), v[2].real(), v[1].real(), vResults);
+                    expandVector(v[0], v[2], v[1], vResults);
             }
             else
             {
@@ -773,24 +778,46 @@ namespace mu
 	}
 
 
+    /////////////////////////////////////////////////
+    /// \brief Determines, whether the passed step is
+    /// still in valid range and therefore can be
+    /// done to expand the vector.
+    ///
+    /// \param current const mu::value_type&
+    /// \param last const mu::value_type&
+    /// \param d const mu::value_type&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    static bool stepIsStillPossible(const mu::value_type& current, const mu::value_type& last, const mu::value_type& d)
+	{
+	    mu::value_type fact(d.real() >= 0.0 ? 1.0 : -1.0, d.imag() >= 0.0 ? 1.0 : -1.0);
+
+	    return (current.real() * fact.real()) <= (last.real() * fact.real())
+            && (current.imag() * fact.imag()) <= (last.imag() * fact.imag());
+	}
+
+
     /** \brief This function expands the vector.
      *
-     * \param dFirst double
-     * \param dLast double
-     * \param dIncrement double
+     * \param dFirst const mu::value_type&
+     * \param dLast const mu::value_type&
+     * \param dIncrement const mu::value_type&
      * \param vResults vector<mu::value_type>&
      * \return void
      *
      * This function expands the vector. Private member used by ParserBase::evaluateVectorExpansion()
      *
      */
-	void ParserBase::expandVector(double dFirst, double dLast, double dIncrement, vector<mu::value_type>& vResults)
+	void ParserBase::expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, vector<mu::value_type>& vResults)
 	{
 		// ignore impossible combinations. Store only
 		// the accessible value
-		if ((dFirst < dLast && dIncrement < 0)
-				|| (dFirst > dLast && dIncrement > 0)
-				|| dIncrement == 0)
+		if ((dFirst.real() < dLast.real() && dIncrement.real() < 0)
+            || (dFirst.imag() < dLast.imag() && dIncrement.imag() < 0)
+            || (dFirst.real() > dLast.real() && dIncrement.real() > 0)
+            || (dFirst.imag() > dLast.imag() && dIncrement.imag() > 0)
+            || dIncrement == 0.0)
 		{
 			vResults.push_back(dFirst);
 			return;
@@ -799,25 +826,12 @@ namespace mu
 		// Store the first value
 		vResults.push_back(dFirst);
 
-		// Depending on the relation of the first and last value, change the expansion algorithm
-		if (dFirst <= dLast)
-		{
-		    // Avoid rounding errors by allowing a little bit larger values than the last one
-			while (dFirst + dIncrement <= dLast + 1e-10 * dIncrement)
-			{
-				dFirst += dIncrement;
-				vResults.push_back(dFirst);
-			}
-		}
-		else
-		{
-		    // Avoid rounding errors by allowing a little bit smaller values than the last one
-			while (dFirst + dIncrement >= dLast + 1e-10 * dIncrement)
-			{
-				dFirst += dIncrement;
-				vResults.push_back(dFirst);
-			}
-		}
+		// As long as the next step is possible, add the increment
+		while (stepIsStillPossible(dFirst+dIncrement, dLast+1e-10*dIncrement, dIncrement))
+        {
+            dFirst += dIncrement;
+            vResults.push_back(dFirst);
+        }
 	}
 
 

@@ -526,12 +526,11 @@ namespace NumeRe
                 // Convert all results into strings
                 for (int n = 0; n < nResults; n++)
                 {
-                    if (fabs(rint(v[n]) - v[n]) < 1e-14 && fabs(v[n]) >= 1.0)
-                        sElement = toString(intCast(v[n]));
-                    else
-                        sElement = toString(v[n], _option.getPrecision());
+                    sElement = printValue(v[n]);
+
                     while (sElement.length() < sPrefix.length() + 1)
                         sElement.insert(0, 1, '0');
+
                     vResults.push_back(addQuotationMarks(sElement));
                 }
 
