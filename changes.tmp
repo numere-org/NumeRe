@@ -1,2 +1,3 @@
 Fixed	Accessing a URL without a filename and downloading its contents to a file is now possible.
 Cleaned	The debugger will now clear its error field contents at a new breakpoint.
+Fixed	A startup with old-style documentation files in the local directory is now possible.

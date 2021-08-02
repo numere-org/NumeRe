@@ -501,14 +501,21 @@ void Documentation::addFileToDocumentationIndex(const std::string& sFileName)
     if (!sFileName.length())
         return;
 
-    DocumentationFile docFile(sFileName);
-
-    // Parse the file and add it to the documentation
-    // index
-    for (DocumentationArticle& article : docFile.getArticles())
+    try
     {
-        if (article.m_keywords.size())
-            addEntry(article.m_docEntry, article.m_keywords);
+        DocumentationFile docFile(sFileName);
+
+        // Parse the file and add it to the documentation
+        // index
+        for (DocumentationArticle& article : docFile.getArticles())
+        {
+            if (article.m_keywords.size())
+                addEntry(article.m_docEntry, article.m_keywords);
+        }
+    }
+    catch (...)
+    {
+        // Catch all to avoid issues during start-up
     }
 }
 
