@@ -1,2 +1,4 @@
 Fixed	Accessing a URL without a filename and downloading its contents to a file is now possible.
 Cleaned	The debugger will now clear its error field contents at a new breakpoint.
+New	NumeRe now support complex numbers. Complex numbers may be entered using a number followed by the letter "i" or by using the function "complex()"
+Added	Functions for complex numbers were added: "real()", "imag()", "to_rect()", "to_polar()", "conj()" and "complex()"

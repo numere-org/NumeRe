@@ -176,13 +176,19 @@ string toCmdString(double dNumber)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Converts a numerical value into a
+/// "full" precision string
+///
+/// \param dNumber const std::complex<double>&
+/// \return string
+///
+/////////////////////////////////////////////////
 string toCmdString(const std::complex<double>& dNumber)
 {
-    ostringstream Temp;
-    Temp.precision(20);
-    Temp << dNumber;
-    return Temp.str();
+    return toString(dNumber, 20);
 }
+
 
 // integer into a Hex value (used for pointers)
 string toHexString(int nNumber)
