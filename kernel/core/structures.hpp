@@ -29,7 +29,7 @@
 
 using namespace std;
 
-long long int intCast(std::complex<double>);
+long long int intCast(const std::complex<double>&);
 std::string toString(long long int);
 
 

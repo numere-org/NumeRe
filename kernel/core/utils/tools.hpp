@@ -46,109 +46,26 @@ enum TIMESTAMP
     GET_WITH_TEXT = 4
 };
 
-
-/** \brief Macht aus einem Int ein String (mit Praezision)
- *
- * \param nNumber int
- * \param _option const Settings&
- * \return string
- *
- */
-string toString(int nNumber, const Settings& _option);
-
-/** \brief Macht aus einem Double ein String (Wobei die Praezision beachtet wird)
- *
- * \param dNumber double
- * \param _option const Settings&
- * \return string
- *
- */
-string toString(double dNumber, const Settings& _option);
-
-/** \brief Macht aus einem Double einen String mit beliebiger Preazision
- *
- * \param dNumber double
- * \param nPrecision int
- * \return string
- *
- */
-string toString(double dNumber, int nPrecision);
-string toString(const std::complex<double>& dNumber, int nPrecision);
-
-/** \brief Transforms an integer into a string
- *
- * \param int
- * \return string
- *
- */
-string toString(int);
-
-/** \brief Transforms a time_t into a string (formatted as time)
- *
- * \param tTime __time64_t
- * \param timeStampFlags int
- * \return string
- *
- */
-string toString(__time64_t tTime, int timeStampFlags);
-
-/** \brief Macht aus einem Int ein String (ohne Praezision)
- *
- * \param nNumber long longint
- * \return string
- *
- */
-string toString(long long int nNumber);
-
-/** \brief Macht aus einem size_t ein String (ohne Praezision)
- *
- * \param nNumber size_t
- * \return string
- *
- */
-string toString(size_t nNumber);
-
-/** \brief Macht aus einem Double einen String mit 20 Ziffern
- *
- * \param dNumber double
- * \return string
- *
- */
-string toCmdString(double dNumber);
-string toCmdString(const std::complex<double>& dNumber);
-
-/** \brief Macht aus einem bool einen String mit "true" oder "false"
- *
- * \param bBoolean bool
- * \return string
- *
- */
-string toString(bool bBoolean);
-
-/** \brief Transforms the passed int into a string using the hexidecimal representation
- *
- * \param nNumber int
- * \return string
- *
- */
-string toHexString(int nNumber);
-string toString(const vector<int>& vVector);
-vector<int> toVector(string sString);
-
-/** \brief Removes vowels and umlauts from strings
- *
- * \param sText const string&
- * \return string
- *
- */
-string condenseText(const string& sText);
-
-string truncString(const string& sText, size_t nMaxChars);
-
+std::string toString(int nNumber, const Settings& _option);
+std::string toString(double dNumber, const Settings& _option);
+std::string toString(double dNumber, int nPrecision);
+std::string toString(const std::complex<double>& dNumber, int nPrecision);
+std::string toString(int);
+std::string toString(__time64_t tTime, int timeStampFlags);
+std::string toString(long long int nNumber);
+std::string toString(size_t nNumber);
+std::string toCmdString(double dNumber);
+std::string toCmdString(const std::complex<double>& dNumber);
+std::string toString(bool bBoolean);
+std::string toHexString(int nNumber);
+std::string toString(const std::vector<int>& vVector);
+std::vector<int> toVector(std::string sString);
+std::string condenseText(const std::string& sText);
+std::string truncString(const std::string& sText, size_t nMaxChars);
 
 
 long long int intCast(double number);
-long long int intCast(std::complex<double> number);
+long long int intCast(const std::complex<double>& number);
 string wcstombs(const wstring& wStr);
 void StripSpaces(string&);
 int findParameter(const string& sCmd, const string& sParam, const char cFollowing = ' ');
