@@ -2086,6 +2086,55 @@ static string strfnc_basetodec(StringFuncArgs& funcArgs)
 }
 
 
+//TODO: Doxy
+static string strfnc_justify(StringFuncArgs& funcArgs)
+{
+    // mHandleTable["justify"] = StringFuncHandle(STR_VAL, strfnc_justify, true);
+
+    //NOTE: wie funktioniert das struct StringFuncArgs ?
+    //NOTE: warum dort long long int?
+
+    // Remove the masked strings
+    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+
+    // Examine the whole string array
+    for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+    {
+        // Remove the masked strings
+        funcArgs.sMultiArg[i] = removeMaskedStrings(funcArgs.sMultiArg[i]);
+    }
+
+    //NOTE: Wo sind die strings drin? sMultiArg? Was hat es mit nMultiArg auf sich?
+    // Find the string of max length
+    size_t maxLength = -1;
+    for (std::string thisString: funcArgs.sMultiArg)
+    {
+        if (thisString.size() > maxLength)
+            maxLength = line.size();
+    }
+
+    //NOTE: Wie soll der Nutzer den justify mode uebergeben? sArg/nArg ?
+    mode = ?;
+    // Fill all string with as many whitespaces as necessary
+    for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+    {
+        if (mode == "left")
+            funcArgs.sMultiArg[i].insert(0, std::string(maxLength - funcArgs.sMultiArg[i].size(), " ");
+        else if (mode == "right")
+            funcArgs.sMultiArg[i].append(std::string(maxLength - funcArgs.sMultiArg[i].size(), " ");
+        else if (mode == "centered")
+        {
+            size_t leftSpace = std::string(maxLength - funcArgs.sMultiArg[i].size()) / 2;
+            size_t rightSpace = maxLength - leftSpace;
+            funcArgs.sMultiArg[i].insert(0, std::string(leftSpace, " "));
+            funcArgs.sMultiArg[i].append(std::string(rightSpace, " "));
+        }
+    }
+
+    //NOTE: muessten nicht die masked strings auch wieder masked werden? Wenn nein warum nicht und warum sind sie dann am Anfang ueberhaupt masked?
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This static function is used to construct
 /// the string map.
@@ -2128,6 +2177,7 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["is_space"]            = StringFuncHandle(STR, strfnc_isspace, false);
     mHandleTable["is_upper"]            = StringFuncHandle(STR, strfnc_isupper, false);
     mHandleTable["is_xdigit"]           = StringFuncHandle(STR, strfnc_isxdigit, false);
+    mHandleTable["justify"]             = StringFuncHandle(STR_VAL, strfnc_justify, true);
     mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
     mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
     mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);
