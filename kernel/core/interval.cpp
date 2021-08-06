@@ -61,7 +61,7 @@ double Interval::getSample(size_t n, size_t nSamples) const
     if (m_vInterval.size() == 2)
         // Usual interval access using the two values as start
         // and end of the interval
-        return m_vInterval.front() + (m_vInterval.back() - m_vInterval.front()) / (double)((nSamples-1) * n);
+        return m_vInterval.front() + (m_vInterval.back() - m_vInterval.front()) / (double)(nSamples-1) * n;
     else if (m_vInterval.size() == nSamples)
     {
         // In this case we have more than two values in
