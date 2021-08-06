@@ -140,7 +140,7 @@ static void evaluateExpression(std::string& sExpr)
     instance->getParser().SetExpr(sExpr);
 
     int results;
-    value_type* v = instance->getParser().Eval(results);
+    mu::value_type* v = instance->getParser().Eval(results);
 
     sExpr.clear();
 
@@ -566,7 +566,7 @@ void windowCommand(CommandLineParser& cmdParser)
                     cmdParser.setReturnValue("nan");
                 else
                 {
-                    std::vector<double> vRes;
+                    std::vector<mu::value_type> vRes;
 
                     // Convert the ints to doubles
                     for (auto items : vItems)

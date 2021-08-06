@@ -872,7 +872,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(const std::string& sArgumen
                         // Evaluate numerical expressions
                         _parserRef->SetExpr(sArgumentMap[i][1]);
                         int nRes = 0;
-                        value_type* v = _parserRef->Eval(nRes);
+                        mu::value_type* v = _parserRef->Eval(nRes);
 
                         if (nRes > 1)
                         {
@@ -883,7 +883,7 @@ void ProcedureVarFactory::evaluateProcedureArguments(const std::string& sArgumen
                         }
                         else
                         {
-                            value_type* newVar = new value_type;
+                            mu::value_type* newVar = new mu::value_type;
                             *newVar = v[0];
                             _parserRef->m_lDataStorage.push_back(newVar);
                             _parserRef->DefineVar(sNewArgName, newVar);
@@ -964,7 +964,7 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
     nLocalVarMapSize = countVarListElements(sVarList);
 
     sLocalVars = new string*[nLocalVarMapSize];
-    dLocalVars = new double[nLocalVarMapSize];
+    dLocalVars = new mu::value_type[nLocalVarMapSize];
 
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalVarMapSize; i++)

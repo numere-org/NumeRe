@@ -49,7 +49,7 @@ namespace NumeRe
     }
 
     // Private double vector assign ment function
-    void Cluster::assign(const vector<double>& vVals)
+    void Cluster::assign(const vector<mu::value_type>& vVals)
     {
         bSortCaseInsensitive = false;
 
@@ -84,7 +84,7 @@ namespace NumeRe
 
     // Private result assignment function for doubles
     // using vectors as indices
-    void Cluster::assignVectorResults(Indices _idx, int nNum, double* data)
+    void Cluster::assignVectorResults(Indices _idx, int nNum, mu::value_type* data)
     {
         if (nGlobalType != ClusterItem::ITEMTYPE_DOUBLE)
             nGlobalType = ClusterItem::ITEMTYPE_INVALID;
@@ -138,7 +138,7 @@ namespace NumeRe
         }
         else if (isDouble())
         {
-            if (vClusterArray[i]->getDouble() < vClusterArray[j]->getDouble())
+            if (vClusterArray[i]->getDouble().real() < vClusterArray[j]->getDouble().real())
                 return -1;
 
             if (vClusterArray[i]->getDouble() == vClusterArray[j]->getDouble())
@@ -154,7 +154,7 @@ namespace NumeRe
     // sorter object
     bool Cluster::isValue(int line, int col)
     {
-        if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_DOUBLE && !isnan(vClusterArray[line]->getDouble()))
+        if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_DOUBLE && !isnan(vClusterArray[line]->getDouble().real()))
             return true;
 
         if (vClusterArray[line]->getType() == ClusterItem::ITEMTYPE_STRING && vClusterArray[line]->getString() != "\"\"")
@@ -194,7 +194,7 @@ namespace NumeRe
 
     // This member function constructs a new double cluster
     // item at the back of the internal clsuter array buffer
-    void Cluster::push_back(double val)
+    void Cluster::push_back(mu::value_type val)
     {
         vClusterArray.push_back(new ClusterDoubleItem(val));
 
@@ -249,7 +249,7 @@ namespace NumeRe
         for (size_t i = 0; i < vClusterArray.size(); i++)
         {
             if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_DOUBLE)
-                nBytes += sizeof(double);
+                nBytes += sizeof(mu::value_type);
             else if (vClusterArray[i]->getType() == ClusterItem::ITEMTYPE_STRING)
                 nBytes += sizeof(char) * (vClusterArray[i]->getString().length()-2);
         }
@@ -370,7 +370,7 @@ namespace NumeRe
 
     // This member function returns the data of the i-th
     // cluster item in memory as a double
-    double Cluster::getDouble(size_t i) const
+    mu::value_type Cluster::getDouble(size_t i) const
     {
         if (vClusterArray.size() > i)
             return vClusterArray[i]->getDouble();
@@ -381,7 +381,7 @@ namespace NumeRe
     // This member function assigns a double as data for
     // the i-th cluster item in memory. The type of the
     // i-th cluster item is adapted on-the-fly
-    void Cluster::setDouble(size_t i, double value)
+    void Cluster::setDouble(size_t i, mu::value_type value)
     {
         // Create new items if needed
         while (vClusterArray.size() <= i)
@@ -402,9 +402,9 @@ namespace NumeRe
 
     // This member function returns the data of all cluster
     // items memory as a double vector
-    vector<double> Cluster::getDoubleArray() const
+    vector<mu::value_type> Cluster::getDoubleArray() const
     {
-        vector<double> vArray;
+        vector<mu::value_type> vArray;
 
         for (size_t i = 0; i < vClusterArray.size(); i++)
         {
@@ -417,7 +417,7 @@ namespace NumeRe
     // This member function inserts the data of all cluster
     // items memory into the pointer passed to the function.
     // This function is used for cached memory accesses
-    void Cluster::insertDataInArray(vector<double>* vTarget, const VectorIndex& _vLine)
+    void Cluster::insertDataInArray(vector<mu::value_type>* vTarget, const VectorIndex& _vLine)
     {
         if (vTarget == nullptr)
             return;
@@ -448,7 +448,7 @@ namespace NumeRe
     // This member function assigns a doubles as data for
     // the all cluster items in memory. The type of the
     // cluster items is adapted on-the-fly
-    void Cluster::setDoubleArray(const vector<double>& vVals)
+    void Cluster::setDoubleArray(const vector<mu::value_type>& vVals)
     {
         // Create new cluster items, if needed
         while (vClusterArray.size() < vVals.size())
@@ -473,7 +473,7 @@ namespace NumeRe
     // This member function assigns a doubles as data for
     // the all cluster items in memory. The type of the
     // cluster items is adapted on-the-fly
-    void Cluster::setDoubleArray(int nNum, double* data)
+    void Cluster::setDoubleArray(int nNum, mu::value_type* data)
     {
         // Create new cluster items, if needed
         while (vClusterArray.size() < (size_t)nNum)
@@ -499,7 +499,7 @@ namespace NumeRe
     // as data for the cluster items in memory, which are
     // referenced by the passed indices. The type of the
     // cluster items is adapted on-the-fly
-    void Cluster::assignResults(Indices _idx, int nNum, double* data)
+    void Cluster::assignResults(Indices _idx, int nNum, mu::value_type* data)
     {
         // If the indices indicate a complete override
         // do that here and return
@@ -781,14 +781,14 @@ namespace NumeRe
     // This member function calculates the standard deviation
     // of the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::std(const VectorIndex& _vLine)
+    mu::value_type Cluster::std(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
 
         // Calculate the average of the referenced items
-        double dAvg = avg(_vLine);
-        double dStd = 0.0;
+        mu::value_type dAvg = avg(_vLine);
+        mu::value_type dStd = 0.0;
         unsigned int nInvalid = 0;
 
         // Apply the operation and ignore invalid or non-double items
@@ -796,27 +796,27 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 nInvalid++;
             else
-                dStd += (dAvg - vClusterArray[_vLine[i]]->getDouble()) * (dAvg - vClusterArray[_vLine[i]]->getDouble());
+                dStd += (dAvg - vClusterArray[_vLine[i]]->getDouble()) * conj(dAvg - vClusterArray[_vLine[i]]->getDouble());
         }
 
         if (nInvalid >= _vLine.size() - 1)
             return NAN;
 
-        return sqrt(dStd / ((_vLine.size()) - 1 - nInvalid));
+        return sqrt(dStd / ((_vLine.size()) - 1 - (double)nInvalid));
     }
 
     // This member function calculates the average of
     // the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::avg(const VectorIndex& _vLine)
+    mu::value_type Cluster::avg(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
 
-        double dAvg = 0.0;
+        mu::value_type dAvg = 0.0;
         unsigned int nInvalid = 0;
 
         // Apply the operation and ignore invalid or non-double items
@@ -824,7 +824,7 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 nInvalid++;
             else
                 dAvg += vClusterArray[_vLine[i]]->getDouble();
@@ -833,13 +833,13 @@ namespace NumeRe
         if (nInvalid >= _vLine.size())
             return NAN;
 
-        return dAvg / (_vLine.size() - nInvalid);
+        return dAvg / (_vLine.size() - (double)nInvalid);
     }
 
     // This member function calculates the maximal value
     // of the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::max(const VectorIndex& _vLine)
+    mu::value_type Cluster::max(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() || isString())
             return NAN;
@@ -852,14 +852,14 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
             if (isnan(dMax))
-                dMax = vClusterArray[_vLine[i]]->getDouble();
+                dMax = vClusterArray[_vLine[i]]->getDouble().real();
 
-            if (dMax < vClusterArray[_vLine[i]]->getDouble())
-                dMax = vClusterArray[_vLine[i]]->getDouble();
+            if (dMax < vClusterArray[_vLine[i]]->getDouble().real())
+                dMax = vClusterArray[_vLine[i]]->getDouble().real();
         }
 
         return dMax;
@@ -895,7 +895,7 @@ namespace NumeRe
     // This member function calculates the minimal value
     // of the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::min(const VectorIndex& _vLine)
+    mu::value_type Cluster::min(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() || isString())
             return NAN;
@@ -908,14 +908,14 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
             if (isnan(dMin))
-                dMin = vClusterArray[_vLine[i]]->getDouble();
+                dMin = vClusterArray[_vLine[i]]->getDouble().real();
 
-            if (dMin > vClusterArray[_vLine[i]]->getDouble())
-                dMin = vClusterArray[_vLine[i]]->getDouble();
+            if (dMin > vClusterArray[_vLine[i]]->getDouble().real())
+                dMin = vClusterArray[_vLine[i]]->getDouble().real();
         }
 
         return dMin;
@@ -951,12 +951,12 @@ namespace NumeRe
     // This member function calculates the product
     // of the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::prd(const VectorIndex& _vLine)
+    mu::value_type Cluster::prd(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
 
-        double dPrd = 1.0;
+        mu::value_type dPrd = 1.0;
 
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
@@ -964,7 +964,7 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 continue;
 
-            if (isnan(vClusterArray[_vLine[i]]->getDouble()))
+            if (isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 continue;
 
             dPrd *= vClusterArray[_vLine[i]]->getDouble();
@@ -976,12 +976,12 @@ namespace NumeRe
     // This member function calculates the sum of the
     // data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::sum(const VectorIndex& _vLine)
+    mu::value_type Cluster::sum(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size() && isString())
             return NAN;
 
-        double dSum = 0.0;
+        mu::value_type dSum = 0.0;
 
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
@@ -989,7 +989,7 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 continue;
 
             dSum += vClusterArray[_vLine[i]]->getDouble();
@@ -1024,7 +1024,7 @@ namespace NumeRe
     // This member function counts the number of valid cluster
     // items in memory. Cluster items of any type are counted, if
     // they do have a valid value (depending on their type)
-    double Cluster::num(const VectorIndex& _vLine)
+    mu::value_type Cluster::num(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0;
@@ -1036,19 +1036,19 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE && isnan(vClusterArray[_vLine[i]]->getDouble()))
+            else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE && isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
             else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_STRING && vClusterArray[_vLine[i]]->getString() == "\"\"")
                 nInvalid++;
         }
 
-        return _vLine.size() - nInvalid;
+        return _vLine.size() - (double)nInvalid;
     }
 
     // This member function applies an "AND" to
     // the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::and_func(const VectorIndex& _vLine)
+    mu::value_type Cluster::and_func(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0.0;
@@ -1064,7 +1064,7 @@ namespace NumeRe
             if (isnan(dRetVal))
                 dRetVal = 1.0;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()) || vClusterArray[_vLine[i]]->getDouble() == 0)
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()) || vClusterArray[_vLine[i]]->getDouble() == 0.0)
                 return 0.0;
         }
 
@@ -1077,7 +1077,7 @@ namespace NumeRe
     // This member function applies an "OR" to
     // the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::or_func(const VectorIndex& _vLine)
+    mu::value_type Cluster::or_func(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0.0;
@@ -1089,7 +1089,7 @@ namespace NumeRe
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE
-                && (isnan(vClusterArray[_vLine[i]]->getDouble()) || vClusterArray[_vLine[i]]->getDouble() != 0))
+                && (isnan(vClusterArray[_vLine[i]]->getDouble().real()) || vClusterArray[_vLine[i]]->getDouble() != 0.0))
                 return 1.0;
         }
 
@@ -1099,7 +1099,7 @@ namespace NumeRe
     // This member function applies an "exclusive OR" to
     // the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::xor_func(const VectorIndex& _vLine)
+    mu::value_type Cluster::xor_func(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0.0;
@@ -1113,7 +1113,7 @@ namespace NumeRe
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE
-                && (isnan(vClusterArray[_vLine[i]]->getDouble()) || vClusterArray[_vLine[i]]->getDouble() != 0))
+                && (isnan(vClusterArray[_vLine[i]]->getDouble().real()) || vClusterArray[_vLine[i]]->getDouble() != 0.0))
             {
                 if (!isTrue)
                     isTrue = true;
@@ -1131,7 +1131,7 @@ namespace NumeRe
     // This member function counts the number of valid cluster
     // items in memory. Cluster items of any type are counted, if
     // the vector index points to a valid location
-    double Cluster::cnt(const VectorIndex& _vLine)
+    mu::value_type Cluster::cnt(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return 0;
@@ -1144,18 +1144,18 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 nInvalid++;
         }
-        return _vLine.size()  - nInvalid;
+        return _vLine.size() - (double)nInvalid;
     }
 
     // This member function calculates the euclidic vector norm
     // of the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::norm(const VectorIndex& _vLine)
+    mu::value_type Cluster::norm(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
 
-        double dNorm = 0.0;
+        mu::value_type dNorm = 0.0;
 
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
@@ -1163,10 +1163,10 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 continue;
 
-            dNorm += vClusterArray[_vLine[i]]->getDouble() * vClusterArray[_vLine[i]]->getDouble();
+            dNorm += vClusterArray[_vLine[i]]->getDouble() * conj(vClusterArray[_vLine[i]]->getDouble());
         }
 
         return sqrt(dNorm);
@@ -1176,7 +1176,7 @@ namespace NumeRe
     // the referenced value and returns indices or values depending
     // on the passed type. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::cmp(const VectorIndex& _vLine, double dRef, int _nType)
+    mu::value_type Cluster::cmp(const VectorIndex& _vLine, mu::value_type dRef, int _nType)
     {
         if (!vClusterArray.size())
             return NAN;
@@ -1191,7 +1191,7 @@ namespace NumeRe
 
         int nType = 0;
 
-        double dKeep = dRef;
+        mu::value_type dKeep = dRef;
         int nKeep = -1;
 
         if (_nType > 0)
@@ -1218,7 +1218,7 @@ namespace NumeRe
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 continue;
 
-            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 continue;
 
             if (vClusterArray[_vLine[i]]->getDouble() == dRef)
@@ -1228,37 +1228,37 @@ namespace NumeRe
 
                 return _vLine[i] + 1;
             }
-            else if (nType & RETURN_GE && vClusterArray[_vLine[i]]->getDouble() > dRef)
+            else if (nType & RETURN_GE && vClusterArray[_vLine[i]]->getDouble().real() > dRef.real())
             {
                 if (nType & RETURN_FIRST)
                 {
                     if (nType & RETURN_VALUE)
-                        return vClusterArray[_vLine[i]]->getDouble();
+                        return vClusterArray[_vLine[i]]->getDouble().real();
 
                     return _vLine[i]+1;
                 }
 
-                if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble() < dKeep)
+                if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble().real() < dKeep.real())
                 {
-                    dKeep = vClusterArray[_vLine[i]]->getDouble();
+                    dKeep = vClusterArray[_vLine[i]]->getDouble().real();
                     nKeep = _vLine[i];
                 }
                 else
                     continue;
             }
-            else if (nType & RETURN_LE && vClusterArray[_vLine[i]]->getDouble() < dRef)
+            else if (nType & RETURN_LE && vClusterArray[_vLine[i]]->getDouble().real() < dRef.real())
             {
                 if (nType & RETURN_FIRST)
                 {
                     if (nType & RETURN_VALUE)
-                        return vClusterArray[_vLine[i]]->getDouble();
+                        return vClusterArray[_vLine[i]]->getDouble().real();
 
                     return _vLine[i]+1;
                 }
 
-                if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble() > dKeep)
+                if (nKeep == -1 || vClusterArray[_vLine[i]]->getDouble().real() > dKeep.real())
                 {
-                    dKeep = vClusterArray[_vLine[i]]->getDouble();
+                    dKeep = vClusterArray[_vLine[i]]->getDouble().real();
                     nKeep = _vLine[i];
                 }
                 else
@@ -1277,7 +1277,7 @@ namespace NumeRe
     // This member function calculates the median value
     // of the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::med(const VectorIndex& _vLine)
+    mu::value_type Cluster::med(const VectorIndex& _vLine)
     {
         if (!vClusterArray.size())
             return NAN;
@@ -1292,7 +1292,7 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
         }
 
@@ -1305,10 +1305,10 @@ namespace NumeRe
         // copy the data to the buffer
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
-            dData[nCount] = vClusterArray[_vLine[i]]->getDouble();
+            dData[nCount] = vClusterArray[_vLine[i]]->getDouble().real();
             nCount++;
 
             if (nCount == _vLine.size() - nInvalid)
@@ -1335,7 +1335,7 @@ namespace NumeRe
     // This member function calculates the p-th percentile
     // of the data in memory. Cluster items, which do not
     // have the type "double" are ignored
-    double Cluster::pct(const VectorIndex& _vLine, double dPct)
+    mu::value_type Cluster::pct(const VectorIndex& _vLine, mu::value_type dPct)
     {
         if (!vClusterArray.size())
             return NAN;
@@ -1344,7 +1344,7 @@ namespace NumeRe
         unsigned int nCount = 0;
         double* dData = 0;
 
-        if (dPct >= 1 || dPct <= 0)
+        if (dPct.real() >= 1 || dPct.real() <= 0)
             return NAN;
 
         // Calculate the number of valid items
@@ -1352,7 +1352,7 @@ namespace NumeRe
         {
             if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
                 nInvalid++;
-            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
         }
 
@@ -1365,10 +1365,10 @@ namespace NumeRe
         // copy the data to the buffer
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble()))
+            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
-            dData[nCount] = vClusterArray[_vLine[i]]->getDouble();
+            dData[nCount] = vClusterArray[_vLine[i]]->getDouble().real();
             nCount++;
 
             if (nCount == _vLine.size() - nInvalid)
@@ -1385,7 +1385,7 @@ namespace NumeRe
         }
 
         // Calculate the p-th percentile
-        dPct = gsl_stats_quantile_from_sorted_data(dData, 1, nCount, dPct);
+        dPct = gsl_stats_quantile_from_sorted_data(dData, 1, nCount, dPct.real());
 
         delete[] dData;
 

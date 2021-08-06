@@ -220,7 +220,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 static string createMafDataAccessString(const string& sAccessString, Parser& _parser);
 static string createEveryDefinition(const string& sLine, Parser& _parser);
 static string createMafVectorName(string sAccessString);
-static vector<double> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess);
+static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess);
 static string getMafFromAccessString(const string& sAccessString);
 static string getMafAccessString(const string& sLine, const string& sEntity);
 static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data);
@@ -401,7 +401,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 	bool bWriteStrings = false;
 	bool bWriteFileName = false;
 	bool isCluster = sEntity.back() == '{';
-	vector<double> vEntityContents;
+	vector<mu::value_type> vEntityContents;
 	string sEntityReplacement = "";
 	string sEntityStringReplacement = "";
 
@@ -818,7 +818,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 			{
 				// cmp() is more difficult
 				_parser.DisableAccessCaching();
-				double dRef = 0.0;
+				mu::value_type dRef = 0.0;
 				int nType = 0;
 				string sArg = "";
 				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
@@ -845,7 +845,7 @@ static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence
 			{
 				// pct() is more difficult
 				_parser.DisableAccessCaching();
-				double dPct = 0.5;
+				mu::value_type dPct = 0.5;
 				string sArg = "";
 				sLeft = sLine.substr(sLine.find(sLeft) + sLeft.length(), getMatchingParenthesis(sLine.substr(sLine.find(sLeft) + sLeft.length() - 1)) - 1);
 				sArg = getNextArgument(sLeft, true);
@@ -1007,10 +1007,10 @@ static string getMafAccessString(const string& sLine, const string& sEntity)
 /// \param sMafname const string&
 /// \param sCache const string&
 /// \param sMafAccess const string&
-/// \return vector<double>
+/// \return vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-static vector<double> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess)
+static vector<mu::value_type> MafDataAccess(MemoryManager& _data, const string& sMafname, const string& sCache, const string& sMafAccess)
 {
 	if (sMafname == "std")
 		return _data.std(sCache, sMafAccess);
@@ -1046,7 +1046,7 @@ static vector<double> MafDataAccess(MemoryManager& _data, const string& sMafname
 		return _data.minpos(sCache, sMafAccess);
 
 	// return a vector with one NAN
-	return vector<double>(1, NAN);
+	return vector<mu::value_type>(1, NAN);
 }
 
 
@@ -1515,10 +1515,10 @@ bool isClusterCandidate(string& sLine, string& sCluster, bool doCut)
 /// \param i long longint
 /// \param j long longint
 /// \param isCluster bool
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double getDataFromObject(const string& sObject, long long int i, long long int j, bool isCluster)
+mu::value_type getDataFromObject(const string& sObject, long long int i, long long int j, bool isCluster)
 {
     // Get a reference to the datafile object
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();

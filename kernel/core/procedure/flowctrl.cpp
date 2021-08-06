@@ -165,12 +165,12 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     // loop index
     for (int i = 0; i < 2; i++)
     {
-        vVarArray[nVarAdress][i + 1] = (int)v[i];
+        vVarArray[nVarAdress][i + 1] = intCast(v[i]);
     }
 
     // Depending on the order of the boundaries, we
     // have to consider the incrementation variable
-    if (vVarArray[nVarAdress][2] < vVarArray[nVarAdress][1])
+    if (vVarArray[nVarAdress][2].real() < vVarArray[nVarAdress][1].real())
         nInc *= -1;
 
     // Print to the terminal, if needed
@@ -183,7 +183,7 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
     // Evaluate the whole for loop. The outer loop does the
     // loop index management (the actual "for" command), the
     // inner loop runs through the contained command lines
-    for (int __i = (int)vVarArray[nVarAdress][1]; (nInc)*__i <= nInc * (int)vVarArray[nVarAdress][2]; __i += nInc)
+    for (int __i = intCast(vVarArray[nVarAdress][1]); (nInc)*__i <= nInc * intCast(vVarArray[nVarAdress][2]); __i += nInc)
     {
         vVarArray[nVarAdress][0] = __i;
 
@@ -301,23 +301,23 @@ int FlowCtrl::for_loop(int nth_Cmd, int nth_loop)
 
         // The variable value might have been changed
         // snychronize the index
-        __i = (int)vVarArray[nVarAdress][0];
+        __i = intCast(vVarArray[nVarAdress][0]);
 
         // Print the status to the terminal, if it is required
         if (!nth_loop && !bMask && bSilent)
         {
-            if (abs(int(vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1])) < 99999
-                    && abs((int)((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20))
-                    > abs((int)((vVarArray[nVarAdress][0] - 1 - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20)))
+            if (abs(intCast(vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1])) < 99999
+                    && abs(intCast((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20.0))
+                    > abs(intCast((vVarArray[nVarAdress][0] - 1.0 - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20.0)))
             {
-                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs((int)((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20)) * 5) + " %");
+                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs(intCast((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 20.0)) * 5) + " %");
                 bPrintedStatus = true;
             }
-            else if (abs(int(vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1])) >= 99999
-                     && abs((int)((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100))
-                     > abs((int)((vVarArray[nVarAdress][0] - 1 - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100)))
+            else if (abs(intCast(vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1])) >= 99999
+                     && abs(intCast((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100.0))
+                     > abs(intCast((vVarArray[nVarAdress][0] - 1.0 - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100.0)))
             {
-                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs((int)((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100))) + " %");
+                NumeReKernel::printPreFmt("\r|FOR> " + _lang.get("COMMON_EVALUATING") + " ... " + toString(abs(intCast((vVarArray[nVarAdress][0] - vVarArray[nVarAdress][1]) / (vVarArray[nVarAdress][2] - vVarArray[nVarAdress][1]) * 100.0))) + " %");
                 bPrintedStatus = true;
             }
         }
@@ -378,7 +378,7 @@ int FlowCtrl::while_loop(int nth_Cmd, int nth_loop)
         // Check, whether the header condition is true.
         // NaN and INF are no "true" values. Return the
         // end of the current block otherwise
-        if (!(bool)v[0] || isnan(v[0]) || isinf(v[0]))
+        if (v[0] == 0.0 || isnan(v[0]) || isinf(v[0]))
         {
             return nJumpTable[nth_Cmd][BLOCK_END];
         }
@@ -534,7 +534,7 @@ int FlowCtrl::if_fork(int nth_Cmd, int nth_loop)
         v = evalHeader(nNum, sIf_Condition, false, nth_Cmd);
 
         // If the condition is true, enter the if-case
-        if ((bool)v[0] && !isnan(v[0]) && !isinf(v[0]))
+        if (v[0] != 0.0 && !isnan(v[0]) && !isinf(v[0]))
         {
             // The inner loop goes through the contained
             // commands
@@ -784,7 +784,7 @@ int FlowCtrl::switch_fork(int nth_Cmd, int nth_loop)
     // Search for the correct first(!) case
     for (int i = 0; i < nNum; i++)
     {
-        if (!v[i])
+        if (v[i] == 0.0)
             nNextCase = nJumpTable[nNextCase][ELSE_START];
         else
             break;
@@ -2294,7 +2294,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             }
 
             vVals = _parserRef->Eval(nArgument);
-            make_progressBar((int)vVals[0], (int)vVals[1], (int)vVals[2], sArgument);
+            make_progressBar(intCast(vVals[0]), intCast(vVals[1]), intCast(vVals[2]), sArgument);
             return FLOWCTRL_OK;
         }
     }
@@ -2784,7 +2784,7 @@ string FlowCtrl::extractFlagsAndIndexVariables()
         if (vCmdArray[i].sCommand.find("end") != string::npos && findParameter(vCmdArray[i].sCommand, "lnumctrl", '='))
         {
             _parserRef->SetExpr(getArgAtPos(vCmdArray[i].sCommand, findParameter(vCmdArray[i].sCommand, "lnumctrl", '=') + 8));
-            nLoopSavety = (int)_parserRef->Eval();
+            nLoopSavety = intCast(_parserRef->Eval());
 
             if (nLoopSavety <= 0)
                 nLoopSavety = 1000;

@@ -173,7 +173,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (findParameter(sCmd, "alpha", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "alpha", '=')+5));
-            dAlphaVal = 1 - _parser.Eval();
+            dAlphaVal = 1 - _parser.Eval().real();
 
             if (dAlphaVal < 0 || dAlphaVal > 1)
                 dAlphaVal = 0.5;
@@ -182,7 +182,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (findParameter(sCmd, "transparency", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "transparency", '=')+12));
-            dAlphaVal = 1 - _parser.Eval();
+            dAlphaVal = 1 - _parser.Eval().real();
 
             if (dAlphaVal < 0 || dAlphaVal > 1)
                 dAlphaVal = 0.5;
@@ -218,7 +218,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (findParameter(sCmd, "lcont", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lcont", '=')));
-            nContLines = (size_t)_parser.Eval();
+            nContLines = (size_t)_parser.Eval().real();
         }
     }
     if (findParameter(sCmd, "nolcont") && (nType == ALL || nType & LOCAL))
@@ -230,7 +230,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (findParameter(sCmd, "pcont", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "pcont", '=')));
-            nContLines = (size_t)_parser.Eval();
+            nContLines = (size_t)_parser.Eval().real();
         }
     }
     if (findParameter(sCmd, "nopcont") && (nType == ALL || nType & LOCAL))
@@ -242,7 +242,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (findParameter(sCmd, "fcont", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "fcont", '=')));
-            nContLines = (size_t)_parser.Eval();
+            nContLines = (size_t)_parser.Eval().real();
         }
     }
     if (findParameter(sCmd, "nofcont") && (nType == ALL || nType & LOCAL))
@@ -299,8 +299,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     {
         int nPos = findParameter(sCmd, "samples", '=') + 7;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        nSamples = (int)_parser.Eval();
-        if (isnan(_parser.Eval()) || isinf(_parser.Eval()))
+        nSamples = (int)_parser.Eval().real();
+        if (isnan(_parser.Eval().real()) || isinf(_parser.Eval().real()))
             nSamples = 100;
         if (_option.isDeveloperMode())
             cerr << "|-> DEBUG: nSamples = " << nSamples << endl;
@@ -314,11 +314,11 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             auto indices = getAllIndices(sTemp_1);
             _parser.SetExpr(indices[0]);
-            dtParam[0] = _parser.Eval();
+            dtParam[0] = _parser.Eval().real();
             if (isnan(dtParam[0]) || isinf(dtParam[0]))
                 dtParam[0] = 0;
             _parser.SetExpr(indices[1]);
-            dtParam[1] = _parser.Eval();
+            dtParam[1] = _parser.Eval().real();
             if (isnan(dtParam[1]) || isinf(dtParam[1]))
                 dtParam[1] = 1;
         }
@@ -332,9 +332,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             auto indices = getAllIndices(sTemp_1);
             _parser.SetExpr(indices[0]);
-            dColorRange[0] = _parser.Eval();
+            dColorRange[0] = _parser.Eval().real();
             _parser.SetExpr(indices[1]);
-            dColorRange[1] = _parser.Eval();
+            dColorRange[1] = _parser.Eval().real();
             if (isnan(dColorRange[0]) || isnan(dColorRange[1]) || isinf(dColorRange[0]) || isinf(dColorRange[1]))
             {
                 dColorRange[0] = NAN;
@@ -353,19 +353,19 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 _parser.SetExpr(sTemp);
                 _parser.Eval();
                 int nResults = _parser.GetNumResults();
-                double* dTemp = _parser.Eval(nResults);
-                dRotateAngles[0] = dTemp[0];
-                dRotateAngles[1] = dTemp[1];
+                mu::value_type* dTemp = _parser.Eval(nResults);
+                dRotateAngles[0] = dTemp[0].real();
+                dRotateAngles[1] = dTemp[1].real();
             }
             else if (!sTemp.find(','))
             {
                 _parser.SetExpr(sTemp.substr(1));
-                dRotateAngles[1] = _parser.Eval();
+                dRotateAngles[1] = _parser.Eval().real();
             }
             else if (sTemp.find(',') == sTemp.length()-1)
             {
                 _parser.SetExpr(sTemp.substr(0,sTemp.length()-1));
-                dRotateAngles[0] = _parser.Eval();
+                dRotateAngles[0] = _parser.Eval().real();
             }
             for (unsigned int i = 0; i < 2; i++)
             {
@@ -403,13 +403,13 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             _parser.SetExpr(sTemp);
             int nResults = 0;
-            double* dTemp = _parser.Eval(nResults);
+            mu::value_type* dTemp = _parser.Eval(nResults);
             if (nResults)
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    if (i < nResults && !isnan(dTemp[i]) && !isinf(dTemp[i]))
-                        dOrigin[i] = dTemp[i];
+                    if (i < nResults && !isnan(dTemp[i].real()) && !isinf(dTemp[i].real()))
+                        dOrigin[i] = dTemp[i].real();
                     else
                         dOrigin[i] = 0.0;
                 }
@@ -434,13 +434,13 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             _parser.SetExpr(sTemp);
             int nResults = 0;
-            double* dTemp = _parser.Eval(nResults);
+            mu::value_type* dTemp = _parser.Eval(nResults);
             if (nResults)
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    if (i < nResults && !isnan(dTemp[i]) && !isinf(dTemp[i]) && dTemp[i] <= 5 && dTemp[i] >= 0)
-                        nSlices[i] = (unsigned short)dTemp[i];
+                    if (i < nResults && !isnan(dTemp[i].real()) && !isinf(dTemp[i].real()) && dTemp[i].real() <= 5 && dTemp[i].real() >= 0)
+                        nSlices[i] = (unsigned short)dTemp[i].real();
                     else
                         nSlices[i] = 1;
                 }
@@ -460,7 +460,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         {
             _parser.SetExpr(sTemp);
             int nResults = 0;
-            double* dTemp = _parser.Eval(nResults);
+            mu::value_type* dTemp = _parser.Eval(nResults);
 
             if (nResults >= 2)
             {
@@ -528,7 +528,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     {
         unsigned int nPos = findParameter(sCmd, "animate", '=')+7;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        nAnimateSamples = (int)_parser.Eval();
+        nAnimateSamples = (int)_parser.Eval().real();
         if (nAnimateSamples && !isinf(_parser.Eval()) && !isnan(_parser.Eval()))
             bAnimate = true;
         else
@@ -545,8 +545,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     {
         unsigned int nPos = findParameter(sCmd, "marks", '=')+5;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        nMarks = (int)_parser.Eval();
-        if (!nMarks || isinf(_parser.Eval()) || isnan(_parser.Eval()))
+        nMarks = (int)_parser.Eval().real();
+        if (!nMarks || isinf(_parser.Eval().real()) || isnan(_parser.Eval().real()))
             nMarks = 0;
         if (nMarks > 9)
             nMarks = 9;
@@ -559,7 +559,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     {
         unsigned int nPos = findParameter(sCmd, "textsize", '=')+8;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        dTextsize = _parser.Eval();
+        dTextsize = _parser.Eval().real();
 
         if (isinf(dTextsize) || isnan(dTextsize))
             dTextsize = 5;
@@ -571,7 +571,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     {
         unsigned int nPos = findParameter(sCmd, "aspect", '=') + 6;
         _parser.SetExpr(getArgAtPos(__sCmd, nPos));
-        dAspect = _parser.Eval();
+        dAspect = _parser.Eval().real();
         if (dAspect <= 0 || isnan(dAspect) || isinf(dAspect))
             dAspect = 4/3;
     }
@@ -625,8 +625,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     if (findParameter(sCmd, "bars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "bars", '=')+4));
-        dBars = _parser.Eval();
-        if (dBars && !isinf(_parser.Eval()) && !isnan(_parser.Eval()) && (dBars < 0.0 || dBars > 1.0))
+        dBars = _parser.Eval().real();
+        if (dBars && !isinf(_parser.Eval().real()) && !isnan(_parser.Eval().real()) && (dBars < 0.0 || dBars > 1.0))
             dBars = 0.9;
         dHBars = 0.0;
     }
@@ -638,8 +638,8 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
     if (findParameter(sCmd, "hbars", '=') && (nType == ALL || nType & LOCAL))
     {
         _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "hbars", '=')+5));
-        dHBars = _parser.Eval();
-        if (dHBars && !isinf(_parser.Eval()) && !isnan(_parser.Eval()) && (dHBars < 0.0 || dHBars > 1.0))
+        dHBars = _parser.Eval().real();
+        if (dHBars && !isinf(_parser.Eval().real()) && !isnan(_parser.Eval().real()) && (dHBars < 0.0 || dHBars > 1.0))
             dHBars = 0.9;
         dBars = 0.0;
     }
@@ -730,7 +730,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 if (i)
                     _lHlines.push_back(Line());
 
-                _lHlines[i+2].dPos = v[i];
+                _lHlines[i+2].dPos = v[i].real();
             }
 
             string sDescList = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
@@ -784,7 +784,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                 if (i)
                     _lVLines.push_back(Line());
 
-                _lVLines[i+2].dPos = v[i];
+                _lVLines[i+2].dPos = v[i].real();
             }
 
             string sDescList = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
@@ -864,7 +864,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
-            _lVLines[0].dPos = _parser.Eval();
+            _lVLines[0].dPos = _parser.Eval().real();
             _lVLines[0].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
             if (sTemp.length())
                 _lVLines[0].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
@@ -879,7 +879,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             if (sTemp[0] == '(' && sTemp[sTemp.length()-1] == ')')
                 sTemp = sTemp.substr(1,sTemp.length()-2);
             _parser.SetExpr(getNextArgument(sTemp, true));
-            _lVLines[1].dPos = _parser.Eval();
+            _lVLines[1].dPos = _parser.Eval().real();
             _lVLines[1].sDesc = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
             if (sTemp.length())
                 _lVLines[1].sStyle = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
@@ -896,9 +896,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             if (getNextArgument(sTemp, false).front() != '"')
             {
                 _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[0].dMin = _parser.Eval();
+                _AddAxes[0].dMin = _parser.Eval().real();
                 _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[0].dMax = _parser.Eval();
+                _AddAxes[0].dMax = _parser.Eval().real();
                 if (getNextArgument(sTemp, false).length())
                 {
                     _AddAxes[0].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
@@ -937,9 +937,9 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
             if (getNextArgument(sTemp, false).front() != '"')
             {
                 _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[1].dMin = _parser.Eval();
+                _AddAxes[1].dMin = _parser.Eval().real();
                 _parser.SetExpr(getNextArgument(sTemp, true));
-                _AddAxes[1].dMax = _parser.Eval();
+                _AddAxes[1].dMax = _parser.Eval().real();
                 if (getNextArgument(sTemp, false).length())
                 {
                     _AddAxes[1].sLabel = evaluateString(getArgAtPos(getNextArgument(sTemp, true),0));
@@ -1632,22 +1632,22 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
         if (findParameter(sCmd, "xscale", '='))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "xscale", '=')+6));
-            dAxisScale[0] = _parser.Eval();
+            dAxisScale[0] = _parser.Eval().real();
         }
         if (findParameter(sCmd, "yscale", '='))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "yscale", '=')+6));
-            dAxisScale[1] = _parser.Eval();
+            dAxisScale[1] = _parser.Eval().real();
         }
         if (findParameter(sCmd, "zscale", '='))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "zscale", '=')+6));
-            dAxisScale[2] = _parser.Eval();
+            dAxisScale[2] = _parser.Eval().real();
         }
         if (findParameter(sCmd, "cscale", '='))
         {
             _parser.SetExpr(getArgAtPos(__sCmd, findParameter(sCmd, "cscale", '=')+6));
-            dAxisScale[3] = _parser.Eval();
+            dAxisScale[3] = _parser.Eval().real();
         }
 
         for (int i = 0; i < 4; i++)
@@ -1713,7 +1713,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                             continue;
 
                         _parser.SetExpr(indices[j]);
-                        dColorRange[j] = _parser.Eval();
+                        dColorRange[j] = _parser.Eval().real();
                     }
 
                     if (isnan(dColorRange[0]) || isnan(dColorRange[1]) || isinf(dColorRange[0]) || isinf(dColorRange[1]))
@@ -1730,7 +1730,7 @@ void PlotData::setParams(const string& __sCmd, Parser& _parser, const Settings& 
                             continue;
 
                         _parser.SetExpr(indices[j]);
-                        dRanges[i][j] = _parser.Eval();
+                        dRanges[i][j] = _parser.Eval().real();
                     }
 
                     if (isNotEmptyExpression(indices[0]) || isNotEmptyExpression(indices[1]))

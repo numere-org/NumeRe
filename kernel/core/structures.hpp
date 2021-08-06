@@ -29,7 +29,7 @@
 
 using namespace std;
 
-long long int intCast(double);
+long long int intCast(const std::complex<double>&);
 std::string toString(long long int);
 
 
@@ -131,18 +131,18 @@ class VectorIndex
         /// The third argument is used only to avoid
         /// misinterpretation from the compiler.
         ///
-        /// \param indices const double*
+        /// \param indices const mu::value_type*
         /// \param nResults int
         /// \param unused int
         ///
         /////////////////////////////////////////////////
-        VectorIndex(const double* indices, int nResults, int unused)
+        VectorIndex(const mu::value_type* indices, int nResults, int unused)
         {
             // Store the indices and convert them to integers
             // using the intCast() function
             for (int i = 0; i < nResults; i++)
             {
-                if (!isnan(indices[i]) && !isinf(indices[i]))
+                if (!isnan(indices[i].real()) && !isinf(indices[i].real()))
                     vStorage.push_back(intCast(indices[i]) - 1);
             }
 
@@ -2255,7 +2255,7 @@ struct TimeAxis
 /////////////////////////////////////////////////
 struct Returnvalue
 {
-    vector<double> vNumVal;
+    vector<mu::value_type> vNumVal;
     vector<string> vStringVal;
 
     // clear method
@@ -2284,7 +2284,7 @@ struct Returnvalue
 struct DefaultVariables
 {
     string sName[4] = {"x", "y", "z", "t"};
-    double vValue[4][4];
+    mu::value_type vValue[4][4];
 };
 
 

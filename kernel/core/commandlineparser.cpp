@@ -237,11 +237,11 @@ std::string CommandLineParser::parseFileName(std::string& sFileName, std::string
 /// variable creation functionality of the
 /// parser.
 ///
-/// \param vRetVal const std::vector<double>&
+/// \param vRetVal const std::vector<mu::value_type>&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void CommandLineParser::setReturnValue(const std::vector<double>& vRetVal)
+void CommandLineParser::setReturnValue(const std::vector<mu::value_type>& vRetVal)
 {
     m_returnValueStatement += NumeReKernel::getInstance()->getParser().CreateTempVectorVar(vRetVal);
 }
@@ -418,10 +418,10 @@ std::string CommandLineParser::parseExprAsString() const
 /// \brief Parses the expression into numerical
 /// values, returned as a vector of doubles.
 ///
-/// \return std::vector<double>
+/// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-std::vector<double> CommandLineParser::parseExprAsNumericalValues() const
+std::vector<mu::value_type> CommandLineParser::parseExprAsNumericalValues() const
 {
     NumeReKernel* instance = NumeReKernel::getInstance();
     // Make a copy
@@ -444,11 +444,11 @@ std::vector<double> CommandLineParser::parseExprAsNumericalValues() const
 
     instance->getParser().SetExpr(sValue);
     int nRes;
-    value_type* v;
+    mu::value_type* v;
 
     v = instance->getParser().Eval(nRes);
 
-    std::vector<double> vVals(v, v+nRes);
+    std::vector<mu::value_type> vVals(v, v+nRes);
 
     return vVals;
 }
@@ -657,18 +657,18 @@ std::string CommandLineParser::getParameterValueAsString(const std::string& sPar
 /// not found, an empty vector is returned.
 ///
 /// \param sParameter const std::string&
-/// \return std::vector<double>
+/// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-std::vector<double> CommandLineParser::getParameterValueAsNumericalValue(const std::string& sParameter) const
+std::vector<mu::value_type> CommandLineParser::getParameterValueAsNumericalValue(const std::string& sParameter) const
 {
     int nParPos = findParameter(m_parlist, sParameter, '=');
 
     if (!nParPos)
-        return std::vector<double>();
+        return std::vector<mu::value_type>();
 
     std::string arg = getArgAtPos(m_parlist, nParPos+sParameter.length(), ARGEXTRACT_PARSED | ARGEXTRACT_STRIPPED);
-    std::vector<double> vArgs;
+    std::vector<mu::value_type> vArgs;
 
     while (arg.length())
     {

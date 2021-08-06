@@ -55,11 +55,11 @@ namespace NumeRe
                 return nType;
             }
 
-            virtual double getDouble()
+            virtual mu::value_type getDouble()
             {
                 return NAN;
             }
-            virtual void setDouble(double val) {}
+            virtual void setDouble(mu::value_type val) {}
 
             virtual string getString()
             {
@@ -74,23 +74,23 @@ namespace NumeRe
     class ClusterDoubleItem : public ClusterItem
     {
         private:
-            double dData;
+            mu::value_type dData;
 
         public:
-            ClusterDoubleItem(double value) : ClusterItem(ClusterItem::ITEMTYPE_DOUBLE), dData(value) {}
+            ClusterDoubleItem(mu::value_type value) : ClusterItem(ClusterItem::ITEMTYPE_DOUBLE), dData(value) {}
             virtual ~ClusterDoubleItem() override {}
 
-            virtual double getDouble() override
+            virtual mu::value_type getDouble() override
             {
                 return dData;
             }
-            virtual void setDouble(double val) override
+            virtual void setDouble(mu::value_type val) override
             {
                 dData = val;
             }
             virtual string getString() override
             {
-                if (isnan(dData))
+                if (isnan(std::abs(dData)))
                     return "\"nan\"";
 
                 return "\"" + toString(dData, 7) + "\"";
@@ -116,11 +116,11 @@ namespace NumeRe
             ClusterStringItem(const string& strval) : ClusterItem(ClusterItem::ITEMTYPE_STRING) {setString(strval);}
             virtual ~ClusterStringItem() override {}
 
-            virtual double getDouble() override
+            virtual mu::value_type getDouble() override
             {
                 return atof(sData.c_str());
             }
-            virtual void setDouble(double val) override
+            virtual void setDouble(mu::value_type val) override
             {
                 sData = toString(val, 7);
             }
@@ -150,9 +150,9 @@ namespace NumeRe
             mutable int nGlobalType;
 
             void assign(const Cluster& cluster);
-            void assign(const vector<double>& vVals);
+            void assign(const vector<mu::value_type>& vVals);
             void assign(const vector<string>& vStrings);
-            void assignVectorResults(Indices _idx, int nNum, double* data);
+            void assignVectorResults(Indices _idx, int nNum, mu::value_type* data);
             virtual int compare(int i, int j, int col) override;
             virtual bool isValue(int line, int col) override;
             void reorderElements(vector<int> vIndex, int i1, int i2);
@@ -167,7 +167,7 @@ namespace NumeRe
             {
                 assign(cluster);
             }
-            Cluster(const vector<double>& vVals)
+            Cluster(const vector<mu::value_type>& vVals)
             {
                 assign(vVals);
             }
@@ -186,7 +186,7 @@ namespace NumeRe
                 assign(cluster);
                 return *this;
             }
-            Cluster& operator=(const vector<double>& vVals)
+            Cluster& operator=(const vector<mu::value_type>& vVals)
             {
                 assign(vVals);
                 return *this;
@@ -198,7 +198,7 @@ namespace NumeRe
             }
 
             void push_back(ClusterItem* item);
-            void push_back(double val);
+            void push_back(mu::value_type val);
             void push_back(const string& strval);
             void pop_back();
 
@@ -212,13 +212,13 @@ namespace NumeRe
 
             unsigned short getType(size_t i) const;
 
-            double getDouble(size_t i) const;
-            void setDouble(size_t i, double value);
-            vector<double> getDoubleArray() const;
-            void insertDataInArray(vector<double>* vTarget, const VectorIndex& _vLine);
-            void setDoubleArray(const vector<double>& vVals);
-            void setDoubleArray(int nNum, double* data);
-            void assignResults(Indices _idx, int nNum, double* data);
+            mu::value_type getDouble(size_t i) const;
+            void setDouble(size_t i, mu::value_type value);
+            vector<mu::value_type> getDoubleArray() const;
+            void insertDataInArray(vector<mu::value_type>* vTarget, const VectorIndex& _vLine);
+            void setDoubleArray(const vector<mu::value_type>& vVals);
+            void setDoubleArray(int nNum, mu::value_type* data);
+            void assignResults(Indices _idx, int nNum, mu::value_type* data);
 
             string getString(size_t i) const;
             void setString(size_t i, const string& strval);
@@ -232,24 +232,24 @@ namespace NumeRe
             void deleteItems(long long int i1, long long int i2);
             void deleteItems(const VectorIndex& vLines);
 
-            double std(const VectorIndex& _vLine);
-            double avg(const VectorIndex& _vLine);
-            double max(const VectorIndex& _vLine);
+            mu::value_type std(const VectorIndex& _vLine);
+            mu::value_type avg(const VectorIndex& _vLine);
+            mu::value_type max(const VectorIndex& _vLine);
             string strmax(const VectorIndex& _vLine);
-            double min(const VectorIndex& _vLine);
+            mu::value_type min(const VectorIndex& _vLine);
             string strmin(const VectorIndex& _vLine);
-            double prd(const VectorIndex& _vLine);
-            double sum(const VectorIndex& _vLine);
+            mu::value_type prd(const VectorIndex& _vLine);
+            mu::value_type sum(const VectorIndex& _vLine);
             string strsum(const VectorIndex& _vLine);
-            double num(const VectorIndex& _vLine);
-            double and_func(const VectorIndex& _vLine);
-            double or_func(const VectorIndex& _vLine);
-            double xor_func(const VectorIndex& _vLine);
-            double cnt(const VectorIndex& _vLine);
-            double norm(const VectorIndex& _vLine);
-            double cmp(const VectorIndex& _vLine, double dRef, int _nType);
-            double med(const VectorIndex& _vLine);
-            double pct(const VectorIndex& _vLine, double dPct);
+            mu::value_type num(const VectorIndex& _vLine);
+            mu::value_type and_func(const VectorIndex& _vLine);
+            mu::value_type or_func(const VectorIndex& _vLine);
+            mu::value_type xor_func(const VectorIndex& _vLine);
+            mu::value_type cnt(const VectorIndex& _vLine);
+            mu::value_type norm(const VectorIndex& _vLine);
+            mu::value_type cmp(const VectorIndex& _vLine, mu::value_type dRef, int _nType);
+            mu::value_type med(const VectorIndex& _vLine);
+            mu::value_type pct(const VectorIndex& _vLine, mu::value_type dPct);
 
     };
 
@@ -269,7 +269,7 @@ namespace NumeRe
             ClusterManager() {dClusterElementsCount = 0.0;}
             ~ClusterManager() {}
 
-            double dClusterElementsCount;
+            mu::value_type dClusterElementsCount;
 
             bool containsClusters(const string& sCmdLine) const;
             bool isCluster(StringView sCluster) const;

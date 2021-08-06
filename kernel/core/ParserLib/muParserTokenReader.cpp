@@ -803,7 +803,12 @@ namespace mu
 			return false;
 
 		if (m_iSynFlags & noVAR)
+        {
+            if (m_pPostOprtDef->find(strTok) != m_pPostOprtDef->end())
+                return false;
+
 			Error(ecUNEXPECTED_VAR, m_iPos, strTok);
+        }
 
 		m_pParser->OnDetectVar(&m_strFormula, m_iPos, iEnd);
 

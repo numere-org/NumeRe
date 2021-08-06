@@ -28,6 +28,7 @@
 #include "plotting/plotting.hpp"
 #include "../kernel.hpp"
 #include "ui/winlayout.hpp"
+#include "utils/tools.hpp"
 
 #include "commandlineparser.hpp"
 
@@ -136,7 +137,7 @@ static string getVarList(const string& sCmd, Parser& _parser, MemoryManager& _da
 					sReturn += "\"" + mStringVars[iter->first] + "\"";
 			}
 			else
-				sReturn += toString(*mNumVars[iter->first], _option);
+				sReturn += toString(*mNumVars[iter->first], _option.getPrecision());
 
 			sReturn += sSep;
 		}
@@ -169,7 +170,7 @@ static string getVarList(const string& sCmd, Parser& _parser, MemoryManager& _da
 		for (auto iter = mNumVars.begin(); iter != mNumVars.end(); ++iter)
 		{
 			sReturn += iter->first + " = ";
-			sReturn += toString(*iter->second, _option);
+			sReturn += toString(*iter->second, _option.getPrecision());
 			sReturn += sSep;
 		}
 	}
@@ -1536,8 +1537,8 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 		else
 		{
 		    // This is a numerical variable
-			NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2) + strfill(toString(*variables[item->first], _option), (_option.getWindow(0) - 60) / 2 + _option.getPrecision()) + strfill("[double]", 19) + strfill("8", 9) + "  Bytes\n");
-			nBytesSum += sizeof(double);
+			NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2) + strfill(toString(*variables[item->first], _option.getPrecision()), (_option.getWindow(0) - 60) / 2 + _option.getPrecision()) + (variables[item->first]->imag() ? strfill("[complex]", 19) + strfill("16", 9) + "  Bytes\n" : strfill("[double]", 19) + strfill("8", 9) + "  Bytes\n"));
+			nBytesSum += variables[item->first]->imag() ? sizeof(std::complex<double>) : sizeof(double);
 		}
 	}
 
@@ -1638,7 +1639,7 @@ static void listConstants(const Parser& _parser, const Settings& _option)
     {
         if (item->first[0] != '_')
             continue;
-        NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow() - 10) / 2 + 2 - _option.getPrecision() - (item->first).length() + _option.getWindow() % 2) + strfill(toString(item->second, _option), _option.getPrecision() + (_option.getWindow() - 50) / 2));
+        NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow() - 10) / 2 + 2 - _option.getPrecision() - (item->first).length() + _option.getWindow() % 2) + strfill(toString(item->second, _option.getPrecision()), _option.getPrecision() + (_option.getWindow() - 50) / 2));
         for (int i = 0; i < nUnits; i++)
         {
             if (sUnits[i].substr(0, sUnits[i].find('[')) == (item->first).substr(0, sUnits[i].find('[')))
@@ -3382,7 +3383,7 @@ static CommandReturnValues cmd_append(string& sCmd)
 
         double j1 = _data.getCols("data") + 1;
         append_data(cmdParser);
-        cmdParser.setReturnValue(std::vector<double>({1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")}));
+        cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")}));
 
         sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
@@ -3548,12 +3549,12 @@ static CommandReturnValues cmd_warn(string& sCmd)
                 sMessage = "{";
 
                 for (size_t i = 0; i < vVals.size(); i++)
-                    sMessage += " " + toString(vVals[i], _option) + ",";
+                    sMessage += " " + toString(vVals[i], _option.getPrecision()) + ",";
 
                 sMessage.back() = '}';
             }
             else
-                sMessage = toString(vVals.front(), _option);
+                sMessage = toString(vVals.front(), _option.getPrecision());
         }
         else
             sMessage = cmdParser.parseExprAsString();
@@ -4030,7 +4031,7 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     vParVal = cmdParser.getParameterValueAsNumericalValue("alpha");
 
     if (vParVal.size())
-        dAlpha = vParVal.front();
+        dAlpha = vParVal.front().real();
 
     // Find the smoothing filter type
     std::string sFilterType = cmdParser.getParameterValue("type");
@@ -4780,7 +4781,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         {
             double j1 = _data.getCols("data") + 1;
             append_data(cmdParser);
-            cmdParser.setReturnValue(std::vector<double>({1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")}));
+            cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")}));
             sCmd = cmdParser.getReturnValueStatement();
 
             return COMMAND_HAS_RETURNVALUE;
@@ -4811,7 +4812,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sTableName + "()", toString(_data.getLines(info.sTableName, false)), toString(_data.getCols(info.sTableName, false))));
 
-                    cmdParser.setReturnValue(std::vector<double>({1, info.nRows, _data.getCols(info.sTableName)-info.nCols+1, _data.getCols(info.sTableName)}));
+                    cmdParser.setReturnValue(std::vector<mu::value_type>({1, info.nRows, _data.getCols(info.sTableName)-info.nCols+1, _data.getCols(info.sTableName)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4867,7 +4868,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (!_data.isEmpty("data") && _option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sFileName, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
-                    cmdParser.setReturnValue(std::vector<double>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;
@@ -4895,7 +4896,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     if (_option.systemPrints())
                         NumeReKernel::print(_lang.get("BUILTIN_LOADDATA_SUCCESS", info.sFileName, toString(info.nRows), toString(info.nCols)));
 
-                    cmdParser.setReturnValue(std::vector<double>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
+                    cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
                     sCmd = cmdParser.getReturnValueStatement();
 
                     return COMMAND_HAS_RETURNVALUE;

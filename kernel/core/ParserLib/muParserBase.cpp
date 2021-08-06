@@ -44,9 +44,10 @@
 using namespace std;
 
 // Helper prototypes e.g. for the MAF implementations in this class
-string toString(int);
-string toString(double, int);
-string toHexString(int nNumber);
+std::string toString(int);
+std::string toString(double, int);
+std::string toString(const std::complex<double>&, int);
+std::string toHexString(int nNumber);
 
 unsigned int getMatchingParenthesis(const StringView&);
 mu::value_type parser_Num(const mu::value_type*, int);
@@ -71,6 +72,51 @@ mu::value_type parser_Max(const mu::value_type*, int);
 
 namespace mu
 {
+    std::vector<double> real(const std::vector<value_type>& vVec)
+    {
+	    std::vector<double> vReal;
+
+	    for (const auto& val : vVec)
+            vReal.push_back(val.real());
+
+        return vReal;
+    }
+
+
+	std::vector<double> imag(const std::vector<value_type>& vVec)
+	{
+	    std::vector<double> vImag;
+
+	    for (const auto& val : vVec)
+            vImag.push_back(val.imag());
+
+        return vImag;
+	}
+
+
+	bool isinf(value_type v)
+	{
+	    return std::isinf(std::abs(v));
+	}
+
+
+	bool isnan(value_type v)
+	{
+	    return std::isnan(std::abs(v));
+	}
+
+
+	value_type rint(value_type v)
+	{
+	    return value_type(std::rint(v.real()), std::rint(v.imag()));
+	}
+
+
+
+
+
+
+
 	std::locale ParserBase::s_locale = std::locale(std::locale::classic(), new change_dec_sep<char_type>('.'));
 
 	bool ParserBase::g_DbgDumpCmdCode = false;
@@ -302,7 +348,7 @@ namespace mu
 			if (mVectorVars.find(pExpr->substr(nStart, nEnd - nStart)) != mVectorVars.end())
 				return;
 
-			std::vector<double> vVar;
+			std::vector<mu::value_type> vVar;
 
 			if (GetVar().find(pExpr->substr(nStart, nEnd - nStart)) != GetVar().end())
 				vVar.push_back(*(GetVar().find(pExpr->substr(nStart, nEnd - nStart))->second));
@@ -527,7 +573,7 @@ namespace mu
 	    if (!isPaused)
             PauseLoopMode();
 
-		vector<double> vResults;
+		vector<mu::value_type> vResults;
 
 		// Resolve vectors, which are part of a multi-argument
 		// function's parentheses
@@ -572,7 +618,7 @@ namespace mu
 
 					// Store the result in a new temporary vector
                     string sVectorVarName = CreateTempVectorVar(vResults);
-					sExpr.replace(i, j + 1 - i, sVectorVarName);
+					sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a:b}i
 				}
 				else
 				{
@@ -613,7 +659,7 @@ namespace mu
 						    // This is a usual vector
 						    // Store the vector result as a new temporary vector variable
                             string sVectorVarName = CreateTempVectorVar(vResults);
-							sExpr.replace(i, j + 1 - i, sVectorVarName);
+							sExpr.replace(i, j + 1 - i, sVectorVarName + " "); // Whitespace for constructs like {a,b}i
 						}
 					}
 				}
@@ -633,11 +679,11 @@ namespace mu
     /// expansion, e.g. "{1:4}" = {1, 2, 3, 4}.
     ///
     /// \param sSubExpr MutableStringView
-    /// \param vResults vector<double>&
+    /// \param vResults vector<mu::value_type>&
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::evaluateVectorExpansion(MutableStringView sSubExpr, vector<double>& vResults)
+	void ParserBase::evaluateVectorExpansion(MutableStringView sSubExpr, vector<mu::value_type>& vResults)
 	{
 		int nResults = 0;
 		value_type* v = nullptr;
@@ -714,7 +760,12 @@ namespace mu
             {
                 // This is an expansion. There are two possible cases
                 if (nResults == 2)
-                    expandVector(v[0], v[1], (v[0] < v[1] ? 1.0 : -1.0), vResults);
+                {
+                    mu::value_type diff = v[1] - v[0];
+                    diff.real(diff.real() > 0.0 ? 1.0 : (diff.real() < 0.0 ? -1.0 : 0.0));
+                    diff.imag(diff.imag() > 0.0 ? 1.0 : (diff.imag() < 0.0 ? -1.0 : 0.0));
+                    expandVector(v[0], v[1], diff, vResults);
+                }
                 else if (nResults == 3)
                     expandVector(v[0], v[2], v[1], vResults);
             }
@@ -727,24 +778,46 @@ namespace mu
 	}
 
 
+    /////////////////////////////////////////////////
+    /// \brief Determines, whether the passed step is
+    /// still in valid range and therefore can be
+    /// done to expand the vector.
+    ///
+    /// \param current const mu::value_type&
+    /// \param last const mu::value_type&
+    /// \param d const mu::value_type&
+    /// \return bool
+    ///
+    /////////////////////////////////////////////////
+    static bool stepIsStillPossible(const mu::value_type& current, const mu::value_type& last, const mu::value_type& d)
+	{
+	    mu::value_type fact(d.real() >= 0.0 ? 1.0 : -1.0, d.imag() >= 0.0 ? 1.0 : -1.0);
+
+	    return (current.real() * fact.real()) <= (last.real() * fact.real())
+            && (current.imag() * fact.imag()) <= (last.imag() * fact.imag());
+	}
+
+
     /** \brief This function expands the vector.
      *
-     * \param dFirst double
-     * \param dLast double
-     * \param dIncrement double
-     * \param vResults vector<double>&
+     * \param dFirst const mu::value_type&
+     * \param dLast const mu::value_type&
+     * \param dIncrement const mu::value_type&
+     * \param vResults vector<mu::value_type>&
      * \return void
      *
      * This function expands the vector. Private member used by ParserBase::evaluateVectorExpansion()
      *
      */
-	void ParserBase::expandVector(double dFirst, double dLast, double dIncrement, vector<double>& vResults)
+	void ParserBase::expandVector(mu::value_type dFirst, const mu::value_type& dLast, const mu::value_type& dIncrement, vector<mu::value_type>& vResults)
 	{
 		// ignore impossible combinations. Store only
 		// the accessible value
-		if ((dFirst < dLast && dIncrement < 0)
-				|| (dFirst > dLast && dIncrement > 0)
-				|| dIncrement == 0)
+		if ((dFirst.real() < dLast.real() && dIncrement.real() < 0)
+            || (dFirst.imag() < dLast.imag() && dIncrement.imag() < 0)
+            || (dFirst.real() > dLast.real() && dIncrement.real() > 0)
+            || (dFirst.imag() > dLast.imag() && dIncrement.imag() > 0)
+            || dIncrement == 0.0)
 		{
 			vResults.push_back(dFirst);
 			return;
@@ -753,25 +826,12 @@ namespace mu
 		// Store the first value
 		vResults.push_back(dFirst);
 
-		// Depending on the relation of the first and last value, change the expansion algorithm
-		if (dFirst <= dLast)
-		{
-		    // Avoid rounding errors by allowing a little bit larger values than the last one
-			while (dFirst + dIncrement <= dLast + 1e-10 * dIncrement)
-			{
-				dFirst += dIncrement;
-				vResults.push_back(dFirst);
-			}
-		}
-		else
-		{
-		    // Avoid rounding errors by allowing a little bit smaller values than the last one
-			while (dFirst + dIncrement >= dLast + 1e-10 * dIncrement)
-			{
-				dFirst += dIncrement;
-				vResults.push_back(dFirst);
-			}
-		}
+		// As long as the next step is possible, add the increment
+		while (stepIsStillPossible(dFirst+dIncrement, dLast+1e-10*dIncrement, dIncrement))
+        {
+            dFirst += dIncrement;
+            vResults.push_back(dFirst);
+        }
 	}
 
 
@@ -799,7 +859,7 @@ namespace mu
             size_t nClosingParens = getMatchingParenthesis(sExpr.subview(nMultiArgParens)) + nMultiArgParens;
 
             // Set the argument of the function as expression and evaluate it recursively
-            vector<double> vResults;
+            vector<mu::value_type> vResults;
             int nResults;
             SetExpr(sExpr.subview(nMultiArgParens + 1, nClosingParens - nMultiArgParens - 1));
             value_type* v = Eval(nResults);
@@ -1212,7 +1272,7 @@ namespace mu
 		return m_FunDef;
 	}
 
-	const std::map<std::string, std::vector<double> >& ParserBase::GetVectors() const
+	const std::map<std::string, std::vector<mu::value_type> >& ParserBase::GetVectors() const
 	{
 	    for (auto iter = mVectorVars.begin(); iter != mVectorVars.end(); ++iter)
         {
@@ -1399,7 +1459,7 @@ namespace mu
 			token_type vVal1 = a_stVal.pop();
 			token_type vExpr = a_stVal.pop();
 
-			a_stVal.push( (vExpr.GetVal() != 0) ? vVal1 : vVal2);
+			a_stVal.push( (vExpr.GetVal() != 0.0) ? vVal1 : vVal2);
 
 			token_type opIf = a_stOpt.pop();
 			MUP_ASSERT(opElse.GetCode() == cmELSE);
@@ -1536,11 +1596,11 @@ namespace mu
 					// built in binary operators
 					case  cmLE:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] <= Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
 						continue;
 					case  cmGE:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] >= Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
 						continue;
 					case  cmNEQ:
 						--sidx;
@@ -1552,11 +1612,11 @@ namespace mu
 						continue;
 					case  cmLT:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] < Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
 						continue;
 					case  cmGT:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] > Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
 						continue;
 					case  cmADD:
 						--sidx;
@@ -1587,11 +1647,11 @@ namespace mu
 
 					case  cmLAND:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] && Stack[sidx + 1];
+						Stack[sidx]  = std::abs(Stack[sidx]) && std::abs(Stack[sidx + 1]);
 						continue;
 					case  cmLOR:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] || Stack[sidx + 1];
+						Stack[sidx]  = std::abs(Stack[sidx]) || std::abs(Stack[sidx + 1]);
 						continue;
 
 					case  cmASSIGN:
@@ -1605,7 +1665,7 @@ namespace mu
 					//      continue;
 
 					case  cmIF:
-						if (Stack[sidx--] == 0)
+						if (Stack[sidx--] == 0.0)
 							pTok += pTok->Oprt.offset;
 						continue;
 
@@ -1817,11 +1877,11 @@ namespace mu
 					// built in binary operators
 					case  cmLE:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] <= Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() <= Stack[sidx + 1].real();
 						continue;
 					case  cmGE:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] >= Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() >= Stack[sidx + 1].real();
 						continue;
 					case  cmNEQ:
 						--sidx;
@@ -1833,11 +1893,11 @@ namespace mu
 						continue;
 					case  cmLT:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] < Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() < Stack[sidx + 1].real();
 						continue;
 					case  cmGT:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] > Stack[sidx + 1];
+						Stack[sidx]  = Stack[sidx].real() > Stack[sidx + 1].real();
 						continue;
 					case  cmADD:
 						--sidx;
@@ -1868,11 +1928,11 @@ namespace mu
 
 					case  cmLAND:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] && Stack[sidx + 1];
+						Stack[sidx]  = std::abs(Stack[sidx]) && std::abs(Stack[sidx + 1]);
 						continue;
 					case  cmLOR:
 						--sidx;
-						Stack[sidx]  = Stack[sidx] || Stack[sidx + 1];
+						Stack[sidx]  = std::abs(Stack[sidx]) || std::abs(Stack[sidx + 1]);
 						continue;
 
 					case  cmASSIGN:
@@ -1886,7 +1946,7 @@ namespace mu
 					//      continue;
 
 					case  cmIF:
-						if (Stack[sidx--] == 0)
+						if (Stack[sidx--] == 0.0)
 							pTok += pTok->Oprt.offset;
 						continue;
 
@@ -2138,7 +2198,7 @@ namespace mu
 							break;
                         }
 
-						std::vector<double> vVar;
+						std::vector<mu::value_type> vVar;
 						vVar.push_back(*(opt.GetVar()));
 						SetVectorVar(opt.GetAsString(), vVar, true);
 					}
@@ -2866,7 +2926,7 @@ namespace mu
 				// an arbitrary length used
 				if (nVectorlength)
 				{
-                    std::map<double*, double> mFirstVals;
+                    std::map<mu::value_type*, mu::value_type> mFirstVals;
                     valbuf_type buffer;
                     buffer.push_back(0.0); // erster Wert wird nicht mitgezaehlt
 
@@ -2959,7 +3019,7 @@ namespace mu
 			if (mVectorVars.size() && !(mVectorVars.size() == 1 && mTargets.size() && vCurrentUsedVars.find("_~TRGTVCT[~]") != vCurrentUsedVars.end()))
 			{
 				valbuf_type buffer;
-				std::map<double*, double> mFirstVals;
+				std::map<mu::value_type*, mu::value_type> mFirstVals;
 				buffer.push_back(0.0);
 
 				// Get the maximal size of the used vectors
@@ -3564,11 +3624,11 @@ namespace mu
     /// vector into the internal storage referencing
     /// it with a auto-generated variable name.
     ///
-    /// \param vVar const std::vector<double>&
+    /// \param vVar const std::vector<mu::value_type>&
     /// \return string_type
     ///
     /////////////////////////////////////////////////
-	string_type ParserBase::CreateTempVectorVar(const std::vector<double>& vVar)
+	string_type ParserBase::CreateTempVectorVar(const std::vector<mu::value_type>& vVar)
 	{
 	    string_type sTempVarName = "_~TV[" + getNextVectorVarIndex() + "]";
 
@@ -3584,12 +3644,12 @@ namespace mu
     /// it with the passed name.
     ///
     /// \param sVarName const std::string&
-    /// \param vVar const std::vector<double>&
+    /// \param vVar const std::vector<mu::value_type>&
     /// \param bAddVectorType bool
     /// \return void
     ///
     /////////////////////////////////////////////////
-	void ParserBase::SetVectorVar(const std::string& sVarName, const std::vector<double>& vVar, bool bAddVectorType)
+	void ParserBase::SetVectorVar(const std::string& sVarName, const std::vector<mu::value_type>& vVar, bool bAddVectorType)
 	{
 		if (!vVar.size())
 			return;
@@ -3597,7 +3657,7 @@ namespace mu
 		if (!bAddVectorType && mVectorVars.find(sVarName) == mVectorVars.end() && m_VarDef.find(sVarName) == m_VarDef.end())
 		{
 		    // Create the storage for a new variable
-		    m_lDataStorage.push_back(new double);
+		    m_lDataStorage.push_back(new mu::value_type);
 
 		    // Assign the first element of the vector
 		    // to this storage
@@ -3625,10 +3685,10 @@ namespace mu
     /// to the vector stored internally.
     ///
     /// \param sVarName const std::string&
-    /// \return std::vector<double>*
+    /// \return std::vector<mu::value_type>*
     ///
     /////////////////////////////////////////////////
-	std::vector<double>* ParserBase::GetVectorVar(const std::string& sVarName)
+	std::vector<mu::value_type>* ParserBase::GetVectorVar(const std::string& sVarName)
 	{
 		if (mVectorVars.find(sVarName) == mVectorVars.end())
 			return nullptr;

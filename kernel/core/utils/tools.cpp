@@ -25,20 +25,45 @@
 // toString function implementations
 // There's an overwrite for mostly every variable type
 //
-// integer to string
-string toString(int nNumber, const Settings& _option)
+/////////////////////////////////////////////////
+/// \brief Converts an integer to a string.
+///
+/// \param nNumber int
+/// \param _option const Settings&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toString(int nNumber, const Settings& _option)
 {
     return toString((double)nNumber, _option);  // Unnoetig das nochmal zu schreiben. Rufen wir die andere Funktion mit einer expliziten Konvertierung auf
 }
 
-// double to string using precision from the Settings
-string toString(double dNumber, const Settings& _option)
+
+/////////////////////////////////////////////////
+/// \brief Converts a double to a string using
+/// the precision from the Settings object.
+///
+/// \param dNumber double
+/// \param _option const Settings&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toString(double dNumber, const Settings& _option)
 {
     return toString(dNumber, _option.getPrecision());   // Auf den eigentlichen string wird dann mit der Methode ostringstream::str() zugegriffen
 }
 
-// double to string using an explicit precision
-string toString(double dNumber, int nPrecision)
+
+/////////////////////////////////////////////////
+/// \brief Converts a double to a string using
+/// the passed precision.
+///
+/// \param dNumber double
+/// \param nPrecision int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toString(double dNumber, int nPrecision)
 {
     ostringstream Temp;
     Temp.precision(nPrecision);
@@ -46,20 +71,73 @@ string toString(double dNumber, int nPrecision)
     return Temp.str();
 }
 
-// Integer to string without the Settings bloat
-string toString(int nNumber)
+/////////////////////////////////////////////////
+/// \brief Converts a complex number into a
+/// printable string.
+///
+/// \param dNumber const std::complex<double>&
+/// \param nPrecision int
+/// \return sstd::tring
+///
+/////////////////////////////////////////////////
+std::string toString(const std::complex<double>& dNumber, int nPrecision)
+{
+    ostringstream Temp;
+    Temp.precision(std::rint(nPrecision / (dNumber.real() != 0.0 && dNumber.imag() != 0.0 && !isnan(dNumber.imag()) ? 2 : 1)));
+
+    if (dNumber.real() || !dNumber.imag())
+        Temp << dNumber.real();
+
+    if (dNumber.imag())
+    {
+        if ((dNumber.imag() > 0.0 || isnan(dNumber.imag())) && dNumber.real() != 0.0)
+            Temp << "+";
+
+        Temp << dNumber.imag() << (isnan(dNumber.imag()) || isinf(dNumber.imag()) ? " i" : "i");
+    }
+
+    return Temp.str();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts an integer to a string
+/// without the Settings bloat.
+///
+/// \param nNumber int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toString(int nNumber)
 {
     return toString((long long int)nNumber);
 }
 
-// Integer to string without the Settings bloat
-string toString(size_t nNumber)
+
+/////////////////////////////////////////////////
+/// \brief Converts an unsigned integer to a
+/// string.
+///
+/// \param nNumber size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toString(size_t nNumber)
 {
     return toString((long long int)nNumber);
 }
 
-// time_t to string - Will convert a time into a time string
-string toString(__time64_t tTime, int timeStampFlags)
+
+/////////////////////////////////////////////////
+/// \brief Converts a time_t to a string. Will
+/// actually print a timestamp.
+///
+/// \param tTime __time64_t
+/// \param timeStampFlags int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toString(__time64_t tTime, int timeStampFlags)
 {
     tm* ltm = _localtime64(&tTime);
     ostringstream timeStream;
@@ -121,16 +199,32 @@ string toString(__time64_t tTime, int timeStampFlags)
     return timeStream.str();
 }
 
-// long long int to string
-string toString(long long int nNumber)
+
+/////////////////////////////////////////////////
+/// \brief Converts a long long int to a string.
+///
+/// \param nNumber long longint
+/// \return string
+///
+/////////////////////////////////////////////////
+std::string toString(long long int nNumber)
 {
     ostringstream Temp;
     Temp << nNumber;
     return Temp.str();
 }
 
-// boolean to string - returns "true" or "false"
-string toString(bool bBoolean)
+
+/////////////////////////////////////////////////
+/// \brief Converts a boolean to a string by
+/// actually converting the numerical value to
+/// \c "true" and \c "false".
+///
+/// \param bBoolean bool
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toString(bool bBoolean)
 {
     if (bBoolean)
         return "true";
@@ -138,8 +232,16 @@ string toString(bool bBoolean)
         return "false";
 }
 
-// double into "full precision" string
-string toCmdString(double dNumber)
+
+/////////////////////////////////////////////////
+/// \brief Converts a numerical value into a
+/// "full" precision string.
+///
+/// \param dNumber double
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toCmdString(double dNumber)
 {
     ostringstream Temp;
     Temp.precision(20);
@@ -147,17 +249,47 @@ string toCmdString(double dNumber)
     return Temp.str();
 }
 
-// integer into a Hex value (used for pointers)
-string toHexString(int nNumber)
+
+/////////////////////////////////////////////////
+/// \brief Converts a numerical value into a
+/// "full" precision string
+///
+/// \param dNumber const std::complex<double>&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toCmdString(const std::complex<double>& dNumber)
+{
+    return toString(dNumber, 20);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts an integer to a hexadecimal
+/// number printed as string.
+///
+/// \param nNumber int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toHexString(int nNumber)
 {
     ostringstream Temp;
     Temp << std::hex << nNumber;
     return "0x" + Temp.str();
 }
 
-// This function converts a std::vector into a std::string,
-// where the components are translated into "{x,y,z...}"
-string toString(const vector<int>& vVector)
+
+/////////////////////////////////////////////////
+/// \brief This function converts a std::vector
+/// into a std::string, where the components are
+/// translated into "{x,y,z...}"
+///
+/// \param vVector const std::vector<int>&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toString(const std::vector<int>& vVector)
 {
     string sString;
 
@@ -174,9 +306,17 @@ string toString(const vector<int>& vVector)
     return "{" + sString;
 }
 
-// This function converts a std::string into a std::vector,
-// where the string shall be passed as "{x,y,z,...}"
-vector<int> toVector(string sString)
+
+/////////////////////////////////////////////////
+/// \brief This function converts a std::string
+/// into a std::vector, where the string shall be
+/// passed as "{x,y,z,...}"
+///
+/// \param sString std::string
+/// \return std::vector<int>
+///
+/////////////////////////////////////////////////
+std::vector<int> toVector(std::string sString)
 {
     vector<int> vVector;
 
@@ -197,8 +337,16 @@ vector<int> toVector(string sString)
     return vVector;
 }
 
-// Removes vowels and umlauts from the passed string
-string condenseText(const string& sText)
+
+/////////////////////////////////////////////////
+/// \brief Removes vowels and umlauts from the
+/// passed string.
+///
+/// \param sText const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string condenseText(const std::string& sText)
 {
     string sReturn = sText;
     string sToErase = " AaEeIiOoUuÄäÖöÜüßYy";
@@ -1816,7 +1964,7 @@ static void parseArg(std::string& sArg, bool bAsInt)
 
     int results;
     int nPrec = instance->getSettings().getPrecision();
-    value_type* v = instance->getParser().Eval(results);
+    mu::value_type* v = instance->getParser().Eval(results);
 
     sArg.clear();
 
@@ -2022,7 +2170,15 @@ bool isToStringArg(const string& sExpr, unsigned int nPos)
     return false;
 }
 
-// Casts doubles to integers and avoids rounding errors
+
+/////////////////////////////////////////////////
+/// \brief Casts doubles to integers and avoids
+/// rounding errors.
+///
+/// \param number double
+/// \return long long int
+///
+/////////////////////////////////////////////////
 long long int intCast(double number)
 {
     // if quite close, use rint
@@ -2030,6 +2186,21 @@ long long int intCast(double number)
         return rint(number);
     // otherwise truncate
     return static_cast<int>(number);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Casts the real part of the complex
+/// number to an integer and avoids rounding
+/// errors.
+///
+/// \param number const std::complex<double>&
+/// \return long long int
+///
+/////////////////////////////////////////////////
+long long int intCast(const std::complex<double>& number)
+{
+    return intCast(number.real());
 }
 
 // This function is a wrapper for the usual wcstombs function, which can handle wstrings
@@ -3737,6 +3908,27 @@ double intPower(double dNumber, int nExponent)
     for (int i = abs(nExponent); i > 0; i--)
     {
         dResult *= (long double)dNumber;
+    }
+
+    // Apply the sign of the exponent
+    if (nExponent > 0)
+        return dResult;
+    else
+        return 1.0 / dResult;
+}
+
+std::complex<double> intPower(const std::complex<double>& dNumber, int nExponent)
+{
+    std::complex<double> dResult = 1.0L;
+
+    // An exponent of zero returns always 1
+    if (!nExponent)
+        return 1.0;
+
+    // Calculuate the exponentation
+    for (int i = abs(nExponent); i > 0; i--)
+    {
+        dResult *= dNumber;
     }
 
     // Apply the sign of the exponent

@@ -481,10 +481,38 @@ double Memory::readMemInterpolated(double _dLine, double _dCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return vector<double>
+/// \return vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-vector<double> Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+vector<mu::value_type> Memory::readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+{
+    vector<mu::value_type> vReturn;
+
+    if ((_vLine.size() > 1 && _vCol.size() > 1) || !dMemTable)
+        vReturn.push_back(NAN);
+    else
+    {
+        long long int nCurLines = getLines(false);
+        long long int nCurCols = getCols(false);
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
+        {
+            for (unsigned int j = 0; j < _vCol.size(); j++)
+            {
+                if (_vLine[i] < 0 || _vLine[i] >= nCurLines
+                    || _vCol[j] < 0 || _vCol[j] >= nCurCols
+                    || _vLine[i] >= nLines - nAppendedZeroes[_vCol[j]])
+                    vReturn.push_back(NAN);
+                else
+                    vReturn.push_back(dMemTable[_vLine[i]][_vCol[j]]);
+            }
+        }
+    }
+
+    return vReturn;
+}
+
+vector<double> Memory::readRealMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     vector<double> vReturn;
 
@@ -552,13 +580,13 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 /// of the vector instance by directly writing to
 /// the target instance.
 ///
-/// \param vTarget vector<double>*
+/// \param vTarget vector<mu::value_type>*
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::copyElementsInto(vector<double>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
+void Memory::copyElementsInto(vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     vTarget->clear();
 
@@ -835,13 +863,13 @@ int Memory::getHeadlineCount() const
 ///
 /// \param _nLine long long int
 /// \param _nCol long long int
-/// \param _dData double
+/// \param _dData mu::value_type
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
+void Memory::writeData(long long int _nLine, long long int _nCol, mu::value_type _dData)
 {
-    if (!dMemTable && isnan(_dData))
+    if (!dMemTable && isnan(_dData.real()))
         return;
 
     _nLine = std::max(0LL, _nLine);
@@ -849,7 +877,7 @@ void Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
 
     if (dMemTable && (_nLine < nLines) && (_nCol < nCols))
     {
-        if (isnan(_dData))
+        if (isnan(_dData.real()))
         {
             dMemTable[_nLine][_nCol] = NAN;
 
@@ -869,7 +897,7 @@ void Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
         }
         else
         {
-            dMemTable[_nLine][_nCol] = _dData;
+            dMemTable[_nLine][_nCol] = _dData.real();
 
             if (nLines - nAppendedZeroes[_nCol] <= _nLine)
                 nAppendedZeroes[_nCol] = nLines - _nLine - 1;
@@ -882,24 +910,24 @@ void Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
         // Resize the memory table first
         resizeMemory(_nLine+1, _nCol+1);
 
-        if (isnan(_dData))
+        if (isnan(_dData.real()))
             dMemTable[_nLine][_nCol] = NAN;
         else
         {
-            dMemTable[_nLine][_nCol] = _dData;
+            dMemTable[_nLine][_nCol] = _dData.real();
 
             if (nLines - nAppendedZeroes[_nCol] <= _nLine)
                 nAppendedZeroes[_nCol] = nLines - _nLine - 1;
         }
 
-        if (!isnan(_dData) && !bValidData)
+        if (!isnan(_dData.real()) && !bValidData)
             bValidData = true;
     }
 
-    if ((isnan(_dData) || _nLine >= nCalcLines) && nCalcLines != -1)
+    if ((isnan(_dData.real()) || _nLine >= nCalcLines) && nCalcLines != -1)
         nCalcLines = -1;
 
-    if ((isnan(_dData) || _nCol >= nCalcCols) && nCalcCols != -1)
+    if ((isnan(_dData.real()) || _nCol >= nCalcCols) && nCalcCols != -1)
         nCalcCols = -1;
 
     // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
@@ -918,12 +946,12 @@ void Memory::writeData(long long int _nLine, long long int _nCol, double _dData)
 /// necessary.
 ///
 /// \param _idx Indices&
-/// \param _dData double*
+/// \param _dData mu::value_type*
 /// \param _nNum unsigned int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
+void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum)
 {
     int nDirection = LINES;
 
@@ -948,12 +976,12 @@ void Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
             if (nDirection == COLS)
             {
                 if (_nNum > i)
-                    writeData(_idx.row[i], _idx.col[j], _dData[i]);
+                    writeData(_idx.row[i], _idx.col[j], _dData[i].real());
             }
             else
             {
                 if (_nNum > j)
-                    writeData(_idx.row[i], _idx.col[j], _dData[j]);
+                    writeData(_idx.row[i], _idx.col[j], _dData[j].real());
             }
         }
     }
@@ -967,11 +995,11 @@ void Memory::writeData(Indices& _idx, double* _dData, unsigned int _nNum)
 /// if necessary.
 ///
 /// \param _idx Indices&
-/// \param _dData double
+/// \param _dData mu::value_type
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeSingletonData(Indices& _idx, double _dData)
+void Memory::writeSingletonData(Indices& _idx, mu::value_type _dData)
 {
     _idx.row.setOpenEndIndex(std::max(_idx.row.front(), getLines(false)) - 1);
     _idx.col.setOpenEndIndex(std::max(_idx.col.front(), getCols(false)) - 1);
@@ -980,7 +1008,7 @@ void Memory::writeSingletonData(Indices& _idx, double _dData)
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
-            writeData(_idx.row[i], _idx.col[j], _dData);
+            writeData(_idx.row[i], _idx.col[j], _dData.real());
         }
     }
 }
@@ -1597,16 +1625,16 @@ void Memory::countAppendedZeroes()
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
-    double dAvg = avg(_vLine, _vCol);
-    double dStd = 0.0;
+    mu::value_type dAvg = avg(_vLine, _vCol);
+    mu::value_type dStd = 0.0;
 
     long long int lines = getLines(false);
     long long int cols = getCols(false);
@@ -1627,7 +1655,7 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) const
         }
     }
 
-    return sqrt(dStd / (num(_vLine, _vCol) - 1));
+    return sqrt(dStd / (num(_vLine, _vCol) - 1.0));
 }
 
 
@@ -1637,10 +1665,10 @@ double Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
@@ -1655,10 +1683,10 @@ double Memory::avg(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
@@ -1699,10 +1727,10 @@ double Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
@@ -1743,15 +1771,15 @@ double Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
-    double dPrd = 1.0;
+    mu::value_type dPrd = 1.0;
 
     long long int lines = getLines(false);
     long long int cols = getCols(false);
@@ -1783,15 +1811,15 @@ double Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
-    double dSum = 0.0;
+    mu::value_type dSum = 0.0;
 
     long long int lines = getLines(false);
     long long int cols = getCols(false);
@@ -1823,10 +1851,10 @@ double Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0;
@@ -1859,10 +1887,10 @@ double Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0.0;
@@ -1903,10 +1931,10 @@ double Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _vCol) con
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0.0;
@@ -1939,10 +1967,10 @@ double Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vCol) cons
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0.0;
@@ -1985,10 +2013,10 @@ double Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _vCol) con
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return 0;
@@ -2019,15 +2047,15 @@ double Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
 
-    double dNorm = 0.0;
+    mu::value_type dNorm = 0.0;
 
     long long int lines = getLines(false);
     long long int cols = getCols(false);
@@ -2059,12 +2087,12 @@ double Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \param dRef double
+/// \param dRef mu::value_type
 /// \param _nType int
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double dRef, int _nType) const
+mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dRef, int _nType) const
 {
     if (!bValidData)
         return NAN;
@@ -2085,7 +2113,7 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 
     int nType = 0;
 
-    double dKeep = dRef;
+    double dKeep = dRef.real();
     int nKeep = -1;
 
     if (_nType > 0)
@@ -2116,7 +2144,7 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
             if (isnan(dMemTable[_vLine[i]][_vCol[j]]))
                 continue;
 
-            if (dMemTable[_vLine[i]][_vCol[j]] == dRef)
+            if (dMemTable[_vLine[i]][_vCol[j]] == dRef.real())
             {
                 if (nType & RETURN_VALUE)
                     return dMemTable[_vLine[i]][_vCol[j]];
@@ -2126,7 +2154,7 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 
                 return _vLine[i] + 1;
             }
-            else if (nType & RETURN_GE && dMemTable[_vLine[i]][_vCol[j]] > dRef)
+            else if (nType & RETURN_GE && dMemTable[_vLine[i]][_vCol[j]] > dRef.real())
             {
                 if (nType & RETURN_FIRST)
                 {
@@ -2150,7 +2178,7 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
                 else
                     continue;
             }
-            else if (nType & RETURN_LE && dMemTable[_vLine[i]][_vCol[j]] < dRef)
+            else if (nType & RETURN_LE && dMemTable[_vLine[i]][_vCol[j]] < dRef.real())
             {
                 if (nType & RETURN_FIRST)
                 {
@@ -2192,10 +2220,10 @@ double Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+mu::value_type Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     if (!bValidData)
         return NAN;
@@ -2239,11 +2267,11 @@ double Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 ///
 /// \param _vLine const VectorIndex&
 /// \param _vCol const VectorIndex&
-/// \param dPct double
-/// \return double
+/// \param dPct mu::value_type
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double dPct) const
+mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, mu::value_type dPct) const
 {
     if (!bValidData)
         return NAN;
@@ -2258,7 +2286,7 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 
     vData.reserve(_vLine.size()*_vCol.size());
 
-    if (dPct >= 1 || dPct <= 0)
+    if (dPct.real() >= 1 || dPct.real() <= 0)
         return NAN;
 
     for (unsigned int i = 0; i < _vLine.size(); i++)
@@ -2281,7 +2309,7 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
     if (!nCount)
         return NAN;
 
-    return gsl_stats_quantile_from_sorted_data(&vData[0], 1, nCount, dPct);
+    return gsl_stats_quantile_from_sorted_data(&vData[0], 1, nCount, dPct.real());
 }
 
 
@@ -2291,13 +2319,13 @@ double Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, double d
 ///
 /// \param _vIndex const VectorIndex&
 /// \param dir int Bitcomposition of AppDir values
-/// \return vector<double>
+/// \return vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-vector<double> Memory::size(const VectorIndex& _vIndex, int dir) const
+vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) const
 {
     if (!bValidData)
-        return vector<double>(2, 0.0);
+        return vector<mu::value_type>(2, 0.0);
 
     long long int lines = getLines(false);
     long long int cols = getCols(false);
@@ -2307,13 +2335,13 @@ vector<double> Memory::size(const VectorIndex& _vIndex, int dir) const
 
     // Handle simple things first
     if (dir == ALL)
-        return vector<double>({lines, cols});
+        return vector<mu::value_type>({lines, cols});
     else if (dir == GRID)
-        return vector<double>({lines, cols-2});
+        return vector<mu::value_type>({lines, cols-2});
     else if (dir & LINES)
     {
         // Compute the sizes of the table rows
-        vector<double> vSizes;
+        vector<mu::value_type> vSizes;
 
         for (size_t i = 0; i < _vIndex.size(); i++)
         {
@@ -2338,7 +2366,7 @@ vector<double> Memory::size(const VectorIndex& _vIndex, int dir) const
     else if (dir & COLS)
     {
         // Compute the sizes of the table columns
-        vector<double> vSizes;
+        vector<mu::value_type> vSizes;
 
         for (size_t j = 0; j < _vIndex.size(); j++)
         {
@@ -2354,7 +2382,7 @@ vector<double> Memory::size(const VectorIndex& _vIndex, int dir) const
         return vSizes;
     }
 
-    return vector<double>(2, 0.0);
+    return vector<mu::value_type>(2, 0.0);
 }
 
 
@@ -2364,13 +2392,13 @@ vector<double> Memory::size(const VectorIndex& _vIndex, int dir) const
 ///
 /// \param _vIndex const VectorIndex&
 /// \param dir int
-/// \return vector<double>
+/// \return vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir) const
+vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) const
 {
     if (!bValidData)
-        return vector<double>(1, NAN);
+        return vector<mu::value_type>(1, NAN);
 
     long long int lines = getLines(false);
     long long int cols = getCols(false);
@@ -2382,7 +2410,7 @@ vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir) const
     // results for ALL and GRID using the results for LINES
     if (dir & COLS)
     {
-        vector<double> vPos;
+        vector<mu::value_type> vPos;
 
         for (size_t j = 0; j < _vIndex.size(); j++)
         {
@@ -2398,7 +2426,7 @@ vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir) const
         return vPos;
     }
 
-    vector<double> vPos;
+    vector<mu::value_type> vPos;
     double dMin = NAN;
     size_t pos = 0;
 
@@ -2420,11 +2448,11 @@ vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir) const
     }
 
     if (!vPos.size())
-        return vector<double>(1, NAN);
+        return vector<mu::value_type>(1, NAN);
 
     // Use the global minimal value for ALL and GRID
     if (dir == ALL || dir == GRID)
-        return vector<double>({_vIndex[pos]+1, vPos[pos]});
+        return vector<mu::value_type>({_vIndex[pos]+1, vPos[pos]});
 
     return vPos;
 }
@@ -2436,13 +2464,13 @@ vector<double> Memory::minpos(const VectorIndex& _vIndex, int dir) const
 ///
 /// \param _vIndex const VectorIndex&
 /// \param dir int
-/// \return vector<double>
+/// \return vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
+vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
 {
     if (!bValidData)
-        return vector<double>(1, NAN);
+        return vector<mu::value_type>(1, NAN);
 
     long long int lines = getLines(false);
     long long int cols = getCols(false);
@@ -2454,7 +2482,7 @@ vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
     // results for ALL and GRID using the results for LINES
     if (dir & COLS)
     {
-        vector<double> vPos;
+        vector<mu::value_type> vPos;
 
         for (size_t j = 0; j < _vIndex.size(); j++)
         {
@@ -2470,7 +2498,7 @@ vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
         return vPos;
     }
 
-    vector<double> vPos;
+    vector<mu::value_type> vPos;
     double dMax = NAN;
     size_t pos;
 
@@ -2492,11 +2520,11 @@ vector<double> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
     }
 
     if (!vPos.size())
-        return vector<double>(1, NAN);
+        return vector<mu::value_type>(1, NAN);
 
     // Use the global maximal value for ALL and GRID
     if (dir == ALL || dir == GRID)
-        return vector<double>({_vIndex[pos]+1, vPos[pos]});
+        return vector<mu::value_type>({_vIndex[pos]+1, vPos[pos]});
 
     return vPos;
 }
@@ -2724,7 +2752,7 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
             if (isnan(dMemTable[i][j]))
             {
                 Boundary _boundary = findValidBoundary(_vLine, _vCol, i, j);
-                NumeRe::RetouchRegion _region(_boundary.rows-1, _boundary.cols-1, med(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce())));
+                NumeRe::RetouchRegion _region(_boundary.rows-1, _boundary.cols-1, med(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce())).real());
 
                 long long int l,r,t,b;
 
@@ -2736,15 +2764,15 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
                 t = _boundary.rf() < _vLine.front() ? _boundary.re() : _boundary.rf();
                 b = _boundary.re() > _vLine.last() ? _boundary.rf() : _boundary.re();
 
-                _region.setBoundaries(readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(l)),
-                                      readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(r)),
-                                      readMem(VectorIndex(t), VectorIndex(_boundary.cf(), _boundary.ce())),
-                                      readMem(VectorIndex(b), VectorIndex(_boundary.cf(), _boundary.ce())));
+                _region.setBoundaries(readRealMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(l)),
+                                      readRealMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(r)),
+                                      readRealMem(VectorIndex(t), VectorIndex(_boundary.cf(), _boundary.ce())),
+                                      readRealMem(VectorIndex(b), VectorIndex(_boundary.cf(), _boundary.ce())));
 
                 for (long long int _n = _boundary.rf()+1; _n < _boundary.re(); _n++)
                 {
                     for (long long int _m = _boundary.cf()+1; _m < _boundary.ce(); _m++)
-                        dMemTable[_n][_m] = _region.retouch(_n - _boundary.rf() - 1, _m - _boundary.cf() - 1, dMemTable[_n][_m], med(VectorIndex(_n-1, _n+1), VectorIndex(_m-1, _m+1)));
+                        dMemTable[_n][_m] = _region.retouch(_n - _boundary.rf() - 1, _m - _boundary.cf() - 1, dMemTable[_n][_m], med(VectorIndex(_n-1, _n+1), VectorIndex(_m-1, _m+1)).real());
                 }
 
                 bMarkModified = true;

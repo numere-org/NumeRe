@@ -239,8 +239,8 @@ Plot::Plot(string& sCmd, MemoryManager& __data, Parser& __parser, Settings& __op
             // Only use the option value, if it contains two values
             if (nRes == 2)
             {
-                nMultiplots[1] = (unsigned int)v[0];
-                nMultiplots[0] = (unsigned int)v[1];
+                nMultiplots[1] = (unsigned int)intCast(v[0]);
+                nMultiplots[0] = (unsigned int)intCast(v[1]);
             }
 
             // Remove everything up to the first command in the
@@ -995,7 +995,7 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
             }
         }
 
-        double dt_max = _defVars.vValue[TCOORD][0];
+        double dt_max = _defVars.vValue[TCOORD][0].real();
 
         // Apply the title line to the graph
         if (_pData.getTitle().length())
@@ -1077,9 +1077,9 @@ bool Plot::createPlotOrAnimation(int& nStyle, size_t nPlotCompose, size_t nPlotC
         else if (_pInfo.b2DVect)   // 2D-Vektorplot
             create2dVect();
         else if (_pInfo.bDraw)
-            create2dDrawing(vDrawVector, vResults, nFunctions);
+            create2dDrawing(vDrawVector, nFunctions);
         else if (_pInfo.bDraw3D)
-            create3dDrawing(vDrawVector, vResults, nFunctions);
+            create3dDrawing(vDrawVector, nFunctions);
         else            // 3D-Trajektorie
             createStd3dPlot(vType, nStyle, nLegends, nFunctions, nPlotCompose, nPlotComposeSize);
 
@@ -2279,12 +2279,12 @@ void Plot::create2dVect()
 /// creation of all two-dimensional drawings.
 ///
 /// \param vDrawVector vector<string>&
-/// \param vResults value_type*
+
 /// \param nFunctions int&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create2dDrawing(vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
+void Plot::create2dDrawing(vector<string>& vDrawVector, int& nFunctions)
 {
     string sStyle;
     string sTextString;
@@ -2335,7 +2335,8 @@ void Plot::create2dDrawing(vector<string>& vDrawVector, value_type* vResults, in
         if (sDrawExpr.find('{') != string::npos)
             convertVectorToExpression(sDrawExpr, _option);
         _parser.SetExpr(sDrawExpr);
-        vResults = _parser.Eval(nFunctions);
+        mu::value_type* vRes = _parser.Eval(nFunctions);
+        std::vector<double> vResults = real({vRes, vRes+nFunctions});
 
         if (sCurrentDrawingFunction.substr(0, 6) == "trace(" || sCurrentDrawingFunction.substr(0, 5) == "line(")
         {
@@ -2542,12 +2543,12 @@ void Plot::create2dDrawing(vector<string>& vDrawVector, value_type* vResults, in
 /// creation of all three-dimensional drawings.
 ///
 /// \param vDrawVector vector<string>&
-/// \param vResults value_type*
+
 /// \param nFunctions int&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Plot::create3dDrawing(vector<string>& vDrawVector, value_type* vResults, int& nFunctions)
+void Plot::create3dDrawing(vector<string>& vDrawVector, int& nFunctions)
 {
     string sStyle;
     string sTextString;
@@ -2598,7 +2599,8 @@ void Plot::create3dDrawing(vector<string>& vDrawVector, value_type* vResults, in
         if (sDrawExpr.find('{') != string::npos)
             convertVectorToExpression(sDrawExpr, _option);
         _parser.SetExpr(sDrawExpr);
-        vResults = _parser.Eval(nFunctions);
+        mu::value_type* vRes = _parser.Eval(nFunctions);
+        std::vector<double> vResults = real({vRes, vRes+nFunctions});
         if (sCurrentDrawingFunction.substr(0, 6) == "trace(" || sCurrentDrawingFunction.substr(0, 5) == "line(")
         {
             if (nFunctions < 3)
@@ -3632,12 +3634,12 @@ void Plot::evaluateSubplot(size_t& nLegends, string& sCmd, size_t nMultiplots[2]
         if (findParameter(sCmd, "cols", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "cols", '=') + 4));
-            nMultiCols = (unsigned int)_parser.Eval();
+            nMultiCols = (unsigned int)intCast(_parser.Eval());
         }
         if (findParameter(sCmd, "lines", '='))
         {
             _parser.SetExpr(getArgAtPos(sCmd, findParameter(sCmd, "lines", '=') + 5));
-            nMultiLines = (unsigned int)_parser.Eval();
+            nMultiLines = (unsigned int)intCast(_parser.Eval());
         }
         if (sSubPlotIDX.length())
         {
@@ -3652,21 +3654,21 @@ void Plot::evaluateSubplot(size_t& nLegends, string& sCmd, size_t nMultiplots[2]
             value_type* v = _parser.Eval(nRes);
             if (nRes == 1)
             {
-                if (v[0] < 1)
+                if (intCast(v[0]) < 1)
                     v[0] = 1;
-                if ((unsigned int)v[0] - 1 >= nMultiplots[0]*nMultiplots[1])
+                if ((unsigned int)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)(v[0] - 1), nMultiCols, nMultiLines))
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)(intCast(v[0]) - 1), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)v[0] - 1, nMultiCols, nMultiLines);
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)intCast(v[0]) - 1, nMultiCols, nMultiLines);
             }   // cols, lines
             else
             {
-                if ((unsigned int)(v[1] - 1 + (v[0] - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
+                if ((unsigned int)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[1]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)((v[1] - 1) + (v[0] - 1)*nMultiplots[0]), nMultiCols, nMultiLines))
+                if (!checkMultiPlotArray(nMultiplots, nSubPlotMap, (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines))
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((v[1] - 1) + (v[0] - 1)*nMultiplots[0]), nMultiCols, nMultiLines);
+                _graph->MultiPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]), nMultiCols, nMultiLines);
             }
         }
         else
@@ -3707,28 +3709,28 @@ void Plot::evaluateSubplot(size_t& nLegends, string& sCmd, size_t nMultiplots[2]
             value_type* v = _parser.Eval(nRes);
             if (nRes == 1)
             {
-                if (v[0] < 1)
+                if (intCast(v[0]) < 1)
                     v[0] = 1;
-                if ((unsigned int)v[0] - 1 >= nMultiplots[0]*nMultiplots[1])
+                if ((unsigned int)intCast(v[0]) - 1 >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
-                if ((unsigned int)v[0] != 1)
-                    nRes <<= (unsigned int)(v[0] - 1);
+                if ((unsigned int)intCast(v[0]) != 1)
+                    nRes <<= (unsigned int)(intCast(v[0]) - 1);
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)v[0] - 1);
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)intCast(v[0]) - 1);
             }
             else
             {
-                if ((unsigned int)(v[1] - 1 + (v[0] - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
+                if ((unsigned int)(intCast(v[1]) - 1 + (intCast(v[0]) - 1)*nMultiplots[0]) >= nMultiplots[0]*nMultiplots[1])
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nRes = 1;
-                if ((unsigned int)((v[1]) + (v[0] - 1)*nMultiplots[0]) != 1)
-                    nRes <<= (unsigned int)((v[1] - 1) + (v[0] - 1) * nMultiplots[0]);
+                if ((unsigned int)(intCast(v[1]) + (intCast(v[0]) - 1)*nMultiplots[0]) != 1)
+                    nRes <<= (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1) * nMultiplots[0]);
                 if (nRes & nSubPlotMap)
                     throw SyntaxError(SyntaxError::INVALID_SUBPLOT_INDEX, "", SyntaxError::invalid_position);
                 nSubPlotMap |= nRes;
-                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((v[1] - 1) + (v[0] - 1)*nMultiplots[0]));
+                _graph->SubPlot(nMultiplots[0], nMultiplots[1], (unsigned int)((intCast(v[1]) - 1) + (intCast(v[0]) - 1)*nMultiplots[0]));
             }
         }
         else
@@ -4185,7 +4187,7 @@ void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, const st
 
         // Needed for data grids
         if (!_accessParser.isCluster())
-            nNum = _data.num(_accessParser.getDataObject(), _idx.row, VectorIndex(_idx.col.front()+1));
+            nNum = _data.num(_accessParser.getDataObject(), _idx.row, VectorIndex(_idx.col.front()+1)).real();
 
         // Fill the mglData objects using the single indices
         // and the referenced data object
@@ -4433,9 +4435,9 @@ void Plot::createDataLegends()
                         {
                             double dArg_1, dArg_2;
                             _parser.SetExpr(sArg_1);
-                            dArg_1 = _parser.Eval();
+                            dArg_1 = _parser.Eval().real();
                             _parser.SetExpr(sArg_2);
-                            dArg_2 = _parser.Eval();
+                            dArg_2 = _parser.Eval().real();
                             sTemp = "\"";
 
                             // Don't use the first one
@@ -4459,9 +4461,9 @@ void Plot::createDataLegends()
                     {
                         double dArg_1, dArg_2;
                         _parser.SetExpr(sArg_1);
-                        dArg_1 = _parser.Eval();
+                        dArg_1 = _parser.Eval().real();
                         _parser.SetExpr(sArg_2);
-                        dArg_2 = _parser.Eval();
+                        dArg_2 = _parser.Eval().real();
 
                         if (dArg_1 < dArg_2)
                             sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1, sTableName) + " vs. " + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + "\"";
@@ -4474,9 +4476,9 @@ void Plot::createDataLegends()
                     // three-dimensional plot
                     double dArg_1, dArg_2;
                     _parser.SetExpr(sArg_1);
-                    dArg_1 = _parser.Eval();
+                    dArg_1 = _parser.Eval().real();
                     _parser.SetExpr(sArg_2);
-                    dArg_2 = _parser.Eval();
+                    dArg_2 = _parser.Eval().real();
 
                     if (dArg_1 < dArg_2)
                         sTemp = "\"" + _data.getTopHeadLineElement((int)dArg_1 - 1, sTableName) + ", "
@@ -4505,7 +4507,7 @@ void Plot::createDataLegends()
                     {
                         double dArg_1;
                         _parser.SetExpr(sArg_1);
-                        dArg_1 = _parser.Eval();
+                        dArg_1 = _parser.Eval().real();
 
                         sTemp = "\"";
 
@@ -4520,20 +4522,20 @@ void Plot::createDataLegends()
                     else
                     {
                         _parser.SetExpr(sArg_1);
-                        sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval(), sTableName) + " vs. " + _data.getTopHeadLineElement((int)_parser.Eval() - 1, sTableName) + "\"";
+                        sTemp = "\"" + _data.getTopHeadLineElement(intCast(_parser.Eval()), sTableName) + " vs. " + _data.getTopHeadLineElement(intCast(_parser.Eval()) - 1, sTableName) + "\"";
                     }
                 }
                 else if (sArg_3 == "<<empty>>" || !sArg_3.length())
                 {
                     _parser.SetExpr(sArg_1);
-                    sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval() - 1, sTableName) + ", "
-                            + _data.getTopHeadLineElement((int)_parser.Eval(), sTableName) + ", "
-                            + _data.getTopHeadLineElement((int)_parser.Eval() + 1, sTableName) + "\"";
+                    sTemp = "\"" + _data.getTopHeadLineElement(intCast(_parser.Eval()) - 1, sTableName) + ", "
+                            + _data.getTopHeadLineElement(intCast(_parser.Eval()), sTableName) + ", "
+                            + _data.getTopHeadLineElement(intCast(_parser.Eval()) + 1, sTableName) + "\"";
                 }
                 else if (sArg_3.length())
                 {
                     _parser.SetExpr(sArg_1);
-                    sTemp = "\"" + _data.getTopHeadLineElement((int)_parser.Eval() - 1, sTableName) + ", " + _data.getTopHeadLineElement((int)_parser.Eval(), sTableName) + ", ";
+                    sTemp = "\"" + _data.getTopHeadLineElement(intCast(_parser.Eval()) - 1, sTableName) + ", " + _data.getTopHeadLineElement(intCast(_parser.Eval()), sTableName) + ", ";
                     sTemp += constructDataLegendElement(sArg_3, sTableName) + "\"";
                 }
             }
@@ -4594,7 +4596,7 @@ string Plot::constructDataLegendElement(string& sColumnIndices, const string& sT
 
     // If only one value, simply return the corresponding head line
     if (nResults == 1)
-        return _data.getTopHeadLineElement((int)v[0] - 1, sTableName);
+        return _data.getTopHeadLineElement(intCast(v[0]) - 1, sTableName);
 
     string sFirst = "[";
     string sLast = "]";
@@ -4615,7 +4617,7 @@ string Plot::constructDataLegendElement(string& sColumnIndices, const string& sT
     // combine the legend strings
     for (int i = nStart; i < nResults; i++)
     {
-        sLegend += _data.getTopHeadLineElement((int)v[i] - 1, sTableName);
+        sLegend += _data.getTopHeadLineElement(intCast(v[i]) - 1, sTableName);
         if (i + 1 < nResults)
             sLegend += cSep;
     }
@@ -5239,14 +5241,14 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                 else
                     _defVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
             }
-            _mAxisVals[0].a[x] = _defVars.vValue[XCOORD][0];
+            _mAxisVals[0].a[x] = _defVars.vValue[XCOORD][0].real();
             vResults = _parser.Eval(nFunctions);
             for (int i = 0; i < nFunctions; i++)
             {
                 if (isinf(vResults[i]) || isnan(vResults[i]))
                     _pData.setData(x, i, NAN);
                 else
-                    _pData.setData(x, i, (double)vResults[i]);
+                    _pData.setData(x, i, vResults[i].real());
             }
         }
     }
@@ -5263,7 +5265,7 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                     _defVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
             }
             _defVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
-            _mAxisVals[0].a[x] = _defVars.vValue[XCOORD][0];
+            _mAxisVals[0].a[x] = _defVars.vValue[XCOORD][0].real();
             for (int y = 0; y < _pInfo.nSamples; y++)
             {
                 if (y != 0)
@@ -5275,7 +5277,7 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                 }
                 _defVars.vValue[ZCOORD][0] = _pInfo.dRanges[ZCOORD][0];
                 if (!x)
-                    _mAxisVals[1].a[y] = _defVars.vValue[YCOORD][0];
+                    _mAxisVals[1].a[y] = _defVars.vValue[YCOORD][0].real();
                 for (int z = 0; z < _pInfo.nSamples; z++)
                 {
                     if (z != 0)
@@ -5286,8 +5288,8 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                             _defVars.vValue[ZCOORD][0] += (_pInfo.dRanges[ZCOORD][1] - _pInfo.dRanges[ZCOORD][0]) / (double)(_pInfo.nSamples - 1);
                     }
                     if (!x && !y)
-                        _mAxisVals[2].a[z] = _defVars.vValue[ZCOORD][0];
-                    double dResult = _parser.Eval();
+                        _mAxisVals[2].a[z] = _defVars.vValue[ZCOORD][0].real();
+                    double dResult = _parser.Eval().real();
                     //vResults = &_parser.Eval();
 
                     if (isnan(dResult) || isinf(dResult))
@@ -5364,7 +5366,7 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                             _pData.setData(t, i, NAN, k);
                     }
                     else
-                        _pData.setData(t, i, (double)vResults[i + 3 * k], k);
+                        _pData.setData(t, i, vResults[i + 3 * k].real(), k);
                 }
             }
 
@@ -5414,7 +5416,7 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                                 _pData.setData(x, y, NAN, 3 * z + i);
                         }
                         else
-                            _pData.setData(x, y, (double)vResults[i], 3 * z + i);
+                            _pData.setData(x, y, vResults[i].real(), 3 * z + i);
                     }
                 }
             }
@@ -5450,7 +5452,7 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                             _pData.setData(x, y, NAN, i);
                     }
                     else
-                        _pData.setData(x, y, (double)vResults[i], i);
+                        _pData.setData(x, y, vResults[i].real(), i);
                 }
             }
         }
@@ -5469,7 +5471,7 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                     _defVars.vValue[XCOORD][0] += (_pInfo.dRanges[XCOORD][1] - _pInfo.dRanges[XCOORD][0]) / (double)(_pInfo.nSamples - 1);
             }
             _defVars.vValue[YCOORD][0] = _pInfo.dRanges[YCOORD][0];
-            _mAxisVals[0].a[x] = _defVars.vValue[XCOORD][0];
+            _mAxisVals[0].a[x] = _defVars.vValue[XCOORD][0].real();
             for (int y = 0; y < _pInfo.nSamples; y++)
             {
                 if (y != 0)
@@ -5480,7 +5482,7 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                         _defVars.vValue[YCOORD][0] += (_pInfo.dRanges[YCOORD][1] - _pInfo.dRanges[YCOORD][0]) / (double)(_pInfo.nSamples - 1);
                 }
                 if (!x)
-                    _mAxisVals[1].a[y] = _defVars.vValue[YCOORD][0];
+                    _mAxisVals[1].a[y] = _defVars.vValue[YCOORD][0].real();
                 vResults = _parser.Eval(nFunctions);
                 for (int i = 0; i < nFunctions; i++)
                 {
@@ -5492,7 +5494,7 @@ int Plot::fillData(value_type* vResults, double dt_max, int t_animate, int nFunc
                             _pData.setData(x, y, NAN, i);
                     }
                     else
-                        _pData.setData(x, y, (double)vResults[i], i);
+                        _pData.setData(x, y, vResults[i].real(), i);
                 }
             }
         }

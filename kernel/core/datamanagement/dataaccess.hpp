@@ -62,7 +62,7 @@ bool getData(const std::string& sTableName, Indices& _idx, const MemoryManager& 
 NumeRe::Table parser_extractData(const std::string& sDataExpression, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
 bool isNotEmptyExpression(const std::string&);
 bool isClusterCandidate(std::string& sLine, std::string& sCluster, bool doCut = true);
-double getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
+mu::value_type getDataFromObject(const std::string& sObject, long long int i, long long int j, bool isCluster);
 DataAccessParser getAccessParserForPlotAndFit(StringView sExpression);
 Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 

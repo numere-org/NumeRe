@@ -231,24 +231,24 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
             {
                 for (size_t l = 0; l < _idx.row.size(); l++)
                 {
-                    if (_data.getElement(_idx.row[l], _idx.col[0], _histParams.sTable) > _histParams.ranges.x[1]
-                            || _data.getElement(_idx.row[l], _idx.col[0], _histParams.sTable) < _histParams.ranges.x[0]
-                            || _data.getElement(_idx.row[l], _idx.col[1], _histParams.sTable) > _histParams.ranges.y[1]
-                            || _data.getElement(_idx.row[l], _idx.col[1], _histParams.sTable) < _histParams.ranges.y[0]
-                            || _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) > _histParams.ranges.z[1]
-                            || _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) < _histParams.ranges.z[0])
+                    if (_data.getElement(_idx.row[l], _idx.col[0], _histParams.sTable).real() > _histParams.ranges.x[1]
+                            || _data.getElement(_idx.row[l], _idx.col[0], _histParams.sTable).real() < _histParams.ranges.x[0]
+                            || _data.getElement(_idx.row[l], _idx.col[1], _histParams.sTable).real() > _histParams.ranges.y[1]
+                            || _data.getElement(_idx.row[l], _idx.col[1], _histParams.sTable).real() < _histParams.ranges.y[0]
+                            || _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() > _histParams.ranges.z[1]
+                            || _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < _histParams.ranges.z[0])
                         continue;
 
                     if (isXLog)
                     {
-                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) >= pow(10.0, log10(_histParams.ranges.z[0]) + k * _histParams.binWidth[0])
-                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) < pow(10.0, log10(_histParams.ranges.z[0]) + (k + 1) * _histParams.binWidth[0]))
+                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= pow(10.0, log10(_histParams.ranges.z[0]) + k * _histParams.binWidth[0])
+                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < pow(10.0, log10(_histParams.ranges.z[0]) + (k + 1) * _histParams.binWidth[0]))
                             nCount++;
                     }
                     else
                     {
-                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) >= _histParams.ranges.z[0] + k * _histParams.binWidth[0]
-                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) < _histParams.ranges.z[0] + (k + 1) * _histParams.binWidth[0])
+                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= _histParams.ranges.z[0] + k * _histParams.binWidth[0]
+                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < _histParams.ranges.z[0] + (k + 1) * _histParams.binWidth[0])
                             nCount++;
                     }
                 }
@@ -287,14 +287,14 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
                 {
                     if (isXLog)
                     {
-                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) >= pow(10.0, log10(_histParams.ranges.x[0]) + k * _histParams.binWidth[0])
-                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) < pow(10.0, log10(_histParams.ranges.x[0]) + (k + 1) * _histParams.binWidth[0]))
+                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= pow(10.0, log10(_histParams.ranges.x[0]) + k * _histParams.binWidth[0])
+                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < pow(10.0, log10(_histParams.ranges.x[0]) + (k + 1) * _histParams.binWidth[0]))
                             nCount++;
                     }
                     else
                     {
-                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) >= _histParams.ranges.x[0] + k * _histParams.binWidth[0]
-                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable) < _histParams.ranges.x[0] + (k + 1) * _histParams.binWidth[0])
+                        if (_data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() >= _histParams.ranges.x[0] + k * _histParams.binWidth[0]
+                                && _data.getElement(_idx.row[l], _idx.col[i], _histParams.sTable).real() < _histParams.ranges.x[0] + (k + 1) * _histParams.binWidth[0])
                             nCount++;
                     }
                 }
@@ -857,31 +857,31 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
     {
         // x-Range
         prepareIntervalsForHist(sCmd, _histParams.ranges.x[0], _histParams.ranges.x[1],
-                                _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)),
-                                _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)));
+                                _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real(),
+                                _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real());
 
         // y-Range
         prepareIntervalsForHist(sCmd, _histParams.ranges.y[0], _histParams.ranges.y[1],
-                                _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)),
-                                _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)));
+                                _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)).real(),
+                                _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)).real());
 
         // z-Range
         prepareIntervalsForHist(sCmd, _histParams.ranges.z[0], _histParams.ranges.z[1],
-                                _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(2)),
-                                _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(2)));
+                                _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real(),
+                                _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real());
     }
     else
     {
         prepareIntervalsForHist(sCmd, _histParams.ranges.x[0], _histParams.ranges.x[1],
-                                _data.min(_histParams.sTable, _idx.row, _idx.col),
-                                _data.max(_histParams.sTable, _idx.row, _idx.col));
+                                _data.min(_histParams.sTable, _idx.row, _idx.col).real(),
+                                _data.max(_histParams.sTable, _idx.row, _idx.col).real());
     }
 
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
         for (size_t j = 2 * bGrid; j < _idx.col.size(); j++)
         {
-            if (_data.isValidElement(_idx.row[i], _idx.col[j], _histParams.sTable) && _data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable) <= _histParams.ranges.x[1] && _data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable) >= _histParams.ranges.x[0])
+            if (_data.isValidElement(_idx.row[i], _idx.col[j], _histParams.sTable) && _data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).real() <= _histParams.ranges.x[1] && _data.getElement(_idx.row[i], _idx.col[j], _histParams.sTable).real() >= _histParams.ranges.x[0])
                 nMax++;
         }
     }
@@ -893,18 +893,18 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
             if (_histParams.nMethod == STURGES)
                 _histParams.nBin = (int)rint(1.0 + 3.3 * log10((double)nMax));
             else if (_histParams.nMethod == SCOTT)
-                _histParams.binWidth[0] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(2)) / pow((double)nMax, 1.0 / 3.0);
+                _histParams.binWidth[0] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real() / pow((double)nMax, 1.0 / 3.0);
             else if (_histParams.nMethod == FREEDMAN_DIACONIS)
-                _histParams.binWidth[0] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(2), 0.75) - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(2), 0.25)) / pow((double)nMax, 1.0 / 3.0);
+                _histParams.binWidth[0] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(2), 0.75).real() - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(2), 0.25).real()) / pow((double)nMax, 1.0 / 3.0);
         }
         else
         {
             if (_histParams.nMethod == STURGES)
                 _histParams.nBin = (int)rint(1.0 + 3.3 * log10((double)nMax / (double)(_idx.col.size())));
             else if (_histParams.nMethod == SCOTT)
-                _histParams.binWidth[0] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
+                _histParams.binWidth[0] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real() / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
             else if (_histParams.nMethod == FREEDMAN_DIACONIS)
-                _histParams.binWidth[0] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.75) - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.25)) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
+                _histParams.binWidth[0] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.75).real() - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.25).real()) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
         }
     }
 
@@ -1028,14 +1028,14 @@ static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx
             if (_data.isValidElement(_idx.row[i], _idx.col[0], _histParams.sTable)
                     && _data.isValidElement(_idx.row[i], _idx.col[1], _histParams.sTable)
                     && _data.isValidElement(_idx.row[i], _idx.col[2], _histParams.sTable)
-                    && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable) <= _histParams.ranges.x[1]
-                    && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable) >= _histParams.ranges.x[0]
-                    && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable) <= _histParams.ranges.y[1]
-                    && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable) >= _histParams.ranges.y[0])
+                    && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real() <= _histParams.ranges.x[1]
+                    && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real() >= _histParams.ranges.x[0]
+                    && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real() <= _histParams.ranges.y[1]
+                    && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real() >= _histParams.ranges.y[0])
             {
-                _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable);
-                _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable);
-                _hist2DData[2].a[i] = _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable);
+                _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real();
+                _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real();
+                _hist2DData[2].a[i] = _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).real();
             }
             else
             {
@@ -1052,17 +1052,17 @@ static void calculateDataForCenterPlot(MemoryManager& _data, const Indices& _idx
 
         for (size_t i = 0; i < _idx.row.size(); i++)
         {
-            _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable);
-            _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable);
+            _hist2DData[0].a[i] = _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real();
+            _hist2DData[1].a[i] = _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real();
 
             for (size_t j = 0; j < _idx.col.size() - 2; j++)
             {
                 if (_data.isValidElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable)
-                        && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable) <= _histParams.ranges.x[1]
-                        && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable) >= _histParams.ranges.x[0]
-                        && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable) <= _histParams.ranges.y[1]
-                        && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable) >= _histParams.ranges.y[0])
-                    _hist2DData[2].a[i + j * _idx.row.size()] = _data.getElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable);
+                        && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real() <= _histParams.ranges.x[1]
+                        && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real() >= _histParams.ranges.x[0]
+                        && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real() <= _histParams.ranges.y[1]
+                        && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real() >= _histParams.ranges.y[0])
+                    _hist2DData[2].a[i + j * _idx.row.size()] = _data.getElement(_idx.row[i], _idx.col[j + 2], _histParams.sTable).real();
                 else
                     _hist2DData[2].a[i + j * _idx.row.size()] = NAN;
             }
@@ -1105,11 +1105,11 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
         {
             if (_data.isValidElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable)
                     && ((!isLogScale
-                         && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable) >= dBinMin + k * dIntLength
-                         && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable) < dBinMin + (k + 1)*dIntLength)
+                         && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).real() >= dBinMin + k * dIntLength
+                         && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).real() < dBinMin + (k + 1)*dIntLength)
                         || (isLogScale
-                            && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable) >= pow(10.0, log10(dBinMin) + k * dIntLength)
-                            && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable) < pow(10.0, log10(dBinMin) + (k + 1)*dIntLength))
+                            && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).real() >= pow(10.0, log10(dBinMin) + k * dIntLength)
+                            && _data.getElement(_idx.row[i], _idx.col[isHbar], _histParams.sTable).real() < pow(10.0, log10(dBinMin) + (k + 1)*dIntLength))
                        )
                )
             {
@@ -1117,13 +1117,13 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
                 {
                     if (_data.isValidElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable)
                             && _data.isValidElement(_idx.row[i], _idx.col[2], _histParams.sTable)
-                            && _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable) >= _histParams.ranges.z[0]
-                            && _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable) <= _histParams.ranges.z[1]
-                            && _data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable) >= dMin
-                            && _data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable) <= dMax)
+                            && _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).real() >= _histParams.ranges.z[0]
+                            && _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).real() <= _histParams.ranges.z[1]
+                            && _data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable).real() >= dMin
+                            && _data.getElement(_idx.row[i], _idx.col[!isHbar], _histParams.sTable).real() <= dMax)
                     {
                         if (bSum)
-                            dSum += _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable);
+                            dSum += _data.getElement(_idx.row[i], _idx.col[2], _histParams.sTable).real();
                         else
                             dSum++;
                     }
@@ -1134,11 +1134,11 @@ static mglData calculateXYHist(MemoryManager& _data, const Indices& _idx, const 
                     {
                         if (_data.isValidElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable)
                                 && _data.isValidElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable)
-                                && _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable) >= _histParams.ranges.z[0]
-                                && _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable) <= _histParams.ranges.z[1]
-                                && _data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable) >= dMin
-                                && _data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable) <= dMax)
-                            dSum += _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable);
+                                && _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).real() >= _histParams.ranges.z[0]
+                                && _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).real() <= _histParams.ranges.z[1]
+                                && _data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable).real() >= dMin
+                                && _data.getElement(_idx.row[l], _idx.col[!isHbar], _histParams.sTable).real() <= dMax)
+                            dSum += _data.getElement(_idx.row[(!isHbar*i+isHbar*l)], _idx.col[(!isHbar*l+isHbar*i)+2], _histParams.sTable).real();
                     }
                 }
             }
@@ -1553,16 +1553,16 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
     // Update the interval ranges using the minimal and maximal
     // data values in the corresponding spatial directions
     prepareIntervalsForHist(sCmd, _histParams.ranges.x[0], _histParams.ranges.x[1],
-                            _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)),
-                            _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)));
+                            _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real(),
+                            _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real());
 
     prepareIntervalsForHist(sCmd, _histParams.ranges.y[0], _histParams.ranges.y[1],
-                            _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)),
-                            _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)));
+                            _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)).real(),
+                            _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(1, 1)).real());
 
     prepareIntervalsForHist(sCmd, _histParams.ranges.z[0], _histParams.ranges.z[1],
-                            _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(2)),
-                            _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(2)));
+                            _data.min(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real(),
+                            _data.max(_histParams.sTable, _idx.row, _idx.col.subidx(2)).real());
 
     // Adapt the ranges for logscale
     if (_pData.getxLogscale() && _histParams.ranges.x[1] < 0.0)
@@ -1588,10 +1588,10 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
         for (size_t j = 2; j < _idx.col.size(); j++)
         {
             if (_data.isValidElement(_idx.row[i], _idx.col[j], _histParams.sTable)
-                    && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable) <= _histParams.ranges.x[1]
-                    && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable) >= _histParams.ranges.x[0]
-                    && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable) <= _histParams.ranges.y[1]
-                    && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable) >= _histParams.ranges.y[0])
+                    && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real() <= _histParams.ranges.x[1]
+                    && _data.getElement(_idx.row[i], _idx.col[0], _histParams.sTable).real() >= _histParams.ranges.x[0]
+                    && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real() <= _histParams.ranges.y[1]
+                    && _data.getElement(_idx.row[i], _idx.col[1], _histParams.sTable).real() >= _histParams.ranges.y[0])
                 nMax++;
         }
     }
@@ -1603,9 +1603,9 @@ static void createHist2D(const std::string& sCmd, const std::string& sTargettabl
         if (_histParams.nMethod == STURGES)
             _histParams.nBin = (int)rint(1.0 + 3.3 * log10((double)nMax / (double)(_idx.col.size()-2)));
         else if (_histParams.nMethod == SCOTT)
-            _histParams.binWidth[0] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
+            _histParams.binWidth[0] = 3.49 * _data.std(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1)).real() / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
         else if (_histParams.nMethod == FREEDMAN_DIACONIS)
-           _histParams.binWidth[0] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.75) - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.25)) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
+           _histParams.binWidth[0] = 2.0 * (_data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.75).real() - _data.pct(_histParams.sTable, _idx.row, _idx.col.subidx(0, 1), 0.25).real()) / pow((double)nMax / (double)(_idx.col.size()), 1.0 / 3.0);
     }
 
     // Determine the number of bins based upon the

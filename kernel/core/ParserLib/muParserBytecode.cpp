@@ -152,27 +152,27 @@ namespace mu
 		switch (a_Oprt)
 		{
 			case cmLAND:
-				x = (int)x && (int)y;
+				x = std::abs(x) && std::abs(y);
 				m_vRPN.pop_back();
 				break;
 			case cmLOR:
-				x = (int)x || (int)y;
+				x = std::abs(x) || std::abs(y);
 				m_vRPN.pop_back();
 				break;
 			case cmLT:
-				x = x < y;
+				x = x.real() < y.real();
 				m_vRPN.pop_back();
 				break;
 			case cmGT:
-				x = x > y;
+				x = x.real() > y.real();
 				m_vRPN.pop_back();
 				break;
 			case cmLE:
-				x = x <= y;
+				x = x.real() <= y.real();
 				m_vRPN.pop_back();
 				break;
 			case cmGE:
-				x = x >= y;
+				x = x.real() >= y.real();
 				m_vRPN.pop_back();
 				break;
 			case cmNEQ:
@@ -252,11 +252,11 @@ namespace mu
 						// Optimization for ploynomials of low order
 						if (m_vRPN[sz - 2].Cmd == cmVAR && m_vRPN[sz - 1].Cmd == cmVAL)
 						{
-							if (m_vRPN[sz - 1].Val.data2 == 2)
+							if (m_vRPN[sz - 1].Val.data2 == 2.0)
 								m_vRPN[sz - 2].Cmd = cmVARPOW2;
-							else if (m_vRPN[sz - 1].Val.data2 == 3)
+							else if (m_vRPN[sz - 1].Val.data2 == 3.0)
 								m_vRPN[sz - 2].Cmd = cmVARPOW3;
-							else if (m_vRPN[sz - 1].Val.data2 == 4)
+							else if (m_vRPN[sz - 1].Val.data2 == 4.0)
 								m_vRPN[sz - 2].Cmd = cmVARPOW4;
 							else
 								break;
@@ -285,8 +285,8 @@ namespace mu
 
 							m_vRPN[sz - 2].Cmd = cmVARMUL;
 							m_vRPN[sz - 2].Val.ptr    = (value_type*)((long long)(m_vRPN[sz - 2].Val.ptr) | (long long)(m_vRPN[sz - 1].Val.ptr)); // variable
-							m_vRPN[sz - 2].Val.data2 += ((a_Oprt == cmSUB) ? -1 : 1) * m_vRPN[sz - 1].Val.data2; // offset
-							m_vRPN[sz - 2].Val.data  += ((a_Oprt == cmSUB) ? -1 : 1) * m_vRPN[sz - 1].Val.data; // multiplikatior
+							m_vRPN[sz - 2].Val.data2 += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz - 1].Val.data2; // offset
+							m_vRPN[sz - 2].Val.data  += ((a_Oprt == cmSUB) ? -1.0 : 1.0) * m_vRPN[sz - 1].Val.data; // multiplikatior
 							m_vRPN.pop_back();
 							bOptimized = true;
 						}
@@ -333,7 +333,7 @@ namespace mu
 						break;
 
 					case cmDIV:
-						if (m_vRPN[sz - 1].Cmd == cmVAL && m_vRPN[sz - 2].Cmd == cmVARMUL && m_vRPN[sz - 1].Val.data2 != 0)
+						if (m_vRPN[sz - 1].Cmd == cmVAL && m_vRPN[sz - 2].Cmd == cmVARMUL && m_vRPN[sz - 1].Val.data2 != 0.0)
 						{
 							// Optimization: 4*a/2 -> 2*a
 							m_vRPN[sz - 2].Val.data  /= m_vRPN[sz - 1].Val.data2;

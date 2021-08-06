@@ -28,6 +28,8 @@
 #include <exception>
 #include "../ui/error.hpp"
 #include "breakpointmanager.hpp"
+#include "../ParserLib/muParserDef.h"
+
 using namespace std;
 
 // stacktrace
@@ -47,7 +49,7 @@ class NumeReDebugger
         string sErraticCommand;
         string sErraticModule;
         string sErrorMessage;
-        map<string,double> mLocalVars;
+        map<string,mu::value_type> mLocalVars;
         map<string,string> mLocalStrings;
         map<string,string> mLocalTables;
         map<string,string> mLocalClusters;
@@ -122,11 +124,11 @@ class NumeReDebugger
         void popStackItem();
 
         void gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
-        void gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, double* dLocalVars, string** sLocalStrings, size_t nLocalStrMapSize, string** sLocalTables, size_t nLocalTableMapSize,
+        void gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, mu::value_type* dLocalVars, string** sLocalStrings, size_t nLocalStrMapSize, string** sLocalTables, size_t nLocalTableMapSize,
                                 string** sLocalClusters, size_t nLocalClusterMapSize, string** sArgumentMap, size_t nArgumentMapSize, const string& _sErraticCommand, const string& _sErraticModule,
                                 unsigned int _nLineNumber);
 
-        void gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, double** vVarArray, string* sVarArray, int nVarArray);
+        void gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, mu::value_type** vVarArray, string* sVarArray, int nVarArray);
 
         vector<string> getModuleInformations();
         vector<string> getStackTrace();

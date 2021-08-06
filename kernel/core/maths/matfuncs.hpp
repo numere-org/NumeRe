@@ -24,6 +24,7 @@
 #define DIAGONALIZE 2
 
 #include <Eigen/Dense>
+#include <Eigen/Eigenvalues>
 #include <random>
 #include <map>
 #include "matdatastructures.hpp"
@@ -43,10 +44,10 @@
 /// \return Matrix
 ///
 /////////////////////////////////////////////////
-static Matrix createFilledMatrix(size_t n, size_t m, double val)
+static Matrix createFilledMatrix(size_t n, size_t m, const mu::value_type& val)
 {
     Matrix mat;
-    std::vector<double> vLine(m, val);
+    std::vector<mu::value_type> vLine(m, val);
 
     for (size_t i = 0; i < n; i++)
         mat.push_back(vLine);
@@ -118,7 +119,7 @@ static Matrix identityMatrix(const MatFuncData& funcData, const MatFuncErrorInfo
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mIdentity;
-    std::vector<double> vLine;
+    std::vector<mu::value_type> vLine;
 
     for (int i = 0; i < funcData.nVal; i++)
     {
@@ -173,10 +174,10 @@ static Matrix calcTrace(const MatFuncData& funcData, const MatFuncErrorInfo& err
 ///
 /// \param _mMatrix const Matrix&
 /// \param vRemovedLines vector<int>
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-static double calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines)
+static mu::value_type calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines)
 {
     // simple Sonderfaelle
     if (_mMatrix.size() == 1)
@@ -196,7 +197,7 @@ static double calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines)
     }
 
     int nSign = 1;
-    double dDet = 0.0;
+    mu::value_type dDet = 0.0;
 
     for (unsigned int i = 0; i < _mMatrix.size(); i++)
     {
@@ -221,9 +222,9 @@ static double calcDeterminant(const Matrix& _mMatrix, vector<int> vRemovedLines)
 
                     // Berechne Determinante rekursiv
                     if (i+1 < _mMatrix.size())
-                        dDet += nSign * _mMatrix[i][j] * calcDeterminant(_mMatrix, vRemovedLines);
+                        dDet += (double)nSign * _mMatrix[i][j] * calcDeterminant(_mMatrix, vRemovedLines);
                     else
-                        dDet += nSign * _mMatrix[i][j];
+                        dDet += (double)nSign * _mMatrix[i][j];
 
                     // füge Spalte j wieder hinzu
                     vRemovedLines[j] -= 2;
@@ -362,48 +363,6 @@ static bool isSymmMatrix(const Matrix& _mMatrix, const MatFuncErrorInfo& errorIn
 
 
 /////////////////////////////////////////////////
-/// \brief This static function tries to remove
-/// the imaginary part of the returned
-/// eigenvalues.
-///
-/// \param _mMatrix Matrix&
-/// \return void
-///
-/////////////////////////////////////////////////
-static void makeReal(Matrix& _mMatrix)
-{
-    if (_mMatrix[0].size() < 2 || (_mMatrix[0].size() % 2))
-        return;
-
-    // Try to find a non-zero imaginary value
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
-    {
-        // imaginary values are found in the second half of the columns
-        for (unsigned int j = _mMatrix[0].size()/2; j < _mMatrix[0].size(); j++)
-        {
-            if (_mMatrix[i][j])
-                return;
-        }
-    }
-
-    // The matrix is completely real, remove the unnecessary empty columns
-    if (_mMatrix[0].size() == 2)
-    {
-        for (unsigned int i = 0; i < _mMatrix.size(); i++)
-            _mMatrix[i].pop_back();
-    }
-    else
-    {
-        for (unsigned int i = 0; i < _mMatrix.size(); i++)
-        {
-            _mMatrix[i].erase(_mMatrix[i].begin() + _mMatrix[i].size()/2, _mMatrix[i].end());
-        }
-    }
-    return;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This static function does the whole
 /// eigenvalues, eigenvectors and diagonalizing
 /// stuff.
@@ -437,7 +396,7 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
     Matrix _mEigenVals;
     Matrix _mEigenVects;
 
-    Eigen::MatrixXd mMatrix(_mMatrix.size(), _mMatrix.size());
+    Eigen::MatrixXcd mMatrix(_mMatrix.size(), _mMatrix.size());
 
     // Copy the passed matrix into an Eigen matrix
     for (unsigned int i = 0; i < _mMatrix.size(); i++)
@@ -450,20 +409,20 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
 
     // For symmetric matrices the return value is always real
     // This is not true for asymmetric matrices
-    if (isSymmMatrix(_mMatrix, errorInfo))
+    /*if (isSymmMatrix(_mMatrix, errorInfo))
     {
         // Prepare return values
         _mEigenVals = createFilledMatrix(_mMatrix.size(), 1, 0.0);
         _mEigenVects = createFilledMatrix(_mMatrix.size(), _mMatrix.size(), 0.0);
 
         // Construct an Eigen eigenvalue solver
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eSolver(mMatrix);
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> eSolver(mMatrix);
 
         // Get eigenvalues, eigenvectors or the diagonal matrix depending
         // on the selected return type
         if (nReturnType == EIGENVALUES)
         {
-            Eigen::VectorXd vEigenVals = eSolver.eigenvalues();
+            Eigen::EigenValueType vEigenVals = eSolver.eigenvalues();
             for (unsigned int i = 0; i < _mEigenVals.size(); i++)
             {
                 _mEigenVals[i][0] = vEigenVals(i,0);
@@ -471,7 +430,7 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
         }
         else if (nReturnType == EIGENVECTORS)
         {
-            Eigen::MatrixXd mEigenVects = eSolver.eigenvectors();
+            Eigen::MatrixXcd mEigenVects = eSolver.eigenvectors();
             for (unsigned int i = 0; i < _mEigenVects.size(); i++)
             {
                 for (unsigned int j = 0; j < _mEigenVects.size(); j++)
@@ -482,21 +441,21 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
         }
         else if (nReturnType == DIAGONALIZE)
         {
-            Eigen::VectorXd vEigenVals = eSolver.eigenvalues();
+            Eigen::VectorXcd vEigenVals = eSolver.eigenvalues();
             for (unsigned int i = 0; i < _mEigenVects.size(); i++)
             {
                 _mEigenVects[i][i] = vEigenVals(i,0);
             }
         }
     }
-    else
+    else*/
     {
         // Prepare return values
-        _mEigenVals = createFilledMatrix(_mMatrix.size(), 2, 0.0);
-        _mEigenVects = createFilledMatrix(_mMatrix.size(), 2*_mMatrix.size(), 0.0);
+        _mEigenVals = createFilledMatrix(_mMatrix.size(), 1, 0.0);
+        _mEigenVects = createFilledMatrix(_mMatrix.size(), _mMatrix.size(), 0.0);
 
         // Construct an Eigen eigenvalue solver
-        Eigen::EigenSolver<Eigen::MatrixXd> eSolver(mMatrix);
+        Eigen::ComplexEigenSolver<Eigen::MatrixXcd> eSolver(mMatrix);
 
         // Get eigenvalues, eigenvectors or the diagonal matrix depending
         // on the selected return type. Separate the result into real and
@@ -507,26 +466,20 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
 
             for (unsigned int i = 0; i < _mEigenVals.size(); i++)
             {
-                _mEigenVals[i][0] = real(vEigenVals(i,0));
-                _mEigenVals[i][1] = imag(vEigenVals(i,0));
+                _mEigenVals[i][0] = vEigenVals(i,0);
             }
-
-            makeReal(_mEigenVals);
         }
         else if (nReturnType == EIGENVECTORS)
         {
-            Eigen::MatrixXcd mEigenVects = eSolver.eigenvectors();
+            Eigen::EigenSolver<Eigen::MatrixXcd>::EigenvectorsType mEigenVects = eSolver.eigenvectors();
 
             for (unsigned int i = 0; i < _mEigenVects.size(); i++)
             {
                 for (unsigned int j = 0; j < _mEigenVects.size(); j++)
                 {
-                    _mEigenVects[i][j] = real(mEigenVects(i, j));
-                    _mEigenVects[i][j+_mEigenVects.size()] = imag(mEigenVects(i, j));
+                    _mEigenVects[i][j] = mEigenVects(i, j);
                 }
             }
-
-            makeReal(_mEigenVects);
         }
         else if (nReturnType == DIAGONALIZE)
         {
@@ -534,11 +487,8 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
 
             for (unsigned int i = 0; i < _mEigenVects.size(); i++)
             {
-                _mEigenVects[i][i] = real(vEigenVals(i, 0));
-                _mEigenVects[i][i+_mEigenVects.size()] = imag(vEigenVals(i, 0));
+                _mEigenVects[i][i] = vEigenVals(i, 0);
             }
-
-            makeReal(_mEigenVects);
         }
     }
 
@@ -638,7 +588,7 @@ static Matrix createShuffledMatrix(const MatFuncData& funcData, const MatFuncErr
         std::uniform_real_distribution<double> randDist(i, nBase-1);
 
         int nIndex = rint(randDist(randGen));
-        double dTemp = _mBase[i][0];
+        mu::value_type dTemp = _mBase[i][0];
         _mBase[i][0] = _mBase[nIndex][0];
         _mBase[nIndex][0] = dTemp;
     }
@@ -675,9 +625,9 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
     Matrix _mInverse = identityMatrix(MatFuncData(funcData.mat1.size()), errorInfo);
     Matrix _mToInvert = funcData.mat1;
 
-    double dDet = getDeterminant(funcData, errorInfo)[0][0];
+    mu::value_type dDet = getDeterminant(funcData, errorInfo)[0][0];
 
-    if (!dDet)
+    if (dDet == 0.0)
         throw SyntaxError(SyntaxError::MATRIX_IS_NOT_INVERTIBLE, errorInfo.command, errorInfo.position);
 
     //Spezialfaelle mit analytischem Ausdruck
@@ -729,7 +679,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
             {
                 if (i != j) //vertauschen
                 {
-                    double dElement;
+                    mu::value_type dElement;
 
                     for (unsigned int _j = 0; _j < _mToInvert.size(); _j++)
                     {
@@ -745,7 +695,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
                 }
                 else //Gauss-Elimination
                 {
-                    double dPivot = _mToInvert[i][j];
+                    mu::value_type dPivot = _mToInvert[i][j];
 
                     for (unsigned int _j = 0; _j < _mToInvert.size(); _j++)
                     {
@@ -755,9 +705,9 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
                     for (unsigned int _i = i+1; _i < _mToInvert.size(); _i++)
                     {
-                        double dFactor = _mToInvert[_i][j];
+                        mu::value_type dFactor = _mToInvert[_i][j];
 
-                        if (!dFactor) // Bereits 0???
+                        if (dFactor == 0.0) // Bereits 0???
                             continue;
 
                         for (unsigned int _j = 0; _j < _mToInvert.size(); _j++)
@@ -812,7 +762,7 @@ static Matrix invertMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& 
 static Matrix transposeMatrix(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
     Matrix _mTransposed;
-    std::vector<double> vLine;
+    std::vector<mu::value_type> vLine;
 
     for (unsigned int j = 0; j < funcData.mat1[0].size(); j++)
     {
@@ -841,8 +791,8 @@ static Matrix logToIndex(const MatFuncData& funcData, const MatFuncErrorInfo& er
     if (!funcData.mat1.size() || !funcData.mat1[0].size())
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
-    vector<int> vLines;
-    vector<int> vRows;
+    vector<double> vLines;
+    vector<double> vRows;
 
     if (funcData.mat1.size() == 1 || funcData.mat1[0].size() == 1)
     {
@@ -850,7 +800,7 @@ static Matrix logToIndex(const MatFuncData& funcData, const MatFuncErrorInfo& er
         {
             for (size_t j = 0; j < funcData.mat1[0].size(); j++)
             {
-                if (funcData.mat1[i][j])
+                if (funcData.mat1[i][j].real())
                     vLines.push_back(i + j + 1);
             }
         }
@@ -871,7 +821,7 @@ static Matrix logToIndex(const MatFuncData& funcData, const MatFuncErrorInfo& er
         {
             for (size_t j = 0; j < funcData.mat1[0].size(); j++)
             {
-                if (funcData.mat1[i][j])
+                if (funcData.mat1[i][j].real())
                 {
                     vLines.push_back(i+1);
                     vRows.push_back(j+1);
@@ -916,9 +866,9 @@ static Matrix matrixMax(const MatFuncData& funcData, const MatFuncErrorInfo& err
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
             if (!i && !j)
-                _mReturn[0][0] = funcData.mat1[i][j];
-            else if (funcData.mat1[i][j] > _mReturn[0][0] || std::isnan(_mReturn[0][0]))
-                _mReturn[0][0] = funcData.mat1[i][j];
+                _mReturn[0][0] = funcData.mat1[i][j].real();
+            else if (funcData.mat1[i][j].real() > _mReturn[0][0].real() || std::isnan(_mReturn[0][0].real()))
+                _mReturn[0][0] = funcData.mat1[i][j].real();
         }
     }
 
@@ -944,17 +894,17 @@ static Matrix indexToLog(const MatFuncData& funcData, const MatFuncErrorInfo& er
     {
         Matrix _mMatrixMax = matrixMax(funcData, errorInfo);
 
-        if (!_mMatrixMax[0][0] || _mMatrixMax[0][0] < 0)
+        if (!_mMatrixMax[0][0].real() || _mMatrixMax[0][0].real() < 0)
             return createFilledMatrix(1, 1, 0.0);
 
-        Matrix _mReturn = createFilledMatrix(_mMatrixMax[0][0], 1, 0.0);
+        Matrix _mReturn = createFilledMatrix(_mMatrixMax[0][0].real(), 1, 0.0);
 
         for (size_t i = 0; i < funcData.mat1.size(); i++)
         {
             for (size_t j = 0; j < funcData.mat1[0].size(); j++)
             {
-                if (funcData.mat1[i][j] > 0)
-                    _mReturn[funcData.mat1[i][j]-1][0] = 1.0;
+                if (funcData.mat1[i][j].real() > 0)
+                    _mReturn[funcData.mat1[i][j].real()-1][0] = 1.0;
             }
         }
 
@@ -962,23 +912,23 @@ static Matrix indexToLog(const MatFuncData& funcData, const MatFuncErrorInfo& er
     }
     else
     {
-        vector<int> vCol;
-        vector<int> vRow;
+        vector<double> vCol;
+        vector<double> vRow;
 
         if (funcData.mat1.size() == 2 && funcData.mat1[0].size() != 2)
         {
             for (size_t i = 0; i < funcData.mat1[0].size(); i++)
             {
-                vRow.push_back(funcData.mat1[0][i]);
-                vCol.push_back(funcData.mat1[1][i]);
+                vRow.push_back(funcData.mat1[0][i].real());
+                vCol.push_back(funcData.mat1[1][i].real());
             }
         }
         else if (funcData.mat1.size() != 2 && funcData.mat1[0].size() == 2)
         {
             for (size_t i = 0; i < funcData.mat1.size(); i++)
             {
-                vRow.push_back(funcData.mat1[i][0]);
-                vCol.push_back(funcData.mat1[i][1]);
+                vRow.push_back(funcData.mat1[i][0].real());
+                vCol.push_back(funcData.mat1[i][1].real());
             }
         }
         else
@@ -1056,7 +1006,7 @@ static Matrix matrixAnd(const MatFuncData& funcData, const MatFuncErrorInfo& err
     {
         for (size_t j = 0; j < funcData.mat1[i].size(); j++)
         {
-            if (!funcData.mat1[i][j])
+            if (funcData.mat1[i][j] == 0.0)
                 return createFilledMatrix(1, 1, 0.0);
         }
     }
@@ -1083,7 +1033,7 @@ static Matrix matrixOr(const MatFuncData& funcData, const MatFuncErrorInfo& erro
     {
         for (size_t j = 0; j < funcData.mat1[i].size(); j++)
         {
-            if (funcData.mat1[i][j])
+            if (funcData.mat1[i][j] != 0.0)
                 return createFilledMatrix(1, 1, 1.0);
         }
     }
@@ -1112,7 +1062,7 @@ static Matrix matrixXor(const MatFuncData& funcData, const MatFuncErrorInfo& err
     {
         for (size_t j = 0; j < funcData.mat1[i].size(); j++)
         {
-            if (funcData.mat1[i][j])
+            if (funcData.mat1[i][j] != 0.0)
             {
                 if (!isTrue)
                     isTrue = true;
@@ -1149,7 +1099,7 @@ static Matrix matrixSum(const MatFuncData& funcData, const MatFuncErrorInfo& err
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
-            if (!std::isnan(funcData.mat1[i][j]))
+            if (!isnan(funcData.mat1[i][j]))
                 _mReturn[0][0] += funcData.mat1[i][j];
         }
     }
@@ -1178,7 +1128,7 @@ static Matrix matrixNum(const MatFuncData& funcData, const MatFuncErrorInfo& err
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
-            if (!std::isnan(funcData.mat1[i][j]))
+            if (!isnan(funcData.mat1[i][j]))
                 _mReturn[0][0] += 1;
         }
     }
@@ -1230,12 +1180,12 @@ static Matrix matrixStd(const MatFuncData& funcData, const MatFuncErrorInfo& err
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
-            if (!std::isnan(funcData.mat1[i][j]))
-                _mReturn[0][0] += (funcData.mat1[i][j] - _mAvg[0][0])*(funcData.mat1[i][j] - _mAvg[0][0]);
+            if (!isnan(funcData.mat1[i][j]))
+                _mReturn[0][0] += (funcData.mat1[i][j] - _mAvg[0][0])*conj(funcData.mat1[i][j] - _mAvg[0][0]);
         }
     }
 
-    _mReturn[0][0] = sqrt(_mReturn[0][0])/(_mNum[0][0]-1);
+    _mReturn[0][0] = sqrt(_mReturn[0][0])/(_mNum[0][0].real()-1.0);
     return _mReturn;
 }
 
@@ -1260,7 +1210,7 @@ static Matrix matrixPrd(const MatFuncData& funcData, const MatFuncErrorInfo& err
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
-            if (!std::isnan(funcData.mat1[i][j]))
+            if (!isnan(funcData.mat1[i][j]))
                 _mReturn[0][0] *= funcData.mat1[i][j];
         }
     }
@@ -1307,8 +1257,8 @@ static Matrix matrixNorm(const MatFuncData& funcData, const MatFuncErrorInfo& er
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
-            if (!std::isnan(funcData.mat1[i][j]))
-                _mReturn[0][0] += funcData.mat1[i][j]*funcData.mat1[i][j];
+            if (!isnan(funcData.mat1[i][j]))
+                _mReturn[0][0] += funcData.mat1[i][j]*conj(funcData.mat1[i][j]);
         }
     }
 
@@ -1338,9 +1288,9 @@ static Matrix matrixMin(const MatFuncData& funcData, const MatFuncErrorInfo& err
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
             if (!i && !j)
-                _mReturn[0][0] = funcData.mat1[i][j];
-            else if (funcData.mat1[i][j] < _mReturn[0][0] || std::isnan(_mReturn[0][0]))
-                _mReturn[0][0] = funcData.mat1[i][j];
+                _mReturn[0][0] = funcData.mat1[i][j].real();
+            else if (funcData.mat1[i][j].real() < _mReturn[0][0].real() || std::isnan(_mReturn[0][0].real()))
+                _mReturn[0][0] = funcData.mat1[i][j].real();
         }
     }
 
@@ -1366,15 +1316,15 @@ static Matrix matrixCmp(const MatFuncData& funcData, const MatFuncErrorInfo& err
     Matrix _mCoords = createFilledMatrix(2, 1, 0.0);
     _mCoords[0][0] = -1;
 
-    double dValue = funcData.fVal;
+    mu::value_type dValue = funcData.fVal;
     int nType = funcData.nVal;
-    double dKeep = dValue;
+    mu::value_type dKeep = dValue;
 
     for (size_t i = 0; i < funcData.mat1.size(); i++)
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
-            if (std::isnan(funcData.mat1[i][j]) || std::isinf(funcData.mat1[i][j]))
+            if (isnan(funcData.mat1[i][j]) || isinf(funcData.mat1[i][j]))
                 continue;
 
             if (funcData.mat1[i][j] == dValue)
@@ -1390,22 +1340,22 @@ static Matrix matrixCmp(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
                 return _mReturn;
             }
-            else if (nType > 0 && funcData.mat1[i][j] > dValue)
+            else if (nType > 0 && funcData.mat1[i][j].real() > dValue.real())
             {
-                if (_mCoords[0][0] == -1 || funcData.mat1[i][j] < dKeep)
+                if (_mCoords[0][0] == -1.0 || funcData.mat1[i][j].real() < dKeep.real())
                 {
-                    dKeep = funcData.mat1[i][j];
+                    dKeep = funcData.mat1[i][j].real();
                     _mCoords[0][0] = i+1;
                     _mCoords[1][0] = j+1;
                 }
                 else
                     continue;
             }
-            else if (nType < 0 && funcData.mat1[i][j] < dValue)
+            else if (nType < 0 && funcData.mat1[i][j].real() < dValue.real())
             {
-                if (_mCoords[0][0] == -1 || funcData.mat1[i][j] > dKeep)
+                if (_mCoords[0][0] == -1.0 || funcData.mat1[i][j].real() > dKeep.real())
                 {
-                    dKeep = funcData.mat1[i][j];
+                    dKeep = funcData.mat1[i][j].real();
                     _mCoords[0][0] = i+1;
                     _mCoords[1][0] = j+1;
                 }
@@ -1415,7 +1365,7 @@ static Matrix matrixCmp(const MatFuncData& funcData, const MatFuncErrorInfo& err
         }
     }
 
-    if (_mCoords[0][0] == -1)
+    if (_mCoords[0][0] == -1.0)
         _mReturn[0][0] = NAN;
     else if (nType <= -2 || nType >= 2)
         _mReturn[0][0] = dKeep;
@@ -1532,7 +1482,7 @@ static Matrix matrixPct(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixResize(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    size_t nLines = funcData.fVal;
+    size_t nLines = funcData.fVal.real();
     size_t nCols = funcData.nVal;
 
     if (!funcData.mat1.size() || !funcData.mat1[0].size() || !nLines || !nCols)
@@ -1702,7 +1652,7 @@ static Matrix normalize(const MatFuncData& funcData, const MatFuncErrorInfo& err
 /////////////////////////////////////////////////
 static Matrix matrixReshape(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    size_t nLines = funcData.fVal;
+    size_t nLines = funcData.fVal.real();
     size_t nCols = funcData.nVal;
 
     if (!funcData.mat1.size() || !funcData.mat1[0].size() || !nLines || !nCols)
@@ -1733,7 +1683,7 @@ static Matrix matrixReshape(const MatFuncData& funcData, const MatFuncErrorInfo&
 /////////////////////////////////////////////////
 static Matrix matrixRepMat(const MatFuncData& funcData, const MatFuncErrorInfo& errorInfo)
 {
-    size_t n = funcData.fVal;
+    size_t n = funcData.fVal.real();
     size_t m = funcData.nVal;
 
     if (n == 0)
@@ -1770,11 +1720,11 @@ static Matrix matrixRepMat(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /// std::list::remove_if() called in
 /// parser_getUniqueList()
 ///
-/// \param value const double&
+/// \param value const mu::value_type&
 /// \return bool
 ///
 /////////////////////////////////////////////////
-static bool is_nan(const double& value)
+static bool is_nan(const mu::value_type& value)
 {
     return isnan(value);
 }
@@ -1785,20 +1735,25 @@ static bool is_nan(const double& value)
 /// the implementation of the \c unique()
 /// function.
 ///
-/// \param _list std::list<double>&
-/// \return std::vector<double>
+/// \param _list std::list<mu::value_type>&
+/// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-static std::vector<double> getUniqueList(std::list<double>& _list)
+static std::vector<mu::value_type> getUniqueList(std::list<mu::value_type>& _list)
 {
     _list.remove_if(is_nan);
 
     if (_list.empty())
-        return std::vector<double>(1, NAN);
+        return std::vector<mu::value_type>(1, NAN);
 
-    _list.sort();
-    _list.unique();
-    std::vector<double> vReturn(_list.begin(), _list.end());
+    std::vector<mu::value_type> vReturn;
+
+    for (auto& val : _list)
+    {
+        if (std::find(vReturn.begin(), vReturn.end(), val) == vReturn.end())
+            vReturn.push_back(val);
+    }
+
     return vReturn;
 }
 
@@ -1849,7 +1804,7 @@ static Matrix matrixUnique(const MatFuncData& funcData, const MatFuncErrorInfo& 
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     // Create a std::list and the return value
-    std::list<double> dataList;
+    std::list<mu::value_type> dataList;
     Matrix _mReturn;
 
     // Depending on the dimensions of the passed matrix, change
@@ -1951,7 +1906,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
 
         for (unsigned int j = 0; j < _mToSolve[0].size(); j++)
         {
-            if (bIsZeroesLine && _mToSolve[i][j])
+            if (bIsZeroesLine && _mToSolve[i][j] == 0.0)
             {
                 bIsZeroesLine = false;
                 break;
@@ -1970,7 +1925,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
 
             for (unsigned int j = i+1; j < _mToSolve[0].size()-1; j++)
             {
-                if (_mToSolve[i][j])
+                if (_mToSolve[i][j] != 0.0)
                 {
                     // Konstanter Term
                     _mCoefficents[i][_mCoefficents[0].size()-1] -= _mToSolve[i][j] * _mCoefficents[j][_mCoefficents[0].size()-1];
@@ -1989,7 +1944,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
     {
         for (unsigned int j = 0; j < _mCoefficents[0].size()-1; j++)
         {
-            if (_mCoefficents[i][j])
+            if (_mCoefficents[i][j] != 0.0)
             {
                 if (fabs(_mCoefficents[i][j]) != 1.0)
                     vResult[i] += toString(_mCoefficents[i][j], 5) + "*";
@@ -2001,7 +1956,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
             }
         }
 
-        if (_mCoefficents[i][_mCoefficents[0].size()-1])
+        if (_mCoefficents[i][_mCoefficents[0].size()-1] != 0.0)
             vResult[i] += "+" + toString(_mCoefficents[i][_mCoefficents[0].size()-1], 5);
 
         while (vResult[i].find("+-") != string::npos)
@@ -2082,7 +2037,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
             {
                 if (i != j) //vertauschen
                 {
-                    double dElement;
+                    mu::value_type dElement;
 
                     for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
                     {
@@ -2095,7 +2050,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
                 }
                 else //Gauss-Elimination
                 {
-                    double dPivot = _mToSolve[i][j];
+                    mu::value_type dPivot = _mToSolve[i][j];
 
                     for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
                     {
@@ -2104,9 +2059,9 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
 
                     for (unsigned int _i = i+1; _i < _mToSolve.size(); _i++)
                     {
-                        double dFactor = _mToSolve[_i][j];
+                        mu::value_type dFactor = _mToSolve[_i][j];
 
-                        if (!dFactor) // Bereits 0???
+                        if (dFactor == 0.0) // Bereits 0???
                             continue;
 
                         for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
@@ -2142,7 +2097,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
         {
             for (unsigned int j = 0; j < _mToSolve[0].size(); j++)
             {
-                if (_mToSolve[i][j])
+                if (_mToSolve[i][j] != 0.0)
                 {
                     vIsZerosLine[i] = false;
                     break;
@@ -2158,7 +2113,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
                 {
                     if (!vIsZerosLine[_i])
                     {
-                        double dElement;
+                        mu::value_type dElement;
 
                         for (unsigned int _j = 0; _j < _mToSolve[0].size(); _j++)
                         {
@@ -2193,7 +2148,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
         {
             _mToSolve[i][_mToSolve[0].size()-1] -= _mToSolve[i][j]*_mResult[j][0];
 
-            if (_mToSolve[i][j]*_mResult[j][0])
+            if (_mToSolve[i][j]*_mResult[j][0] != 0.0)
                 _mToSolve[i][j] = 0.0;
         }
 
@@ -2439,11 +2394,11 @@ static Matrix polarToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& er
 /////////////////////////////////////////////////
 static size_t findNearestLowerGridAxisValue(const Matrix& gaxes, size_t axis, double axisval)
 {
-    int sign = gaxes.front()[axis] > gaxes.back()[axis] ? -1 : 1;
+    int sign = gaxes.front()[axis].real() > gaxes.back()[axis].real() ? -1 : 1;
 
     for (size_t i = 0; i < gaxes.size(); i++)
     {
-        if (sign * gaxes[i][axis] >= sign * axisval)
+        if (sign * gaxes[i][axis].real() >= sign * axisval)
         {
             if (i)
                 return i-1;
@@ -2486,11 +2441,11 @@ static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& 
     {
         for (size_t j = 0; j < gcoords[i].size(); j++)
         {
-            size_t pos = findNearestLowerGridAxisValue(funcData.mat1, j, gcoords[i][j]); // find the lower grid axis value assuming sorted axis
-            double off = gcoords[i][j] - funcData.mat1[pos][j]; // should be smaller than grid interval, but might be negative
-            double interval = pos+1 < funcData.mat1.size() ? funcData.mat1[pos+1][j] - funcData.mat1[pos][j] : funcData.mat1[pos][j] - funcData.mat1[pos-1][j]; // the grid interval. Might also be negative
+            size_t pos = findNearestLowerGridAxisValue(funcData.mat1, j, gcoords[i][j].real()); // find the lower grid axis value assuming sorted axis
+            mu::value_type off = gcoords[i][j] - funcData.mat1[pos][j]; // should be smaller than grid interval, but might be negative
+            mu::value_type interval = pos+1 < funcData.mat1.size() ? funcData.mat1[pos+1][j] - funcData.mat1[pos][j] : funcData.mat1[pos][j] - funcData.mat1[pos-1][j]; // the grid interval. Might also be negative
 
-            gcoords[i][j] = pos + 1 + off / interval; // if off == interval, then pos+1, else pos + (<1) and +1 due to zero-based coords
+            gcoords[i][j] = pos + 1 + off.real() / interval.real(); // if off == interval, then pos+1, else pos + (<1) and +1 due to zero-based coords
         }
     }
 
@@ -2505,10 +2460,10 @@ static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& 
 /// \param mat const Matrix&
 /// \param row int
 /// \param col int
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-static double readMat(const Matrix& mat, int row, int col)
+static mu::value_type readMat(const Matrix& mat, int row, int col)
 {
     if (row < (int)mat.size() && col < (int)mat[0].size() && row >= 0 && col >= 0)
         return mat[row][col];
@@ -2527,7 +2482,7 @@ static double readMat(const Matrix& mat, int row, int col)
 /// \return double
 ///
 /////////////////////////////////////////////////
-static double bilinearInterpolation(const Matrix& mat, double row, double col)
+static mu::value_type bilinearInterpolation(const Matrix& mat, double row, double col)
 {
     if (std::isnan(row) || std::isnan(col))
         return NAN;
@@ -2541,20 +2496,20 @@ static double bilinearInterpolation(const Matrix& mat, double row, double col)
     double y = col - nBaseCol;
 
     // Find the surrounding four entries
-    double f00 = readMat(mat, nBaseLine, nBaseCol);
-    double f10 = readMat(mat, nBaseLine+1, nBaseCol);
-    double f01 = readMat(mat, nBaseLine, nBaseCol+1);
-    double f11 = readMat(mat, nBaseLine+1, nBaseCol+1);
+    mu::value_type f00 = readMat(mat, nBaseLine, nBaseCol);
+    mu::value_type f10 = readMat(mat, nBaseLine+1, nBaseCol);
+    mu::value_type f01 = readMat(mat, nBaseLine, nBaseCol+1);
+    mu::value_type f11 = readMat(mat, nBaseLine+1, nBaseCol+1);
 
     // If all are NAN, return NAN
-    if (std::isnan(f00) && std::isnan(f01) && std::isnan(f10) && std::isnan(f11))
+    if (isnan(f00) && isnan(f01) && isnan(f10) && isnan(f11))
         return NAN;
 
     // Otherwise set NAN to zero
-    f00 = std::isnan(f00) ? 0.0 : f00;
-    f10 = std::isnan(f10) ? 0.0 : f10;
-    f01 = std::isnan(f01) ? 0.0 : f01;
-    f11 = std::isnan(f11) ? 0.0 : f11;
+    f00 = isnan(f00) ? 0.0 : f00;
+    f10 = isnan(f10) ? 0.0 : f10;
+    f01 = isnan(f01) ? 0.0 : f01;
+    f11 = isnan(f11) ? 0.0 : f11;
 
     //     f(0,0) (1-x) (1-y) + f(1,0) x (1-y) + f(0,1) (1-x) y + f(1,1) x y
     return f00*(1-x)*(1-y)    + f10*x*(1-y)    + f01*(1-x)*y    + f11*x*y;
@@ -2591,11 +2546,11 @@ static Matrix interpolate(const MatFuncData& funcData, const MatFuncErrorInfo& e
         {
             for (size_t j = 1; j < funcData.mat2[i].size(); j++)
             {
-                interp[i][j-1] = bilinearInterpolation(funcData.mat1, funcData.mat2[i][0]-1.0, funcData.mat2[i][j]-1.0);
+                interp[i][j-1] = bilinearInterpolation(funcData.mat1, funcData.mat2[i][0].real()-1.0, funcData.mat2[i][j].real()-1.0);
             }
         }
         else
-            interp[i][0] = bilinearInterpolation(funcData.mat1, funcData.mat2[i][0]-1.0, 0.0);
+            interp[i][0] = bilinearInterpolation(funcData.mat1, funcData.mat2[i][0].real()-1.0, 0.0);
     }
 
     return interp;

@@ -125,7 +125,7 @@ namespace NumeRe
     vector<string> StringVarFactory::evaluateStringVectors(string sLine)
     {
         vector<string> vRes;
-        const map<string, vector<double> >& mNumVectorVars = NumeReKernel::getInstance()->getParser().GetVectors();
+        const map<string, vector<mu::value_type> >& mNumVectorVars = NumeReKernel::getInstance()->getParser().GetVectors();
 
         // As long as the current vector is not empty
         while (sLine.length())

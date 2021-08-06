@@ -288,7 +288,7 @@ static void extractIndexList(StringView sCols, vector<StringView>& vLines, vecto
 /////////////////////////////////////////////////
 static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView sIndex)
 {
-    value_type* v;
+    mu::value_type* v;
     int nResults;
 
     if (!sIndex.length())
@@ -305,7 +305,7 @@ static void handleIndexVectors(Parser& _parser, VectorIndex& _vIdx, StringView s
             // vector
             _vIdx = VectorIndex(v, nResults, 0);
         }
-        else if (!isnan(v[0]) && intCast(v[0]) > 0) // single index
+        else if (!isnan(v[0].real()) && intCast(v[0]) > 0) // single index
             _vIdx.front() = intCast(v[0]) - 1;
     }
 }
@@ -420,7 +420,7 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
     {
         _parser.SetExpr(sIndexExpressions);
 		int nResults;
-        value_type* v = _parser.Eval(nResults);
+        mu::value_type* v = _parser.Eval(nResults);
 
         // check whether the number of the results is matching
         if ((size_t)nResults != vIndexNumbers.size())
@@ -429,9 +429,9 @@ static void handleCasualIndices(Parser& _parser, Indices& _idx, vector<StringVie
         // map the results to their assignments
         for (int i = 0; i < nResults; i++)
         {
-            if (isinf(v[i])) // infinity => last possible index
+            if (isinf(v[i].real())) // infinity => last possible index
                 v[i] = -1; // only -1 because it will be decremented in the following lines
-            else if (isnan(v[i]) || intCast(v[i]) <= 0LL)
+            else if (isnan(v[i].real()) || intCast(v[i]) <= 0LL)
             {
                 std::string sToken;
 

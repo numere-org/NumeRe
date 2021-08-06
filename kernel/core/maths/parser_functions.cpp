@@ -531,7 +531,7 @@ string promptForUserInput(const string& __sCommand)
 /// \return double*
 ///
 /////////////////////////////////////////////////
-double* getPointerToVariable(const string& sVarName, Parser& _parser)
+mu::value_type* getPointerToVariable(const string& sVarName, Parser& _parser)
 {
     // Get the map of declared variables
 	mu::varmap_type Vars = _parser.GetVar();
@@ -704,7 +704,7 @@ static void readAndParseLegacyIntervals(string& sExpr, const string& sLegacyInte
         if (isNotEmptyExpression(indices[i]))
         {
             _parser.SetExpr(indices[i]);
-            vInterval.push_back(_parser.Eval());
+            vInterval.push_back(_parser.Eval().real());
         }
         else
             vInterval.push_back(NAN);
@@ -797,7 +797,7 @@ vector<double> readAndParseIntervals(string& sExpr, Parser& _parser, MemoryManag
                     if (isNotEmptyExpression(indices[j]))
                     {
                         _parser.SetExpr(indices[j]);
-                        vInterval.push_back(_parser.Eval());
+                        vInterval.push_back(_parser.Eval().real());
                     }
                     else
                         vInterval.push_back(NAN);

@@ -21,13 +21,14 @@
 
 #include <vector>
 #include <string>
+#include <complex>
 
 
 // Erster Index: No. of Line; zweiter Index: No. of Col (push_back verwendet dazu stets zeilen!)
 /////////////////////////////////////////////////
 /// \brief Defines a Matrix.
 /////////////////////////////////////////////////
-typedef std::vector<std::vector<double> > Matrix;
+typedef std::vector<std::vector<std::complex<double>> > Matrix;
 
 
 /////////////////////////////////////////////////
@@ -39,7 +40,7 @@ struct MatFuncData
     const Matrix& mat1;
     const Matrix& mat2;
     const Matrix& mat3;
-    double fVal;
+    mu::value_type fVal;
     int nVal;
     int mVal;
 
@@ -47,8 +48,8 @@ struct MatFuncData
     MatFuncData(const Matrix& _mat, int n = 0) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(NAN), nVal(n), mVal(0) {}
     MatFuncData(const Matrix& _mat1, const Matrix& _mat2) : mat1(_mat1), mat2(_mat2), mat3(Matrix()), fVal(NAN), nVal(0), mVal(0) {}
     MatFuncData(const Matrix& _mat1, const Matrix& _mat2, const Matrix& _mat3) : mat1(_mat1), mat2(_mat2), mat3(_mat3), fVal(NAN), nVal(0), mVal(0) {}
-    MatFuncData(const Matrix& _mat, double f) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(0), mVal(0) {}
-    MatFuncData(const Matrix& _mat, double f, int n) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(n), mVal(0) {}
+    MatFuncData(const Matrix& _mat, mu::value_type f) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(0), mVal(0) {}
+    MatFuncData(const Matrix& _mat, mu::value_type f, int n) : mat1(_mat), mat2(Matrix()), mat3(Matrix()), fVal(f), nVal(n), mVal(0) {}
     MatFuncData(int n, int m = 0) : mat1(Matrix()), mat2(Matrix()), mat3(Matrix()), fVal(NAN), nVal(n), mVal(m) {}
 };
 

@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include "language.hpp"
+#include "../ParserLib/muParserDef.h"
 
 #ifndef ERROR_HPP
 #define ERROR_HPP
@@ -470,8 +471,8 @@ class Assertion
         Assertion() : sAssertedExpression(), assertionMode(false) {}
         void reset();
         void enable(const std::string& sExpr);
-        void checkAssertion(double* v, int nNum);
-        void checkAssertion(const std::vector<std::vector<double>>& _mMatrix);
+        void checkAssertion(mu::value_type* v, int nNum);
+        void checkAssertion(const std::vector<std::vector<mu::value_type>>& _mMatrix);
         void checkAssertion(const StringResult& strRes);
 };
 
