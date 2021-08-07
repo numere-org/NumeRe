@@ -2086,52 +2086,69 @@ static string strfnc_basetodec(StringFuncArgs& funcArgs)
 }
 
 
-//TODO: Doxy
+/////////////////////////////////////////////////
+/// \brief Implementation of the justify
+/// function. Each string in a vector of strings
+/// is filled with whitespaces until they are
+/// all the same length.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
 static string strfnc_justify(StringFuncArgs& funcArgs)
 {
     // mHandleTable["justify"] = StringFuncHandle(STR_VAL, strfnc_justify, true);
 
-    //NOTE: wie funktioniert das struct StringFuncArgs ?
-    //NOTE: warum dort long long int?
+    std::string result;
 
-    // Remove the masked strings
-    funcArgs.sArg2 = removeMaskedStrings(funcArgs.sArg2);
+    // Set the default justification mode
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = -1;
 
     // Examine the whole string array
     for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
     {
         // Remove the masked strings
         funcArgs.sMultiArg[i] = removeMaskedStrings(funcArgs.sMultiArg[i]);
+
+        // Remove surrounding whitespaces
+        StripSpaces(funcArgs.sMultiArg[i]);
     }
 
-    //NOTE: Wo sind die strings drin? sMultiArg? Was hat es mit nMultiArg auf sich?
     // Find the string of max length
-    size_t maxLength = -1;
+    size_t maxLength = 0;
     for (std::string thisString: funcArgs.sMultiArg)
     {
         if (thisString.size() > maxLength)
-            maxLength = line.size();
+            maxLength = thisString.size();
     }
 
-    //NOTE: Wie soll der Nutzer den justify mode uebergeben? sArg/nArg ?
-    mode = ?;
     // Fill all string with as many whitespaces as necessary
     for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
     {
-        if (mode == "left")
-            funcArgs.sMultiArg[i].insert(0, std::string(maxLength - funcArgs.sMultiArg[i].size(), " ");
-        else if (mode == "right")
-            funcArgs.sMultiArg[i].append(std::string(maxLength - funcArgs.sMultiArg[i].size(), " ");
-        else if (mode == "centered")
+        if (funcArgs.nArg1 == 1)
+            funcArgs.sMultiArg[i].insert(0, std::string(maxLength - funcArgs.sMultiArg[i].size(), ' '));
+        else if (funcArgs.nArg1 == -1)
+            funcArgs.sMultiArg[i].append(std::string(maxLength - funcArgs.sMultiArg[i].size(), ' '));
+        else if (funcArgs.nArg1 == 0)
         {
-            size_t leftSpace = std::string(maxLength - funcArgs.sMultiArg[i].size()) / 2;
-            size_t rightSpace = maxLength - leftSpace;
-            funcArgs.sMultiArg[i].insert(0, std::string(leftSpace, " "));
-            funcArgs.sMultiArg[i].append(std::string(rightSpace, " "));
+            size_t leftSpace = (maxLength - funcArgs.sMultiArg[i].size()) / 2;
+            size_t rightSpace = maxLength - leftSpace - funcArgs.sMultiArg[i].size();
+            funcArgs.sMultiArg[i].insert(0, std::string(leftSpace, ' '));
+            funcArgs.sMultiArg[i].append(std::string(rightSpace, ' '));
         }
+        // Append a comma
+        if (result.length())
+            result += NEWSTRING;
+
+        // Append the string with the justified result
+        result += "\"";
+        result += funcArgs.sMultiArg[i];
+        result += "\"";
     }
 
-    //NOTE: muessten nicht die masked strings auch wieder masked werden? Wenn nein warum nicht und warum sind sie dann am Anfang ueberhaupt masked?
+    return result;
 }
 
 
