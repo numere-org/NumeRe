@@ -705,7 +705,7 @@ void TableViewer::pasteContents(bool useCursor)
                 for (unsigned int j = 0; j < vTableData[i].size(); j++)
                 {
                     if (vTableData[i][j] == ' ')
-                        vTableData[i][j] = '_';
+                        vTableData[i][j] = '\1';
                 }
             }
         }
@@ -743,6 +743,7 @@ void TableViewer::pasteContents(bool useCursor)
         while (tok.HasMoreTokens())
         {
             sLine = tok.GetNextToken();
+            sLine.Replace("\1", " ");
 
             // Remove trailing percentage signs
             if (sLine[sLine.length()-1] == '%')
@@ -1190,9 +1191,6 @@ wxString TableViewer::copyCell(int row, int col)
     if (cell[0] == '"')
         return cell;
 
-    while (cell.find(' ') != string::npos)
-        cell[cell.find(' ')] = '_';
-
     return cell;
 }
 
@@ -1313,12 +1311,13 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         // Replace whitespaces with underscores, if the current
         // line also contains tabulator characters and it is a
         // non-numerical line
-        if (!isNumerical(sLine.ToStdString()) && sLine.find(' ') != string::npos && sLine.find('\t') != string::npos)
+        if (!isNumerical(sLine.ToStdString())
+            && (sLine.find('\t') != string::npos || sLine.find("  ") != std::string::npos))
         {
-            for (unsigned int i = 0; i < sLine.length(); i++)
+            for (unsigned int i = 1; i < sLine.length()-1; i++)
             {
-                if (sLine[i] == ' ')
-                    sLine[i] = '_';
+                if (sLine[i] == ' ' && sLine[i-1] != ' ' && sLine[i+1] != ' ')
+                    sLine[i] = '\1';
             }
         }
 

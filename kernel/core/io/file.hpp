@@ -171,7 +171,7 @@ namespace NumeRe
                 {
                     if (_sToReplace[i] == '\t')
                     {
-                        _sToReplace[i] = ' ';
+                        _sToReplace.replace(i, 1, "  ");
 
                         // Shall "empty cells" be added?
                         if (bAddPlaceholders)
@@ -182,13 +182,25 @@ namespace NumeRe
                             else if (_sToReplace[i-1] == ' ')
                                 _sToReplace.insert(i, 1, '_');
 
-                            if (i+1 == _sToReplace.length())
+                            if (i+2 == _sToReplace.length())
                                 _sToReplace += "_";
                         }
 
                         // Shall empty cells be kept (determined by heuristic)
                         if (bKeepColumns && (i+1 == _sToReplace.length() || _sToReplace[i+1] == '\t'))
                             _sToReplace.insert(i + 1, "---");
+                    }
+                }
+
+                // Transform single whitespaces into special characters,
+                // which will hide them from the tokenizer. Do this only,
+                // if there are also locations with multiple whitespaces
+                if (bAddPlaceholders && _sToReplace.find("  ") != std::string::npos)
+                {
+                    for (size_t i = 1; i < _sToReplace.length()-1; i++)
+                    {
+                        if (_sToReplace[i] == ' ' && _sToReplace[i-1] != ' ' && _sToReplace[i+1] != ' ')
+                            _sToReplace[i] = '\1';
                     }
                 }
             }

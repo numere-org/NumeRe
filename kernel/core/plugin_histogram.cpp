@@ -313,12 +313,7 @@ static std::vector<std::vector<double>> calculateHist1dData(MemoryManager& _data
             }
 
             // Create the plot legend entry for the current data set
-            vLegends.push_back(_data.getTopHeadLineElement(_idx.col[i], _histParams.sTable));
-
-            while (vLegends.back().find('_') != std::string::npos)
-            {
-                vLegends.back()[vLegends.back().find('_')] = ' ';
-            }
+            vLegends.push_back(replaceToTeX(_data.getTopHeadLineElement(_idx.col[i], _histParams.sTable)));
         }
     }
 
@@ -482,17 +477,17 @@ static void createOutputForHist1D(MemoryManager& _data, const Indices& _idx, con
     sOut[0][0] = _histParams.sBinLabel;
 
     if (bGrid)
-        sOut[0][1] = condenseText(_histParams.sCountLabel) + ":_grid";
+        sOut[0][1] = condenseText(_histParams.sCountLabel) + ": grid";
     else
     {
         for (size_t i = 1; i < vHistMatrix[0].size() + 1; i++)
         {
-            sOut[0][i] = condenseText(_histParams.sCountLabel) + ":_" + _data.getTopHeadLineElement(_idx.col[i-1], _histParams.sTable);
+            sOut[0][i] = condenseText(_histParams.sCountLabel) + ": " + _data.getTopHeadLineElement(_idx.col[i-1], _histParams.sTable);
 
-            size_t nPos;
+            //size_t nPos;
 
-            while ((nPos = sOut[0][i].find(' ')) != std::string::npos)
-                sOut[0][i][nPos] = '_';
+            //while ((nPos = sOut[0][i].find(' ')) != std::string::npos)
+            //    sOut[0][i][nPos] = '_';
         }
     }
 

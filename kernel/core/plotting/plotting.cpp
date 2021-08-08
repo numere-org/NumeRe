@@ -4545,13 +4545,6 @@ void Plot::createDataLegends()
                 continue;
             }
 
-            // Replace underscores with whitespaces
-            for (unsigned int n = 0; n < sTemp.length(); n++)
-            {
-                if (sTemp[n] == '_')
-                    sTemp[n] = ' ';
-            }
-
             // Replace the data expression with the parsed headlines
             sDataLabels = sDataLabels.substr(0, n_dpos) + sTemp + sDataLabels.substr(sDataLabels.find(';', n_dpos));
 

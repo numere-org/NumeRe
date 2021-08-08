@@ -95,6 +95,7 @@ void MemoryManager::removeTablesFromMemory()
 		mCachesMap.clear();
 		mCachesMap["table"] = std::make_pair(0u, 0u);
 		vMemory.push_back(new Memory());
+		sDataFile.clear();
 	}
 }
 

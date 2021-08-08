@@ -710,6 +710,8 @@ namespace NumeRe
                                 while (vLine[j].back() == '_')
                                     vLine[j].pop_back();
 
+                                replaceAll(vLine[j], "\1", " ");
+
                                 // Append the current token to the
                                 // corresponding column heading and
                                 // insert the linebreak character,

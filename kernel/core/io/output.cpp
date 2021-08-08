@@ -692,7 +692,7 @@ void Output::format(string** _sMatrix, long long int _nCol, long long int _nLine
                             j = nCol_0-1;
                     }
 
-                    if ((!bFile || bPrintTeX) && i < nHeadLineCount)
+                    if (bPrintTeX && i < nHeadLineCount)
                     {
                         for (unsigned int k = 0; k < sPrint.length(); k++)
                         {

@@ -439,7 +439,6 @@ namespace NumeRe
         if (vTableHeadings.size() > i)
         {
             string head = vTableHeadings[i];
-            replaceAll(head, "_", " ");
             replaceAll(head, "\\n", "\n");
             return head;
         }
