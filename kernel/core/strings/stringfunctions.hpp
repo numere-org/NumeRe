@@ -2128,24 +2128,22 @@ static string strfnc_justify(StringFuncArgs& funcArgs)
     for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
     {
         if (funcArgs.nArg1 == 1)
-            funcArgs.sMultiArg[i].insert(0, std::string(maxLength - funcArgs.sMultiArg[i].size(), ' '));
+            funcArgs.sMultiArg[i].insert(0, maxLength - funcArgs.sMultiArg[i].size(), ' ');
         else if (funcArgs.nArg1 == -1)
-            funcArgs.sMultiArg[i].append(std::string(maxLength - funcArgs.sMultiArg[i].size(), ' '));
+            funcArgs.sMultiArg[i].append(maxLength - funcArgs.sMultiArg[i].size(), ' ');
         else if (funcArgs.nArg1 == 0)
         {
             size_t leftSpace = (maxLength - funcArgs.sMultiArg[i].size()) / 2;
             size_t rightSpace = maxLength - leftSpace - funcArgs.sMultiArg[i].size();
-            funcArgs.sMultiArg[i].insert(0, std::string(leftSpace, ' '));
-            funcArgs.sMultiArg[i].append(std::string(rightSpace, ' '));
+            funcArgs.sMultiArg[i].insert(0, leftSpace, ' ');
+            funcArgs.sMultiArg[i].append(rightSpace, ' ');
         }
         // Append a comma
         if (result.length())
             result += NEWSTRING;
 
         // Append the string with the justified result
-        result += "\"";
-        result += funcArgs.sMultiArg[i];
-        result += "\"";
+        result += "\"" + funcArgs.sMultiArg[i] + "\"";
     }
 
     return result;
