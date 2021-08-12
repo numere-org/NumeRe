@@ -2303,6 +2303,11 @@ bool addLegends(string& sExpr)
                     sTemp += args[i].insert(j, "+\"\"");
                     break;
                 }
+                else if (j+1 == args[i].length())
+                {
+                    sTemp += args[i] + "+\"\"";
+                    break;
+                }
             }
         }
         else

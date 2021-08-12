@@ -3910,7 +3910,7 @@ std::vector<std::string> Plot::evaluateDataPlots(vector<short>& vType, string& s
 
             string sSubstr = sToken.substr(getMatchingParenthesis(sToken.substr(sToken.find_first_of("({"))) + sToken.find_first_of("({") + 1);
 
-            if (sSubstr[sSubstr.find_first_not_of(' ')] != '"')
+            if (sSubstr[sSubstr.find_first_not_of(' ')] != '"' && sSubstr[sSubstr.find_first_not_of(' ')] != '#')
                 throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
         }
     }

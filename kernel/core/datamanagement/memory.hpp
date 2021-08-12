@@ -21,6 +21,7 @@
 
 #include "table.hpp"
 #include "sorter.hpp"
+#include "tablecolumn.hpp"
 #include "../maths/filtering.hpp"
 
 #ifndef MEMORY_HPP
@@ -32,7 +33,6 @@ namespace NumeRe
 {
     class FileAdapter;
 }
-
 
 /////////////////////////////////////////////////
 /// \brief This class represents a single table
