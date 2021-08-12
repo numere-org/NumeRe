@@ -23,9 +23,19 @@
 
 namespace mu
 {
+    // Forward declaration
     bool isnan(mu::value_type);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Return the table column's contents as
+/// a vector of strings.
+///
+/// \param idx const VectorIndex&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
 std::vector<std::string> TableColumn::getValueAsString(const VectorIndex& idx) const
 {
     idx.setOpenEndIndex(size()-1);
@@ -39,6 +49,15 @@ std::vector<std::string> TableColumn::getValueAsString(const VectorIndex& idx) c
     return vVect;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Return the table column's contents as
+/// a vector of numerical types.
+///
+/// \param idx const VectorIndex&
+/// \return std::vector<mu::value_type>
+///
+/////////////////////////////////////////////////
 std::vector<mu::value_type> TableColumn::getValue(const VectorIndex& idx) const
 {
     idx.setOpenEndIndex(size()-1);
@@ -59,6 +78,13 @@ std::vector<mu::value_type> TableColumn::getValue(const VectorIndex& idx) const
 
 
 
+/////////////////////////////////////////////////
+/// \brief Shrink the column by removing all
+/// invalid elements from the end.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void ValueColumn::shrink()
 {
     for (int i = m_data.size()-1; i >= 0; i--)
@@ -72,6 +98,14 @@ void ValueColumn::shrink()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a string
+/// or a default value, if it does not exist.
+///
+/// \param elem int
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string ValueColumn::getValueAsString(int elem) const
 {
     if (elem >= 0 && elem < m_data.size())
@@ -81,6 +115,15 @@ std::string ValueColumn::getValueAsString(int elem) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the selected value as a
+/// numerical type or an invalid value, if it
+/// does not exist.
+///
+/// \param elem int
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
 mu::value_type ValueColumn::getValue(int elem) const
 {
     if (elem >= 0 && elem < m_data.size())
@@ -90,12 +133,33 @@ mu::value_type ValueColumn::getValue(int elem) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Sets a string vector at the specified
+/// indices.
+///
+/// \throws SyntaxError, because this assignment
+/// is not possible.
+///
+/// \param idx const VectorIndex&
+/// \param vValue const std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ValueColumn::setValue(const VectorIndex& idx, const std::vector<std::string>& vValue)
 {
     throw SyntaxError(SyntaxError::STRING_ERROR, "", "");
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Sets a numerical vector at the
+/// specified indices.
+///
+/// \param idx const VectorIndex&
+/// \param vValue const std::vector<mu::value_type>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ValueColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue)
 {
     for (size_t i = 0; i < idx.size(); i++)
@@ -111,6 +175,16 @@ void ValueColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_t
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Sets a plain numerical array at the
+/// specified indices.
+///
+/// \param idx const VectorIndex&
+/// \param _dData mu::value_type*
+/// \param _nNum unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
 void ValueColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum)
 {
     for (size_t i = 0; i < idx.size(); i++)
@@ -126,6 +200,15 @@ void ValueColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsig
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Creates a copy of the selected part of
+/// this column. Can be used for simple
+/// extraction into a new table.
+///
+/// \param idx const VectorIndex&
+/// \return ValueColumn*
+///
+/////////////////////////////////////////////////
 ValueColumn* ValueColumn::copy(const VectorIndex& idx) const
 {
     idx.setOpenEndIndex(size()-1);
@@ -141,13 +224,32 @@ ValueColumn* ValueColumn::copy(const VectorIndex& idx) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Assign another TableColumn's contents
+/// to this table column.
+///
+/// \param column const TableColumn*
+/// \return void
+///
+/////////////////////////////////////////////////
 void ValueColumn::assign(const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_VALUE)
         m_data = static_cast<const ValueColumn*>(column)->m_data;
+    else
+        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Delete the specified elements.
+///
+/// \note Will trigger the shrinking algorithm.
+///
+/// \param idx const VectorIndex&
+/// \return void
+///
+/////////////////////////////////////////////////
 void ValueColumn::deleteElements(const VectorIndex& idx)
 {
     idx.setOpenEndIndex(size()-1);
@@ -166,6 +268,13 @@ void ValueColumn::deleteElements(const VectorIndex& idx)
 
 
 
+/////////////////////////////////////////////////
+/// \brief Shrink the column by removing all
+/// invalid elements from the end.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void StringColumn::shrink()
 {
     for (int i = m_data.size()-1; i >= 0; i--)
@@ -179,6 +288,14 @@ void StringColumn::shrink()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the selected value or an empty
+/// string, if the value does not exist.
+///
+/// \param elem int
+/// \return std::string
+///
+/////////////////////////////////////////////////
 std::string StringColumn::getValueAsString(int elem) const
 {
     if (elem >= 0 && elem < m_data.size())
@@ -188,12 +305,29 @@ std::string StringColumn::getValueAsString(int elem) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns always NaN, because this
+/// conversion is not possible.
+///
+/// \param elem int
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
 mu::value_type StringColumn::getValue(int elem) const
 {
     return NAN;
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Assigns the strings from the passed
+/// vector at the selected positions.
+///
+/// \param idx const VectorIndex&
+/// \param vValue const std::vector<std::string>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void StringColumn::setValue(const VectorIndex& idx, const std::vector<std::string>& vValue)
 {
     for (size_t i = 0; i < idx.size(); i++)
@@ -209,6 +343,16 @@ void StringColumn::setValue(const VectorIndex& idx, const std::vector<std::strin
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Assigns the numerical values of the
+/// passed vector at the selected positions by
+/// converting the values to strings.
+///
+/// \param idx const VectorIndex&
+/// \param vValue const std::vector<mu::value_type>&
+/// \return void
+///
+/////////////////////////////////////////////////
 void StringColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue)
 {
     for (size_t i = 0; i < idx.size(); i++)
@@ -224,6 +368,17 @@ void StringColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Assigns the numerical values of the
+/// passed array at the selected positions by
+/// converting the values to strings.
+///
+/// \param idx const VectorIndex&
+/// \param _dData mu::value_type*
+/// \param _nNum unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
 void StringColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum)
 {
     for (size_t i = 0; i < idx.size(); i++)
@@ -239,6 +394,15 @@ void StringColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsi
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Creates a copy of the selected part of
+/// this column. Can be used for simple
+/// extraction into a new table.
+///
+/// \param idx const VectorIndex&
+/// \return StringColumn*
+///
+/////////////////////////////////////////////////
 StringColumn* StringColumn::copy(const VectorIndex& idx) const
 {
     idx.setOpenEndIndex(size()-1);
@@ -254,13 +418,32 @@ StringColumn* StringColumn::copy(const VectorIndex& idx) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Assign another TableColumn's contents
+/// to this table column.
+///
+/// \param column const TableColumn*
+/// \return void
+///
+/////////////////////////////////////////////////
 void StringColumn::assign(const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_STRING)
         m_data = static_cast<const StringColumn*>(column)->m_data;
+    else
+        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Delete the specified elements.
+///
+/// \note Will trigger the shrinking algorithm.
+///
+/// \param idx const VectorIndex&
+/// \return void
+///
+/////////////////////////////////////////////////
 void StringColumn::deleteElements(const VectorIndex& idx)
 {
     idx.setOpenEndIndex(size()-1);
@@ -275,6 +458,13 @@ void StringColumn::deleteElements(const VectorIndex& idx)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Calculates the number of bytes
+/// occupied by this column.
+///
+/// \return size_t
+///
+/////////////////////////////////////////////////
 size_t StringColumn::getBytes() const
 {
     size_t bytes = 0;

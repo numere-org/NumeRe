@@ -24,6 +24,11 @@
 #include "../ParserLib/muParserDef.h"
 #include "../structures.hpp"
 
+/////////////////////////////////////////////////
+/// \brief Abstract table column, which allows
+/// using it to compose the data table in each
+/// Memory instance.
+/////////////////////////////////////////////////
 struct TableColumn
 {
     enum ColumnType
@@ -57,6 +62,10 @@ struct TableColumn
 };
 
 
+/////////////////////////////////////////////////
+/// \brief A table column containing only
+/// numerical values.
+/////////////////////////////////////////////////
 class ValueColumn : public TableColumn
 {
     private:
@@ -64,11 +73,22 @@ class ValueColumn : public TableColumn
         void shrink();
 
     public:
+        /////////////////////////////////////////////////
+        /// \brief Default constructor. Sets only the
+        ///  type of the column.
+        /////////////////////////////////////////////////
         ValueColumn() : TableColumn()
         {
             m_type = TableColumn::TYPE_VALUE;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Generalized constructor. Will prepare
+        /// a column with the specified size.
+        ///
+        /// \param nElem size_t
+        ///
+        /////////////////////////////////////////////////
         ValueColumn(size_t nElem) : ValueColumn()
         {
             m_data.resize(nElem);
@@ -86,11 +106,25 @@ class ValueColumn : public TableColumn
         virtual void assign(const TableColumn* column) override;
         virtual void deleteElements(const VectorIndex& idx) override;
 
+        /////////////////////////////////////////////////
+        /// \brief Return the number of bytes occupied by
+        /// this column.
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
         virtual size_t getBytes() const override
         {
             return size() * sizeof(mu::value_type);
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Return the number of elements in this
+        /// column (will also count invalid ones).
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
         virtual size_t size() const override
         {
             return m_data.size();
@@ -99,6 +133,10 @@ class ValueColumn : public TableColumn
 };
 
 
+/////////////////////////////////////////////////
+/// \brief A table column containing only strings
+/// as values.
+/////////////////////////////////////////////////
 class StringColumn : public TableColumn
 {
     private:
@@ -106,11 +144,22 @@ class StringColumn : public TableColumn
         void shrink();
 
     public:
+        /////////////////////////////////////////////////
+        /// \brief Default constructor. Sets only the
+        /// columns type.
+        /////////////////////////////////////////////////
         StringColumn() : TableColumn()
         {
             m_type = TableColumn::TYPE_STRING;
         }
 
+        /////////////////////////////////////////////////
+        /// \brief Generalized constructor. Will prepare
+        /// a column with the specified size.
+        ///
+        /// \param nElem size_t
+        ///
+        /////////////////////////////////////////////////
         StringColumn(size_t nElem) : StringColumn()
         {
             m_data.resize(nElem);
@@ -129,6 +178,13 @@ class StringColumn : public TableColumn
         virtual void deleteElements(const VectorIndex& idx) override;
         virtual size_t getBytes() const override;
 
+        /////////////////////////////////////////////////
+        /// \brief Returns the number of elements in this
+        /// column (will also count invalid ones).
+        ///
+        /// \return size_t
+        ///
+        /////////////////////////////////////////////////
         virtual size_t size() const override
         {
             return m_data.size();
