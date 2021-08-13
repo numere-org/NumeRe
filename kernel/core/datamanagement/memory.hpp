@@ -66,7 +66,7 @@ class Memory : public Sorter
 		bool Allocate(size_t _nNCols, bool shrink = false);
 		void createTableHeaders();
 		bool clear();
-		Boundary findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j) const;
+		Boundary findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, int i, int j) const;
 		bool retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction);
 		bool retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol);
 		bool onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
