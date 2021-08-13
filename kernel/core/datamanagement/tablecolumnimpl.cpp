@@ -287,7 +287,7 @@ int ValueColumn::compare(int i, int j) const
 
     if (m_data[i] == m_data[j])
         return 0;
-    else if (m_data[i] < m_data[j])
+    else if (m_data[i].real() < m_data[j].real())
         return -1;
 
     return 1;
@@ -311,8 +311,20 @@ bool ValueColumn::isValid(int elem) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Interprets the value as a boolean.
+///
+/// \param elem int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool ValueColumn::asBool(int elem) const
+{
+    if (elem < 0 || elem >= m_data.size())
+        return false;
 
-
+    return m_data[elem] != 0.0;
+}
 
 
 /////////////////////////////////////////////////
@@ -376,13 +388,13 @@ mu::value_type StringColumn::getValue(int elem) const
 /////////////////////////////////////////////////
 void StringColumn::setValue(int elem, const std::string& sValue)
 {
-    if (elem >= m_data.size() && !vValue.length())
+    if (elem >= m_data.size() && !sValue.length())
         return;
 
     if (elem >= m_data.size())
         m_data.resize(elem+1);
 
-    m_data[elem] = vValue;
+    m_data[elem] = sValue;
 }
 
 
@@ -602,6 +614,22 @@ bool StringColumn::isValid(int elem) const
         return false;
 
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Interprets the value as a boolean.
+///
+/// \param elem int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool StringColumn::asBool(int elem) const
+{
+    if (elem < 0 || elem >= m_data.size())
+        return false;
+
+    return m_data[elem].length() != 0;
 }
 
 

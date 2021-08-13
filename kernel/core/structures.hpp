@@ -76,9 +76,9 @@ class VectorIndex
 
                 // Consider the case that the order of the indices
                 // could be inverted
-                if (vStorage.front() <= vStorage.back() && n + vStorage.front() <= vStorage.back())
+                if (vStorage.front() <= vStorage.back() && (int)n + vStorage.front() <= vStorage.back())
                     return vStorage.front() + n;
-                else if (vStorage.front() > vStorage.back() && vStorage.front() - n >= vStorage.back()) // >= because vStorage.back() was not decremented first
+                else if (vStorage.front() > vStorage.back() && vStorage.front() - (int)n >= vStorage.back()) // >= because vStorage.back() was not decremented first
                     return vStorage.front() - n;
             }
             else if (n < vStorage.size())

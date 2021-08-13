@@ -176,10 +176,10 @@ bool Memory::resizeMemory(size_t _nLines, size_t _nCols)
 /// \param _bFull bool true, if the reserved
 /// number of columns is requested, false if only
 /// the non-empty ones are requested
-/// \return size_t
+/// \return int
 ///
 /////////////////////////////////////////////////
-size_t Memory::getCols(bool _bFull) const
+int Memory::getCols(bool _bFull) const
 {
     return memArray.size();
 }
@@ -193,10 +193,10 @@ size_t Memory::getCols(bool _bFull) const
 /// \param _bFull bool true, if the reserved
 /// number of lines is requested, false if only
 /// the non-empty ones are requested
-/// \return size_t
+/// \return int
 ///
 /////////////////////////////////////////////////
-size_t Memory::getLines(bool _bFull) const
+int Memory::getLines(bool _bFull) const
 {
     if (memArray.size())
     {
@@ -358,7 +358,7 @@ std::vector<mu::value_type> Memory::readMem(const VectorIndex& _vLine, const Vec
         {
             for (size_t j = 0; j < _vCol.size(); j++)
             {
-                if (_vCol[j] < 0 || _vCol[j] >= memArray.size() || !memArray[_vCol[j]])
+                if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
                     vReturn.push_back(NAN);
                 else
                     vReturn.push_back(memArray[_vCol[j]]->getValue(_vLine[i]));
@@ -381,7 +381,7 @@ std::vector<double> Memory::readRealMem(const VectorIndex& _vLine, const VectorI
         {
             for (size_t j = 0; j < _vCol.size(); j++)
             {
-                if (_vCol[j] < 0 || _vCol[j] >= memArray.size() || !memArray[_vCol[j]])
+                if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
                     vReturn.push_back(NAN);
                 else
                     vReturn.push_back(memArray[_vCol[j]]->getValue(_vLine[i]).real());
@@ -417,7 +417,7 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 
     for (size_t j = 0; j < _vCol.size(); j++)
     {
-        if (_vCol[j] >= 0 && _vCol[j] < memArray.size() && memArray[_vCol[j]])
+        if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
             _memCopy->memArray[j].reset(memArray[_vCol[j]]->copy(_vLine));
     }
 
@@ -452,7 +452,7 @@ void Memory::copyElementsInto(vector<mu::value_type>* vTarget, const VectorIndex
         {
             for (size_t j = 0; j < _vCol.size(); j++)
             {
-                if (_vCol[j] < 0 || _vCol[j] >= memArray.size() || !memArray[_vCol[j]])
+                if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
                     (*vTarget)[j + i * _vCol.size()] = NAN;
                 else
                     (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
@@ -519,7 +519,7 @@ bool Memory::shrink()
     {
         if (memArray[j] && memArray[j]->size())
         {
-            if (j < memArray.size()-1)
+            if (j < (int)memArray.size()-1)
                 memArray.resize(j+1);
 
             break;
@@ -679,18 +679,18 @@ size_t Memory::getHeadlineCount() const
 /// value to the selected position. The table is
 /// automatically enlarged, if necessary.
 ///
-/// \param _nLine size_t
-/// \param _nCol size_t
+/// \param _nLine int
+/// \param _nCol int
 /// \param _dData const mu::value_type&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::writeData(size_t _nLine, size_t _nCol, const mu::value_type& _dData)
+void Memory::writeData(int _nLine, int _nCol, const mu::value_type& _dData)
 {
     if (!memArray.size() && mu::isnan(_dData))
         return;
 
-    if (memArray.size() <= _nCol)
+    if ((int)memArray.size() <= _nCol)
         resizeMemory(_nLine+1, _nCol+1);
 
     if (!memArray[_nCol])
@@ -1030,7 +1030,7 @@ void Memory::reorderColumn(const VectorIndex& vIndex, int i1, int i2, int j1)
 /////////////////////////////////////////////////
 int Memory::compare(int i, int j, int col)
 {
-    if (col < memArray.size() && memArray[col])
+    if (col < (int)memArray.size() && memArray[col])
         return memArray[col]->compare(i, j);
 
     return 0;
@@ -1049,7 +1049,7 @@ int Memory::compare(int i, int j, int col)
 /////////////////////////////////////////////////
 bool Memory::isValue(int line, int col)
 {
-    if (col < memArray.size() && memArray[col])
+    if (col < (int)memArray.size() && memArray[col])
         return memArray[col]->isValid(line);
 
     return false;
@@ -1206,7 +1206,7 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
 /////////////////////////////////////////////////
 void Memory::deleteEntry(int _nLine, int _nCol)
 {
-    if (memArray.size() > _nCol && memArray[_nCol])
+    if ((int)memArray.size() > _nCol && memArray[_nCol])
     {
         if (memArray[_nCol]->isValid(_nLine))
         {
@@ -1252,7 +1252,7 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
     // Delete the selected entries
     for (size_t j = 0; j < _vCol.size(); j++)
     {
-        if (_vCol[j] >= 0 && _vCol[j] < memArray.size() && memArray[_vCol[j]])
+        if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
             memArray[_vCol[j]]->deleteElements(_vLine);
     }
 
@@ -1287,8 +1287,8 @@ mu::value_type Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     mu::value_type dAvg = avg(_vLine, _vCol);
     mu::value_type dStd = 0.0;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1344,8 +1344,8 @@ mu::value_type Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
     double dMax = NAN;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1388,8 +1388,8 @@ mu::value_type Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
     double dMin = NAN;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1432,8 +1432,8 @@ mu::value_type Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
     mu::value_type dPrd = 1.0;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1472,8 +1472,8 @@ mu::value_type Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
     mu::value_type dSum = 0.0;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1512,8 +1512,8 @@ mu::value_type Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
     int nInvalid = 0;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1547,8 +1547,8 @@ mu::value_type Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _v
     if (!memArray.size())
         return 0.0;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1565,7 +1565,7 @@ mu::value_type Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _v
             if (isnan(dRetVal))
                 dRetVal = 1.0;
 
-            if (mu::isnan(readMem(_vLine[i], _vCol[j])) || readMem(_vLine[i], _vCol[j]) == 0.0) // TODO
+            if (!memArray[j] || !memArray[j]->asBool(i))
                 return 0.0;
         }
     }
@@ -1591,8 +1591,8 @@ mu::value_type Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vC
     if (!memArray.size())
         return 0.0;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1604,7 +1604,7 @@ mu::value_type Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vC
             if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
-            if (mu::isnan(readMem(_vLine[i], _vCol[j])) || readMem(_vLine[i], _vCol[j]) != 0.0) // TODO
+            if (memArray[j] && memArray[j]->asBool(i))
                 return 1.0;
         }
     }
@@ -1627,8 +1627,8 @@ mu::value_type Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _v
     if (!memArray.size())
         return 0.0;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1642,7 +1642,7 @@ mu::value_type Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _v
             if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
-            if (mu::isnan(readMem(_vLine[i], _vCol[j])) || readMem(_vLine[i], _vCol[j]) != 0.0) // TODO
+            if (memArray[j] && memArray[j]->asBool(i))
             {
                 if (!isTrue)
                     isTrue = true;
@@ -1675,8 +1675,8 @@ mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
     int nInvalid = 0;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1710,8 +1710,8 @@ mu::value_type Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
 
     mu::value_type dNorm = 0.0;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1750,8 +1750,8 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
     if (!memArray.size())
         return NAN;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1881,8 +1881,8 @@ mu::value_type Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     if (!memArray.size())
         return NAN;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1929,8 +1929,8 @@ mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, 
     if (!memArray.size())
         return NAN;
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
@@ -1972,38 +1972,38 @@ mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, 
 ///
 /// \param _vIndex const VectorIndex&
 /// \param dir int Bitcomposition of AppDir values
-/// \return vector<mu::value_type>
+/// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) const
+std::vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) const
 {
     if (!memArray.size())
-        return vector<mu::value_type>(2, 0.0);
+        return std::vector<mu::value_type>(2, 0.0);
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vIndex.setOpenEndIndex(dir & LINES ? lines-1 : cols-1);
-    size_t nGridOffset = 2*((dir & GRID) != 0);
+    int nGridOffset = 2*((dir & GRID) != 0);
 
     // Handle simple things first
     if (dir == ALL)
-        return vector<mu::value_type>({lines, cols});
+        return std::vector<mu::value_type>({lines, cols});
     else if (dir == GRID)
-        return vector<mu::value_type>({lines, cols-2});
+        return std::vector<mu::value_type>({lines, cols-2});
     else if (dir & LINES)
     {
         // Compute the sizes of the table rows
-        vector<mu::value_type> vSizes;
+        std::vector<mu::value_type> vSizes;
 
         for (size_t i = 0; i < _vIndex.size(); i++)
         {
             if (_vIndex[i] < 0 || _vIndex[i] >= lines)
                 continue;
 
-            for (long long int j = memArray.size()-1; j >= 0; j--)
+            for (int j = memArray.size()-1; j >= 0; j--)
             {
-                if (!mu::isnan(readMem(_vIndex[i], j))) // TODO
+                if (memArray[j] && memArray[j]->isValid(_vIndex[i]))
                 {
                     vSizes.push_back(j+1 - nGridOffset);
                     break;
@@ -2019,14 +2019,17 @@ vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) const
     else if (dir & COLS)
     {
         // Compute the sizes of the table columns
-        vector<mu::value_type> vSizes;
+        std::vector<mu::value_type> vSizes;
 
         for (size_t j = 0; j < _vIndex.size(); j++)
         {
-            if (_vIndex[j] < nGridOffset || _vIndex[j] >= cols || !memArray[_vIndex[j]])
+            if (_vIndex[j] < nGridOffset || _vIndex[j] >= cols)
                 continue;
 
-            vSizes.push_back(memArray[_vIndex[j]]->size());
+            if (!memArray[_vIndex[j]])
+                vSizes.push_back(0.0);
+            else
+                vSizes.push_back(memArray[_vIndex[j]]->size());
         }
 
         if (!vSizes.size())
@@ -2035,7 +2038,7 @@ vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) const
         return vSizes;
     }
 
-    return vector<mu::value_type>(2, 0.0);
+    return std::vector<mu::value_type>(2, 0.0);
 }
 
 
@@ -2045,25 +2048,25 @@ vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) const
 ///
 /// \param _vIndex const VectorIndex&
 /// \param dir int
-/// \return vector<mu::value_type>
+/// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) const
+std::vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) const
 {
     if (!memArray.size())
-        return vector<mu::value_type>(1, NAN);
+        return std::vector<mu::value_type>(1, NAN);
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vIndex.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
-    size_t nGridOffset = 2*((dir & GRID) != 0);
+    int nGridOffset = 2*((dir & GRID) != 0);
 
     // A special case for the columns. We will compute the
     // results for ALL and GRID using the results for LINES
     if (dir & COLS)
     {
-        vector<mu::value_type> vPos;
+        std::vector<mu::value_type> vPos;
 
         for (size_t j = 0; j < _vIndex.size(); j++)
         {
@@ -2079,7 +2082,7 @@ vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) const
         return vPos;
     }
 
-    vector<mu::value_type> vPos;
+    std::vector<mu::value_type> vPos;
     double dMin = NAN;
     size_t pos = 0;
 
@@ -2101,11 +2104,11 @@ vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) const
     }
 
     if (!vPos.size())
-        return vector<mu::value_type>(1, NAN);
+        return std::vector<mu::value_type>(1, NAN);
 
     // Use the global minimal value for ALL and GRID
     if (dir == ALL || dir == GRID)
-        return vector<mu::value_type>({_vIndex[pos]+1, vPos[pos]});
+        return std::vector<mu::value_type>({_vIndex[pos]+1, vPos[pos]});
 
     return vPos;
 }
@@ -2117,25 +2120,25 @@ vector<mu::value_type> Memory::minpos(const VectorIndex& _vIndex, int dir) const
 ///
 /// \param _vIndex const VectorIndex&
 /// \param dir int
-/// \return vector<mu::value_type>
+/// \return std::vector<mu::value_type>
 ///
 /////////////////////////////////////////////////
-vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
+std::vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
 {
     if (!memArray.size())
-        return vector<mu::value_type>(1, NAN);
+        return std::vector<mu::value_type>(1, NAN);
 
-    size_t lines = getLines(false);
-    size_t cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     _vIndex.setOpenEndIndex(dir & COLS ? cols-1 : lines-1);
-    size_t nGridOffset = 2*((dir & GRID) != 0);
+    int nGridOffset = 2*((dir & GRID) != 0);
 
     // A special case for the columns. We will compute the
     // results for ALL and GRID using the results for LINES
     if (dir & COLS)
     {
-        vector<mu::value_type> vPos;
+        std::vector<mu::value_type> vPos;
 
         for (size_t j = 0; j < _vIndex.size(); j++)
         {
@@ -2151,7 +2154,7 @@ vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
         return vPos;
     }
 
-    vector<mu::value_type> vPos;
+    std::vector<mu::value_type> vPos;
     double dMax = NAN;
     size_t pos;
 
@@ -2173,11 +2176,11 @@ vector<mu::value_type> Memory::maxpos(const VectorIndex& _vIndex, int dir) const
     }
 
     if (!vPos.size())
-        return vector<mu::value_type>(1, NAN);
+        return std::vector<mu::value_type>(1, NAN);
 
     // Use the global maximal value for ALL and GRID
     if (dir == ALL || dir == GRID)
-        return vector<mu::value_type>({_vIndex[pos]+1, vPos[pos]});
+        return std::vector<mu::value_type>({_vIndex[pos]+1, vPos[pos]});
 
     return vPos;
 }
@@ -2621,7 +2624,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
         Direction = COLS;
 
     // Check the order
-    if ((_settings.row >= getLines() && Direction == COLS) || (_settings.col >= getCols() && Direction == LINES) || ((_settings.row >= getLines() || _settings.col >= getCols()) && (Direction == ALL || Direction == GRID)))
+    if ((_settings.row >= (size_t)getLines() && Direction == COLS) || (_settings.col >= (size_t)getCols() && Direction == LINES) || ((_settings.row >= (size_t)getLines() || _settings.col >= (size_t)getCols()) && (Direction == ALL || Direction == GRID)))
         throw SyntaxError(SyntaxError::CANNOT_SMOOTH_CACHE, "smooth", SyntaxError::invalid_position);
 
 
@@ -2779,11 +2782,11 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 {
     bool bUseAppendedZeroes = false;
 
-    const size_t __nOrigLines = getLines();
-    const size_t __nOrigCols = getCols();
+    const int __nOrigLines = getLines();
+    const int __nOrigCols = getCols();
 
-    size_t __nLines = __nOrigLines;
-    size_t __nCols = __nOrigCols;
+    int __nLines = __nOrigLines;
+    int __nCols = __nOrigCols;
 
     // Avoid border cases
     if (!memArray.size())
@@ -2900,19 +2903,19 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
     // Create and initalize the dynamic memory: resampler buffer
     double** dResampleBuffer = new double*[__nLines];
 
-    for (size_t i = 0; i < __nLines; i++)
+    for (int i = 0; i < __nLines; i++)
     {
         dResampleBuffer[i] = new double[__nCols];
 
-        for (size_t j = 0; j < __nCols; j++)
+        for (int j = 0; j < __nCols; j++)
             dResampleBuffer[i][j] = NAN;
     }
 
     // resampler output buffer
     const double* dOutputSamples = 0;
     double* dInputSamples = new double[_vCol.size()];
-    size_t _ret_line = 0;
-    size_t _final_cols = 0;
+    int _ret_line = 0;
+    int _final_cols = 0;
 
     // Determine the number of final columns. These will stay constant only in
     // the column application direction
@@ -2922,9 +2925,9 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
         _final_cols = _vCol.size();
 
     // Copy the whole memory
-    for (size_t i = 0; i < __nOrigLines; i++)
+    for (int i = 0; i < __nOrigLines; i++)
     {
-        for (size_t j = 0; j < __nOrigCols; j++)
+        for (int j = 0; j < __nOrigCols; j++)
         {
             dResampleBuffer[i][j] = readMem(i, j).real();
         }
@@ -2969,7 +2972,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
                     if (!dOutputSamples)
                         break;
 
-                    for (size_t _fin = 0; _fin < _final_cols; _fin++)
+                    for (int _fin = 0; _fin < _final_cols; _fin++)
                     {
                         if (isnan(dOutputSamples[_fin]))
                         {
@@ -3002,7 +3005,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
         if (!dOutputSamples)
             break;
 
-        for (size_t _fin = 0; _fin < _final_cols; _fin++)
+        for (int _fin = 0; _fin < _final_cols; _fin++)
         {
             if (isnan(dOutputSamples[_fin]))
             {
@@ -3027,7 +3030,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
     // Block unter dem resampleten kopieren
     if (_vLine.size() < nSamples && (Direction == ALL || Direction == GRID || Direction == COLS))
     {
-        for (size_t i = _vLine.last() + 1; i < __nOrigLines; i++)
+        for (int i = _vLine.last() + 1; i < __nOrigLines; i++)
         {
             for (size_t j = 0; j < _vCol.size(); j++)
             {
@@ -3076,9 +3079,9 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
     // Block rechts kopieren
     if (_vCol.size() < nSamples && (Direction == ALL || Direction == GRID || Direction == LINES))
     {
-        for (size_t i = 0; i < __nOrigLines; i++)
+        for (int i = 0; i < __nOrigLines; i++)
         {
-            for (size_t j = _vCol.last() + 1; j < __nOrigCols; j++)
+            for (int j = _vCol.last() + 1; j < __nOrigCols; j++)
             {
                 if (_final_cols + j - (_vCol.last() + 1) + _vCol.front() >= getCols())
                 {
@@ -3124,12 +3127,12 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
     // After all data is restored successfully
     // copy the data points from the buffer back to their original state
-    for (size_t i = 0; i < getLines(); i++)
+    for (int i = 0; i < getLines(); i++)
     {
         if (i >= __nLines)
             break;
 
-        for (size_t j = 0; j < getCols(); j++)
+        for (int j = 0; j < getCols(); j++)
         {
             if (j >= __nCols)
                 break;

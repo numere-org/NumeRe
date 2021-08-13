@@ -85,8 +85,8 @@ class Memory : public Sorter
 		bool isValid() const;
 		bool isValidElement(size_t _nLine, size_t _nCol) const;
 		bool shrink();
-		size_t getLines(bool _bFull = false) const;
-		size_t getCols(bool _bFull = false) const;
+		int getLines(bool _bFull = false) const;
+		int getCols(bool _bFull = false) const;
         size_t getSize() const;
 
 
@@ -104,7 +104,7 @@ class Memory : public Sorter
 
 		// WRITE ACCESS METHODS
 		void writeSingletonData(Indices& _idx, const mu::value_type& _dData);
-		void writeData(size_t _nLine, size_t _nCol, const mu::value_type& _dData);
+		void writeData(int _nLine, int _nCol, const mu::value_type& _dData);
 		void writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum);
 		bool setHeadLineElement(size_t _i, const std::string& _sHead);
 

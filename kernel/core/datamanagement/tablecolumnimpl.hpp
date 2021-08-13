@@ -71,6 +71,7 @@ class ValueColumn : public TableColumn
 
         virtual int compare(int i, int j) const override;
         virtual bool isValid(int elem) const override;
+        virtual bool asBool(int elem) const override;
 
         /////////////////////////////////////////////////
         /// \brief Return the number of bytes occupied by
@@ -149,6 +150,7 @@ class StringColumn : public TableColumn
 
         virtual int compare(int i, int j) const override;
         virtual bool isValid(int elem) const override;
+        virtual bool asBool(int elem) const override;
 
         virtual size_t getBytes() const override;
 

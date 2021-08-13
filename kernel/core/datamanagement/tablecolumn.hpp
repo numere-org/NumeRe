@@ -66,6 +66,8 @@ struct TableColumn
     virtual int compare(int i, int j) const = 0;
     virtual bool isValid(int elem) const = 0;
 
+    virtual bool asBool(int elem) const = 0;
+
     virtual size_t size() const = 0;
     virtual size_t getBytes() const = 0;
 };
