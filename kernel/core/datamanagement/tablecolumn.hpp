@@ -21,6 +21,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 #include "../ParserLib/muParserDef.h"
 #include "../structures.hpp"
 
@@ -50,146 +51,36 @@ struct TableColumn
     virtual std::string getValueAsString(int elem) const = 0;
     virtual mu::value_type getValue(int elem) const = 0;
 
-    virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& sValue) = 0;
+    virtual void setValue(int elem, const std::string& sValue) = 0;
+    virtual void setValue(int elem, const mu::value_type& vValue) = 0;
+    virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue) = 0;
     virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) = 0;
     virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) = 0;
 
     virtual TableColumn* copy(const VectorIndex& idx) const = 0;
     virtual void assign(const TableColumn* column) = 0;
     virtual void deleteElements(const VectorIndex& idx) = 0;
+    virtual void shrink() = 0;
+
     virtual size_t size() const = 0;
     virtual size_t getBytes() const = 0;
 };
 
 
 /////////////////////////////////////////////////
-/// \brief A table column containing only
-/// numerical values.
+/// \brief Typedef for simplifying the usage of
+/// a smart pointer in combination with a
+/// TableColumn instance.
 /////////////////////////////////////////////////
-class ValueColumn : public TableColumn
-{
-    private:
-        std::vector<mu::value_type> m_data;
-        void shrink();
-
-    public:
-        /////////////////////////////////////////////////
-        /// \brief Default constructor. Sets only the
-        ///  type of the column.
-        /////////////////////////////////////////////////
-        ValueColumn() : TableColumn()
-        {
-            m_type = TableColumn::TYPE_VALUE;
-        }
-
-        /////////////////////////////////////////////////
-        /// \brief Generalized constructor. Will prepare
-        /// a column with the specified size.
-        ///
-        /// \param nElem size_t
-        ///
-        /////////////////////////////////////////////////
-        ValueColumn(size_t nElem) : ValueColumn()
-        {
-            m_data.resize(nElem);
-        }
-
-        virtual ~ValueColumn() {}
-
-        virtual std::string getValueAsString(int elem) const override;
-        virtual mu::value_type getValue(int elem) const override;
-        virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue) override;
-        virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) override;
-        virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) override;
-
-        virtual ValueColumn* copy(const VectorIndex& idx) const override;
-        virtual void assign(const TableColumn* column) override;
-        virtual void deleteElements(const VectorIndex& idx) override;
-
-        /////////////////////////////////////////////////
-        /// \brief Return the number of bytes occupied by
-        /// this column.
-        ///
-        /// \return size_t
-        ///
-        /////////////////////////////////////////////////
-        virtual size_t getBytes() const override
-        {
-            return size() * sizeof(mu::value_type);
-        }
-
-        /////////////////////////////////////////////////
-        /// \brief Return the number of elements in this
-        /// column (will also count invalid ones).
-        ///
-        /// \return size_t
-        ///
-        /////////////////////////////////////////////////
-        virtual size_t size() const override
-        {
-            return m_data.size();
-        }
-
-};
-
+typedef std::unique_ptr<TableColumn> TblColPtr;
 
 /////////////////////////////////////////////////
-/// \brief A table column containing only strings
-/// as values.
+/// \brief This typedef represents the actual
+/// table, which is implemented using a
+/// std::vector.
 /////////////////////////////////////////////////
-class StringColumn : public TableColumn
-{
-    private:
-        std::vector<std::string> m_data;
-        void shrink();
+typedef std::vector<TblColPtr> TableColumnArray;
 
-    public:
-        /////////////////////////////////////////////////
-        /// \brief Default constructor. Sets only the
-        /// columns type.
-        /////////////////////////////////////////////////
-        StringColumn() : TableColumn()
-        {
-            m_type = TableColumn::TYPE_STRING;
-        }
-
-        /////////////////////////////////////////////////
-        /// \brief Generalized constructor. Will prepare
-        /// a column with the specified size.
-        ///
-        /// \param nElem size_t
-        ///
-        /////////////////////////////////////////////////
-        StringColumn(size_t nElem) : StringColumn()
-        {
-            m_data.resize(nElem);
-        }
-
-        virtual ~StringColumn() {}
-
-        virtual std::string getValueAsString(int elem) const override;
-        virtual mu::value_type getValue(int elem) const override;
-        virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue) override;
-        virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) override;
-        virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) override;
-
-        virtual StringColumn* copy(const VectorIndex& idx) const override;
-        virtual void assign(const TableColumn* column) override;
-        virtual void deleteElements(const VectorIndex& idx) override;
-        virtual size_t getBytes() const override;
-
-        /////////////////////////////////////////////////
-        /// \brief Returns the number of elements in this
-        /// column (will also count invalid ones).
-        ///
-        /// \return size_t
-        ///
-        /////////////////////////////////////////////////
-        virtual size_t size() const override
-        {
-            return m_data.size();
-        }
-};
 
 
 #endif // TABLECOLUMN_HPP

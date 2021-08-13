@@ -440,6 +440,8 @@
 		<Unit filename="kernel/core/datamanagement/table.hpp" />
 		<Unit filename="kernel/core/datamanagement/tablecolumn.cpp" />
 		<Unit filename="kernel/core/datamanagement/tablecolumn.hpp" />
+		<Unit filename="kernel/core/datamanagement/tablecolumnimpl.cpp" />
+		<Unit filename="kernel/core/datamanagement/tablecolumnimpl.hpp" />
 		<Unit filename="kernel/core/debugger/breakpointmanager.cpp" />
 		<Unit filename="kernel/core/debugger/breakpointmanager.hpp" />
 		<Unit filename="kernel/core/debugger/debugger.cpp" />
