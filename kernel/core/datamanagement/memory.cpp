@@ -1080,7 +1080,7 @@ NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lin
             if (!i)
                 table.setHead(j, getHeadLineElement(cols[j]));
 
-            table.setValue(i, j, readMem(lines[i], cols[j]));
+            table.setValue(i, j, readMem(lines[i], cols[j]).real()); // TODO: Enable complex values and strings
         }
     }
 
@@ -1157,8 +1157,8 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
     if (!file)
         throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, _sFileName, SyntaxError::invalid_position, _sFileName);
 
-    long long int lines = getLines(false);
-    long long int cols = getCols(false);
+    int lines = getLines(false);
+    int cols = getCols(false);
 
     // Set the dimensions and the generic information
     // in the file

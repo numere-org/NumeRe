@@ -309,8 +309,8 @@ bool MemoryManager::saveToCacheFile()
     cacheFile.setNumberOfTables(mCachesMap.size() - isTable("data"));
     cacheFile.writeCacheHeader();
 
-    long long int nLines;
-    long long int nCols;
+    int nLines;
+    int nCols;
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
@@ -395,7 +395,6 @@ bool MemoryManager::loadFromNewCacheFile()
             cacheFile.getData(vMemory.back()->dMemTable);
             cacheFile.getColumnHeadings(vMemory.back()->sHeadLine);
 
-            vMemory.back()->bValidData = true;
             vMemory.back()->shrink();
         }
 
@@ -647,7 +646,7 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) co
             if (nResults == 1)
             {
                 // Single result: usual every=a,a representation
-                vector<long long int> idx;
+                vector<int> idx;
 
                 for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[0]))
                 {
@@ -659,7 +658,7 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) co
             else if (nResults == 2)
             {
                 // Two results: usual every=a,b representation
-                vector<long long int> idx;
+                vector<int> idx;
 
                 for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[1]))
                 {

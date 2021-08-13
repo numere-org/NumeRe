@@ -72,93 +72,16 @@ namespace NumeRe
             return;
         }
 
-        // Do empty columns exist?
-        for (long long int i = 0; i < _mem->nCols; i++)
+        // Get an iterator to the beginning
+        auto iter = _mem->memArray.begin();
+
+        // Remove all empty columns
+        while (iter != _mem->memArray.end())
         {
-            if (_mem->nAppendedZeroes[i] == _mem->nLines)
-                break;
-
-            if (i+1 == _mem->nCols)
-                return;
-        }
-
-        long long int nColTemp = _mem->nCols;
-        long long int nLinesTemp = _mem->nLines;
-        long long int nEmptyCols = 0;
-
-        // Count the number of empty columns
-        for (long long int i = 0; i < nColTemp; i++)
-        {
-            if (_mem->nAppendedZeroes[i] == nLinesTemp)
-                nEmptyCols++;
-        }
-
-        // Ensure that we have at least a single
-        // non-empty column
-        if (nEmptyCols != nColTemp)
-        {
-            // Create a new memory buffer for the
-            // condensed data set
-            double** dDataTemp = new double*[_mem->nLines];
-
-            for (long long int i = 0; i < _mem->nLines; i++)
-                dDataTemp[i] = new double[_mem->nCols];
-
-            string* sHeadTemp = new string[_mem->nCols];
-            long long int* nAppendedTemp = new long long int[_mem->nCols];
-
-            // Copy the contents to the buffer
-            for (long long int i = 0; i < _mem->nLines; i++)
-            {
-                for (long long int j = 0; j < _mem->nCols; j++)
-                {
-                    dDataTemp[i][j] = _mem->dMemTable[i][j];
-
-                    if (!i)
-                    {
-                        nAppendedTemp[j] = _mem->nAppendedZeroes[j];
-                        sHeadTemp[j] = _mem->sHeadLine[j];
-                    }
-                }
-            }
-
-            // Clear the original table and create a new
-            // table
-            _mem->clear();
-            _mem->Allocate(nLinesTemp, nColTemp-nEmptyCols);
-
-            // Write the non-empty columns in the new
-            // table
-            for (long long int i = 0; i < _mem->nLines; i++)
-            {
-                long long int nSkip = 0;
-
-                for (long long int j = 0; j < nColTemp; j++)
-                {
-                    if (nAppendedTemp[j] == _mem->nLines)
-                    {
-                        nSkip++;
-                        continue;
-                    }
-
-                    _mem->dMemTable[i][j-nSkip] = dDataTemp[i][j];
-
-                    if (!i)
-                    {
-                        _mem->sHeadLine[j-nSkip] = sHeadTemp[j];
-                        _mem->nAppendedZeroes[j-nSkip] = nAppendedTemp[j];
-                    }
-                }
-            }
-
-            // Free the buffer
-            delete[] sHeadTemp;
-            delete[] nAppendedTemp;
-
-            for (long long int i = 0; i < nLinesTemp; i++)
-                delete[] dDataTemp[i];
-
-            delete[] dDataTemp;
+            if (!iter->get() || !iter->get()->size())
+                iter = _mem->memArray.erase(iter);
+            else
+                ++iter;
         }
     }
 
@@ -227,7 +150,8 @@ namespace NumeRe
             throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFile, SyntaxError::invalid_position, sFile);
         }
 
-        Memory* _mem = new Memory(info.nRows, info.nCols);
+        Memory* _mem = new Memory();
+        _mem->resizeMemory(info.nRows, info.nCols);
 
         // If the dimensions were valid and the internal
         // memory was created, copy the data to this
@@ -236,7 +160,6 @@ namespace NumeRe
         {
             // Copy them and delete the file instance
             // afterwards
-            _mem->bValidData = true;
             file->getData(_mem->dMemTable);
             file->getColumnHeadings(_mem->sHeadLine);
             delete file;
