@@ -30,6 +30,7 @@
 using namespace std;
 
 long long int intCast(const std::complex<double>&);
+std::string toString(int);
 std::string toString(long long int);
 
 
@@ -42,7 +43,7 @@ std::string toString(long long int);
 class VectorIndex
 {
     private:
-        mutable vector<long long int> vStorage;
+        mutable vector<int> vStorage;
         bool expand;
 
         /////////////////////////////////////////////////
@@ -52,10 +53,10 @@ class VectorIndex
         /// the n-th vector index.
         ///
         /// \param n size_t
-        /// \return long long int
+        /// \return int
         ///
         /////////////////////////////////////////////////
-        inline long long int getIndex(size_t n) const
+        inline int getIndex(size_t n) const
         {
             // If single indices are used, they will be expanded
             // into virtual vectors
@@ -152,11 +153,11 @@ class VectorIndex
         /////////////////////////////////////////////////
         /// \brief Constructor for single indices.
         ///
-        /// \param nStart long long int
-        /// \param nEnd long long int
+        /// \param nStart int
+        /// \param nEnd int
         ///
         /////////////////////////////////////////////////
-        VectorIndex(long long int nStart, long long int nEnd = INVALID)
+        VectorIndex(int nStart, int nEnd = INVALID)
         {
             vStorage.assign({nStart, nEnd});
             expand = true;
@@ -165,10 +166,10 @@ class VectorIndex
         /////////////////////////////////////////////////
         /// \brief Constructor from a STL vector.
         ///
-        /// \param vIndex const vector<long long int>&
+        /// \param vIndex const vector<int>&
         ///
         /////////////////////////////////////////////////
-        VectorIndex(const vector<long long int>& vIndex)
+        VectorIndex(const vector<int>& vIndex)
         {
             if (vIndex.size())
             {
@@ -201,11 +202,11 @@ class VectorIndex
         /// \brief Assignment operator overload for STL
         /// vectors.
         ///
-        /// \param vIndex const vector<long long int>&
+        /// \param vIndex const vector<int>&
         /// \return VectorIndex&
         ///
         /////////////////////////////////////////////////
-        VectorIndex& operator=(const vector<long long int>& vIndex)
+        VectorIndex& operator=(const vector<int>& vIndex)
         {
             if (vIndex.size())
             {
@@ -260,7 +261,7 @@ class VectorIndex
             // expanded. The last index is not decremented, because
             // terminating iterator always points after the last
             // element in the list
-            return VectorIndex(vector<long long int>(vStorage.begin()+pos, vStorage.begin()+pos+nLen));
+            return VectorIndex(vector<int>(vStorage.begin()+pos, vStorage.begin()+pos+nLen));
         }
 
         /////////////////////////////////////////////////
@@ -278,8 +279,8 @@ class VectorIndex
         {
             if (!expand)
             {
-                long long int nMin = min();
-                long long int nMax = max();
+                int nMin = min();
+                int nMax = max();
 
                 vStorage.clear();
                 vStorage.assign({nMin, nMax});
@@ -293,10 +294,10 @@ class VectorIndex
         /// getIndex() member function.
         ///
         /// \param n size_t
-        /// \return long long int
+        /// \return int
         ///
         /////////////////////////////////////////////////
-        inline long long int operator[](size_t n) const
+        inline int operator[](size_t n) const
         {
             return getIndex(n);
         }
@@ -388,11 +389,11 @@ class VectorIndex
         /// automatically.
         ///
         /// \param nthIndex size_t
-        /// \param nVal long long int
+        /// \param nVal int
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void setIndex(size_t nthIndex, long long int nVal)
+        void setIndex(size_t nthIndex, int nVal)
         {
             // If the size is large enough, simply store
             // the passed index. Otherwise expand the
@@ -424,11 +425,11 @@ class VectorIndex
         /// The internal storage is expanded first, if
         /// necessary.
         ///
-        /// \param nVal long long int
+        /// \param nVal int
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void push_back(long long int nVal)
+        void push_back(int nVal)
         {
             if (expand)
             {
@@ -445,11 +446,11 @@ class VectorIndex
         /// internal storage is expanded first, if
         /// necessary.
         ///
-        /// \param vVector const vector<long long int>&
+        /// \param vVector const vector<int>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void append(const vector<long long int>& vVector)
+        void append(const vector<int>& vVector)
         {
             if (expand)
             {
@@ -485,11 +486,11 @@ class VectorIndex
         /// vector. The internal storage is expanded
         /// first, if necessary.
         ///
-        /// \param vVector const vector<long long int>&
+        /// \param vVector const vector<int>&
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void prepend(const vector<long long int>& vVector)
+        void prepend(const vector<int>& vVector)
         {
             if (expand)
             {
@@ -526,16 +527,16 @@ class VectorIndex
         /// single indices are expanded in the returned
         /// vector.
         ///
-        /// \return vector<long long int>
+        /// \return vector<int>
         ///
         /////////////////////////////////////////////////
-        vector<long long int> getVector() const
+        vector<int> getVector() const
         {
             // Expand the single indices stored internally
             // if needed
             if (expand)
             {
-                vector<long long int> vReturn;
+                vector<int> vReturn;
 
                 for (size_t i = 0; i < size(); i++)
                 {
@@ -553,10 +554,10 @@ class VectorIndex
         /// index value obtained from the values stored
         /// internally.
         ///
-        /// \return long long int
+        /// \return int
         ///
         /////////////////////////////////////////////////
-        long long int max() const
+        int max() const
         {
             if (isOpenEnd())
                 return OPEN_END;
@@ -571,17 +572,17 @@ class VectorIndex
         /// minimal index value obtained from the values
         /// stored internally.
         ///
-        /// \return long long int
+        /// \return int
         ///
         /////////////////////////////////////////////////
-        long long int min() const
+        int min() const
         {
             if (expand && isOpenEnd())
                 return vStorage.front();
             else if (expand)
                 return ::min(vStorage.front(), vStorage.back());
 
-            long long int nMin = vStorage.front();
+            int nMin = vStorage.front();
 
             for (size_t i = 1; i < vStorage.size(); i++)
             {
@@ -635,10 +636,10 @@ class VectorIndex
         /// reference to the first index value stored
         /// internally.
         ///
-        /// \return long long int&
+        /// \return int&
         ///
         /////////////////////////////////////////////////
-        long long int& front()
+        int& front()
         {
             return vStorage.front();
         }
@@ -648,10 +649,10 @@ class VectorIndex
         /// reference to the final index value stored
         /// internally.
         ///
-        /// \return long long int&
+        /// \return int&
         ///
         /////////////////////////////////////////////////
-        long long int& back()
+        int& back()
         {
             return vStorage.back();
         }
@@ -661,10 +662,10 @@ class VectorIndex
         /// reference to the first index value stored
         /// internally.
         ///
-        /// \return const long long int&
+        /// \return const int&
         ///
         /////////////////////////////////////////////////
-        const long long int& front() const
+        const int& front() const
         {
             return vStorage.front();
         }
@@ -674,10 +675,10 @@ class VectorIndex
         /// reference to the final index value stored
         /// internally.
         ///
-        /// \return const long long int&
+        /// \return const int&
         ///
         /////////////////////////////////////////////////
-        const long long int& back() const
+        const int& back() const
         {
             return vStorage.back();
         }
@@ -688,10 +689,10 @@ class VectorIndex
         /// values stored internally (this is most
         /// probably different from the final value).
         ///
-        /// \return long long int
+        /// \return int
         ///
         /////////////////////////////////////////////////
-        long long int last() const
+        int last() const
         {
             if (expand && vStorage.back() == INVALID)
                 return vStorage.front();
@@ -705,18 +706,18 @@ class VectorIndex
         /// a defined interval. If the values are already
         /// in a smaller interval, nothing happens.
         ///
-        /// \param nMin long long int
-        /// \param nMax long long int
+        /// \param nMin int
+        /// \param nMax int
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void setRange(long long int nMin, long long int nMax)
+        void setRange(int nMin, int nMax)
         {
             // Change the order of the minimal and
             // maximal value, if needed
             if (nMin > nMax)
             {
-                long long int nTemp = nMin;
+                int nTemp = nMin;
                 nMin = nMax;
                 nMax = nTemp;
             }
@@ -750,11 +751,11 @@ class VectorIndex
         /// index value although the VectorIndex instance
         /// was passed as const ref.
         ///
-        /// \param nLast long longint
+        /// \param nLast int
         /// \return void
         ///
         /////////////////////////////////////////////////
-        void setOpenEndIndex(long long int nLast) const
+        void setOpenEndIndex(int nLast) const
         {
             if (vStorage.back() == OPEN_END)
                 vStorage.back() = nLast;

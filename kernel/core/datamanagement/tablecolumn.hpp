@@ -59,8 +59,12 @@ struct TableColumn
 
     virtual TableColumn* copy(const VectorIndex& idx) const = 0;
     virtual void assign(const TableColumn* column) = 0;
+    virtual void insert(const VectorIndex& idx, const TableColumn* column) = 0;
     virtual void deleteElements(const VectorIndex& idx) = 0;
     virtual void shrink() = 0;
+
+    virtual int compare(int i, int j) const = 0;
+    virtual bool isValid(int elem) const = 0;
 
     virtual size_t size() const = 0;
     virtual size_t getBytes() const = 0;

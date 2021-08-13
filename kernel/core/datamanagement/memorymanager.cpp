@@ -396,7 +396,6 @@ bool MemoryManager::loadFromNewCacheFile()
             cacheFile.getColumnHeadings(vMemory.back()->sHeadLine);
 
             vMemory.back()->bValidData = true;
-            vMemory.back()->countAppendedZeroes();
             vMemory.back()->shrink();
         }
 

@@ -772,8 +772,8 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum
 /////////////////////////////////////////////////
 void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
 {
-    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), (long long int)getLines(false)) - 1);
-    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), (long long int)getCols(false)) - 1);
+    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), (int)getLines(false)) - 1);
+    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), (int)getCols(false)) - 1);
 
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
@@ -1002,26 +1002,17 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
 /// the contents of the selected column using the
 /// passed index vector.
 ///
-/// \param vIndex const vector<int>&
+/// \param vIndex const VectorIndex&
 /// \param i1 int
 /// \param i2 int
 /// \param j1 int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::reorderColumn(const vector<int>& vIndex, int i1, int i2, int j1)
+void Memory::reorderColumn(const VectorIndex& vIndex, int i1, int i2, int j1)
 {
-    double* dSortVector = new double[i2 - i1 + 1];
-
-    // Copy the sorted values to a buffer
-    for (int i = 0; i <= i2 - i1; i++)
-        dSortVector[i] = dMemTable[vIndex[i]][j1];
-
-    // Copy the contents back to the table
-    for (int i = 0; i <= i2 - i1; i++)
-        dMemTable[i + i1][j1] = dSortVector[i];
-
-    delete[] dSortVector;
+    TblColPtr col(memArray[j1]->copy(vIndex));
+    memArray[j1]->insert(VectorIndex(i1, i2), col.get());
 }
 
 
@@ -1039,12 +1030,10 @@ void Memory::reorderColumn(const vector<int>& vIndex, int i1, int i2, int j1)
 /////////////////////////////////////////////////
 int Memory::compare(int i, int j, int col)
 {
-    if (dMemTable[i][col] == dMemTable[j][col])
-        return 0;
-    else if (dMemTable[i][col] < dMemTable[j][col])
-        return -1;
+    if (col < memArray.size() && memArray[col])
+        return memArray[col]->compare(i, j);
 
-    return 1;
+    return 0;
 }
 
 
@@ -1060,7 +1049,10 @@ int Memory::compare(int i, int j, int col)
 /////////////////////////////////////////////////
 bool Memory::isValue(int line, int col)
 {
-    return !isnan(dMemTable[line][col]);
+    if (col < memArray.size() && memArray[col])
+        return memArray[col]->isValid(line);
+
+    return false;
 }
 
 
@@ -1139,7 +1131,7 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
                 break;
 
         if (_table.getHead(j).length())
-            sHeadLine[cols[j]] = _table.getHead(j);
+            setHeadLineElement(cols[j], _table.getHead(j));
     }
 }
 
@@ -1207,22 +1199,19 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
 /// \brief This member function deletes a single
 /// entry from the memory table.
 ///
-/// \param _nLine long long int
-/// \param _nCol long long int
+/// \param _nLine int
+/// \param _nCol int
 /// \return void
 ///
 /////////////////////////////////////////////////
-void Memory::deleteEntry(long long int _nLine, long long int _nCol)
+void Memory::deleteEntry(int _nLine, int _nCol)
 {
-    if (_nLine < 0 || _nCol < 0)
-        return;
-
-    if (dMemTable)
+    if (memArray.size() > _nCol && memArray[_nCol])
     {
-        if (!isnan(dMemTable[_nLine][_nCol]))
+        if (memArray[_nCol]->isValid(_nLine))
         {
-            // Set the element to NaN
-            dMemTable[_nLine][_nCol] = NAN;
+            // Delete the element
+            memArray[_nCol]->deleteElements(VectorIndex(_nLine));
 
             if (bIsSaved)
             {
@@ -1230,36 +1219,12 @@ void Memory::deleteEntry(long long int _nLine, long long int _nCol)
                 bIsSaved = false;
             }
 
-            // Count the appended zeroes
-            for (long long int i = nLines - 1; i >= 0; i--)
-            {
-                if (!isnan(dMemTable[i][_nCol]))
-                {
-                    nAppendedZeroes[_nCol] = nLines - i - 1;
-                    break;
-                }
+            // Evaluate, whether we can remove
+            // the column from memory
+            if (!_nLine && !memArray[_nCol]->size())
+                memArray[_nCol].reset(nullptr);
 
-                if (!i && isnan(dMemTable[i][_nCol]))
-                {
-                    nAppendedZeroes[_nCol] = nLines;
-
-                    // If the first element of this column was currently
-                    // removed, reset its headline
-                    if (!_nLine)
-                    {
-                        sHeadLine[_nCol] = _lang.get("COMMON_COL") + "_" + toString((int)_nCol + 1);
-
-                        if (nWrittenHeadlines > _nCol)
-                            nWrittenHeadlines = _nCol;
-                    }
-                }
-            }
-
-            nCalcCols = -1;
             nCalcLines = -1;
-
-            if (!getLines(false) && !getCols(false))
-                bValidData = false;
         }
     }
 }
@@ -1276,29 +1241,19 @@ void Memory::deleteEntry(long long int _nLine, long long int _nCol)
 /////////////////////////////////////////////////
 void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
-    bool bHasFirstLine = false;
-
-    if (!Memory::getCols(false))
+    if (!memArray.size())
         return;
 
-    _vLine.setOpenEndIndex(nLines-1);
-    _vCol.setOpenEndIndex(nCols-1);
+    _vLine.setOpenEndIndex(getLines()-1);
+    _vCol.setOpenEndIndex(getCols()-1);
 
-    // Delete the selected entries and detect,
-    // whether any index value corresponds to
-    // a first element in any column.
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    bool bHasFirstLine = _vLine.min() == 0;
+
+    // Delete the selected entries
+    for (size_t j = 0; j < _vCol.size(); j++)
     {
-        if (!_vLine[i])
-            bHasFirstLine = true;
-
-        for (unsigned int j = 0; j < _vCol.size(); j++)
-        {
-            if (_vCol[j] >= nCols || _vCol[j] < 0 || _vLine[i] >= nLines || _vLine[i] < 0)
-                continue;
-
-            dMemTable[_vLine[i]][_vCol[j]] = NAN;
-        }
+        if (_vCol[j] >= 0 && _vCol[j] < memArray.size() && memArray[_vCol[j]])
+            memArray[_vCol[j]]->deleteElements(_vLine);
     }
 
     if (bIsSaved)
@@ -1307,78 +1262,11 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
         nLastSaved = time(0);
     }
 
-    // Count the appended zeroes
-    for (long long int j = nCols - 1; j >= 0; j--)
-    {
-        int currentcol = -1;
+    // Remove all invalid elements and columns
+    if (bHasFirstLine)
+        shrink();
 
-        // Detect, whether the current colum was in
-        // the list of selected column indices
-        for (size_t i = 0; i < _vCol.size(); i++)
-        {
-            if (_vCol[i] == j)
-                currentcol = (int)i;
-        }
-
-        for (long long int i = nLines - 1; i >= 0; i--)
-        {
-            // Find the last valid value
-            if (!isnan(dMemTable[i][j]))
-            {
-                nAppendedZeroes[j] = nLines - i - 1;
-                break;
-            }
-
-            if (!i && isnan(dMemTable[i][j]))
-            {
-                nAppendedZeroes[j] = nLines;
-
-                // If the current column was in the
-                // list of selected column indices and the
-                // first element of any column was part
-                // of the range, reset the whole column
-                if (currentcol >= 0 && bHasFirstLine)
-                {
-                    sHeadLine[j] = _lang.get("COMMON_COL") + "_" + toString((int)j + 1);
-
-                    if (nWrittenHeadlines > j)
-                        nWrittenHeadlines = j;
-                }
-            }
-        }
-    }
-
-    nCalcCols = -1;
     nCalcLines = -1;
-
-    if (!getLines(false) && !getCols(false))
-        bValidData = false;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This member function counts the number
-/// of appended zeroes, i.e. the number of
-/// invalid values, which are appended at the end
-/// of the columns.
-///
-/// \return void
-///
-/////////////////////////////////////////////////
-void Memory::countAppendedZeroes()
-{
-    for (long long int i = 0; i < nCols; i++)
-    {
-        nAppendedZeroes[i] = 0;
-
-        for (long long int j = nLines-1; j >= 0; j--)
-        {
-            if (isnan(dMemTable[j][i]))
-                nAppendedZeroes[i]++;
-            else
-                break;
-        }
-    }
 }
 
 

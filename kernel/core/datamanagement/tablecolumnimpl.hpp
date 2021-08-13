@@ -65,8 +65,12 @@ class ValueColumn : public TableColumn
 
         virtual ValueColumn* copy(const VectorIndex& idx) const override;
         virtual void assign(const TableColumn* column) override;
+        virtual void insert(const VectorIndex& idx, const TableColumn* column) override;
         virtual void deleteElements(const VectorIndex& idx) override;
         virtual void shrink() override;
+
+        virtual int compare(int i, int j) const override;
+        virtual bool isValid(int elem) const override;
 
         /////////////////////////////////////////////////
         /// \brief Return the number of bytes occupied by
@@ -139,8 +143,13 @@ class StringColumn : public TableColumn
 
         virtual StringColumn* copy(const VectorIndex& idx) const override;
         virtual void assign(const TableColumn* column) override;
+        virtual void insert(const VectorIndex& idx, const TableColumn* column) override;
         virtual void deleteElements(const VectorIndex& idx) override;
         virtual void shrink() override;
+
+        virtual int compare(int i, int j) const override;
+        virtual bool isValid(int elem) const override;
+
         virtual size_t getBytes() const override;
 
         /////////////////////////////////////////////////

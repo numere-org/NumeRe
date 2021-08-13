@@ -241,7 +241,6 @@ namespace NumeRe
             file->getColumnHeadings(_mem->sHeadLine);
             delete file;
 
-            _mem->countAppendedZeroes();
             condenseDataSet(_mem);
             _mem->createTableHeaders();
             _mem->setSaveStatus(false);

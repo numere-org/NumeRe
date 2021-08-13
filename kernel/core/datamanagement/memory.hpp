@@ -70,10 +70,9 @@ class Memory : public Sorter
 		bool retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction);
 		bool retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol);
 		bool onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		void reorderColumn(const std::vector<int>& vIndex, int i1, int i2, int j1 = 0);
+		void reorderColumn(const VectorIndex& vIndex, int i1, int i2, int j1 = 0);
 		virtual int compare(int i, int j, int col) override;
         virtual bool isValue(int line, int col) override;
-		void countAppendedZeroes();
 		void smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines);
 		void smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter);
 
@@ -114,7 +113,7 @@ class Memory : public Sorter
         void setSaveStatus(bool _bIsSaved);
         long long int getLastSaved() const;
         std::vector<int> sortElements(int i1, int i2, int j1 = 0, int j2 = 0, const std::string& sSortingExpression = "");
-        void deleteEntry(long long int _nLine, long long int _nCol);
+        void deleteEntry(int _nLine, int _nCol);
         void deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol);
         NumeRe::Table extractTable(const std::string& _sTable, const VectorIndex& lines, const VectorIndex& cols);
         void importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols);

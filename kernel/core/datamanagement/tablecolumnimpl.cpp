@@ -230,6 +230,24 @@ void ValueColumn::assign(const TableColumn* column)
 
 
 /////////////////////////////////////////////////
+/// \brief Insert the contents of the passed
+/// column at the specified positions.
+///
+/// \param idx const VectorIndex&
+/// \param column const TableColumn*
+/// \return void
+///
+/////////////////////////////////////////////////
+void ValueColumn::insert(const VectorIndex& idx, const TableColumn* column)
+{
+    if (column->m_type == TableColumn::TYPE_VALUE)
+        setValue(idx, static_cast<const ValueColumn*>(column)->m_data);
+    else
+        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Delete the specified elements.
 ///
 /// \note Will trigger the shrinking algorithm.
@@ -249,6 +267,47 @@ void ValueColumn::deleteElements(const VectorIndex& idx)
     }
 
     shrink();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns 0, if both elements are equal,
+/// -1 if element i is smaller than element j and
+/// 1 otherwise.
+///
+/// \param i int
+/// \param j int
+/// \return int
+///
+/////////////////////////////////////////////////
+int ValueColumn::compare(int i, int j) const
+{
+    if (m_data.size() <= std::max(i, j))
+        return 0;
+
+    if (m_data[i] == m_data[j])
+        return 0;
+    else if (m_data[i] < m_data[j])
+        return -1;
+
+    return 1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if the selected element
+/// is a valid value.
+///
+/// \param elem int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool ValueColumn::isValid(int elem) const
+{
+    if (elem >= m_data.size() || mu::isnan(m_data[elem]))
+        return false;
+
+    return true;
 }
 
 
@@ -465,6 +524,24 @@ void StringColumn::assign(const TableColumn* column)
 
 
 /////////////////////////////////////////////////
+/// \brief Insert the contents of the passed
+/// column at the specified positions.
+///
+/// \param idx const VectorIndex&
+/// \param column const TableColumn*
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringColumn::insert(const VectorIndex& idx, const TableColumn* column)
+{
+    if (column->m_type == TableColumn::TYPE_STRING)
+        setValue(idx, static_cast<const StringColumn*>(column)->m_data);
+    else
+        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Delete the specified elements.
 ///
 /// \note Will trigger the shrinking algorithm.
@@ -484,6 +561,47 @@ void StringColumn::deleteElements(const VectorIndex& idx)
     }
 
     shrink();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns 0, if both elements are equal,
+/// -1 if element i is smaller than element j and
+/// 1 otherwise.
+///
+/// \param i int
+/// \param j int
+/// \return int
+///
+/////////////////////////////////////////////////
+int StringColumn::compare(int i, int j) const
+{
+    if (m_data.size() <= std::max(i, j))
+        return 0;
+
+    if (m_data[i] == m_data[j])
+        return 0;
+    else if (m_data[i] < m_data[j])
+        return -1;
+
+    return 1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns true, if the selected element
+/// is a valid value.
+///
+/// \param elem int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool StringColumn::isValid(int elem) const
+{
+    if (elem >= m_data.size() || !m_data[elem].length())
+        return false;
+
+    return true;
 }
 
 
