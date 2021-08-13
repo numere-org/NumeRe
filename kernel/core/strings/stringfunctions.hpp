@@ -2087,6 +2087,70 @@ static string strfnc_basetodec(StringFuncArgs& funcArgs)
 
 
 /////////////////////////////////////////////////
+/// \brief Implementation of the justify
+/// function. Each string in a vector of strings
+/// is filled with whitespaces until they are
+/// all the same length.
+///
+/// \param funcArgs StringFuncArgs&
+/// \return string
+///
+/////////////////////////////////////////////////
+static string strfnc_justify(StringFuncArgs& funcArgs)
+{
+    // mHandleTable["justify"] = StringFuncHandle(STR_VAL, strfnc_justify, true);
+
+    std::string result;
+
+    // Set the default justification mode
+    if (funcArgs.nArg1 == DEFAULT_NUM_ARG)
+        funcArgs.nArg1 = -1;
+
+    // Examine the whole string array
+    for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+    {
+        // Remove the masked strings
+        funcArgs.sMultiArg[i] = removeMaskedStrings(funcArgs.sMultiArg[i]);
+
+        // Remove surrounding whitespaces
+        StripSpaces(funcArgs.sMultiArg[i]);
+    }
+
+    // Find the string of max length
+    size_t maxLength = 0;
+    for (std::string thisString: funcArgs.sMultiArg)
+    {
+        if (thisString.size() > maxLength)
+            maxLength = thisString.size();
+    }
+
+    // Fill all string with as many whitespaces as necessary
+    for (size_t i = 0; i < funcArgs.sMultiArg.size(); i++)
+    {
+        if (funcArgs.nArg1 == 1)
+            funcArgs.sMultiArg[i].insert(0, maxLength - funcArgs.sMultiArg[i].size(), ' ');
+        else if (funcArgs.nArg1 == -1)
+            funcArgs.sMultiArg[i].append(maxLength - funcArgs.sMultiArg[i].size(), ' ');
+        else if (funcArgs.nArg1 == 0)
+        {
+            size_t leftSpace = (maxLength - funcArgs.sMultiArg[i].size()) / 2;
+            size_t rightSpace = maxLength - leftSpace - funcArgs.sMultiArg[i].size();
+            funcArgs.sMultiArg[i].insert(0, leftSpace, ' ');
+            funcArgs.sMultiArg[i].append(rightSpace, ' ');
+        }
+        // Append a comma
+        if (result.length())
+            result += NEWSTRING;
+
+        // Append the string with the justified result
+        result += "\"" + funcArgs.sMultiArg[i] + "\"";
+    }
+
+    return result;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This static function is used to construct
 /// the string map.
 ///
@@ -2128,6 +2192,7 @@ static map<string, StringFuncHandle> getStringFuncHandles()
     mHandleTable["is_space"]            = StringFuncHandle(STR, strfnc_isspace, false);
     mHandleTable["is_upper"]            = StringFuncHandle(STR, strfnc_isupper, false);
     mHandleTable["is_xdigit"]           = StringFuncHandle(STR, strfnc_isxdigit, false);
+    mHandleTable["justify"]             = StringFuncHandle(STR_VAL, strfnc_justify, true);
     mHandleTable["locate"]              = StringFuncHandle(STR_STR_VALOPT_VALOPT, strfnc_locate, true);
     mHandleTable["max"]                 = StringFuncHandle(STR, strfnc_max, true);
     mHandleTable["min"]                 = StringFuncHandle(STR, strfnc_min, true);

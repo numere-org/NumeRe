@@ -1,3 +1,4 @@
 New	NumeRe now support complex numbers. Complex numbers may be entered using a number followed by the letter "i" or by using the function "complex()"
 Added	Functions for complex numbers were added: "real()", "imag()", "to_rect()", "to_polar()", "conj()" and "complex()"
 Cleaned	Underscores in table heads are now visible in the table viewer and all table printing functionalities.
+Added	The string justify function to align strings in a vector of strings according to the mode chosen.
