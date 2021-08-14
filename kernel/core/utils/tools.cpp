@@ -553,7 +553,6 @@ bool getStringArgument(const string& sCmd, string& sArgument)
     {
         // If the first character is not an equal sign, then try to find the first string operation part
         // This block only handles a small set of all available string functions
-        // TODO to be investigated
         nPos = sCmd.find('"');
 
         if (sCmd.find('#') != string::npos && (sCmd.find('#') < nPos || nPos == string::npos))

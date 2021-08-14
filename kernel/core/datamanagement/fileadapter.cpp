@@ -156,15 +156,15 @@ namespace NumeRe
         // If the dimensions were valid and the internal
         // memory was created, copy the data to this
         // memory
-        if (_mem->dMemTable && _mem->sHeadLine)
+        if (_mem->memArray.size())
         {
             // Copy them and delete the file instance
             // afterwards
-            file->getData(_mem->dMemTable);
-            file->getColumnHeadings(_mem->sHeadLine);
+            file->getData(&_mem->memArray);
             delete file;
 
             condenseDataSet(_mem);
+            _mem->convert();
             _mem->createTableHeaders();
             _mem->setSaveStatus(false);
 

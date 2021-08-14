@@ -26,6 +26,8 @@
 #include "../version.h"
 #include "../../kernel.hpp"
 
+#define DEFAULT_PRECISION 14
+
 extern Language _lang;
 
 namespace NumeRe
@@ -157,10 +159,9 @@ namespace NumeRe
 		// Create the target storage
 		createStorage();
 
-		// TODO enable strings
 		for (TblColPtr& col : *fileData)
         {
-            col.reset(new ValueColumn);
+            col.reset(new StringColumn);
         }
 
 		nLine = 0;
@@ -187,19 +188,7 @@ namespace NumeRe
             // the converted values
             for (size_t j = 0; j < vLine.size(); j++)
             {
-                // Replace comma with a dot
-                replaceDecimalSign(vLine[j]);
-
-                // Handle special values and convert the text
-                // string into a numerical value
-                if (vLine[j] == "---" || toLowerCase(vLine[j]) == "nan")
-                    fileData->at(j)->setValue(nLine, mu::value_type(NAN));
-                else if (toLowerCase(vLine[j]) == "inf")
-                    fileData->at(j)->setValue(nLine, mu::value_type(INFINITY));
-                else if (toLowerCase(vLine[j]) == "-inf")
-                    fileData->at(j)->setValue(nLine, mu::value_type(-INFINITY));
-                else
-                    fileData->at(j)->setValue(nLine, StrToCmplx(vLine[j]));
+                fileData->at(j)->setValue(nLine, vLine[j]);
             }
 
             nLine++;
@@ -326,7 +315,12 @@ namespace NumeRe
                 if (!fileData->at(j)->isValid(i))
                     fFileStream << "---";
                 else
-                    fFileStream << fileData->at(j)->getValue(i); // TODO enable strings
+                {
+                    if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                        fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
+                    else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                        fFileStream << fileData->at(j)->getValueAsString(i);
+                }
             }
 
             fFileStream.width(0);
@@ -754,7 +748,7 @@ namespace NumeRe
                             for (size_t col = 0; col < vHeadline.size(); col++)
                             {
                                 if (!fileData->at(col))
-                                    fileData->at(col).reset(new ValueColumn); // TODO determine default column type
+                                    fileData->at(col).reset(new StringColumn);
 
                                 fileData->at(col)->m_sHeadLine = vHeadline[col];
                             }
@@ -791,7 +785,7 @@ namespace NumeRe
         {
             if (!fileData->at(j))
             {
-                vColumnWidths.push_back(0); // TODO Should actually be a reasonable default value
+                vColumnWidths.push_back(TableColumn::getDefaultColumnHead(j).length());
                 continue;
             }
 
@@ -1956,7 +1950,7 @@ namespace NumeRe
                 if (fileData->at(j) && fileData->at(j)->isValid(i))
                 {
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
-                        fFileStream << toString(fileData->at(j)->getValue(i), 14);
+                        fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
                     else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
                         fFileStream << fileData->at(j)->getValueAsString(i);
                 }

@@ -263,8 +263,13 @@ namespace NumeRe
             {
                 size_t nLastLineBreak = 0u;
 
-                if (!fileData->at(nCol)) // TODO should be a reasonable default value, e.g. via a static method in TableColumn
+                if (!fileData->at(nCol))
+                {
+                    if (!nLineNumber)
+                        return TableColumn::getDefaultColumnHead(nCol);
+
                     return " ";
+                }
 
                 std::string sHeadLine = fileData->at(nCol)->m_sHeadLine;
 

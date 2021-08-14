@@ -35,7 +35,6 @@
 #define DEFAULT_COL_TYPE ValueColumn
 
 using namespace std;
-extern Language _lang;
 
 
 
@@ -124,7 +123,7 @@ void Memory::createTableHeaders()
             memArray[j].reset(new DEFAULT_COL_TYPE);
 
         if (!memArray[j]->m_sHeadLine.length())
-            memArray[j]->m_sHeadLine = _lang.get("COMMON_COL") + "_" + toString(j+1);
+            memArray[j]->m_sHeadLine = TableColumn::getDefaultColumnHead(j);
     }
 }
 
@@ -582,7 +581,7 @@ bool Memory::getSaveStatus() const
 std::string Memory::getHeadLineElement(size_t _i) const
 {
     if (_i >= memArray.size() || !memArray[_i])
-        return _lang.get("COMMON_COL") + "_" + toString((int)_i + 1) + " (leer)";
+        return TableColumn::getDefaultColumnHead(_i+1);
     else
         return memArray[_i]->m_sHeadLine;
 }

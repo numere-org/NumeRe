@@ -1549,7 +1549,6 @@ namespace wxcode
 
             wxHeaderButtonParams params;
 
-            // TODO: columnInfo should have label colours...
             params.m_labelColour = wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOWTEXT );
             params.m_labelFont = GetFont();
 
@@ -3604,7 +3603,6 @@ namespace wxcode
         }
     }
 
-// TODO: tree sorting functions are not reentrant and not MT-safe!
     static wxTreeListMainWindow* s_treeBeingSorted = NULL;
 
     static int LINKAGEMODE tree_ctrl_compare_func(wxTreeListItem** item1, wxTreeListItem** item2)
@@ -4432,7 +4430,7 @@ namespace wxcode
                 }
                 break;
 
-            // '*': expand/collapse all subtrees // TODO: Mak it more useful
+            // '*': expand/collapse all subtrees
             case '*':
             case WXK_MULTIPLY:
                 {
@@ -4442,7 +4440,7 @@ namespace wxcode
                     }
                     else if (m_curItem->HasPlus())
                     {
-                        Collapse (m_curItem); // TODO: CollapseAll
+                        Collapse (m_curItem);
                     }
                 }
                 break;
@@ -4813,8 +4811,6 @@ namespace wxcode
 
     void wxTreeListMainWindow::OnRenameAccept(bool isCancelled)
     {
-
-        // TODO if the validator fails this causes a crash
         wxTreeEvent le( wxEVT_COMMAND_TREE_END_LABEL_EDIT, 0 );
         le.SetLabel( m_editRes );
         le.SetEditCanceled(isCancelled);
@@ -5162,7 +5158,7 @@ namespace wxcode
                 // we are now dragging
                 m_isDragging = true;
                 RefreshSelected();
-                CaptureMouse(); // TODO: usefulness unclear
+                CaptureMouse();
 
                 wxTreeEvent nevent(0, 0);
                 nevent.SetPoint(p);
@@ -5200,7 +5196,6 @@ namespace wxcode
         // send event to wxTreeListCtrl (for user code)
         if (m_owner->GetEventHandler()->ProcessEvent(event)) return; // handled (and not skipped) in user code
 
-        // TODO
 #if defined(__WXGTK__) && !defined(__WXUNIVERSAL__)
         wxScrolledWindow::OnScroll(event);
 #else
@@ -5356,8 +5351,6 @@ Recurse:
 
     void wxTreeListMainWindow::RefreshSelected()
     {
-        // TODO: this is awfully inefficient, we should keep the list of all
-        //       selected items internally, should be much faster
         if (m_rootItem)
         {
             RefreshSelectedUnder (m_rootItem);
@@ -5838,7 +5831,6 @@ Recurse:
         if (m_main_win)
             m_main_win->SetWindowStyle(style);
         m_windowStyle = style;
-        // TODO: provide something like wxTL_NO_HEADERS to hide m_header_win
     }
 
     long wxTreeListCtrl::GetWindowStyle() const

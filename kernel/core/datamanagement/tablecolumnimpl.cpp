@@ -229,7 +229,8 @@ void ValueColumn::assign(const TableColumn* column)
         m_data = static_cast<const ValueColumn*>(column)->m_data;
     }
     else
-        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
+#warning TODO (numere#1#08/14/21): Define this error
+        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", "");
 }
 
 
@@ -247,7 +248,8 @@ void ValueColumn::insert(const VectorIndex& idx, const TableColumn* column)
     if (column->m_type == TableColumn::TYPE_VALUE)
         setValue(idx, static_cast<const ValueColumn*>(column)->m_data);
     else
-        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
+#warning TODO (numere#1#08/14/21): Define this error
+        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", "");
 }
 
 
@@ -539,7 +541,8 @@ void StringColumn::assign(const TableColumn* column)
         m_data = static_cast<const StringColumn*>(column)->m_data;
     }
     else
-        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
+#warning TODO (numere#1#08/14/21): Define this error
+        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", "");
 }
 
 
@@ -557,7 +560,8 @@ void StringColumn::insert(const VectorIndex& idx, const TableColumn* column)
     if (column->m_type == TableColumn::TYPE_STRING)
         setValue(idx, static_cast<const StringColumn*>(column)->m_data);
     else
-        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
+#warning TODO (numere#1#08/14/21): Define this error
+        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", "");
 }
 
 

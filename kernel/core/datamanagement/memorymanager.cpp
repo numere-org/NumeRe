@@ -321,8 +321,7 @@ bool MemoryManager::saveToCacheFile()
         nCols = vMemory[iter->second.first]->getCols(false);
 
         cacheFile.setDimensions(nLines, nCols);
-        cacheFile.setColumnHeadings(vMemory[iter->second.first]->sHeadLine, nCols);
-        cacheFile.setData(vMemory[iter->second.first]->dMemTable, nLines, nCols);
+        cacheFile.setData(&vMemory[iter->second.first]->memArray, nLines, nCols);
         cacheFile.setTableName(iter->first);
         cacheFile.setComment("NO COMMENT");
 
@@ -392,8 +391,7 @@ bool MemoryManager::loadFromNewCacheFile()
             vMemory.push_back(new Memory());
 
             vMemory.back()->resizeMemory(cacheFile.getRows(), cacheFile.getCols());
-            cacheFile.getData(vMemory.back()->dMemTable);
-            cacheFile.getColumnHeadings(vMemory.back()->sHeadLine);
+            cacheFile.getData(&vMemory.back()->memArray);
 
             vMemory.back()->shrink();
         }

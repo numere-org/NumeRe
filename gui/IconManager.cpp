@@ -261,7 +261,6 @@ void IconManager::CreateDisabledIcon(wxString iconInfo)
 	dc.DrawLine(15, 0, 0, 15);
 	dc.SelectObject(wxNullBitmap);
 
-	// TODO: copying back to an icon may be unnecessary.
 	wxIcon disabledIcon;
 	disabledIcon.CopyFromBitmap(iconBitmap);
 

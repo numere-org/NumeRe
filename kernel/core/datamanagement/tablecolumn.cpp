@@ -17,6 +17,10 @@
 ******************************************************************************/
 
 #include "tablecolumn.hpp"
+#include "../ui/language.hpp"
+#include "../utils/tools.hpp"
+
+extern Language _lang;
 
 namespace mu
 {
@@ -82,5 +86,17 @@ TableColumn* TableColumn::copy() const
 }
 
 
-
+/////////////////////////////////////////////////
+/// \brief Creates a default column headline for
+/// a column, which can be used without an
+/// instance of this class.
+///
+/// \param colNo size_t
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string TableColumn::getDefaultColumnHead(size_t colNo)
+{
+    return _lang.get("COMMON_COL") + "_" + toString(colNo+1);
+}
 
