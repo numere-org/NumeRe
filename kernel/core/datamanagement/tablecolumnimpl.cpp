@@ -202,6 +202,7 @@ ValueColumn* ValueColumn::copy(const VectorIndex& idx) const
     idx.setOpenEndIndex(size()-1);
 
     ValueColumn* col = new ValueColumn(idx.size());
+    col->m_sHeadLine = m_sHeadLine;
 
     for (size_t i = 0; i < idx.size(); i++)
     {
@@ -223,7 +224,10 @@ ValueColumn* ValueColumn::copy(const VectorIndex& idx) const
 void ValueColumn::assign(const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_VALUE)
+    {
+        m_sHeadLine = column->m_sHeadLine;
         m_data = static_cast<const ValueColumn*>(column)->m_data;
+    }
     else
         throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
 }
@@ -507,6 +511,7 @@ StringColumn* StringColumn::copy(const VectorIndex& idx) const
     idx.setOpenEndIndex(size()-1);
 
     StringColumn* col = new StringColumn(idx.size());
+    col->m_sHeadLine = m_sHeadLine;
 
     for (size_t i = 0; i < idx.size(); i++)
     {
@@ -529,7 +534,10 @@ StringColumn* StringColumn::copy(const VectorIndex& idx) const
 void StringColumn::assign(const TableColumn* column)
 {
     if (column->m_type == TableColumn::TYPE_STRING)
+    {
+        m_sHeadLine = column->m_sHeadLine;
         m_data = static_cast<const StringColumn*>(column)->m_data;
+    }
     else
         throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", ""); // TODO
 }
