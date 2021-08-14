@@ -659,6 +659,51 @@ size_t StringColumn::getBytes() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Returns the contents of this column as
+/// a ValueColumn of a nullptr, if the conversion
+/// is not possible.
+///
+/// \return ValueColumn*
+///
+/////////////////////////////////////////////////
+ValueColumn* StringColumn::convert() const
+{
+    // Determine first, if a conversion is possible
+    for (size_t i = 0; i < m_data.size(); i++)
+    {
+        if (!m_data[i].length())
+            continue;
+
+        if (m_data[i].find_first_not_of("0123456789.,eEiI+-") != std::string::npos
+            && toLowerCase(m_data[i]) != "inf"
+            && toLowerCase(m_data[i]) != "-inf"
+            && toLowerCase(m_data[i]) != "nan")
+            return nullptr;
+    }
+
+    ValueColumn* valCol = new ValueColumn(m_data.size());
+    valCol->m_sHeadLine = m_sHeadLine;
+
+    for (size_t i = 0; i < m_data.size(); i++)
+    {
+        if (!m_data[i].length() || toLowerCase(m_data[i]) == "nan" || m_data[i] == "---")
+            valCol->setValue(i, NAN);
+        else if (toLowerCase(m_data[i]) == "inf")
+            valCol->setValue(i, INFINITY);
+        else if (toLowerCase(m_data[i]) == "-inf")
+            valCol->setValue(i, -INFINITY);
+        else
+        {
+            std::string strval = m_data[i];
+            replaceAll(strval, ",", ".");
+            valCol->setValue(i, StrToCmplx(m_data[i]));
+        }
+    }
+
+    return valCol;
+}
+
 
 
 

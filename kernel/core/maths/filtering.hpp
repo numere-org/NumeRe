@@ -510,7 +510,7 @@ namespace NumeRe
                 if (m_windowSize.second > 1)
                 {
                     // Create a file instance
-                    GenericFile<double>* _file = getFileByType("<>/params/savitzky_golay_coeffs_2D.dat");
+                    GenericFile* _file = getFileByType("<>/params/savitzky_golay_coeffs_2D.dat");
 
                     if (!_file)
                         return;
@@ -533,14 +533,14 @@ namespace NumeRe
 
                     // First element in the column is the
                     // central element in the matrix
-                    m_filterKernel[m_windowSize.first/2][m_windowSize.first/2] = _view.getElement(m_windowSize.first*m_windowSize.first/2, j);
+                    m_filterKernel[m_windowSize.first/2][m_windowSize.first/2] = _view.getElement(m_windowSize.first*m_windowSize.first/2, j).real();
 
                     for (long long int i = 0; i < m_windowSize.first*m_windowSize.first/2; i++)
                     {
                         // left part
-                        m_filterKernel[m_windowSize.first - 1 - i % m_windowSize.first][i / m_windowSize.first] = _view.getElement(i, j);
+                        m_filterKernel[m_windowSize.first - 1 - i % m_windowSize.first][i / m_windowSize.first] = _view.getElement(i, j).real();
                         // right part
-                        m_filterKernel[i % m_windowSize.first][m_windowSize.first - i / m_windowSize.first - 1] = _view.getElement(i, j);
+                        m_filterKernel[i % m_windowSize.first][m_windowSize.first - i / m_windowSize.first - 1] = _view.getElement(i, j).real();
                         // middle column
                     }
 

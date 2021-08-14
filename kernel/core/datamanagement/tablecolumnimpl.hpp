@@ -165,6 +165,8 @@ class StringColumn : public TableColumn
         {
             return m_data.size();
         }
+
+        ValueColumn* convert() const;
 };
 
 

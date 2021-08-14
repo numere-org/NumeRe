@@ -27,6 +27,7 @@
 
 #include "../utils/zip++.hpp"
 #include "../ui/error.hpp"
+#include "../datamanagement/tablecolumn.hpp"
 #include "filesystem.hpp"
 
 namespace NumeRe
@@ -61,7 +62,6 @@ namespace NumeRe
     /// instantiated directly, because the read and
     /// write methods are declared as pure virtual.
     /////////////////////////////////////////////////
-    template <class DATATYPE>
     class GenericFile : public FileSystem
     {
         protected:
@@ -79,10 +79,7 @@ namespace NumeRe
             std::ios::openmode openMode;
 
             // The main data table
-            DATATYPE** fileData;
-
-            // The table column headlines
-            std::string* fileTableHeads;
+            TableColumnArray* fileData;
 
             /////////////////////////////////////////////////
             /// \brief This method has to be used to open the
@@ -266,16 +263,21 @@ namespace NumeRe
             {
                 size_t nLastLineBreak = 0u;
 
+                if (!fileData->at(nCol)) // TODO should be a reasonable default value, e.g. via a static method in TableColumn
+                    return " ";
+
+                std::string sHeadLine = fileData->at(nCol)->m_sHeadLine;
+
                 // Search the selected part
-                for (size_t i = 0; i < fileTableHeads[nCol].length(); i++)
+                for (size_t i = 0; i < sHeadLine.length(); i++)
                 {
                     // Linebreak character found?
-                    if (fileTableHeads[nCol][i] == '\n')
+                    if (sHeadLine[i] == '\n')
                     {
                         // If this is the correct line number, return
                         // the corresponding substring
                         if (!nLineNumber)
-                            return fileTableHeads[nCol].substr(nLastLineBreak, i - nLastLineBreak);
+                            return sHeadLine.substr(nLastLineBreak, i - nLastLineBreak);
 
                         // Decrement the line number and store the
                         // position of the current line break
@@ -287,7 +289,7 @@ namespace NumeRe
                 // Catch the last part of the string, which is not found by
                 // the for loop
                 if (!nLineNumber)
-                    return fileTableHeads[nCol].substr(nLastLineBreak);
+                    return sHeadLine.substr(nLastLineBreak);
 
                 // Not enough lines in this string, return a whitespace character
                 return " ";
@@ -404,10 +406,10 @@ namespace NumeRe
             ///
             /// \param rows long longint&
             /// \param cols long longint&
-            /// \return DATATYPE**
+            /// \return template <typenameT>T*
             ///
             /////////////////////////////////////////////////
-            DATATYPE** readDataArray(long long int& rows, long long int& cols)
+            template <typename T> T** readDataArray(long long int& rows, long long int& cols)
             {
                 // Get the dimensions of the data block in memory
                 rows = readNumField<long long int>();
@@ -418,14 +420,14 @@ namespace NumeRe
                     return nullptr;
 
                 // Prepare a new storage object for the contained data
-                DATATYPE** data = new DATATYPE*[rows];
+                T** data = new T*[rows];
 
                 // Create the storage for the columns during reading the
                 // file and read the contents directly to memory
                 for (long long int i = 0; i < rows; i++)
                 {
-                    data[i] = new DATATYPE[cols];
-                    fFileStream.read((char*)data[i], sizeof(DATATYPE)*cols);
+                    data[i] = new T[cols];
+                    fFileStream.read((char*)data[i], sizeof(T)*cols);
                 }
 
                 return data;
@@ -583,13 +585,13 @@ namespace NumeRe
             /// two-dimensional array of data to the file in
             /// binary mode.
             ///
-            /// \param data DATATYPE**
+            /// \param data T**
             /// \param rows long long int
             /// \param cols long long int
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void writeDataArray(DATATYPE** data, long long int rows, long long int cols)
+            template <typename T> void writeDataArray(T** data, long long int rows, long long int cols)
             {
                 // Store the dimensions of the array first
                 writeNumField<long long int>(rows);
@@ -597,7 +599,7 @@ namespace NumeRe
 
                 // Write the contents to the file in linewise fashion
                 for (long long int i = 0; i < rows; i++)
-                    fFileStream.write((char*)data[i], sizeof(DATATYPE)*cols);
+                    fFileStream.write((char*)data[i], sizeof(T)*cols);
             }
 
             /////////////////////////////////////////////////
@@ -633,19 +635,10 @@ namespace NumeRe
             /////////////////////////////////////////////////
             void createStorage()
             {
-                if (nRows > 0 && nCols > 0 && !fileData && !fileTableHeads)
+                if (nRows > 0 && nCols > 0 && !fileData)
                 {
-                    fileTableHeads = new std::string[nCols];
-
-                    fileData = new DATATYPE*[nRows];
-
-                    for (long long int i = 0; i < nRows; i++)
-                    {
-                        fileData[i] = new DATATYPE[nCols];
-
-                        for (long long int j = 0; j < nCols; j++)
-                            fileData[i][j] = NAN;
-                    }
+                    fileData = new TableColumnArray;
+                    fileData->resize(nCols);
                 }
                 else if (nRows < 0 || nCols < 0)
                     throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
@@ -666,27 +659,12 @@ namespace NumeRe
                 // source
                 if (!useExternalData)
                 {
-                    if (fileTableHeads)
-                    {
-                        delete[] fileTableHeads;
-                        fileTableHeads = nullptr;
-                    }
-
-                    if (fileData)
-                    {
-                        for (long long int i = 0; i < nRows; i++)
-                            delete[] fileData[i];
-
-                        delete[] fileData;
-                        fileData = nullptr;
-                    }
-
-                }
-                else
-                {
-                    fileTableHeads = nullptr;
+                    fileData->clear();
+                    delete fileData;
                     fileData = nullptr;
                 }
+                else
+                    fileData = nullptr;
 
                 nRows = 0;
                 nCols = 0;
@@ -697,14 +675,14 @@ namespace NumeRe
             /// dimensional arrays of data. Both source and
             /// target arrays have to exist in advance.
             ///
-            /// \param from DATATYPE**
-            /// \param to DATATYPE**
+            /// \param from T**
+            /// \param to T**
             /// \param rows long long int
             /// \param cols long long int
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void copyDataArray(DATATYPE** from, DATATYPE** to, long long int rows, long long int cols)
+            template <typename T> void copyDataArray(T** from, T** to, long long int rows, long long int cols)
             {
                 if (!from || !to || !rows || !cols)
                     return;
@@ -817,9 +795,15 @@ namespace NumeRe
                 sFileExtension = file.sFileExtension;
                 sTableName = file.sTableName;
 
+                // Creates only the vector but leaves the
+                // actual columns untouched
                 createStorage();
-                copyDataArray(file.fileData, fileData, nRows, nCols);
-                copyStringArray(file.fileTableHeads, fileTableHeads, nCols);
+
+                if (file.fileData && fileData)
+                {
+                    for (long long int col = 0; col < nCols; col++)
+                        fileData->at(col).reset(file.fileData->at(col)->copy());
+                }
             }
 
         public:
@@ -830,7 +814,7 @@ namespace NumeRe
             /// \param fileName const std::string&
             ///
             /////////////////////////////////////////////////
-            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr), fileTableHeads(nullptr)
+            GenericFile(const std::string& fileName) : FileSystem(), nRows(0), nCols(0), nPrecFields(7), useExternalData(false), fileData(nullptr)
             {
                 // Initializes the file system from the kernel
                 initializeFromKernel();
@@ -1085,13 +1069,17 @@ namespace NumeRe
             /// to the passed memory address. The target
             /// memory must already exist.
             ///
-            /// \param data DATATYPE**
+            /// \param data TableColumnArray*
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void getData(DATATYPE** data)
+            void getData(TableColumnArray* data)
             {
-                copyDataArray(fileData, data, nRows, nCols);
+                if (data && fileData)
+                {
+                    for (long long int col = 0; col < nCols; col++)
+                        data->at(col).reset(fileData->at(col)->copy());
+                }
             }
 
             /////////////////////////////////////////////////
@@ -1103,47 +1091,15 @@ namespace NumeRe
             ///
             /// \param rows long long int&
             /// \param cols long long int&
-            /// \return DATATYPE**
+            /// \return TableColumnArray*
             ///
             /////////////////////////////////////////////////
-            DATATYPE** getData(long long int& rows, long long int& cols)
+            TableColumnArray* getData(long long int& rows, long long int& cols)
             {
                 rows = nRows;
                 cols = nCols;
 
                 return fileData;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method copies the column headings
-            /// from the internal data to the passed memory
-            /// address. The target memory must already exist.
-            ///
-            /// \param sHead std::string*
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void getColumnHeadings(std::string* sHead)
-            {
-                copyStringArray(fileTableHeads, sHead, nCols);
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method returns a pointer to the
-            /// column headings of the internal memory with
-            /// read and write access. This pointer shall not
-            /// be stored for future use, because the
-            /// referenced memory will be deleted upon
-            /// destruction of this class instance.
-            ///
-            /// \param cols long long int&
-            /// \return std::string*
-            ///
-            /////////////////////////////////////////////////
-            std::string* getColumnHeadings(long long int& cols)
-            {
-                cols = nCols;
-                return fileTableHeads;
             }
 
             /////////////////////////////////////////////////
@@ -1195,13 +1151,13 @@ namespace NumeRe
             /// storage and copies the passed data to this
             /// storage.
             ///
-            /// \param data DATATYPE**
+            /// \param data TableColumnArray*
             /// \param rows long long int
             /// \param cols long long int
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void addData(DATATYPE** data, long long int rows, long long int cols)
+            void addData(TableColumnArray* data, long long int rows, long long int cols)
             {
                 if (!nRows && !nCols)
                 {
@@ -1210,23 +1166,12 @@ namespace NumeRe
                 }
 
                 createStorage();
-                copyDataArray(data, fileData, rows, cols);
-            }
 
-            /////////////////////////////////////////////////
-            /// \brief This method creates the internal
-            /// storage (if not already done) and copies the
-            /// passed column headings to this storage.
-            ///
-            /// \param sHead std::string*
-            /// \param cols long long int
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void addColumnHeadings(std::string* sHead, long long int cols)
-            {
-                createStorage();
-                copyStringArray(sHead, fileTableHeads, cols);
+                if (fileData && data)
+                {
+                    for (long long int col = 0; col < nCols; col++)
+                       fileData->at(col).reset(data->at(col)->copy());
+                }
             }
 
             /////////////////////////////////////////////////
@@ -1235,37 +1180,18 @@ namespace NumeRe
             /// copied and must exist as long as thos class
             /// exists.
             ///
-            /// \param data DATATYPE**
+            /// \param data TableColumnArray*
             /// \param rows long long int
             /// \param cols long long int
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void setData(DATATYPE** data, long long int rows, long long int cols)
+            void setData(TableColumnArray* data, long long int rows, long long int cols)
             {
                 useExternalData = true;
 
                 fileData = data;
                 nRows = rows;
-                nCols = cols;
-            }
-
-            /////////////////////////////////////////////////
-            /// \brief This method references the passed
-            /// external column headings internally. The
-            /// headings are not copied as must exist as long
-            /// as this class exists.
-            ///
-            /// \param sHead std::string*
-            /// \param cols long long int
-            /// \return void
-            ///
-            /////////////////////////////////////////////////
-            void setColumnHeadings(std::string* sHead, long long int cols)
-            {
-                useExternalData = true;
-
-                fileTableHeads = sHead;
                 nCols = cols;
             }
     };
@@ -1278,14 +1204,14 @@ namespace NumeRe
     /// type, a null pointer is returned. The calling
     /// function is responsible for clearing the
     /// created instance. The returned pointer is of
-    /// the type GenericFile<double>, but actually
+    /// the type GenericFile, but actually
     /// references an instance of a derived class.
     ///
     /// \param filename const std::string&
-    /// \return GenericFile<double>*
+    /// \return GenericFile*
     ///
     /////////////////////////////////////////////////
-    GenericFile<double>* getFileByType(const std::string& filename);
+    GenericFile* getFileByType(const std::string& filename);
 
 
     /////////////////////////////////////////////////
@@ -1294,11 +1220,10 @@ namespace NumeRe
     /// the contents of the contained file more
     /// easily.
     /////////////////////////////////////////////////
-    template <class DATATYPE>
     class GenericFileView
     {
         private:
-            GenericFile<DATATYPE>* m_file;
+            GenericFile* m_file;
 
         public:
             /////////////////////////////////////////////////
@@ -1310,20 +1235,20 @@ namespace NumeRe
             /// \brief Constructor from an available
             /// GenericFile instance.
             ///
-            /// \param _file GenericFile<DATATYPE>*
+            /// \param _file GenericFile*
             ///
             /////////////////////////////////////////////////
-            GenericFileView(GenericFile<DATATYPE>* _file) : m_file(_file) {}
+            GenericFileView(GenericFile* _file) : m_file(_file) {}
 
             /////////////////////////////////////////////////
             /// \brief Attaches a new GenericFile instance to
             /// this facet class.
             ///
-            /// \param _file GenericFile<DATATYPE>*
+            /// \param _file GenericFile*
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void attach(GenericFile<DATATYPE>* _file)
+            void attach(GenericFile* _file)
             {
                 m_file = _file;
             }
@@ -1332,10 +1257,10 @@ namespace NumeRe
             /// \brief Returns the internally stored
             /// GenericFile instance pointer.
             ///
-            /// \return GenericFile<DATATYPE>*
+            /// \return GenericFile*
             ///
             /////////////////////////////////////////////////
-            GenericFile<DATATYPE>* getPtr()
+            GenericFile* getPtr()
             {
                 return m_file;
             }
@@ -1372,16 +1297,16 @@ namespace NumeRe
 
             /////////////////////////////////////////////////
             /// \brief Returns the value stored at the passed
-            /// positions. A default constructed DATATYPE
+            /// positions. A default constructed mu::value_type
             /// object instance is returned, if the element
             /// does not exist.
             ///
             /// \param row long long int
             /// \param col long long int
-            /// \return DATATYPE
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            DATATYPE getElement(long long int row, long long int col) const
+            mu::value_type getElement(long long int row, long long int col) const
             {
                 if (m_file)
                 {
@@ -1390,10 +1315,13 @@ namespace NumeRe
 
                     // dummy variable
                     long long int r,c;
-                    return m_file->getData(r,c)[row][col];
+                    TableColumnArray* arr = m_file->getData(r,c);
+
+                    if (arr->at(col))
+                        return arr->at(col)->getValue(row);
                 }
 
-                return DATATYPE();
+                return mu::value_type();
             }
 
             /////////////////////////////////////////////////
@@ -1413,8 +1341,11 @@ namespace NumeRe
                         return "";
 
                     // dummy variable
-                    long long int c;
-                    return m_file->getColumnHeadings(c)[col];
+                    long long int r,c;
+                    TableColumnArray* arr = m_file->getData(r,c);
+
+                    if (arr->at(col))
+                        return arr->at(col)->m_sHeadLine;
                 }
 
                 return "";
@@ -1422,7 +1353,7 @@ namespace NumeRe
     };
 
 
-    typedef GenericFileView<double> FileView;
+    typedef GenericFileView FileView;
 
 
     /////////////////////////////////////////////////
@@ -1431,7 +1362,7 @@ namespace NumeRe
     /// manner. The columns may be separated using
     /// tabulators and/or whitespace characters.
     /////////////////////////////////////////////////
-    class TextDataFile : public GenericFile<double>
+    class TextDataFile : public GenericFile
     {
         private:
             void readFile();
@@ -1468,7 +1399,7 @@ namespace NumeRe
     /// in binary mode using the methods from
     /// GenericFile.
     /////////////////////////////////////////////////
-    class NumeReDataFile : public GenericFile<double>
+    class NumeReDataFile : public GenericFile
     {
         protected:
             bool isLegacy;
@@ -1477,15 +1408,18 @@ namespace NumeRe
             long int versionMajor;
             long int versionMinor;
             long int versionBuild;
-            const short fileVersionMajor = 2;
-            const short fileVersionMinor = 1;
+            const short fileSpecVersionMajor = 3;
+            const short fileSpecVersionMinor = 0;
+            float fileVersionRead;
 
             void writeHeader();
             void writeDummyHeader();
             void writeFile();
+            void writeColumn(const TblColPtr& col);
             void readHeader();
             void skipDummyHeader();
             void readFile();
+            void readColumn(TblColPtr& col);
             void readLegacyFormat();
             void* readGenericField(std::string& type, long long int& size);
             void deleteGenericData(void* data, const std::string& type);
@@ -1671,7 +1605,7 @@ namespace NumeRe
     /// Only reading from this file format is
     /// supported.
     /////////////////////////////////////////////////
-    class CassyLabx : public GenericFile<double>
+    class CassyLabx : public GenericFile
     {
         private:
             void readFile();
@@ -1702,7 +1636,7 @@ namespace NumeRe
     /// Reading and writing is supported for this
     /// file format.
     /////////////////////////////////////////////////
-    class CommaSeparatedValues : public GenericFile<double>
+    class CommaSeparatedValues : public GenericFile
     {
         private:
             void readFile();
@@ -1736,7 +1670,7 @@ namespace NumeRe
     /// tabular data. Only writing is supported by
     /// this file format.
     /////////////////////////////////////////////////
-    class LaTeXTable : public GenericFile<double>
+    class LaTeXTable : public GenericFile
     {
         private:
             void writeFile();
@@ -1744,7 +1678,7 @@ namespace NumeRe
             void writeTableHeads();
             size_t countHeadLines();
             std::string replaceNonASCII(const std::string& sText);
-            std::string formatNumber(double number);
+            std::string formatNumber(const mu::value_type& number);
 
         public:
             LaTeXTable(const std::string& filename);
@@ -1770,7 +1704,7 @@ namespace NumeRe
     /// format may be hashed somehow to save storage.
     /// Only reading is suported by this class.
     /////////////////////////////////////////////////
-    class JcampDX : public GenericFile<double>
+    class JcampDX : public GenericFile
     {
         private:
             void readFile();
@@ -1802,7 +1736,7 @@ namespace NumeRe
     /// Zipfile extractor from GenericFile. Only
     /// reading is supported by this class.
     /////////////////////////////////////////////////
-    class OpenDocumentSpreadSheet : public GenericFile<double>
+    class OpenDocumentSpreadSheet : public GenericFile
     {
         private:
             void readFile();
@@ -1832,7 +1766,7 @@ namespace NumeRe
     /// compound file. Reading and writing is done
     /// using the BasicExcel library.
     /////////////////////////////////////////////////
-    class XLSSpreadSheet : public GenericFile<double>
+    class XLSSpreadSheet : public GenericFile
     {
         private:
             void readFile();
@@ -1863,7 +1797,7 @@ namespace NumeRe
     /// Zipfile extractor from GenericFile. Only
     /// reading is supported by this class.
     /////////////////////////////////////////////////
-    class XLSXSpreadSheet : public GenericFile<double>
+    class XLSXSpreadSheet : public GenericFile
     {
         private:
             void readFile();
@@ -1894,7 +1828,7 @@ namespace NumeRe
     /// format. Only reading is supported by this
     /// class.
     /////////////////////////////////////////////////
-    class IgorBinaryWave : public GenericFile<double>
+    class IgorBinaryWave : public GenericFile
     {
         private:
             bool bXZSlice;

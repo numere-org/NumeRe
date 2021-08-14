@@ -57,6 +57,7 @@ struct TableColumn
     virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) = 0;
     virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) = 0;
 
+    TableColumn* copy() const;
     virtual TableColumn* copy(const VectorIndex& idx) const = 0;
     virtual void assign(const TableColumn* column) = 0;
     virtual void insert(const VectorIndex& idx, const TableColumn* column) = 0;

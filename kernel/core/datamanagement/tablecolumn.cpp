@@ -69,5 +69,18 @@ std::vector<mu::value_type> TableColumn::getValue(const VectorIndex& idx) const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Simplification wrapper around the
+/// indiced copy method to copy the whole column.
+///
+/// \return TableColumn*
+///
+/////////////////////////////////////////////////
+TableColumn* TableColumn::copy() const
+{
+    return copy(VectorIndex(0, VectorIndex::OPEN_END));
+}
+
+
 
 

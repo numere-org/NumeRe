@@ -73,6 +73,7 @@ bool getStringArgument(const string& sCmd, string& sArgument);
 string extractStringToken(const string& sCmd, size_t nPos);
 int StrToInt(const string&);
 double StrToDb(const string&);
+std::complex<double> StrToCmplx(const std::string&);
 unsigned int getMatchingParenthesis(const StringView&);
 string toLowerCase(const string& sUpperCase);
 string toUpperCase(const string& sLowerCase);
