@@ -115,7 +115,7 @@ namespace NumeRe
             sFile = ValidFileName(_sFile+".*");
 
         // Get an instance of the desired file type
-        GenericFile<double>* file = getFileByType(sFile);
+        GenericFile* file = getFileByType(sFile);
 
         // Ensure that the instance is valid
         if (!file)

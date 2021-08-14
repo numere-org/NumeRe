@@ -85,6 +85,7 @@ class Memory : public Sorter
 		bool isValid() const;
 		bool isValidElement(size_t _nLine, size_t _nCol) const;
 		bool shrink();
+		void convert();
 		int getLines(bool _bFull = false) const;
 		int getCols(bool _bFull = false) const;
         size_t getSize() const;

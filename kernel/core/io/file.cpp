@@ -1919,17 +1919,6 @@ namespace NumeRe
                 fileData->at(j)->setValue(i-nComment, vTokens[j]);
             }
         }
-
-        // Now try to convert some columns to numerical values
-        for (TblColPtr& col : *fileData)
-        {
-            ValueColumn* valCol = static_cast<StringColumn*>(col.get())->convert();
-
-            // Only valid conversions return a non-zero
-            // pointer
-            if (valCol)
-                col.reset(valCol);
-        }
     }
 
 
@@ -3046,6 +3035,13 @@ namespace NumeRe
         nCols = nMaxCols;
         createStorage();
 
+        // We first create a string-only table and try to
+        // convert them afterwards
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new StringColumn);
+        }
+
         unsigned int nPos = 0;
 
         // Store the pure text lines as table
@@ -3068,10 +3064,10 @@ namespace NumeRe
                 sEntry.erase(0, 1);
                 sEntry.pop_back();
 
-                if (!fileTableHeads[j].length())
-                    fileTableHeads[j] = sEntry;
-                else if (fileTableHeads[j] != sEntry)
-                    fileTableHeads[j] += "\\n" + sEntry;
+                if (!fileData->at(j)->m_sHeadLine.length())
+                    fileData->at(j)->m_sHeadLine = sEntry;
+                else if (fileData->at(j)->m_sHeadLine != sEntry)
+                    fileData->at(j)->m_sHeadLine += "\\n" + sEntry;
             }
         }
 
@@ -3097,20 +3093,8 @@ namespace NumeRe
                 sEntry.erase(0, 1);
                 sEntry.pop_back();
 
-                // Store the content as double value,
-                // if it is numeric, and as part of
-                // the table column head, otherwise
-                if (isNumeric(sEntry))
-                {
-                    if (sEntry.find_first_not_of('-') == string::npos)
-                        continue;
-
-                    fileData[i][j] = StrToDb(sEntry);
-                }
-                else if (!fileTableHeads[j].length())
-                    fileTableHeads[j] = sEntry;
-                else if (fileTableHeads[j] != sEntry)
-                    fileTableHeads[j] += "\\n" + sEntry;
+                // Write it as a string to the table
+                fileData->at(j)->setValue(i, sEntry);
             }
         }
     }
@@ -3311,6 +3295,13 @@ namespace NumeRe
         nCols = nExcelCols;
         createStorage();
 
+        // We create a string-only table and try to convert it
+        // afterwards
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new StringColumn);
+        }
+
         // Copy the pure text lines into the corresponding
         // table column heads
         for (unsigned int n = 0; n < nSheets; n++)
@@ -3349,10 +3340,10 @@ namespace NumeRe
 
                     // Append the string to the current table
                     // column head, if it is not empty
-                    if (!fileTableHeads[j+nOffset].length())
-                        fileTableHeads[j+nOffset] = sEntry;
-                    else if (fileTableHeads[j+nOffset] != sEntry)
-                        fileTableHeads[j+nOffset] += "\\n" + sEntry;
+                    if (!fileData->at(j+nOffset)->m_sHeadLine.length())
+                        fileData->at(j+nOffset)->m_sHeadLine = sEntry;
+                    else if (fileData->at(j+nOffset)->m_sHeadLine != sEntry)
+                        fileData->at(j+nOffset)->m_sHeadLine += "\\n" + sEntry;
                 }
             }
 
@@ -3382,42 +3373,28 @@ namespace NumeRe
                         break;
 
                     _cell = _sheet->Cell(i,j);
-                    sEntry.clear();
 
                     // Select the type of the cell and
                     // store the value, if it's a number
                     switch (_cell->Type())
                     {
                         case YExcel::BasicExcelCell::UNDEFINED:
-                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "nan");
                             break;
                         case YExcel::BasicExcelCell::INT:
-                            fileData[i-vCommentLines[n]][j+nOffset] = (double)_cell->GetInteger();
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], (double)_cell->GetInteger());
                             break;
                         case YExcel::BasicExcelCell::DOUBLE:
-                            fileData[i-vCommentLines[n]][j+nOffset] = _cell->GetDouble();
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], _cell->GetDouble());
                             break;
                         case YExcel::BasicExcelCell::STRING:
-                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
-                            sEntry = _cell->GetString();
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], utf8parser(_cell->GetString()));
                             break;
                         case YExcel::BasicExcelCell::WSTRING:
-                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
-                            sEntry = wcstombs(_cell->GetWString());
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], utf8parser(wcstombs(_cell->GetWString())));
                             break;
                         default:
-                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
-                    }
-
-                    // If the entry is not empty, then it
-                    // is a textual cell. We append it to
-                    // the corresponding table column head
-                    if (sEntry.length())
-                    {
-                        if (!fileTableHeads[j+nOffset].length())
-                            fileTableHeads[j+nOffset] = sEntry;
-                        else if (fileTableHeads[j+nOffset] != sEntry)
-                            fileTableHeads[j+nOffset] += "\\n" + sEntry;
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "nan");
                     }
                 }
             }
@@ -3458,7 +3435,9 @@ namespace NumeRe
         {
             // Get the current cell and the headline string
             _cell = _sheet->Cell(0u, j);
-            sHeadLine = fileTableHeads[j];
+
+            if (fileData->at(j))
+                sHeadLine = fileData->at(j)->m_sHeadLine;
 
             // Replace newlines with the corresponding character code
             while (sHeadLine.find("\\n") != string::npos)
@@ -3478,10 +3457,16 @@ namespace NumeRe
 
                 // Write the cell contents, if the data table contains valid data
                 // otherwise clear the cell
-                if (!isnan(fileData[i][j]))
-                    _cell->SetDouble(fileData[i][j]);
-                else
+                if (!fileData->at(j) || !fileData->at(j)->isValid(i))
+                {
                     _cell->EraseContents();
+                    continue;
+                }
+
+                if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                    _cell->SetString(fileData->at(j)->getValueAsString(i).c_str());
+                else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                    _cell->SetDouble(fileData->at(j)->getValue(i).real());
             }
         }
 
@@ -3663,6 +3648,12 @@ namespace NumeRe
         // Allocate the memory
         createStorage();
 
+        // We create a text-only table first
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new StringColumn);
+        }
+
         // Walk through the sheets and extract the
         // contents to memory
         //
@@ -3744,21 +3735,24 @@ namespace NumeRe
                             // column head
                             if (sEntry.length())
                             {
-                                if (!fileTableHeads[nCol+nOffset].length())
-                                    fileTableHeads[nCol+nOffset] = sEntry;
-                                else if (fileTableHeads[nCol+nOffset] != sEntry)
-                                    fileTableHeads[nCol+nOffset] += "\\n" + sEntry;
+                                if (nLine - vCommentLines[i] < 0)
+                                {
+                                    if (!fileData->at(nCol+nOffset)->m_sHeadLine.length())
+                                        fileData->at(nCol+nOffset)->m_sHeadLine = sEntry;
+                                    else if (fileData->at(nCol+nOffset)->m_sHeadLine != sEntry)
+                                        fileData->at(nCol+nOffset)->m_sHeadLine += "\\n" + sEntry;
+                                }
+                                else
+                                    fileData->at(nCol+nOffset)->setValue(nLine-vCommentLines[i], sEntry);
                             }
 
                             continue;
                         }
+                        else if (_element->FirstChildElement("v"))
+                        {
+                            fileData->at(nCol+nOffset)->setValue(nLine-vCommentLines[i], _element->FirstChildElement("v")->GetText());
+                        }
                     }
-
-                    // If the current cell contains a value
-                    // tag, then we'll obtain that value and
-                    // store it in the target table
-                    if (_element->FirstChildElement("v"))
-                        _element->FirstChildElement("v")->QueryDoubleText(&fileData[nLine-vCommentLines[i]][nCol+nOffset]);
                 }
                 while ((_element = _element->NextSiblingElement()));
             }
@@ -3935,15 +3929,9 @@ namespace NumeRe
         {
             nFirstCol = 1;
             nCols = 2;
-
-            if (bReadComplexData)
-                nCols++;
         }
         else if (nDim[1] && (!nDim[2] || nDim[2] == 1))
         {
-            if (bReadComplexData)
-                nCols *= 2;
-
             nCols += 2;
             nFirstCol = 2;
 
@@ -3952,9 +3940,6 @@ namespace NumeRe
         }
         else if (nDim[1] && nDim[2] && (!nDim[3] || nDim[3] == 1))
         {
-            if (bReadComplexData)
-                nCols *= 2;
-
             nCols += 3;
             nFirstCol = 3;
             nRows = nDim[2] > nRows ? nDim[2] : nRows;
@@ -3965,15 +3950,21 @@ namespace NumeRe
         // final dimensions
         createStorage();
 
+        // We create plain value column tables
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new ValueColumn);
+        }
+
         // Fill the x column and its corresponding
         // table column head
         for (long long int j = 0; j < nFirstCol; j++)
         {
-            fileTableHeads[j] = cName + string("_[")+(char)('x'+j)+string("]");
+            fileData->at(j)->m_sHeadLine = cName + string("_[")+(char)('x'+j)+string("]");
 
             for (long long int i = 0; i < nDim[j]; i++)
             {
-                fileData[i][j] = dScalingFactorA[j]*(double)i + dScalingFactorB[j];
+                fileData->at(j)->setValue(i, dScalingFactorA[j]*(double)i + dScalingFactorB[j]);
             }
         }
 
@@ -3996,84 +3987,58 @@ namespace NumeRe
             // Write the corresponding table column
             // head
             if (nCols == 2 && !j)
-            {
-                fileTableHeads[1] = cName + string("_[y]");
-            }
-            else if (nCols == 3 && !j && bReadComplexData)
-            {
-                fileTableHeads[1] = string("Re:_") + cName + string("_[y]");
-                fileTableHeads[2] = string("Im:_") + cName + string("_[y]");
-            }
-            else if (!bReadComplexData)
-                fileTableHeads[j+nFirstCol] = cName + string("_["+toString(j+1)+"]");
+                fileData->at(1)->m_sHeadLine = cName + string("_[y]");
             else
-            {
-                fileTableHeads[j+nFirstCol] = string("Re:_") + cName + string("_["+toString(j+1)+"]");
-                fileTableHeads[j+nFirstCol+1] = string("Im:_") + cName + string("_["+toString(j+1)+"]");
-            }
+                fileData->at(j+nFirstCol)->m_sHeadLine = cName + string("_["+toString(j+1)+"]");
 
             // Write the actual data to the table.
             // We have to take care about the type
             // of the data and whether the data is
             // complex or not
+            long long int nInsertion = 0;
+
             for (long long int i = 0; i < (nDim[0]+bReadComplexData*nDim[0]); i++)
             {
                 if (dData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = dData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = dData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(dData[i+j*2*nDim[0]], dData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, dData[i+j*(nDim[0])]);
                 }
                 else if (fData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = fData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = fData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(fData[i+j*2*nDim[0]], fData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)fData[i+j*(nDim[0])]);
                 }
                 else if (n8_tData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = (double)n8_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = (double)n8_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(n8_tData[i+j*2*nDim[0]], n8_tData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n8_tData[i+j*(nDim[0])]);
+
                 }
                 else if (n16_tData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = (double)n16_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = (double)n16_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(n16_tData[i+j*2*nDim[0]], n16_tData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n16_tData[i+j*(nDim[0])]);
                 }
                 else if (n32_tData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = (double)n32_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = (double)n32_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(n32_tData[i+j*2*nDim[0]], n32_tData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n32_tData[i+j*(nDim[0])]);
                 }
-                else
-                    continue;
-            }
 
-            if (bReadComplexData)
-                j++;
+                nInsertion++;
+                i += bReadComplexData;
+            }
         }
 
         // Close the file reference and

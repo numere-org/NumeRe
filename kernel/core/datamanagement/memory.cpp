@@ -531,6 +531,31 @@ bool Memory::shrink()
 
 
 /////////////////////////////////////////////////
+/// \brief This member function tries to convert
+/// all string columns to value columns, if it
+/// is possible.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::convert()
+{
+    for (TblColPtr& col : memArray)
+    {
+        if (col && col->m_type == TableColumn::TYPE_STRING)
+        {
+            ValueColumn* valCol = static_cast<StringColumn*>(col.get())->convert();
+
+            // Only valid conversions return a non-zero
+            // pointer
+            if (valCol)
+                col.reset(valCol);
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns, whether the contents of the
 /// current table are already saved into either
 /// a usual file or into the cache file.
@@ -1151,7 +1176,7 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
 bool Memory::save(string _sFileName, const string& sTableName, unsigned short nPrecision)
 {
     // Get an instance of the desired file type
-    NumeRe::GenericFile<double>* file = NumeRe::getFileByType(_sFileName);
+    NumeRe::GenericFile* file = NumeRe::getFileByType(_sFileName);
 
     // Ensure that a file was created
     if (!file)
@@ -1163,8 +1188,7 @@ bool Memory::save(string _sFileName, const string& sTableName, unsigned short nP
     // Set the dimensions and the generic information
     // in the file
     file->setDimensions(lines, cols);
-    file->setColumnHeadings(sHeadLine, cols);
-    file->setData(dMemTable, lines, cols);
+    file->setData(&memArray, lines, cols);
     file->setTableName(sTableName);
     file->setTextfilePrecision(nPrecision);
 
