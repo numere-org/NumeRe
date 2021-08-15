@@ -4135,7 +4135,7 @@ void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, const st
         // if the current plot is a boxplot
         if (_pData.getBoxplot())
         {
-            vector<long long int> vJ = _idx.col.getVector();
+            vector<int> vJ = _idx.col.getVector();
             vJ.insert(vJ.begin(), -1);
             _idx.col = vJ;
         }

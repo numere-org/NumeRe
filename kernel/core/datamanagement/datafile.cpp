@@ -276,7 +276,8 @@ Memory* PasteHandler::pasteLoad(const Settings& _option)
             nCols = nColsTemp;
     }
 
-    Memory* _mem = new Memory(nLines, nCols);
+    Memory* _mem = new Memory;
+    _mem->resizeMemory(nLines, nCols);
 
     for (unsigned int i = 0; i < vPaste.size(); i++)
     {

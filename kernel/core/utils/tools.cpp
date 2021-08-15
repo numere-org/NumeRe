@@ -732,7 +732,51 @@ int StrToInt(const string& sString)
 double StrToDb(const string& sString)
 {
     return atof(sString.c_str());
-    //return std::stod(sString);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts a string into a complex
+/// number.
+///
+/// \param sString std::string& const
+/// \return std::complex<double>
+///
+/////////////////////////////////////////////////
+std::complex<double> StrToCmplx(const std::string& sString)
+{
+    double re, im;
+
+    if (sString.find_first_not_of("0123456789.+-*eEiI ") != std::string::npos)
+        return NAN;
+
+    std::stringstream in(sString);
+
+    // read 1st value
+    if (!(in >> re))
+        return NAN; // ERROR!
+
+    // check whether next char is 'i'
+    char c = in.peek();
+
+    if (c == EOF)
+        return re; // End of Input
+
+    // Is it the actual imaginary value?
+    if (c == 'i' || c == 'I' || c == '*')
+        return std::complex<double>(0.0, re);
+
+    if (!(in >> im))
+        return re; // ERROR or end of input
+
+    c = in.peek();
+
+    if (c == EOF || (c != 'i' && c != 'I' && c != '*'))
+    { // ERROR or premature end of input
+        return re;
+    }
+
+    return std::complex<double>(re, im);
 }
 
 
