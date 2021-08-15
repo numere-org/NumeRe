@@ -423,7 +423,9 @@ void StringColumn::shrink()
 /////////////////////////////////////////////////
 std::string StringColumn::getValueAsString(int elem) const
 {
-    return "\"" + getValueAsInternalString(elem) + "\"";
+    std::string sInternalString = getValueAsInternalString(elem);
+    replaceAll(sInternalString, "\"", "\\\"");
+    return "\"" + sInternalString + "\"";
 }
 
 

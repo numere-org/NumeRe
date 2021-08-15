@@ -58,7 +58,8 @@ namespace NumeRe
 
         for (size_t i = 0; i < vTableData.size(); i++)
         {
-            vTableData[i].reset(_table.vTableData[i]->copy());
+            if (_table.vTableData[i])
+                vTableData[i].reset(_table.vTableData[i]->copy());
         }
     }
 
@@ -114,7 +115,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void Table::setMinSize(size_t i, size_t j)
     {
-        vTableData.resize(j);
+        if (vTableData.size() <= j)
+            vTableData.resize(j);
     }
 
 
@@ -289,7 +291,7 @@ namespace NumeRe
                 vTableData[j]->m_sHeadLine = TableColumn::getDefaultColumnHead(j);
             }
 
-            vTableData[j]->setValue(i, _sValue);
+            vTableData[j]->setValue(i, (_sValue.front() == '"' && _sValue.back() == '"') ? _sValue.substr(1, _sValue.length()-2) : _sValue);
             return;
         }
 

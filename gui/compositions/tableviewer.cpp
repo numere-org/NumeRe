@@ -1440,7 +1440,7 @@ void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
 void TableViewer::SetData(NumeRe::Table& _table)
 {
     // Create an empty table, if necessary
-    if (_table.isEmpty())
+    if (_table.isEmpty() || !_table.getLines())
     {
         createZeroElementTable();
         return;

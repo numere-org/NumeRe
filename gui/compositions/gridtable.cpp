@@ -57,7 +57,7 @@ NumeRe::Table GridNumeReTable::getTableCopy()
 // class
 int GridNumeReTable::GetNumberRows()
 {
-    return _table.getLines() + getNumHeadlines() + 1;
+    return std::max(_table.getLines(), 1u) + getNumHeadlines() + 1;
 }
 
 // This member function will return the number of columns
@@ -124,10 +124,8 @@ void GridNumeReTable::SetValue(int row, int col, const wxString& value)
     int nHeadRows = getNumHeadlines();
 
     // Set the value
-    if (row < nHeadRows && col < (int)_table.getCols())
+    if (row < nHeadRows)
         _table.setHeadPart(col, row, value.ToStdString());
-    else if (row - nHeadRows >= (int)_table.getLines() || col >= (int)_table.getCols())
-        return;
     else
         _table.setValueAsString(row - nHeadRows, col, value.ToStdString());
 

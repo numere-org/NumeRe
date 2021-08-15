@@ -1113,9 +1113,12 @@ namespace NumeRe
         // Version 3.0 introduces column-like layout
         if (fileVersionRead >= 3.00)
         {
-            for (TblColPtr& col : *fileData)
+            if (fileData)
             {
-                readColumn(col);
+                for (TblColPtr& col : *fileData)
+                {
+                    readColumn(col);
+                }
             }
 
             return;
