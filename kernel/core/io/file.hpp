@@ -662,7 +662,7 @@ namespace NumeRe
                 // Only delete the storage, if it is internal data. Do
                 // not delete the storage, if it is linked from an external
                 // source
-                if (!useExternalData)
+                if (!useExternalData && fileData)
                 {
                     fileData->clear();
                     delete fileData;

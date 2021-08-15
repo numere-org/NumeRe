@@ -155,7 +155,7 @@ void ValueColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_t
         if (i >= vValue.size())
             break;
 
-        if (idx[i] > m_data.size())
+        if (idx[i] >= m_data.size())
             m_data.resize(idx[i]+1);
 
         m_data[idx[i]] = vValue[i];
@@ -180,7 +180,7 @@ void ValueColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsig
         if (i >= _nNum)
             break;
 
-        if (idx[i] > m_data.size())
+        if (idx[i] >= m_data.size())
             m_data.resize(idx[i]+1);
 
         m_data[idx[i]] = _dData[i];
@@ -440,7 +440,7 @@ void StringColumn::setValue(const VectorIndex& idx, const std::vector<std::strin
         if (i >= vValue.size())
             break;
 
-        if (idx[i] > m_data.size())
+        if (idx[i] >= m_data.size())
             m_data.resize(idx[i]+1);
 
         m_data[idx[i]] = vValue[i];
@@ -465,7 +465,7 @@ void StringColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_
         if (i >= vValue.size())
             break;
 
-        if (idx[i] > m_data.size())
+        if (idx[i] >= m_data.size())
             m_data.resize(idx[i]+1);
 
         m_data[idx[i]] = toString(vValue[i], NumeReKernel::getInstance()->getSettings().getPrecision());
@@ -491,7 +491,7 @@ void StringColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsi
         if (i >= _nNum)
             break;
 
-        if (idx[i] > m_data.size())
+        if (idx[i] >= m_data.size())
             m_data.resize(idx[i]+1);
 
         m_data[idx[i]] = toString(_dData[i], NumeReKernel::getInstance()->getSettings().getPrecision());
