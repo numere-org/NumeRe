@@ -524,7 +524,7 @@ namespace NumeRe
     TableColumn* Table::getColumn(size_t j) const
     {
         if (j < vTableData.size() && vTableData[j])
-            vTableData[j]->copy();
+            return vTableData[j]->copy();
 
         return nullptr;
     }

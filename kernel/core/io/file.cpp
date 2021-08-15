@@ -319,7 +319,7 @@ namespace NumeRe
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                         fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
                     else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
-                        fFileStream << fileData->at(j)->getValueAsString(i);
+                        fFileStream << fileData->at(j)->getValueAsInternalString(i);
                 }
             }
 
@@ -959,7 +959,7 @@ namespace NumeRe
         else if (col->m_type == TableColumn::TYPE_STRING)
         {
             writeStringField("DTYPE=STRING");
-            std::vector<std::string> values = col->getValueAsString(VectorIndex(0, VectorIndex::OPEN_END));
+            std::vector<std::string> values = col->getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END));
             writeStringBlock(&values[0], values.size());
         }
     }
@@ -1952,7 +1952,7 @@ namespace NumeRe
                     if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                         fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
                     else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
-                        fFileStream << fileData->at(j)->getValueAsString(i);
+                        fFileStream << fileData->at(j)->getValueAsInternalString(i);
                 }
 
                 fFileStream << ",";
@@ -2210,7 +2210,7 @@ namespace NumeRe
                 else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                     fFileStream << formatNumber(fileData->at(j)->getValue(i));
                 else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
-                    fFileStream << fileData->at(j)->getValueAsString(i);
+                    fFileStream << fileData->at(j)->getValueAsInternalString(i);
 
                 if (j+1 < nCols)
                     fFileStream << " &";
@@ -3458,7 +3458,7 @@ namespace NumeRe
                 }
 
                 if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
-                    _cell->SetString(fileData->at(j)->getValueAsString(i).c_str());
+                    _cell->SetString(fileData->at(j)->getValueAsInternalString(i).c_str());
                 else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
                     _cell->SetDouble(fileData->at(j)->getValue(i).real());
             }

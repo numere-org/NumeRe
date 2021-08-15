@@ -46,9 +46,11 @@ struct TableColumn
     virtual ~TableColumn() {}
 
     std::vector<std::string> getValueAsString(const VectorIndex& idx) const;
+    std::vector<std::string> getValueAsInternalString(const VectorIndex& idx) const;
     std::vector<mu::value_type> getValue(const VectorIndex& idx) const;
 
     virtual std::string getValueAsString(int elem) const = 0;
+    virtual std::string getValueAsInternalString(int elem) const = 0;
     virtual mu::value_type getValue(int elem) const = 0;
 
     virtual void setValue(int elem, const std::string& sValue) = 0;

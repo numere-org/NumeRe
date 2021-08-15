@@ -1046,7 +1046,7 @@ double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCe
     {
         for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
         {
-            double val = CellToCmplx(i, j).real()
+            double val = CellToCmplx(i, j).real();
 
             if (isnan(dMin) || val < dMin)
                 dMin = val;
@@ -1074,7 +1074,7 @@ double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCe
     {
         for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
         {
-            double val = CellToCmplx(i, j).real()
+            double val = CellToCmplx(i, j).real();
 
             if (isnan(dMax) || val > dMax)
                 dMax = val;

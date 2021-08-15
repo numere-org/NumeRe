@@ -1113,12 +1113,13 @@ NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lin
 /////////////////////////////////////////////////
 void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols)
 {
-    deleteBulk(lines, cols);
+    // We construct separate objects because they might be overwritten
+    deleteBulk(VectorIndex(lines), VectorIndex(cols));
 
     lines.setOpenEndIndex(lines.front() + _table.getLines()-1);
     cols.setOpenEndIndex(cols.front() + _table.getCols()-1);
 
-    resizeMemory(lines.max(), cols.max());
+    resizeMemory(lines.max()+1, cols.max()+1);
 
     for (size_t j = 0; j < _table.getCols(); j++)
     {

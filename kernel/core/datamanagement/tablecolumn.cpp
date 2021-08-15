@@ -52,6 +52,28 @@ std::vector<std::string> TableColumn::getValueAsString(const VectorIndex& idx) c
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the table column's contents as
+/// a vector containing internal strings.
+///
+/// \param idx const VectorIndex&
+/// \return std::vector<std::string>
+///
+/////////////////////////////////////////////////
+std::vector<std::string> TableColumn::getValueAsInternalString(const VectorIndex& idx) const
+{
+    idx.setOpenEndIndex(size()-1);
+    std::vector<std::string> vVect(idx.size());
+
+    for (size_t i = 0; i < idx.size(); i++)
+    {
+        vVect[i] = getValueAsInternalString(idx[i]);
+    }
+
+    return vVect;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Return the table column's contents as
 /// a vector of numerical types.
 ///

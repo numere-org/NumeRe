@@ -55,6 +55,7 @@ class ValueColumn : public TableColumn
         virtual ~ValueColumn() {}
 
         virtual std::string getValueAsString(int elem) const override;
+        virtual std::string getValueAsInternalString(int elem) const override;
         virtual mu::value_type getValue(int elem) const override;
 
         virtual void setValue(int elem, const std::string& sValue) override;
@@ -138,6 +139,7 @@ class StringColumn : public TableColumn
         virtual ~StringColumn() {}
 
         virtual std::string getValueAsString(int elem) const override;
+        virtual std::string getValueAsInternalString(int elem) const override;
         virtual mu::value_type getValue(int elem) const override;
 
         virtual void setValue(int elem, const std::string& sValue) override;

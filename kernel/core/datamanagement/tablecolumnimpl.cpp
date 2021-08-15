@@ -67,6 +67,20 @@ std::string ValueColumn::getValueAsString(int elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the contents as an internal
+/// string (i.e. without quotation marks).
+///
+/// \param elem int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ValueColumn::getValueAsInternalString(int elem) const
+{
+    return getValueAsString(elem);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the selected value as a
 /// numerical type or an invalid value, if it
 /// does not exist.
@@ -409,10 +423,24 @@ void StringColumn::shrink()
 /////////////////////////////////////////////////
 std::string StringColumn::getValueAsString(int elem) const
 {
-    if (elem >= 0 && elem < m_data.size())
-        return "\"" + m_data[elem] + "\"";
+    return "\"" + getValueAsInternalString(elem) + "\"";
+}
 
-    return "\"\"";
+
+/////////////////////////////////////////////////
+/// \brief Returns the contents as an internal
+/// string (i.e. without quotation marks).
+///
+/// \param elem int
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string StringColumn::getValueAsInternalString(int elem) const
+{
+    if (elem >= 0 && elem < m_data.size())
+        return m_data[elem];
+
+    return "";
 }
 
 
