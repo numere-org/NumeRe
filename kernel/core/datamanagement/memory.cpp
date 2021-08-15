@@ -511,18 +511,9 @@ bool Memory::shrink()
     {
         if (col)
             col->shrink();
-    }
 
-    // Remove possible unneeded columns
-    for (int j = memArray.size()-1; j >= 0; j--)
-    {
-        if (memArray[j] && memArray[j]->size())
-        {
-            if (j < (int)memArray.size()-1)
-                memArray.resize(j+1);
-
-            break;
-        }
+        if (col && !col->size())
+            col.reset(nullptr);
     }
 
     return true;
@@ -718,7 +709,10 @@ void Memory::writeData(int _nLine, int _nCol, const mu::value_type& _dData)
         resizeMemory(_nLine+1, _nCol+1);
 
     if (!memArray[_nCol])
+    {
         memArray[_nCol].reset(new ValueColumn);
+        memArray[_nCol]->m_sHeadLine = TableColumn::getDefaultColumnHead(_nCol);
+    }
 
     memArray[_nCol]->setValue(_nLine, _dData);
 
@@ -1097,15 +1091,10 @@ NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lin
 
     table.setName(_sTable);
 
-    for (size_t i = 0; i < lines.size(); i++)
+    for (size_t j = 0; j < cols.size(); j++)
     {
-        for (size_t j = 0; j < cols.size(); j++)
-        {
-            if (!i)
-                table.setHead(j, getHeadLineElement(cols[j]));
-
-            table.setValue(i, j, readMem(lines[i], cols[j]).real()); // TODO: Enable complex values and strings
-        }
+        if (cols[j] < memArray.size() && memArray[cols[j]])
+            table.setColumn(j, memArray[cols[j]]->copy(lines));
     }
 
     return table;
@@ -1131,31 +1120,26 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
 
     resizeMemory(lines.max(), cols.max());
 
-    for (size_t i = 0; i < _table.getLines(); i++)
-    {
-        if (i >= lines.size())
-            break;
-
-        for (size_t j = 0; j < _table.getCols(); j++)
-        {
-            if (j >= cols.size())
-                break;
-
-            // Use writeData() to automatically set all
-            // other parameters
-            writeData(lines[i], cols[j], _table.getValue(i, j));
-        }
-    }
-
-    // Set the table heads, if they have
-    // a non-zero length
     for (size_t j = 0; j < _table.getCols(); j++)
     {
         if (j >= cols.size())
-                break;
+            break;
 
-        if (_table.getHead(j).length())
-            setHeadLineElement(cols[j], _table.getHead(j));
+        TableColumn* tabCol = _table.getColumn(j);
+
+        if (!tabCol)
+            continue;
+
+        if (!memArray[cols[j]])
+        {
+            if (tabCol->m_type == TableColumn::TYPE_VALUE)
+                memArray[cols[j]].reset(new ValueColumn);
+            else if (tabCol->m_type == TableColumn::TYPE_STRING)
+                memArray[cols[j]].reset(new StringColumn);
+        }
+
+        memArray[cols[j]]->insert(lines, tabCol);
+        memArray[cols[j]]->m_sHeadLine = tabCol->m_sHeadLine;
     }
 }
 
@@ -2559,9 +2543,11 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
     for (size_t n = 0; n < sizes.first; n++)
     {
         if (!_filter->isConvolution())
-            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).real())); // TODO
+#warning TODO (numere#5#08/15/21): Enable complex values
+            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).real()));
         else
-            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).real()); // TODO
+#warning TODO (numere#5#08/15/21): Enable complex values
+            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).real());
     }
 
     // If the filter is a convolution, store the new value here
@@ -2595,9 +2581,11 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
         for (size_t m = 0; m < sizes.second; m++)
         {
             if (!_filter->isConvolution())
-                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).real())); // TODO
+#warning TODO (numere#5#08/15/21): Enable complex values
+                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).real()));
             else
-                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).real()); // TODO
+#warning TODO (numere#5#08/15/21): Enable complex values
+                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).real());
         }
     }
 

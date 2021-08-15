@@ -78,10 +78,12 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
         return true;
 
     // Regular cells
-    if (sTypeName == wxGRID_VALUE_FLOAT)
+    if (sTypeName == wxGRID_VALUE_FLOAT
+        && _table.getColumnType(col) == TableColumn::TYPE_VALUE
+        && _table.getValue(row-getNumHeadlines(), col).imag() == 0)
         return true;
 
-    if (sTypeName == wxGRID_VALUE_STRING)
+    if (sTypeName == wxGRID_VALUE_STRING && _table.getColumnType(col) != TableColumn::TYPE_NONE)
         return true;
 
     return false;
@@ -98,7 +100,7 @@ double GridNumeReTable::GetValueAsDouble(int row, int col)
     if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return NAN;
 
-    return _table.getValue(row - getNumHeadlines(), col);
+    return _table.getValue(row - getNumHeadlines(), col).real();
 }
 
 // This virtual member function returns the value of the

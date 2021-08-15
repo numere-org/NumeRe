@@ -64,6 +64,10 @@ struct TableColumn
     virtual void deleteElements(const VectorIndex& idx) = 0;
     virtual void shrink() = 0;
 
+    virtual void insertElements(size_t pos, size_t elem) = 0;
+    virtual void appendElements(size_t elem) = 0;
+    virtual void removeElements(size_t pos, size_t elem) = 0;
+
     virtual int compare(int i, int j) const = 0;
     virtual bool isValid(int elem) const = 0;
 

@@ -1794,8 +1794,7 @@ namespace NumeRe
                         vector<mu::value_type> vRes(res, res + nRes);
                         sVectorTemp = _parser.CreateTempVectorVar(vRes);
                     }
-                    // TODO: What happens in the remaining case of multiple
-                    // elements in tempres.vResult?
+#warning TODO (numere#3#08/15/21):  What happens in the remaining case of multiple elements in tempres.vResult?
 
                     strExpr.sLine.replace(i, nmatching+1, sVectorTemp);
                 }

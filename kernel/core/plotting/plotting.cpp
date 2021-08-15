@@ -1867,7 +1867,7 @@ void Plot::createStdPlot(vector<short>& vType, int& nStyle, size_t& nLegends, in
 /////////////////////////////////////////////////
 bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType)
 {
-    // FIXME: Temporary fix for MathGL misbehavior
+#warning TODO (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
     if (!_pData.getBoxplot() && !_pData.getyError() && !_pData.getxError() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
     {
         _mData = duplicatePoints(_mData);
@@ -3243,7 +3243,7 @@ void Plot::createStd3dPlot(vector<short>& vType, int& nStyle, size_t& nLegends, 
 /////////////////////////////////////////////////
 bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
 {
-    // FIXME: Temporary fix for MathGL misbehavior
+#warning TODO (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
     if (!_pData.getBoxplot() && !_pData.getyError() && !_pData.getxError() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
     {
         for (int i = 0; i < 3; i++)

@@ -2377,7 +2377,7 @@ NumeReVariables NumeReKernel::getVariableList()
         else
         {
             sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x " + toString(_memoryManager.getCols(iter->first, false));
-            sCurrentLine += "\tdouble\t{" + toString(_memoryManager.min(iter->first, "")[0], 5) + ", ..., " + toString(_memoryManager.max(iter->first, "")[0], 5) + "}\t" + iter->first + "()";
+            sCurrentLine += "\ttable\t{" + toString(_memoryManager.min(iter->first, "")[0], 5) + ", ..., " + toString(_memoryManager.max(iter->first, "")[0], 5) + "}\t" + iter->first + "()";
         }
 
         vars.vVariables.push_back(sCurrentLine);

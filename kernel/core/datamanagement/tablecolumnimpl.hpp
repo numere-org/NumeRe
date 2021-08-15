@@ -69,6 +69,10 @@ class ValueColumn : public TableColumn
         virtual void deleteElements(const VectorIndex& idx) override;
         virtual void shrink() override;
 
+        virtual void insertElements(size_t pos, size_t elem);
+        virtual void appendElements(size_t elem);
+        virtual void removeElements(size_t pos, size_t elem);
+
         virtual int compare(int i, int j) const override;
         virtual bool isValid(int elem) const override;
         virtual bool asBool(int elem) const override;
@@ -82,7 +86,7 @@ class ValueColumn : public TableColumn
         /////////////////////////////////////////////////
         virtual size_t getBytes() const override
         {
-            return size() * sizeof(mu::value_type);
+            return size() * sizeof(mu::value_type) + m_sHeadLine.length() * sizeof(char);
         }
 
         /////////////////////////////////////////////////
@@ -147,6 +151,10 @@ class StringColumn : public TableColumn
         virtual void insert(const VectorIndex& idx, const TableColumn* column) override;
         virtual void deleteElements(const VectorIndex& idx) override;
         virtual void shrink() override;
+
+        virtual void insertElements(size_t pos, size_t elem);
+        virtual void appendElements(size_t elem);
+        virtual void removeElements(size_t pos, size_t elem);
 
         virtual int compare(int i, int j) const override;
         virtual bool isValid(int elem) const override;

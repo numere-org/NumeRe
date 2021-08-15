@@ -19,12 +19,12 @@
 #include "tableviewer.hpp"
 #include "gridtable.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/utils/tools.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
 
-double StrToDb(const string&);
-string toString(double, int);
+#define STATUSBAR_PRECISION 5
 
 extern Language _guilang;
 
@@ -39,6 +39,12 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
     EVT_GRID_SELECT_CELL        (TableViewer::OnCellSelect)
     EVT_GRID_RANGE_SELECT       (TableViewer::OnCellRangeSelect)
 END_EVENT_TABLE()
+
+
+namespace mu
+{
+    bool isnan(mu::value_type);
+}
 
 
 /////////////////////////////////////////////////
@@ -498,7 +504,7 @@ void TableViewer::deleteSelection()
 /////////////////////////////////////////////////
 bool TableViewer::isNumerical(const string& sCell)
 {
-    static string sNums = "0123456789,.eE+- INFinf";
+    static string sNums = "0123456789,.eE+-* INFinf";
     return sCell.find_first_not_of(sNums) == string::npos;
 }
 
@@ -1005,21 +1011,20 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
 
 
 /////////////////////////////////////////////////
-/// \brief Return the cell value as double.
+/// \brief Return the cell value as value_type.
 ///
 /// \param row int
 /// \param col int
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double TableViewer::CellToDouble(int row, int col)
+mu::value_type TableViewer::CellToCmplx(int row, int col)
 {
     if (GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT))
         return GetTable()->GetValueAsDouble(row, col);
-    else if (!nFirstNumRow && GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
-    {
-        return atof(GetCellValue(row, col).ToStdString().c_str());
-    }
+    else if (row >= nFirstNumRow && GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
+        return StrToCmplx(GetCellValue(row, col).ToStdString());
+
     return NAN;
 }
 
@@ -1041,8 +1046,10 @@ double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCe
     {
         for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
         {
-            if (isnan(dMin) || CellToDouble(i, j) < dMin)
-                dMin = CellToDouble(i,j);
+            double val = CellToCmplx(i, j).real()
+
+            if (isnan(dMin) || val < dMin)
+                dMin = val;
         }
     }
 
@@ -1067,8 +1074,10 @@ double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCe
     {
         for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
         {
-            if (isnan(dMax) || CellToDouble(i, j) > dMax)
-                dMax = CellToDouble(i,j);
+            double val = CellToCmplx(i, j).real()
+
+            if (isnan(dMax) || val > dMax)
+                dMax = val;
         }
     }
 
@@ -1082,19 +1091,21 @@ double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCe
 ///
 /// \param topLeft const wxGridCellCoords&
 /// \param bottomRight const wxGridCellCoords&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+mu::value_type TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    double dSum = 0;
+    mu::value_type dSum = 0;
 
     for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
     {
         for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
         {
-            if (!isnan(CellToDouble(i, j)))
-                dSum += CellToDouble(i,j);
+            mu::value_type val = CellToCmplx(i, j);
+
+            if (!mu::isnan(val))
+                dSum += val;
         }
     }
 
@@ -1108,22 +1119,24 @@ double TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCe
 ///
 /// \param topLeft const wxGridCellCoords&
 /// \param bottomRight const wxGridCellCoords&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+mu::value_type TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    double dSum = 0;
-    int nCount = 0;
+    mu::value_type dSum = 0;
+    double nCount = 0;
 
     for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
     {
         for (int j = topLeft.GetCol(); j <= bottomRight.GetCol(); j++)
         {
-            if (!isnan(CellToDouble(i, j)))
+            mu::value_type val = CellToCmplx(i, j);
+
+            if (!mu::isnan(val))
             {
                 nCount++;
-                dSum += CellToDouble(i, j);
+                dSum += val;
             }
         }
     }
@@ -1162,10 +1175,10 @@ void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridC
         sel << "--,--";
 
     // Calculate the simple statistics
-    wxString statustext = "Min: " + toString(calculateMin(topLeft, bottomRight), 5);
-    statustext << " | Max: " << toString(calculateMax(topLeft, bottomRight), 5);
-    statustext << " | Sum: " << toString(calculateSum(topLeft, bottomRight), 5);
-    statustext << " | Avg: " << toString(calculateAvg(topLeft, bottomRight), 5);
+    wxString statustext = "Min: " + toString(calculateMin(topLeft, bottomRight), STATUSBAR_PRECISION);
+    statustext << " | Max: " << toString(calculateMax(topLeft, bottomRight), STATUSBAR_PRECISION);
+    statustext << " | Sum: " << toString(calculateSum(topLeft, bottomRight), 2*STATUSBAR_PRECISION);
+    statustext << " | Avg: " << toString(calculateAvg(topLeft, bottomRight), 2*STATUSBAR_PRECISION);
 
     // Set the status bar valuey
     m_statusBar->SetStatusText(dim);

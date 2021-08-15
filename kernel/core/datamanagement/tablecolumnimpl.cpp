@@ -60,9 +60,9 @@ void ValueColumn::shrink()
 std::string ValueColumn::getValueAsString(int elem) const
 {
     if (elem >= 0 && elem < m_data.size())
-        return "\"" + toString(m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision()) + "\"";
+        return toString(m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision());
 
-    return "\"nan\"";
+    return "nan";
 }
 
 
@@ -97,7 +97,7 @@ mu::value_type ValueColumn::getValue(int elem) const
 /////////////////////////////////////////////////
 void ValueColumn::setValue(int elem, const std::string& sValue)
 {
-    throw SyntaxError(SyntaxError::STRING_ERROR, "", "");
+    throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
 }
 
 
@@ -229,8 +229,7 @@ void ValueColumn::assign(const TableColumn* column)
         m_data = static_cast<const ValueColumn*>(column)->m_data;
     }
     else
-#warning TODO (numere#1#08/14/21): Define this error
-        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", "");
+        throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, _lang.get("TYPE_VALUE") + "/" + _lang.get("TYPE_STRING"));
 }
 
 
@@ -248,8 +247,7 @@ void ValueColumn::insert(const VectorIndex& idx, const TableColumn* column)
     if (column->m_type == TableColumn::TYPE_VALUE)
         setValue(idx, static_cast<const ValueColumn*>(column)->m_data);
     else
-#warning TODO (numere#1#08/14/21): Define this error
-        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", "");
+        throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, _lang.get("TYPE_VALUE") + "/" + _lang.get("TYPE_STRING"));
 }
 
 
@@ -273,6 +271,54 @@ void ValueColumn::deleteElements(const VectorIndex& idx)
     }
 
     shrink();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Inserts as many as the selected
+/// elements at the desired position, if the
+/// column is already larger than the starting
+/// position.
+///
+/// \param pos size_t
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void ValueColumn::insertElements(size_t pos, size_t elem)
+{
+    if (pos < m_data.size())
+        m_data.insert(m_data.begin()+pos, elem, NAN);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Appends the number of elements.
+///
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void ValueColumn::appendElements(size_t elem)
+{
+    m_data.insert(m_data.end(), elem, NAN);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Removes the selected number of
+/// elements from the column and moving all
+/// following items forward.
+///
+/// \param pos size_t
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void ValueColumn::removeElements(size_t pos, size_t elem)
+{
+    if (pos < m_data.size())
+        m_data.erase(m_data.begin()+pos, m_data.begin()+pos+elem);
 }
 
 
@@ -541,8 +587,7 @@ void StringColumn::assign(const TableColumn* column)
         m_data = static_cast<const StringColumn*>(column)->m_data;
     }
     else
-#warning TODO (numere#1#08/14/21): Define this error
-        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", "");
+        throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, _lang.get("TYPE_STRING") + "/" + _lang.get("TYPE_VALUE"));
 }
 
 
@@ -560,8 +605,7 @@ void StringColumn::insert(const VectorIndex& idx, const TableColumn* column)
     if (column->m_type == TableColumn::TYPE_STRING)
         setValue(idx, static_cast<const StringColumn*>(column)->m_data);
     else
-#warning TODO (numere#1#08/14/21): Define this error
-        throw SyntaxError(SyntaxError::CANNOT_COPY_DATA, "", "");
+        throw SyntaxError(SyntaxError::CANNOT_ASSIGN_COLUMN_OF_DIFFERENT_TYPE, m_sHeadLine, column->m_sHeadLine, _lang.get("TYPE_STRING") + "/" + _lang.get("TYPE_VALUE"));
 }
 
 
@@ -585,6 +629,54 @@ void StringColumn::deleteElements(const VectorIndex& idx)
     }
 
     shrink();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Inserts as many as the selected
+/// elements at the desired position, if the
+/// column is already larger than the starting
+/// position.
+///
+/// \param pos size_t
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringColumn::insertElements(size_t pos, size_t elem)
+{
+    if (pos < m_data.size())
+        m_data.insert(m_data.begin()+pos, elem, "");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Appends the number of elements.
+///
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringColumn::appendElements(size_t elem)
+{
+    m_data.insert(m_data.end(), elem, "");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Removes the selected number of
+/// elements from the column and moving all
+/// following items forward.
+///
+/// \param pos size_t
+/// \param elem size_t
+/// \return void
+///
+/////////////////////////////////////////////////
+void StringColumn::removeElements(size_t pos, size_t elem)
+{
+    if (pos < m_data.size())
+        m_data.erase(m_data.begin()+pos, m_data.begin()+pos+elem);
 }
 
 
@@ -659,7 +751,7 @@ size_t StringColumn::getBytes() const
     for (const auto& val : m_data)
         bytes += val.length() * sizeof(char);
 
-    return bytes;
+    return bytes + m_sHeadLine.length() * sizeof(char);
 }
 
 

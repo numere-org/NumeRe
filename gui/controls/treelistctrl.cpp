@@ -6347,7 +6347,7 @@ Recurse:
 
 #define wxTR_SINGLE                  0x0000     // for convenience
 #define wxTR_MULTIPLE                0x0020     // can select multiple items
-#define wxTR_EXTENDED                0x0040     // TODO: allow extended selection
+#define wxTR_EXTENDED                0x0040     // NOT IMPLEMENTED
 #define wxTR_HAS_VARIABLE_ROW_HEIGHT 0x0080     // what it says
 
 #define wxTR_EDIT_LABELS             0x0200     // can edit item labels

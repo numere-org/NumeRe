@@ -1041,8 +1041,9 @@ static void handleTeXIndicesAndExponents(string& sReturn, string sCodepage[][2] 
     }
 }
 
-// TODO rework this function
+
 // --> Ersetzt Tokens in einem String mit dem entsprechenden TeX-Befehl <--
+#warning TODO (numere#3#08/15/21): Rework this function
 string replaceToTeX(const string& sString, bool replaceForTeXFile) // bool-flag for true TeX files. The graph needs more tweaking
 {
     string sReturn = " " + sString + " ";            // Rueckgabe-String

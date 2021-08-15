@@ -648,7 +648,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         else
         {
             sTableData = toString(instance->getMemoryManager().getLines(sLocalTables[i][1], false)) + " x " + toString(instance->getMemoryManager().getCols(sLocalTables[i][1], false));
-            sTableData += "\tdouble\t{" + toString(instance->getMemoryManager().min(sLocalTables[i][1], "")[0], 5) + ", ..., " + toString(instance->getMemoryManager().max(sLocalTables[i][1], "")[0], 5) + "}\t" + sLocalTables[i][1] + "()";
+            sTableData += "\ttable\t{" + toString(instance->getMemoryManager().min(sLocalTables[i][1], "")[0], 5) + ", ..., " + toString(instance->getMemoryManager().max(sLocalTables[i][1], "")[0], 5) + "}\t" + sLocalTables[i][1] + "()";
         }
 
         mLocalTables[sLocalTables[i][0] + "()"] = sTableData;
@@ -951,7 +951,7 @@ vector<string> NumeReDebugger::getGlobals()
         if (iter->first.substr(0, 2) != "_~")
         {
             mGlobals[iter->first + "()"] = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false))
-                                           + "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ..., " + toString(_data.max(iter->first, "")[0], 5) + "}";
+                                           + "\ttable\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ..., " + toString(_data.max(iter->first, "")[0], 5) + "}";
         }
     }
 

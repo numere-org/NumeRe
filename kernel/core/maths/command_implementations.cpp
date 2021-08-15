@@ -2547,14 +2547,14 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     // get the data from the data object
     NumeRe::Table _table = parser_extractData(cmdParser.getExpr(), _parser, _data, _option);
 
-    dNyquistFrequency = _table.getLines() / (_table.getValue(_table.getLines() - 1, 0) - _table.getValue(0, 0)) / 2.0;
-    dTimeInterval = (_table.getLines() - 1) / (_table.getValue(_table.getLines() - 1, 0));
+    dNyquistFrequency = _table.getLines() / (_table.getValue(_table.getLines() - 1, 0).real() - _table.getValue(0, 0).real()) / 2.0;
+    dTimeInterval = (_table.getLines() - 1) / (_table.getValue(_table.getLines() - 1, 0).real());
 
     // Adapt the values for the shifted axis
     if (bShiftAxis)
     {
         dFrequencyOffset = -dNyquistFrequency * (1 + (_table.getLines() % 2) * 1.0 / _table.getLines());
-        dTimeInterval = fabs((_table.getLines() + (_table.getLines() % 2)) / (_table.getValue(0, 0))) * 0.5;
+        dTimeInterval = fabs((_table.getLines() + (_table.getLines() % 2)) / (_table.getValue(0, 0).real())) * 0.5;
     }
 
     if (_option.systemPrints())
@@ -2582,11 +2582,11 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     for (size_t i = 0; i < _table.getLines(); i++)
     {
         if (_table.getCols() == 2)
-            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1), 0.0);
+            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1).real(), 0.0);
         else if (_table.getCols() == 3 && bComplex)
-            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1), _table.getValue(vAxis[i], 2));
+            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1).real(), _table.getValue(vAxis[i], 2).real());
         else if (_table.getCols() == 3 && !bComplex)
-            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1) * cos(_table.getValue(vAxis[i], 2)), _table.getValue(vAxis[i], 1) * sin(_table.getValue(vAxis[i], 2)));
+            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1).real() * cos(_table.getValue(vAxis[i], 2).real()), _table.getValue(vAxis[i], 1).real() * sin(_table.getValue(vAxis[i], 2).real()));
     }
 
     // Calculate the actual transformation and apply some
@@ -2767,10 +2767,10 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
 
     for (size_t i = 0; i < _table.getLines(); i++)
     {
-        vWaveletData.push_back(_table.getValue(i, 1));
+        vWaveletData.push_back(_table.getValue(i, 1).real());
 
         if (bTargetGrid)
-            vAxisData.push_back(_table.getValue(i, 0));
+            vAxisData.push_back(_table.getValue(i, 0).real());
     }
 
     // calculate the wavelet:
@@ -2823,7 +2823,7 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
                 if (_idx.col[j] == VectorIndex::INVALID)
                     break;
 
-                _data.writeToTable(_idx.row[i], _idx.col[j], sTargetTable, tWaveletData.getValue(i, j));
+                _data.writeToTable(_idx.row[i], _idx.col[j], sTargetTable, tWaveletData.getValue(i, j).real());
             }
         }
 

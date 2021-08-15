@@ -46,6 +46,7 @@ enum TIMESTAMP
     GET_WITH_TEXT = 4
 };
 
+#warning TODO (numere#3#08/15/21): Extract the string conversion functions into a new module
 std::string toString(int nNumber, const Settings& _option);
 std::string toString(double dNumber, const Settings& _option);
 std::string toString(double dNumber, int nPrecision);

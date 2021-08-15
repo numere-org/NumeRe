@@ -5979,8 +5979,6 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
         m_currentEd->ReplaceSelection(replaceString);
         m_currentEd->EnsureCaretVisible();
         m_currentEd->SetSelection(pos, pos + replaceString.length());
-
-        // TODO Do a Find after this for the next item automatically?
     }
     else if (type == wxEVT_COMMAND_FIND_REPLACE_ALL)
     {
