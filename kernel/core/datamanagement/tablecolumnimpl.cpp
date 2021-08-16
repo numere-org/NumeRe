@@ -476,7 +476,11 @@ void StringColumn::setValue(int elem, const std::string& sValue)
     if (elem >= m_data.size())
         m_data.resize(elem+1);
 
-    m_data[elem] = sValue;
+#warning TODO (numere#1#08/16/21): Find a common way of representing a string in memory
+    if (sValue.front() == '"' && sValue.back() == '"')
+        m_data[elem] = sValue.substr(1, sValue.length()-2);
+    else
+        m_data[elem] = sValue;
 }
 
 
@@ -519,7 +523,11 @@ void StringColumn::setValue(const VectorIndex& idx, const std::vector<std::strin
         if (idx[i] >= m_data.size())
             m_data.resize(idx[i]+1);
 
-        m_data[idx[i]] = vValue[i];
+#warning TODO (numere#1#08/16/21): Find a common way of representing a string in memory
+        if (vValue[i].front() == '"' && vValue[i].back() == '"')
+            m_data[idx[i]] = vValue[i].substr(1, vValue[i].length()-2);
+        else
+            m_data[idx[i]] = vValue[i];
     }
 }
 

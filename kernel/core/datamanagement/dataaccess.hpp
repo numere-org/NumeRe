@@ -53,11 +53,19 @@ class DataAccessParser
 };
 
 
+enum DataOptions
+{
+    NO_OPTION = 0x0,
+    REPLACE_NAN = 0x1,
+    INSERT_STRINGS = 0x2
+};
+
+
 size_t findAssignmentOperator(StringView sCmd);
 bool parser_CheckMultArgFunc(const std::string&, const std::string&);
 
 std::string getDataElements(std::string& sLine, mu::Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs = true);
-void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, const Settings&, bool);
+void replaceDataEntities(std::string&, const std::string&, MemoryManager&, mu::Parser&, const Settings&, int options = NO_OPTION);
 bool getData(const std::string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols = 2, bool bSort = true);
 NumeRe::Table parser_extractData(const std::string& sDataExpression, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
 bool isNotEmptyExpression(const std::string&);

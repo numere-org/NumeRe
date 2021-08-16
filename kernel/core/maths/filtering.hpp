@@ -409,15 +409,6 @@ namespace NumeRe
     /// \brief This class implements a Savitzky-Golay
     /// filter, which is a polynomial smoothing
     /// filter.
-    ///
-    /// \todo This implementation currently only
-    /// supports one-dimensional data sets, because
-    /// multi-dimensional ones would require that all
-    /// coefficients are stored into data sets (too
-    /// difficult to calculate) and to obtain a single
-    /// filtered value a matrix multiplication between
-    /// the coefficient matrix and the (window sized)
-    /// data matrix is required.
     /////////////////////////////////////////////////
     class SavitzkyGolayFilter : public Filter
     {

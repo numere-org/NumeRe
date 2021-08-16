@@ -26,36 +26,6 @@ extern mglGraph _fontData;
 
 
 /////////////////////////////////////////////////
-/// \brief This function checks, whether the
-/// selected variable occurs in the current
-/// expression, which has to be set as current in
-/// advance.
-///
-/// \param _parser Parser&
-/// \param sVar const string_type&
-/// \return bool
-///
-/// \todo Find a better solution for this function.
-/////////////////////////////////////////////////
-bool isVariableInAssignedExpression(Parser& _parser, const string_type& sVar)
-{
-	// Ensure that the current expression has been parsed
-	_parser.Eval();
-
-	// Get a map containing the variables used in the
-	// parsed expression
-	varmap_type variables = _parser.GetUsedVar();
-
-	// Return false, if the map doesn't contain any elements
-	if (!variables.size())
-		return false;
-
-    // Try to find the selected variable
-    return variables.find(sVar) != variables.end();
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function searches for the
 /// selected variable in the passed string and
 /// returns the position of the first occurence

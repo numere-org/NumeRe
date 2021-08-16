@@ -34,6 +34,9 @@ namespace NumeRe
     class FileAdapter;
 }
 
+#warning TODO (numere#3#08/16/21): Determine, whether std::vector<std::string> is a good type
+typedef std::vector<std::string> ValueVector;
+
 /////////////////////////////////////////////////
 /// \brief This class represents a single table
 /// in memory, or a - so to say - single memory
@@ -96,6 +99,7 @@ class Memory : public Sorter
 		mu::value_type readMemInterpolated(double _dLine, double _dCol) const;
 		std::vector<mu::value_type> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		std::vector<double> readRealMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		ValueVector readMixedMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		Memory* extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		std::string getHeadLineElement(size_t _i) const;
@@ -105,8 +109,11 @@ class Memory : public Sorter
 
 		// WRITE ACCESS METHODS
 		void writeSingletonData(Indices& _idx, const mu::value_type& _dData);
+		void writeSingletonData(Indices& _idx, const std::string& _sValue);
 		void writeData(int _nLine, int _nCol, const mu::value_type& _dData);
+		void writeData(int _nLine, int _nCol, const std::string& sValue);
 		void writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum);
+		void writeData(Indices& _idx, const ValueVector& _values);
 		bool setHeadLineElement(size_t _i, const std::string& _sHead);
 
 		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision);

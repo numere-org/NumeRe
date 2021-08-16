@@ -212,6 +212,7 @@ void show_data(MemoryManager& _data, Output& _out, Settings& _option, const stri
 /// \return string**
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#1#08/16/21): This function does not correspond to the current design
 string** make_stringmatrix(MemoryManager& _data, Output& _out, Settings& _option, const string& sCache, long long int& nLines, long long int& nCols, int& nHeadlineCount, size_t nPrecision, bool bSave)
 {
 	nHeadlineCount = 1;

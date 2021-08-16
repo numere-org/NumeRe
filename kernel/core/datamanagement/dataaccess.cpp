@@ -359,7 +359,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
         for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); iter++)
         {
             if (sLine.find((iter->first) + "(") != string::npos)
-                replaceDataEntities(sLine, iter->first + "(", _data, _parser, _option, bReplaceNANs);
+                replaceDataEntities(sLine, iter->first + "(", _data, _parser, _option, bReplaceNANs ? REPLACE_NAN : NO_OPTION);
         }
     }
 
@@ -369,7 +369,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
         for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); iter++)
         {
             if (sLine.find((iter->first) + "{") != string::npos)
-                replaceDataEntities(sLine, iter->first + "{", _data, _parser, _option, bReplaceNANs);
+                replaceDataEntities(sLine, iter->first + "{", _data, _parser, _option, bReplaceNANs ? REPLACE_NAN : NO_OPTION);
         }
     }
 }
@@ -385,7 +385,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
 /// \param _data Datafile&
 /// \param _parser Parser&
 /// \param _option const Settings&
-/// \param bReplaceNANs bool
+/// \param options int
 /// \return void
 ///
 /// Because this function calls the index parser,
@@ -393,7 +393,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
 /// to any data entity included in the current call
 /// to the specified data entity.
 /////////////////////////////////////////////////
-void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
+void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _data, Parser& _parser, const Settings& _option, int options)
 {
 	string sEntityOccurence = "";
 	string sEntityName = sEntity.substr(0, sEntity.length()-1);
@@ -512,7 +512,11 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 		{
 			// This is a usual data access
 			// create a vector containing the data
-            vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
+			if (options & INSERT_STRINGS)
+                sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
+            else
+#warning TODO (numere#3#08/16/21): Is it possible to determine the return time here?
+                vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
 		}
 		else if (isCluster)
 		{
@@ -1158,6 +1162,7 @@ static string getLastToken(const string& sLine)
 /// \return bool
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#3#08/16/21): Might be more reasonable to return a Memory* here
 bool getData(const string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols, bool bSort)
 {
 	// write the data
@@ -1371,6 +1376,7 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
 /// \return NumeRe::Table
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#3#08/16/21): Can be done by using the extract functionality directly?
 static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim)
 {
     MemoryManager _cache;

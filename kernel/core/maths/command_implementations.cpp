@@ -1430,7 +1430,7 @@ bool findExtrema(CommandLineParser& cmdParser)
             return findExtremaInMultiResult(cmdParser, sExpr, sInterval, nOrder, nMode);
         else
         {
-            if (!isVariableInAssignedExpression(_parser, sVar))
+            if (findVariableInExpression(sExpr, sVar) == std::string::npos)
             {
                 cmdParser.setReturnValue("nan");
                 return true;
@@ -1875,7 +1875,7 @@ bool findZeroes(CommandLineParser& cmdParser)
             return findZeroesInMultiResult(cmdParser, sExpr, sInterval, nMode);
         else
         {
-            if (!isVariableInAssignedExpression(_parser, sVar))
+            if (findVariableInExpression(sExpr, sVar) == std::string::npos)
             {
                 cmdParser.setReturnValue("nan");
                 return true;
@@ -2310,7 +2310,7 @@ void taylor(CommandLineParser& cmdParser)
     _parser.SetExpr(sExpr);
 
     // Ensure that the expression uses the selected variable
-    if (!isVariableInAssignedExpression(_parser, sVarName))
+    if (findVariableInExpression(sExpr, sVarName) == std::string::npos)
     {
         NumeReKernel::print(LineBreak(_lang.get("PARSERFUNCS_TAYLOR_CONSTEXPR", sVarName), _option));
         return;

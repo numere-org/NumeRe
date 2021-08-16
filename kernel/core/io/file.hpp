@@ -1330,6 +1330,34 @@ namespace NumeRe
             }
 
             /////////////////////////////////////////////////
+            /// \brief Returns the value stored at the passed
+            /// positions. An empty string is returned, if
+            /// the element does not exist.
+            ///
+            /// \param row long long int
+            /// \param col long long int
+            /// \return std::string
+            ///
+            /////////////////////////////////////////////////
+            std::string getStringElement(long long int row, long long int col) const
+            {
+                if (m_file)
+                {
+                    if (row >= m_file->getRows() || col >= m_file->getCols())
+                        return 0;
+
+                    // dummy variable
+                    long long int r,c;
+                    TableColumnArray* arr = m_file->getData(r,c);
+
+                    if (arr->at(col))
+                        return arr->at(col)->getValueAsInternalString(row);
+                }
+
+                return "";
+            }
+
+            /////////////////////////////////////////////////
             /// \brief Returns the column heading stored for
             /// the passed column. Returns an empty string,
             /// if the column does not exist.

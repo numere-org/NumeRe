@@ -743,7 +743,7 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
                 _parser.Eval(nFunctions);
 
                 // Search for the animation time variable "t"
-                if (isVariableInAssignedExpression(_parser, "t"))
+                if (findVariableInExpression(sFunc, "t"))
                     bAnimateVar = true;
 
                 // Check, whether the number of functions correspond to special

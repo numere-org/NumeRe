@@ -2029,6 +2029,7 @@ static string getPathForSetting(string& sCmd, size_t pos)
 /// \return void
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#3#08/16/21): Might be better to directly export a Memory* here
 static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _accessParser, MemoryManager& _data, MemoryManager& _cache)
 {
     // Validize the obtained index sets
@@ -5032,6 +5033,7 @@ static CommandReturnValues cmd_progress(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_print(string& sCmd)
 {
+#warning TODO (numere#3#08/16/21): This function might directly call the string parser without this indirection
     string sArgument = sCmd.substr(findCommand(sCmd).nPos + 6) + " -print";
     sCmd.replace(findCommand(sCmd).nPos, string::npos, sArgument);
 

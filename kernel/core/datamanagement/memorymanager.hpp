@@ -398,6 +398,14 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return std::vector<mu::value_type>();
 		}
 
+		ValueVector getElementMixed(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
+		{
+		    if (exists(_sTable))
+                return vMemory[findTable(_sTable)]->readMixedMem(_vLine, _vCol);
+
+            return ValueVector();
+		}
+
 		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
 		{
 			vMemory[findTable(_sTable)]->copyElementsInto(vTarget, _vLine, _vCol);
@@ -445,9 +453,19 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _dData);
 		}
 
+		inline void writeToTable(long long int _nLine, long long int _nCol, const std::string& _sCache, const std::string& _sValue)
+		{
+			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _sValue);
+		}
+
 		inline void writeToTable(Indices& _idx, const std::string& _sCache, mu::value_type* _dData, unsigned int _nNum)
 		{
 			vMemory[findTable(_sCache)]->writeData(_idx, _dData, _nNum);
+		}
+
+		inline void writeToTable(Indices& _idx, const std::string& _sCache, const ValueVector& _values)
+		{
+			vMemory[findTable(_sCache)]->writeData(_idx, _values);
 		}
 
 		bool setHeadLineElement(long long int _i, const std::string& _sTable, std::string _sHead)
@@ -789,3 +807,5 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 };
 
 #endif
+
+

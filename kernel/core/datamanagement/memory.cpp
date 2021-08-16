@@ -368,6 +368,8 @@ std::vector<mu::value_type> Memory::readMem(const VectorIndex& _vLine, const Vec
     return vReturn;
 }
 
+
+#warning TODO (numere#3#08/16/21): This has to be removed
 std::vector<double> Memory::readRealMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
 {
     std::vector<double> vReturn;
@@ -384,6 +386,39 @@ std::vector<double> Memory::readRealMem(const VectorIndex& _vLine, const VectorI
                     vReturn.push_back(NAN);
                 else
                     vReturn.push_back(memArray[_vCol[j]]->getValue(_vLine[i]).real());
+            }
+        }
+    }
+
+    return vReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function returns the
+/// elements stored at the selected positions.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \return ValueVector
+///
+/////////////////////////////////////////////////
+ValueVector Memory::readMixedMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
+{
+    ValueVector vReturn;
+
+    if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
+        vReturn.push_back("");
+    else
+    {
+        for (size_t i = 0; i < _vLine.size(); i++)
+        {
+            for (size_t j = 0; j < _vCol.size(); j++)
+            {
+                if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
+                    vReturn.push_back("");
+                else
+                    vReturn.push_back(memArray[_vCol[j]]->getValueAsString(_vLine[i]));
             }
         }
     }
@@ -708,15 +743,65 @@ void Memory::writeData(int _nLine, int _nCol, const mu::value_type& _dData)
     if ((int)memArray.size() <= _nCol)
         resizeMemory(_nLine+1, _nCol+1);
 
-    if (!memArray[_nCol])
+    if (!memArray[_nCol]
+        || (!memArray[_nCol]->size() && memArray[_nCol]->m_type != TableColumn::TYPE_VALUE))
     {
+        std::string sColumnHead = TableColumn::getDefaultColumnHead(_nCol);
+
+        if (memArray[_nCol])
+            sColumnHead = memArray[_nCol]->m_sHeadLine;
+
         memArray[_nCol].reset(new ValueColumn);
-        memArray[_nCol]->m_sHeadLine = TableColumn::getDefaultColumnHead(_nCol);
+        memArray[_nCol]->m_sHeadLine = sColumnHead;
     }
 
     memArray[_nCol]->setValue(_nLine, _dData);
 
     if ((mu::isnan(_dData) || _nLine >= nCalcLines) && nCalcLines != -1)
+        nCalcLines = -1;
+
+    // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
+    if (bIsSaved)
+    {
+        nLastSaved = time(0);
+        bIsSaved = false;
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Writes string data to the internal
+/// table.
+///
+/// \param _nLine int
+/// \param _nCol int
+/// \param sValue const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::writeData(int _nLine, int _nCol, const std::string& sValue)
+{
+    if (!memArray.size() && !sValue.length())
+        return;
+
+    if ((int)memArray.size() <= _nCol)
+        resizeMemory(_nLine+1, _nCol+1);
+
+    if (!memArray[_nCol]
+        || (!memArray[_nCol]->size() && memArray[_nCol]->m_type != TableColumn::TYPE_STRING))
+    {
+        std::string sColumnHead = TableColumn::getDefaultColumnHead(_nCol);
+
+        if (memArray[_nCol])
+            sColumnHead = memArray[_nCol]->m_sHeadLine;
+
+        memArray[_nCol].reset(new StringColumn);
+        memArray[_nCol]->m_sHeadLine = sColumnHead;
+    }
+
+    memArray[_nCol]->setValue(_nLine, sValue);
+
+    if ((!sValue.length() || _nLine >= nCalcLines) && nCalcLines != -1)
         nCalcLines = -1;
 
     // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
@@ -798,6 +883,80 @@ void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
             writeData(_idx.row[i], _idx.col[j], _dData);
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function writes a whole
+/// array of values to the selected table range.
+/// The table is automatically enlarged, if
+/// necessary.
+///
+/// \param _idx Indices&
+/// \param _values const ValueVector&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::writeData(Indices& _idx, const ValueVector& _values)
+{
+    int nDirection = LINES;
+
+    if (_values.size() == 1)
+    {
+        writeSingletonData(_idx, _values.front());
+        return;
+    }
+
+    _idx.row.setOpenEndIndex(_idx.row.front() + _values.size() - 1);
+    _idx.col.setOpenEndIndex(_idx.col.front() + _values.size() - 1);
+
+    if (_idx.row.size() > 1)
+        nDirection = COLS;
+    else if (_idx.col.size() > 1)
+        nDirection = LINES;
+
+    for (size_t i = 0; i < _idx.row.size(); i++)
+    {
+        for (size_t j = 0; j < _idx.col.size(); j++)
+        {
+            if (nDirection == COLS)
+            {
+                if (_values.size() > i)
+                    writeData(_idx.row[i], _idx.col[j], _values[i]);
+            }
+            else
+            {
+                if (_values.size() > j)
+                    writeData(_idx.row[i], _idx.col[j], _values[j]);
+            }
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function writes multiple
+/// copies of a single string to a range in the
+/// table. The table is automatically enlarged,
+/// if necessary.
+///
+/// \param _idx Indices&
+/// \param _sValue const std::string&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::writeSingletonData(Indices& _idx, const std::string& _sValue)
+{
+    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), (int)getLines(false)) - 1);
+    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), (int)getCols(false)) - 1);
+
+    for (size_t i = 0; i < _idx.row.size(); i++)
+    {
+        for (size_t j = 0; j < _idx.col.size(); j++)
+        {
+            writeData(_idx.row[i], _idx.col[j], _sValue);
         }
     }
 }

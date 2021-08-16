@@ -281,7 +281,7 @@ namespace NumeRe
                 sData.replace(nStartPosition-nStartPos+sOccurence.length(), nEndPosition-nStartPosition-sOccurence.length(), parseStringsInIndices(getFunctionArgumentList(sOccurence, sLine, nStartPosition, nEndPosition)));
 
                 // Get the data and parse string expressions
-                replaceDataEntities(sData, sOccurence, _data, _parser, _option, true);
+                replaceDataEntities(sData, sOccurence, _data, _parser, _option, REPLACE_NAN | INSERT_STRINGS);
             }
 
             // Strip the spaces, which have been added during the
@@ -681,56 +681,56 @@ namespace NumeRe
             mu::value_type* v = nullptr;
             int nResults = 0;
             int nthComponent = 0;
-            string sExpr;
-            size_t nOffset = 0;
-            const size_t nMAXSETLENGTH = 5000;
-            size_t nVectorOffset = strRes.vNumericalValues.size();
 
-            while (nCurrentComponent + nOffset < strRes.vResult.size())
+            for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
             {
-                sExpr.clear();
-
-                for (size_t i = nCurrentComponent + nOffset; i < min(nCurrentComponent+nOffset+nMAXSETLENGTH, strRes.vResult.size()); i++)
-                {
-                    sExpr += strRes.vResult[i] + ",";
-                }
-
                 // Set expression and evaluate it (not efficient but currently necessary)
-                _parser.SetExpr(sExpr.substr(0, sExpr.length()-1));
-                v = _parser.Eval(nResults);
-                strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
-                nOffset += nMAXSETLENGTH;
-            }
-
-            // Special case: only one single value
-            if (_idx.row.size() == 1 && _idx.col.size() == 1)
-            {
-                _data.writeToTable(_idx.row.front(), _idx.col.front(), sTableName, strRes.vNumericalValues[nVectorOffset]);
-            }
-            else
-            {
-                // Write the single values
-                for (size_t j = nVectorOffset; j < strRes.vNumericalValues.size(); j++)
+                if (strRes.vResult[i].front() == '"')
                 {
-                    if (_idx.row.size() == 1 && _idx.col.size() > 1)
+                    if (_idx.row.size() == 1 && _idx.col.size() >= 1)
                     {
                         if (_idx.col[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, strRes.vNumericalValues[j]);
+                        _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, strRes.vResult[i]);
                     }
                     else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                     {
                         if (_idx.row[nthComponent] == VectorIndex::INVALID)
                             break;
 
-                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, strRes.vNumericalValues[j]);
+                        _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, strRes.vResult[i]);
                     }
 
                     nthComponent++;
                 }
-            }
+                else
+                {
+                    _parser.SetExpr(strRes.vResult[i]);
+                    v = _parser.Eval(nResults);
+                    strRes.vNumericalValues.insert(strRes.vNumericalValues.end(), v, v+nResults);
 
+                    for (int j = 0; j < nResults; j++)
+                    {
+                        if (_idx.row.size() == 1 && _idx.col.size() >= 1)
+                        {
+                            if (_idx.col[nthComponent] == VectorIndex::INVALID)
+                                break;
+
+                            _data.writeToTable(_idx.row.front(), _idx.col[nthComponent], sTableName, v[j]);
+                        }
+                        else if (_idx.row.size() > 1 && _idx.col.size() == 1)
+                        {
+                            if (_idx.row[nthComponent] == VectorIndex::INVALID)
+                                break;
+
+                            _data.writeToTable(_idx.row[nthComponent], _idx.col.front(), sTableName, v[j]);
+                        }
+
+                        nthComponent++;
+                    }
+                }
+            }
 
             nCurrentComponent = nStrings;
         }
