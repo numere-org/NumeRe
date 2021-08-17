@@ -71,7 +71,7 @@ struct TableColumn
     virtual void appendElements(size_t elem) = 0;
     virtual void removeElements(size_t pos, size_t elem) = 0;
 
-    virtual int compare(int i, int j) const = 0;
+    virtual int compare(int i, int j, bool flag) const = 0;
     virtual bool isValid(int elem) const = 0;
 
     virtual bool asBool(int elem) const = 0;

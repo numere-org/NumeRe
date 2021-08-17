@@ -74,7 +74,7 @@ class ValueColumn : public TableColumn
         virtual void appendElements(size_t elem);
         virtual void removeElements(size_t pos, size_t elem);
 
-        virtual int compare(int i, int j) const override;
+        virtual int compare(int i, int j, bool unused) const override;
         virtual bool isValid(int elem) const override;
         virtual bool asBool(int elem) const override;
 
@@ -158,7 +158,7 @@ class StringColumn : public TableColumn
         virtual void appendElements(size_t elem);
         virtual void removeElements(size_t pos, size_t elem);
 
-        virtual int compare(int i, int j) const override;
+        virtual int compare(int i, int j, bool caseinsensitive) const override;
         virtual bool isValid(int elem) const override;
         virtual bool asBool(int elem) const override;
 

@@ -34,7 +34,7 @@ namespace NumeRe
     class FileAdapter;
 }
 
-#warning TODO (numere#3#08/16/21): Determine, whether std::vector<std::string> is a good type
+#warning TODO (numere#5#08/16/21): Determine, whether std::vector<std::string> is a good type
 typedef std::vector<std::string> ValueVector;
 
 /////////////////////////////////////////////////
@@ -64,6 +64,7 @@ class Memory : public Sorter
 
 		bool bIsSaved;
 		bool bSaveMutex;
+		bool bSortCaseInsensitive;
 		time_t nLastSaved;
 
 		bool Allocate(size_t _nNCols, bool shrink = false);

@@ -1006,7 +1006,6 @@ long long int Memory::getLastSaved() const
 /// \return vector<int>
 ///
 /////////////////////////////////////////////////
-#warning TODO (numere#4#08/17/21): This does not really support applicable string sorts
 vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::string& sSortingExpression)
 {
     if (!memArray.size())
@@ -1014,6 +1013,7 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
 
     bool bError = false;
     bool bReturnIndex = false;
+    bSortCaseInsensitive = findParameter(sSortingExpression, "ignorecase");
     int nSign = 1;
 
     i1 = std::max(0, i1);
@@ -1208,7 +1208,7 @@ void Memory::reorderColumn(const VectorIndex& vIndex, int i1, int i2, int j1)
 int Memory::compare(int i, int j, int col)
 {
     if (col < (int)memArray.size() && memArray[col])
-        return memArray[col]->compare(i, j);
+        return memArray[col]->compare(i, j, bSortCaseInsensitive);
 
     return 0;
 }

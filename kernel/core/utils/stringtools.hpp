@@ -54,6 +54,9 @@ std::string truncString(const std::string& sText, size_t nMaxChars);
 std::string wcstombs(const std::wstring& wStr);
 void StripSpaces(std::string&);
 
+std::string toInternalString(std::string sStr);
+std::string toExternalString(std::string sStr);
+
 std::string toLowerCase(const std::string& sUpperCase);
 std::string toUpperCase(const std::string& sLowerCase);
 int StrToInt(const std::string&);

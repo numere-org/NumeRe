@@ -225,8 +225,6 @@ static string getMafFromAccessString(const string& sAccessString);
 static string getMafAccessString(const string& sLine, const string& sEntity);
 static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data);
 static string getLastToken(const string& sLine);
-static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option);
-static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim);
 
 
 size_t findAssignmentOperator(StringView sCmd)
@@ -515,7 +513,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 			if (options & INSERT_STRINGS)
                 sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
             else
-#warning TODO (numere#3#08/17/21): Evaluate the advantages of using the return type here
+#warning TODO (numere#5#08/17/21): Evaluate the advantages of using the return type here
                 vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
 		}
 		else if (isCluster)
@@ -1187,55 +1185,6 @@ Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, i
 
 
 /////////////////////////////////////////////////
-/// \brief This function evaluates the column
-/// indices and returns the final dimension of
-/// the columns.
-///
-/// \param _data Datafile&
-/// \param _parser Parser&
-/// \param sDatatable const string&
-/// \param sDataExpression const string&
-/// \param _idx Indices&
-/// \param nColumns int
-/// \param isCluster bool
-/// \param _option const Settings&
-/// \return int
-///
-/////////////////////////////////////////////////
-static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option)
-{
-    int nDim = 0;
-
-    // Ensure consistent indices
-    _idx.row.setRange(0, _data.getLines(sDatatable, false)-1);
-    _idx.col.setRange(0, _data.getCols(sDatatable)-1);
-
-    // Validate the calculated indices
-	if (_idx.row.front() > _data.getLines(sDatatable, false)
-            || _idx.col.front() > _data.getCols(sDatatable) - 1)
-	{
-		throw SyntaxError(SyntaxError::INVALID_INDEX, sDataExpression, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
-	}
-
-	/* --> Bestimmen wir die "Dimension" des zu fittenden Datensatzes. Dabei ist es auch
-	 *     von Bedeutung, ob Fehlerwerte verwendet werden sollen <--
-	 */
-	nDim = 0;
-
-	if ((nColumns == 1 && _idx.col.size() < 2) || isCluster)
-		throw SyntaxError(SyntaxError::TOO_FEW_COLS, sDataExpression, SyntaxError::invalid_position);
-	else if (nColumns == 1)
-		nDim = _idx.col.size();
-	else
-	{
-		nDim = nColumns;
-	}
-
-	return nDim;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This function will return the access
 /// parser instance for the current expression
 /// validate, whether the expression is actual
@@ -1303,53 +1252,6 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
     }
 
     return _idx;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function will copy the contents
-/// to the target table and extract the table.
-///
-/// \param _data Datafile&
-/// \param sDatatable const string&
-/// \param _idx const Indices&
-/// \param nDim int
-/// \return NumeRe::Table
-///
-/////////////////////////////////////////////////
-#warning TODO (numere#3#08/16/21): Can be done by using the extract functionality directly?
-static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim)
-{
-    MemoryManager _cache;
-    // Copy the contents of the data into the local cache object
-    // The indices are vectors
-    if (nDim == 2)
-    {
-        for (size_t i = 0; i < _idx.row.size(); i++)
-        {
-            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
-        }
-    }
-    else if (nDim == 3)
-    {
-        for (size_t i = 0; i < _idx.row.size(); i++)
-        {
-            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
-            _cache.writeToTable(i, 2, "table", _data.getElement(_idx.row[i], _idx.col[2], sDatatable));
-        }
-    }
-
-	// Sort the elements
-	_cache.sortElements("sort -table c=1[2:]");
-
-	// Rename the table
-	if (sDatatable != "table")
-        _cache.renameTable("table", sDatatable, true);
-
-	// Return the extracted table object
-	return _cache.extractTable(sDatatable);
 }
 
 

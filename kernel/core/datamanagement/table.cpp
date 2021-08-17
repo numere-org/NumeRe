@@ -291,7 +291,7 @@ namespace NumeRe
                 vTableData[j]->m_sHeadLine = TableColumn::getDefaultColumnHead(j);
             }
 
-            vTableData[j]->setValue(i, (_sValue.front() == '"' && _sValue.back() == '"') ? _sValue.substr(1, _sValue.length()-2) : _sValue);
+            vTableData[j]->setValue(i, _sValue);
             return;
         }
 

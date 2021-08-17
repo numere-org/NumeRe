@@ -484,6 +484,40 @@ std::complex<double> StrToCmplx(const std::string& sString)
 
 
 /////////////////////////////////////////////////
+/// \brief Converts a string literal to the
+/// internal representation in tables and
+/// clusters.
+///
+/// \param sStr std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toInternalString(std::string sStr)
+{
+    if (sStr.front() == '"' && sStr.back() == '"')
+        sStr = sStr.substr(1, sStr.length()-2);
+
+    replaceAll(sStr, "\\\"", "\"");
+    return sStr;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts an internal string to the
+/// external representation in the terminal.
+///
+/// \param sStr std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string toExternalString(std::string sStr)
+{
+    replaceAll(sStr, "\"", "\\\"");
+    return "\"" + sStr + "\"";
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Converts uppercase to lowercase
 /// letters.
 ///

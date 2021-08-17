@@ -336,10 +336,11 @@ void ValueColumn::removeElements(size_t pos, size_t elem)
 ///
 /// \param i int
 /// \param j int
+/// \param unused bool
 /// \return int
 ///
 /////////////////////////////////////////////////
-int ValueColumn::compare(int i, int j) const
+int ValueColumn::compare(int i, int j, bool unused) const
 {
     if (m_data.size() <= std::max(i, j))
         return 0;
@@ -416,9 +417,7 @@ void StringColumn::shrink()
 /////////////////////////////////////////////////
 std::string StringColumn::getValueAsString(int elem) const
 {
-    std::string sInternalString = getValueAsInternalString(elem);
-    replaceAll(sInternalString, "\"", "\\\"");
-    return "\"" + sInternalString + "\"";
+    return toExternalString(getValueAsInternalString(elem));
 }
 
 
@@ -469,11 +468,7 @@ void StringColumn::setValue(int elem, const std::string& sValue)
     if (elem >= m_data.size())
         m_data.resize(elem+1);
 
-#warning TODO (numere#1#08/16/21): Find a common way of representing a string in memory
-    if (sValue.front() == '"' && sValue.back() == '"')
-        m_data[elem] = sValue.substr(1, sValue.length()-2);
-    else
-        m_data[elem] = sValue;
+    m_data[elem] = toInternalString(sValue);
 }
 
 
@@ -516,11 +511,7 @@ void StringColumn::setValue(const VectorIndex& idx, const std::vector<std::strin
         if (idx[i] >= m_data.size())
             m_data.resize(idx[i]+1);
 
-#warning TODO (numere#1#08/16/21): Find a common way of representing a string in memory
-        if (vValue[i].front() == '"' && vValue[i].back() == '"')
-            m_data[idx[i]] = vValue[i].substr(1, vValue[i].length()-2);
-        else
-            m_data[idx[i]] = vValue[i];
+        m_data[idx[i]] = toInternalString(vValue[i]);
     }
 }
 
@@ -718,18 +709,29 @@ void StringColumn::removeElements(size_t pos, size_t elem)
 ///
 /// \param i int
 /// \param j int
+/// \param caseinsensitive bool
 /// \return int
 ///
 /////////////////////////////////////////////////
-int StringColumn::compare(int i, int j) const
+int StringColumn::compare(int i, int j, bool caseinsensitive) const
 {
     if (m_data.size() <= std::max(i, j))
         return 0;
 
-    if (m_data[i] == m_data[j])
-        return 0;
-    else if (m_data[i] < m_data[j])
-        return -1;
+    if (caseinsensitive)
+    {
+        if (toLowerCase(m_data[i]) == toLowerCase(m_data[j]))
+            return 0;
+        else if (toLowerCase(m_data[i]) < toLowerCase(m_data[j]))
+            return -1;
+    }
+    else
+    {
+        if (m_data[i] == m_data[j])
+            return 0;
+        else if (m_data[i] < m_data[j])
+            return -1;
+    }
 
     return 1;
 }

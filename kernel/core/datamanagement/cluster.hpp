@@ -91,16 +91,13 @@ namespace NumeRe
             virtual string getString() override
             {
                 if (isnan(std::abs(dData)))
-                    return "\"nan\"";
+                    return toExternalString("nan");
 
-                return "\"" + toString(dData, 7) + "\"";
+                return toExternalString(toString(dData, 7));
             }
             virtual void setString(const string& strval) override
             {
-                if (strval.front() == '"' && strval.back() == '"')
-                    dData = atof(strval.substr(1, strval.length()-2).c_str());
-                else
-                    dData = atof(strval.c_str());
+                dData = StrToCmplx(toInternalString(strval));
             }
     };
 
@@ -118,7 +115,7 @@ namespace NumeRe
 
             virtual mu::value_type getDouble() override
             {
-                return atof(sData.c_str());
+                return StrToCmplx(sData.c_str());
             }
             virtual void setDouble(mu::value_type val) override
             {
@@ -126,14 +123,11 @@ namespace NumeRe
             }
             virtual string getString() override
             {
-                return "\"" + sData + "\"";
+                return toExternalString(sData);
             }
             virtual void setString(const string& strval) override
             {
-                if (strval.front() == '"' && strval.back() == '"')
-                    sData = strval.substr(1, strval.length()-2);
-                else
-                    sData = strval;
+                sData = toInternalString(strval);
             }
     };
 
