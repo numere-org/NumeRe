@@ -2525,7 +2525,6 @@ static std::vector<size_t> getShiftedAxis(size_t nElements, bool inverseTrafo)
 /////////////////////////////////////////////////
 bool fastFourierTransform(CommandLineParser& cmdParser)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -2544,49 +2543,58 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     // search for explicit "target" options and select the target cache
     sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
 
-    // get the data from the data object
-    NumeRe::Table _table = parser_extractData(cmdParser.getExpr(), _parser, _data, _option);
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
 
-    dNyquistFrequency = _table.getLines() / (_table.getValue(_table.getLines() - 1, 0).real() - _table.getValue(0, 0).real()) / 2.0;
-    dTimeInterval = (_table.getLines() - 1) / (_table.getValue(_table.getLines() - 1, 0).real());
+    // get the data from the data object
+    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 3, true));
+
+    if (!_mem)
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
+
+    int lines = _mem->getLines();
+    int cols = _mem->getCols();
+
+    dNyquistFrequency = lines / (_mem->readMem(lines - 1, 0).real() - _mem->readMem(0, 0).real()) / 2.0;
+    dTimeInterval = (lines - 1) / (_mem->readMem(lines - 1, 0).real());
 
     // Adapt the values for the shifted axis
     if (bShiftAxis)
     {
-        dFrequencyOffset = -dNyquistFrequency * (1 + (_table.getLines() % 2) * 1.0 / _table.getLines());
-        dTimeInterval = fabs((_table.getLines() + (_table.getLines() % 2)) / (_table.getValue(0, 0).real())) * 0.5;
+        dFrequencyOffset = -dNyquistFrequency * (1 + (lines % 2) * 1.0 / lines);
+        dTimeInterval = fabs((lines + (lines % 2)) / (_mem->readMem(0, 0).real())) * 0.5;
     }
 
     if (_option.systemPrints())
     {
         if (!bInverseTrafo)
-            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(_table.getCols()), toString(dNyquistFrequency, 6)) + " ", _option, 0));
+            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(cols), toString(dNyquistFrequency, 6)) + " ", _option, 0));
         else
-            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(_table.getCols()), toString(dTimeInterval, 6)) + " ", _option, 0));
+            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(cols), toString(dTimeInterval, 6)) + " ", _option, 0));
     }
 
-    _fftData.Create(_table.getLines());
+    _fftData.Create(lines);
 
     std::vector<size_t> vAxis;
 
     // Prepare the axis (shifted if necessary)
     if (bShiftAxis && bInverseTrafo)
-        vAxis = getShiftedAxis(_table.getLines(), bInverseTrafo);
+        vAxis = getShiftedAxis(lines, bInverseTrafo);
     else
     {
-        for (size_t i = 0; i < _table.getLines(); i++)
+        for (size_t i = 0; i < lines; i++)
             vAxis.push_back(i);
     }
 
     // Copy the data
-    for (size_t i = 0; i < _table.getLines(); i++)
+    for (size_t i = 0; i < lines; i++)
     {
-        if (_table.getCols() == 2)
-            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1).real(), 0.0);
-        else if (_table.getCols() == 3 && bComplex)
-            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1).real(), _table.getValue(vAxis[i], 2).real());
-        else if (_table.getCols() == 3 && !bComplex)
-            _fftData.a[i] = dual(_table.getValue(vAxis[i], 1).real() * cos(_table.getValue(vAxis[i], 2).real()), _table.getValue(vAxis[i], 1).real() * sin(_table.getValue(vAxis[i], 2).real()));
+        if (cols == 2)
+            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real(), 0.0);
+        else if (cols == 3 && bComplex)
+            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real(), _mem->readMem(vAxis[i], 2).real());
+        else if (cols == 3 && !bComplex)
+            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real() * cos(_mem->readMem(vAxis[i], 2).real()),
+                                 _mem->readMem(vAxis[i], 1).real() * sin(_mem->readMem(vAxis[i], 2).real()));
     }
 
     // Calculate the actual transformation and apply some
@@ -2595,7 +2603,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     {
         _fftData.FFT("x");
 
-        double samples = _table.getLines()/2.0;
+        double samples = lines/2.0;
 
         _fftData.a[0] /= dual(2*samples, 0.0);
 
@@ -2618,7 +2626,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         _idx.col.setRange(0, _idx.col.front() + 3);
 
     if (bShiftAxis && !bInverseTrafo)
-        vAxis = getShiftedAxis(_table.getLines(), bInverseTrafo);
+        vAxis = getShiftedAxis(lines, bInverseTrafo);
 
     // Store the results of the transformation in the target
     // table
@@ -2714,7 +2722,6 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
 /////////////////////////////////////////////////
 bool fastWaveletTransform(CommandLineParser& cmdParser)
 {
-    Parser& _parser = NumeReKernel::getInstance()->getParser();
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     const Settings& _option = NumeReKernel::getInstance()->getSettings();
 
@@ -2742,8 +2749,13 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     // search for explicit "target" options and select the target cache
     sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
 
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+
     // get the data from the data object
-    NumeRe::Table _table = parser_extractData(cmdParser.getExpr(), _parser, _data, _option);
+    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
+
+    if (!_mem)
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
     if (_option.systemPrints())
     {
@@ -2765,12 +2777,12 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
             NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_WAVELET_INVERSE_TRANSFORMING", sExplType) + " ", _option, 0));
     }
 
-    for (size_t i = 0; i < _table.getLines(); i++)
+    for (size_t i = 0; i < _mem->getLines(); i++)
     {
-        vWaveletData.push_back(_table.getValue(i, 1).real());
+        vWaveletData.push_back(_mem->readMem(i, 1).real());
 
         if (bTargetGrid)
-            vAxisData.push_back(_table.getValue(i, 0).real());
+            vAxisData.push_back(_mem->readMem(i, 0).real());
     }
 
     // calculate the wavelet:
@@ -3551,24 +3563,24 @@ bool regularizeDataSet(CommandLineParser& cmdParser)
 
     // Indices lesen
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
-    Indices& _idx = accessParser.getIndices();
 
-    MemoryManager _cache;
-    getData(accessParser.getDataObject(), _idx, _data, _cache);
+    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
 
-    _cache.sortElements("sort -table cols=1[2]");
+    if (!_mem)
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
-    sColHeaders[0] = _cache.getHeadLineElement(0, "table") + "\\n(regularized)";
-    sColHeaders[1] = _cache.getHeadLineElement(1, "table") + "\\n(regularized)";
+    sColHeaders[0] = _mem->getHeadLineElement(0) + "\\n(regularized)";
+    sColHeaders[1] = _mem->getHeadLineElement(1) + "\\n(regularized)";
 
-    long long int nLines = _cache.getLines("table", false);
+    long long int nLines = _mem->getLines();
 
-    dXmin = _cache.min("table", 0, nLines - 1, 0).real();
-    dXmax = _cache.max("table", 0, nLines - 1, 0).real();
+    dXmin = _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real();
+    dXmax = _mem->max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real();
 
     // Create splines
     tk::spline _spline;
-    _spline.set_points(mu::real(_cache.getElement(VectorIndex(0, nLines-1), VectorIndex(0), "table")), mu::real(_cache.getElement(VectorIndex(0, nLines-1), VectorIndex(1), "table")), false);
+    _spline.set_points(mu::real(_mem->readMem(VectorIndex(0, nLines-1), VectorIndex(0))),
+                       mu::real(_mem->readMem(VectorIndex(0, nLines-1), VectorIndex(1))), false);
 
     if (!nSamples)
         nSamples = nLines;
@@ -3609,21 +3621,21 @@ bool analyzePulse(CommandLineParser& cmdParser)
 
     // Indices lesen
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
-    Indices& _idx = accessParser.getIndices();
-    std::string sDataset = accessParser.getDataObject();
 
-    MemoryManager _cache;
-    getData(sDataset, _idx, NumeReKernel::getInstance()->getMemoryManager(), _cache);
+    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
 
-    long long int nLines = _cache.getLines("table", false);
+    if (!_mem)
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
-    dXmin = _cache.min("table", 0, nLines - 1, 0).real();
-    dXmax = _cache.max("table", 0, nLines - 1, 0).real();
+    long long int nLines = _mem->getLines();
+
+    dXmin = _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real();
+    dXmax = _mem->max(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0)).real();
 
     _v.Create(nLines);
 
     for (long long int i = 0; i < nLines; i++)
-        _v.a[i] = _cache.getElement(i, 1, "table").real();
+        _v.a[i] = _mem->readMem(i, 1).real();
 
     dSampleSize = (dXmax - dXmin) / ((double)_v.GetNx() - 1.0);
     mglData _pulse(_v.Pulse('x'));
@@ -3863,11 +3875,13 @@ void boneDetection(CommandLineParser& cmdParser)
     _idx.col = _idx.col.subidx(2);
 
     // Get the data
-    MemoryManager _cache;
-    getData(accessParser.getDataObject(), _idx, _data, _cache, 100, false);
+    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 100));
 
-    long long int nLines = _cache.getLines("table", false);
-    long long int nCols = _cache.getCols("table", false);
+    if (!_mem)
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
+
+    long long int nLines = _mem->getLines();
+    long long int nCols = _mem->getCols();
 
     // Restrict the attraction to not exceed the axis range
     dAttrX = min(dAttrX, (double)nLines);
@@ -3875,7 +3889,7 @@ void boneDetection(CommandLineParser& cmdParser)
 
     // Use minimal data value if level is NaN
     if (isnan(dLevel))
-        dLevel = _cache.min("table", "all").front().real();
+        dLevel = _mem->min(VectorIndex(0, VectorIndex::OPEN_END), VectorIndex(0, VectorIndex::OPEN_END)).real();
 
     _mData.Create(nLines, nCols);
 
@@ -3884,7 +3898,7 @@ void boneDetection(CommandLineParser& cmdParser)
     {
         for (long long int j = 0; j < nCols; j++)
         {
-            _mData.a[i+j*nLines] = _cache.getElement(i, j, "table").real();
+            _mData.a[i+j*nLines] = _mem->readMem(i, j).real();
         }
     }
 
@@ -3938,23 +3952,25 @@ bool calculateSplines(CommandLineParser& cmdParser)
 {
     FunctionDefinitionManager& _functions = NumeReKernel::getInstance()->getDefinitions();
 
-    MemoryManager _cache;
     tk::spline _spline;
     vector<double> xVect, yVect;
 
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
 
-    getData(accessParser.getDataObject(), accessParser.getIndices(), NumeReKernel::getInstance()->getMemoryManager(), _cache);
+    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
 
-    long long int nLines = _cache.getLines("table", true) - _cache.getAppendedZeroes(0, "table");
+    if (!_mem)
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
+
+    long long int nLines = _mem->getLines() - _mem->getAppendedZeroes(0);
 
     if (nLines < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), accessParser.getDataObject());
 
     for (long long int i = 0; i < nLines; i++)
     {
-        xVect.push_back(_cache.getElement(i, 0, "table").real());
-        yVect.push_back(_cache.getElement(i, 1, "table").real());
+        xVect.push_back(_mem->readMem(i, 0).real());
+        yVect.push_back(_mem->readMem(i, 1).real());
     }
 
     // Set the points for the spline to calculate

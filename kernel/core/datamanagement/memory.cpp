@@ -1006,6 +1006,7 @@ long long int Memory::getLastSaved() const
 /// \return vector<int>
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#4#08/17/21): This does not really support applicable string sorts
 vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::string& sSortingExpression)
 {
     if (!memArray.size())

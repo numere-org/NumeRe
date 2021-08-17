@@ -1147,101 +1147,42 @@ static string getLastToken(const string& sLine)
 
 
 /////////////////////////////////////////////////
-/// \brief This function is for extracting the
-/// desired number of columns out of the data
-/// object and storing it to a continous block of
-/// memory used for example for regularize,
-/// spline, pulse, stfa.
+/// \brief This function extracts a portion of a
+/// table and returns it to the calling function.
+/// The returned pointer may as well be a
+/// nullptr, if the selectd table does not exist.
 ///
-/// \param sTableName const string&
-/// \param _idx Indices&
-/// \param _data const Datafile&
-/// \param _cache Datafile&
+/// \param sCmd const std::string&
+/// \param _accessParser DataAccessParser&
 /// \param nDesiredCols int
 /// \param bSort bool
-/// \return bool
+/// \return Memory*
 ///
 /////////////////////////////////////////////////
-#warning TODO (numere#3#08/16/21): Might be more reasonable to return a Memory* here
-bool getData(const string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols, bool bSort)
+Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols, bool bSort)
 {
-	// write the data
-	// the first case uses vector indices
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _data.getLines(sTableName, false)-1);
+    // Validize the obtained index sets
+    if (!isValidIndexSet(_accessParser.getIndices()))
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
 
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + nDesiredCols-1);
+    // Select the number of relevant columns
+    if (nDesiredCols > 0 && _accessParser.getIndices().col.isOpenEnd())
+        _accessParser.getIndices().col.setRange(0, _accessParser.getIndices().col.front() + nDesiredCols-1);
 
-    // If the command requires two columns and the column indices contain two
-    // nodes, handle them here. Otherwise use a vectorial access in the lower
-    // section of this conditional statement
-    if (nDesiredCols == 2 && _idx.col.numberOfNodes() == 2 && _idx.col.isExpanded()) // Do not expand in this case!
-    {
-        for (long long int i = 0; i < _idx.row.size(); i++)
-        {
-            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
-            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col.last(), sTableName));
+    // Evaluate the number of rows, if necessary
+    _accessParser.evalIndices();
 
-            if (!i)
-            {
-                _cache.setHeadLineElement(0, "table", _data.getHeadLineElement(_idx.col.front(), sTableName));
-                _cache.setHeadLineElement(1, "table", _data.getHeadLineElement(_idx.col.last(), sTableName));
-            }
-        }
-    }
-    else
-    {
-        for (long long int i = 0; i < _idx.row.size(); i++)
-        {
-            for (long long int j = 0; j < _idx.col.size(); j++)
-            {
-                _cache.writeToTable(i, j, "table", _data.getElement(_idx.row[i], _idx.col[j], sTableName));
+    Memory* _mem = NumeReKernel::getInstance()->getMemoryManager().getTable(_accessParser.getDataObject());
 
-                if (!i)
-                    _cache.setHeadLineElement(j, "table", _data.getHeadLineElement(_idx.col[j], sTableName));
-            }
-        }
-    }
+    if (!_mem)
+        return nullptr;
 
-	// sort, if sorting is activated
-	if (bSort)
-		_cache.sortElements("sort -table c=1[2:]");
+    _mem = _mem->extractRange(_accessParser.getIndices().row, _accessParser.getIndices().col);
 
-	return true;
-}
+    if (bSort)
+        _mem->sortElements(0, _mem->getLines(), 0, _mem->getCols(), "-c=1[2:]");
 
-
-/////////////////////////////////////////////////
-/// \brief This function will extract the needed
-/// data into a table object.
-///
-/// \param sDataExpression const string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
-/// \return NumeRe::Table
-///
-/////////////////////////////////////////////////
-NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, MemoryManager& _data, const Settings& _option)
-{
-	string sDatatable = "data";                             // Int fuer die Position des aktuellen find-Treffers eines Daten-Objekts
-	int nColumns = 0;
-	bool openEnd = false;
-	bool isCluster = false;
-
-	// Get the correct index set
-	Indices _idx = getIndicesForPlotAndFit(sDataExpression, sDatatable, nColumns, openEnd, isCluster);
-
-	// Evaluate the indices and determine the dimension
-    int nDim = evalColumnIndicesAndGetDimension(_data, _parser, sDatatable, sDataExpression, _idx, nColumns, isCluster, _option);
-
-	// Validate, if the line indices have a reasonable large difference
-	if (_idx.row.size() <= 1)
-		throw SyntaxError(SyntaxError::TOO_FEW_LINES, sDataExpression, SyntaxError::invalid_position);
-
-    // copy the data and extract the table
-    return copyAndExtract(_data, sDatatable, _idx, nDim);
+    return _mem;
 }
 
 
