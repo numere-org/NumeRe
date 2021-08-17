@@ -545,6 +545,8 @@
 		<Unit filename="kernel/core/ui/winlayout.hpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.cpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.hpp" />
+		<Unit filename="kernel/core/utils/stringtools.cpp" />
+		<Unit filename="kernel/core/utils/stringtools.hpp" />
 		<Unit filename="kernel/core/utils/timer.hpp">
 			<Option target="Debug" />
 			<Option target="Profiling" />

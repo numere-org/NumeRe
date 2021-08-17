@@ -117,11 +117,10 @@
 #include "icons/breakpoint_octagon_disable.xpm"
 
 const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
-std::string replacePathSeparator(const std::string&);
-string toString(const vector<int>& vVector);
-vector<int> toVector(string sString);
-string removeQuotationMarks(const string& sString);
+
+// Forward declaration
 string removeMaskedStrings(const string& sString);
+std::string removeQuotationMarks(const std::string&);
 
 string prepareStringsForDialog(const string& sString)
 {

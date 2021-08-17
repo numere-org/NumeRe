@@ -41,12 +41,6 @@ BEGIN_EVENT_TABLE(TableViewer, wxGrid)
 END_EVENT_TABLE()
 
 
-namespace mu
-{
-    bool isnan(mu::value_type);
-}
-
-
 /////////////////////////////////////////////////
 /// \brief Constructor.
 ///

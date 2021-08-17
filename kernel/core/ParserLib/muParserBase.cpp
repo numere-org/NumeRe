@@ -26,6 +26,7 @@
 #include "muParserBase.h"
 #include "muParserTemplateMagic.h"
 #include "../../kernel.hpp"
+#include "../utils/stringtools.hpp"
 #include "../structures.hpp"
 
 //--- Standard includes ------------------------------------------------------------------------
@@ -42,12 +43,6 @@
 #endif
 
 using namespace std;
-
-// Helper prototypes e.g. for the MAF implementations in this class
-std::string toString(int);
-std::string toString(double, int);
-std::string toString(const std::complex<double>&, int);
-std::string toHexString(int nNumber);
 
 unsigned int getMatchingParenthesis(const StringView&);
 mu::value_type parser_Num(const mu::value_type*, int);
@@ -94,13 +89,13 @@ namespace mu
 	}
 
 
-	bool isinf(value_type v)
+	bool isinf(const value_type& v)
 	{
 	    return std::isinf(std::abs(v));
 	}
 
 
-	bool isnan(value_type v)
+	bool isnan(const value_type& v)
 	{
 	    return std::isnan(std::abs(v));
 	}

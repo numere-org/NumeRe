@@ -22,12 +22,6 @@
 
 extern Language _lang;
 
-namespace mu
-{
-    // Forward declaration
-    bool isnan(mu::value_type);
-}
-
 
 /////////////////////////////////////////////////
 /// \brief Return the table column's contents as

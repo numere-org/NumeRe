@@ -406,6 +406,14 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return ValueVector();
 		}
 
+		TableColumn::ColumnType getType(const VectorIndex& _vCol, const std::string& _sTable) const
+		{
+		    if (exists(_sTable))
+                return vMemory[findTable(_sTable)]->getType(_vCol);
+
+            return TableColumn::TYPE_NONE;
+		}
+
 		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
 		{
 			vMemory[findTable(_sTable)]->copyElementsInto(vTarget, _vLine, _vCol);

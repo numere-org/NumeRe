@@ -17,8 +17,7 @@
 ******************************************************************************/
 
 #include "gridtable.hpp"
-
-std::string toString(int nNumber);
+#include "../../kernel/core/utils/stringtools.hpp"
 
 // Default constructor
 GridNumeReTable::GridNumeReTable()

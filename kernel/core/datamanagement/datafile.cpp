@@ -20,25 +20,19 @@
 #include "datafile.hpp"
 #include "../../kernel.hpp"
 #include "../ui/error.hpp"
+#include "../utils/stringtools.hpp"
 
 #include <boost/tokenizer.hpp>
 
 bool fileExists(const string&);
-string wcstombs(const wstring&);
 using namespace std;
 using namespace boost;
 
 size_t qSortDouble(double* dArray, size_t nlength);
-string toString(int);
-string toLowerCase(const string&);
-
 
 int findParameter(const string& sCmd, const string& sParam, const char cFollowing);
 string getArgAtPos(const string& sCmd, unsigned int nPos, int extraction);
-void StripSpaces(string& sToStrip);
 string getClipboardText();
-string utf8parser(const string& sString);
-int StrToInt(const string&);
 
 /*
  * Realisierung der Datafile-Klasse

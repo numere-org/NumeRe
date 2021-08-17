@@ -19,13 +19,11 @@
 
 
 #include "language.hpp"
+#include "../utils/stringtools.hpp"
 
 using namespace std;
 
-void StripSpaces(string&);
-string toString(int);
 bool fileExists(const string&);
-string toString(unsigned int nInt);
 
 /////////////////////////////////////////////////
 /// \brief Contructor of the language class.

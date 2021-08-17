@@ -98,8 +98,8 @@ class Memory : public Sorter
 		mu::value_type readMem(size_t _nLine, size_t _nCol) const;
 		mu::value_type readMemInterpolated(double _dLine, double _dCol) const;
 		std::vector<mu::value_type> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		std::vector<double> readRealMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		ValueVector readMixedMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		TableColumn::ColumnType getType(const VectorIndex& _vCol) const;
 		Memory* extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		std::string getHeadLineElement(size_t _i) const;

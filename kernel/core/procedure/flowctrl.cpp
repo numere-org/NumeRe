@@ -20,6 +20,7 @@
 // Implementation der FlowCtrl-Klasse
 #include "flowctrl.hpp"
 #include "../../kernel.hpp"
+#include "../utils/stringtools.hpp"
 
 // Definition of special return values
 #define FLOWCTRL_ERROR -1
@@ -35,10 +36,6 @@
 #define ELSE_START 1
 #define PROCEDURE_INTERFACE 2
 extern value_type vAns;
-
-// Prototype of the toString function,
-// avoiding inclusion of "tools"
-string toString(double, int);
 
 
 /////////////////////////////////////////////////

@@ -18,6 +18,7 @@
 
 #include "variableviewer.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/utils/stringtools.hpp"
 #include "../../common/datastructures.h"
 #include "../../common/Options.h"
 #include "../NumeReWindow.h"
@@ -27,8 +28,6 @@
 #define DIMCOLUMN 1
 #define CLASSCOLUMN 2
 #define VALUECOLUMN 3
-
-std::string toString(size_t nNum);
 
 extern Language _guilang;
 using namespace wxcode;

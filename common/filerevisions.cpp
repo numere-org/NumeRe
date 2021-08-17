@@ -28,7 +28,7 @@
 
 #define COMPRESSIONLEVEL 6
 
-std::string toString(size_t);
+#include "../kernel/core/utils/stringtools.hpp"
 
 /////////////////////////////////////////////////
 /// \brief Constructor. Will try to create the missing folders on-the-fly.

@@ -21,13 +21,6 @@
 #include "../ui/error.hpp"
 #include "../../kernel.hpp"
 
-namespace mu
-{
-    // Forward declaration
-    bool isnan(mu::value_type);
-}
-
-
 
 /////////////////////////////////////////////////
 /// \brief Shrink the column by removing all

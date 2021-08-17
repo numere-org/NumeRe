@@ -19,6 +19,7 @@
 #include "customwindow.hpp"
 #include "../NumeReWindow.h" // Already includes NumeRe::Window
 #include "../../kernel/core/utils/tinyxml2.h"
+#include "../../kernel/core/utils/stringtools.hpp"
 #include "grouppanel.hpp"
 #include <wx/tokenzr.h>
 #include <wx/dataview.h>
@@ -26,8 +27,6 @@
 #include "../wx.h"
 
 #include <string>
-
-std::string toString(size_t);
 
 /////////////////////////////////////////////////
 /// \brief This static function converts colors

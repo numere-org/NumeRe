@@ -515,7 +515,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 			if (options & INSERT_STRINGS)
                 sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
             else
-#warning TODO (numere#3#08/16/21): Is it possible to determine the return time here?
+#warning TODO (numere#3#08/17/21): Evaluate the advantages of using the return type here
                 vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
 		}
 		else if (isCluster)

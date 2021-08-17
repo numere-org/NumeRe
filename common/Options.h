@@ -9,11 +9,9 @@
 
 #include "datastructures.h"
 #include "../kernel/core/settings.hpp"
+#include "../kernel/core/utils/stringtools.hpp"
 
 using namespace std;
-
-int StrToInt(const string&);
-string toString(int);
 
 // copied from stc.h
 // PrintColourMode - force black text on white background for printing.

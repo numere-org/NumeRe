@@ -369,31 +369,6 @@ std::vector<mu::value_type> Memory::readMem(const VectorIndex& _vLine, const Vec
 }
 
 
-#warning TODO (numere#3#08/16/21): This has to be removed
-std::vector<double> Memory::readRealMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const
-{
-    std::vector<double> vReturn;
-
-    if ((_vLine.size() > 1 && _vCol.size() > 1) || !memArray.size())
-        vReturn.push_back(NAN);
-    else
-    {
-        for (size_t i = 0; i < _vLine.size(); i++)
-        {
-            for (size_t j = 0; j < _vCol.size(); j++)
-            {
-                if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
-                    vReturn.push_back(NAN);
-                else
-                    vReturn.push_back(memArray[_vCol[j]]->getValue(_vLine[i]).real());
-            }
-        }
-    }
-
-    return vReturn;
-}
-
-
 /////////////////////////////////////////////////
 /// \brief This member function returns the
 /// elements stored at the selected positions.
@@ -424,6 +399,30 @@ ValueVector Memory::readMixedMem(const VectorIndex& _vLine, const VectorIndex& _
     }
 
     return vReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the "common" type of the
+/// selected columns.
+///
+/// \param _vCol const VectorIndex&
+/// \return TableColumn::ColumnType
+///
+/////////////////////////////////////////////////
+TableColumn::ColumnType Memory::getType(const VectorIndex& _vCol) const
+{
+    TableColumn::ColumnType type = TableColumn::TYPE_NONE;
+
+    for (const TblColPtr& col : memArray)
+    {
+        if (col && type == TableColumn::TYPE_NONE)
+            type = col->m_type;
+        else if (col && type != col->m_type)
+            return TableColumn::TYPE_MIXED;
+    }
+
+    return type;
 }
 
 
@@ -2552,7 +2551,6 @@ bool Memory::retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppD
 /// \param _vCol const VectorIndex&
 /// \return bool
 ///
-/// \todo Currently only real values possible
 /////////////////////////////////////////////////
 bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
 {
@@ -2565,7 +2563,9 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
             if (mu::isnan(readMem(i, j)))
             {
                 Boundary _boundary = findValidBoundary(_vLine, _vCol, i, j);
-                NumeRe::RetouchRegion _region(_boundary.rows-1, _boundary.cols-1, med(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce())).real());
+                NumeRe::RetouchRegion _region(_boundary.rows-1,
+                                              _boundary.cols-1,
+                                              med(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(_boundary.cf(), _boundary.ce())));
 
                 long long int l,r,t,b;
 
@@ -2577,10 +2577,10 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
                 t = _boundary.rf() < _vLine.front() ? _boundary.re() : _boundary.rf();
                 b = _boundary.re() > _vLine.last() ? _boundary.rf() : _boundary.re();
 
-                _region.setBoundaries(readRealMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(l)),
-                                      readRealMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(r)),
-                                      readRealMem(VectorIndex(t), VectorIndex(_boundary.cf(), _boundary.ce())),
-                                      readRealMem(VectorIndex(b), VectorIndex(_boundary.cf(), _boundary.ce())));
+                _region.setBoundaries(readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(l)),
+                                      readMem(VectorIndex(_boundary.rf(), _boundary.re()), VectorIndex(r)),
+                                      readMem(VectorIndex(t), VectorIndex(_boundary.cf(), _boundary.ce())),
+                                      readMem(VectorIndex(b), VectorIndex(_boundary.cf(), _boundary.ce())));
 
                 for (long long int _n = _boundary.rf()+1; _n < _boundary.re(); _n++)
                 {
@@ -2589,8 +2589,8 @@ bool Memory::retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol)
                         writeData(_n, _m,
                                   _region.retouch(_n - _boundary.rf() - 1,
                                                   _m - _boundary.cf() - 1,
-                                                  readMem(_n, _m).real(),
-                                                  med(VectorIndex(_n-1, _n+1), VectorIndex(_m-1, _m+1)).real()));
+                                                  readMem(_n, _m),
+                                                  med(VectorIndex(_n-1, _n+1), VectorIndex(_m-1, _m+1))));
                     }
                 }
 
@@ -2697,17 +2697,15 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
 {
     auto sizes = _filter->getWindowSize();
 
-    double sum = 0.0;
+    mu::value_type sum = 0.0;
 
     // Apply the filter to the data
     for (size_t n = 0; n < sizes.first; n++)
     {
         if (!_filter->isConvolution())
-#warning TODO (numere#5#08/15/21): Enable complex values
-            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).real()));
+            writeData(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines], _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines])));
         else
-#warning TODO (numere#5#08/15/21): Enable complex values
-            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]).real());
+            sum += _filter->apply(n, 0, readMem(_vLine[i+n*(!smoothLines)], _vCol[j+n*smoothLines]));
     }
 
     // If the filter is a convolution, store the new value here
@@ -2733,7 +2731,7 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
 {
     auto sizes = _filter->getWindowSize();
 
-    double sum = 0.0;
+    mu::value_type sum = 0.0;
 
     // Apply the filter to the data
     for (size_t n = 0; n < sizes.first; n++)
@@ -2741,11 +2739,9 @@ void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vC
         for (size_t m = 0; m < sizes.second; m++)
         {
             if (!_filter->isConvolution())
-#warning TODO (numere#5#08/15/21): Enable complex values
-                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).real()));
+                writeData(_vLine[i+n], _vCol[j+m], _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m])));
             else
-#warning TODO (numere#5#08/15/21): Enable complex values
-                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]).real());
+                sum += _filter->apply(n, m, readMem(_vLine[i+n], _vCol[j+m]));
         }
     }
 

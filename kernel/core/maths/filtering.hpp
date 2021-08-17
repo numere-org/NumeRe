@@ -24,6 +24,7 @@
 #include <cmath>
 #include "../io/file.hpp"
 #include "../utils/tools.hpp"
+#include "../ParserLib/muParserDef.h"
 
 //void showMatrix(const vector<vector<double> >&);
 
@@ -87,8 +88,8 @@ namespace NumeRe
             /// \brief Filter base constructor. Will set the
             /// used window sizes.
             ///
-            /// \param row
-            /// \param col
+            /// \param row size_t
+            /// \param col size_t
             ///
             /////////////////////////////////////////////////
             Filter(size_t row, size_t col) : m_type(FilterSettings::FILTER_NONE), m_isConvolution(false)
@@ -122,11 +123,11 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val double
-            /// \return double
+            /// \param val const mu::value_type&
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            virtual double apply(size_t i, size_t j, double val) const = 0;
+            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const = 0;
 
             /////////////////////////////////////////////////
             /// \brief This method returns, whether the
@@ -231,9 +232,9 @@ namespace NumeRe
             /// \brief Filter constructor. Will automatically
             /// create the filter kernel.
             ///
-            /// \param row
-            /// \param col
-            /// \param force2D
+            /// \param row size_t
+            /// \param col size_t
+            /// \param force2D bool
             ///
             /////////////////////////////////////////////////
             WeightedLinearFilter(size_t row, size_t col, bool force2D = false) : Filter(row, col)
@@ -279,11 +280,11 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val double
-            /// \return virtual double
+            /// \param val const mu::value_type&
+            /// \return virtual mu::value_type
             ///
             /////////////////////////////////////////////////
-            virtual double apply(size_t i, size_t j, double val) const override
+            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
             {
                 if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
@@ -386,16 +387,16 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val double
-            /// \return virtual double
+            /// \param val const mu::value_type&
+            /// \return virtual mu::value_type
             ///
             /////////////////////////////////////////////////
-            virtual double apply(size_t i, size_t j, double val) const override
+            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
             {
                 if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
 
-                if (isnan(val))
+                if (mu::isnan(val))
                     return 0.0;
 
                 // Gaussian is symmetric, therefore the convolution does not
@@ -599,16 +600,16 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val double
-            /// \return virtual double
+            /// \param val const mu::value_type&
+            /// \return virtual mu::value_type
             ///
             /////////////////////////////////////////////////
-            virtual double apply(size_t i, size_t j, double val) const override
+            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
             {
                 if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
 
-                if (isnan(val))
+                if (mu::isnan(val))
                     return 0.0;
 
                 return m_filterKernel[i][j] * val;
@@ -655,13 +656,13 @@ namespace NumeRe
     class RetouchRegion : public Filter
     {
         private:
-            std::vector<double> m_left;
-            std::vector<double> m_right;
-            std::vector<double> m_top;
-            std::vector<double> m_bottom;
+            std::vector<mu::value_type> m_left;
+            std::vector<mu::value_type> m_right;
+            std::vector<mu::value_type> m_top;
+            std::vector<mu::value_type> m_bottom;
             bool is2D;
             std::vector<std::vector<double> > m_filterKernel;
-            double m_fallback;
+            mu::value_type m_fallback;
             bool m_invertedKernel;
 
             /////////////////////////////////////////////////
@@ -700,10 +701,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return double
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double left(size_t i, size_t j) const
+            mu::value_type left(size_t i, size_t j) const
             {
                 if (!is2D)
                     return validize(m_left.front());
@@ -717,10 +718,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return double
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double right(size_t i, size_t j) const
+            mu::value_type right(size_t i, size_t j) const
             {
                 if (!is2D)
                     return validize(m_right.front());
@@ -734,10 +735,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return double
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double top(size_t i, size_t j) const
+            mu::value_type top(size_t i, size_t j) const
             {
                 if (!is2D)
                     return 0.0;
@@ -751,10 +752,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return double
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double bottom(size_t i, size_t j) const
+            mu::value_type bottom(size_t i, size_t j) const
             {
                 if (!is2D)
                     return 0.0;
@@ -769,10 +770,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return double
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double topleft(size_t i, size_t j) const
+            mu::value_type topleft(size_t i, size_t j) const
             {
                 if (i >= j)
                     return validize(m_left[i-j]);
@@ -787,10 +788,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return double
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double topright(size_t i, size_t j) const
+            mu::value_type topright(size_t i, size_t j) const
             {
                 if (i+j <= m_windowSize.second-1)
                     return validize(m_top[i+j+2]); // size(m_top) + 2 == m_order
@@ -805,10 +806,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return double
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double bottomleft(size_t i, size_t j) const
+            mu::value_type bottomleft(size_t i, size_t j) const
             {
                 if (i+j <= m_windowSize.first-1)
                     return validize(m_left[i+j+2]); // size(m_left) + 2 == m_order
@@ -823,10 +824,10 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \return double
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double bottomright(size_t i, size_t j) const
+            mu::value_type bottomright(size_t i, size_t j) const
             {
                 if (i >= j)
                     return validize(m_bottom[m_windowSize.second-(i-j)+1]); // size(m_bottom) + 2 == m_order
@@ -840,13 +841,13 @@ namespace NumeRe
             /// is not, it will be replaced by the fallback
             /// value.
             ///
-            /// \param val double
-            /// \return double
+            /// \param val mu::value_type
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double validize(double val) const
+            mu::value_type validize(mu::value_type val) const
             {
-                if (isnan(val))
+                if (mu::isnan(val))
                     return m_fallback;
 
                 return val;
@@ -857,11 +858,12 @@ namespace NumeRe
             /// \brief Filter constructor. Will automatically
             /// create the filter kernel.
             ///
-            /// \param _row
-            /// \param _col
+            /// \param _row size_t
+            /// \param _col size_t
+            /// \param _dMedian const mu::value_type&
             ///
             /////////////////////////////////////////////////
-            RetouchRegion(size_t _row, size_t _col, double _dMedian) : Filter(_row, _col)
+            RetouchRegion(size_t _row, size_t _col, const mu::value_type& _dMedian) : Filter(_row, _col)
             {
                 m_type = FilterSettings::FILTER_WEIGHTED_LINEAR;
                 m_isConvolution = false;
@@ -906,11 +908,11 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val double
-            /// \return virtual double
+            /// \param val const mu::value_type&
+            /// \return virtual mu::value_type
             ///
             /////////////////////////////////////////////////
-            virtual double apply(size_t i, size_t j, double val) const override
+            virtual mu::value_type apply(size_t i, size_t j, const mu::value_type& val) const override
             {
                 if (i >= m_windowSize.first || j >= m_windowSize.second)
                     return NAN;
@@ -925,8 +927,8 @@ namespace NumeRe
 
                 // cross hair: summarize the linearily interpolated values along the rows and cols at the desired position
                 // Summarize implies that the value is not averaged yet
-                double dAverage = top(i,j) + (bottom(i,j) - top(i,j)) / (m_windowSize.first + 1.0) * (i+1.0)
-                                  + left(i,j) + (right(i,j) - left(i,j)) / (m_windowSize.second + 1.0) * (j+1.0);
+                mu::value_type dAverage = top(i,j) + (bottom(i,j) - top(i,j)) / (m_windowSize.first + 1.0) * (i+1.0)
+                                        + left(i,j) + (right(i,j) - left(i,j)) / (m_windowSize.second + 1.0) * (j+1.0);
 
                 // Additional weighting because are the nearest neighbours
                 dAverage /= 2.0;
@@ -943,7 +945,7 @@ namespace NumeRe
                 if (i + j <= m_windowSize.first + 1)
                     dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (i+j+2.0) * (j+1.0);
                 else
-                    dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (m_windowSize.first + m_windowSize.second - i - j) * (double)(m_windowSize.first-i);
+                    dAverage += bottomleft(i,j) + (topright(i,j) - bottomleft(i,j)) / (double)(m_windowSize.first + m_windowSize.second - i - j) * (double)(m_windowSize.first-i);
 
                 // Restore the desired average
                 dAverage /= 6.0;
@@ -958,10 +960,14 @@ namespace NumeRe
             /// \brief This method is used to update the
             /// internal filter boundaries.
             ///
+            /// \param left const std::vector<mu::value_type>&
+            /// \param right const std::vector<mu::value_type>&
+            /// \param top const std::vector<mu::value_type>&
+            /// \param bottom const std::vector<mu::value_type>&
             /// \return void
             ///
             /////////////////////////////////////////////////
-            void setBoundaries(const std::vector<double>& left, const std::vector<double>& right, const std::vector<double>& top = std::vector<double>(), const std::vector<double>& bottom = std::vector<double>())
+            void setBoundaries(const std::vector<mu::value_type>& left, const std::vector<mu::value_type>& right, const std::vector<mu::value_type>& top = std::vector<mu::value_type>(), const std::vector<mu::value_type>& bottom = std::vector<mu::value_type>())
             {
                 m_left = left;
                 m_right = right;
@@ -977,16 +983,16 @@ namespace NumeRe
             ///
             /// \param i size_t
             /// \param j size_t
-            /// \param val double
-            /// \param med double
-            /// \return double
+            /// \param val const mu::value_type&
+            /// \param med const mu::value_type&
+            /// \return mu::value_type
             ///
             /////////////////////////////////////////////////
-            double retouch(size_t i, size_t j, double val, double med)
+            mu::value_type retouch(size_t i, size_t j, const mu::value_type& val, const mu::value_type& med)
             {
-                if (isnan(val) && !isnan(med))
+                if (mu::isnan(val) && !mu::isnan(med))
                     return 0.5*(apply(i, j, m_fallback) + med);
-                else if (isnan(val) && isnan(med))
+                else if (mu::isnan(val) && mu::isnan(med))
                     return apply(i, j, m_fallback);
 
                 return val;

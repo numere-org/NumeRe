@@ -36,7 +36,8 @@ struct TableColumn
     {
         TYPE_NONE,
         TYPE_VALUE,
-        TYPE_STRING
+        TYPE_STRING,
+        TYPE_MIXED
     };
 
     std::string m_sHeadLine;
