@@ -213,7 +213,7 @@ bool DataAccessParser::isCluster() const
 
 
 
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs);
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, int options);
 static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
 static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, const Settings& _option, bool isCluster);
@@ -255,7 +255,7 @@ size_t findAssignmentOperator(StringView sCmd)
 /// \param _parser Parser&
 /// \param _data Datafile&
 /// \param _option const Settings&
-/// \param bReplaceNANs bool
+/// \param options int
 /// \return string
 ///
 /// This function actually delegates the hard work
@@ -263,7 +263,7 @@ size_t findAssignmentOperator(StringView sCmd)
 /// public and replaces all calls to a single
 /// data entity.
 /////////////////////////////////////////////////
-string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs)
+string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, int options)
 {
 	// Evaluate possible cached equations
 	if ((_parser.HasCachedAccess() || _parser.GetCachedEquation().length()) && !_parser.IsCompiling())
@@ -296,7 +296,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 		if (eq_pos == string::npos              // gar kein "="?
             || !_data.containsTablesOrClusters(sLine.substr(0, eq_pos)))   // nur links von "cache("?
 		{
-            resolveTablesAndClusters(sLine, _parser, _data, _option, bReplaceNANs);
+            resolveTablesAndClusters(sLine, _parser, _data, _option, options);
 		}
 		else
 		{
@@ -315,7 +315,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 			if (_data.containsTablesOrClusters(sCache.substr(sCache.find_first_of("({") + 1)))
 			{
 				sLine_Temp = sCache.substr(sCache.find_first_of("({") + 1);
-                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, bReplaceNANs);
+                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, options);
 				sCache = sCache.substr(0, sCache.find_first_of("({") + 1) + sLine_Temp;
 			}
 
@@ -327,7 +327,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 				/* --> Ja? Geht eigentlich trotzdem wie oben, mit Ausnahme, dass ueberall wo "sLine" aufgetreten ist,
 				 *     nun "sLine_Temp" auftritt <--
 				 */
-                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, bReplaceNANs);
+                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, options);
 			}
 
 			// --> sLine_Temp an sLine zuweisen <--
@@ -347,11 +347,11 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 /// \param _parser Parser&
 /// \param _data Datafile&
 /// \param _option const Settings&
-/// \param bReplaceNANs bool
+/// \param options int
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs)
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, int options)
 {
     // Try to find every cache and handle its contents
     if (_data.containsTables(sLine))
@@ -359,7 +359,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
         for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); iter++)
         {
             if (sLine.find((iter->first) + "(") != string::npos)
-                replaceDataEntities(sLine, iter->first + "(", _data, _parser, _option, bReplaceNANs ? REPLACE_NAN : NO_OPTION);
+                replaceDataEntities(sLine, iter->first + "(", _data, _parser, _option, options);
         }
     }
 
@@ -369,7 +369,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
         for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); iter++)
         {
             if (sLine.find((iter->first) + "{") != string::npos)
-                replaceDataEntities(sLine, iter->first + "{", _data, _parser, _option, bReplaceNANs ? REPLACE_NAN : NO_OPTION);
+                replaceDataEntities(sLine, iter->first + "{", _data, _parser, _option, options);
         }
     }
 }
