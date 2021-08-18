@@ -1083,7 +1083,10 @@ namespace NumeRe
                 if (data && fileData)
                 {
                     for (long long int col = 0; col < nCols; col++)
-                        data->at(col).reset(fileData->at(col)->copy());
+                    {
+                        if (fileData->at(col))
+                            data->at(col).reset(fileData->at(col)->copy());
+                    }
                 }
             }
 

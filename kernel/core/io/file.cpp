@@ -946,6 +946,7 @@ namespace NumeRe
         {
             writeStringField("");
             writeStringField("DTYPE=NONE");
+            return;
         }
 
         writeStringField(col->m_sHeadLine);
@@ -961,6 +962,10 @@ namespace NumeRe
             writeStringField("DTYPE=STRING");
             std::vector<std::string> values = col->getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END));
             writeStringBlock(&values[0], values.size());
+        }
+        else if (col->m_type == TableColumn::TYPE_NONE)
+        {
+            writeStringField("DTYPE=NONE");
         }
     }
 

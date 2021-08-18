@@ -36,9 +36,13 @@ void ValueColumn::shrink()
         if (!mu::isnan(m_data[i]))
         {
             m_data.erase(m_data.begin()+i+1, m_data.end());
-            break;
+            return;
         }
     }
+
+    // If the code reaches this point, it is either empty
+    // or full of NANs
+    m_data.clear();
 }
 
 
@@ -401,9 +405,13 @@ void StringColumn::shrink()
         if (m_data[i].length())
         {
             m_data.erase(m_data.begin()+i+1, m_data.end());
-            break;
+            return;
         }
     }
+
+    // If the code reaches this point, it is either empty
+    // or consists only empty strings
+    m_data.clear();
 }
 
 
