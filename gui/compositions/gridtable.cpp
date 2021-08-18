@@ -79,7 +79,7 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
     // Regular cells
     if (sTypeName == wxGRID_VALUE_FLOAT
         && _table.getColumnType(col) == TableColumn::TYPE_VALUE
-        && _table.getValue(row-getNumHeadlines(), col).imag() == 0)
+        && (_table.getValue(row-getNumHeadlines(), col).imag() == 0 || mu::isnan(_table.getValue(row-getNumHeadlines(), col))))
         return true;
 
     if (sTypeName == wxGRID_VALUE_STRING && _table.getColumnType(col) != TableColumn::TYPE_NONE)

@@ -35,7 +35,7 @@ void ValueColumn::shrink()
     {
         if (!mu::isnan(m_data[i]))
         {
-            m_data.erase(m_data.begin()+i+1, m_data.end());
+            m_data.resize(i+1);
             return;
         }
     }
@@ -126,7 +126,7 @@ void ValueColumn::setValue(int elem, const mu::value_type& vValue)
         return;
 
     if (elem >= m_data.size())
-        m_data.resize(elem+1);
+        m_data.resize(elem+1, NAN);
 
     m_data[elem] = vValue;
 }
@@ -167,7 +167,7 @@ void ValueColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_t
             break;
 
         if (idx[i] >= m_data.size())
-            m_data.resize(idx[i]+1);
+            m_data.resize(idx[i]+1, NAN);
 
         m_data[idx[i]] = vValue[i];
     }
@@ -192,7 +192,7 @@ void ValueColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsig
             break;
 
         if (idx[i] >= m_data.size())
-            m_data.resize(idx[i]+1);
+            m_data.resize(idx[i]+1, NAN);
 
         m_data[idx[i]] = _dData[i];
     }
@@ -404,7 +404,7 @@ void StringColumn::shrink()
     {
         if (m_data[i].length())
         {
-            m_data.erase(m_data.begin()+i+1, m_data.end());
+            m_data.resize(i+1);
             return;
         }
     }
