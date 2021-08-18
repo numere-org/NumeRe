@@ -34,8 +34,13 @@ namespace NumeRe
     class FileAdapter;
 }
 
-#warning TODO (numere#5#08/16/21): Determine, whether std::vector<std::string> is a good type
+
+/////////////////////////////////////////////////
+/// \brief This type defines a generic value
+/// vector.
+/////////////////////////////////////////////////
 typedef std::vector<std::string> ValueVector;
+
 
 /////////////////////////////////////////////////
 /// \brief This class represents a single table

@@ -661,6 +661,7 @@ void TableViewer::copyContents()
 /// \return void
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#3#08/18/21): This function will probably not accept strings for now
 void TableViewer::pasteContents(bool useCursor)
 {
     vector<wxString> vTableData;
@@ -691,26 +692,10 @@ void TableViewer::pasteContents(bool useCursor)
     int nCols = 0;
     int nSkip = 0;
 
-    // Distinguish between numerical and text data
-    for (unsigned int i = 0; i < vTableData.size(); i++)
+    if (nLines && !useCursor && !isNumerical(vTableData.front().ToStdString()))
     {
-        if (!isNumerical(vTableData[i].ToStdString()))
-        {
-            nLines--;
-            nSkip++;
-
-            // Replace text data with underscores
-            if (nLines > (int)i+1 && vTableData[i+1].find(' ') == string::npos && vTableData[i].find(' ') != string::npos)
-            {
-                for (unsigned int j = 0; j < vTableData[i].size(); j++)
-                {
-                    if (vTableData[i][j] == ' ')
-                        vTableData[i][j] = '\1';
-                }
-            }
-        }
-        else
-            break;
+        nSkip++;
+        nLines--;
     }
 
     // Return if the number of lines is zero
@@ -750,35 +735,7 @@ void TableViewer::pasteContents(bool useCursor)
                 sLine.erase(sLine.length()-1);
 
             // Set the value to the correct cell
-            if (isNumerical(sLine.ToStdString()) && sLine != "NAN" && sLine != "NaN" && sLine != "nan")
-            {
-                // Numerical value
-                if (i < (size_t)nSkip && nSkip)
-                {
-                    if (sLine.length())
-                    {
-                        this->SetCellValue(i, topleft.GetCol()+j, sLine);
-                    }
-                }
-                else
-                {
-                    this->SetCellValue(topleft.GetRow()+i-nSkip, topleft.GetCol()+j, sLine);
-                }
-            }
-            else if (i < (size_t)nSkip && nSkip)
-            {
-                // string value in the top section
-                if (sLine.length())
-                {
-                    this->SetCellValue(i, topleft.GetCol()+j, sLine);
-                }
-            }
-            else
-            {
-                // string value
-                this->SetCellValue(topleft.GetRow()+i-nSkip, topleft.GetCol()+j, sLine);
-            }
-
+            this->SetCellValue(topleft.GetRow()+i-nSkip, topleft.GetCol()+j, sLine);
             j++;
 
             // Stop, if the the counter reached the
@@ -1193,12 +1150,7 @@ void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridC
 /////////////////////////////////////////////////
 wxString TableViewer::copyCell(int row, int col)
 {
-    wxString cell = this->GetCellValue(row, col);
-
-    if (cell[0] == '"')
-        return cell;
-
-    return cell;
+    return this->GetCellValue(row, col);
 }
 
 
@@ -1339,7 +1291,9 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         // Replace the decimal sign, if the line is numerical,
         // otherwise try to detect, whether the comma is used
         // to separate the columns
-        if (isNumerical(sLine.ToStdString()) && sLine.find(',') != string::npos && sLine.find('.') == string::npos)
+        //if (isNumerical(sLine.ToStdString()) && sLine.find(',') != string::npos && sLine.find('.') == string::npos)
+#warning FIXME (numere#1#08/18/21): This is a hack (see commented section)
+        if (sLine.find(',') != string::npos && sLine.find('.') == string::npos)
             replaceDecimalSign(sLine);
         else if (sLine.find(',') != string::npos && sLine.find(';') != string::npos)
         {

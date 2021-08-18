@@ -89,6 +89,9 @@ namespace NumeRe
         if (nGlobalType != ClusterItem::ITEMTYPE_DOUBLE)
             nGlobalType = ClusterItem::ITEMTYPE_INVALID;
 
+        if (nNum == 1)
+            _idx.row.setOpenEndIndex(std::max(_idx.row.front(), (int)size()) - 1);
+
         // Assign the single results
         for (size_t i = 0; i < _idx.row.size(); i++)
         {

@@ -846,7 +846,41 @@ ValueColumn* StringColumn::convert() const
 
 
 
+/////////////////////////////////////////////////
+/// \brief Tries to convert a column if the
+/// column does not contain any data (with the
+/// exception of the header).
+///
+/// \param col TblColPtr&
+/// \param colNo size_t
+/// \param type TableColumn::ColumnType
+/// \return void
+///
+/////////////////////////////////////////////////
+void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
+{
+    if (!col || (!col->size() && col->m_type != type))
+    {
+        std::string sHead = TableColumn::getDefaultColumnHead(colNo);
 
+        if (col)
+            sHead = col->m_sHeadLine;
+
+        switch (type)
+        {
+            case TableColumn::TYPE_STRING:
+                col.reset(new StringColumn);
+                break;
+            case TableColumn::TYPE_VALUE:
+                col.reset(new ValueColumn);
+                break;
+            default:
+                return;
+        }
+
+        col->m_sHeadLine = sHead;
+    }
+}
 
 
 

@@ -2029,7 +2029,6 @@ static string getPathForSetting(string& sCmd, size_t pos)
 /// \return void
 ///
 /////////////////////////////////////////////////
-#warning TODO (numere#3#08/16/21): Might be better to directly export a Memory* here
 static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _accessParser, MemoryManager& _data, MemoryManager& _cache)
 {
     // Validize the obtained index sets

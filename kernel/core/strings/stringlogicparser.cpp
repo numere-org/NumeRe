@@ -282,7 +282,6 @@ namespace NumeRe
     /// \param bReturningLogicals bool&
     /// \return string
     ///
-    /// \todo Refactor this function.
     /////////////////////////////////////////////////
     string StringLogicParser::evalStringLogic(string sLine, bool& bReturningLogicals)
     {
@@ -317,7 +316,9 @@ namespace NumeRe
 
                 if (!isInQuotes(sLine, nPos - 1))
                 {
-                    sLine = sLine.substr(0, nPos - 1) + evalStringLogic(sLine.substr(nPos, getMatchingParenthesis(sLine.substr(nPos - 1)) - 1), bReturningLogicals) + sLine.substr(getMatchingParenthesis(sLine.substr(nPos - 1)) + nPos);
+                    sLine = sLine.substr(0, nPos - 1)
+                            + evalStringLogic(sLine.substr(nPos, getMatchingParenthesis(sLine.substr(nPos - 1)) - 1), bReturningLogicals)
+                            + sLine.substr(getMatchingParenthesis(sLine.substr(nPos - 1)) + nPos);
                     nPos = 0;
                 }
             }
@@ -422,75 +423,33 @@ namespace NumeRe
             {
                 if (sLine.substr(i, 2) == "==")
                 {
-                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
-                    string sRight = prepareComparisonValues(sLine.substr(i + 2));
-
                     bReturningLogicals = true;
-
-                    if (sLeft == sRight)
-                        return "true";
-                    else
-                        return "false";
+                    return toString(prepareComparisonValues(sLine.substr(0, i)) == prepareComparisonValues(sLine.substr(i + 2)));
                 }
                 else if (sLine.substr(i, 2) == "!=")
                 {
-                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
-                    string sRight = prepareComparisonValues(sLine.substr(i + 2));
-
                     bReturningLogicals = true;
-
-                    if (sLeft != sRight)
-                        return "true";
-                    else
-                        return "false";
+                    return toString(prepareComparisonValues(sLine.substr(0, i)) != prepareComparisonValues(sLine.substr(i + 2)));
                 }
                 else if (sLine.substr(i, 2) == "<=")
                 {
-                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
-                    string sRight = prepareComparisonValues(sLine.substr(i + 2));
-
                     bReturningLogicals = true;
-
-                    if (sLeft <= sRight)
-                        return "true";
-                    else
-                        return "false";
+                    return toString(prepareComparisonValues(sLine.substr(0, i)) <= prepareComparisonValues(sLine.substr(i + 2)));
                 }
                 else if (sLine.substr(i, 2) == ">=")
                 {
-                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
-                    string sRight = prepareComparisonValues(sLine.substr(i + 2));
-
                     bReturningLogicals = true;
-
-                    if (sLeft >= sRight)
-                        return "true";
-                    else
-                        return "false";
+                    return toString(prepareComparisonValues(sLine.substr(0, i)) >= prepareComparisonValues(sLine.substr(i + 2)));
                 }
                 else if (sLine[i] == '<')
                 {
-                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
-                    string sRight = prepareComparisonValues(sLine.substr(i + 1));
-
                     bReturningLogicals = true;
-
-                    if (sLeft < sRight)
-                        return "true";
-                    else
-                        return "false";
+                    return toString(prepareComparisonValues(sLine.substr(0, i)) < prepareComparisonValues(sLine.substr(i + 1)));
                 }
                 else if (sLine[i] == '>')
                 {
-                    string sLeft = prepareComparisonValues(sLine.substr(0, i));
-                    string sRight = prepareComparisonValues(sLine.substr(i + 1));
-
                     bReturningLogicals = true;
-
-                    if (sLeft > sRight)
-                        return "true";
-                    else
-                        return "false";
+                    return toString(prepareComparisonValues(sLine.substr(0, i)) > prepareComparisonValues(sLine.substr(i + 1)));
                 }
 
             }

@@ -742,18 +742,7 @@ void Memory::writeData(int _nLine, int _nCol, const mu::value_type& _dData)
     if ((int)memArray.size() <= _nCol)
         resizeMemory(_nLine+1, _nCol+1);
 
-    if (!memArray[_nCol]
-        || (!memArray[_nCol]->size() && memArray[_nCol]->m_type != TableColumn::TYPE_VALUE))
-    {
-        std::string sColumnHead = TableColumn::getDefaultColumnHead(_nCol);
-
-        if (memArray[_nCol])
-            sColumnHead = memArray[_nCol]->m_sHeadLine;
-
-        memArray[_nCol].reset(new ValueColumn);
-        memArray[_nCol]->m_sHeadLine = sColumnHead;
-    }
-
+    convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
     memArray[_nCol]->setValue(_nLine, _dData);
 
     if ((mu::isnan(_dData) || _nLine >= nCalcLines) && nCalcLines != -1)
@@ -786,18 +775,7 @@ void Memory::writeData(int _nLine, int _nCol, const std::string& sValue)
     if ((int)memArray.size() <= _nCol)
         resizeMemory(_nLine+1, _nCol+1);
 
-    if (!memArray[_nCol]
-        || (!memArray[_nCol]->size() && memArray[_nCol]->m_type != TableColumn::TYPE_STRING))
-    {
-        std::string sColumnHead = TableColumn::getDefaultColumnHead(_nCol);
-
-        if (memArray[_nCol])
-            sColumnHead = memArray[_nCol]->m_sHeadLine;
-
-        memArray[_nCol].reset(new StringColumn);
-        memArray[_nCol]->m_sHeadLine = sColumnHead;
-    }
-
+    convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_STRING);
     memArray[_nCol]->setValue(_nLine, sValue);
 
     if ((!sValue.length() || _nLine >= nCalcLines) && nCalcLines != -1)

@@ -138,8 +138,6 @@ namespace mu
 			void CacheCurrentTarget(const std::string& sEquation);
 			const std::string& GetCachedTarget() const;
 			int IsValidByteCode(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
-			void DeclareAsInvalid(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
-			void DeclareAsDelayed(unsigned int _nthLoopElement = -1, unsigned int _nthPartEquation = 0);
 			bool ActiveLoopMode() const;
 			bool IsLockedPause() const;
 			void LockPause(bool _bLock = true);

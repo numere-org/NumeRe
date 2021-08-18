@@ -255,12 +255,7 @@ namespace NumeRe
     {
         this->setMinSize(i+1, j+1);
 
-        if (!vTableData[j])
-        {
-            vTableData[j].reset(new ValueColumn);
-            vTableData[j]->m_sHeadLine = TableColumn::getDefaultColumnHead(j);
-        }
-
+        convert_if_empty(vTableData[j], j, TableColumn::TYPE_VALUE);
         vTableData[j]->setValue(i, _dValue);
     }
 
@@ -285,22 +280,12 @@ namespace NumeRe
         // Is it a numerical value?
         if (!isNumerical(_sValue))
         {
-            if (!vTableData[j])
-            {
-                vTableData[j].reset(new StringColumn);
-                vTableData[j]->m_sHeadLine = TableColumn::getDefaultColumnHead(j);
-            }
-
+            convert_if_empty(vTableData[j], j, TableColumn::TYPE_STRING);
             vTableData[j]->setValue(i, _sValue);
             return;
         }
 
-        if (!vTableData[j])
-        {
-            vTableData[j].reset(new ValueColumn);
-            vTableData[j]->m_sHeadLine = TableColumn::getDefaultColumnHead(j);
-        }
-
+        convert_if_empty(vTableData[j], j, TableColumn::TYPE_VALUE);
         vTableData[j]->setValue(i, StrToCmplx(_sValue));
     }
 
