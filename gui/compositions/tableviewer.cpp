@@ -1164,10 +1164,18 @@ wxString TableViewer::copyCell(int row, int col)
 /////////////////////////////////////////////////
 void TableViewer::replaceDecimalSign(wxString& text)
 {
-    for (size_t i = 0; i < text.length(); i++)
+    wxArrayString toks = wxStringTokenize(text);
+    text.clear();
+
+    for (size_t i = 0; i < toks.size(); i++)
     {
-        if (text[i] == ',')
-            text[i] = '.';
+        if (isNumerical(toks[i].ToStdString()))
+            toks[i].Replace(",", ".");
+
+        if (text.length())
+            text += "  ";
+
+        text += toks[i];
     }
 }
 
@@ -1248,6 +1256,7 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
     // Endless loop
     while (true)
     {
+        bool tabSeparated = false;
         // Abort, if the clipboards contents indicate an
         // empty table
         if (!sClipboard.length() || sClipboard == "\n")
@@ -1260,6 +1269,10 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         if (sLine.length() && sLine[sLine.length()-1] == (char)13)
             sLine.erase(sLine.length()-1);
 
+        // determine the separation mode
+        if (sLine.find('\t') != std::string::npos)
+            tabSeparated = true;
+
         // Remove the obtained line from the clipboard
         if (sClipboard.find('\n') != string::npos)
             sClipboard.erase(0, sClipboard.find('\n')+1);
@@ -1270,7 +1283,7 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         // line also contains tabulator characters and it is a
         // non-numerical line
         if (!isNumerical(sLine.ToStdString())
-            && (sLine.find('\t') != string::npos || sLine.find("  ") != std::string::npos))
+            && (tabSeparated || sLine.find("  ") != std::string::npos))
         {
             for (unsigned int i = 1; i < sLine.length()-1; i++)
             {
@@ -1290,11 +1303,9 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         // Replace the decimal sign, if the line is numerical,
         // otherwise try to detect, whether the comma is used
         // to separate the columns
-        //if (isNumerical(sLine.ToStdString()) && sLine.find(',') != string::npos && sLine.find('.') == string::npos)
-#warning FIXME (numere#1#08/18/21): This is a hack (see commented section)
-        if (sLine.find(',') != string::npos && sLine.find('.') == string::npos)
+        if (sLine.find(',') != string::npos && (sLine.find('.') == string::npos || tabSeparated))
             replaceDecimalSign(sLine);
-        else if (sLine.find(',') != string::npos && sLine.find(';') != string::npos)
+        else if (!tabSeparated && sLine.find(',') != string::npos && sLine.find(';') != string::npos)
         {
             // The semicolon is used to separate the columns
             // in this case
@@ -1309,7 +1320,7 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
                 }
             }
         }
-        else
+        else if (!tabSeparated)
         {
             // The comma is used to separate the columns
             // in this case

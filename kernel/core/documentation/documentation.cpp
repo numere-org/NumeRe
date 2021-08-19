@@ -585,7 +585,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
             if (generateFile)
                 sHTML += "<p>" + sDescription + "</p>\n<div style=\"margin-left:40px;\">\n<code><span style=\"color:#00008B;\">\n";
             else
-                sHTML += "<p>" + sDescription + "</p>\n<div>\n<code><span style=\"color:#00008B;\">\n";
+                sHTML += "<p>" + sDescription + "</p>\n<div>\n<code><span style=\"color:#00008B;background-color:#EAEAEA;\">\n";
 
             for (unsigned int j = i+1; j < vDocArticle.size(); j++)
             {
@@ -712,7 +712,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                     if (generateFile)
                         vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "</p><div class=\"sites-codeblock sites-codesnippet-block\"><code><span style=\"color:#00008B;\">" + sExprBlock + "</span></code></div><p>");
                     else
-                        vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "</p><blockquote><code><span style=\"color:#00008B;\">" + sExprBlock + "</span></code></blockquote><p>");
+                        vDocArticle[i].replace(vDocArticle[i].find("<codeblock>"), vDocArticle[i].find("</codeblock>")+12-vDocArticle[i].find("<codeblock>"), "</p><blockquote><code><span style=\"color:#00008B;background-color:#EAEAEA;\">" + sExprBlock + "</span></code></blockquote><p>");
                 }
 
                 sHTML += "<p>" + (vDocArticle[i]) + "</p>\n";
@@ -725,7 +725,7 @@ string doc_HelpAsHTML(const string& __sTopic, bool generateFile, Settings& _opti
                 if (generateFile)
                     sHTML += "<div class=\"sites-codeblock sites-codesnippet-block\"><code><span style=\"color:#00008B;\">\n";
                 else
-                    sHTML += "<blockquote><code><span style=\"color:#00008B;\">\n";
+                    sHTML += "<blockquote><code><span style=\"color:#00008B;background-color:#EAEAEA;\">\n";
 
                 for (unsigned int j = i+1; j < vDocArticle.size(); j++)
                 {
@@ -972,7 +972,7 @@ void doc_ReplaceTokensForHTML(string& sDocParagraph, bool generateFile, Settings
         }
         if (sDocParagraph.substr(k,6) == "<code>" && sDocParagraph.find("</code>", k+6) != string::npos)
         {
-            sDocParagraph.insert(k+6, "<span style=\"color:#00008B;\">");
+            sDocParagraph.insert(k+6, "<span style=\"color:#00008B;background-color:#EAEAEA;\">");
             sDocParagraph.insert(sDocParagraph.find("</code>", k+6), "</span>");
             string sCode = sDocParagraph.substr(k+6, sDocParagraph.find("</code>", k+6)-k-6);
             for (unsigned int i = 0; i < sCode.length(); i++)
