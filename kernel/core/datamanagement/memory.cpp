@@ -1279,6 +1279,9 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
         memArray[cols[j]]->insert(lines, tabCol);
         memArray[cols[j]]->m_sHeadLine = tabCol->m_sHeadLine;
     }
+
+    // Try to convert string- to valuecolumns
+    convert();
 }
 
 

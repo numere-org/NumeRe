@@ -661,7 +661,6 @@ void TableViewer::copyContents()
 /// \return void
 ///
 /////////////////////////////////////////////////
-#warning TODO (numere#3#08/18/21): This function will probably not accept strings for now
 void TableViewer::pasteContents(bool useCursor)
 {
     vector<wxString> vTableData;

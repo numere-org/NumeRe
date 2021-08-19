@@ -277,15 +277,24 @@ namespace NumeRe
         // Resize the table if needed
         this->setMinSize(i+1, j+1);
 
+        // Empty value means deletion
+        if (!_sValue.length())
+        {
+            if (vTableData[j])
+                vTableData[j]->deleteElements(VectorIndex(i));
+
+            return;
+        }
+
         // Is it a numerical value?
         if (!isNumerical(_sValue))
         {
-            convert_if_empty(vTableData[j], j, TableColumn::TYPE_STRING);
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING);
             vTableData[j]->setValue(i, _sValue);
             return;
         }
 
-        convert_if_empty(vTableData[j], j, TableColumn::TYPE_VALUE);
+        convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE);
         vTableData[j]->setValue(i, StrToCmplx(_sValue));
     }
 

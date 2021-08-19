@@ -392,6 +392,36 @@ bool ValueColumn::asBool(int elem) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the contents of this column as
+/// a StringColumn.
+///
+/// \return StringColumn*
+///
+/////////////////////////////////////////////////
+StringColumn* ValueColumn::convert() const
+{
+    StringColumn* strCol = new StringColumn(m_data.size());
+    strCol->m_sHeadLine = m_sHeadLine;
+
+    for (size_t i = 0; i < m_data.size(); i++)
+    {
+        if (!mu::isnan(m_data[i]))
+            strCol->setValue(i, toString(m_data[i], NumeReKernel::getInstance()->getSettings().getPrecision()));
+    }
+
+    return strCol;
+}
+
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////
 /// \brief Shrink the column by removing all
 /// invalid elements from the end.
 ///
@@ -798,7 +828,7 @@ size_t StringColumn::getBytes() const
 
 /////////////////////////////////////////////////
 /// \brief Returns the contents of this column as
-/// a ValueColumn of a nullptr, if the conversion
+/// a ValueColumn or a nullptr, if the conversion
 /// is not possible.
 ///
 /// \return ValueColumn*
@@ -882,6 +912,52 @@ void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type
     }
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Tries to convert a column into the
+/// selected column, if possible.
+///
+/// \param col TblColPtr&
+/// \param colNo size_t
+/// \param type TableColumn::ColumnType
+/// \return void
+///
+/////////////////////////////////////////////////
+void convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
+{
+    if (!col || (!col->size() && col->m_type != type))
+    {
+        convert_if_empty(col, colNo, type);
+        return;
+    }
+
+    if (col->m_type == type)
+        return;
+
+    switch (type)
+    {
+        case TableColumn::TYPE_STRING:
+        {
+            StringColumn* strCol = static_cast<ValueColumn*>(col.get())->convert();
+
+            if (strCol)
+                col.reset(strCol);
+
+            break;
+        }
+        case TableColumn::TYPE_VALUE:
+        {
+            ValueColumn* valCol = static_cast<StringColumn*>(col.get())->convert();
+
+            if (valCol)
+                col.reset(valCol);
+
+            break;
+        }
+        default:
+            return;
+    }
+}
 
 
 
