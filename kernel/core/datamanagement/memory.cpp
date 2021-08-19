@@ -91,7 +91,7 @@ bool Memory::Allocate(size_t _nNCols, bool shrink)
     // We simply resize the number of columns. Note, that
     // this only affects the column count. The column themselves
     // are not automatically allocated
-    memArray.resize(_nNCols);
+    memArray.resize(std::max(_nNCols, memArray.size()));
 
     if (shrink)
     {
@@ -550,6 +550,20 @@ bool Memory::shrink()
             col.reset(nullptr);
     }
 
+    nCalcLines = -1;
+
+    // Remove obsolete columns
+    for (int i = memArray.size()-1; i >= 0; i--)
+    {
+        if (memArray[i])
+        {
+            memArray.resize(i+1);
+            return true;
+        }
+    }
+
+    // if this place is reached, delete everything
+    memArray.clear();
     return true;
 }
 
@@ -1166,8 +1180,12 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
 /////////////////////////////////////////////////
 void Memory::reorderColumn(const VectorIndex& vIndex, int i1, int i2, int j1)
 {
-    TblColPtr col(memArray[j1]->copy(vIndex));
-    memArray[j1]->insert(VectorIndex(i1, i2), col.get());
+    if (memArray.size() > j1 && memArray[j1])
+    {
+        TblColPtr col(memArray[j1]->copy(vIndex));
+        memArray[j1]->insert(VectorIndex(i1, i2), col.get());
+        memArray[j1]->shrink();
+    }
 }
 
 
@@ -2927,6 +2945,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 /// \return bool
 ///
 /////////////////////////////////////////////////
+#warning TODO (numere#5#08/19/21): This function does not correspond to the current design decisions
 bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSamples, AppDir Direction)
 {
     bool bUseAppendedZeroes = false;
@@ -3024,7 +3043,6 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
         // Determine final size (only upscale)
         if (nSamples > _vLine.size())
 		{
-            resizeMemory(1, getCols() - 1);
 			// Determine the size of the buffer
             __nLines += nSamples - _vLine.size();
 		}
@@ -3276,16 +3294,10 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
     // After all data is restored successfully
     // copy the data points from the buffer back to their original state
-    for (int i = 0; i < getLines(); i++)
+    for (int i = 0; i < __nLines; i++)
     {
-        if (i >= __nLines)
-            break;
-
-        for (int j = 0; j < getCols(); j++)
+        for (int j = 0; j < __nCols; j++)
         {
-            if (j >= __nCols)
-                break;
-
             writeData(i, j, dResampleBuffer[i][j]);
         }
     }

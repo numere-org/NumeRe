@@ -2546,10 +2546,12 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     DataAccessParser accessParser = cmdParser.getExprAsDataObject();
 
     // get the data from the data object
-    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 3, true));
+    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
 
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
+
+    _mem->shrink();
 
     int lines = _mem->getLines();
     int cols = _mem->getCols();

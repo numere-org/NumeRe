@@ -510,7 +510,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 		{
 			// This is a usual data access
 			// create a vector containing the data
-			if (options & INSERT_STRINGS)
+			if (options & INSERT_STRINGS && _data.getType(_idx.col, sEntityName) != TableColumn::TYPE_VALUE)
                 sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
             else
 #warning TODO (numere#5#08/17/21): Evaluate the advantages of using the return type here
@@ -1178,7 +1178,7 @@ Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, i
     _mem = _mem->extractRange(_accessParser.getIndices().row, _accessParser.getIndices().col);
 
     if (bSort)
-        _mem->sortElements(0, _mem->getLines(), 0, _mem->getCols(), "-c=1[2:]");
+        _mem->sortElements(0, _mem->getLines()-1, 0, _mem->getCols()-1, "-c=1[2:]");
 
     return _mem;
 }
