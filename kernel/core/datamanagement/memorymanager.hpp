@@ -202,6 +202,11 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			vMemory[findTable(_sCache)]->deleteBulk(_vLine, _vCol);
 		}
 
+		void shrink(const std::string& _sCache)
+		{
+		    vMemory[findTable(_sCache)]->shrink();
+		}
+
 
 		// TABLE INFORMATION AND SAVING METHODS
 		bool getSaveStatus() const;

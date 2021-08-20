@@ -1166,6 +1166,13 @@ Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, i
     // Select the number of relevant columns
     if (nDesiredCols > 0 && _accessParser.getIndices().col.isOpenEnd())
         _accessParser.getIndices().col.setRange(0, _accessParser.getIndices().col.front() + nDesiredCols-1);
+    else if (nDesiredCols == 2 && _accessParser.getIndices().col.numberOfNodes() == 2u)
+    {
+        // Check number of nodes and convert the columns to an explicit two-element vector,
+        // if the user did not pass an open-end index set
+        Indices& _idx = _accessParser.getIndices();
+        _idx.col = VectorIndex(std::vector<int>({_idx.col.front(), _idx.col.last()}));
+    }
 
     // Evaluate the number of rows, if necessary
     _accessParser.evalIndices();

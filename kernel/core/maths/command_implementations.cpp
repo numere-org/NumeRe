@@ -2669,12 +2669,12 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         }
 
         // Write headlines
-        _data.setHeadLineElement(_idx.col.front(), sTargetTable, _lang.get("COMMON_FREQUENCY") + "_[Hz]");
+        _data.setHeadLineElement(_idx.col.front(), sTargetTable, _lang.get("COMMON_FREQUENCY") + " [Hz]");
 
         if (!bComplex)
         {
             _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_AMPLITUDE"));
-            _data.setHeadLineElement(_idx.col[2], sTargetTable, _lang.get("COMMON_PHASE") + "_[rad]");
+            _data.setHeadLineElement(_idx.col[2], sTargetTable, _lang.get("COMMON_PHASE") + " [rad]");
         }
         else
         {
@@ -2698,7 +2698,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         }
 
         // Write headlines
-        _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME") + "_[s]");
+        _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME") + " [s]");
         _data.setHeadLineElement(_idx.col[1], sTargetTable, "Re(" + _lang.get("COMMON_SIGNAL") + ")");
         _data.setHeadLineElement(_idx.col[2], sTargetTable, "Im(" + _lang.get("COMMON_SIGNAL") + ")");
     }
@@ -3770,7 +3770,7 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
 
             // Update the headline
             if (!i)
-                _data.setHeadLineElement(_target.col[j+2], sTargetCache, "A[" + toString((int)j + 1) + "]");
+                _data.setHeadLineElement(_target.col[j+2], sTargetCache, "A(" + toString((int)j + 1) + ")");
         }
     }
 
@@ -4219,6 +4219,7 @@ void rotateTable(CommandLineParser& cmdParser)
 
     // clear the memory instance
     delete _source;
+    _data.shrink(sTargetTable);
 
     if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_ROTATETABLE_SUCCESS", sTargetTable));

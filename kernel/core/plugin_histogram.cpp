@@ -1204,10 +1204,10 @@ static void createOutputForHist2D(MemoryManager& _data, const Indices& _idx, con
 
             if (!k)
             {
-                _data.setHeadLineElement(_tIdx.col[0], sTargettable, "Bins_[x]");
-                _data.setHeadLineElement(_tIdx.col[1], sTargettable, (bSum ? "Sum_[x]" : "Counts_[x]"));
-                _data.setHeadLineElement(_tIdx.col[2], sTargettable, "Bins_[y]");
-                _data.setHeadLineElement(_tIdx.col[3], sTargettable, (bSum ? "Sum_[y]" : "Counts_[y]"));
+                _data.setHeadLineElement(_tIdx.col[0], sTargettable, "Bins [x]");
+                _data.setHeadLineElement(_tIdx.col[1], sTargettable, (bSum ? "Sum [x]" : "Counts [x]"));
+                _data.setHeadLineElement(_tIdx.col[2], sTargettable, "Bins [y]");
+                _data.setHeadLineElement(_tIdx.col[3], sTargettable, (bSum ? "Sum [y]" : "Counts [y]"));
             }
 
             _data.writeToTable(_tIdx.row[k], _tIdx.col[0], sTargettable, _mAxisVals[0].a[k]);
