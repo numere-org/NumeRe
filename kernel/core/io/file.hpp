@@ -184,8 +184,8 @@ namespace NumeRe
                         }
 
                         // Shall empty cells be kept (determined by heuristic)
-                        if (bKeepColumns && (i+1 == _sToReplace.length() || _sToReplace[i+1] == '\t'))
-                            _sToReplace.insert(i + 1, "---");
+                        if (bKeepColumns && (i+2 == _sToReplace.length() || _sToReplace[i+2] == '\t'))
+                            _sToReplace.insert(i + 2, "---");
                     }
                 }
 
