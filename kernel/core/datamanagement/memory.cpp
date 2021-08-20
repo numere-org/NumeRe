@@ -2945,16 +2945,12 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 /// \return bool
 ///
 /////////////////////////////////////////////////
-#warning TODO (numere#5#08/19/21): This function does not correspond to the current design decisions
 bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSamples, AppDir Direction)
 {
     bool bUseAppendedZeroes = false;
 
-    const int __nOrigLines = getLines();
-    const int __nOrigCols = getCols();
-
-    int __nLines = __nOrigLines;
-    int __nCols = __nOrigCols;
+    int nLinesToInsert = 0;
+    int nColsToInsert = 0;
 
     // Avoid border cases
     if (!memArray.size())
@@ -2992,7 +2988,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
     }
 
     // Prepare a pointer to the resampler object
-    Resampler* _resampler = nullptr;
+    std::unique_ptr<Resampler> _resampler;
 
     // Create the actual resample object based upon the application direction.
     // Additionally determine the size of the resampling buffer, which might
@@ -3020,14 +3016,16 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
             // Determine the size of the buffer
             if (nSamples > _vLine.size())
-                __nLines += nSamples - _vLine.size();
+                nLinesToInsert = nSamples - _vLine.size();
 
             if (nSamples > _vCol.size())
-                __nCols += nSamples - _vCol.size();
+                nColsToInsert = nSamples - _vCol.size();
         }
 
         // Create the resample object and prepare the needed memory
-        _resampler = new Resampler(_vCol.size(), _vLine.size(), nSamples, nSamples, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
+        _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
+                                       nSamples, nSamples,
+                                       Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6"));
 
         // Determine final size (only upscale)
         if (nSamples > _vLine.size() || nSamples > _vCol.size())
@@ -3038,49 +3036,49 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
         _vCol.linearize();
 
         // Create the resample object and prepare the needed memory
-        _resampler = new Resampler(_vCol.size(), _vLine.size(), _vCol.size(), nSamples, Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
+        _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
+                                       _vCol.size(), nSamples,
+                                       Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6"));
 
         // Determine final size (only upscale)
         if (nSamples > _vLine.size())
-		{
-			// Determine the size of the buffer
-            __nLines += nSamples - _vLine.size();
-		}
+            nLinesToInsert = nSamples - _vLine.size();
     }
     else if (Direction == LINES)// lines
     {
         // Create the resample object and prepare the needed memory
-        _resampler = new Resampler(_vCol.size(), _vLine.size(), nSamples, _vLine.size(), Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6");
+        _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
+                                       nSamples, _vLine.size(),
+                                       Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6"));
 
         // Determine final size (only upscale)
         if (nSamples > _vCol.size())
-		{
-            resizeMemory(1, getCols() + nSamples - _vCol.size());
-			// Determine the size of the buffer
-            __nCols += nSamples - _vCol.size();
-		}
+            nColsToInsert = nSamples - _vCol.size();
     }
 
     // Ensure that the resampler was created
     if (!_resampler)
-    {
         throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
+
+    // Create and initialize the dynamic memory: inserted rows and columns
+    if (nLinesToInsert)
+    {
+        for (size_t j = 0; j < _vCol.size(); j++)
+        {
+            if (memArray.size() < _vCol[j] && memArray[_vCol[j]])
+                memArray[_vCol[j]]->insertElements(_vLine.last()+1, nLinesToInsert);
+        }
     }
 
-    // Create and initalize the dynamic memory: resampler buffer
-    double** dResampleBuffer = new double*[__nLines];
-
-    for (int i = 0; i < __nLines; i++)
+    if (nColsToInsert)
     {
-        dResampleBuffer[i] = new double[__nCols];
-
-        for (int j = 0; j < __nCols; j++)
-            dResampleBuffer[i][j] = NAN;
+        TableColumnArray arr(nColsToInsert);
+        memArray.insert(memArray.begin()+_vCol.last()+1, std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
     }
 
     // resampler output buffer
     const double* dOutputSamples = 0;
-    double* dInputSamples = new double[_vCol.size()];
+    std::vector<double> dInputSamples(_vCol.size());
     int _ret_line = 0;
     int _final_cols = 0;
 
@@ -3090,15 +3088,6 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
         _final_cols = nSamples;
     else
         _final_cols = _vCol.size();
-
-    // Copy the whole memory
-    for (int i = 0; i < __nOrigLines; i++)
-    {
-        for (int j = 0; j < __nOrigCols; j++)
-        {
-            dResampleBuffer[i][j] = readMem(i, j).real();
-        }
-    }
 
     // Resample the data table
     // Apply the resampling linewise
@@ -3111,20 +3100,11 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
         // If the resampler doesn't accept a further line
         // the buffer is probably full
-        if (!_resampler->put_line(dInputSamples))
+        if (!_resampler->put_line(&dInputSamples[0]))
         {
             if (_resampler->status() != Resampler::STATUS_SCAN_BUFFER_FULL)
             {
                 // Obviously not the case
-                // Clear the memory and return
-                delete _resampler;
-
-                for (long long int _i = 0; _i < __nLines; _i++)
-                    delete[] dResampleBuffer[_i];
-
-                delete[] dResampleBuffer;
-                delete[] dInputSamples;
-
                 throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
             }
             else if (_resampler->status() == Resampler::STATUS_SCAN_BUFFER_FULL)
@@ -3141,26 +3121,17 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
                     for (int _fin = 0; _fin < _final_cols; _fin++)
                     {
-                        if (isnan(dOutputSamples[_fin]))
-                        {
-                            dResampleBuffer[_vLine.front() + _ret_line][_vCol.front() + _fin] = NAN;
-                            continue;
-                        }
-
-                        dResampleBuffer[_vLine.front() + _ret_line][_vCol.front() + _fin] = dOutputSamples[_fin];
+                        writeData(_vLine.front()+_ret_line, _vCol.front()+_fin, dOutputSamples[_fin]);
                     }
 
                     _ret_line++;
                 }
 
                 // Try again to put the current line
-                _resampler->put_line(dInputSamples);
+                _resampler->put_line(&dInputSamples[0]);
             }
         }
     }
-
-    // Clear the input sample memory
-    delete[] dInputSamples;
 
     // Extract the remaining resampled lines from the resampler's memory
     while (true)
@@ -3174,139 +3145,14 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
         for (int _fin = 0; _fin < _final_cols; _fin++)
         {
-            if (isnan(dOutputSamples[_fin]))
-            {
-                dResampleBuffer[_vLine.front() + _ret_line][_vCol.front() + _fin] = NAN;
-                continue;
-            }
-
-            dResampleBuffer[_vLine.front() + _ret_line][_vCol.front() + _fin] = dOutputSamples[_fin];
+            writeData(_vLine.front()+_ret_line, _vCol.front()+_fin, dOutputSamples[_fin]);
         }
 
         _ret_line++;
     }
 
-    //_ret_line++;
-
-    // Delete the resampler: it is not used any more
-    delete _resampler;
-
     // Reset the calculated lines and columns
     nCalcLines = -1;
-
-    // Block unter dem resampleten kopieren
-    if (_vLine.size() < nSamples && (Direction == ALL || Direction == GRID || Direction == COLS))
-    {
-        for (int i = _vLine.last() + 1; i < __nOrigLines; i++)
-        {
-            for (size_t j = 0; j < _vCol.size(); j++)
-            {
-                if (_ret_line + i - (_vLine.last() + 1) + _vLine.front() >= getLines())
-                {
-                    for (long long int _i = 0; _i < __nLines; _i++)
-                        delete[] dResampleBuffer[_i];
-
-                    delete[] dResampleBuffer;
-
-                    throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
-                }
-
-                if (mu::isnan(readMem(i, _vCol[j])))
-                {
-                    dResampleBuffer[_ret_line + i - (_vLine.last() + 1) + _vLine.front()][_vCol[j]] = NAN;
-                }
-                else
-                {
-                    dResampleBuffer[_ret_line + i - (_vLine.last() + 1) + _vLine.front()][_vCol[j]] = readMem(i, _vCol[j]).real();
-                }
-            }
-        }
-    }
-    else if (_vLine.size() > nSamples && (Direction == ALL || Direction == GRID || Direction == COLS))
-    {
-        for (size_t i = nSamples - 1; i < _vLine.size(); i++)
-        {
-            for (size_t j = 0; j < _vCol.size(); j++)
-            {
-                if (_vLine[i] >= getLines())
-                {
-                    for (long long int _i = 0; _i < __nLines; _i++)
-                        delete[] dResampleBuffer[_i];
-
-                    delete[] dResampleBuffer;
-
-                    throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
-                }
-
-                dResampleBuffer[_vLine[i]][_vCol[j]] = NAN;
-            }
-        }
-    }
-
-    // Block rechts kopieren
-    if (_vCol.size() < nSamples && (Direction == ALL || Direction == GRID || Direction == LINES))
-    {
-        for (int i = 0; i < __nOrigLines; i++)
-        {
-            for (int j = _vCol.last() + 1; j < __nOrigCols; j++)
-            {
-                if (_final_cols + j - (_vCol.last() + 1) + _vCol.front() >= getCols())
-                {
-                    for (long long int _i = 0; _i < __nLines; _i++)
-                        delete[] dResampleBuffer[_i];
-
-                    delete[] dResampleBuffer;
-
-                    throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
-                }
-
-                if (mu::isnan(readMem(i, j)))
-                {
-                    dResampleBuffer[i][_final_cols + j - (_vCol.last() + 1) + _vCol.front()] = NAN;
-                }
-                else
-                {
-                    dResampleBuffer[i][_final_cols + j - (_vCol.last() + 1) + _vCol.front()] = readMem(i, j).real();
-                }
-            }
-        }
-    }
-    else if (_vCol.size() > nSamples && (Direction == ALL || Direction == GRID || Direction == LINES))
-    {
-        for (size_t i = 0; i < _vLine.size(); i++)
-        {
-            for (size_t j = nSamples - 1; j < _vCol.size(); j++)
-            {
-                if (_vCol[j] >= getCols())
-                {
-                    for (long long int _i = 0; _i < __nLines; _i++)
-                        delete[] dResampleBuffer[_i];
-
-                    delete[] dResampleBuffer;
-
-                    throw SyntaxError(SyntaxError::INTERNAL_RESAMPLER_ERROR, "resample", SyntaxError::invalid_position);
-                }
-
-                dResampleBuffer[_vLine[i]][_vCol[j]] = NAN;
-            }
-        }
-    }
-
-    // After all data is restored successfully
-    // copy the data points from the buffer back to their original state
-    for (int i = 0; i < __nLines; i++)
-    {
-        for (int j = 0; j < __nCols; j++)
-        {
-            writeData(i, j, dResampleBuffer[i][j]);
-        }
-    }
-
-    // Clear unused memory
-    for (long long int i = 0; i < __nLines; i++)
-        delete[] dResampleBuffer[i];
-
-    delete[] dResampleBuffer;
 
     if (bIsSaved)
     {

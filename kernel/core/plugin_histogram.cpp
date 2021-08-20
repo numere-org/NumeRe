@@ -985,7 +985,7 @@ static void createHist1D(const std::string& sCmd, const std::string& sTargettabl
                     break;
 
                 if (!i)
-                    _data.setHeadLineElement(_tIdx.col[j+1], sTargettable, _data.getHeadLineElement(_idx.col[j+1], _histParams.sTable));
+                    _data.setHeadLineElement(_tIdx.col[j+1], sTargettable, _data.getHeadLineElement(_idx.col[j], _histParams.sTable));
 
                 _data.writeToTable(_tIdx.row[i], _tIdx.col[j+1], sTargettable, vHistMatrix[i][j]);
             }
