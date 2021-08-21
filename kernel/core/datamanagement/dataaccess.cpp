@@ -510,10 +510,10 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 		{
 			// This is a usual data access
 			// create a vector containing the data
-			if (options & INSERT_STRINGS && _data.getType(_idx.col, sEntityName) != TableColumn::TYPE_VALUE)
+#warning NOTE (numere#1#08/17/21): Might be the source of some bytecode issues
+			if (/*options & INSERT_STRINGS &&*/ _data.getType(_idx.col, sEntityName) != TableColumn::TYPE_VALUE)
                 sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
             else
-#warning TODO (numere#5#08/17/21): Evaluate the advantages of using the return type here
                 vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
 		}
 		else if (isCluster)
@@ -644,6 +644,7 @@ static const string& handleCachedDataAccess(string& sLine, Parser& _parser, Memo
 		if (isCluster)
             _data.getCluster(_access.sCacheName).insertDataInArray(_parser.GetVectorVar(_access.sVectorName), _idx.row);
         else
+#warning NOTE (numere#3#08/21/21): This might lead to problems, if the user switches the type of a column in a loop
             _data.copyElementsInto(_parser.GetVectorVar(_access.sVectorName), _idx.row, _idx.col, _access.sCacheName);
 
 		_parser.UpdateVectorVar(_access.sVectorName);

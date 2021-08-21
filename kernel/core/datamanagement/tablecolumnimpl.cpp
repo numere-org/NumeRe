@@ -56,7 +56,7 @@ void ValueColumn::shrink()
 /////////////////////////////////////////////////
 std::string ValueColumn::getValueAsString(int elem) const
 {
-    if (elem >= 0 && elem < m_data.size())
+    if (elem >= 0 && elem < (int)m_data.size())
         return toString(m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision());
 
     return "nan";
@@ -88,7 +88,7 @@ std::string ValueColumn::getValueAsInternalString(int elem) const
 /////////////////////////////////////////////////
 mu::value_type ValueColumn::getValue(int elem) const
 {
-    if (elem >= 0 && elem < m_data.size())
+    if (elem >= 0 && elem < (int)m_data.size())
         return m_data[elem];
 
     return NAN;
@@ -122,10 +122,10 @@ void ValueColumn::setValue(int elem, const std::string& sValue)
 /////////////////////////////////////////////////
 void ValueColumn::setValue(int elem, const mu::value_type& vValue)
 {
-    if (elem >= m_data.size() && mu::isnan(vValue))
+    if (elem >= (int)m_data.size() && mu::isnan(vValue))
         return;
 
-    if (elem >= m_data.size())
+    if (elem >= (int)m_data.size())
         m_data.resize(elem+1, NAN);
 
     m_data[elem] = vValue;
@@ -166,7 +166,7 @@ void ValueColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_t
         if (i >= vValue.size())
             break;
 
-        if (idx[i] >= m_data.size())
+        if (idx[i] >= (int)m_data.size())
             m_data.resize(idx[i]+1, NAN);
 
         m_data[idx[i]] = vValue[i];
@@ -191,7 +191,7 @@ void ValueColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsig
         if (i >= _nNum)
             break;
 
-        if (idx[i] >= m_data.size())
+        if (idx[i] >= (int)m_data.size())
             m_data.resize(idx[i]+1, NAN);
 
         m_data[idx[i]] = _dData[i];
@@ -277,7 +277,7 @@ void ValueColumn::deleteElements(const VectorIndex& idx)
 
     for (size_t i = 0; i < idx.size(); i++)
     {
-        if (idx[i] >= 0 && idx[i] < m_data.size())
+        if (idx[i] >= 0 && idx[i] < (int)m_data.size())
             m_data[idx[i]] = NAN;
     }
 
@@ -346,7 +346,7 @@ void ValueColumn::removeElements(size_t pos, size_t elem)
 /////////////////////////////////////////////////
 int ValueColumn::compare(int i, int j, bool unused) const
 {
-    if (m_data.size() <= std::max(i, j))
+    if ((int)m_data.size() <= std::max(i, j))
         return 0;
 
     if (m_data[i] == m_data[j])
@@ -368,7 +368,7 @@ int ValueColumn::compare(int i, int j, bool unused) const
 /////////////////////////////////////////////////
 bool ValueColumn::isValid(int elem) const
 {
-    if (elem >= m_data.size() || mu::isnan(m_data[elem]))
+    if (elem >= (int)m_data.size() || mu::isnan(m_data[elem]))
         return false;
 
     return true;
@@ -384,7 +384,7 @@ bool ValueColumn::isValid(int elem) const
 /////////////////////////////////////////////////
 bool ValueColumn::asBool(int elem) const
 {
-    if (elem < 0 || elem >= m_data.size())
+    if (elem < 0 || elem >= (int)m_data.size())
         return false;
 
     return m_data[elem] != 0.0;
@@ -469,7 +469,7 @@ std::string StringColumn::getValueAsString(int elem) const
 /////////////////////////////////////////////////
 std::string StringColumn::getValueAsInternalString(int elem) const
 {
-    if (elem >= 0 && elem < m_data.size())
+    if (elem >= 0 && elem < (int)m_data.size())
         return m_data[elem];
 
     return "";
@@ -500,10 +500,10 @@ mu::value_type StringColumn::getValue(int elem) const
 /////////////////////////////////////////////////
 void StringColumn::setValue(int elem, const std::string& sValue)
 {
-    if (elem >= m_data.size() && !sValue.length())
+    if (elem >= (int)m_data.size() && !sValue.length())
         return;
 
-    if (elem >= m_data.size())
+    if (elem >= (int)m_data.size())
         m_data.resize(elem+1);
 
     m_data[elem] = toInternalString(sValue);
@@ -520,10 +520,10 @@ void StringColumn::setValue(int elem, const std::string& sValue)
 /////////////////////////////////////////////////
 void StringColumn::setValue(int elem, const mu::value_type& vValue)
 {
-    if (elem >= m_data.size() && mu::isnan(vValue))
+    if (elem >= (int)m_data.size() && mu::isnan(vValue))
         return;
 
-    if (elem >= m_data.size())
+    if (elem >= (int)m_data.size())
         m_data.resize(elem+1);
 
     m_data[elem] = toString(vValue, NumeReKernel::getInstance()->getSettings().getPrecision());
@@ -546,7 +546,7 @@ void StringColumn::setValue(const VectorIndex& idx, const std::vector<std::strin
         if (i >= vValue.size())
             break;
 
-        if (idx[i] >= m_data.size())
+        if (idx[i] >= (int)m_data.size())
             m_data.resize(idx[i]+1);
 
         m_data[idx[i]] = toInternalString(vValue[i]);
@@ -571,7 +571,7 @@ void StringColumn::setValue(const VectorIndex& idx, const std::vector<mu::value_
         if (i >= vValue.size())
             break;
 
-        if (idx[i] >= m_data.size())
+        if (idx[i] >= (int)m_data.size())
             m_data.resize(idx[i]+1);
 
         m_data[idx[i]] = toString(vValue[i], NumeReKernel::getInstance()->getSettings().getPrecision());
@@ -597,7 +597,7 @@ void StringColumn::setValue(const VectorIndex& idx, mu::value_type* _dData, unsi
         if (i >= _nNum)
             break;
 
-        if (idx[i] >= m_data.size())
+        if (idx[i] >= (int)m_data.size())
             m_data.resize(idx[i]+1);
 
         m_data[idx[i]] = toString(_dData[i], NumeReKernel::getInstance()->getSettings().getPrecision());
@@ -623,7 +623,7 @@ StringColumn* StringColumn::copy(const VectorIndex& idx) const
 
     for (size_t i = 0; i < idx.size(); i++)
     {
-        if (idx[i] >= 0 && idx[i] < m_data.size())
+        if (idx[i] >= 0 && idx[i] < (int)m_data.size())
             col->m_data[i] = m_data[idx[i]];
     }
 
@@ -684,7 +684,7 @@ void StringColumn::deleteElements(const VectorIndex& idx)
 
     for (size_t i = 0; i < idx.size(); i++)
     {
-        if (idx[i] >= 0 && idx[i] < m_data.size())
+        if (idx[i] >= 0 && idx[i] < (int)m_data.size())
             m_data[idx[i]].clear();
     }
 
@@ -753,7 +753,7 @@ void StringColumn::removeElements(size_t pos, size_t elem)
 /////////////////////////////////////////////////
 int StringColumn::compare(int i, int j, bool caseinsensitive) const
 {
-    if (m_data.size() <= std::max(i, j))
+    if ((int)m_data.size() <= std::max(i, j))
         return 0;
 
     if (caseinsensitive)
@@ -785,7 +785,7 @@ int StringColumn::compare(int i, int j, bool caseinsensitive) const
 /////////////////////////////////////////////////
 bool StringColumn::isValid(int elem) const
 {
-    if (elem >= m_data.size() || !m_data[elem].length())
+    if (elem >= (int)m_data.size() || !m_data[elem].length())
         return false;
 
     return true;
@@ -801,7 +801,7 @@ bool StringColumn::isValid(int elem) const
 /////////////////////////////////////////////////
 bool StringColumn::asBool(int elem) const
 {
-    if (elem < 0 || elem >= m_data.size())
+    if (elem < 0 || elem >= (int)m_data.size())
         return false;
 
     return m_data[elem].length() != 0;

@@ -1867,7 +1867,7 @@ void Plot::createStdPlot(vector<short>& vType, int& nStyle, size_t& nLegends, in
 /////////////////////////////////////////////////
 bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType)
 {
-#warning TODO (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
+#warning NOTE (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
     if (!_pData.getBoxplot() && !_pData.getyError() && !_pData.getxError() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
     {
         _mData = duplicatePoints(_mData);
@@ -3243,7 +3243,7 @@ void Plot::createStd3dPlot(vector<short>& vType, int& nStyle, size_t& nLegends, 
 /////////////////////////////////////////////////
 bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
 {
-#warning TODO (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
+#warning NOTE (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
     if (!_pData.getBoxplot() && !_pData.getyError() && !_pData.getxError() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
     {
         for (int i = 0; i < 3; i++)
@@ -4023,7 +4023,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
         }
         else
         {
-            if (_idx.row.last() >= _data.getCluster(sDataTable).size())
+            if (_idx.row.last() >= (int)_data.getCluster(sDataTable).size())
                 _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
         }
 
@@ -4031,7 +4031,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
         // a table is used for the current data access
         if (_accessParser.isCluster())
         {
-            if (_idx.row.front() >= _data.getCluster(sDataTable).size())
+            if (_idx.row.front() >= (int)_data.getCluster(sDataTable).size())
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
         }
         else

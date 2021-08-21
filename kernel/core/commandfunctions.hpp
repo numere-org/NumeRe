@@ -3961,7 +3961,7 @@ static CommandReturnValues cmd_show(string& sCmd)
             {
                 for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
                 {
-                    if (_data.getStringElements(_accessParser.getIndices().col[j]) <= _accessParser.getIndices().row[i])
+                    if ((int)_data.getStringElements(_accessParser.getIndices().col[j]) <= _accessParser.getIndices().row[i])
                         break;
 
                     _stringTable.set(i, j, "\"" + _data.readString(_accessParser.getIndices().row[i], _accessParser.getIndices().col[j]) + "\"");
@@ -5032,8 +5032,16 @@ static CommandReturnValues cmd_progress(string& sCmd)
 /////////////////////////////////////////////////
 static CommandReturnValues cmd_print(string& sCmd)
 {
-    string sArgument = sCmd.substr(findCommand(sCmd).nPos + 6) + " -print";
+    string sArgument = sCmd.substr(findCommand(sCmd).nPos + 6);
     string sDummy;
+
+    if (!NumeReKernel::getInstance()->getDefinitions().call(sArgument))
+        throw SyntaxError(SyntaxError::FUNCTION_ERROR, sCmd, sArgument);
+
+    if (sArgument.find("??") != string::npos)
+        sArgument = promptForUserInput(sArgument);
+
+    sArgument += " -print";
 
     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sArgument, sDummy, false);
 

@@ -25,6 +25,8 @@
 
 #define KERNEL_PRINT_SLEEP 2
 #define TERMINAL_FORMAT_FIELD_LENOFFSET 16
+#define DEFAULT_NUM_PRECISION 7
+#define DEFAULT_MINMAX_PRECISION 5
 
 extern const string sVersion;
 /* --> STATUS: Versionsname des Programms; Aktuell "Ampere", danach "Angstroem". Ab 1.0 Namen mit "B",
@@ -2342,9 +2344,9 @@ NumeReVariables NumeReKernel::getVariableList()
             continue;
 
         if ((*iter->second).imag())
-            sCurrentLine = iter->first + "\t1 x 1\tcomplex\t" + toString(*iter->second, 5) + "\t" + iter->first;
+            sCurrentLine = iter->first + "\t1 x 1\tcomplex\t" + toString(*iter->second, DEFAULT_NUM_PRECISION*2) + "\t" + iter->first;
         else
-            sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, 5) + "\t" + iter->first;
+            sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, DEFAULT_NUM_PRECISION) + "\t" + iter->first;
 
         vars.vVariables.push_back(sCurrentLine);
     }
@@ -2377,7 +2379,7 @@ NumeReVariables NumeReKernel::getVariableList()
         else
         {
             sCurrentLine = iter->first + "()\t" + toString(_memoryManager.getLines(iter->first, false)) + " x " + toString(_memoryManager.getCols(iter->first, false));
-            sCurrentLine += "\ttable\t{" + toString(_memoryManager.min(iter->first, "")[0], 5) + ", ..., " + toString(_memoryManager.max(iter->first, "")[0], 5) + "}\t" + iter->first + "()";
+            sCurrentLine += "\ttable\t{" + toString(_memoryManager.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_memoryManager.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter->first + "()";
         }
 
         vars.vVariables.push_back(sCurrentLine);

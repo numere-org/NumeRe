@@ -1053,7 +1053,7 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
 /////////////////////////////////////////////////
 void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType)
 {
-#warning TODO (numere#1#08/15/21): The "onclose" event is still undefined
+#warning NOTE (numere#1#08/15/21): The "onclose" event is still undefined
     if (sEventType == "onclose")
         return;
 

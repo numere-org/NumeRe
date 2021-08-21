@@ -1180,7 +1180,7 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
 /////////////////////////////////////////////////
 void Memory::reorderColumn(const VectorIndex& vIndex, int i1, int i2, int j1)
 {
-    if (memArray.size() > j1 && memArray[j1])
+    if ((int)memArray.size() > j1 && memArray[j1])
     {
         TblColPtr col(memArray[j1]->copy(vIndex));
         memArray[j1]->insert(VectorIndex(i1, i2), col.get());
@@ -1248,7 +1248,7 @@ NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lin
 
     for (size_t j = 0; j < cols.size(); j++)
     {
-        if (cols[j] < memArray.size() && memArray[cols[j]])
+        if (cols[j] < (int)memArray.size() && memArray[cols[j]])
             table.setColumn(j, memArray[cols[j]]->copy(lines));
     }
 
@@ -1523,14 +1523,16 @@ mu::value_type Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) 
             if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
-            if (mu::isnan(readMem(_vLine[i], _vCol[j])))
+            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+
+            if (mu::isnan(val))
                 continue;
 
             if (isnan(dMax))
-                dMax = readMem(_vLine[i], _vCol[j]).real();
+                dMax = val.real();
 
-            if (dMax < readMem(_vLine[i], _vCol[j]).real())
-                dMax = readMem(_vLine[i], _vCol[j]).real();
+            if (dMax < val.real())
+                dMax = val.real();
         }
     }
 
@@ -1567,14 +1569,16 @@ mu::value_type Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) 
             if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
                 continue;
 
-            if (mu::isnan(readMem(_vLine[i], _vCol[j])))
+            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+
+            if (mu::isnan(val))
                 continue;
 
             if (isnan(dMin))
-                dMin = readMem(_vLine[i], _vCol[j]).real();
+                dMin = val.real();
 
-            if (dMin > readMem(_vLine[i], _vCol[j]).real())
-                dMin = readMem(_vLine[i], _vCol[j]).real();
+            if (dMin > val.real())
+                dMin = val.real();
         }
     }
 
@@ -3065,7 +3069,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
     {
         for (size_t j = 0; j < _vCol.size(); j++)
         {
-            if (memArray.size() < _vCol[j] && memArray[_vCol[j]])
+            if ((int)memArray.size() < _vCol[j] && memArray[_vCol[j]])
                 memArray[_vCol[j]]->insertElements(_vLine.last()+1, nLinesToInsert);
         }
     }

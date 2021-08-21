@@ -972,7 +972,7 @@ mu::value_type TableViewer::CellToCmplx(int row, int col)
 {
     if (GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT))
         return GetTable()->GetValueAsDouble(row, col);
-    else if (row >= nFirstNumRow && GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
+    else if (row >= (int)nFirstNumRow && GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
         return StrToCmplx(GetCellValue(row, col).ToStdString());
 
     return NAN;

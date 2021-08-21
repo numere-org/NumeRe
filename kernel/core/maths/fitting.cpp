@@ -807,7 +807,7 @@ static int getDataForFit(const string& sCmd, string& sDimsForFitLog, FittingData
     }
     else
     {
-        if (_idx.row.back() > _data.getCluster(sDataTable).size())
+        if (_idx.row.back() > (int)_data.getCluster(sDataTable).size())
             _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
     }
 

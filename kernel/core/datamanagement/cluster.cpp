@@ -99,7 +99,7 @@ namespace NumeRe
                 return;
 
             // Expand the current cluster on-the-fly
-            while (_idx.row[i] >= vClusterArray.size())
+            while (_idx.row[i] >= (int)vClusterArray.size())
                 push_back(new ClusterDoubleItem(NAN));
 
             // Assign the value and expand singletons
@@ -439,7 +439,7 @@ namespace NumeRe
             // Insert the elements in the passed array
             for (unsigned int i = 0; i < _vLine.size(); i++)
             {
-                if (_vLine[i] >= vClusterArray.size() || _vLine[i] < 0)
+                if (_vLine[i] >= (int)vClusterArray.size() || _vLine[i] < 0)
                     (*vTarget)[i] = NAN;
                 else
                     (*vTarget)[i] = vClusterArray[_vLine[i]]->getDouble();
@@ -755,7 +755,7 @@ namespace NumeRe
         // set the pointer to a nullpointer
         for (size_t i = 0; i < vLines.size(); i++)
         {
-            if (vLines[i] < 0 || vLines[i] >= vClusterArray.size())
+            if (vLines[i] < 0 || vLines[i] >= (int)vClusterArray.size())
                 continue;
 
             if (vClusterArray[vLines[i]])
@@ -797,7 +797,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
             else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 nInvalid++;
@@ -825,7 +825,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
             else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
                 nInvalid++;
@@ -852,7 +852,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
@@ -882,7 +882,7 @@ namespace NumeRe
         // their values on-the-fly
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (!sMax.length())
@@ -908,7 +908,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
@@ -938,7 +938,7 @@ namespace NumeRe
         // their values on-the-fly
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (!sMin.length())
@@ -964,7 +964,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
@@ -989,7 +989,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
@@ -1015,7 +1015,7 @@ namespace NumeRe
         // their values on-the-fly
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             sSum += vClusterArray[_vLine[i]]->getString();
@@ -1037,7 +1037,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid values
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
             else if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE && isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
@@ -1061,7 +1061,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (isnan(dRetVal))
@@ -1088,7 +1088,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE
@@ -1112,7 +1112,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() == ClusterItem::ITEMTYPE_DOUBLE
@@ -1144,7 +1144,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid locations
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
         }
         return _vLine.size() - (double)nInvalid;
@@ -1163,7 +1163,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
@@ -1218,7 +1218,7 @@ namespace NumeRe
         // Apply the operation and ignore invalid or non-double items
         for (long long int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 continue;
 
             if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(std::abs(vClusterArray[_vLine[i]]->getDouble())))
@@ -1293,7 +1293,7 @@ namespace NumeRe
         // Calculate the number of valid items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
             else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
@@ -1308,7 +1308,7 @@ namespace NumeRe
         // copy the data to the buffer
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
             dData[nCount] = vClusterArray[_vLine[i]]->getDouble().real();
@@ -1353,7 +1353,7 @@ namespace NumeRe
         // Calculate the number of valid items
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size())
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size())
                 nInvalid++;
             else if (vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 nInvalid++;
@@ -1368,7 +1368,7 @@ namespace NumeRe
         // copy the data to the buffer
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
+            if (_vLine[i] < 0 || _vLine[i] >= (int)vClusterArray.size() || vClusterArray[_vLine[i]]->getType() != ClusterItem::ITEMTYPE_DOUBLE || isnan(vClusterArray[_vLine[i]]->getDouble().real()))
                 continue;
 
             dData[nCount] = vClusterArray[_vLine[i]]->getDouble().real();

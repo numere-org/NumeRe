@@ -1353,7 +1353,7 @@ namespace NumeRe
                 {
                     sElement = printValue(v[n]);
 
-                    if (n < vCounts.size())
+                    if (n < (int)vCounts.size())
                         nLen = intCast(fabs(vCounts[n]));
 
                     while (sElement.length() < nLen && sChar.length())

@@ -109,7 +109,6 @@ BEGIN_EVENT_TABLE(NumeReEditor, wxStyledTextCtrl)
     EVT_MENU            (ID_FOLD_CURRENT_BLOCK, NumeReEditor::OnFoldCurrentBlock)
     EVT_MENU            (ID_HIDE_SELECTION, NumeReEditor::OnHideSelection)
     EVT_MENU            (ID_MENU_HELP_ON_ITEM, NumeReEditor::OnHelpOnSelection)
-    EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)
     EVT_MENU            (ID_RENAME_SYMBOLS, NumeReEditor::OnRenameSymbols)
     EVT_MENU            (ID_ABSTRAHIZE_SECTION, NumeReEditor::OnAbstrahizeSection)
     EVT_MENU            (ID_MENU_COPY, NumeReEditor::OnMenuEvent)
@@ -278,9 +277,6 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_popupMenu.Append(ID_DEBUG_ADD_BREAKPOINT, _guilang.get("GUI_MENU_EDITOR_ADDBP"));
     m_popupMenu.Append(ID_DEBUG_REMOVE_BREAKPOINT, _guilang.get("GUI_MENU_EDITOR_REMOVEBP"));
     m_popupMenu.Append(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, _guilang.get("GUI_MENU_EDITOR_CLEARBP"));
-
-    //m_popupMenu.Append(ID_DEBUG_RUNTOCURSOR, "Run to cursor");
-
     m_popupMenu.AppendSeparator();
 
     m_popupMenu.Append(ID_BOOKMARK_ADD, _guilang.get("GUI_MENU_EDITOR_ADDBM"));
@@ -5366,24 +5362,6 @@ void NumeReEditor::FocusOnLine(int linenumber, bool showMarker)
         MarkerDeleteAll(MARKER_FOCUSEDLINE);
         MarkerAdd(linenumber, MARKER_FOCUSEDLINE);
     }
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-///  private OnRunToCursor
-///  Creates a "one-shot" breakpoint and tells the debugger to run to that line
-///
-///  @param  event wxCommandEvent & The generated menu event
-///
-///  @return void
-///
-///  @author Mark Erikson @date 04-22-2004
-///
-/// \todo Evaluate, whether this method is still needed
-//////////////////////////////////////////////////////////////////////////////
-void NumeReEditor::OnRunToCursor(wxCommandEvent& event)
-{
-    ResetRightClickLocation();
 }
 
 

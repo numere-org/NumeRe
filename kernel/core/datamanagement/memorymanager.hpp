@@ -336,7 +336,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
 		// DIMENSION ACCESS METHODS
-		inline long long int getLines(StringView sTable, bool _bFull = false) const
+		inline int getLines(StringView sTable, bool _bFull = false) const
 		{
 		    size_t idx = mapStringViewFind(sTable);
 
@@ -346,7 +346,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
-		inline long long int getLines(const std::string& sTable, bool _bFull = false) const
+		inline int getLines(const std::string& sTable, bool _bFull = false) const
 		{
 		    auto iter = mCachesMap.find(sTable);
 
@@ -356,7 +356,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
-		inline long long int getCols(StringView sTable, bool _bFull = false) const
+		inline int getCols(StringView sTable, bool _bFull = false) const
 		{
 		    size_t idx = mapStringViewFind(sTable);
 
@@ -366,7 +366,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
-		inline long long int getCols(const std::string& sTable, bool _bFull = false) const
+		inline int getCols(const std::string& sTable, bool _bFull = false) const
 		{
 		    auto iter = mCachesMap.find(sTable);
 

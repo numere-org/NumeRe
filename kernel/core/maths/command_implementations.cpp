@@ -2583,12 +2583,12 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         vAxis = getShiftedAxis(lines, bInverseTrafo);
     else
     {
-        for (size_t i = 0; i < lines; i++)
+        for (size_t i = 0; i < (size_t)lines; i++)
             vAxis.push_back(i);
     }
 
     // Copy the data
-    for (size_t i = 0; i < lines; i++)
+    for (size_t i = 0; i < (size_t)lines; i++)
     {
         if (cols == 2)
             _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real(), 0.0);
@@ -2779,7 +2779,7 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
             NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_WAVELET_INVERSE_TRANSFORMING", sExplType) + " ", _option, 0));
     }
 
-    for (size_t i = 0; i < _mem->getLines(); i++)
+    for (size_t i = 0; i < (size_t)_mem->getLines(); i++)
     {
         vWaveletData.push_back(_mem->readMem(i, 1).real());
 
@@ -3916,12 +3916,12 @@ void boneDetection(CommandLineParser& cmdParser)
     // Copy the results to the target table
     for (int i = 0; i < _res.GetNy(); i++)
     {
-        if (_target.row.size() <= i)
+        if ((int)_target.row.size() <= i)
             break;
 
         for (int j = 0; j < _res.GetNx(); j++)
         {
-            if (_target.col.size() <= j)
+            if ((int)_target.col.size() <= j)
                 break;
 
             if (!j)
@@ -4137,7 +4137,7 @@ void rotateTable(CommandLineParser& cmdParser)
         // Write the x axis
         for (int i = 0; i < rows; i++)
         {
-            if (_idx.row.size() <= i)
+            if ((int)_idx.row.size() <= i)
                 break;
 
             _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, i+1);
@@ -4146,7 +4146,7 @@ void rotateTable(CommandLineParser& cmdParser)
         // Write the y axis
         for (int i = 0; i < cols; i++)
         {
-            if (_idx.row.size() <= i)
+            if ((int)_idx.row.size() <= i)
                 break;
 
             _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, i+1);
@@ -4163,7 +4163,7 @@ void rotateTable(CommandLineParser& cmdParser)
         // the values of the new coordinates
         for (int i = 0; i < rows; i++)
         {
-            if (_idx.row.size() <= i)
+            if ((int)_idx.row.size() <= i)
                 break;
 
             Point p(i+top, origin.y);
@@ -4179,7 +4179,7 @@ void rotateTable(CommandLineParser& cmdParser)
 
         for (int j = 0; j < cols; j++)
         {
-            if (_idx.row.size() <= j)
+            if ((int)_idx.row.size() <= j)
                 break;
 
             Point p(origin.x, j+left);
@@ -4199,12 +4199,12 @@ void rotateTable(CommandLineParser& cmdParser)
     // Calculate the rotated grid
     for (int i = 0; i < rows; i++)
     {
-        if (_idx.row.size() <= i)
+        if ((int)_idx.row.size() <= i)
             break;
 
         for (int j = 0; j < cols; j++)
         {
-            if (_idx.col.size() <= j)
+            if ((int)_idx.col.size() <= j)
                 break;
 
             // Create a point in rotated source coordinates

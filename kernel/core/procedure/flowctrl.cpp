@@ -2459,6 +2459,11 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             if (sCache.length())
                 bWriteToCache = true;
 
+            // Ad-hoc bytecode adaption
+#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
+            if (nCurrentCalcType && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+                nCurrentCalcType |= CALCTYPE_STRING;
+
             if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
             {
                 _parserRef->CacheCurrentEquation(sLine);
