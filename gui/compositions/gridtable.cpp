@@ -39,7 +39,7 @@ GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable)
 
 // This member function will return the number of headlines
 // available in the internal buffer
-int GridNumeReTable::getNumHeadlines()
+int GridNumeReTable::getNumHeadlines() const
 {
     return _table.getHeadCount();
 }
@@ -71,12 +71,15 @@ int GridNumeReTable::GetNumberCols()
 bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
 {
     // Headlines
-    if (row == 0 && sTypeName == wxGRID_VALUE_FLOAT)
+    if (row == 0 && (sTypeName == wxGRID_VALUE_FLOAT || sTypeName == "complex"))
         return false;
     else if (row < getNumHeadlines() && sTypeName == wxGRID_VALUE_STRING)
         return true;
 
     // Regular cells
+    if (sTypeName == "complex" && _table.getColumnType(col) == TableColumn::TYPE_VALUE)
+        return true;
+
     if (sTypeName == wxGRID_VALUE_FLOAT
         && _table.getColumnType(col) == TableColumn::TYPE_VALUE
         && (_table.getValue(row-getNumHeadlines(), col).imag() == 0 || mu::isnan(_table.getValue(row-getNumHeadlines(), col))))
@@ -100,6 +103,12 @@ double GridNumeReTable::GetValueAsDouble(int row, int col)
         return NAN;
 
     return _table.getValue(row - getNumHeadlines(), col).real();
+}
+
+void* GridNumeReTable::GetValueAsCustom(int row, int col, const wxString& sTypeName)
+{
+    value = _table.getValue(row - getNumHeadlines(), col);
+    return static_cast<void*>(&value);
 }
 
 // This virtual member function returns the value of the
@@ -270,4 +279,92 @@ wxString GridNumeReTable::GetColLabelValue(int col)
 {
     return toString(col+1);
 }
+
+
+double GridNumeReTable::min(int r1, int c1, int r2, int c2) const
+{
+    double dMin = NAN;
+    const int nHeadLines = getNumHeadlines();
+
+    for (int i = r1; i <= r2; i++)
+    {
+        for (int j = c1; j <= c2; j++)
+        {
+            double val = _table.getValue(i - nHeadLines, j).real();
+
+            if (isnan(dMin) || val < dMin)
+                dMin = val;
+        }
+    }
+
+    return dMin;
+}
+
+
+double GridNumeReTable::max(int r1, int c1, int r2, int c2) const
+{
+    double dMax = NAN;
+    const int nHeadLines = getNumHeadlines();
+
+    for (int i = r1; i <= r2; i++)
+    {
+        for (int j = c1; j <= c2; j++)
+        {
+            double val = _table.getValue(i - nHeadLines, j).real();
+
+            if (isnan(dMax) || val > dMax)
+                dMax = val;
+        }
+    }
+
+    return dMax;
+}
+
+
+mu::value_type GridNumeReTable::avg(int r1, int c1, int r2, int c2) const
+{
+    mu::value_type dSum = 0;
+    size_t nCount = 0;
+    const int nHeadLines = getNumHeadlines();
+
+    for (int i = r1; i <= r2; i++)
+    {
+        for (int j = c1; j <= c2; j++)
+        {
+            mu::value_type val = _table.getValue(i - nHeadLines, j);
+
+            if (!mu::isnan(val))
+            {
+                nCount++;
+                dSum += val;
+            }
+        }
+    }
+
+    if (nCount)
+        return dSum / (double)nCount;
+
+    return 0.0;
+}
+
+
+mu::value_type GridNumeReTable::sum(int r1, int c1, int r2, int c2) const
+{
+    mu::value_type dSum = 0;
+    const int nHeadLines = getNumHeadlines();
+
+    for (int i = r1; i <= r2; i++)
+    {
+        for (int j = c1; j <= c2; j++)
+        {
+            mu::value_type val = _table.getValue(i - nHeadLines, j);
+
+            if (!mu::isnan(val))
+                dSum += val;
+        }
+    }
+
+    return dSum;
+}
+
 

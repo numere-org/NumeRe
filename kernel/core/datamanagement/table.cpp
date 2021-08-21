@@ -130,7 +130,7 @@ namespace NumeRe
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::isNumerical(const std::string& sValue)
+    bool Table::isNumerical(const std::string& sValue) const
     {
         static std::string sValidNumericalCharacters = "0123456789,.eE+-* INFAinfa";
         return sValue.find_first_not_of(sValidNumericalCharacters) == std::string::npos;
@@ -338,7 +338,7 @@ namespace NumeRe
     /// \return int
     ///
     /////////////////////////////////////////////////
-    int Table::getHeadCount()
+    int Table::getHeadCount() const
     {
         int nHeadlineCount = 1;
 
@@ -420,7 +420,7 @@ namespace NumeRe
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Table::getCleanHeadPart(size_t i, size_t part)
+    std::string Table::getCleanHeadPart(size_t i, size_t part) const
     {
         if (vTableData.size() > i && vTableData[i] && part < (size_t)getHeadCount())
         {
@@ -474,7 +474,7 @@ namespace NumeRe
     /// \return mu::value_type
     ///
     /////////////////////////////////////////////////
-    mu::value_type Table::getValue(size_t i, size_t j)
+    mu::value_type Table::getValue(size_t i, size_t j) const
     {
         if (vTableData.size() > j && vTableData[j])
             return vTableData[j]->getValue(i);
@@ -493,7 +493,7 @@ namespace NumeRe
     /// \return std::string
     ///
     /////////////////////////////////////////////////
-    std::string Table::getValueAsString(size_t i, size_t j)
+    std::string Table::getValueAsString(size_t i, size_t j) const
     {
         if (vTableData.size() > j && vTableData[j])
         {
@@ -569,7 +569,7 @@ namespace NumeRe
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t Table::getCols()
+    size_t Table::getCols() const
     {
         return vTableData.size();
     }

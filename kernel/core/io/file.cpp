@@ -807,7 +807,7 @@ namespace NumeRe
     NumeReDataFile::NumeReDataFile(const string& filename)
         : GenericFile(filename),
         isLegacy(false), timeStamp(0), versionMajor(0), versionMinor(0),
-        versionBuild(0)
+        versionBuild(0), fileVersionRead(1.0f)
     {
         // Empty constructor
     }
@@ -828,6 +828,7 @@ namespace NumeRe
         versionMajor = file.versionMajor;
         versionMinor = file.versionMinor;
         versionBuild = file.versionBuild;
+        fileVersionRead = file.fileVersionRead;
     }
 
 
@@ -993,6 +994,7 @@ namespace NumeRe
         if (versionMajor * 100 + versionMinor * 10 + versionBuild <= 111)
         {
             isLegacy = true;
+            fileVersionRead = 1.0f;
             nRows = readNumField<long long int>();
             nCols = readNumField<long long int>();
             timeStamp = oldTime;

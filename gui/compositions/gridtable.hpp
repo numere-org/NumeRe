@@ -27,7 +27,8 @@ class GridNumeReTable : public wxGridTableBase
 {
     private:
         NumeRe::Table _table;
-        int getNumHeadlines();
+        int getNumHeadlines() const;
+        mu::value_type value;
 
     public:
         GridNumeReTable();
@@ -47,6 +48,7 @@ class GridNumeReTable : public wxGridTableBase
 
         virtual bool CanGetValueAs(int row, int col, const wxString& sTypeName);
         virtual double GetValueAsDouble(int row, int col);
+        virtual void* GetValueAsCustom(int row, int col, const wxString& sTypeName);
 
         virtual wxString GetValue(int row, int col);
         virtual void SetValue(int row, int col, const wxString& value);
@@ -61,6 +63,11 @@ class GridNumeReTable : public wxGridTableBase
 
         virtual wxString GetRowLabelValue(int row);
         virtual wxString GetColLabelValue(int col);
+
+        double min(int r1, int c1, int r2, int c2) const;
+        double max(int r1, int c1, int r2, int c2) const;
+        mu::value_type avg(int r1, int c1, int r2, int c2) const;
+        mu::value_type sum(int r1, int c1, int r2, int c2) const;
 };
 
 

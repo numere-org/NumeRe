@@ -1,3 +1,10 @@
 New	NumeRe now support complex numbers. Complex numbers may be entered using a number followed by the letter "i" or by using the function "complex()"
 Added	Functions for complex numbers were added: "real()", "imag()", "to_rect()", "to_polar()", "conj()" and "complex()"
 Cleaned	Underscores in table heads are now visible in the table viewer and all table printing functionalities.
+New	Tables can now contain complex values
+New	Tables can now contain strings in distinct columns
+Applied	Enhanced displaying speed of tables in the table viewer
+Applied	NDAT file tooltips now display the NDAT file version instead of the NumeRe file version
+Applied	Code snippets in the documentation browser are now highlighted with an additional grey background
+Applied	The table editor has full flexibilty regarding string and value columns. If the values change, the column will try to convert itself to a more fitting type
+Applied	String columns or tables containing strings in arbitrary locations can now be pasted into the table editor

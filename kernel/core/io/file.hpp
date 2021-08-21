@@ -47,7 +47,8 @@ namespace NumeRe
         long int versionMajor;
         long int versionMinor;
         long int versionBuild;
-        time_t timeStamp;
+        float fileVersion;
+        __time64_t timeStamp;
 
         FileHeaderInfo() : sFileExtension(), sFileName(), sTableName(), sComment(), nRows(0), nCols(0), versionMajor(-1), versionMinor(-1), versionBuild(-1), timeStamp(0) {}
     };
@@ -1516,6 +1517,7 @@ namespace NumeRe
                 info.versionMajor = versionMajor;
                 info.versionMinor = versionMinor;
                 info.versionBuild = versionBuild;
+                info.fileVersion = fileVersionRead;
                 info.timeStamp = timeStamp;
 
                 return info;

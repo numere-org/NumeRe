@@ -970,12 +970,14 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
 /////////////////////////////////////////////////
 mu::value_type TableViewer::CellToCmplx(int row, int col)
 {
-    if (GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT))
-        return GetTable()->GetValueAsDouble(row, col);
-    else if (row >= (int)nFirstNumRow && GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
-        return StrToCmplx(GetCellValue(row, col).ToStdString());
-
-    return NAN;
+    //if (GetTable()->CanGetValueAs(row, col, "complex"))
+        return *static_cast<mu::value_type*>(GetTable()->GetValueAsCustom(row, col, "complex"));
+    //else if (GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT))
+    //    return GetTable()->GetValueAsDouble(row, col);
+    //else if (row >= (int)nFirstNumRow && GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
+    //    return StrToCmplx(GetCellValue(row, col).ToStdString());
+    //
+    //return NAN;
 }
 
 
@@ -990,20 +992,7 @@ mu::value_type TableViewer::CellToCmplx(int row, int col)
 /////////////////////////////////////////////////
 double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    double dMin = NAN;
-
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
-    {
-        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
-        {
-            double val = CellToCmplx(i, j).real();
-
-            if (isnan(dMin) || val < dMin)
-                dMin = val;
-        }
-    }
-
-    return dMin;
+    return static_cast<GridNumeReTable*>(GetTable())->min(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
 }
 
 
@@ -1018,20 +1007,7 @@ double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCe
 /////////////////////////////////////////////////
 double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    double dMax = NAN;
-
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
-    {
-        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
-        {
-            double val = CellToCmplx(i, j).real();
-
-            if (isnan(dMax) || val > dMax)
-                dMax = val;
-        }
-    }
-
-    return dMax;
+    return static_cast<GridNumeReTable*>(GetTable())->max(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
 }
 
 
@@ -1046,20 +1022,7 @@ double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCe
 /////////////////////////////////////////////////
 mu::value_type TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    mu::value_type dSum = 0;
-
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
-    {
-        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
-        {
-            mu::value_type val = CellToCmplx(i, j);
-
-            if (!mu::isnan(val))
-                dSum += val;
-        }
-    }
-
-    return dSum;
+    return static_cast<GridNumeReTable*>(GetTable())->sum(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
 }
 
 
@@ -1074,27 +1037,7 @@ mu::value_type TableViewer::calculateSum(const wxGridCellCoords& topLeft, const 
 /////////////////////////////////////////////////
 mu::value_type TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    mu::value_type dSum = 0;
-    double nCount = 0;
-
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
-    {
-        for (int j = topLeft.GetCol(); j <= bottomRight.GetCol(); j++)
-        {
-            mu::value_type val = CellToCmplx(i, j);
-
-            if (!mu::isnan(val))
-            {
-                nCount++;
-                dSum += val;
-            }
-        }
-    }
-
-    if (nCount)
-        return dSum / nCount;
-
-    return 0.0;
+    return static_cast<GridNumeReTable*>(GetTable())->avg(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
 }
 
 

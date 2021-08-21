@@ -35,7 +35,7 @@ namespace NumeRe
             std::string sTableName;
 
             void setMinSize(size_t i, size_t j);
-            bool isNumerical(const std::string& sValue);
+            bool isNumerical(const std::string& sValue) const;
 
         public:
             Table();
@@ -58,17 +58,17 @@ namespace NumeRe
             void setColumn(size_t j, TableColumn* column);
 
             std::string getName() const;
-            int getHeadCount();
+            int getHeadCount() const;
             std::string getHead(size_t i) const;
             std::string getCleanHead(size_t i) const;
-            std::string getCleanHeadPart(size_t i, size_t part = 0);
-            mu::value_type getValue(size_t i, size_t j);
-            std::string getValueAsString(size_t i, size_t j);
+            std::string getCleanHeadPart(size_t i, size_t part = 0) const;
+            mu::value_type getValue(size_t i, size_t j) const;
+            std::string getValueAsString(size_t i, size_t j) const;
             TableColumn* getColumn(size_t j) const;
             TableColumn::ColumnType getColumnType(size_t j) const;
 
             size_t getLines() const;
-            size_t getCols();
+            size_t getCols() const;
 
             bool isEmpty() const;
 

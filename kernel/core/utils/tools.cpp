@@ -3146,7 +3146,11 @@ string getFileInfo(const string& sFileName)
         return "";
     }
 
-    sFileInfo = toString(file.getTimeStamp(), 0) + " (v" + file.getVersionString() + ") | " + toString(file.getRows()) + " x " + toString(file.getCols()) + " | \"" + file.getTableName() + "()\"";
+    NumeRe::FileHeaderInfo info = file.getFileHeaderInformation();
+
+    sFileInfo = toString(info.timeStamp, 0)
+                + " (NDAT v" + toString(info.fileVersion, 5) + ") | "
+                + toString(info.nRows) + " x " + toString(info.nCols) + " | \"" + info.sTableName + "()\"";
 
     // Return the read file meta information
     return sFileInfo;
