@@ -1853,9 +1853,10 @@ namespace NumeRe
             // Clear the first line, if the tokens were
             // not erased before
             if (vTokens.size())
+            {
                 vFileData[0].clear();
-
-            nComment++;
+                nComment++;
+            }
         }
 
         // Store the number of lines of the file,
@@ -2083,10 +2084,9 @@ namespace NumeRe
                     nCol++;
             }
 
-            if (!nCols)
+            if (nCols < nCol)
                 nCols = nCol;
-
-            else if (nCol != nCols)
+            else if (abs(nCol - nCols) > 1)
             {
                 if (cSep == ',')
                     cSep = ';';

@@ -842,7 +842,7 @@ ValueColumn* StringColumn::convert() const
         if (!m_data[i].length())
             continue;
 
-        if (m_data[i].find_first_not_of("0123456789.,eEiI+-*") != std::string::npos
+        if (m_data[i].find_first_not_of(" 0123456789.,eEiI+-*") != std::string::npos
             && toLowerCase(m_data[i]) != "inf"
             && toLowerCase(m_data[i]) != "-inf"
             && toLowerCase(m_data[i]) != "nan")

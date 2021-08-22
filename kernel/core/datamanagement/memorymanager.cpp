@@ -781,7 +781,7 @@ Memory* MemoryManager::getTable(const string& sTable)
 void MemoryManager::melt(Memory* _mem, const string& sTable)
 {
     // Ensure that the table exists
-    if (!_mem)
+    if (!_mem || !_mem->memArray.size())
         return;
 
     // Is a corresponding table known?
@@ -796,22 +796,17 @@ void MemoryManager::melt(Memory* _mem, const string& sTable)
         // Combine both tables
         Memory* _existingMem = vMemory[mCachesMap[sTable].first];
 
-        long long int nCols = _existingMem->getCols(false);
+        size_t nCols = _existingMem->memArray.size();
 
         // Resize the existing table to fit the contents
         // of both tables
-        _existingMem->resizeMemory(std::max(_existingMem->getLines(false), _mem->getLines(false)), _existingMem->getCols(false) + _mem->getCols(false));
+        _existingMem->resizeMemory(1, nCols + _mem->memArray.size());
 
-        // Copy the contents
-        for (long long int i = 0; i < _mem->getLines(false); i++)
+        // Move the contents
+        for (size_t j = 0; j < _mem->memArray.size(); j++)
         {
-            for (long long int j = 0; j < _mem->getCols(false); j++)
-            {
-                if (!i)
-                    _existingMem->setHeadLineElement(j + nCols, _mem->getHeadLineElement(j));
-
-                _existingMem->writeData(i, j + nCols, _mem->readMem(i, j));
-            }
+            if (_mem->memArray[j])
+                _existingMem->memArray[j+nCols].reset(_mem->memArray[j].release());
         }
 
         _existingMem->setSaveStatus(false);

@@ -163,6 +163,7 @@ namespace NumeRe
             file->getData(&_mem->memArray);
             delete file;
 
+            _mem->shrink();
             condenseDataSet(_mem);
             _mem->convert();
             _mem->createTableHeaders();

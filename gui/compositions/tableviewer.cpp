@@ -111,13 +111,14 @@ void TableViewer::layoutGrid()
                 // Headlines
                 SetCellFont(i, j, GetCellFont(i, j).MakeBold());
                 SetCellBackgroundColour(i, j, HeadlineColor);
+                SetCellAlignment(wxALIGN_LEFT, i, j);
             }
             else if (i == GetNumberRows()-1 || j == GetNumberCols()-1)
             {
                 // Surrounding frame
                 this->SetCellBackgroundColour(i, j, FrameColor);
             }
-            else if (!nFirstNumRow && this->GetCellValue(i, j)[0] == '"')
+            else if (this->GetCellValue(i, j)[0] == '"')
             {
                 this->SetCellAlignment(wxALIGN_LEFT, i, j);
             }
@@ -970,14 +971,7 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
 /////////////////////////////////////////////////
 mu::value_type TableViewer::CellToCmplx(int row, int col)
 {
-    //if (GetTable()->CanGetValueAs(row, col, "complex"))
-        return *static_cast<mu::value_type*>(GetTable()->GetValueAsCustom(row, col, "complex"));
-    //else if (GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT))
-    //    return GetTable()->GetValueAsDouble(row, col);
-    //else if (row >= (int)nFirstNumRow && GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
-    //    return StrToCmplx(GetCellValue(row, col).ToStdString());
-    //
-    //return NAN;
+    return *static_cast<mu::value_type*>(GetTable()->GetValueAsCustom(row, col, "complex"));
 }
 
 

@@ -4781,7 +4781,7 @@ static CommandReturnValues cmd_load(string& sCmd)
         {
             double j1 = _data.getCols("data") + 1;
             append_data(cmdParser);
-            cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")}));
+            cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data"), j1, _data.getCols("data")}));
             sCmd = cmdParser.getReturnValueStatement();
 
             return COMMAND_HAS_RETURNVALUE;

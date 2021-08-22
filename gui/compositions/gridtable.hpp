@@ -23,6 +23,11 @@
 #define GRIDTABLE_HPP
 
 
+/////////////////////////////////////////////////
+/// \brief This class is a specialisation for the
+/// standard wxGridTableBase supporting complex
+/// numbers as well as the internal data model.
+/////////////////////////////////////////////////
 class GridNumeReTable : public wxGridTableBase
 {
     private:
