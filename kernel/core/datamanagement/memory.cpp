@@ -826,6 +826,11 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum
         return;
     }
 
+    bool rewriteColumn = false;
+
+    if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
+        rewriteColumn = true;
+
     _idx.row.setOpenEndIndex(_idx.row.front() + _nNum - 1);
     _idx.col.setOpenEndIndex(_idx.col.front() + _nNum - 1);
 
@@ -840,6 +845,9 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum
         {
             if (nDirection == COLS)
             {
+                if (!i && rewriteColumn)
+                    convert_for_overwrite(memArray[j], j, TableColumn::TYPE_VALUE);
+
                 if (_nNum > i)
                     writeData(_idx.row[i], _idx.col[j], _dData[i]);
             }
@@ -866,6 +874,11 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum
 /////////////////////////////////////////////////
 void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
 {
+    bool rewriteColumn = false;
+
+    if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
+        rewriteColumn = true;
+
     _idx.row.setOpenEndIndex(std::max(_idx.row.front(), (int)getLines(false)) - 1);
     _idx.col.setOpenEndIndex(std::max(_idx.col.front(), (int)getCols(false)) - 1);
 
@@ -873,6 +886,9 @@ void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
+            if (!i && rewriteColumn)
+                convert_for_overwrite(memArray[j], j, TableColumn::TYPE_VALUE);
+
             writeData(_idx.row[i], _idx.col[j], _dData);
         }
     }
@@ -900,6 +916,11 @@ void Memory::writeData(Indices& _idx, const ValueVector& _values)
         return;
     }
 
+    bool rewriteColumn = false;
+
+    if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
+        rewriteColumn = true;
+
     _idx.row.setOpenEndIndex(_idx.row.front() + _values.size() - 1);
     _idx.col.setOpenEndIndex(_idx.col.front() + _values.size() - 1);
 
@@ -914,6 +935,9 @@ void Memory::writeData(Indices& _idx, const ValueVector& _values)
         {
             if (nDirection == COLS)
             {
+                if (!i && rewriteColumn)
+                    convert_for_overwrite(memArray[j], j, TableColumn::TYPE_STRING);
+
                 if (_values.size() > i)
                     writeData(_idx.row[i], _idx.col[j], _values[i]);
             }
@@ -940,6 +964,11 @@ void Memory::writeData(Indices& _idx, const ValueVector& _values)
 /////////////////////////////////////////////////
 void Memory::writeSingletonData(Indices& _idx, const std::string& _sValue)
 {
+    bool rewriteColumn = false;
+
+    if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
+        rewriteColumn = true;
+
     _idx.row.setOpenEndIndex(std::max(_idx.row.front(), (int)getLines(false)) - 1);
     _idx.col.setOpenEndIndex(std::max(_idx.col.front(), (int)getCols(false)) - 1);
 
@@ -947,6 +976,9 @@ void Memory::writeSingletonData(Indices& _idx, const std::string& _sValue)
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
+            if (!i && rewriteColumn)
+                convert_for_overwrite(memArray[j], j, TableColumn::TYPE_STRING);
+
             writeData(_idx.row[i], _idx.col[j], _sValue);
         }
     }

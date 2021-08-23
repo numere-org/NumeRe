@@ -842,10 +842,7 @@ ValueColumn* StringColumn::convert() const
         if (!m_data[i].length())
             continue;
 
-        if (m_data[i].find_first_not_of(" 0123456789.,eEiI+-*") != std::string::npos
-            && toLowerCase(m_data[i]) != "inf"
-            && toLowerCase(m_data[i]) != "-inf"
-            && toLowerCase(m_data[i]) != "nan")
+        if (!isConvertible(m_data[i], CONVTYPE_VALUE))
             return nullptr;
     }
 
@@ -864,7 +861,7 @@ ValueColumn* StringColumn::convert() const
         {
             std::string strval = m_data[i];
             replaceAll(strval, ",", ".");
-            valCol->setValue(i, StrToCmplx(m_data[i]));
+            valCol->setValue(i, StrToCmplx(strval));
         }
     }
 
@@ -960,4 +957,49 @@ void convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType typ
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This function deletes the contents of
+/// a column, if necessary, and creates a new
+/// column with the correct type.
+///
+/// \param col TblColPtr&
+/// \param colNo size_t
+/// \param type TableColumn::ColumnType
+/// \return void
+///
+/////////////////////////////////////////////////
+void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType type)
+{
+    if (!col || (!col->size() && col->m_type != type))
+    {
+        convert_if_empty(col, colNo, type);
+        return;
+    }
+
+    if (col->m_type == type)
+        return;
+
+    std::string sHeadLine = col->m_sHeadLine;
+
+    if (!sHeadLine.length())
+        sHeadLine = TableColumn::getDefaultColumnHead(colNo);
+
+    switch (type)
+    {
+        case TableColumn::TYPE_STRING:
+        {
+            col.reset(new StringColumn);
+            col->m_sHeadLine = sHeadLine;
+            break;
+        }
+        case TableColumn::TYPE_VALUE:
+        {
+            col.reset(new ValueColumn);
+            col->m_sHeadLine = sHeadLine;
+            break;
+        }
+        default:
+            return;
+    }
+}
 

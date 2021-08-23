@@ -186,6 +186,7 @@ class StringColumn : public TableColumn
 
 void convert_if_empty(TblColPtr& col, size_t colNo, TableColumn::ColumnType type);
 void convert_if_needed(TblColPtr& col, size_t colNo, TableColumn::ColumnType type);
+void convert_for_overwrite(TblColPtr& col, size_t colNo, TableColumn::ColumnType type);
 
 
 #endif // TABLECOLUMNIMPL_HPP

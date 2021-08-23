@@ -682,6 +682,13 @@ namespace NumeRe
             int nResults = 0;
             int nthComponent = 0;
 
+            bool rewriteColumn = false;
+
+            if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
+                rewriteColumn = true;
+
+
+
             for (size_t i = nCurrentComponent; i < strRes.vResult.size(); i++)
             {
                 // Set expression and evaluate it (not efficient but currently necessary)
@@ -696,6 +703,9 @@ namespace NumeRe
                     }
                     else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                     {
+                        if (i == nCurrentComponent && rewriteColumn)
+                            _data.overwriteColumn(_idx.col.front(), sTableName, TableColumn::TYPE_STRING);
+
                         if (_idx.row[nthComponent] == VectorIndex::INVALID)
                             break;
 
@@ -721,6 +731,9 @@ namespace NumeRe
                         }
                         else if (_idx.row.size() > 1 && _idx.col.size() == 1)
                         {
+                            if (i == nCurrentComponent && rewriteColumn)
+                                _data.overwriteColumn(_idx.col.front(), sTableName, TableColumn::TYPE_VALUE);
+
                             if (_idx.row[nthComponent] == VectorIndex::INVALID)
                                 break;
 

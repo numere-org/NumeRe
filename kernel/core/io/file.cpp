@@ -111,7 +111,6 @@ namespace NumeRe
         open(ios::in);
 
 		long long int nLine = 0;
-		long long int nCol = 0;
 		long long int nComment = 0;
 
 		// Read the text file contents to memory
@@ -135,26 +134,42 @@ namespace NumeRe
         }
 
 		// Count the number of comment lines, which are found
-		// in the files contents. Determine also, how many
-		// columns are found in the file
+		// in the files contents.
 		for (size_t i = 0; i < vFileContents.size(); i++)
 		{
-			if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))
-			{
+			if (vFileContents[i][0] == '#')
 				nComment++;
-				continue;
-			}
-			else if (!nCol)
-			{
-			    // Determine the number of columns by applying
-			    // the tokenizer to the files contents
-				nCol = tokenize(vFileContents[i], " ", true).size();
-			}
 		}
+
+		// If no comments have been found, use all non-numeric lines
+		if (!nComment)
+        {
+            for (size_t i = 0; i < vFileContents.size(); i++)
+            {
+                if (!isNumeric(vFileContents[i]))
+                    nComment++;
+            }
+        }
+
+		// If now all lines are comments, we have a string table
+		if (vFileContents.size() == nComment)
+            nComment = 0;
+
+		// Determine now, how many columns are found in the file
+		for (size_t i = 0; i < vFileContents.size(); i++)
+        {
+            size_t elem = tokenize(vFileContents[i], " ", true).size();
+
+            if (elem > nCols)
+                nCols = elem;
+        }
 
 		// Set the final dimensions
 		nRows = vFileContents.size() - nComment;
-		nCols = nCol;
+
+		// Something's wrong here!
+		if (!nCols || !nRows)
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
 		// Create the target storage
 		createStorage();
@@ -169,7 +184,7 @@ namespace NumeRe
 		// Copy the data from the file to the internal memory
 		for (size_t i = 0; i < vFileContents.size(); i++)
         {
-            if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))
+            if (vFileContents[i][0] == '#' || (i < nComment && !isNumeric(vFileContents[i])))
             {
                 // ignore table heads
                 continue;
@@ -188,6 +203,7 @@ namespace NumeRe
             // the converted values
             for (size_t j = 0; j < vLine.size(); j++)
             {
+                replaceAll(vLine[j], "\1", " ");
                 fileData->at(j)->setValue(nLine, vLine[j]);
             }
 
@@ -270,10 +286,10 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void TextDataFile::writeTableHeads(const vector<size_t>& vColumnWidth, size_t nNumberOfLines)
     {
-        fFileStream << "# ";
-
         for (size_t i = 0; i < nNumberOfLines; i++)
         {
+            fFileStream << "# ";
+
             for (long long int j = 0; j < nCols; j++)
             {
                 fFileStream.width(vColumnWidth[j]);
@@ -379,14 +395,26 @@ namespace NumeRe
         // where the table heads are located. Depending on the format of
         // the comment section in the file, the following code tries
         // different approaches
-        if (nComment >= 15 && vFileContents[2].substr(0, 21) == "# NumeRe: Framework f")
+        if (nComment >= 13 && vFileContents[2].substr(0, 21) == "# NumeRe: Framework f")
         {
             // This is a NumeRe-created text file
-            for (size_t k = 13; k < vFileContents.size(); k++)
+            // Find the first actual headline
+            for (size_t k = 11; k < vFileContents.size(); k++)
             {
+                // Is this the first separator line?
                 if (vFileContents[k] == sCommentSign)
                 {
-                    _nHeadline = 14;
+                    // Now search for the last empty line right
+                    // before the sepator line
+                    for (int kk = k-1; kk >= 0; kk--)
+                    {
+                        if (vFileContents[kk] == "#")
+                        {
+                            _nHeadline = kk+2;
+                            break;
+                        }
+                    }
+
                     break;
                 }
             }
@@ -470,7 +498,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols+1)
+                            if (tokenize(vFileContents[i-1], " ", true).size() <= nCols+1)
                             {
                                 _nHeadline = i;
                                 break;
@@ -502,7 +530,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-2], " ", true).size() == nCols+1)
+                            if (tokenize(vFileContents[i-2], " ", true).size() <= nCols+1)
                                 _nHeadline = i-1;
                         }
                     }
@@ -669,7 +697,7 @@ namespace NumeRe
                         for (size_t k = i; k < vFileContents.size(); k++)
                         {
                             // Abort on numeric lines
-                            if (vFileContents[k][0] != '#' && isNumeric(vFileContents[k]))
+                            if ((vFileContents[k][0] != '#' && isNumeric(vFileContents[k])) || i+nComment == k)
                                 break;
 
                             // Abort on separator lines
@@ -732,27 +760,28 @@ namespace NumeRe
 
                         // Remove all empty columns from the list of
                         // column headings
-                        for (auto iter = vHeadline.begin(); iter != vHeadline.end(); ++iter)
-                        {
-                            if (!(iter->length()))
-                            {
-                                iter = vHeadline.erase(iter);
-                                iter--;
-                            }
-                        }
+#warning FIXME (numere#3#08/22/21): This section might be necessary for multi-line headlines
+                        //for (auto iter = vHeadline.begin(); iter != vHeadline.end(); ++iter)
+                        //{
+                        //    if (!(iter->length()))
+                        //    {
+                        //        iter = vHeadline.erase(iter);
+                        //        iter--;
+                        //    }
+                        //}
 
                         // Copy the decoded column headings to
                         // the internal memory
-                        if (vHeadline.size() <= nCols)
+                        for (size_t col = 0; col < std::min(vHeadline.size(), (size_t)nCols); col++)
                         {
-                            for (size_t col = 0; col < vHeadline.size(); col++)
-                            {
-                                if (!fileData->at(col))
-                                    fileData->at(col).reset(new StringColumn);
+                            if (!fileData->at(col))
+                                fileData->at(col).reset(new StringColumn);
 
-                                fileData->at(col)->m_sHeadLine = vHeadline[col];
-                            }
+                            fileData->at(col)->m_sHeadLine = vHeadline[col];
                         }
+                        //if (vHeadline.size() <= nCols)
+                        //{
+                        //}
 
                         // Return here
                         return;

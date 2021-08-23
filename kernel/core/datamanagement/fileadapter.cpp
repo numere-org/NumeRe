@@ -163,9 +163,9 @@ namespace NumeRe
             file->getData(&_mem->memArray);
             delete file;
 
+            _mem->convert();
             _mem->shrink();
             condenseDataSet(_mem);
-            _mem->convert();
             _mem->createTableHeaders();
             _mem->setSaveStatus(false);
 
@@ -221,7 +221,7 @@ namespace NumeRe
     bool FileAdapter::saveFile(const std::string& sTable, std::string _sFileName, unsigned short nPrecision)
     {
         if (!_sFileName.length())
-            generateFileName();
+            sOutputFile = generateFileName();
         else
         {
             string sTemp = sPath;
@@ -342,10 +342,11 @@ namespace NumeRe
     /// \brief This member function creates a file
     /// name from the file prefix and the time stamp.
     ///
-    /// \return void
+    /// \param sExtension const std::string&
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    void FileAdapter::generateFileName()
+    std::string FileAdapter::generateFileName(const std::string& sExtension)
     {
         string sTime;
 
@@ -359,8 +360,8 @@ namespace NumeRe
 
         sTime += "/" + sPrefix + "_";		// Prefix laden
         sTime += getDate();		// Datum aus der Klasse laden
-        sTime += ".ndat";
-        sOutputFile = sTime;			// Dateinamen an sFileName zuweisen
+        sTime += sExtension;
+        return sTime;
     }
 }
 

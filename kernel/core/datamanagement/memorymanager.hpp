@@ -432,7 +432,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
-		std::string getHeadLineElement(long long int _i, const std::string& _sTable) const
+		std::string getHeadLineElement(int _i, const std::string& _sTable) const
 		{
 			if (exists(_sTable))
                 return vMemory[findTable(_sTable)]->getHeadLineElement(_i);
@@ -448,12 +448,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return std::vector<std::string>();
 		}
 
-		std::string getTopHeadLineElement(long long int _i, const std::string& _sTable) const
+		std::string getTopHeadLineElement(int _i, const std::string& _sTable) const
         {
             return getHeadLineElement(_i, _sTable).substr(0, getHeadLineElement(_i, _sTable).find("\\n"));
         }
 
-		long long int getAppendedZeroes(long long int _i, const std::string& _sTable) const
+		long long int getAppendedZeroes(int _i, const std::string& _sTable) const
 		{
 			return vMemory[findTable(_sTable)]->getAppendedZeroes(_i);
 		}
@@ -461,12 +461,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
         // WRITE ACCESS METHODS
-		inline void writeToTable(long long int _nLine, long long int _nCol, const std::string& _sCache, mu::value_type _dData)
+		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, mu::value_type _dData)
 		{
 			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _dData);
 		}
 
-		inline void writeToTable(long long int _nLine, long long int _nCol, const std::string& _sCache, const std::string& _sValue)
+		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, const std::string& _sValue)
 		{
 			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _sValue);
 		}
@@ -481,11 +481,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			vMemory[findTable(_sCache)]->writeData(_idx, _values);
 		}
 
-		bool setHeadLineElement(long long int _i, const std::string& _sTable, std::string _sHead)
+		bool setHeadLineElement(int _i, const std::string& _sTable, std::string _sHead)
 		{
 			return vMemory[findTable(_sTable)]->setHeadLineElement(_i, _sHead);
 		}
 
+		void overwriteColumn(int col, const std::string& _sCache, TableColumn::ColumnType type);
 
 
 		// MAF METHODS

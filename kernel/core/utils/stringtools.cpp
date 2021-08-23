@@ -450,7 +450,7 @@ std::complex<double> StrToCmplx(const std::string& sString)
 {
     double re, im;
 
-    if (sString.find_first_not_of("0123456789.+-*eEiI ") != std::string::npos)
+    if (!isConvertible(sString, CONVTYPE_VALUE))
         return NAN;
 
     std::stringstream in(sString);
@@ -600,6 +600,66 @@ std::string toUpperCase(const std::string& sLowerCase)
             sUpperCase[i] = (char)154;
     }
     return sUpperCase;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function checks, whether a string
+/// can be converted to the selected
+/// ConvertibleType.
+///
+/// \param sStr const std::string&
+/// \param type ConvertibleType
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool isConvertible(const std::string& sStr, ConvertibleType type)
+{
+    if (type == CONVTYPE_VALUE)
+    {
+        // Apply the simplest heuristic: mostly every numerical valid character
+        if (sStr.find_first_not_of(" 0123456789.,eianfEIANF+-*") != std::string::npos || sStr.find_first_not_of(' ') == std::string::npos)
+            return false;
+
+        // Eliminate invalid character positions
+        if (tolower(sStr.front()) == 'e'
+            || tolower(sStr.front()) == 'a'
+            || tolower(sStr.front()) == 'f'
+            || tolower(sStr.back()) == 'e'
+            || tolower(sStr.back()) == 'a')
+            return false;
+
+        // Try to detect dates
+        return !isConvertible(sStr, CONVTYPE_DATE);
+    }
+    else if (type == CONVTYPE_DATE)
+    {
+        // Apply the simplest heuristic: only digits and separators
+        if (sStr.find_first_not_of(" 0123456789.-/") != std::string::npos || sStr.find_first_not_of(' ') == std::string::npos)
+            return false;
+
+        // Try to detect dates
+        size_t pos = sStr.find_first_not_of(' ');
+
+        if (sStr.length() >= pos+4 && isdigit(sStr[pos]))
+        {
+            for (size_t i = pos; i < sStr.length()-3; i++)
+            {
+                // Detects these candidates:
+                // (YY)YY-MM-DD, DD.MM.YY(YY), (yy)yy-m-d, d.m.yy(yy),
+                // d.m., dd.mm., (YY)YY/MM/DD, (YY)YY/M/D
+                if (sStr[i] == '-' || sStr[i] == '.' || sStr[i] == '/')
+                {
+                    if (sStr[i+3] == sStr[i] || sStr[i+2] == sStr[i])
+                        return true;
+
+                    return false;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 

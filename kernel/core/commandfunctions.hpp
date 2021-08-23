@@ -2217,29 +2217,19 @@ static CommandReturnValues saveDataObject(string& sCmd)
         else
             sFileName = cmdParser.getFileParameterValue(".ndat", "<savepath>", "");
 
-        if (sFileName.length())
+        if (!sFileName.length())
         {
-            if (_cache.saveFile(_access.getDataObject(), sFileName, nPrecision))
-            {
-                if (_option.systemPrints())
-                    NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
-
-                return COMMAND_PROCESSED;
-            }
-            else
-                throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sFileName, sFileName);
-        }
-        else
             _cache.setPrefix(_access.getDataObject());
+            sFileName = _cache.generateFileName(".dat");
+        }
 
-        // Auto-generate a file name during saving
-        if (_cache.saveFile(_access.getDataObject(), "", nPrecision))
+        if (_cache.saveFile(_access.getDataObject(), sFileName, nPrecision))
         {
             if (_option.systemPrints())
-                NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()), _option) );
+                NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SAVEDATA_SUCCESS", _cache.getOutputFileName()));
         }
         else
-            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, SyntaxError::invalid_position);
+            throw SyntaxError(SyntaxError::CANNOT_SAVE_FILE, sCmd, sFileName, sFileName);
 
         return COMMAND_PROCESSED;
     }

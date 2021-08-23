@@ -34,6 +34,13 @@ enum TIMESTAMP
     GET_WITH_TEXT = 4
 };
 
+enum ConvertibleType
+{
+    CONVTYPE_NONE,
+    CONVTYPE_VALUE,
+    CONVTYPE_DATE
+};
+
 std::string toString(int nNumber, const Settings& _option);
 std::string toString(double dNumber, const Settings& _option);
 std::string toString(double dNumber, int nPrecision);
@@ -62,6 +69,8 @@ std::string toUpperCase(const std::string& sLowerCase);
 int StrToInt(const std::string&);
 double StrToDb(const std::string&);
 std::complex<double> StrToCmplx(const std::string&);
+
+bool isConvertible(const std::string& sStr, ConvertibleType type = CONVTYPE_VALUE);
 
 std::string toSystemCodePage(std::string sOutput);
 std::string fromSystemCodePage(std::string sOutput);

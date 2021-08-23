@@ -104,7 +104,7 @@ string addQuotationMarks(const string& sString)
 /////////////////////////////////////////////////
 static bool isNumericValue(const string& sString)
 {
-    if (sString.find_first_not_of("0123456789.eE+-(){}, ") != string::npos)
+    if (sString.find_first_not_of("0123456789.ieE+-(){}, ") != string::npos)
         return false;
 
     if (sString.find_first_of("1234567890") == string::npos)

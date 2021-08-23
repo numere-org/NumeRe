@@ -195,7 +195,7 @@ namespace NumeRe
                 // if there are also locations with multiple whitespaces
                 if (bAddPlaceholders && _sToReplace.find("  ") != std::string::npos)
                 {
-                    for (size_t i = 1; i < _sToReplace.length()-1; i++)
+                    for (size_t i = 1+(_sToReplace.front() == '#'); i < _sToReplace.length()-1; i++)
                     {
                         if (_sToReplace[i] == ' ' && _sToReplace[i-1] != ' ' && _sToReplace[i+1] != ' ')
                             _sToReplace[i] = '\1';
@@ -237,6 +237,18 @@ namespace NumeRe
                             pCellExtents.first = i - nLastLineBreak;
 
                         nLastLineBreak = i;
+                    }
+                    else if (sContents.substr(i, 2) == "\\n")
+                    {
+                        // Increment the number of lines
+                        pCellExtents.second++;
+
+                        // Use the maximal number of characters per line
+                        // as the first column
+                        if (i - nLastLineBreak > pCellExtents.first)
+                            pCellExtents.first = i - nLastLineBreak;
+
+                        nLastLineBreak = i+1;
                     }
                 }
 
@@ -289,6 +301,18 @@ namespace NumeRe
                         // position of the current line break
                         nLineNumber--;
                         nLastLineBreak = i+1;
+                    }
+                    else if (sHeadLine.substr(i, 2) == "\\n")
+                    {
+                        // If this is the correct line number, return
+                        // the corresponding substring
+                        if (!nLineNumber)
+                            return sHeadLine.substr(nLastLineBreak, i - nLastLineBreak);
+
+                        // Decrement the line number and store the
+                        // position of the current line break
+                        nLineNumber--;
+                        nLastLineBreak = i+2;
                     }
                 }
 

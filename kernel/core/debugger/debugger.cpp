@@ -365,7 +365,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
     }
 
     // Is it a constant numerical expression or value?
-    if (sArgumentValue.find_first_not_of("0123456789.eE-+*/^!&|<>=(){},") == string::npos)
+    if (sArgumentValue.find_first_not_of("0123456789.eEi-+*/^!&|<>=(){},") == string::npos)
         return "\t1 x 1\tdouble\t";
 
     // Is the current argument a string expression?

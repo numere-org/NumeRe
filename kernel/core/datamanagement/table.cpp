@@ -132,8 +132,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool Table::isNumerical(const std::string& sValue) const
     {
-        static std::string sValidNumericalCharacters = "0123456789,.eE+-* INFAinfa";
-        return sValue.find_first_not_of(sValidNumericalCharacters) == std::string::npos;
+        return isConvertible(sValue, CONVTYPE_VALUE);
     }
 
 

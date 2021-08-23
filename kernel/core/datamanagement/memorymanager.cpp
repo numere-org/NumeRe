@@ -26,6 +26,7 @@
 #include "../version.h"
 #include "../maths/resampler.h"
 #include "../../kernel.hpp"
+#include "tablecolumnimpl.hpp"
 using namespace std;
 
 
@@ -603,6 +604,27 @@ bool MemoryManager::loadFromLegacyCacheFile()
 
 
 /////////////////////////////////////////////////
+/// \brief This member function converts the
+/// selected column to the needed type, if this
+/// column shall be overwritten by another than
+/// the current type.
+///
+/// \param col int
+/// \param _sCache const std::string&
+/// \param type TableColumn::ColumnType
+/// \return void
+///
+/////////////////////////////////////////////////
+void MemoryManager::overwriteColumn(int col, const std::string& _sCache, TableColumn::ColumnType type)
+{
+    if (getCols(_sCache) <= col)
+        return;
+
+    convert_for_overwrite(vMemory[findTable(_sCache)]->memArray[col], col, type);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function extracts and
 /// parses the \c every expression part of a MAF
 /// call.
@@ -810,6 +832,7 @@ void MemoryManager::melt(Memory* _mem, const string& sTable)
         }
 
         _existingMem->setSaveStatus(false);
+        _existingMem->nCalcLines = -1;
 
         // Delete the passed instance (it is not
         // needed any more).
