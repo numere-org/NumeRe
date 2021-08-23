@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "../utils/zip++.hpp"
+#include "../utils/stringtools.hpp"
 #include "../ui/error.hpp"
 #include "../datamanagement/tablecolumn.hpp"
 #include "filesystem.hpp"
@@ -779,29 +780,7 @@ namespace NumeRe
                 if (!sString.length())
                     return false;
 
-                static const std::string sVALIDNUMERICCHARACTERS = "0123456789eE+-.,\t% ";
-
-                for (unsigned int i = 0; i < sString.length(); i++)
-                {
-                    if (sVALIDNUMERICCHARACTERS.find(sString[i]) != std::string::npos)
-                        continue;
-                    else if (sString.substr(i, 3) == "nan"
-                        || sString.substr(i, 3) == "NaN"
-                        || sString.substr(i, 3) == "NAN"
-                        || sString.substr(i, 3) == "inf"
-                        || sString.substr(i, 3) == "INF"
-                        )
-                    {
-                        i += 2;
-                        continue;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
+                return isConvertible(sString, CONVTYPE_VALUE);
             }
 
             /////////////////////////////////////////////////

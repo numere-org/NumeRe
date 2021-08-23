@@ -1864,7 +1864,7 @@ namespace NumeRe
 
             for (size_t i = 0; i < vTokens.size(); i++)
             {
-                if (vTokens[i].find_first_not_of(sValidSymbols) == string::npos)
+                if (isConvertible(vTokens[i], CONVTYPE_VALUE))
                 {
                     vTokens.clear();
                     break;
@@ -2650,7 +2650,7 @@ namespace NumeRe
                 break;
 
             // Abort, if we read enough lines
-            if (nComment + 1 == nRows)
+            if (j - nComment + 1 == nRows)
                 break;
 
             // Decode the current line
@@ -2667,7 +2667,7 @@ namespace NumeRe
 
                 // Write the data to the internal
                 // storage
-                fileData->at(k)->setValue(j+nComment+1, vLine[k] * (k % 2 ? dYFactor : dXFactor));
+                fileData->at(k)->setValue(j-nComment+1, vLine[k] * (k % 2 ? dYFactor : dXFactor));
             }
         }
     }
@@ -3412,7 +3412,7 @@ namespace NumeRe
                     switch (_cell->Type())
                     {
                         case YExcel::BasicExcelCell::UNDEFINED:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "nan");
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "");
                             break;
                         case YExcel::BasicExcelCell::INT:
                             fileData->at(j+nOffset)->setValue(i-vCommentLines[n], (double)_cell->GetInteger());
@@ -3427,7 +3427,7 @@ namespace NumeRe
                             fileData->at(j+nOffset)->setValue(i-vCommentLines[n], utf8parser(wcstombs(_cell->GetWString())));
                             break;
                         default:
-                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "nan");
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "");
                     }
                 }
             }

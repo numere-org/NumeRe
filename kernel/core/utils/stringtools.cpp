@@ -618,7 +618,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
     if (type == CONVTYPE_VALUE)
     {
         // Apply the simplest heuristic: mostly every numerical valid character
-        if (sStr.find_first_not_of(" 0123456789.,eianfEIANF+-*") != std::string::npos || sStr.find_first_not_of(' ') == std::string::npos)
+        if (sStr.find_first_not_of(" 0123456789.,eianfEIANF+-*\t") != std::string::npos || sStr.find_first_not_of(" \t") == std::string::npos)
             return false;
 
         // Eliminate invalid character positions
@@ -635,11 +635,11 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
     else if (type == CONVTYPE_DATE)
     {
         // Apply the simplest heuristic: only digits and separators
-        if (sStr.find_first_not_of(" 0123456789.-/") != std::string::npos || sStr.find_first_not_of(' ') == std::string::npos)
+        if (sStr.find_first_not_of(" 0123456789.-/\t") != std::string::npos || sStr.find_first_not_of(" \t") == std::string::npos)
             return false;
 
         // Try to detect dates
-        size_t pos = sStr.find_first_not_of(' ');
+        size_t pos = sStr.find_first_not_of(" \t");
 
         if (sStr.length() >= pos+4 && isdigit(sStr[pos]))
         {
@@ -650,7 +650,7 @@ bool isConvertible(const std::string& sStr, ConvertibleType type)
                 // d.m., dd.mm., (YY)YY/MM/DD, (YY)YY/M/D
                 if (sStr[i] == '-' || sStr[i] == '.' || sStr[i] == '/')
                 {
-                    if (sStr[i+3] == sStr[i] || sStr[i+2] == sStr[i])
+                    if (isdigit(sStr[i-1]) && isdigit(sStr[i+1]) && (sStr[i+3] == sStr[i] || sStr[i+2] == sStr[i]))
                         return true;
 
                     return false;
