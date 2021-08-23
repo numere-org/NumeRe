@@ -845,7 +845,7 @@ void Memory::writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum
         {
             if (nDirection == COLS)
             {
-                if (!i && rewriteColumn)
+                if (!i && rewriteColumn && memArray.size() > j)
                     convert_for_overwrite(memArray[j], j, TableColumn::TYPE_VALUE);
 
                 if (_nNum > i)
@@ -886,7 +886,7 @@ void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
-            if (!i && rewriteColumn)
+            if (!i && rewriteColumn && memArray.size() > j)
                 convert_for_overwrite(memArray[j], j, TableColumn::TYPE_VALUE);
 
             writeData(_idx.row[i], _idx.col[j], _dData);
@@ -935,7 +935,7 @@ void Memory::writeData(Indices& _idx, const ValueVector& _values)
         {
             if (nDirection == COLS)
             {
-                if (!i && rewriteColumn)
+                if (!i && rewriteColumn && memArray.size() > j)
                     convert_for_overwrite(memArray[j], j, TableColumn::TYPE_STRING);
 
                 if (_values.size() > i)
@@ -976,7 +976,7 @@ void Memory::writeSingletonData(Indices& _idx, const std::string& _sValue)
     {
         for (size_t j = 0; j < _idx.col.size(); j++)
         {
-            if (!i && rewriteColumn)
+            if (!i && rewriteColumn && memArray.size() > j)
                 convert_for_overwrite(memArray[j], j, TableColumn::TYPE_STRING);
 
             writeData(_idx.row[i], _idx.col[j], _sValue);
