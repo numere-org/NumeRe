@@ -1372,7 +1372,7 @@ static void listDefinitions(const FunctionDefinitionManager& _functions, const S
 			// Print the actual implementation of the function
 			NumeReKernel::printPreFmt(LineBreak("|       " + _lang.get("PARSERFUNCS_LISTDEFINE_DEFINITION", _functions.getFunctionSignature(i), _functions.getImplementation(i)), _option, false, 0, 29) + "\n"); //14
         }
-		NumeReKernel::printPreFmt("|   -- " + toString((int)_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
+		NumeReKernel::printPreFmt("|   -- " + toString(_functions.getDefinedFunctions()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTDEFINE_FUNCTIONS"))  + " --\n");
 	}
 	NumeReKernel::toggleTableStatus();
 	make_hline();
@@ -1458,7 +1458,7 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 	}
 
 	// Get data table and string table sizes
-	string sStringSize = toString((int)_data.getStringElements()) + " x " + toString((int)_data.getStringCols());
+	string sStringSize = toString(_data.getStringElements()) + " x " + toString(_data.getStringCols());
 
 	NumeReKernel::toggleTableStatus();
 	make_hline();
@@ -1527,11 +1527,11 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 		{
 		    // This is a string
 			NumeReKernel::printPreFmt("|   " + item->first + strfill(" = ", (_option.getWindow(0) - 20) / 2 + 1 - _option.getPrecision() - (item->first).length() + _option.getWindow(0) % 2));
-			if (StringMap[item->first].length() > (unsigned int)_option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 4)
+			if (StringMap[item->first].length() > _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 4)
 				NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first].substr(0, _option.getPrecision() + (_option.getWindow(0) - 60) / 2 - 7) + "...\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
 			else
 				NumeReKernel::printPreFmt(strfill("\"" + StringMap[item->first] + "\"", (_option.getWindow(0) - 60) / 2 + _option.getPrecision()));
-			NumeReKernel::printPreFmt(strfill("[string]", 19) + strfill(toString((int)StringMap[item->first].size()), 9) + "  Bytes\n");
+			NumeReKernel::printPreFmt(strfill("[string]", 19) + strfill(toString(StringMap[item->first].size()), 9) + "  Bytes\n");
 			nBytesSum += StringMap[item->first].size();
 		}
 		else
@@ -1545,7 +1545,7 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 	// Create now the footer of the list:
 	// Combine the number of variables and data
 	// tables first
-	NumeReKernel::printPreFmt("|   -- " + toString((int)VarMap.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
+	NumeReKernel::printPreFmt("|   -- " + toString(VarMap.size()) + " " + toSystemCodePage(_lang.get("PARSERFUNCS_LISTVAR_VARS_AND")) + " ");
 	if (_data.isValid() || _data.getStringElements())
 	{
 		if (_data.isValid() && _data.getStringElements())
@@ -4825,7 +4825,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     vFilelist[i] = _data.openFile(vFilelist[i], true, nArgument, getTargetTable(cmdParser.getParameterList())).sTableName;
 
                 if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints())
-                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString((int)vFilelist.size()), sFileName));
+                    NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString(vFilelist.size()), sFileName));
 
                 // Returning of indices not possible due to multiple
                 // table targets
@@ -4856,7 +4856,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     }
 
                     if (!_data.isEmpty("data") && _option.systemPrints())
-                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString((int)vFilelist.size()), sFileName, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
+                        NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_SUCCESS", toString(vFilelist.size()), sFileName, toString(_data.getLines("data", false)), toString(_data.getCols("data", false))));
 
                     cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data", false), 1, _data.getCols("data", false)}));
                     sCmd = cmdParser.getReturnValueStatement();

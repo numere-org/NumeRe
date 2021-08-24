@@ -879,8 +879,8 @@ void Memory::writeSingletonData(Indices& _idx, const mu::value_type& _dData)
     if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
         rewriteColumn = true;
 
-    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), (int)getLines(false)) - 1);
-    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), (int)getCols(false)) - 1);
+    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), getLines(false)) - 1);
+    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), getCols(false)) - 1);
 
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
@@ -969,8 +969,8 @@ void Memory::writeSingletonData(Indices& _idx, const std::string& _sValue)
     if (_idx.row.front() == 0 && _idx.row.isOpenEnd())
         rewriteColumn = true;
 
-    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), (int)getLines(false)) - 1);
-    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), (int)getCols(false)) - 1);
+    _idx.row.setOpenEndIndex(std::max(_idx.row.front(), getLines(false)) - 1);
+    _idx.col.setOpenEndIndex(std::max(_idx.col.front(), getCols(false)) - 1);
 
     for (size_t i = 0; i < _idx.row.size(); i++)
     {

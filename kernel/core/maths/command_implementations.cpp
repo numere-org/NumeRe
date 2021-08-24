@@ -3916,12 +3916,12 @@ void boneDetection(CommandLineParser& cmdParser)
     // Copy the results to the target table
     for (int i = 0; i < _res.GetNy(); i++)
     {
-        if ((int)_target.row.size() <= i)
+        if (_target.row.size() <= (size_t)i)
             break;
 
         for (int j = 0; j < _res.GetNx(); j++)
         {
-            if ((int)_target.col.size() <= j)
+            if (_target.col.size() <= (size_t)j)
                 break;
 
             if (!j)
@@ -4137,7 +4137,7 @@ void rotateTable(CommandLineParser& cmdParser)
         // Write the x axis
         for (int i = 0; i < rows; i++)
         {
-            if ((int)_idx.row.size() <= i)
+            if (_idx.row.size() <= (size_t)i)
                 break;
 
             _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, i+1);
@@ -4146,7 +4146,7 @@ void rotateTable(CommandLineParser& cmdParser)
         // Write the y axis
         for (int i = 0; i < cols; i++)
         {
-            if ((int)_idx.row.size() <= i)
+            if (_idx.row.size() <= (size_t)i)
                 break;
 
             _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, i+1);
@@ -4163,7 +4163,7 @@ void rotateTable(CommandLineParser& cmdParser)
         // the values of the new coordinates
         for (int i = 0; i < rows; i++)
         {
-            if ((int)_idx.row.size() <= i)
+            if (_idx.row.size() <= (size_t)i)
                 break;
 
             Point p(i+top, origin.y);
@@ -4179,7 +4179,7 @@ void rotateTable(CommandLineParser& cmdParser)
 
         for (int j = 0; j < cols; j++)
         {
-            if ((int)_idx.row.size() <= j)
+            if (_idx.row.size() <= (size_t)j)
                 break;
 
             Point p(origin.x, j+left);
@@ -4199,12 +4199,12 @@ void rotateTable(CommandLineParser& cmdParser)
     // Calculate the rotated grid
     for (int i = 0; i < rows; i++)
     {
-        if ((int)_idx.row.size() <= i)
+        if (_idx.row.size() <= (size_t)i)
             break;
 
         for (int j = 0; j < cols; j++)
         {
-            if ((int)_idx.col.size() <= j)
+            if (_idx.col.size() <= (size_t)j)
                 break;
 
             // Create a point in rotated source coordinates

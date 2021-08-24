@@ -19,7 +19,6 @@
 #ifndef COMMAND_IMPLEMENTATIONS_HPP
 #define COMMAND_IMPLEMENTATIONS_HPP
 
-#include "../datamanagement/datafile.hpp"
 #include "../datamanagement/memorymanager.hpp"
 #include "../ParserLib/muParser.h"
 #include "../settings.hpp"
