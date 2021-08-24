@@ -153,7 +153,7 @@ namespace NumeRe
 
 		// If now all lines are comments, we have a string table
 		if (vFileContents.size() == nComment)
-            nComment = 0;
+            nComment = 1;
 
 		// Determine now, how many columns are found in the file
 		for (size_t i = 0; i < vFileContents.size(); i++)
