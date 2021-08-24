@@ -354,8 +354,6 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnDrop(wxStyledTextEvent& event);
 		void OnMouseMotion(wxMouseEvent& event);
 
-		void OnRunToCursor(wxCommandEvent& event);
-
 		int GetLineForMarkerOperation();
 		void ResetRightClickLocation();
 		void ReplaceMatches(const vector<int>& vMatches, const wxString& sSymbol, const wxString& sNewSymbol);

@@ -330,39 +330,6 @@ static Matrix calcCrossProduct(const MatFuncData& funcData, const MatFuncErrorIn
 
 
 /////////////////////////////////////////////////
-/// \brief This static function determines,
-/// whether the passed matrix is symmetric or not.
-///
-/// \param _mMatrix const Matrix&
-/// \param errorInfo const MatFuncErrorInfo&
-/// \return bool
-///
-/////////////////////////////////////////////////
-static bool isSymmMatrix(const Matrix& _mMatrix, const MatFuncErrorInfo& errorInfo)
-{
-    if (!_mMatrix.size() || !_mMatrix[0].size())
-        throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
-
-    if (_mMatrix.size() != _mMatrix[0].size())
-        throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, errorInfo.command, errorInfo.position, toString(_mMatrix.size()) +"x"+ toString(_mMatrix[0].size()));
-
-    // Try to find a value, which is not symmetric
-    for (unsigned int i = 0; i < _mMatrix.size(); i++)
-    {
-        for (unsigned int j = i; j < _mMatrix.size(); j++)
-        {
-            // Is this value not symmetric?
-            if (_mMatrix[i][j] != _mMatrix[j][i])
-                return false;
-        }
-    }
-
-    // Is symmetric
-    return true;
-}
-
-
-/////////////////////////////////////////////////
 /// \brief This static function does the whole
 /// eigenvalues, eigenvectors and diagonalizing
 /// stuff.

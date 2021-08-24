@@ -32,30 +32,13 @@
 #define MARGIN_FOLD 3
 
 BEGIN_EVENT_TABLE(NumeReHistory, wxStyledTextCtrl)
-/*	EVT_STC_CHARADDED	(-1, NumeReEditor::OnChar)
-	EVT_STC_MODIFIED	(-1, NumeReEditor::OnEditorModified)
-	EVT_KEY_DOWN        (NumeReEditor::OnKeyDn)
-	EVT_KEY_UP          (NumeReEditor::OnKeyRel)*/
 	EVT_LEFT_DOWN       (NumeReHistory::OnMouseDn)
-	//EVT_LEFT_UP         (NumeReEditor::OnMouseUp)
 	EVT_RIGHT_DOWN		(NumeReHistory::OnRightClick)
 	EVT_LEFT_DCLICK		(NumeReHistory::OnMouseDblClk)
 	EVT_MOUSE_CAPTURE_LOST(NumeReHistory::OnMouseCaptureLost)
-	/*EVT_ENTER_WINDOW    (NumeReEditor::OnEnter)
-	EVT_STC_DWELLSTART  (-1, NumeReEditor::OnMouseDwell)*/
 	EVT_STC_MARGINCLICK (-1, NumeReHistory::OnMarginClick)
 	EVT_MENU            (ID_DELETE_FROM_HISTORY, NumeReHistory::OnMenuEvent)
 	EVT_MENU            (ID_COPY_FROM_HISTORY, NumeReHistory::OnMenuEvent)
-	/*EVT_STC_DRAG_OVER   (-1, NumeReEditor::OnDragOver)
-	EVT_MENU			(ID_DEBUG_ADD_BREAKPOINT, NumeReEditor::OnAddBreakpoint)
-	EVT_MENU			(ID_DEBUG_REMOVE_BREAKPOINT, NumeReEditor::OnRemoveBreakpoint)
-	EVT_MENU			(ID_DEBUG_CLEAR_ALL_BREAKPOINTS, NumeReEditor::OnClearBreakpoints)
-	EVT_MENU			(ID_DEBUG_WATCH_SELECTION, NumeReEditor::OnAddWatch)
-	EVT_MENU			(ID_DEBUG_DISPLAY_SELECTION, NumeReEditor::OnDisplayVariable)
-	EVT_MENU			(ID_FIND_PROCEDURE, NumeReEditor::OnFindProcedure)
-	EVT_MENU            (ID_UPPERCASE, NumeReEditor::OnChangeCase)
-	EVT_MENU            (ID_LOWERCASE, NumeReEditor::OnChangeCase)
-	EVT_MENU			(ID_DEBUG_RUNTOCURSOR, NumeReEditor::OnRunToCursor)*/
 END_EVENT_TABLE()
 
 

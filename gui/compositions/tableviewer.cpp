@@ -19,12 +19,12 @@
 #include "tableviewer.hpp"
 #include "gridtable.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/utils/tools.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
 
-double StrToDb(const string&);
-string toString(double, int);
+#define STATUSBAR_PRECISION 5
 
 extern Language _guilang;
 
@@ -111,13 +111,14 @@ void TableViewer::layoutGrid()
                 // Headlines
                 SetCellFont(i, j, GetCellFont(i, j).MakeBold());
                 SetCellBackgroundColour(i, j, HeadlineColor);
+                SetCellAlignment(wxALIGN_LEFT, i, j);
             }
             else if (i == GetNumberRows()-1 || j == GetNumberCols()-1)
             {
                 // Surrounding frame
                 this->SetCellBackgroundColour(i, j, FrameColor);
             }
-            else if (!nFirstNumRow && this->GetCellValue(i, j)[0] == '"')
+            else if (this->GetCellValue(i, j)[0] == '"')
             {
                 this->SetCellAlignment(wxALIGN_LEFT, i, j);
             }
@@ -498,7 +499,7 @@ void TableViewer::deleteSelection()
 /////////////////////////////////////////////////
 bool TableViewer::isNumerical(const string& sCell)
 {
-    static string sNums = "0123456789,.eE+- INFinf";
+    static string sNums = "0123456789,.eE+-* INFinf";
     return sCell.find_first_not_of(sNums) == string::npos;
 }
 
@@ -691,26 +692,10 @@ void TableViewer::pasteContents(bool useCursor)
     int nCols = 0;
     int nSkip = 0;
 
-    // Distinguish between numerical and text data
-    for (unsigned int i = 0; i < vTableData.size(); i++)
+    if (nLines && !useCursor && !isNumerical(vTableData.front().ToStdString()))
     {
-        if (!isNumerical(vTableData[i].ToStdString()))
-        {
-            nLines--;
-            nSkip++;
-
-            // Replace text data with underscores
-            if (nLines > (int)i+1 && vTableData[i+1].find(' ') == string::npos && vTableData[i].find(' ') != string::npos)
-            {
-                for (unsigned int j = 0; j < vTableData[i].size(); j++)
-                {
-                    if (vTableData[i][j] == ' ')
-                        vTableData[i][j] = '\1';
-                }
-            }
-        }
-        else
-            break;
+        nSkip++;
+        nLines--;
     }
 
     // Return if the number of lines is zero
@@ -750,35 +735,7 @@ void TableViewer::pasteContents(bool useCursor)
                 sLine.erase(sLine.length()-1);
 
             // Set the value to the correct cell
-            if (isNumerical(sLine.ToStdString()) && sLine != "NAN" && sLine != "NaN" && sLine != "nan")
-            {
-                // Numerical value
-                if (i < (size_t)nSkip && nSkip)
-                {
-                    if (sLine.length())
-                    {
-                        this->SetCellValue(i, topleft.GetCol()+j, sLine);
-                    }
-                }
-                else
-                {
-                    this->SetCellValue(topleft.GetRow()+i-nSkip, topleft.GetCol()+j, sLine);
-                }
-            }
-            else if (i < (size_t)nSkip && nSkip)
-            {
-                // string value in the top section
-                if (sLine.length())
-                {
-                    this->SetCellValue(i, topleft.GetCol()+j, sLine);
-                }
-            }
-            else
-            {
-                // string value
-                this->SetCellValue(topleft.GetRow()+i-nSkip, topleft.GetCol()+j, sLine);
-            }
-
+            this->SetCellValue(topleft.GetRow()+i-nSkip, topleft.GetCol()+j, sLine);
             j++;
 
             // Stop, if the the counter reached the
@@ -1005,22 +962,16 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
 
 
 /////////////////////////////////////////////////
-/// \brief Return the cell value as double.
+/// \brief Return the cell value as value_type.
 ///
 /// \param row int
 /// \param col int
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double TableViewer::CellToDouble(int row, int col)
+mu::value_type TableViewer::CellToCmplx(int row, int col)
 {
-    if (GetTable()->CanGetValueAs(row, col, wxGRID_VALUE_FLOAT))
-        return GetTable()->GetValueAsDouble(row, col);
-    else if (!nFirstNumRow && GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
-    {
-        return atof(GetCellValue(row, col).ToStdString().c_str());
-    }
-    return NAN;
+    return *static_cast<mu::value_type*>(GetTable()->GetValueAsCustom(row, col, "complex"));
 }
 
 
@@ -1035,18 +986,7 @@ double TableViewer::CellToDouble(int row, int col)
 /////////////////////////////////////////////////
 double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    double dMin = NAN;
-
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
-    {
-        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
-        {
-            if (isnan(dMin) || CellToDouble(i, j) < dMin)
-                dMin = CellToDouble(i,j);
-        }
-    }
-
-    return dMin;
+    return static_cast<GridNumeReTable*>(GetTable())->min(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
 }
 
 
@@ -1061,18 +1001,7 @@ double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCe
 /////////////////////////////////////////////////
 double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    double dMax = NAN;
-
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
-    {
-        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
-        {
-            if (isnan(dMax) || CellToDouble(i, j) > dMax)
-                dMax = CellToDouble(i,j);
-        }
-    }
-
-    return dMax;
+    return static_cast<GridNumeReTable*>(GetTable())->max(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
 }
 
 
@@ -1082,23 +1011,12 @@ double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCe
 ///
 /// \param topLeft const wxGridCellCoords&
 /// \param bottomRight const wxGridCellCoords&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+mu::value_type TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    double dSum = 0;
-
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
-    {
-        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
-        {
-            if (!isnan(CellToDouble(i, j)))
-                dSum += CellToDouble(i,j);
-        }
-    }
-
-    return dSum;
+    return static_cast<GridNumeReTable*>(GetTable())->sum(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
 }
 
 
@@ -1108,30 +1026,12 @@ double TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCe
 ///
 /// \param topLeft const wxGridCellCoords&
 /// \param bottomRight const wxGridCellCoords&
-/// \return double
+/// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-double TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
+mu::value_type TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    double dSum = 0;
-    int nCount = 0;
-
-    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
-    {
-        for (int j = topLeft.GetCol(); j <= bottomRight.GetCol(); j++)
-        {
-            if (!isnan(CellToDouble(i, j)))
-            {
-                nCount++;
-                dSum += CellToDouble(i, j);
-            }
-        }
-    }
-
-    if (nCount)
-        return dSum / nCount;
-
-    return 0.0;
+    return static_cast<GridNumeReTable*>(GetTable())->avg(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
 }
 
 
@@ -1162,10 +1062,10 @@ void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridC
         sel << "--,--";
 
     // Calculate the simple statistics
-    wxString statustext = "Min: " + toString(calculateMin(topLeft, bottomRight), 5);
-    statustext << " | Max: " << toString(calculateMax(topLeft, bottomRight), 5);
-    statustext << " | Sum: " << toString(calculateSum(topLeft, bottomRight), 5);
-    statustext << " | Avg: " << toString(calculateAvg(topLeft, bottomRight), 5);
+    wxString statustext = "Min: " + toString(calculateMin(topLeft, bottomRight), STATUSBAR_PRECISION);
+    statustext << " | Max: " << toString(calculateMax(topLeft, bottomRight), STATUSBAR_PRECISION);
+    statustext << " | Sum: " << toString(calculateSum(topLeft, bottomRight), 2*STATUSBAR_PRECISION);
+    statustext << " | Avg: " << toString(calculateAvg(topLeft, bottomRight), 2*STATUSBAR_PRECISION);
 
     // Set the status bar valuey
     m_statusBar->SetStatusText(dim);
@@ -1186,12 +1086,7 @@ void TableViewer::updateStatusBar(const wxGridCellCoords& topLeft, const wxGridC
 /////////////////////////////////////////////////
 wxString TableViewer::copyCell(int row, int col)
 {
-    wxString cell = this->GetCellValue(row, col);
-
-    if (cell[0] == '"')
-        return cell;
-
-    return cell;
+    return this->GetCellValue(row, col);
 }
 
 
@@ -1206,10 +1101,18 @@ wxString TableViewer::copyCell(int row, int col)
 /////////////////////////////////////////////////
 void TableViewer::replaceDecimalSign(wxString& text)
 {
-    for (size_t i = 0; i < text.length(); i++)
+    wxArrayString toks = wxStringTokenize(text);
+    text.clear();
+
+    for (size_t i = 0; i < toks.size(); i++)
     {
-        if (text[i] == ',')
-            text[i] = '.';
+        if (isNumerical(toks[i].ToStdString()))
+            toks[i].Replace(",", ".");
+
+        if (text.length())
+            text += "  ";
+
+        text += toks[i];
     }
 }
 
@@ -1290,6 +1193,7 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
     // Endless loop
     while (true)
     {
+        bool tabSeparated = false;
         // Abort, if the clipboards contents indicate an
         // empty table
         if (!sClipboard.length() || sClipboard == "\n")
@@ -1302,6 +1206,10 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         if (sLine.length() && sLine[sLine.length()-1] == (char)13)
             sLine.erase(sLine.length()-1);
 
+        // determine the separation mode
+        if (sLine.find('\t') != std::string::npos)
+            tabSeparated = true;
+
         // Remove the obtained line from the clipboard
         if (sClipboard.find('\n') != string::npos)
             sClipboard.erase(0, sClipboard.find('\n')+1);
@@ -1312,7 +1220,7 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         // line also contains tabulator characters and it is a
         // non-numerical line
         if (!isNumerical(sLine.ToStdString())
-            && (sLine.find('\t') != string::npos || sLine.find("  ") != std::string::npos))
+            && (tabSeparated || sLine.find("  ") != std::string::npos))
         {
             for (unsigned int i = 1; i < sLine.length()-1; i++)
             {
@@ -1332,9 +1240,9 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
         // Replace the decimal sign, if the line is numerical,
         // otherwise try to detect, whether the comma is used
         // to separate the columns
-        if (isNumerical(sLine.ToStdString()) && sLine.find(',') != string::npos && sLine.find('.') == string::npos)
+        if (sLine.find(',') != string::npos && (sLine.find('.') == string::npos || tabSeparated))
             replaceDecimalSign(sLine);
-        else if (sLine.find(',') != string::npos && sLine.find(';') != string::npos)
+        else if (!tabSeparated && sLine.find(',') != string::npos && sLine.find(';') != string::npos)
         {
             // The semicolon is used to separate the columns
             // in this case
@@ -1349,7 +1257,7 @@ vector<wxString> TableViewer::getLinesFromPaste(const wxString& data)
                 }
             }
         }
-        else
+        else if (!tabSeparated)
         {
             // The comma is used to separate the columns
             // in this case
@@ -1427,7 +1335,7 @@ void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
 void TableViewer::SetData(NumeRe::Table& _table)
 {
     // Create an empty table, if necessary
-    if (_table.isEmpty())
+    if (_table.isEmpty() || !_table.getLines())
     {
         createZeroElementTable();
         return;

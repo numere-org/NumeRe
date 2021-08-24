@@ -20,6 +20,7 @@
 // Implementation der FlowCtrl-Klasse
 #include "flowctrl.hpp"
 #include "../../kernel.hpp"
+#include "../utils/stringtools.hpp"
 
 // Definition of special return values
 #define FLOWCTRL_ERROR -1
@@ -35,10 +36,6 @@
 #define ELSE_START 1
 #define PROCEDURE_INTERFACE 2
 extern value_type vAns;
-
-// Prototype of the toString function,
-// avoiding inclusion of "tools"
-string toString(double, int);
 
 
 /////////////////////////////////////////////////
@@ -2462,6 +2459,11 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             if (sCache.length())
                 bWriteToCache = true;
 
+            // Ad-hoc bytecode adaption
+#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
+            if (nCurrentCalcType && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+                nCurrentCalcType |= CALCTYPE_STRING;
+
             if (_parserRef->IsCompiling() && _parserRef->CanCacheAccess())
             {
                 _parserRef->CacheCurrentEquation(sLine);
@@ -3184,7 +3186,7 @@ void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
         StripSpaces(sVarArray[i]);
 
         // Is it already defined?
-        // FIXME: This is a monkey patch
+#warning TODO (numere#5#08/15/21): Evaluate this monkey patch (might be resolved already)
         if (sVarArray[i].substr(0, 2) == "_~" && getPointerToVariable(sVarArray[i], *_parserRef))
             vVars[sVarArray[i]] = getPointerToVariable(sVarArray[i], *_parserRef);
         else

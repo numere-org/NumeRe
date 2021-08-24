@@ -117,11 +117,10 @@
 #include "icons/breakpoint_octagon_disable.xpm"
 
 const string sVersion = toString((int)AutoVersion::MAJOR) + "." + toString((int)AutoVersion::MINOR) + "." + toString((int)AutoVersion::BUILD) + " \"" + AutoVersion::STATUS + "\"";
-std::string replacePathSeparator(const std::string&);
-string toString(const vector<int>& vVector);
-vector<int> toVector(string sString);
-string removeQuotationMarks(const string& sString);
+
+// Forward declaration
 string removeMaskedStrings(const string& sString);
+std::string removeQuotationMarks(const std::string&);
 
 string prepareStringsForDialog(const string& sString)
 {
@@ -888,7 +887,6 @@ void NumeReWindow::InitializeProgramOptions()
         // Inform the kernel about updated settings
         m_terminal->setKernelSettings(*m_options);
 
-        // TODO: Remove this ini file
         m_config.DeleteAll();
     }
 }
@@ -4115,7 +4113,7 @@ wxString NumeReWindow::ConstructFilterString(FileFilterType filterType)
     wxString filterString;
     switch(filterType)
     {
-    case FILE_ALLSOURCETYPES: /// TODO: find a senseful order
+    case FILE_ALLSOURCETYPES:
         filterString = m_filterExecutableFiles;
         filterString += "|";
         filterString += m_filterNSCRFiles;
@@ -4822,14 +4820,6 @@ void NumeReWindow::UpdateMenuBar()
     menuEdit->Append(wxID_ANY, _guilang.get("GUI_MENU_STRIP"), menuStripSpaces);
     menuEdit->Append(ID_MENU_SORT_SELECTION_ASC, _guilang.get("GUI_MENU_SORT_ASC"), _guilang.get("GUI_MENU_SORT_ASC_TTP"));
     menuEdit->Append(ID_MENU_SORT_SELECTION_DESC, _guilang.get("GUI_MENU_SORT_DESC"), _guilang.get("GUI_MENU_SORT_DESC_TTP"));
-
-    // TODO Implement these Edit menu items
-
-    /*
-    menuEdit->AppendSeparator();
-    menuEdit->Append(ID_SELECTALL, "Select all\tCtrl-A");
-    menuEdit->Append(ID_SELECTLINE, "Select line");
-    */
 
     menuBar->Append(menuEdit, _guilang.get("GUI_MENU_EDIT"));
 
@@ -5988,8 +5978,6 @@ void NumeReWindow::OnFindEvent(wxFindDialogEvent& event)
         m_currentEd->ReplaceSelection(replaceString);
         m_currentEd->EnsureCaretVisible();
         m_currentEd->SetSelection(pos, pos + replaceString.length());
-
-        // TODO Do a Find after this for the next item automatically?
     }
     else if (type == wxEVT_COMMAND_FIND_REPLACE_ALL)
     {

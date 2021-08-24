@@ -33,8 +33,6 @@ bool NumeRePrintout::OnPrintPage (int page) {
 	// scale DC
 	PrintScaling (dc);
 
-	// TODO Need to figure out how to preview the appropriate page...
-	// right now it just does from the start
 	// print page
 	if (page == 1) m_printed = 0;
 	m_printed = m_edit->FormatRange (1,

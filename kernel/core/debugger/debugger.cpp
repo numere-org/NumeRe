@@ -23,6 +23,9 @@
 #include "../utils/tools.hpp"
 #include "../procedure/procedurevarfactory.hpp"
 
+#define DEFAULT_NUM_PRECISION 7
+#define DEFAULT_MINMAX_PRECISION 5
+
 
 /////////////////////////////////////////////////
 /// \brief Constructor.
@@ -283,7 +286,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
 
         // Replace the value with its actual value and mark the
         // argument type as reference
-        sArgumentValue = "{" + toString(_data.min(sCache, "")[0], 5) + ", ..., " + toString(_data.max(sCache, "")[0], 5) + "}";
+        sArgumentValue = "{" + toString(_data.min(sCache, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_data.max(sCache, "")[0], DEFAULT_MINMAX_PRECISION) + "}";
 
         // Determine whether this is a templated variable
         if (sArgumentName.length() && sArgumentName.find("()") == std::string::npos)
@@ -353,7 +356,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
         // Replace the value with its actual value and mark the
         // argument type as reference
         mu::value_type* address = _parser.GetVar().find(sArgumentValue)->second;
-        sArgumentValue = toString(*address, 5);
+        sArgumentValue = toString(*address, (address->imag() ? 2*DEFAULT_NUM_PRECISION : DEFAULT_NUM_PRECISION));
 
         if (address->imag())
             return "\t1 x 1\t" + isRef + "complex\t";
@@ -362,7 +365,7 @@ string NumeReDebugger::decodeType(string& sArgumentValue, const std::string& sAr
     }
 
     // Is it a constant numerical expression or value?
-    if (sArgumentValue.find_first_not_of("0123456789.eE-+*/^!&|<>=(){},") == string::npos)
+    if (sArgumentValue.find_first_not_of("0123456789.eEi-+*/^!&|<>=(){},") == string::npos)
         return "\t1 x 1\tdouble\t";
 
     // Is the current argument a string expression?
@@ -648,7 +651,7 @@ void NumeReDebugger::gatherInformations(string** sLocalVars, size_t nLocalVarMap
         else
         {
             sTableData = toString(instance->getMemoryManager().getLines(sLocalTables[i][1], false)) + " x " + toString(instance->getMemoryManager().getCols(sLocalTables[i][1], false));
-            sTableData += "\tdouble\t{" + toString(instance->getMemoryManager().min(sLocalTables[i][1], "")[0], 5) + ", ..., " + toString(instance->getMemoryManager().max(sLocalTables[i][1], "")[0], 5) + "}\t" + sLocalTables[i][1] + "()";
+            sTableData += "\ttable\t{" + toString(instance->getMemoryManager().min(sLocalTables[i][1], "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(instance->getMemoryManager().max(sLocalTables[i][1], "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + sLocalTables[i][1] + "()";
         }
 
         mLocalTables[sLocalTables[i][0] + "()"] = sTableData;
@@ -828,9 +831,9 @@ vector<string> NumeReDebugger::getNumVars()
     for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
     {
         if (iter->second.imag())
-            vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tcomplex\t" + toString(iter->second, 7) + (iter->first).substr((iter->first).find('\t')));
+            vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tcomplex\t" + toString(iter->second, 2*DEFAULT_NUM_PRECISION) + (iter->first).substr((iter->first).find('\t')));
         else
-            vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tdouble\t" + toString(iter->second, 7) + (iter->first).substr((iter->first).find('\t')));
+            vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tdouble\t" + toString(iter->second, DEFAULT_NUM_PRECISION) + (iter->first).substr((iter->first).find('\t')));
     }
 
     return vNumVars;
@@ -951,7 +954,7 @@ vector<string> NumeReDebugger::getGlobals()
         if (iter->first.substr(0, 2) != "_~")
         {
             mGlobals[iter->first + "()"] = toString(_data.getLines(iter->first, false)) + " x " + toString(_data.getCols(iter->first, false))
-                                           + "\tdouble\t{" + toString(_data.min(iter->first, "")[0], 5) + ", ..., " + toString(_data.max(iter->first, "")[0], 5) + "}";
+                                           + "\ttable\t{" + toString(_data.min(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(_data.max(iter->first, "")[0], DEFAULT_MINMAX_PRECISION) + "}";
         }
     }
 
@@ -979,9 +982,9 @@ vector<string> NumeReDebugger::getGlobals()
         if (iter->first.substr(0, 2) != "_~")
         {
             if ((*iter->second).imag())
-                mGlobals[iter->first] = "1 x 1\tcomplex\t" + toString(*iter->second, 5);
+                mGlobals[iter->first] = "1 x 1\tcomplex\t" + toString(*iter->second, 2*DEFAULT_NUM_PRECISION);
             else
-                mGlobals[iter->first] = "1 x 1\tdouble\t" + toString(*iter->second, 5);
+                mGlobals[iter->first] = "1 x 1\tdouble\t" + toString(*iter->second, DEFAULT_NUM_PRECISION);
         }
     }
 

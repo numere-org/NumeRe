@@ -19,6 +19,7 @@
 
 #include "duplicatecodedialog.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/utils/stringtools.hpp"
 #include "../editor/editor.h"
 #include <wx/clipbrd.h>
 #include <algorithm>
@@ -32,9 +33,6 @@
 #define SEMANTICS_FUNCTION 8
 
 extern Language _guilang;
-
-int StrToInt(const string&);
-double StrToDb(const string&);
 
 struct compare_index
 {

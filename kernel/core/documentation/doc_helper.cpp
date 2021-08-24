@@ -24,9 +24,6 @@
 #include "../../kernel.hpp"
 #include <algorithm>
 
-bool fileExists(const std::string&);
-
-
 
 /////////////////////////////////////////////////
 /// \brief Strips comments from the documentation

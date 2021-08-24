@@ -499,7 +499,7 @@ namespace NumeRe
                 __nPos = sLine.find(iter->first, __nPos)+1;
 
                 // Appended opening parenthesis indicates a function
-                if (sLine[__nPos+(iter->first).length()-1] == '(')
+                if (sLine[__nPos+(iter->first).length()-1] == '(' || sLine[__nPos+(iter->first).length()-1] == '{')
                     continue;
 
                 // Check, whether the found occurence is correctly

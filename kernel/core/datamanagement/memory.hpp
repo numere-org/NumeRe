@@ -21,6 +21,7 @@
 
 #include "table.hpp"
 #include "sorter.hpp"
+#include "tablecolumn.hpp"
 #include "../maths/filtering.hpp"
 
 #ifndef MEMORY_HPP
@@ -32,6 +33,13 @@ namespace NumeRe
 {
     class FileAdapter;
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This type defines a generic value
+/// vector.
+/////////////////////////////////////////////////
+typedef std::vector<std::string> ValueVector;
 
 
 /////////////////////////////////////////////////
@@ -55,76 +63,71 @@ class Memory : public Sorter
 	    friend class MemoryManager;
 	    friend class NumeRe::FileAdapter;
 
-		long long int nLines;
-		long long int nCols;
-		mutable long long int nCalcLines;
-		mutable long long int nCalcCols;
-		long long int nWrittenHeadlines;
-		long long int* nAppendedZeroes;
-		double** dMemTable;
-		bool bValidData;
-		std::string* sHeadLine;
+	    TableColumnArray memArray;
+
+		mutable int nCalcLines;
+
 		bool bIsSaved;
 		bool bSaveMutex;
-		long long int nLastSaved;
+		bool bSortCaseInsensitive;
+		time_t nLastSaved;
 
-		bool Allocate(long long int _nNLines, long long int _nNCols, bool shrink = false);
+		bool Allocate(size_t _nNCols, bool shrink = false);
 		void createTableHeaders();
 		bool clear();
-		Boundary findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, long long int i, long long int j) const;
+		Boundary findValidBoundary(const VectorIndex& _vLine, const VectorIndex& _vCol, int i, int j) const;
 		bool retouch1D(const VectorIndex& _vLine, const VectorIndex& _vCol, AppDir Direction);
 		bool retouch2D(const VectorIndex& _vLine, const VectorIndex& _vCol);
 		bool onlyValidValues(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		void reorderColumn(const std::vector<int>& vIndex, long long int i1, long long int i2, long long int j1 = 0);
+		void reorderColumn(const VectorIndex& vIndex, int i1, int i2, int j1 = 0);
 		virtual int compare(int i, int j, int col) override;
         virtual bool isValue(int line, int col) override;
-		void countAppendedZeroes();
 		void smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines);
 		void smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter);
 
     public:
 		Memory();
-		Memory(long long int _nLines, long long int _nCols);
+		Memory(size_t _nCols);
 		~Memory();
 
-		bool resizeMemory(long long int _nLines, long long int _nCols);
+		bool resizeMemory(size_t _nLines, size_t _nCols);
 		bool isValid() const;
-		bool isValidElement(long long int _nLine, long long int _nCol) const;
+		bool isValidElement(size_t _nLine, size_t _nCol) const;
 		bool shrink();
-		long long int getLines(bool _bFull = false) const;
-		long long int getCols(bool _bFull = false) const;
-        inline int getSize() const
-            {
-                if (bValidData)
-                    return nLines * nCols * sizeof(double);
-                else
-                    return 0;
-            }
+		void convert();
+		int getLines(bool _bFull = false) const;
+		int getCols(bool _bFull = false) const;
+        size_t getSize() const;
+
 
         // READ ACCESS METHODS
-		double readMem(long long int _nLine, long long int _nCol) const;
-		double readMemInterpolated(double _dLine, double _dCol) const;
+		mu::value_type readMem(size_t _nLine, size_t _nCol) const;
+		mu::value_type readMemInterpolated(double _dLine, double _dCol) const;
 		std::vector<mu::value_type> readMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		std::vector<double> readRealMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		ValueVector readMixedMem(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
+		TableColumn::ColumnType getType(const VectorIndex& _vCol) const;
 		Memory* extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol) const;
 		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol) const;
-		std::string getHeadLineElement(long long int _i) const;
+		std::string getHeadLineElement(size_t _i) const;
 		std::vector<std::string> getHeadLineElement(const VectorIndex& _vCol) const;
-		long long int getAppendedZeroes(long long int _i) const;
-		int getHeadlineCount() const;
+		size_t getAppendedZeroes(size_t _i) const;
+		size_t getHeadlineCount() const;
 
 		// WRITE ACCESS METHODS
-		void writeSingletonData(Indices& _idx, mu::value_type _dData);
-		void writeData(long long int _nLine, long long int _nCol, mu::value_type _dData);
+		void writeSingletonData(Indices& _idx, const mu::value_type& _dData);
+		void writeSingletonData(Indices& _idx, const std::string& _sValue);
+		void writeData(int _nLine, int _nCol, const mu::value_type& _dData);
+		void writeData(int _nLine, int _nCol, const std::string& sValue);
 		void writeData(Indices& _idx, mu::value_type* _dData, unsigned int _nNum);
-		bool setHeadLineElement(long long int _i, std::string _sHead);
+		void writeData(Indices& _idx, const ValueVector& _values);
+		bool setHeadLineElement(size_t _i, const std::string& _sHead);
 
 		bool save(std::string _sFileName, const std::string& sTableName, unsigned short nPrecision);
         bool getSaveStatus() const;
         void setSaveStatus(bool _bIsSaved);
         long long int getLastSaved() const;
-        std::vector<int> sortElements(long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const std::string& sSortingExpression = "");
-        void deleteEntry(long long int _nLine, long long int _nCol);
+        std::vector<int> sortElements(int i1, int i2, int j1 = 0, int j2 = 0, const std::string& sSortingExpression = "");
+        void deleteEntry(int _nLine, int _nCol);
         void deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol);
         NumeRe::Table extractTable(const std::string& _sTable, const VectorIndex& lines, const VectorIndex& cols);
         void importTable(NumeRe::Table _table, const VectorIndex& lines, const VectorIndex& cols);

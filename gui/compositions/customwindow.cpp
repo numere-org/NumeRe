@@ -19,6 +19,7 @@
 #include "customwindow.hpp"
 #include "../NumeReWindow.h" // Already includes NumeRe::Window
 #include "../../kernel/core/utils/tinyxml2.h"
+#include "../../kernel/core/utils/stringtools.hpp"
 #include "grouppanel.hpp"
 #include <wx/tokenzr.h>
 #include <wx/dataview.h>
@@ -26,8 +27,6 @@
 #include "../wx.h"
 
 #include <string>
-
-std::string toString(size_t);
 
 /////////////////////////////////////////////////
 /// \brief This static function converts colors
@@ -846,7 +845,7 @@ void CustomWindow::layoutChild(const tinyxml2::XMLElement* currentChild, wxWindo
 
             // A collapsible group is currently very buggy (if used
             // with the current GroupPanel).
-            // TODO: Fix this
+#warning TODO (numere#1#08/15/21): Fix the collapsible group
             if (label.length())
             {
                 if (isCollapsible)
@@ -1021,9 +1020,6 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
             if (currentChild->Attribute("style"))
                 isMenu = currentChild->Attribute("style", "menu");
 
-            // A collapsible group is currently very buggy (if used
-            // with the current GroupPanel).
-            // TODO: Fix this
             if (label.length() && isMenu)
             {
                 wxMenu* subMenu = new wxMenu();
@@ -1057,7 +1053,7 @@ void CustomWindow::layoutMenu(const tinyxml2::XMLElement* currentChild, wxMenu* 
 /////////////////////////////////////////////////
 void CustomWindow::handleEvent(wxEvent& event, const wxString& sEventType)
 {
-    // FIXME: Ignore the onclose event for now
+#warning NOTE (numere#1#08/15/21): The "onclose" event is still undefined
     if (sEventType == "onclose")
         return;
 

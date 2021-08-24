@@ -26,6 +26,7 @@
 #include "muParserBase.h"
 #include "muParserTemplateMagic.h"
 #include "../../kernel.hpp"
+#include "../utils/stringtools.hpp"
 #include "../structures.hpp"
 
 //--- Standard includes ------------------------------------------------------------------------
@@ -42,12 +43,6 @@
 #endif
 
 using namespace std;
-
-// Helper prototypes e.g. for the MAF implementations in this class
-std::string toString(int);
-std::string toString(double, int);
-std::string toString(const std::complex<double>&, int);
-std::string toHexString(int nNumber);
 
 unsigned int getMatchingParenthesis(const StringView&);
 mu::value_type parser_Num(const mu::value_type*, int);
@@ -94,13 +89,13 @@ namespace mu
 	}
 
 
-	bool isinf(value_type v)
+	bool isinf(const value_type& v)
 	{
 	    return std::isinf(std::abs(v));
 	}
 
 
-	bool isnan(value_type v)
+	bool isnan(const value_type& v)
 	{
 	    return std::isnan(std::abs(v));
 	}
@@ -3416,51 +3411,6 @@ namespace mu
             return vValidByteCode[_nthLoopElement][_nthPartEquation];
         else
             return vValidByteCode[nthLoopElement][_nthPartEquation];
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Probably unused.
-    ///
-    /// \param _nthLoopElement unsigned int
-    /// \param _nthPartEquation unsigned int
-    /// \return void
-    /// \todo Evaluate, whether this is used.
-    ///
-    /////////////////////////////////////////////////
-    void ParserBase::DeclareAsInvalid(unsigned int _nthLoopElement, unsigned int _nthPartEquation)
-    {
-        if (bMakeLoopByteCode && !bPauseLoopByteCode)
-        {
-            if (g_DbgDumpStack)
-                NumeReKernel::print("DEBUG: Declared as invalid: (" + toString(_nthLoopElement) + "," + toString(_nthPartEquation) + ")");
-
-            if (_nthLoopElement < nLoopLength)
-                vValidByteCode[_nthLoopElement][_nthPartEquation] = 0;
-            else
-                vValidByteCode[nthLoopElement][_nthPartEquation] = 0;
-        }
-    }
-
-
-    /////////////////////////////////////////////////
-    /// \brief Probably unused.
-    ///
-    /// \param _nthLoopElement unsigned int
-    /// \param _nthPartEquation unsigned int
-    /// \return void
-    /// \todo Evaluate, whether this is used.
-    ///
-    /////////////////////////////////////////////////
-    void ParserBase::DeclareAsDelayed(unsigned int _nthLoopElement, unsigned int _nthPartEquation)
-    {
-        if (bMakeLoopByteCode && !bPauseLoopByteCode)
-        {
-            if (_nthLoopElement < nLoopLength)
-                vValidByteCode[_nthLoopElement][_nthPartEquation] = -1;
-            else
-                vValidByteCode[nthLoopElement][_nthPartEquation] = -1;
-        }
     }
 
 

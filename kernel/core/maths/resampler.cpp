@@ -329,7 +329,7 @@ static double bessel0(double x)
 	pow = 1.0;
 	k = 0;
 	ds = 1.0;
-	while (ds > sum * EPSILON_RATIO) // FIXME: Shouldn't this stop after X iterations for max. safety?
+	while (ds > sum * EPSILON_RATIO)
 	{
 		++k;
 		pow = pow * (xh / k);

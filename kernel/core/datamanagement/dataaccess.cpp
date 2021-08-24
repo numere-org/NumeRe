@@ -213,7 +213,7 @@ bool DataAccessParser::isCluster() const
 
 
 
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs);
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, int options);
 static const string& handleCachedDataAccess(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option);
 static void replaceEntityStringOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityStringReplacement);
 static void replaceEntityOccurence(string& sLine, const string& sEntityOccurence, const string& sEntityName, const string& sEntityReplacement, const Indices& _idx, MemoryManager& _data, Parser& _parser, const Settings& _option, bool isCluster);
@@ -225,8 +225,6 @@ static string getMafFromAccessString(const string& sAccessString);
 static string getMafAccessString(const string& sLine, const string& sEntity);
 static void handleMafDataAccess(string& sLine, const string& sMafAccess, Parser& _parser, MemoryManager& _data);
 static string getLastToken(const string& sLine);
-static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option);
-static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim);
 
 
 size_t findAssignmentOperator(StringView sCmd)
@@ -255,7 +253,7 @@ size_t findAssignmentOperator(StringView sCmd)
 /// \param _parser Parser&
 /// \param _data Datafile&
 /// \param _option const Settings&
-/// \param bReplaceNANs bool
+/// \param options int
 /// \return string
 ///
 /// This function actually delegates the hard work
@@ -263,7 +261,7 @@ size_t findAssignmentOperator(StringView sCmd)
 /// public and replaces all calls to a single
 /// data entity.
 /////////////////////////////////////////////////
-string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs)
+string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, int options)
 {
 	// Evaluate possible cached equations
 	if ((_parser.HasCachedAccess() || _parser.GetCachedEquation().length()) && !_parser.IsCompiling())
@@ -296,7 +294,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 		if (eq_pos == string::npos              // gar kein "="?
             || !_data.containsTablesOrClusters(sLine.substr(0, eq_pos)))   // nur links von "cache("?
 		{
-            resolveTablesAndClusters(sLine, _parser, _data, _option, bReplaceNANs);
+            resolveTablesAndClusters(sLine, _parser, _data, _option, options);
 		}
 		else
 		{
@@ -315,7 +313,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 			if (_data.containsTablesOrClusters(sCache.substr(sCache.find_first_of("({") + 1)))
 			{
 				sLine_Temp = sCache.substr(sCache.find_first_of("({") + 1);
-                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, bReplaceNANs);
+                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, options);
 				sCache = sCache.substr(0, sCache.find_first_of("({") + 1) + sLine_Temp;
 			}
 
@@ -327,7 +325,7 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 				/* --> Ja? Geht eigentlich trotzdem wie oben, mit Ausnahme, dass ueberall wo "sLine" aufgetreten ist,
 				 *     nun "sLine_Temp" auftritt <--
 				 */
-                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, bReplaceNANs);
+                resolveTablesAndClusters(sLine_Temp, _parser, _data, _option, options);
 			}
 
 			// --> sLine_Temp an sLine zuweisen <--
@@ -347,11 +345,11 @@ string getDataElements(string& sLine, Parser& _parser, MemoryManager& _data, con
 /// \param _parser Parser&
 /// \param _data Datafile&
 /// \param _option const Settings&
-/// \param bReplaceNANs bool
+/// \param options int
 /// \return void
 ///
 /////////////////////////////////////////////////
-static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, bool bReplaceNANs)
+static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManager& _data, const Settings& _option, int options)
 {
     // Try to find every cache and handle its contents
     if (_data.containsTables(sLine))
@@ -359,7 +357,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
         for (auto iter = _data.getTableMap().begin(); iter != _data.getTableMap().end(); iter++)
         {
             if (sLine.find((iter->first) + "(") != string::npos)
-                replaceDataEntities(sLine, iter->first + "(", _data, _parser, _option, bReplaceNANs);
+                replaceDataEntities(sLine, iter->first + "(", _data, _parser, _option, options);
         }
     }
 
@@ -369,7 +367,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
         for (auto iter = _data.getClusterMap().begin(); iter != _data.getClusterMap().end(); iter++)
         {
             if (sLine.find((iter->first) + "{") != string::npos)
-                replaceDataEntities(sLine, iter->first + "{", _data, _parser, _option, bReplaceNANs);
+                replaceDataEntities(sLine, iter->first + "{", _data, _parser, _option, options);
         }
     }
 }
@@ -385,7 +383,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
 /// \param _data Datafile&
 /// \param _parser Parser&
 /// \param _option const Settings&
-/// \param bReplaceNANs bool
+/// \param options int
 /// \return void
 ///
 /// Because this function calls the index parser,
@@ -393,7 +391,7 @@ static void resolveTablesAndClusters(string& sLine, Parser& _parser, MemoryManag
 /// to any data entity included in the current call
 /// to the specified data entity.
 /////////////////////////////////////////////////
-void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _data, Parser& _parser, const Settings& _option, bool bReplaceNANs)
+void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _data, Parser& _parser, const Settings& _option, int options)
 {
 	string sEntityOccurence = "";
 	string sEntityName = sEntity.substr(0, sEntity.length()-1);
@@ -512,7 +510,11 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 		{
 			// This is a usual data access
 			// create a vector containing the data
-            vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
+#warning NOTE (numere#1#08/17/21): Might be the source of some bytecode issues
+			if (/*options & INSERT_STRINGS &&*/ _data.getType(_idx.col, sEntityName) != TableColumn::TYPE_VALUE)
+                sEntityStringReplacement = NumeReKernel::getInstance()->getStringParser().createTempStringVectorVar(_data.getElementMixed(_idx.row, _idx.col, sEntityName));
+            else
+                vEntityContents = _data.getElement(_idx.row, _idx.col, sEntityName);
 		}
 		else if (isCluster)
 		{
@@ -642,6 +644,7 @@ static const string& handleCachedDataAccess(string& sLine, Parser& _parser, Memo
 		if (isCluster)
             _data.getCluster(_access.sCacheName).insertDataInArray(_parser.GetVectorVar(_access.sVectorName), _idx.row);
         else
+#warning NOTE (numere#3#08/21/21): This might lead to problems, if the user switches the type of a column in a loop
             _data.copyElementsInto(_parser.GetVectorVar(_access.sVectorName), _idx.row, _idx.col, _access.sCacheName);
 
 		_parser.UpdateVectorVar(_access.sVectorName);
@@ -1143,149 +1146,49 @@ static string getLastToken(const string& sLine)
 
 
 /////////////////////////////////////////////////
-/// \brief This function is for extracting the
-/// desired number of columns out of the data
-/// object and storing it to a continous block of
-/// memory used for example for regularize,
-/// spline, pulse, stfa.
+/// \brief This function extracts a portion of a
+/// table and returns it to the calling function.
+/// The returned pointer may as well be a
+/// nullptr, if the selectd table does not exist.
 ///
-/// \param sTableName const string&
-/// \param _idx Indices&
-/// \param _data const Datafile&
-/// \param _cache Datafile&
+/// \param sCmd const std::string&
+/// \param _accessParser DataAccessParser&
 /// \param nDesiredCols int
 /// \param bSort bool
-/// \return bool
+/// \return Memory*
 ///
 /////////////////////////////////////////////////
-bool getData(const string& sTableName, Indices& _idx, const MemoryManager& _data, MemoryManager& _cache, int nDesiredCols, bool bSort)
+Memory* extractRange(const std::string& sCmd, DataAccessParser& _accessParser, int nDesiredCols, bool bSort)
 {
-	// write the data
-	// the first case uses vector indices
-    if (_idx.row.isOpenEnd())
-        _idx.row.setRange(0, _data.getLines(sTableName, false)-1);
+    // Validize the obtained index sets
+    if (!isValidIndexSet(_accessParser.getIndices()))
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, _accessParser.getDataObject() + "(", _accessParser.getDataObject() + "()");
 
-    if (_idx.col.isOpenEnd())
-        _idx.col.setRange(0, _idx.col.front() + nDesiredCols-1);
-
-    // If the command requires two columns and the column indices contain two
-    // nodes, handle them here. Otherwise use a vectorial access in the lower
-    // section of this conditional statement
-    if (nDesiredCols == 2 && _idx.col.numberOfNodes() == 2 && _idx.col.isExpanded()) // Do not expand in this case!
+    // Select the number of relevant columns
+    if (nDesiredCols > 0 && _accessParser.getIndices().col.isOpenEnd())
+        _accessParser.getIndices().col.setRange(0, _accessParser.getIndices().col.front() + nDesiredCols-1);
+    else if (nDesiredCols == 2 && _accessParser.getIndices().col.numberOfNodes() == 2u)
     {
-        for (long long int i = 0; i < _idx.row.size(); i++)
-        {
-            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col.front(), sTableName));
-            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col.last(), sTableName));
-
-            if (!i)
-            {
-                _cache.setHeadLineElement(0, "table", _data.getHeadLineElement(_idx.col.front(), sTableName));
-                _cache.setHeadLineElement(1, "table", _data.getHeadLineElement(_idx.col.last(), sTableName));
-            }
-        }
-    }
-    else
-    {
-        for (long long int i = 0; i < _idx.row.size(); i++)
-        {
-            for (long long int j = 0; j < _idx.col.size(); j++)
-            {
-                _cache.writeToTable(i, j, "table", _data.getElement(_idx.row[i], _idx.col[j], sTableName));
-
-                if (!i)
-                    _cache.setHeadLineElement(j, "table", _data.getHeadLineElement(_idx.col[j], sTableName));
-            }
-        }
+        // Check number of nodes and convert the columns to an explicit two-element vector,
+        // if the user did not pass an open-end index set
+        Indices& _idx = _accessParser.getIndices();
+        _idx.col = VectorIndex(std::vector<int>({_idx.col.front(), _idx.col.last()}));
     }
 
-	// sort, if sorting is activated
-	if (bSort)
-		_cache.sortElements("sort -table c=1[2:]");
+    // Evaluate the number of rows, if necessary
+    _accessParser.evalIndices();
 
-	return true;
-}
+    Memory* _mem = NumeReKernel::getInstance()->getMemoryManager().getTable(_accessParser.getDataObject());
 
+    if (!_mem)
+        return nullptr;
 
-/////////////////////////////////////////////////
-/// \brief This function will extract the needed
-/// data into a table object.
-///
-/// \param sDataExpression const string&
-/// \param _parser Parser&
-/// \param _data Datafile&
-/// \param _option const Settings&
-/// \return NumeRe::Table
-///
-/////////////////////////////////////////////////
-NumeRe::Table parser_extractData(const string& sDataExpression, Parser& _parser, MemoryManager& _data, const Settings& _option)
-{
-	string sDatatable = "data";                             // Int fuer die Position des aktuellen find-Treffers eines Daten-Objekts
-	int nColumns = 0;
-	bool openEnd = false;
-	bool isCluster = false;
+    _mem = _mem->extractRange(_accessParser.getIndices().row, _accessParser.getIndices().col);
 
-	// Get the correct index set
-	Indices _idx = getIndicesForPlotAndFit(sDataExpression, sDatatable, nColumns, openEnd, isCluster);
+    if (bSort)
+        _mem->sortElements(0, _mem->getLines()-1, 0, _mem->getCols()-1, "-c=1[2:]");
 
-	// Evaluate the indices and determine the dimension
-    int nDim = evalColumnIndicesAndGetDimension(_data, _parser, sDatatable, sDataExpression, _idx, nColumns, isCluster, _option);
-
-	// Validate, if the line indices have a reasonable large difference
-	if (_idx.row.size() <= 1)
-		throw SyntaxError(SyntaxError::TOO_FEW_LINES, sDataExpression, SyntaxError::invalid_position);
-
-    // copy the data and extract the table
-    return copyAndExtract(_data, sDatatable, _idx, nDim);
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function evaluates the column
-/// indices and returns the final dimension of
-/// the columns.
-///
-/// \param _data Datafile&
-/// \param _parser Parser&
-/// \param sDatatable const string&
-/// \param sDataExpression const string&
-/// \param _idx Indices&
-/// \param nColumns int
-/// \param isCluster bool
-/// \param _option const Settings&
-/// \return int
-///
-/////////////////////////////////////////////////
-static int evalColumnIndicesAndGetDimension(MemoryManager& _data, Parser& _parser, const string& sDatatable, const string& sDataExpression, Indices& _idx, int nColumns, bool isCluster, const Settings& _option)
-{
-    int nDim = 0;
-
-    // Ensure consistent indices
-    _idx.row.setRange(0, _data.getLines(sDatatable, false)-1);
-    _idx.col.setRange(0, _data.getCols(sDatatable)-1);
-
-    // Validate the calculated indices
-	if (_idx.row.front() > _data.getLines(sDatatable, false)
-            || _idx.col.front() > _data.getCols(sDatatable) - 1)
-	{
-		throw SyntaxError(SyntaxError::INVALID_INDEX, sDataExpression, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
-	}
-
-	/* --> Bestimmen wir die "Dimension" des zu fittenden Datensatzes. Dabei ist es auch
-	 *     von Bedeutung, ob Fehlerwerte verwendet werden sollen <--
-	 */
-	nDim = 0;
-
-	if ((nColumns == 1 && _idx.col.size() < 2) || isCluster)
-		throw SyntaxError(SyntaxError::TOO_FEW_COLS, sDataExpression, SyntaxError::invalid_position);
-	else if (nColumns == 1)
-		nDim = _idx.col.size();
-	else
-	{
-		nDim = nColumns;
-	}
-
-	return nDim;
+    return _mem;
 }
 
 
@@ -1357,52 +1260,6 @@ Indices getIndicesForPlotAndFit(const string& sExpression, string& sDataTable, i
     }
 
     return _idx;
-}
-
-
-/////////////////////////////////////////////////
-/// \brief This function will copy the contents
-/// to the target table and extract the table.
-///
-/// \param _data Datafile&
-/// \param sDatatable const string&
-/// \param _idx const Indices&
-/// \param nDim int
-/// \return NumeRe::Table
-///
-/////////////////////////////////////////////////
-static NumeRe::Table copyAndExtract(MemoryManager& _data, const string& sDatatable, const Indices& _idx, int nDim)
-{
-    MemoryManager _cache;
-    // Copy the contents of the data into the local cache object
-    // The indices are vectors
-    if (nDim == 2)
-    {
-        for (size_t i = 0; i < _idx.row.size(); i++)
-        {
-            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
-        }
-    }
-    else if (nDim == 3)
-    {
-        for (size_t i = 0; i < _idx.row.size(); i++)
-        {
-            _cache.writeToTable(i, 0, "table", _data.getElement(_idx.row[i], _idx.col[0], sDatatable));
-            _cache.writeToTable(i, 1, "table", _data.getElement(_idx.row[i], _idx.col[1], sDatatable));
-            _cache.writeToTable(i, 2, "table", _data.getElement(_idx.row[i], _idx.col[2], sDatatable));
-        }
-    }
-
-	// Sort the elements
-	_cache.sortElements("sort -table c=1[2:]");
-
-	// Rename the table
-	if (sDatatable != "table")
-        _cache.renameTable("table", sDatatable, true);
-
-	// Return the extracted table object
-	return _cache.extractTable(sDatatable);
 }
 
 

@@ -18,15 +18,13 @@
 
 #include "procedureviewer.hpp"
 #include "../../kernel/core/ui/language.hpp"
+#include "../../kernel/core/utils/stringtools.hpp"
 #include "../editor/editor.h"
 
 BEGIN_EVENT_TABLE(ProcedureViewer, wxListView)
     EVT_LIST_COL_CLICK(-1, ProcedureViewer::OnColumnClick)
     EVT_LIST_ITEM_ACTIVATED(-1, ProcedureViewer::OnItemClick)
 END_EVENT_TABLE()
-
-std::string toString(unsigned int);
-std::string toLowerCase(const std::string&);
 
 // Data structure for the procedure viewer to enable
 // effective sorting

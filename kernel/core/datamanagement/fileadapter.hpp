@@ -62,7 +62,7 @@ namespace NumeRe
             void setPrefix(const std::string& _sPrefix);
             void setbLoadEmptyCols(bool _bLoadEmptyCols);
             void setbLoadEmptyColsInNextFile(bool _bLoadEmptyCols);
-            void generateFileName();
+            std::string generateFileName(const std::string& sExtension = ".ndat");
             virtual void melt(Memory* _mem, const std::string& sTable) = 0;
     };
 }

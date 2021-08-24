@@ -2031,7 +2031,7 @@ value_type parser_EllipticF(value_type phi, value_type k)
     if (k.real() < 0 || k.real() >= 1)
         return NAN;
 
-    if (phi.real() < 0 || phi.real() > M_PI_2) /// FIXME
+    if (phi.real() < 0 || phi.real() > M_PI_2)
     {
         int nSign = 1;
         int nMultiple = floor(fabs(phi.real()/M_PI_2));
@@ -2069,7 +2069,7 @@ value_type parser_EllipticE(value_type phi, value_type k)
     if (k.real() < 0 || k.real() >= 1)
         return NAN;
 
-    if (phi.real() < 0 || phi.real() > M_PI_2) /// FIXME
+    if (phi.real() < 0 || phi.real() > M_PI_2)
     {
         int nSign = 1;
         int nMultiple = floor(fabs(phi.real()/M_PI_2));
@@ -2109,7 +2109,7 @@ value_type parser_EllipticP(value_type phi, value_type n, value_type k)
     if (k.real() < 0 || k.real() >= 1)
         return NAN;
 
-    if (phi.real() < 0 || phi.real() > M_PI_2) /// FIXME
+    if (phi.real() < 0 || phi.real() > M_PI_2)
     {
         int nSign = 1;
         int nMultiple = floor(fabs(phi.real()/M_PI_2));
@@ -2149,7 +2149,7 @@ value_type parser_EllipticD(value_type phi, value_type n, value_type k)
     if (k.real() < 0 || k.real() >= 1)
         return NAN;
 
-    if (phi.real() < 0 || phi.real() > M_PI_2) /// FIXME
+    if (phi.real() < 0 || phi.real() > M_PI_2)
     {
         int nSign = 1;
         int nMultiple = floor(fabs(phi.real()/M_PI_2));

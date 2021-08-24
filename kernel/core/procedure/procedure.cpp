@@ -399,6 +399,11 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
 
             if (sCache.length() && sCache.find('#') == string::npos)
                 bWriteToCache = true;
+
+            // Ad-hoc bytecode adaption
+#warning NOTE (numere#1#08/21/21): Might need some adaption, if bytecode issues are experienced
+            if (nCurrentByteCode && NumeReKernel::getInstance()->getStringParser().isStringExpression(sLine))
+                nCurrentByteCode |= ProcedureCommandLine::BYTECODE_STRING;
         }
         else if (isClusterCandidate(sLine, sCache))
         {

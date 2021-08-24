@@ -384,7 +384,7 @@ bool Odesolver::solve(const string& sCmd)
             break;
 
         if (bAllowCacheClearance || !_idx.row.front())
-            _odeData->setHeadLineElement(_idx.col[1+j], sTarget, "y"+toString(j+1));
+            _odeData->setHeadLineElement(_idx.col[1+j], sTarget, "y_"+toString(j+1));
 
         _odeData->writeToTable(_idx.row.front(), _idx.col[j+1], sTarget, y[j]);
     }

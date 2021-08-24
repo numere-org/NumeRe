@@ -202,6 +202,11 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			vMemory[findTable(_sCache)]->deleteBulk(_vLine, _vCol);
 		}
 
+		void shrink(const std::string& _sCache)
+		{
+		    vMemory[findTable(_sCache)]->shrink();
+		}
+
 
 		// TABLE INFORMATION AND SAVING METHODS
 		bool getSaveStatus() const;
@@ -331,7 +336,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
 		// DIMENSION ACCESS METHODS
-		inline long long int getLines(StringView sTable, bool _bFull = false) const
+		inline int getLines(StringView sTable, bool _bFull = false) const
 		{
 		    size_t idx = mapStringViewFind(sTable);
 
@@ -341,7 +346,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
-		inline long long int getLines(const std::string& sTable, bool _bFull = false) const
+		inline int getLines(const std::string& sTable, bool _bFull = false) const
 		{
 		    auto iter = mCachesMap.find(sTable);
 
@@ -351,7 +356,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
-		inline long long int getCols(StringView sTable, bool _bFull = false) const
+		inline int getCols(StringView sTable, bool _bFull = false) const
 		{
 		    size_t idx = mapStringViewFind(sTable);
 
@@ -361,7 +366,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
-		inline long long int getCols(const std::string& sTable, bool _bFull = false) const
+		inline int getCols(const std::string& sTable, bool _bFull = false) const
 		{
 		    auto iter = mCachesMap.find(sTable);
 
@@ -398,6 +403,22 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return std::vector<mu::value_type>();
 		}
 
+		ValueVector getElementMixed(const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
+		{
+		    if (exists(_sTable))
+                return vMemory[findTable(_sTable)]->readMixedMem(_vLine, _vCol);
+
+            return ValueVector();
+		}
+
+		TableColumn::ColumnType getType(const VectorIndex& _vCol, const std::string& _sTable) const
+		{
+		    if (exists(_sTable))
+                return vMemory[findTable(_sTable)]->getType(_vCol);
+
+            return TableColumn::TYPE_NONE;
+		}
+
 		void copyElementsInto(std::vector<mu::value_type>* vTarget, const VectorIndex& _vLine, const VectorIndex& _vCol, const std::string& _sTable) const
 		{
 			vMemory[findTable(_sTable)]->copyElementsInto(vTarget, _vLine, _vCol);
@@ -411,7 +432,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
-		std::string getHeadLineElement(long long int _i, const std::string& _sTable) const
+		std::string getHeadLineElement(int _i, const std::string& _sTable) const
 		{
 			if (exists(_sTable))
                 return vMemory[findTable(_sTable)]->getHeadLineElement(_i);
@@ -427,12 +448,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return std::vector<std::string>();
 		}
 
-		std::string getTopHeadLineElement(long long int _i, const std::string& _sTable) const
+		std::string getTopHeadLineElement(int _i, const std::string& _sTable) const
         {
             return getHeadLineElement(_i, _sTable).substr(0, getHeadLineElement(_i, _sTable).find("\\n"));
         }
 
-		long long int getAppendedZeroes(long long int _i, const std::string& _sTable) const
+		long long int getAppendedZeroes(int _i, const std::string& _sTable) const
 		{
 			return vMemory[findTable(_sTable)]->getAppendedZeroes(_i);
 		}
@@ -440,9 +461,14 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
         // WRITE ACCESS METHODS
-		inline void writeToTable(long long int _nLine, long long int _nCol, const std::string& _sCache, mu::value_type _dData)
+		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, mu::value_type _dData)
 		{
 			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _dData);
+		}
+
+		inline void writeToTable(int _nLine, int _nCol, const std::string& _sCache, const std::string& _sValue)
+		{
+			vMemory[findTable(_sCache)]->writeData(_nLine, _nCol, _sValue);
 		}
 
 		inline void writeToTable(Indices& _idx, const std::string& _sCache, mu::value_type* _dData, unsigned int _nNum)
@@ -450,11 +476,17 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			vMemory[findTable(_sCache)]->writeData(_idx, _dData, _nNum);
 		}
 
-		bool setHeadLineElement(long long int _i, const std::string& _sTable, std::string _sHead)
+		inline void writeToTable(Indices& _idx, const std::string& _sCache, const ValueVector& _values)
+		{
+			vMemory[findTable(_sCache)]->writeData(_idx, _values);
+		}
+
+		bool setHeadLineElement(int _i, const std::string& _sTable, std::string _sHead)
 		{
 			return vMemory[findTable(_sTable)]->setHeadLineElement(_i, _sHead);
 		}
 
+		void overwriteColumn(int col, const std::string& _sCache, TableColumn::ColumnType type);
 
 
 		// MAF METHODS
@@ -789,3 +821,5 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 };
 
 #endif
+
+

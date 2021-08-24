@@ -17,34 +17,66 @@
 ******************************************************************************/
 
 #include "gridtable.hpp"
+#include "../../kernel/core/utils/stringtools.hpp"
 
-std::string toString(int nNumber);
 
-// Default constructor
+/////////////////////////////////////////////////
+/// \brief Default constructor.
+/////////////////////////////////////////////////
 GridNumeReTable::GridNumeReTable()
 {
     _table = NumeRe::Table();
 }
 
-// General constructor. Will create an empty internal table
+
+/////////////////////////////////////////////////
+/// \brief General constructor. Will create an
+/// empty internal table.
+///
+/// \param numRows int
+/// \param numCols int
+///
+/////////////////////////////////////////////////
 GridNumeReTable::GridNumeReTable(int numRows, int numCols)
 {
     _table = NumeRe::Table(numRows-2, numCols-1);
 }
 
-// Move constructor taking the contents of the passed table
+
+/////////////////////////////////////////////////
+/// \brief Move constructor taking the contents
+/// of the passed table.
+///
+/// \param _extTable NumeRe::Table&&
+///
+/////////////////////////////////////////////////
 GridNumeReTable::GridNumeReTable(NumeRe::Table&& _extTable)
 {
     _table = std::move(_extTable);
 }
 
-// This member function will return the number of headlines
-// available in the internal buffer
-int GridNumeReTable::getNumHeadlines()
+
+/////////////////////////////////////////////////
+/// \brief This member function will return the
+/// number of headlines available in the internal
+/// buffer.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
+int GridNumeReTable::getNumHeadlines() const
 {
     return _table.getHeadCount();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief This member function returns a copy of
+/// the internal table.
+///
+/// \return NumeRe::Table
+///
+/////////////////////////////////////////////////
 NumeRe::Table GridNumeReTable::getTableCopy()
 {
     NumeRe::Table tableCopy(_table);
@@ -52,43 +84,78 @@ NumeRe::Table GridNumeReTable::getTableCopy()
 }
 
 
-// This member function will return the number of lines
-// including the headlines handled by this data provider
-// class
+/////////////////////////////////////////////////
+/// \brief This member function will return the
+/// number of lines including the headlines
+/// handled by this data provider class.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int GridNumeReTable::GetNumberRows()
 {
-    return _table.getLines() + getNumHeadlines() + 1;
+    return std::max(_table.getLines(), 1u) + getNumHeadlines() + 1;
 }
 
-// This member function will return the number of columns
-// handled by this data provider class
+
+/////////////////////////////////////////////////
+/// \brief This member function will return the
+/// number of columns handled by this data
+/// provider class.
+///
+/// \return int
+///
+/////////////////////////////////////////////////
 int GridNumeReTable::GetNumberCols()
 {
     return _table.getCols() + 1;
 }
 
-// This virtual member function will tell the grid, which
-// data types may be returned by the current cell
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function will tell
+/// the grid, which data types may be returned by
+/// the current cell.
+///
+/// \param row int
+/// \param col int
+/// \param sTypeName const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
 {
     // Headlines
-    if (row == 0 && sTypeName == wxGRID_VALUE_FLOAT)
+    if (row == 0 && (sTypeName == wxGRID_VALUE_FLOAT || sTypeName == "complex"))
         return false;
     else if (row < getNumHeadlines() && sTypeName == wxGRID_VALUE_STRING)
         return true;
 
     // Regular cells
-    if (sTypeName == wxGRID_VALUE_FLOAT)
+    if (sTypeName == "complex" && _table.getColumnType(col) == TableColumn::TYPE_VALUE)
         return true;
 
-    if (sTypeName == wxGRID_VALUE_STRING)
+    if (sTypeName == wxGRID_VALUE_FLOAT
+        && _table.getColumnType(col) == TableColumn::TYPE_VALUE
+        && (_table.getValue(row-getNumHeadlines(), col).imag() == 0 || mu::isnan(_table.getValue(row-getNumHeadlines(), col))))
+        return true;
+
+    if (sTypeName == wxGRID_VALUE_STRING && _table.getColumnType(col) != TableColumn::TYPE_NONE)
         return true;
 
     return false;
 }
 
-// This virtual member function returns the selected
-// cell value as a double
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function returns
+/// the selected cell value as a double.
+///
+/// \param row int
+/// \param col int
+/// \return double
+///
+/////////////////////////////////////////////////
 double GridNumeReTable::GetValueAsDouble(int row, int col)
 {
     // Return NAN, if this is not a numeric cell
@@ -98,11 +165,37 @@ double GridNumeReTable::GetValueAsDouble(int row, int col)
     if (row - getNumHeadlines() >= (int)_table.getLines() || col >= (int)_table.getCols())
         return NAN;
 
-    return _table.getValue(row - getNumHeadlines(), col);
+    return _table.getValue(row - getNumHeadlines(), col).real();
 }
 
-// This virtual member function returns the value of the
-// selected cell as string
+
+/////////////////////////////////////////////////
+/// \brief This member function will return the
+/// internal data as a void pointer referencing
+/// the internal mu::value_type attribute.
+///
+/// \param row int
+/// \param col int
+/// \param sTypeName const wxString&
+/// \return void*
+///
+/////////////////////////////////////////////////
+void* GridNumeReTable::GetValueAsCustom(int row, int col, const wxString& sTypeName)
+{
+    value = _table.getValue(row - getNumHeadlines(), col);
+    return static_cast<void*>(&value);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function returns
+/// the value of the selected cell as string.
+///
+/// \param row int
+/// \param col int
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString GridNumeReTable::GetValue(int row, int col)
 {
     if (row < getNumHeadlines() && col < (int)_table.getCols())
@@ -113,19 +206,27 @@ wxString GridNumeReTable::GetValue(int row, int col)
         return _table.getValueAsString(row - getNumHeadlines(), col);
 }
 
-// This virtual member function sets the passed value
-// in the internal buffer. It's decided automatically,
-// whether it's stored as a headline and whether a new
-// headline is required
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function sets the
+/// passed value in the internal buffer. It's
+/// decided automatically, whether it's stored as
+/// a headline and whether a new headline is
+/// required.
+///
+/// \param row int
+/// \param col int
+/// \param value const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
 void GridNumeReTable::SetValue(int row, int col, const wxString& value)
 {
     int nHeadRows = getNumHeadlines();
 
     // Set the value
-    if (row < nHeadRows && col < (int)_table.getCols())
+    if (row < nHeadRows)
         _table.setHeadPart(col, row, value.ToStdString());
-    else if (row - nHeadRows >= (int)_table.getLines() || col >= (int)_table.getCols())
-        return;
     else
         _table.setValueAsString(row - nHeadRows, col, value.ToStdString());
 
@@ -146,15 +247,31 @@ void GridNumeReTable::SetValue(int row, int col, const wxString& value)
     }
 }
 
-// This virtual function redirects the control directly
-// to the internal buffer and cleares it contents
+
+/////////////////////////////////////////////////
+/// \brief This virtual function redirects the
+/// control directly to the internal buffer and
+/// cleares it contents.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void GridNumeReTable::Clear()
 {
     _table.Clear();
 }
 
-// This virtual function redirects the control directly
-// to the internal buffer and inserts rows
+
+/////////////////////////////////////////////////
+/// \brief This virtual function redirects the
+/// control directly to the internal buffer and
+/// inserts rows.
+///
+/// \param pos size_t
+/// \param numRows size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GridNumeReTable::InsertRows(size_t pos, size_t numRows)
 {
     _table.insertLines(pos, numRows);
@@ -170,8 +287,16 @@ bool GridNumeReTable::InsertRows(size_t pos, size_t numRows)
     return true;
 }
 
-// This virtual function redirects the control directly
-// to the internal buffer and appends rows
+
+/////////////////////////////////////////////////
+/// \brief This virtual function redirects the
+/// control directly to the internal buffer and
+/// appends rows.
+///
+/// \param numRows size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GridNumeReTable::AppendRows(size_t numRows)
 {
     _table.appendLines(numRows);
@@ -187,8 +312,17 @@ bool GridNumeReTable::AppendRows(size_t numRows)
     return true;
 }
 
-// This virtual function redirects the control directly
-// to the internal buffer and deletes rows
+
+/////////////////////////////////////////////////
+/// \brief This virtual function redirects the
+/// control directly to the internal buffer and
+/// deletes rows.
+///
+/// \param pos size_t
+/// \param numRows size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GridNumeReTable::DeleteRows(size_t pos, size_t numRows)
 {
     _table.deleteLines(pos, numRows);
@@ -204,8 +338,17 @@ bool GridNumeReTable::DeleteRows(size_t pos, size_t numRows)
     return true;
 }
 
-// This virtual function redirects the control directly
-// to the internal buffer and inserts columns
+
+/////////////////////////////////////////////////
+/// \brief This virtual function redirects the
+/// control directly to the internal buffer and
+/// inserts columns.
+///
+/// \param pos size_t
+/// \param numRows size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GridNumeReTable::InsertCols(size_t pos, size_t numRows)
 {
     _table.insertCols(pos, numRows);
@@ -221,8 +364,16 @@ bool GridNumeReTable::InsertCols(size_t pos, size_t numRows)
     return true;
 }
 
-// This virtual function redirects the control directly
-// to the internal buffer and appends columns
+
+/////////////////////////////////////////////////
+/// \brief This virtual function redirects the
+/// control directly to the internal buffer and
+/// appends columns.
+///
+/// \param numRows size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GridNumeReTable::AppendCols(size_t numRows)
 {
     _table.appendCols(numRows);
@@ -238,8 +389,17 @@ bool GridNumeReTable::AppendCols(size_t numRows)
     return true;
 }
 
-// This virtual function redirects the control directly
-// to the internal buffer and deletes columns
+
+/////////////////////////////////////////////////
+/// \brief This virtual function redirects the
+/// control directly to the internal buffer and
+/// deletes columns.
+///
+/// \param pos size_t
+/// \param numRows size_t
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool GridNumeReTable::DeleteCols(size_t pos, size_t numRows)
 {
     _table.deleteCols(pos, numRows);
@@ -255,8 +415,16 @@ bool GridNumeReTable::DeleteCols(size_t pos, size_t numRows)
     return true;
 }
 
-// This virtual member function will return the
-// label for the selected row as a string
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function will
+/// return the label for the selected row as a
+/// string.
+///
+/// \param row int
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString GridNumeReTable::GetRowLabelValue(int row)
 {
     if (row < getNumHeadlines())
@@ -265,10 +433,150 @@ wxString GridNumeReTable::GetRowLabelValue(int row)
         return toString(row - (getNumHeadlines()-1));
 }
 
-// This virtual member function will return the
-// label for the selected column as a string
+
+/////////////////////////////////////////////////
+/// \brief This virtual member function will
+/// return the label for the selected column as a
+/// string.
+///
+/// \param col int
+/// \return wxString
+///
+/////////////////////////////////////////////////
 wxString GridNumeReTable::GetColLabelValue(int col)
 {
     return toString(col+1);
 }
+
+
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// minimal value in the range (r1,c1)->(r2,c2).
+///
+/// \param r1 int
+/// \param c1 int
+/// \param r2 int
+/// \param c2 int
+/// \return double
+///
+/////////////////////////////////////////////////
+double GridNumeReTable::min(int r1, int c1, int r2, int c2) const
+{
+    double dMin = NAN;
+    const int nHeadLines = getNumHeadlines();
+
+    for (int i = r1; i <= r2; i++)
+    {
+        for (int j = c1; j <= c2; j++)
+        {
+            double val = _table.getValue(i - nHeadLines, j).real();
+
+            if (isnan(dMin) || val < dMin)
+                dMin = val;
+        }
+    }
+
+    return dMin;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// maximal value in the range (r1,c1)->(r2,c2).
+///
+/// \param r1 int
+/// \param c1 int
+/// \param r2 int
+/// \param c2 int
+/// \return double
+///
+/////////////////////////////////////////////////
+double GridNumeReTable::max(int r1, int c1, int r2, int c2) const
+{
+    double dMax = NAN;
+    const int nHeadLines = getNumHeadlines();
+
+    for (int i = r1; i <= r2; i++)
+    {
+        for (int j = c1; j <= c2; j++)
+        {
+            double val = _table.getValue(i - nHeadLines, j).real();
+
+            if (isnan(dMax) || val > dMax)
+                dMax = val;
+        }
+    }
+
+    return dMax;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// average value of the range (r1,c1)->(r2,c2).
+///
+/// \param r1 int
+/// \param c1 int
+/// \param r2 int
+/// \param c2 int
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
+mu::value_type GridNumeReTable::avg(int r1, int c1, int r2, int c2) const
+{
+    mu::value_type dSum = 0;
+    size_t nCount = 0;
+    const int nHeadLines = getNumHeadlines();
+
+    for (int i = r1; i <= r2; i++)
+    {
+        for (int j = c1; j <= c2; j++)
+        {
+            mu::value_type val = _table.getValue(i - nHeadLines, j);
+
+            if (!mu::isnan(val))
+            {
+                nCount++;
+                dSum += val;
+            }
+        }
+    }
+
+    if (nCount)
+        return dSum / (double)nCount;
+
+    return 0.0;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This member function calculates the
+/// sum of the range (r1,c1)->(r2,c2).
+///
+/// \param r1 int
+/// \param c1 int
+/// \param r2 int
+/// \param c2 int
+/// \return mu::value_type
+///
+/////////////////////////////////////////////////
+mu::value_type GridNumeReTable::sum(int r1, int c1, int r2, int c2) const
+{
+    mu::value_type dSum = 0;
+    const int nHeadLines = getNumHeadlines();
+
+    for (int i = r1; i <= r2; i++)
+    {
+        for (int j = c1; j <= c2; j++)
+        {
+            mu::value_type val = _table.getValue(i - nHeadLines, j);
+
+            if (!mu::isnan(val))
+                dSum += val;
+        }
+    }
+
+    return dSum;
+}
+
 

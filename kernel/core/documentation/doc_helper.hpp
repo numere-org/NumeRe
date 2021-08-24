@@ -28,10 +28,6 @@
 #include "../io/filesystem.hpp"
 #include "../ui/error.hpp"
 
-void StripSpaces(std::string&);
-std::string toUpperCase(const std::string&);
-std::string toString(int);
-
 struct DocumentationEntry;
 
 /////////////////////////////////////////////////

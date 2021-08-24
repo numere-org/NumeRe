@@ -743,7 +743,7 @@ size_t Plot::createSubPlotSet(string& sOutputName, bool& bAnimateVar, vector<str
                 _parser.Eval(nFunctions);
 
                 // Search for the animation time variable "t"
-                if (isVariableInAssignedExpression(_parser, "t"))
+                if (findVariableInExpression(sFunc, "t"))
                     bAnimateVar = true;
 
                 // Check, whether the number of functions correspond to special
@@ -1867,7 +1867,7 @@ void Plot::createStdPlot(vector<short>& vType, int& nStyle, size_t& nLegends, in
 /////////////////////////////////////////////////
 bool Plot::plotstd(mglData& _mData, mglData& _mAxisVals, mglData _mData2[2], const short nType)
 {
-    // FIXME: Temporary fix for MathGL misbehavior
+#warning NOTE (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
     if (!_pData.getBoxplot() && !_pData.getyError() && !_pData.getxError() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
     {
         _mData = duplicatePoints(_mData);
@@ -3243,7 +3243,7 @@ void Plot::createStd3dPlot(vector<short>& vType, int& nStyle, size_t& nLegends, 
 /////////////////////////////////////////////////
 bool Plot::plotstd3d(mglData _mData[3], mglData _mData2[3], const short nType)
 {
-    // FIXME: Temporary fix for MathGL misbehavior
+#warning NOTE (numere#3#08/15/21): Temporary fix for MathGL misbehaviour
     if (!_pData.getBoxplot() && !_pData.getyError() && !_pData.getxError() && !_pData.getBars() && !_pData.getHBars() && !_pData.getStepplot())
     {
         for (int i = 0; i < 3; i++)
@@ -3910,7 +3910,7 @@ std::vector<std::string> Plot::evaluateDataPlots(vector<short>& vType, string& s
 
             string sSubstr = sToken.substr(getMatchingParenthesis(sToken.substr(sToken.find_first_of("({"))) + sToken.find_first_of("({") + 1);
 
-            if (sSubstr[sSubstr.find_first_not_of(' ')] != '"')
+            if (sSubstr[sSubstr.find_first_not_of(' ')] != '"' && sSubstr[sSubstr.find_first_not_of(' ')] != '#')
                 throw SyntaxError(SyntaxError::DATAPOINTS_CANNOT_BE_MODIFIED_WHILE_PLOTTING, "", SyntaxError::invalid_position, sToken);
         }
     }
@@ -4023,7 +4023,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
         }
         else
         {
-            if (_idx.row.last() >= _data.getCluster(sDataTable).size())
+            if (_idx.row.last() >= (int)_data.getCluster(sDataTable).size())
                 _idx.row.setRange(0, _data.getCluster(sDataTable).size()-1);
         }
 
@@ -4031,7 +4031,7 @@ void Plot::extractDataValues(const std::vector<std::string>& vDataPlots, const s
         // a table is used for the current data access
         if (_accessParser.isCluster())
         {
-            if (_idx.row.front() >= _data.getCluster(sDataTable).size())
+            if (_idx.row.front() >= (int)_data.getCluster(sDataTable).size())
                 throw SyntaxError(SyntaxError::INVALID_INDEX, sDataTable, SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
         }
         else
@@ -4135,7 +4135,7 @@ void Plot::getValuesFromData(DataAccessParser& _accessParser, size_t i, const st
         // if the current plot is a boxplot
         if (_pData.getBoxplot())
         {
-            vector<long long int> vJ = _idx.col.getVector();
+            vector<int> vJ = _idx.col.getVector();
             vJ.insert(vJ.begin(), -1);
             _idx.col = vJ;
         }

@@ -1062,7 +1062,7 @@ class Settings : public Documentation
         ///
         /// \param nWindow int
         /// \return size_t
-        /// \todo The y value might not be updated if the
+        /// \note The y value might not be updated if the
         /// user changes the height of the terminal.
         ///
         /////////////////////////////////////////////////

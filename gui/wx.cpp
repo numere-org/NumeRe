@@ -78,7 +78,6 @@ public:
 protected:
     wxScrolledWindow *scroll;	///< Scrolling area
     wxMenu *popup;			///< Popup menu
-//	wxSpinCtrl *tet, *phi;	///< Spin box for angles // TODO
 
     void MakeMenu();		///< Create menu, toolbar and popup menu
 };

@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "file.hpp"
+#include "../datamanagement/tablecolumnimpl.hpp"
 #include "../IgorLib/ReadWave.h"
 #include "../utils/tools.hpp"
 #include "../utils/BasicExcel.hpp"
@@ -24,6 +25,8 @@
 #include "../ui/language.hpp"
 #include "../version.h"
 #include "../../kernel.hpp"
+
+#define DEFAULT_PRECISION 14
 
 extern Language _lang;
 
@@ -34,9 +37,9 @@ namespace NumeRe
     // This function determines the correct class to be used for the filename
     // passed to this function. If there's no fitting file type, a null pointer
     // is returned. The calling function is responsible for clearing the
-    // created instance. The returned pointer is of the type of GenericFile<double>
+    // created instance. The returned pointer is of the type of GenericFile
     // but references an instance of a derived class
-    GenericFile<double>* getFileByType(const string& filename)
+    GenericFile* getFileByType(const string& filename)
     {
         FileSystem _fSys;
         _fSys.initializeFromKernel();
@@ -108,7 +111,6 @@ namespace NumeRe
         open(ios::in);
 
 		long long int nLine = 0;
-		long long int nCol = 0;
 		long long int nComment = 0;
 
 		// Read the text file contents to memory
@@ -132,36 +134,57 @@ namespace NumeRe
         }
 
 		// Count the number of comment lines, which are found
-		// in the files contents. Determine also, how many
-		// columns are found in the file
+		// in the files contents.
 		for (size_t i = 0; i < vFileContents.size(); i++)
 		{
-			if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))
-			{
+			if (vFileContents[i][0] == '#')
 				nComment++;
-				continue;
-			}
-			else if (!nCol)
-			{
-			    // Determine the number of columns by applying
-			    // the tokenizer to the files contents
-				nCol = tokenize(vFileContents[i], " ", true).size();
-			}
 		}
+
+		// If no comments have been found, use all non-numeric lines
+		if (!nComment)
+        {
+            for (size_t i = 0; i < vFileContents.size(); i++)
+            {
+                if (!isNumeric(vFileContents[i]))
+                    nComment++;
+            }
+        }
+
+		// If now all lines are comments, we have a string table
+		if (vFileContents.size() == nComment)
+            nComment = 1;
+
+		// Determine now, how many columns are found in the file
+		for (size_t i = 0; i < vFileContents.size(); i++)
+        {
+            size_t elem = tokenize(vFileContents[i], " ", true).size();
+
+            if (elem > nCols)
+                nCols = elem;
+        }
 
 		// Set the final dimensions
 		nRows = vFileContents.size() - nComment;
-		nCols = nCol;
+
+		// Something's wrong here!
+		if (!nCols || !nRows)
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
 
 		// Create the target storage
 		createStorage();
+
+		for (TblColPtr& col : *fileData)
+        {
+            col.reset(new StringColumn);
+        }
 
 		nLine = 0;
 
 		// Copy the data from the file to the internal memory
 		for (size_t i = 0; i < vFileContents.size(); i++)
         {
-            if (vFileContents[i][0] == '#' || !isNumeric(vFileContents[i]))
+            if (vFileContents[i][0] == '#' || (i < nComment && !isNumeric(vFileContents[i])))
             {
                 // ignore table heads
                 continue;
@@ -180,19 +203,8 @@ namespace NumeRe
             // the converted values
             for (size_t j = 0; j < vLine.size(); j++)
             {
-                // Replace comma with a dot
-                replaceDecimalSign(vLine[j]);
-
-                // Handle special values and convert the text
-                // string into a numerical value
-                if (vLine[j] == "---" || toLowerCase(vLine[j]) == "nan")
-                    fileData[nLine][j] = NAN;
-                else if (toLowerCase(vLine[j]) == "inf")
-                    fileData[nLine][j] = INFINITY;
-                else if (toLowerCase(vLine[j]) == "-inf")
-                    fileData[nLine][j] = -INFINITY;
-                else
-                    fileData[nLine][j] = StrToDb(vLine[j]);
+                replaceAll(vLine[j], "\1", " ");
+                fileData->at(j)->setValue(nLine, vLine[j]);
             }
 
             nLine++;
@@ -274,10 +286,10 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void TextDataFile::writeTableHeads(const vector<size_t>& vColumnWidth, size_t nNumberOfLines)
     {
-        fFileStream << "# ";
-
         for (size_t i = 0; i < nNumberOfLines; i++)
         {
+            fFileStream << "# ";
+
             for (long long int j = 0; j < nCols; j++)
             {
                 fFileStream.width(vColumnWidth[j]);
@@ -316,10 +328,15 @@ namespace NumeRe
                 fFileStream.precision(nPrecFields);
 
                 // Handle NaNs correctly
-                if (isnan(fileData[i][j]))
+                if (!fileData->at(j)->isValid(i))
                     fFileStream << "---";
                 else
-                    fFileStream << fileData[i][j];
+                {
+                    if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                        fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
+                    else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                        fFileStream << fileData->at(j)->getValueAsInternalString(i);
+                }
             }
 
             fFileStream.width(0);
@@ -378,14 +395,26 @@ namespace NumeRe
         // where the table heads are located. Depending on the format of
         // the comment section in the file, the following code tries
         // different approaches
-        if (nComment >= 15 && vFileContents[2].substr(0, 21) == "# NumeRe: Framework f")
+        if (nComment >= 13 && vFileContents[2].substr(0, 21) == "# NumeRe: Framework f")
         {
             // This is a NumeRe-created text file
-            for (size_t k = 13; k < vFileContents.size(); k++)
+            // Find the first actual headline
+            for (size_t k = 11; k < vFileContents.size(); k++)
             {
+                // Is this the first separator line?
                 if (vFileContents[k] == sCommentSign)
                 {
-                    _nHeadline = 14;
+                    // Now search for the last empty line right
+                    // before the sepator line
+                    for (int kk = k-1; kk >= 0; kk--)
+                    {
+                        if (vFileContents[kk] == "#")
+                        {
+                            _nHeadline = kk+2;
+                            break;
+                        }
+                    }
+
                     break;
                 }
             }
@@ -469,7 +498,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-1], " ", true).size() == nCols+1)
+                            if (tokenize(vFileContents[i-1], " ", true).size() <= nCols+1)
                             {
                                 _nHeadline = i;
                                 break;
@@ -501,7 +530,7 @@ namespace NumeRe
                             // Considering the comment character, which is the
                             // first token, does the number of elements match to
                             // the number of columns?
-                            if (tokenize(vFileContents[i-2], " ", true).size() == nCols+1)
+                            if (tokenize(vFileContents[i-2], " ", true).size() <= nCols+1)
                                 _nHeadline = i-1;
                         }
                     }
@@ -668,7 +697,7 @@ namespace NumeRe
                         for (size_t k = i; k < vFileContents.size(); k++)
                         {
                             // Abort on numeric lines
-                            if (vFileContents[k][0] != '#' && isNumeric(vFileContents[k]))
+                            if ((vFileContents[k][0] != '#' && isNumeric(vFileContents[k])) || i+nComment == k)
                                 break;
 
                             // Abort on separator lines
@@ -731,21 +760,28 @@ namespace NumeRe
 
                         // Remove all empty columns from the list of
                         // column headings
-                        for (auto iter = vHeadline.begin(); iter != vHeadline.end(); ++iter)
-                        {
-                            if (!(iter->length()))
-                            {
-                                iter = vHeadline.erase(iter);
-                                iter--;
-                            }
-                        }
+#warning FIXME (numere#3#08/22/21): This section might be necessary for multi-line headlines
+                        //for (auto iter = vHeadline.begin(); iter != vHeadline.end(); ++iter)
+                        //{
+                        //    if (!(iter->length()))
+                        //    {
+                        //        iter = vHeadline.erase(iter);
+                        //        iter--;
+                        //    }
+                        //}
 
                         // Copy the decoded column headings to
                         // the internal memory
-                        if (vHeadline.size() <= nCols)
+                        for (size_t col = 0; col < std::min(vHeadline.size(), (size_t)nCols); col++)
                         {
-                            copyStringArray(&vHeadline[0], fileTableHeads, vHeadline.size());
+                            if (!fileData->at(col))
+                                fileData->at(col).reset(new StringColumn);
+
+                            fileData->at(col)->m_sHeadLine = vHeadline[col];
                         }
+                        //if (vHeadline.size() <= nCols)
+                        //{
+                        //}
 
                         // Return here
                         return;
@@ -757,7 +793,7 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function calculats the
+    /// \brief This member function calculates the
     /// widths of the columns and also determines the
     /// number of lines needed for the column heads.
     ///
@@ -776,7 +812,13 @@ namespace NumeRe
         // value
         for (long long int j = 0; j < nCols; j++)
         {
-            pair<size_t, size_t> pCellExtents = calculateCellExtents(fileTableHeads[j]);
+            if (!fileData->at(j))
+            {
+                vColumnWidths.push_back(TableColumn::getDefaultColumnHead(j).length());
+                continue;
+            }
+
+            pair<size_t, size_t> pCellExtents = calculateCellExtents(fileData->at(j)->m_sHeadLine);
             vColumnWidths.push_back(max(NUMBERFIELDLENGTH, pCellExtents.first));
 
             if (nNumberOfLines < pCellExtents.second)
@@ -794,7 +836,7 @@ namespace NumeRe
     NumeReDataFile::NumeReDataFile(const string& filename)
         : GenericFile(filename),
         isLegacy(false), timeStamp(0), versionMajor(0), versionMinor(0),
-        versionBuild(0)
+        versionBuild(0), fileVersionRead(1.0f)
     {
         // Empty constructor
     }
@@ -815,6 +857,7 @@ namespace NumeRe
         versionMajor = file.versionMajor;
         versionMinor = file.versionMinor;
         versionBuild = file.versionBuild;
+        fileVersionRead = file.fileVersionRead;
     }
 
 
@@ -843,8 +886,8 @@ namespace NumeRe
 
         writeDummyHeader();
 
-        writeNumField(fileVersionMajor);
-        writeNumField(fileVersionMinor);
+        writeNumField(fileSpecVersionMajor);
+        writeNumField(fileSpecVersionMinor);
         writeStringField(getTableName());
         writeStringField(sComment);
 
@@ -859,7 +902,8 @@ namespace NumeRe
         writeNumBlock<double>(nullptr, 0);
         writeStringField("FTYPE=DOUBLE");
         writeNumBlock<double>(nullptr, 0);
-        writeStringField("DTYPE=DOUBLE");
+        writeStringField("FTYPE=DOUBLE");
+        writeNumBlock<double>(nullptr, 0);
 
         // Finally, write the dimensions of the
         // target data
@@ -882,9 +926,9 @@ namespace NumeRe
     {
         writeNumField(1LL);
         writeNumField(1LL);
-        writeStringField("THIS_FILE_NEEDS_AT_LEAST_VERSION_v1.1.2 ");
+        writeStringField("THIS_FILE_NEEDS_AT_LEAST_VERSION_v1.1.4 ");
         long long int appZeros = 0;
-        double data = 1.12;
+        double data = 1.14;
         bool valid = true;
         fFileStream.write((char*)&appZeros, sizeof(long long int));
         fFileStream.write((char*)&data, sizeof(double));
@@ -913,11 +957,46 @@ namespace NumeRe
         // Write the file header
         writeHeader();
 
-        // Write the table column headers
-        writeStringBlock(fileTableHeads, nCols);
+        // Write the columns
+        for (TblColPtr& col : *fileData)
+            writeColumn(col);
+    }
 
-        // Write the actual data array
-        writeDataArray(fileData, nRows, nCols);
+
+    /////////////////////////////////////////////////
+    /// \brief Writes a single column to the file.
+    ///
+    /// \param col const TblColPtr&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void NumeReDataFile::writeColumn(const TblColPtr& col)
+    {
+        if (!col)
+        {
+            writeStringField("");
+            writeStringField("DTYPE=NONE");
+            return;
+        }
+
+        writeStringField(col->m_sHeadLine);
+
+        if (col->m_type == TableColumn::TYPE_VALUE)
+        {
+            writeStringField("DTYPE=COMPLEX");
+            std::vector<mu::value_type> values = col->getValue(VectorIndex(0, VectorIndex::OPEN_END));
+            writeNumBlock<mu::value_type>(&values[0], values.size());
+        }
+        else if (col->m_type == TableColumn::TYPE_STRING)
+        {
+            writeStringField("DTYPE=STRING");
+            std::vector<std::string> values = col->getValueAsInternalString(VectorIndex(0, VectorIndex::OPEN_END));
+            writeStringBlock(&values[0], values.size());
+        }
+        else if (col->m_type == TableColumn::TYPE_NONE)
+        {
+            writeStringField("DTYPE=NONE");
+        }
     }
 
 
@@ -944,6 +1023,7 @@ namespace NumeRe
         if (versionMajor * 100 + versionMinor * 10 + versionBuild <= 111)
         {
             isLegacy = true;
+            fileVersionRead = 1.0f;
             nRows = readNumField<long long int>();
             nCols = readNumField<long long int>();
             timeStamp = oldTime;
@@ -958,12 +1038,13 @@ namespace NumeRe
         // NumeRe)
         short fileVerMajor = readNumField<short>();
         short fileVerMinor = readNumField<short>();
+        fileVersionRead = fileVerMajor + fileVerMinor / 100.0;
 
         // Ensure that the major version of the file
         // is not larger than the major version
         // implemented in this class (minor version
         // changes shall be downwards compatible)
-        if (fileVerMajor > fileVersionMajor)
+        if (fileVerMajor > fileSpecVersionMajor)
             throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sFileName, SyntaxError::invalid_position, sFileName);
 
         // Read the table name and the comment
@@ -978,7 +1059,7 @@ namespace NumeRe
         void* data = readGenericField(type, size);
 
         // Version 2.1 introduces 64 bit time stamps
-        if (fileVerMinor >= fileVersionMinor && type == "LLINT" && size == 1u)
+        if (fileVersionRead >= 2.01 && type == "LLINT" && size == 1u)
             timeStamp = *(long long int*)data;
         else
             timeStamp = oldTime;
@@ -991,12 +1072,21 @@ namespace NumeRe
         data = readGenericField(type, size);
         deleteGenericData(data, type);
 
-        // Determine the data type of the table
-        string dataType = readStringField();
+        // Version 3.0 introduces another generic field
+        if (fileVersionRead >= 3.00)
+        {
+            data = readGenericField(type, size);
+            deleteGenericData(data, type);
+        }
+        else
+        {
+            // Determine the data type of the table
+            string dataType = readStringField();
 
-        // Ensure that the data type is DOUBLE
-        if (dataType != "DTYPE=DOUBLE")
-            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+            // Ensure that the data type is DOUBLE
+            if (dataType != "DTYPE=DOUBLE")
+                throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sFileName, SyntaxError::invalid_position, sFileName);
+        }
 
         // Read the dimensions of the table
         nRows = readNumField<long long int>();
@@ -1053,16 +1143,85 @@ namespace NumeRe
             return;
         }
 
+        // Create empty storage
+        createStorage();
+
+        // Version 3.0 introduces column-like layout
+        if (fileVersionRead >= 3.00)
+        {
+            if (fileData)
+            {
+                for (TblColPtr& col : *fileData)
+                {
+                    readColumn(col);
+                }
+            }
+
+            return;
+        }
+
         long long int stringBlockSize;
         long long int dataarrayrows;
         long long int dataarraycols;
 
         // Read the table column headers and the
-        // table data directly to the internal
-        // memory (we avoid unneeded copying of
-        // the data)
-        fileTableHeads = readStringBlock(stringBlockSize);
-        fileData = readDataArray(dataarrayrows, dataarraycols);
+        // table data and copy it to a ValueColumn
+        // array
+        std::string* sHeads = readStringBlock(stringBlockSize);
+        double** data = readDataArray<double>(dataarrayrows, dataarraycols);
+
+        for (long long int j = 0; j < dataarraycols; j++)
+        {
+            fileData->at(j).reset(new ValueColumn);
+            fileData->at(j)->m_sHeadLine = sHeads[j];
+
+            for (long long int i = 0; i < dataarrayrows; i++)
+            {
+                fileData->at(j)->setValue(i, data[i][j]);
+            }
+        }
+
+        // Free up memory
+        delete[] sHeads;
+
+        for (long long int i = 0; i < dataarrayrows; i++)
+            delete[] data[i];
+
+        delete[] data;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Reads a single column from file.
+    ///
+    /// \param col TblColPtr&
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void NumeReDataFile::readColumn(TblColPtr& col)
+    {
+        std::string sHeadLine = readStringField();
+        std::string sDataType = readStringField();
+
+        if (sDataType == "DTYPE=NONE")
+            return;
+
+        if (sDataType == "DTYPE=COMPLEX")
+        {
+            col.reset(new ValueColumn);
+            col->m_sHeadLine = sHeadLine;
+            long long int size = 0;
+            mu::value_type* values = readNumBlock<mu::value_type>(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<mu::value_type>(values, values+size));
+        }
+        else if (sDataType == "DTYPE=STRING")
+        {
+            col.reset(new StringColumn);
+            col->m_sHeadLine = sHeadLine;
+            long long int size = 0;
+            std::string* strings = readStringBlock(size);
+            col->setValue(VectorIndex(0, VectorIndex::OPEN_END), std::vector<std::string>(strings, strings+size));
+        }
     }
 
 
@@ -1091,15 +1250,17 @@ namespace NumeRe
         // storage
         for (long long int i = 0; i < nCols; i++)
         {
+            fileData->at(i).reset(new ValueColumn);
+
             nLength = 0;
             fFileStream.read((char*)&nLength, sizeof(size_t));
             cHeadLine[i] = new char[nLength];
             fFileStream.read(cHeadLine[i], sizeof(char)*nLength);
-            fileTableHeads[i].resize(nLength-1);
+            fileData->at(i)->m_sHeadLine.resize(nLength-1);
 
             for (unsigned int j = 0; j < nLength-1; j++)
             {
-                fileTableHeads[i][j] = cHeadLine[i][j];
+                fileData->at(i)->m_sHeadLine[j] = cHeadLine[i][j];
             }
         }
 
@@ -1115,10 +1276,19 @@ namespace NumeRe
         // two dimensional array is probably
         // not layed out as continous block
         // in memory
+        double* data = new double[nCols];
+
         for (long long int i = 0; i < nRows; i++)
         {
-            fFileStream.read((char*)fileData[i], sizeof(double)*nCols);
+            fFileStream.read((char*)data, sizeof(double)*nCols);
+
+            for (long long int j = 0; j < nCols; j++)
+            {
+                fileData->at(j)->setValue(i, data[j]);
+            }
         }
+
+        delete[] data;
 
         // Read the validation block and apply
         // the contained information on the data
@@ -1129,7 +1299,7 @@ namespace NumeRe
             for (long long int j = 0; j < nCols; j++)
             {
                 if (!bValidEntry[j])
-                    fileData[i][j] = NAN;
+                    fileData->at(j)->setValue(i, NAN);
             }
         }
 
@@ -1402,7 +1572,7 @@ namespace NumeRe
         // Ensure that the file major version is
         // not larger than the one currently
         // implemented in this class
-        if (fileVerMajor > fileVersionMajor)
+        if (fileVerMajor > fileSpecVersionMajor)
             throw SyntaxError(SyntaxError::INSUFFICIENT_NUMERE_VERSION, sFileName, SyntaxError::invalid_position, sFileName);
 
         // Read the number of available tables
@@ -1442,8 +1612,8 @@ namespace NumeRe
         writeNumField(AutoVersion::BUILD);
         writeNumField(time(0));
         writeStringField("NUMERECACHEFILE");
-        writeNumField(fileVersionMajor);
-        writeNumField(fileVersionMinor);
+        writeNumField(fileSpecVersionMajor);
+        writeNumField(fileSpecVersionMinor);
 
         // Write the length of the file index array
         writeNumField(vFileIndex.size());
@@ -1564,7 +1734,13 @@ namespace NumeRe
         // Prepare the internal storage and copy
         // the already decoded headlines
         createStorage();
-        copyStringArray(&vHeadLines[0], fileTableHeads, vHeadLines.size());
+
+        for (long long int i = 0; i < nCols; i++)
+        {
+            fileData->at(i).reset(new ValueColumn);
+            fileData->at(i)->m_sHeadLine = vHeadLines[i];
+        }
+
         long long int nElements = 0;
 
         // Extract the numerical values directly
@@ -1578,14 +1754,16 @@ namespace NumeRe
             {
                 // Get the number of elements in
                 // the current column
-                nElements = StrToInt(vCols[i].substr(vCols[i].find('"')+1, vCols[i].find('"', vCols[i].find('"')+1)-1-vCols[i].find('"')));
+                nElements = StrToInt(vCols[i].substr(vCols[i].find('"')+1,
+                                                     vCols[i].find('"', vCols[i].find('"')+1)-1-vCols[i].find('"')));
                 vCols[i].erase(0, vCols[i].find('>')+1);
 
                 // Copy the elements into the internal
                 // storage
                 for (long long int j = 0; j < min(nElements, nRows); j++)
                 {
-                    fileData[j][i] = extractValueFromTag(vCols[i].substr(vCols[i].find("<value"), vCols[i].find('<', vCols[i].find('/'))-vCols[i].find("<value")));
+                    fileData->at(i)->setValue(j, extractValueFromTag(vCols[i].substr(vCols[i].find("<value"),
+                                                                                     vCols[i].find('<', vCols[i].find('/'))-vCols[i].find("<value"))));
                     vCols[i].erase(0, vCols[i].find('>', vCols[i].find('/'))+1);
                 }
             }
@@ -1686,7 +1864,7 @@ namespace NumeRe
 
             for (size_t i = 0; i < vTokens.size(); i++)
             {
-                if (vTokens[i].find_first_not_of(sValidSymbols) == string::npos)
+                if (isConvertible(vTokens[i], CONVTYPE_VALUE))
                 {
                     vTokens.clear();
                     break;
@@ -1704,9 +1882,10 @@ namespace NumeRe
             // Clear the first line, if the tokens were
             // not erased before
             if (vTokens.size())
+            {
                 vFileData[0].clear();
-
-            nComment++;
+                nComment++;
+            }
         }
 
         // Store the number of lines of the file,
@@ -1720,12 +1899,24 @@ namespace NumeRe
         // Prepare the internal storage
         createStorage();
 
+        // We start with string-only and try to
+        // convert them later
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new StringColumn);
+        }
+
         // Copy the already decoded table heads to
         // the internal storage or create a dummy
         // column head, if the data contains only
         // one column
 		if (nComment)
-            copyStringArray(&vHeadLine[0], fileTableHeads, vHeadLine.size());
+        {
+            for (long long int j = 0; j < nCols; j++)
+            {
+                fileData->at(j)->m_sHeadLine = vHeadLine[j];
+            }
+        }
 		else
 		{
 		    // If the file contains only one column,
@@ -1734,9 +1925,9 @@ namespace NumeRe
 			if (nCols == 1)
 			{
                 if (sFileName.find('/') == string::npos)
-                    fileTableHeads[0] = sFileName.substr(0, sFileName.rfind('.'));
+                    fileData->at(0)->m_sHeadLine = sFileName.substr(0, sFileName.rfind('.'));
                 else
-                    fileTableHeads[0] = sFileName.substr(sFileName.rfind('/')+1, sFileName.rfind('.')-1-sFileName.rfind('/'));
+                    fileData->at(0)->m_sHeadLine = sFileName.substr(sFileName.rfind('/')+1, sFileName.rfind('.')-1-sFileName.rfind('/'));
 			}
 		}
 
@@ -1759,38 +1950,7 @@ namespace NumeRe
                 if (j >= nCols)
                     break;
 
-                // Handle special values first
-                if (!vTokens[j].length()
-                    || vTokens[j] == "---"
-                    || toLowerCase(vTokens[j]) == "nan")
-                {
-                    fileData[i-nComment][j] = NAN;
-                }
-                else if (toLowerCase(vTokens[j]) == "inf")
-                    fileData[i-nComment][j] = INFINITY;
-                else if (toLowerCase(vTokens[j]) == "-inf")
-                    fileData[i-nComment][j] = -INFINITY;
-                else
-                {
-                    // In all other cases, ensure that the current
-                    // token is not a string token, which should
-                    // be stored in the table column header
-                    if (vTokens[j].find_first_not_of(sValidSymbols) != string::npos)
-                    {
-                        // Append a linebreak character, if the
-                        // current table head is not empty
-                        if (fileTableHeads[j].length())
-                            fileTableHeads[j] += "\\n";
-
-                        fileTableHeads[j] += vTokens[j];
-                        fileData[i-nComment][j] = NAN;
-                    }
-                    else
-                    {
-                        replaceDecimalSign(vTokens[j]);
-                        fileData[i-nComment][j] = StrToDb(vTokens[j]);
-                    }
-                }
+                fileData->at(j)->setValue(i-nComment, vTokens[j]);
             }
         }
     }
@@ -1813,7 +1973,10 @@ namespace NumeRe
         // Write the table heads to the file
         for (long long int j = 0; j < nCols; j++)
         {
-            fFileStream << fileTableHeads[j] + ",";
+            if (fileData->at(j))
+                fFileStream << fileData->at(j)->m_sHeadLine;
+
+            fFileStream << ",";
         }
 
         fFileStream << "\n";
@@ -1824,8 +1987,13 @@ namespace NumeRe
         {
             for (long long int j = 0; j < nCols; j++)
             {
-                if (!isnan(fileData[i][j]))
-                    fFileStream << fileData[i][j];
+                if (fileData->at(j) && fileData->at(j)->isValid(i))
+                {
+                    if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                        fFileStream << toString(fileData->at(j)->getValue(i), DEFAULT_PRECISION);
+                    else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                        fFileStream << fileData->at(j)->getValueAsInternalString(i);
+                }
 
                 fFileStream << ",";
             }
@@ -1945,10 +2113,9 @@ namespace NumeRe
                     nCol++;
             }
 
-            if (!nCols)
+            if (nCols < nCol)
                 nCols = nCol;
-
-            else if (nCol != nCols)
+            else if (abs(nCol - nCols) > 1)
             {
                 if (cSep == ',')
                     cSep = ';';
@@ -2077,7 +2244,12 @@ namespace NumeRe
                 fFileStream.width(nPrecFields+20);
                 fFileStream.fill(' ');
 
-                fFileStream << formatNumber(fileData[i][j]);
+                if (!fileData->at(j))
+                    fFileStream << "---";
+                else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                    fFileStream << formatNumber(fileData->at(j)->getValue(i));
+                else if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                    fFileStream << fileData->at(j)->getValueAsInternalString(i);
 
                 if (j+1 < nCols)
                     fFileStream << " &";
@@ -2188,7 +2360,10 @@ namespace NumeRe
         // value
         for (long long int i = 0; i < nCols; i++)
         {
-            auto extents = calculateCellExtents(fileTableHeads[i]);
+            if (!fileData->at(i))
+                continue;
+
+            auto extents = calculateCellExtents(fileData->at(i)->m_sHeadLine);
 
             if (extents.second > headlines)
                 headlines = extents.second;
@@ -2262,20 +2437,20 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief This member function formats a double
+    /// \brief This member function formats a complex
     /// as LaTeX number string.
     ///
-    /// \param number double
+    /// \param number const mu::value_type&
     /// \return string
     ///
     /////////////////////////////////////////////////
-    string LaTeXTable::formatNumber(double number)
+    string LaTeXTable::formatNumber(const mu::value_type& number)
     {
         string sNumber = toString(number, nPrecFields);
 
         // Handle floating point numbers with
         // exponents correctly
-        if (sNumber.find('e') != string::npos)
+        while (sNumber.find('e') != std::string::npos)
         {
             sNumber = sNumber.substr(0, sNumber.find('e'))
                     + "\\cdot10^{"
@@ -2374,6 +2549,12 @@ namespace NumeRe
         // Prepare the internal storage
         createStorage();
 
+        // We only create numerical columns for this data type
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new ValueColumn);
+        }
+
         // Prepare some decoding variables
         double dXFactor = 1.0;
         double dYFactor = 1.0;
@@ -2469,7 +2650,7 @@ namespace NumeRe
                 break;
 
             // Abort, if we read enough lines
-            if (nComment + 1 == nRows)
+            if (j - nComment + 1 == nRows)
                 break;
 
             // Decode the current line
@@ -2482,11 +2663,11 @@ namespace NumeRe
 
                 // Store the table column heads
                 if (j == nComment-1)
-                    fileTableHeads[k] = (k % 2 ? sYUnit : sXUnit);
+                    fileData->at(k)->m_sHeadLine = (k % 2 ? sYUnit : sXUnit);
 
                 // Write the data to the internal
                 // storage
-                fileData[j-nComment+1][k] = vLine[k] * (k % 2 ? dYFactor : dXFactor);
+                fileData->at(k)->setValue(j-nComment+1, vLine[k] * (k % 2 ? dYFactor : dXFactor));
             }
         }
     }
@@ -2887,6 +3068,13 @@ namespace NumeRe
         nCols = nMaxCols;
         createStorage();
 
+        // We first create a string-only table and try to
+        // convert them afterwards
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new StringColumn);
+        }
+
         unsigned int nPos = 0;
 
         // Store the pure text lines as table
@@ -2909,10 +3097,10 @@ namespace NumeRe
                 sEntry.erase(0, 1);
                 sEntry.pop_back();
 
-                if (!fileTableHeads[j].length())
-                    fileTableHeads[j] = sEntry;
-                else if (fileTableHeads[j] != sEntry)
-                    fileTableHeads[j] += "\\n" + sEntry;
+                if (!fileData->at(j)->m_sHeadLine.length())
+                    fileData->at(j)->m_sHeadLine = sEntry;
+                else if (fileData->at(j)->m_sHeadLine != sEntry)
+                    fileData->at(j)->m_sHeadLine += "\\n" + sEntry;
             }
         }
 
@@ -2938,20 +3126,8 @@ namespace NumeRe
                 sEntry.erase(0, 1);
                 sEntry.pop_back();
 
-                // Store the content as double value,
-                // if it is numeric, and as part of
-                // the table column head, otherwise
-                if (isNumeric(sEntry))
-                {
-                    if (sEntry.find_first_not_of('-') == string::npos)
-                        continue;
-
-                    fileData[i][j] = StrToDb(sEntry);
-                }
-                else if (!fileTableHeads[j].length())
-                    fileTableHeads[j] = sEntry;
-                else if (fileTableHeads[j] != sEntry)
-                    fileTableHeads[j] += "\\n" + sEntry;
+                // Write it as a string to the table
+                fileData->at(j)->setValue(i, sEntry);
             }
         }
     }
@@ -3152,6 +3328,13 @@ namespace NumeRe
         nCols = nExcelCols;
         createStorage();
 
+        // We create a string-only table and try to convert it
+        // afterwards
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new StringColumn);
+        }
+
         // Copy the pure text lines into the corresponding
         // table column heads
         for (unsigned int n = 0; n < nSheets; n++)
@@ -3190,10 +3373,10 @@ namespace NumeRe
 
                     // Append the string to the current table
                     // column head, if it is not empty
-                    if (!fileTableHeads[j+nOffset].length())
-                        fileTableHeads[j+nOffset] = sEntry;
-                    else if (fileTableHeads[j+nOffset] != sEntry)
-                        fileTableHeads[j+nOffset] += "\\n" + sEntry;
+                    if (!fileData->at(j+nOffset)->m_sHeadLine.length())
+                        fileData->at(j+nOffset)->m_sHeadLine = sEntry;
+                    else if (fileData->at(j+nOffset)->m_sHeadLine != sEntry)
+                        fileData->at(j+nOffset)->m_sHeadLine += "\\n" + sEntry;
                 }
             }
 
@@ -3223,42 +3406,28 @@ namespace NumeRe
                         break;
 
                     _cell = _sheet->Cell(i,j);
-                    sEntry.clear();
 
                     // Select the type of the cell and
                     // store the value, if it's a number
                     switch (_cell->Type())
                     {
                         case YExcel::BasicExcelCell::UNDEFINED:
-                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "");
                             break;
                         case YExcel::BasicExcelCell::INT:
-                            fileData[i-vCommentLines[n]][j+nOffset] = (double)_cell->GetInteger();
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], (double)_cell->GetInteger());
                             break;
                         case YExcel::BasicExcelCell::DOUBLE:
-                            fileData[i-vCommentLines[n]][j+nOffset] = _cell->GetDouble();
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], _cell->GetDouble());
                             break;
                         case YExcel::BasicExcelCell::STRING:
-                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
-                            sEntry = _cell->GetString();
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], utf8parser(_cell->GetString()));
                             break;
                         case YExcel::BasicExcelCell::WSTRING:
-                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
-                            sEntry = wcstombs(_cell->GetWString());
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], utf8parser(wcstombs(_cell->GetWString())));
                             break;
                         default:
-                            fileData[i-vCommentLines[n]][j+nOffset] = NAN;
-                    }
-
-                    // If the entry is not empty, then it
-                    // is a textual cell. We append it to
-                    // the corresponding table column head
-                    if (sEntry.length())
-                    {
-                        if (!fileTableHeads[j+nOffset].length())
-                            fileTableHeads[j+nOffset] = sEntry;
-                        else if (fileTableHeads[j+nOffset] != sEntry)
-                            fileTableHeads[j+nOffset] += "\\n" + sEntry;
+                            fileData->at(j+nOffset)->setValue(i-vCommentLines[n], "");
                     }
                 }
             }
@@ -3299,7 +3468,9 @@ namespace NumeRe
         {
             // Get the current cell and the headline string
             _cell = _sheet->Cell(0u, j);
-            sHeadLine = fileTableHeads[j];
+
+            if (fileData->at(j))
+                sHeadLine = fileData->at(j)->m_sHeadLine;
 
             // Replace newlines with the corresponding character code
             while (sHeadLine.find("\\n") != string::npos)
@@ -3319,10 +3490,16 @@ namespace NumeRe
 
                 // Write the cell contents, if the data table contains valid data
                 // otherwise clear the cell
-                if (!isnan(fileData[i][j]))
-                    _cell->SetDouble(fileData[i][j]);
-                else
+                if (!fileData->at(j) || !fileData->at(j)->isValid(i))
+                {
                     _cell->EraseContents();
+                    continue;
+                }
+
+                if (fileData->at(j)->m_type == TableColumn::TYPE_STRING)
+                    _cell->SetString(fileData->at(j)->getValueAsInternalString(i).c_str());
+                else if (fileData->at(j)->m_type == TableColumn::TYPE_VALUE)
+                    _cell->SetDouble(fileData->at(j)->getValue(i).real());
             }
         }
 
@@ -3504,6 +3681,12 @@ namespace NumeRe
         // Allocate the memory
         createStorage();
 
+        // We create a text-only table first
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new StringColumn);
+        }
+
         // Walk through the sheets and extract the
         // contents to memory
         //
@@ -3585,21 +3768,24 @@ namespace NumeRe
                             // column head
                             if (sEntry.length())
                             {
-                                if (!fileTableHeads[nCol+nOffset].length())
-                                    fileTableHeads[nCol+nOffset] = sEntry;
-                                else if (fileTableHeads[nCol+nOffset] != sEntry)
-                                    fileTableHeads[nCol+nOffset] += "\\n" + sEntry;
+                                if (nLine - vCommentLines[i] < 0)
+                                {
+                                    if (!fileData->at(nCol+nOffset)->m_sHeadLine.length())
+                                        fileData->at(nCol+nOffset)->m_sHeadLine = sEntry;
+                                    else if (fileData->at(nCol+nOffset)->m_sHeadLine != sEntry)
+                                        fileData->at(nCol+nOffset)->m_sHeadLine += "\\n" + sEntry;
+                                }
+                                else
+                                    fileData->at(nCol+nOffset)->setValue(nLine-vCommentLines[i], sEntry);
                             }
 
                             continue;
                         }
+                        else if (_element->FirstChildElement("v"))
+                        {
+                            fileData->at(nCol+nOffset)->setValue(nLine-vCommentLines[i], _element->FirstChildElement("v")->GetText());
+                        }
                     }
-
-                    // If the current cell contains a value
-                    // tag, then we'll obtain that value and
-                    // store it in the target table
-                    if (_element->FirstChildElement("v"))
-                        _element->FirstChildElement("v")->QueryDoubleText(&fileData[nLine-vCommentLines[i]][nCol+nOffset]);
                 }
                 while ((_element = _element->NextSiblingElement()));
             }
@@ -3776,15 +3962,9 @@ namespace NumeRe
         {
             nFirstCol = 1;
             nCols = 2;
-
-            if (bReadComplexData)
-                nCols++;
         }
         else if (nDim[1] && (!nDim[2] || nDim[2] == 1))
         {
-            if (bReadComplexData)
-                nCols *= 2;
-
             nCols += 2;
             nFirstCol = 2;
 
@@ -3793,9 +3973,6 @@ namespace NumeRe
         }
         else if (nDim[1] && nDim[2] && (!nDim[3] || nDim[3] == 1))
         {
-            if (bReadComplexData)
-                nCols *= 2;
-
             nCols += 3;
             nFirstCol = 3;
             nRows = nDim[2] > nRows ? nDim[2] : nRows;
@@ -3806,15 +3983,21 @@ namespace NumeRe
         // final dimensions
         createStorage();
 
+        // We create plain value column tables
+        for (long long int j = 0; j < nCols; j++)
+        {
+            fileData->at(j).reset(new ValueColumn);
+        }
+
         // Fill the x column and its corresponding
         // table column head
         for (long long int j = 0; j < nFirstCol; j++)
         {
-            fileTableHeads[j] = cName + string("_[")+(char)('x'+j)+string("]");
+            fileData->at(j)->m_sHeadLine = cName + string("_[")+(char)('x'+j)+string("]");
 
             for (long long int i = 0; i < nDim[j]; i++)
             {
-                fileData[i][j] = dScalingFactorA[j]*(double)i + dScalingFactorB[j];
+                fileData->at(j)->setValue(i, dScalingFactorA[j]*(double)i + dScalingFactorB[j]);
             }
         }
 
@@ -3837,84 +4020,58 @@ namespace NumeRe
             // Write the corresponding table column
             // head
             if (nCols == 2 && !j)
-            {
-                fileTableHeads[1] = cName + string("_[y]");
-            }
-            else if (nCols == 3 && !j && bReadComplexData)
-            {
-                fileTableHeads[1] = string("Re:_") + cName + string("_[y]");
-                fileTableHeads[2] = string("Im:_") + cName + string("_[y]");
-            }
-            else if (!bReadComplexData)
-                fileTableHeads[j+nFirstCol] = cName + string("_["+toString(j+1)+"]");
+                fileData->at(1)->m_sHeadLine = cName + string("_[y]");
             else
-            {
-                fileTableHeads[j+nFirstCol] = string("Re:_") + cName + string("_["+toString(j+1)+"]");
-                fileTableHeads[j+nFirstCol+1] = string("Im:_") + cName + string("_["+toString(j+1)+"]");
-            }
+                fileData->at(j+nFirstCol)->m_sHeadLine = cName + string("_["+toString(j+1)+"]");
 
             // Write the actual data to the table.
             // We have to take care about the type
             // of the data and whether the data is
             // complex or not
+            long long int nInsertion = 0;
+
             for (long long int i = 0; i < (nDim[0]+bReadComplexData*nDim[0]); i++)
             {
                 if (dData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = dData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = dData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(dData[i+j*2*nDim[0]], dData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, dData[i+j*(nDim[0])]);
                 }
                 else if (fData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = fData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = fData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(fData[i+j*2*nDim[0]], fData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)fData[i+j*(nDim[0])]);
                 }
                 else if (n8_tData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = (double)n8_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = (double)n8_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(n8_tData[i+j*2*nDim[0]], n8_tData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n8_tData[i+j*(nDim[0])]);
+
                 }
                 else if (n16_tData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = (double)n16_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = (double)n16_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(n16_tData[i+j*2*nDim[0]], n16_tData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n16_tData[i+j*(nDim[0])]);
                 }
                 else if (n32_tData)
                 {
-                    fileData[i][nSliceCounter+nFirstCol] = (double)n32_tData[i+j*(nDim[0]+bReadComplexData*nDim[0])];
-
                     if (bReadComplexData)
-                    {
-                        fileData[i][nSliceCounter+1+nFirstCol] = (double)n32_tData[i+1+j*(nDim[0]+bReadComplexData*nDim[0])];
-                        i++;
-                    }
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, mu::value_type(n32_tData[i+j*2*nDim[0]], n32_tData[i+1+j*2*nDim[0]]));
+                    else
+                        fileData->at(nSliceCounter+nFirstCol)->setValue(nInsertion, (double)n32_tData[i+j*(nDim[0])]);
                 }
-                else
-                    continue;
-            }
 
-            if (bReadComplexData)
-                j++;
+                nInsertion++;
+                i += bReadComplexData;
+            }
         }
 
         // Close the file reference and

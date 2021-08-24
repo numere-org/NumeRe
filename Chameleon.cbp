@@ -421,8 +421,6 @@
 		<Unit filename="kernel/core/datamanagement/dataaccess.hpp" />
 		<Unit filename="kernel/core/datamanagement/database.cpp" />
 		<Unit filename="kernel/core/datamanagement/database.hpp" />
-		<Unit filename="kernel/core/datamanagement/datafile.cpp" />
-		<Unit filename="kernel/core/datamanagement/datafile.hpp" />
 		<Unit filename="kernel/core/datamanagement/dataops.cpp" />
 		<Unit filename="kernel/core/datamanagement/dataops.hpp" />
 		<Unit filename="kernel/core/datamanagement/fileadapter.cpp" />
@@ -438,6 +436,10 @@
 		<Unit filename="kernel/core/datamanagement/stringmemory.hpp" />
 		<Unit filename="kernel/core/datamanagement/table.cpp" />
 		<Unit filename="kernel/core/datamanagement/table.hpp" />
+		<Unit filename="kernel/core/datamanagement/tablecolumn.cpp" />
+		<Unit filename="kernel/core/datamanagement/tablecolumn.hpp" />
+		<Unit filename="kernel/core/datamanagement/tablecolumnimpl.cpp" />
+		<Unit filename="kernel/core/datamanagement/tablecolumnimpl.hpp" />
 		<Unit filename="kernel/core/debugger/breakpointmanager.cpp" />
 		<Unit filename="kernel/core/debugger/breakpointmanager.hpp" />
 		<Unit filename="kernel/core/debugger/debugger.cpp" />
@@ -541,6 +543,8 @@
 		<Unit filename="kernel/core/ui/winlayout.hpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.cpp" />
 		<Unit filename="kernel/core/utils/BasicExcel.hpp" />
+		<Unit filename="kernel/core/utils/stringtools.cpp" />
+		<Unit filename="kernel/core/utils/stringtools.hpp" />
 		<Unit filename="kernel/core/utils/timer.hpp">
 			<Option target="Debug" />
 			<Option target="Profiling" />

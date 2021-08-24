@@ -20,62 +20,25 @@
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 #include <string>
-#include <windows.h>
-#include <conio.h>
 #include <cstdlib>
-#include <fstream>
-#include <ctime>
 #include <vector>
-#include <cmath>
 
 #include "../structures.hpp"
 #include "../ui/error.hpp"
 #include "../settings.hpp"
+#include "stringtools.hpp"
 
 extern const string sVersion;
 using namespace std;
 
-enum TIMESTAMP
-{
-    GET_ONLY_TIME = 1,
-    GET_AS_TIMESTAMP = 2,
-    GET_WITH_TEXT = 4
-};
-
-std::string toString(int nNumber, const Settings& _option);
-std::string toString(double dNumber, const Settings& _option);
-std::string toString(double dNumber, int nPrecision);
-std::string toString(const std::complex<double>& dNumber, int nPrecision);
-std::string toString(int);
-std::string toString(__time64_t tTime, int timeStampFlags);
-std::string toString(long long int nNumber);
-std::string toString(size_t nNumber);
-std::string toCmdString(double dNumber);
-std::string toCmdString(const std::complex<double>& dNumber);
-std::string toString(bool bBoolean);
-std::string toHexString(int nNumber);
-std::string toString(const std::vector<int>& vVector);
-std::vector<int> toVector(std::string sString);
-std::string condenseText(const std::string& sText);
-std::string truncString(const std::string& sText, size_t nMaxChars);
-
-
 long long int intCast(double number);
 long long int intCast(const std::complex<double>& number);
-string wcstombs(const wstring& wStr);
-void StripSpaces(string&);
+
 int findParameter(const string& sCmd, const string& sParam, const char cFollowing = ' ');
 bool getStringArgument(const string& sCmd, string& sArgument);
 string extractStringToken(const string& sCmd, size_t nPos);
-int StrToInt(const string&);
-double StrToDb(const string&);
 unsigned int getMatchingParenthesis(const StringView&);
-string toLowerCase(const string& sUpperCase);
-string toUpperCase(const string& sLowerCase);
 bool isMultiValue(const string& sExpr, bool bIgnoreClosingParenthesis = false);
 string replaceToTeX(const string& sString, bool replaceForTeXFile = false);
 Match findCommand(const string& sCmd, string sCommand = "");
@@ -103,17 +66,12 @@ bool addLegends(string&);
 bool checkDelimiter(const string& sToken, bool stringdelim = false);
 string LineBreak(string sOutput, const Settings& _option, bool bAllowDashBreaks = true, int nFirstIndent = 4, int nIndent = 4);
 double Linearize(double x_0, double y_0, double x_1, double y_1);
-string toSystemCodePage(string sOutput);
-string fromSystemCodePage(string sOutput);
 void make_hline(int nLength = -1);
 void make_progressBar(int nStep, int nFirstStep = 1, int nFinalStep = 100, const string& sType = "std");
 bool containsStrings(const string& sLine);
 bool fileExists(const string& sFilename);
 void reduceLogFilesize(const string& sFileName);
 string replaceToVectorname(const string& sExpression);
-void replaceAll(string& sToModify, const char* sToRep, const char* sNewValue, size_t nStart = 0, size_t nEnd = string::npos);
-string replaceControlCharacters(string sToModify);
-string utf8parser(const string& sString);
 void eraseToken(string& sExpr, const string& sToken, bool bTokenHasValue = false);
 string generateCacheName(const string& sFilename, Settings& _option) __attribute__ ((deprecated));
 string getFileInfo(const string& sFilename);
@@ -158,13 +116,7 @@ EndlessVector<StringView> getAllArguments(StringView sArgList);
 EndlessVector<string> getAllArguments(string sArgList);
 EndlessVector<string> getAllIndices(string sArgList);
 EndlessVector<string> getAllSemiColonSeparatedTokens(string sArgList);
-/** \brief Transforms Windows-style filepaths to Unix-Style
- *
- * \param __sPath const string&
- * \return string
- *
- */
-string replacePathSeparator(const string& __sPath);
+
 
 /** \brief Checks, whether the "to_cmd()" function was used
  *
@@ -175,7 +127,6 @@ string replacePathSeparator(const string& __sPath);
  */
 bool isToCmd(const string& sCmd, unsigned int nPos);
 
-string getTimeStamp(bool bGetStamp = true);
 unsigned int countEscapeSymbols(const string& sLine);
 vector<string> getFileList(const string& sDirectory, const Settings& _option, int nFlags = 0);
 vector<string> getFolderList(const string& sDirectory, const Settings& _option, int nFlags = 0);

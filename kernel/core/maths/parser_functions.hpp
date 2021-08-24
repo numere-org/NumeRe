@@ -34,7 +34,6 @@ using namespace mu;
 
 // Tools & Stuff
 string evaluateTargetOptionInCommand(string& sCmd, const string& sDefaultTarget, Indices& _idx, Parser& _parser, MemoryManager& _data, const Settings& _option);
-bool isVariableInAssignedExpression(Parser&, const string_type&);
 size_t findVariableInExpression(const string& sExpr, const string& sVarName);
 void convertVectorToExpression(string&, const Settings&);
 string addMissingVectorComponent(const string&, const string&, const string&, bool);

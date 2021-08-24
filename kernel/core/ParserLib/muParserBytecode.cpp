@@ -25,6 +25,7 @@
 
 #include "muParserBytecode.h"
 #include "../../kernel.hpp"
+#include "../utils/stringtools.hpp"
 
 #include <cassert>
 #include <string>
@@ -37,9 +38,6 @@
 #include "muParserToken.h"
 #include "muParserStack.h"
 #include "muParserTemplateMagic.h"
-
-std::string toString(unsigned int);
-std::string toHexString(int nNumber);
 
 namespace mu
 {

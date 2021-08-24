@@ -19,10 +19,7 @@
 #ifndef TABLE_HPP
 #define TABLE_HPP
 
-#include <vector>
-#include <string>
-
-using namespace std;
+#include "tablecolumn.hpp"
 
 namespace NumeRe
 {
@@ -34,17 +31,15 @@ namespace NumeRe
     class Table
     {
         private:
-            vector<vector<double> > vTableData;
-            vector<string> vTableHeadings;
-            string sTableName;
+            TableColumnArray vTableData;
+            std::string sTableName;
 
             void setMinSize(size_t i, size_t j);
-            bool isNumerical(const string& sValue);
+            bool isNumerical(const std::string& sValue) const;
 
         public:
             Table();
             Table(int nLines, int nCols);
-            Table(double** const dData, string* const sHeadings, long long int nLines, long long int nCols, const string& sName = "");
             Table(const Table& _table);
             Table(Table&& _table);
             ~Table();
@@ -55,22 +50,25 @@ namespace NumeRe
 
             void setSize(size_t i, size_t j);
 
-            void setName(const string& _sName);
-            void setHead(size_t i, const string& _sHead);
-            void setHeadPart(size_t i, size_t part, const string& _sHead);
-            void setValue(size_t i, size_t j, double _dValue);
-            void setValueAsString(size_t i, size_t j, const string& _sValue);
+            void setName(const std::string& _sName);
+            void setHead(size_t i, const std::string& _sHead);
+            void setHeadPart(size_t i, size_t part, const std::string& _sHead);
+            void setValue(size_t i, size_t j, const mu::value_type& _dValue);
+            void setValueAsString(size_t i, size_t j, const std::string& _sValue);
+            void setColumn(size_t j, TableColumn* column);
 
-            string getName() const;
-            int getHeadCount();
-            string getHead(size_t i) const;
-            string getCleanHead(size_t i) const;
-            string getCleanHeadPart(size_t i, size_t part = 0);
-            double getValue(size_t i, size_t j);
-            string getValueAsString(size_t i, size_t j);
+            std::string getName() const;
+            int getHeadCount() const;
+            std::string getHead(size_t i) const;
+            std::string getCleanHead(size_t i) const;
+            std::string getCleanHeadPart(size_t i, size_t part = 0) const;
+            mu::value_type getValue(size_t i, size_t j) const;
+            std::string getValueAsString(size_t i, size_t j) const;
+            TableColumn* getColumn(size_t j) const;
+            TableColumn::ColumnType getColumnType(size_t j) const;
 
             size_t getLines() const;
-            size_t getCols();
+            size_t getCols() const;
 
             bool isEmpty() const;
 

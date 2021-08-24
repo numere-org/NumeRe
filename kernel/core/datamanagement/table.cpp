@@ -18,10 +18,9 @@
 
 #include "table.hpp"
 #include "../utils/tools.hpp"
+#include "tablecolumnimpl.hpp"
 #include <cmath>
 #include <cstdio>
-
-double StrToDb(const string& sString);
 
 namespace NumeRe
 {
@@ -48,49 +47,20 @@ namespace NumeRe
 
 
     /////////////////////////////////////////////////
-    /// \brief Fill constructor
-    ///
-    /// \param dData double** const
-    /// \param sHeadings string* const
-    /// \param nLines long longint
-    /// \param nCols long longint
-    /// \param sName const string&
-    ///
-    /////////////////////////////////////////////////
-    Table::Table(double** const dData, string* const sHeadings, long long int nLines, long long int nCols, const string& sName)
-    {
-        // Empty table with predefined headlines
-        if (nCols && !nLines)
-            nLines = 1;
-
-        // Prepare the table
-        setMinSize(nLines, nCols);
-
-        // Copy the data
-        for (long long int i = 0; i < nLines; i++)
-        {
-            for (long long int j = 0; j < nCols; j++)
-            {
-                vTableData[i][j] = dData[i][j];
-            }
-        }
-
-        // Copy the headlines
-        for (long long int j = 0; j < nCols; j++)
-            vTableHeadings[j] = sHeadings[j];
-
-        sTableName = sName;
-    }
-
-
-    /////////////////////////////////////////////////
     /// \brief Copy constructor
     ///
     /// \param _table const Table&
     ///
     /////////////////////////////////////////////////
-    Table::Table(const Table& _table) : vTableData(_table.vTableData), vTableHeadings(_table.vTableHeadings), sTableName(_table.sTableName)
+    Table::Table(const Table& _table) : sTableName(_table.sTableName)
     {
+        vTableData.resize(_table.vTableData.size());
+
+        for (size_t i = 0; i < vTableData.size(); i++)
+        {
+            if (_table.vTableData[i])
+                vTableData[i].reset(_table.vTableData[i]->copy());
+        }
     }
 
 
@@ -104,7 +74,6 @@ namespace NumeRe
     {
         // We move by using the std::swap() functions
         std::swap(vTableData, _table.vTableData);
-        std::swap(vTableHeadings, _table.vTableHeadings);
     }
 
 
@@ -114,7 +83,6 @@ namespace NumeRe
     Table::~Table()
     {
         vTableData.clear();
-        vTableHeadings.clear();
     }
 
 
@@ -129,7 +97,6 @@ namespace NumeRe
     {
         // We move by using the std::swap() functions
         std::swap(vTableData, _table.vTableData);
-        std::swap(vTableHeadings, _table.vTableHeadings);
         sTableName = _table.sTableName;
 
         return *this;
@@ -148,30 +115,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     void Table::setMinSize(size_t i, size_t j)
     {
-        if (!vTableData.size())
-        {
-            // Simple case: table is empty
-            vTableData = vector<vector<double> >(i, vector<double>(j, NAN));
-        }
-        else if (vTableData.size() < i || vTableData[0].size() < j)
-        {
-            // complex case: table is not empty
-            vector<vector<double> > vTempData = vector<vector<double> >(i, vector<double>(j, NAN));
-
-            for (size_t ii = 0; ii < vTableData.size(); ii++)
-            {
-                for (size_t jj = 0; jj < vTableData[ii].size(); jj++)
-                {
-                    vTempData[ii][jj] = vTableData[ii][jj];
-                }
-            }
-
-            vTableData = vTempData;
-        }
-
-        // Prepare the column headlines
-        while (vTableHeadings.size() <= j)
-            vTableHeadings.push_back("Spalte_" + toString(vTableHeadings.size()+1));
+        if (vTableData.size() <= j)
+            vTableData.resize(j);
     }
 
 
@@ -181,14 +126,13 @@ namespace NumeRe
     /// passed value may be parsed into a numerical
     /// value.
     ///
-    /// \param sValue const string&
+    /// \param sValue const std::string&
     /// \return bool
     ///
     /////////////////////////////////////////////////
-    bool Table::isNumerical(const string& sValue)
+    bool Table::isNumerical(const std::string& sValue) const
     {
-        static string sValidNumericalCharacters = "0123456789,.eE+- INFAinfa";
-        return sValue.find_first_not_of(sValidNumericalCharacters) == string::npos;
+        return isConvertible(sValue, CONVTYPE_VALUE);
     }
 
 
@@ -202,7 +146,6 @@ namespace NumeRe
     void Table::Clear()
     {
         vTableData.clear();
-        vTableHeadings.clear();
         sTableName.clear();
     }
 
@@ -225,11 +168,11 @@ namespace NumeRe
     /////////////////////////////////////////////////
     /// \brief Setter function for the table name.
     ///
-    /// \param _sName const string&
+    /// \param _sName const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setName(const string& _sName)
+    void Table::setName(const std::string& _sName)
     {
         sTableName = _sName;
     }
@@ -241,16 +184,19 @@ namespace NumeRe
     /// headlines automatically.
     ///
     /// \param i size_t
-    /// \param _sHead const string&
+    /// \param _sHead const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setHead(size_t i, const string& _sHead)
+    void Table::setHead(size_t i, const std::string& _sHead)
     {
-        while (vTableHeadings.size() <= i)
-            vTableHeadings.push_back("");
+        if (i >= vTableData.size())
+            vTableData.resize(i+1);
 
-        vTableHeadings[i] = _sHead;
+        if (!vTableData[i])
+            vTableData[i].reset(new ValueColumn);
+
+        vTableData[i]->m_sHeadLine = _sHead;
     }
 
 
@@ -263,16 +209,19 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param part size_t
-    /// \param _sHead const string&
+    /// \param _sHead const std::string&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setHeadPart(size_t i, size_t part, const string& _sHead)
+    void Table::setHeadPart(size_t i, size_t part, const std::string& _sHead)
     {
-        while (vTableHeadings.size() <= i)
-            vTableHeadings.push_back("");
+        if (i >= vTableData.size())
+            vTableData.resize(i+1);
 
-        string head;
+        if (!vTableData[i])
+            vTableData[i].reset(new ValueColumn);
+
+        std::string head;
 
         // Compose the new headline using the different
         // parts
@@ -286,7 +235,7 @@ namespace NumeRe
 
         head.erase(head.find_last_not_of("\\n")+1);
 
-        vTableHeadings[i] = head;
+        vTableData[i]->m_sHeadLine = head;
     }
 
 
@@ -297,14 +246,16 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
-    /// \param _dValue double
+    /// \param _dValue const mu::value_type&
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setValue(size_t i, size_t j, double _dValue)
+    void Table::setValue(size_t i, size_t j, const mu::value_type& _dValue)
     {
         this->setMinSize(i+1, j+1);
-        vTableData[i][j] = _dValue;
+
+        convert_if_empty(vTableData[j], j, TableColumn::TYPE_VALUE);
+        vTableData[j]->setValue(i, _dValue);
     }
 
 
@@ -320,42 +271,48 @@ namespace NumeRe
     /// \return void
     ///
     /////////////////////////////////////////////////
-    void Table::setValueAsString(size_t i, size_t j, const string& _sValue)
+    void Table::setValueAsString(size_t i, size_t j, const std::string& _sValue)
     {
-        // Is it a numerical value?
-        if (!isNumerical(_sValue))
-        {
-            if (vTableHeadings[j].length())
-                vTableHeadings[j] += "\\n";
+        // Resize the table if needed
+        this->setMinSize(i+1, j+1);
 
-            vTableHeadings[j] += _sValue;
+        // Empty value means deletion
+        if (!_sValue.length())
+        {
+            if (vTableData[j])
+                vTableData[j]->deleteElements(VectorIndex(i));
 
             return;
         }
 
-        // Resize the table if needed
-        this->setMinSize(i+1, j+1);
-        double _dValue = 0.0;
-        string sValue = _sValue;
-
-        // Parse the value as a numerical value
-        if (!_sValue.length())
-            _dValue = NAN;
-        else if (_sValue == "NAN" || _sValue == "NaN" || _sValue == "nan" || _sValue == "---")
-            _dValue = NAN;
-        else if (_sValue == "inf")
-            _dValue = INFINITY;
-        else if (_sValue == "-inf")
-            _dValue = -INFINITY;
-        else
+        // Is it a numerical value?
+        if (!isNumerical(_sValue))
         {
-            while (sValue.find(',') != string::npos)
-                sValue[sValue.find(',')] = '.';
-
-            _dValue = StrToDb(sValue);
+            convert_if_needed(vTableData[j], j, TableColumn::TYPE_STRING);
+            vTableData[j]->setValue(i, _sValue);
+            return;
         }
 
-        vTableData[i][j] = _dValue;
+        convert_if_needed(vTableData[j], j, TableColumn::TYPE_VALUE);
+        vTableData[j]->setValue(i, StrToCmplx(_sValue));
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Assigns a whole column to the internal
+    /// array.
+    ///
+    /// \param j size_t
+    /// \param column TableColumn*
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void Table::setColumn(size_t j, TableColumn* column)
+    {
+        if (vTableData.size() <= j)
+            vTableData.resize(j+1);
+
+        vTableData[j].reset(column);
     }
 
 
@@ -366,7 +323,7 @@ namespace NumeRe
     /// \return string
     ///
     /////////////////////////////////////////////////
-    string Table::getName() const
+    std::string Table::getName() const
     {
         return sTableName;
     }
@@ -380,22 +337,26 @@ namespace NumeRe
     /// \return int
     ///
     /////////////////////////////////////////////////
-    int Table::getHeadCount()
+    int Table::getHeadCount() const
     {
         int nHeadlineCount = 1;
+
         // Get the dimensions of the complete headline (i.e. including possible linebreaks)
-        for (long long int j = 0; j < vTableHeadings.size(); j++)
+        for (size_t j = 0; j < vTableData.size(); j++)
         {
+            if (!vTableData[j])
+                continue;
+
             // No linebreak? Continue
-            if (vTableHeadings[j].find("\\n") == string::npos)
+            if (vTableData[j]->m_sHeadLine.find("\\n") == std::string::npos)
                 continue;
 
             int nLinebreak = 0;
 
             // Count all linebreaks
-            for (unsigned int n = 0; n < vTableHeadings[j].length() - 2; n++)
+            for (unsigned int n = 0; n < vTableData[j]->m_sHeadLine.length() - 2; n++)
             {
-                if (vTableHeadings[j].substr(n, 2) == "\\n")
+                if (vTableData[j]->m_sHeadLine.substr(n, 2) == "\\n")
                     nLinebreak++;
             }
 
@@ -413,15 +374,15 @@ namespace NumeRe
     /// column's headline.
     ///
     /// \param i size_t
-    /// \return string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string Table::getHead(size_t i) const
+    std::string Table::getHead(size_t i) const
     {
-        if (vTableHeadings.size() > i)
-            return vTableHeadings[i];
+        if (vTableData.size() > i && vTableData[i])
+            return vTableData[i]->m_sHeadLine;
 
-        return "";
+        return TableColumn::getDefaultColumnHead(i);
     }
 
 
@@ -431,19 +392,19 @@ namespace NumeRe
     /// headlines are replaced on-the-fly.
     ///
     /// \param i size_t
-    /// \return string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string Table::getCleanHead(size_t i) const
+    std::string Table::getCleanHead(size_t i) const
     {
-        if (vTableHeadings.size() > i)
+        if (vTableData.size() > i && vTableData[i])
         {
-            string head = vTableHeadings[i];
+            std::string head = vTableData[i]->m_sHeadLine;
             replaceAll(head, "\\n", "\n");
             return head;
         }
 
-        return "";
+        return TableColumn::getDefaultColumnHead(i);
     }
 
 
@@ -455,15 +416,15 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param part size_t
-    /// \return string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string Table::getCleanHeadPart(size_t i, size_t part)
+    std::string Table::getCleanHeadPart(size_t i, size_t part) const
     {
-        if (vTableHeadings.size() > i || part >= (size_t)getHeadCount())
+        if (vTableData.size() > i && vTableData[i] && part < (size_t)getHeadCount())
         {
             // get the cleaned headline
-            string head = getCleanHead(i);
+            std::string head = getCleanHead(i);
 
             // Simple case: only one line
             if (head.find('\n') == string::npos)
@@ -496,6 +457,9 @@ namespace NumeRe
             return "";
         }
 
+        if (!part)
+            return TableColumn::getDefaultColumnHead(i);
+
         return "";
     }
 
@@ -506,13 +470,13 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
-    /// \return double
+    /// \return mu::value_type
     ///
     /////////////////////////////////////////////////
-    double Table::getValue(size_t i, size_t j)
+    mu::value_type Table::getValue(size_t i, size_t j) const
     {
-        if (vTableData.size() > i && vTableData[i].size() > j)
-            return vTableData[i][j];
+        if (vTableData.size() > j && vTableData[j])
+            return vTableData[j]->getValue(i);
 
         return NAN;
     }
@@ -525,31 +489,56 @@ namespace NumeRe
     ///
     /// \param i size_t
     /// \param j size_t
-    /// \return string
+    /// \return std::string
     ///
     /////////////////////////////////////////////////
-    string Table::getValueAsString(size_t i, size_t j)
+    std::string Table::getValueAsString(size_t i, size_t j) const
     {
-        char cBuffer[50];
-
-        if (vTableData.size() > i && vTableData[i].size() > j)
+        if (vTableData.size() > j && vTableData[j])
         {
             // Invalid number
-            if (isnan(vTableData[i][j]))
+            if (!vTableData[j]->isValid(i))
                 return "---";
 
-            // +/- infinity
-            if (isinf(vTableData[i][j]) && vTableData[i][j] > 0)
-                return "inf";
-            else if (isinf(vTableData[i][j]))
-                return "-inf";
-
-            // Explicit conversion
-            sprintf(cBuffer, "%.*g", 7, vTableData[i][j]);
-            return string(cBuffer);
+            return vTableData[j]->getValueAsString(i);
         }
 
         return "---";
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Returns a copy of the internal column
+    /// array or a nullptr, if the column does not
+    /// exist or is empty.
+    ///
+    /// \param j size_t
+    /// \return TableColumn*
+    ///
+    /////////////////////////////////////////////////
+    TableColumn* Table::getColumn(size_t j) const
+    {
+        if (j < vTableData.size() && vTableData[j])
+            return vTableData[j]->copy();
+
+        return nullptr;
+    }
+
+
+    /////////////////////////////////////////////////
+    /// \brief Returns the type of the selected
+    /// column.
+    ///
+    /// \param j size_t
+    /// \return TableColumn::ColumnType
+    ///
+    /////////////////////////////////////////////////
+    TableColumn::ColumnType Table::getColumnType(size_t j) const
+    {
+        if (j < vTableData.size() && vTableData[j])
+            return vTableData[j]->m_type;
+
+        return TableColumn::TYPE_NONE;
     }
 
 
@@ -561,7 +550,15 @@ namespace NumeRe
     /////////////////////////////////////////////////
     size_t Table::getLines() const
     {
-        return vTableData.size();
+        size_t lines = 0;
+
+        for (const TblColPtr& col : vTableData)
+        {
+            if (col && col->size() > lines)
+                lines = col->size();
+        }
+
+        return lines;
     }
 
 
@@ -571,9 +568,9 @@ namespace NumeRe
     /// \return size_t
     ///
     /////////////////////////////////////////////////
-    size_t Table::getCols()
+    size_t Table::getCols() const
     {
-        return vTableData[0].size();
+        return vTableData.size();
     }
 
 
@@ -602,8 +599,11 @@ namespace NumeRe
     {
         nPos -= getHeadCount();
 
-        for (size_t i = 0; i < nNum; i++)
-            vTableData.insert(vTableData.begin() + nPos, vector<double>(vTableData[0].size(), NAN));
+        for (TblColPtr& col : vTableData)
+        {
+            if (col)
+                col->insertElements(nPos, nNum);
+        }
 
         return true;
     }
@@ -618,8 +618,11 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool Table::appendLines(size_t nNum)
     {
-        for (size_t i = 0; i < nNum; i++)
-            vTableData.push_back(vector<double>(vTableData[0].size(), NAN));
+        for (TblColPtr& col : vTableData)
+        {
+            if (col)
+                col->appendElements(nNum);
+        }
 
         return true;
     }
@@ -638,7 +641,12 @@ namespace NumeRe
     {
         nPos -= getHeadCount();
 
-        vTableData.erase(vTableData.begin() + nPos, vTableData.begin() + nPos + nNum);
+        for (TblColPtr& col : vTableData)
+        {
+            if (col)
+                col->removeElements(nPos, nNum);
+        }
+
         return true;
     }
 
@@ -654,10 +662,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool Table::insertCols(size_t nPos, size_t nNum)
     {
-        for (size_t i = 0; i < vTableData.size(); i++)
-            vTableData[i].insert(vTableData[i].begin() + nPos, nNum, NAN);
-
-        vTableHeadings.insert(vTableHeadings.begin() + nPos, nNum, "");
+        TableColumnArray arr(nNum);
+        vTableData.insert(vTableData.begin()+nPos, std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
         return true;
     }
 
@@ -671,10 +677,8 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool Table::appendCols(size_t nNum)
     {
-        for (size_t i = 0; i < vTableData.size(); i++)
-            vTableData[i].insert(vTableData[i].end(), nNum, NAN);
-
-        vTableHeadings.insert(vTableHeadings.end(), nNum, "");
+        TableColumnArray arr(nNum);
+        vTableData.insert(vTableData.end(), std::make_move_iterator(arr.begin()), std::make_move_iterator(arr.end()));
         return true;
     }
 
@@ -690,10 +694,7 @@ namespace NumeRe
     /////////////////////////////////////////////////
     bool Table::deleteCols(size_t nPos, size_t nNum)
     {
-        for (size_t i = 0; i < vTableData.size(); i++)
-            vTableData[i].erase(vTableData[i].begin() + nPos, vTableData[i].begin() + nPos + nNum);
-
-        vTableHeadings.erase(vTableHeadings.begin() + nPos, vTableHeadings.begin() + nPos + nNum);
+        vTableData.erase(vTableData.begin()+nPos, vTableData.begin()+nPos+nNum);
         return true;
     }
 

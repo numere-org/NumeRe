@@ -38,9 +38,6 @@ namespace NumeRe
     /// expression parser. It is designed as being
     /// a singleton with a persistent existence linked
     /// to the kernel class.
-    ///
-    /// \todo Define reasonable return values for the
-    /// evalAndFormat() method.
     /////////////////////////////////////////////////
     class StringParser : public StringLogicParser, public StringFuncHandler
     {

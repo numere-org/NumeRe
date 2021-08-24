@@ -692,7 +692,7 @@ std::vector<std::string> getEventProcedures(const std::string& sLayoutFile)
     std::string sFolderName = sLayoutFile.substr(0, sLayoutFile.rfind('/'));
     std::vector<std::string> vProcedures;
 
-    for (size_t i = 0; i < layoutFile.getLinesCount(); i++)
+    for (size_t i = 0; i < (size_t)layoutFile.getLinesCount(); i++)
     {
         std::string sLine = layoutFile.getStrippedLine(i);
 

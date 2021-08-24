@@ -308,7 +308,20 @@ namespace NumeRe
         }
         else if (_data.containsTablesOrClusters(sFuncArgument))
         {
-            getDataElements(sFuncArgument, _parser, _data, _option, false);
+            getDataElements(sFuncArgument, _parser, _data, _option, INSERT_STRINGS);
+
+            if (isStringExpression(sFuncArgument))
+            {
+                // Call the string parser core
+                StringResult strRes = eval(sFuncArgument, "", true);
+
+                // Use the returned values as function arguments
+                for (size_t i = 0; i < strRes.vResult.size(); i++)
+                    sArg.push_back(removeQuotationMarks(strRes.vResult[i]));
+
+                bLogicalOnly = strRes.bOnlyLogicals;
+                return strRes.vResult.size();
+            }
         }
 
         // Expand the passed argument, if needed and
@@ -1340,7 +1353,7 @@ namespace NumeRe
                 {
                     sElement = printValue(v[n]);
 
-                    if (n < vCounts.size())
+                    if (n < (int)vCounts.size())
                         nLen = intCast(fabs(vCounts[n]));
 
                     while (sElement.length() < nLen && sChar.length())

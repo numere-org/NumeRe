@@ -130,7 +130,7 @@ void getIndices(StringView sCmd, Indices& _idx,  Parser& _parser, MemoryManager&
         //_idx.col.setIndex(0,0);
         //return;
 
-    // FIXME: I do not like the check for string variables here
+#warning TODO (numere#3#08/15/21): Checking for string variables here is inefficient
     if (NumeReKernel::getInstance()->getStringParser().containsStringVectorVars(_idx.sCompiledAccessEquation))
     {
         EndlessVector<std::string> idc = getAllArguments(_idx.sCompiledAccessEquation);

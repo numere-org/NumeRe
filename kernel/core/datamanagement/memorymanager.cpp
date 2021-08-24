@@ -26,6 +26,7 @@
 #include "../version.h"
 #include "../maths/resampler.h"
 #include "../../kernel.hpp"
+#include "tablecolumnimpl.hpp"
 using namespace std;
 
 
@@ -309,8 +310,8 @@ bool MemoryManager::saveToCacheFile()
     cacheFile.setNumberOfTables(mCachesMap.size() - isTable("data"));
     cacheFile.writeCacheHeader();
 
-    long long int nLines;
-    long long int nCols;
+    int nLines;
+    int nCols;
 
     for (auto iter = mCachesMap.begin(); iter != mCachesMap.end(); ++iter)
     {
@@ -321,8 +322,7 @@ bool MemoryManager::saveToCacheFile()
         nCols = vMemory[iter->second.first]->getCols(false);
 
         cacheFile.setDimensions(nLines, nCols);
-        cacheFile.setColumnHeadings(vMemory[iter->second.first]->sHeadLine, nCols);
-        cacheFile.setData(vMemory[iter->second.first]->dMemTable, nLines, nCols);
+        cacheFile.setData(&vMemory[iter->second.first]->memArray, nLines, nCols);
         cacheFile.setTableName(iter->first);
         cacheFile.setComment("NO COMMENT");
 
@@ -392,11 +392,8 @@ bool MemoryManager::loadFromNewCacheFile()
             vMemory.push_back(new Memory());
 
             vMemory.back()->resizeMemory(cacheFile.getRows(), cacheFile.getCols());
-            cacheFile.getData(vMemory.back()->dMemTable);
-            cacheFile.getColumnHeadings(vMemory.back()->sHeadLine);
+            cacheFile.getData(&vMemory.back()->memArray);
 
-            vMemory.back()->bValidData = true;
-            vMemory.back()->countAppendedZeroes();
             vMemory.back()->shrink();
         }
 
@@ -607,6 +604,27 @@ bool MemoryManager::loadFromLegacyCacheFile()
 
 
 /////////////////////////////////////////////////
+/// \brief This member function converts the
+/// selected column to the needed type, if this
+/// column shall be overwritten by another than
+/// the current type.
+///
+/// \param col int
+/// \param _sCache const std::string&
+/// \param type TableColumn::ColumnType
+/// \return void
+///
+/////////////////////////////////////////////////
+void MemoryManager::overwriteColumn(int col, const std::string& _sCache, TableColumn::ColumnType type)
+{
+    if (getCols(_sCache) <= col)
+        return;
+
+    convert_for_overwrite(vMemory[findTable(_sCache)]->memArray[col], col, type);
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function extracts and
 /// parses the \c every expression part of a MAF
 /// call.
@@ -648,7 +666,7 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) co
             if (nResults == 1)
             {
                 // Single result: usual every=a,a representation
-                vector<long long int> idx;
+                vector<int> idx;
 
                 for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[0]))
                 {
@@ -660,7 +678,7 @@ VectorIndex MemoryManager::parseEvery(string& sDir, const string& sTableName) co
             else if (nResults == 2)
             {
                 // Two results: usual every=a,b representation
-                vector<long long int> idx;
+                vector<int> idx;
 
                 for (long long int i = intCast(v[0])-1; i < (sDir.find("cols") != string::npos ? getCols(sTableName, false) : getLines(sTableName, false)); i += intCast(v[1]))
                 {
@@ -785,7 +803,7 @@ Memory* MemoryManager::getTable(const string& sTable)
 void MemoryManager::melt(Memory* _mem, const string& sTable)
 {
     // Ensure that the table exists
-    if (!_mem)
+    if (!_mem || !_mem->memArray.size())
         return;
 
     // Is a corresponding table known?
@@ -800,25 +818,21 @@ void MemoryManager::melt(Memory* _mem, const string& sTable)
         // Combine both tables
         Memory* _existingMem = vMemory[mCachesMap[sTable].first];
 
-        long long int nCols = _existingMem->getCols(false);
+        size_t nCols = _existingMem->memArray.size();
 
         // Resize the existing table to fit the contents
         // of both tables
-        _existingMem->resizeMemory(std::max(_existingMem->getLines(false), _mem->getLines(false)), _existingMem->getCols(false) + _mem->getCols(false));
+        _existingMem->resizeMemory(1, nCols + _mem->memArray.size());
 
-        // Copy the contents
-        for (long long int i = 0; i < _mem->getLines(false); i++)
+        // Move the contents
+        for (size_t j = 0; j < _mem->memArray.size(); j++)
         {
-            for (long long int j = 0; j < _mem->getCols(false); j++)
-            {
-                if (!i)
-                    _existingMem->setHeadLineElement(j + nCols, _mem->getHeadLineElement(j));
-
-                _existingMem->writeData(i, j + nCols, _mem->readMem(i, j));
-            }
+            if (_mem->memArray[j])
+                _existingMem->memArray[j+nCols].reset(_mem->memArray[j].release());
         }
 
         _existingMem->setSaveStatus(false);
+        _existingMem->nCalcLines = -1;
 
         // Delete the passed instance (it is not
         // needed any more).

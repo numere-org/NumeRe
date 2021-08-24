@@ -1239,7 +1239,7 @@ static Matrix getMatrixElements(string& sExpr, const Matrix& _mMatrix, Parser& _
     {
         for (unsigned int j = 0; j < _idx.col.size(); j++)
         {
-            if (_idx.row[i] >= _mMatrix.size() || _idx.col[j] >= _mMatrix[0].size())
+            if (_idx.row[i] >= (int)_mMatrix.size() || _idx.col[j] >= (int)_mMatrix[0].size())
                 throw SyntaxError(SyntaxError::INVALID_INDEX, "", SyntaxError::invalid_position, _idx.row.to_string() + ", " + _idx.col.to_string());
 
             _mReturn[i][j] = _mMatrix[_idx.row[i]][_idx.col[j]];
@@ -1294,7 +1294,6 @@ static void showMatrixResult(const Matrix& _mResult, const Settings& _option)
 
     const size_t FIELDLENGTH = 21;
     const size_t FIELDLENGTH_W_FILLER = 23;
-    const size_t PRECISION = 7;
 
     NumeReKernel::toggleTableStatus();
 
