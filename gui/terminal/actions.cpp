@@ -22,27 +22,27 @@ void GenericTerminal::normal_input()
 {
     // Convert the current view cursor position into
     // the corresponding logical position
-	LogicalCursor cursor = tm.toLogicalCursor(termCursor);
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
 
-	// Ensure that the cursor is valid
-	if (!cursor)
+    // Ensure that the cursor is valid
+    if (!cursor)
         cursor = tm.getCurrentLogicalPos();
 
     // Insert the text at the cursor's position
-	tm.insertInput(sInput_Data, cursor.pos);
+    tm.insertInput(sInput_Data, cursor.pos);
 
-	// Advance the cursor
-	cursor.pos += sInput_Data.length();
+    // Advance the cursor
+    cursor.pos += sInput_Data.length();
 
-	// Clear the input buffer
-	sInput_Data.clear();
+    // Clear the input buffer
+    sInput_Data.clear();
 
-	// Get the new view cursor position from the logical cursor
-	termCursor = tm.toViewCursor(cursor);
+    // Get the new view cursor position from the logical cursor
+    termCursor = tm.toViewCursor(cursor);
 
-	// If the view cursor is not valid, get the
-	// view cursor of the last position
-	if (!termCursor)
+    // If the view cursor is not valid, get the
+    // view cursor of the last position
+    if (!termCursor)
         termCursor = tm.getCurrentViewPos();
 }
 
@@ -57,27 +57,27 @@ void GenericTerminal::normal_input()
 void GenericTerminal::normal_output()
 {
     // Get the output data
-	string sInput = sInput_Data;
+    string sInput = sInput_Data;
 
 #ifdef DO_LOG
-	wxLogDebug("%s", sInput.c_str());
+    wxLogDebug("%s", sInput.c_str());
 #endif
 
-	// As long as the output data has a length
-	do
-	{
-	    // Print the output until the first control character
-		tm.printOutput(sInput.substr(0, sInput.find_first_of("\n\r\t")));
+    // As long as the output data has a length
+    do
+    {
+        // Print the output until the first control character
+        tm.printOutput(sInput.substr(0, sInput.find_first_of("\n\r\t")));
 
-		// Store the position of the first control character
-		size_t nPos = sInput.find_first_of("\n\r\t");
+        // Store the position of the first control character
+        size_t nPos = sInput.find_first_of("\n\r\t");
 
-		// If the position is valid
-		if (nPos != string::npos)
-		{
-		    // Evalute the control character
-		    switch (sInput[nPos])
-		    {
+        // If the position is valid
+        if (nPos != string::npos)
+        {
+            // Evalute the control character
+            switch (sInput[nPos])
+            {
                 case '\n':
                     tm.newLine();
                     break;
@@ -87,24 +87,24 @@ void GenericTerminal::normal_output()
                 case '\r':
                     tm.eraseLine();
                     break;
-		    }
+            }
 
-		    // Erase everything in front of and including
-		    // the control character
+            // Erase everything in front of and including
+            // the control character
             sInput.erase(0, nPos + 1);
-		}
-		else
-		{
-			sInput.clear();
-		}
+        }
+        else
+        {
+            sInput.clear();
+        }
 
-	}
-	while (sInput.length());
+    }
+    while (sInput.length());
 
-	// Set the view cursor to the last position
-	// and clear the input data
-	termCursor = tm.getCurrentViewPos();
-	sInput_Data.clear();
+    // Set the view cursor to the last position
+    // and clear the input data
+    termCursor = tm.getCurrentViewPos();
+    sInput_Data.clear();
 }
 
 
@@ -124,10 +124,10 @@ void GenericTerminal::resetAutoComp(int mode)
     // Reset the cursor position for the tab key
     if (!(mode & RESETTAB) || nTabStartPos == -1)
         return;
-	nTabStartPos = -1;
+    nTabStartPos = -1;
 
-	sAutoCompList.clear();
-	sAutoCompWordStart.clear();
+    sAutoCompList.clear();
+    sAutoCompWordStart.clear();
 }
 
 
@@ -142,26 +142,26 @@ void GenericTerminal::resetAutoComp(int mode)
 /////////////////////////////////////////////////
 string GenericTerminal::getProcNameSpace()
 {
-	string sNameSpace;
+    string sNameSpace;
 
-	// Get the position of the current autocompletion start
-	int nNameSpacePos = nTabStartPos - 1;
+    // Get the position of the current autocompletion start
+    int nNameSpacePos = nTabStartPos - 1;
 
-	// Find the start of the current procedure syntax
-	while (nNameSpacePos && ((tm.GetColorAdjusted(termCursor.y, nNameSpacePos - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE && tm.GetCharAdjusted(termCursor.y, nNameSpacePos - 1) != '$')
-		nNameSpacePos--;
+    // Find the start of the current procedure syntax
+    while (nNameSpacePos && ((tm.GetColorAdjusted(termCursor.y, nNameSpacePos - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE && tm.GetCharAdjusted(termCursor.y, nNameSpacePos - 1) != '$')
+        nNameSpacePos--;
 
-	// Get the text between the start and the current autocompletion start
-	sNameSpace = toLowerCase(tm.GetTextRange(termCursor.y, nNameSpacePos, nTabStartPos));
+    // Get the text between the start and the current autocompletion start
+    sNameSpace = toLowerCase(tm.GetTextRange(termCursor.y, nNameSpacePos, nTabStartPos));
 
-	// If the obtained namespace contains the (possible) procedure
-	// name, then erase this part, because we only want to have the
-	// current namespace
-	if (sNameSpace.find(sAutoCompWordStart) != string::npos)
-		sNameSpace.erase(sNameSpace.rfind(sAutoCompWordStart));
+    // If the obtained namespace contains the (possible) procedure
+    // name, then erase this part, because we only want to have the
+    // current namespace
+    if (sNameSpace.find(sAutoCompWordStart) != string::npos)
+        sNameSpace.erase(sNameSpace.rfind(sAutoCompWordStart));
 
-	// return the evaluted namespace
-	return sNameSpace;
+    // return the evaluted namespace
+    return sNameSpace;
 }
 
 
@@ -173,7 +173,7 @@ string GenericTerminal::getProcNameSpace()
 /////////////////////////////////////////////////
 void GenericTerminal::cr()
 {
-	move_cursor(0, termCursor.y);
+    move_cursor(0, termCursor.y);
 }
 
 
@@ -185,12 +185,12 @@ void GenericTerminal::cr()
 /////////////////////////////////////////////////
 void GenericTerminal::lf()
 {
-	tm.newLine();
+    tm.newLine();
 
-	if (termCursor.y < (size_t)scroll_bot)
-	{
-		move_cursor(termCursor.x, termCursor.y + 1);
-	}
+    if (termCursor.y < (size_t)scroll_bot)
+    {
+        move_cursor(termCursor.x, termCursor.y + 1);
+    }
 }
 
 
@@ -202,9 +202,9 @@ void GenericTerminal::lf()
 /////////////////////////////////////////////////
 void GenericTerminal::ff()
 {
-	clear_area(0, scroll_top, width - 1, scroll_bot);
+    clear_area(0, scroll_top, width - 1, scroll_bot);
 
-	move_cursor(0, scroll_top);
+    move_cursor(0, scroll_top);
 }
 
 
@@ -220,57 +220,57 @@ void GenericTerminal::tab()
 {
     // Determine, whether this is the first tab key press (in this case
     // the tab start position is equal to -1)
-	if (nTabStartPos == -1)
-	{
-		nTabStartPos = termCursor.x;
+    if (nTabStartPos == -1)
+    {
+        nTabStartPos = termCursor.x;
 
-		// Get the word start from the terminal
-		sAutoCompWordStart = toLowerCase(tm.GetWordStartAt(termCursor.y, termCursor.x));
+        // Get the word start from the terminal
+        sAutoCompWordStart = toLowerCase(tm.GetWordStartAt(termCursor.y, termCursor.x));
 
-		// There are different autocompletion lists for procedures and every other syntax element
-		if (((tm.GetColorAdjusted(termCursor.y, termCursor.x - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
-		{
-			string sNameSpace = getProcNameSpace();
-			sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
-		}
-		else
-			sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
+        // There are different autocompletion lists for procedures and every other syntax element
+        if (((tm.GetColorAdjusted(termCursor.y, termCursor.x - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
+        {
+            string sNameSpace = getProcNameSpace();
+            sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
+        }
+        else
+            sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
 
         // Reset the autocompletion, if no completion was found or the word start is too short
-		if (!sAutoCompList.length() || !sAutoCompWordStart.length())
-		{
-			resetAutoComp(RESETCURSOR | RESETTAB);
-			return;
-		}
-	}
-	else
-	{
-	    // This is not the first time the tab key was pressed
-	    // If the autocompletion list is empty, recreate it here
-		if (!sAutoCompList.length())
-		{
-			if (((tm.GetColorAdjusted(termCursor.y, nTabStartPos - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
-			{
-				string sNameSpace = getProcNameSpace();
-				sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
-			}
-			else
-				sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
-		}
-	}
+        if (!sAutoCompList.length() || !sAutoCompWordStart.length())
+        {
+            resetAutoComp(RESETCURSOR | RESETTAB);
+            return;
+        }
+    }
+    else
+    {
+        // This is not the first time the tab key was pressed
+        // If the autocompletion list is empty, recreate it here
+        if (!sAutoCompList.length())
+        {
+            if (((tm.GetColorAdjusted(termCursor.y, nTabStartPos - 1) >> 4) & 0xf) == NumeReSyntax::SYNTAX_PROCEDURE)
+            {
+                string sNameSpace = getProcNameSpace();
+                sAutoCompList = _syntax.getProcAutoCompList(sAutoCompWordStart, "", sNameSpace);
+            }
+            else
+                sAutoCompList = _syntax.getAutoCompList(sAutoCompWordStart);
+        }
+    }
 
-	// clear the word start and move the cursor back to the word start
-	// (word start cleared to avoid character case issues)
-    clear_area(nTabStartPos-sAutoCompWordStart.length(), termCursor.y, termCursor.x, termCursor.y);
-    move_cursor(nTabStartPos-sAutoCompWordStart.length(), termCursor.y);
+    // clear the word start and move the cursor back to the word start
+    // (word start cleared to avoid character case issues)
+    clear_area(nTabStartPos - sAutoCompWordStart.length(), termCursor.y, termCursor.x, termCursor.y);
+    move_cursor(nTabStartPos - sAutoCompWordStart.length(), termCursor.y);
 
-	// Get the next autocompletion proposal, store it as input and remove it from the list
-	sInput_Data = sAutoCompList.substr(0, sAutoCompList.find('?'));
-	data_len = sInput_Data.length();
-	sAutoCompList.erase(0, sAutoCompList.find(' ') + 1);
+    // Get the next autocompletion proposal, store it as input and remove it from the list
+    sInput_Data = sAutoCompList.substr(0, sAutoCompList.find('?'));
+    data_len = sInput_Data.length();
+    sAutoCompList.erase(0, sAutoCompList.find(' ') + 1);
 
-	// Process the input
-	normal_input();
+    // Process the input
+    normal_input();
 }
 
 
@@ -283,29 +283,29 @@ void GenericTerminal::tab()
 bool GenericTerminal::bs()
 {
     // Convert the current view cursor to a logical cursor
-	LogicalCursor cursor = tm.toLogicalCursor(termCursor);
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
 
     // Ensure that the position is editable and perform the backspace
-	if (termCursor.x > 0 && tm.IsEditable(termCursor.y, termCursor.x - 1))
-	{
-		tm.backspace(cursor);
-	}
-	else
-		return false;
+    if (termCursor.x > 0 && tm.IsEditable(termCursor.y, termCursor.x - 1))
+    {
+        tm.backspace(cursor);
+    }
+    else
+        return false;
 
     // move the cursor to the left
-	cursor--;
+    cursor--;
 
-	// Convert it to a new view cursor
-	termCursor = tm.toViewCursor(cursor);
+    // Convert it to a new view cursor
+    termCursor = tm.toViewCursor(cursor);
 
-	// If the view cursor is not valid, use the current input position
+    // If the view cursor is not valid, use the current input position
     if (!termCursor)
         termCursor = tm.getCurrentViewPos();
 
     // Update the GUI and return
-	update_changes();
-	return true;
+    update_changes();
+    return true;
 }
 
 
@@ -318,23 +318,23 @@ bool GenericTerminal::bs()
 bool GenericTerminal::del()
 {
     // Convert the current view cursor to a logical cursor
-	LogicalCursor cursor = tm.toLogicalCursor(termCursor);
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
 
-	// Move the cursor to the right
-	cursor++;
+    // Move the cursor to the right
+    cursor++;
 
-	// Ensure that the position to the right is editable and perform the backspace
-	if (termCursor.x > 0 && tm.IsEditable(termCursor.y, termCursor.x + 1))
-	{
-		tm.backspace(cursor);
-	}
-	else
-		return false;
+    // Ensure that the position to the right is editable and perform the backspace
+    if (termCursor.x > 0 && tm.IsEditable(termCursor.y, termCursor.x + 1))
+    {
+        tm.backspace(cursor);
+    }
+    else
+        return false;
 
     // The view cursor stays at its position so
     // only update the GUI and return
-	update_changes();
-	return true;
+    update_changes();
+    return true;
 }
 
 
@@ -380,7 +380,7 @@ bool GenericTerminal::delSelected()
 /////////////////////////////////////////////////
 void GenericTerminal::bell()
 {
-	Bell();
+    Bell();
 }
 
 
@@ -393,18 +393,18 @@ void GenericTerminal::bell()
 /////////////////////////////////////////////////
 void GenericTerminal::reset()
 {
-	bg_color = 0;
-	fg_color = 7;
-	scroll_top = 0;
-	scroll_bot = height - 1;
+    bg_color = 0;
+    fg_color = 7;
+    scroll_top = 0;
+    scroll_bot = height - 1;
 
-	clear_mode_flag(NOEOLWRAP | CURSORAPPMODE | CURSORRELATIVE | NEWLINE | INSERT | UNDERLINE | BLINK | KEYAPPMODE
-					| CURSORINVISIBLE);
+    clear_mode_flag(NOEOLWRAP | CURSORAPPMODE | CURSORRELATIVE | NEWLINE | INSERT | UNDERLINE | BLINK | KEYAPPMODE
+                    | CURSORINVISIBLE);
 
-	clear_area(0, 0, width - 1, height - 1);
-	move_cursor(0, 0);
+    clear_area(0, 0, width - 1, height - 1);
+    move_cursor(0, 0);
 
-	tm.Reset();
+    tm.Reset();
 }
 
 
@@ -465,16 +465,16 @@ bool GenericTerminal::cursor_up()
         nCursorUpDownStartPos = tm.toLogicalCursor(termCursor).pos - 4;
 
     if (!tm.IsEditable(termCursor.y - 1, termCursor.x))
-	{
-	    // Get the last history entry
-		std::string sHistory = tm.GetInputHistory(true);
+    {
+        // Get the last history entry
+        std::string sHistory = tm.GetInputHistory(true);
 
         // Get the current user input line
         std::string currentLine = tm.getCurrentInputLine();
 
         while (sHistory.length())
-		{
-		    wxLogDebug(std::to_string(nCursorUpDownStartPos).c_str());
+        {
+            wxLogDebug(std::to_string(nCursorUpDownStartPos).c_str());
             if (sHistory != currentLine && sHistory.substr(0, nCursorUpDownStartPos) == currentLine.substr(0, nCursorUpDownStartPos))
             {
                 erase_usercontent_line();
@@ -484,25 +484,25 @@ bool GenericTerminal::cursor_up()
                 return true;
             }
             sHistory = tm.GetInputHistory(true);
-		}
-		return false;
-	}
+        }
+        return false;
+    }
 
-	// Move the cursor up
-	int n, y;
+    // Move the cursor up
+    int n, y;
 
-	n = param[0];
+    n = param[0];
 
-	if (n < 1)
-		n = 1;
+    if (n < 1)
+        n = 1;
 
-	y = termCursor.y - n;
+    y = termCursor.y - n;
 
-	if (y < 0)
-		y = 0;
+    if (y < 0)
+        y = 0;
 
-	move_cursor(termCursor.x, y);
-	return true;
+    move_cursor(termCursor.x, y);
+    return true;
 }
 
 
@@ -520,15 +520,15 @@ bool GenericTerminal::cursor_down()
         nCursorUpDownStartPos = tm.toLogicalCursor(termCursor).pos - 4;
 
     if (!tm.IsEditable(termCursor.y + 1, termCursor.x))
-	{
-	    // Get the last history entry
-		std::string sHistory = tm.GetInputHistory(false);
+    {
+        // Get the last history entry
+        std::string sHistory = tm.GetInputHistory(false);
 
         // Get the current user input line
         std::string currentLine = tm.getCurrentInputLine();
 
         while (sHistory.length())
-		{
+        {
             if (sHistory != currentLine && sHistory.substr(0, nCursorUpDownStartPos) == currentLine.substr(0, nCursorUpDownStartPos))
             {
                 erase_usercontent_line();
@@ -538,10 +538,10 @@ bool GenericTerminal::cursor_down()
                 return true;
             }
             sHistory = tm.GetInputHistory(false);
-		}
+        }
 
-		// Reset to original input if no other result was found
-		if (currentLine.length() > nCursorUpDownStartPos)
+        // Reset to original input if no other result was found
+        if (currentLine.length() > nCursorUpDownStartPos)
         {
             erase_usercontent_line();
             sInput_Data = currentLine.substr(0, nCursorUpDownStartPos);
@@ -550,24 +550,24 @@ bool GenericTerminal::cursor_down()
             return true;
         }
 
-		return false;
-	}
+        return false;
+    }
 
-	// Move the cursor down
-	int n, y;
+    // Move the cursor down
+    int n, y;
 
-	n = param[0];
+    n = param[0];
 
-	if (n < 1)
-		n = 1;
+    if (n < 1)
+        n = 1;
 
-	y = termCursor.y + n;
+    y = termCursor.y + n;
 
-	if (y >= height)
-		y = height - 1;
+    if (y >= height)
+        y = height - 1;
 
-	move_cursor(termCursor.x, y);
-	return true;
+    move_cursor(termCursor.x, y);
+    return true;
 }
 
 
@@ -583,7 +583,7 @@ bool GenericTerminal::ctrl_left()
 
     // If already at the beginning of a word, go one
     // position to the left
-    if (!isalnum(tm.GetCharLogical(cursor-1)))
+    if (!isalnum(tm.GetCharLogical(cursor - 1)))
         cursor--;
 
     // Always go to the first non-whitespace character
@@ -645,19 +645,19 @@ bool GenericTerminal::ctrl_right()
 /////////////////////////////////////////////////
 bool GenericTerminal::home()
 {
-	int n = termCursor.x;
+    int n = termCursor.x;
 
-	// Search the last not editable character from the right
-	while (tm.IsEditable(termCursor.y, n - 1))
-		n--;
+    // Search the last not editable character from the right
+    while (tm.IsEditable(termCursor.y, n - 1))
+        n--;
 
     // Don't do anything, if the cursor is already there
-	if (n == (int)termCursor.x)
-		return front();
+    if (n == (int)termCursor.x)
+        return front();
 
     // Move the cursor
-	move_cursor(n, termCursor.y);
-	return true;
+    move_cursor(n, termCursor.y);
+    return true;
 }
 
 
@@ -670,19 +670,19 @@ bool GenericTerminal::home()
 /////////////////////////////////////////////////
 bool GenericTerminal::end()
 {
-	size_t n = termCursor.x;
+    size_t n = termCursor.x;
 
-	// Search the first not editable character from the left
-	while (tm.IsEditable(termCursor.y, n + 1))
-		n++;
+    // Search the first not editable character from the left
+    while (tm.IsEditable(termCursor.y, n + 1))
+        n++;
 
     // Don't do anything, if the cursor is already there
-	if (n == termCursor.x)
-		return back();
+    if (n == termCursor.x)
+        return back();
 
     // Move the cursor
-	move_cursor(n, termCursor.y);
-	return true;
+    move_cursor(n, termCursor.y);
+    return true;
 }
 
 
@@ -697,9 +697,9 @@ bool GenericTerminal::front()
 {
     LogicalCursor cursor = tm.toLogicalCursor(termCursor);
 
-	// Search the last not editable character from the right
-	while (tm.IsEditableLogical(cursor))
-		cursor--;
+    // Search the last not editable character from the right
+    while (tm.IsEditableLogical(cursor))
+        cursor--;
 
     // Move the cursor to the first editable position
     cursor++;
@@ -712,8 +712,8 @@ bool GenericTerminal::front()
         return false;
 
     // Move the cursor
-	move_cursor(vCursor.x, vCursor.y);
-	return true;
+    move_cursor(vCursor.x, vCursor.y);
+    return true;
 }
 
 
@@ -728,9 +728,9 @@ bool GenericTerminal::back()
 {
     LogicalCursor cursor = tm.toLogicalCursor(termCursor);
 
-	// Search the last not editable character from the right
-	while (tm.IsEditableLogical(cursor))
-		cursor++;
+    // Search the last not editable character from the right
+    while (tm.IsEditableLogical(cursor))
+        cursor++;
 
     // Move the cursor to the last editable position
     cursor--;
@@ -743,8 +743,8 @@ bool GenericTerminal::back()
         return false;
 
     // Move the cursor
-	move_cursor(vCursor.x, vCursor.y);
-	return true;
+    move_cursor(vCursor.x, vCursor.y);
+    return true;
 }
 
 
@@ -773,23 +773,23 @@ void GenericTerminal::erase_usercontent_line()
     // Go to the very last position first
     back();
 
-	if (!tm.IsEditable(termCursor.y, termCursor.x))
-		return;
+    if (!tm.IsEditable(termCursor.y, termCursor.x))
+        return;
 
     // Convert the current view cursor into a logical cursor
-	LogicalCursor cursor = tm.toLogicalCursor(termCursor);
-	cursor.pos--;
+    LogicalCursor cursor = tm.toLogicalCursor(termCursor);
+    cursor.pos--;
 
-	// While the current character is editable, erase it
-	while (tm.IsEditableLogical(cursor))
-	{
-		cursor.pos++;
-		tm.backspace(cursor);
-		cursor.pos -= 2;
-	}
+    // While the current character is editable, erase it
+    while (tm.IsEditableLogical(cursor))
+    {
+        cursor.pos++;
+        tm.backspace(cursor);
+        cursor.pos -= 2;
+    }
 
-	// Get the new view cursor
-	termCursor = tm.toViewCursor(cursor);
+    // Get the new view cursor
+    termCursor = tm.toViewCursor(cursor);
     termCursor.x++;
 
     // If the view cursor is not valid, use the current input location
