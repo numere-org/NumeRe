@@ -1155,7 +1155,7 @@ string TextManager::GetInputHistory(bool vcursorup)
         }
 
         // Fallback
-        return GetInputHistory(false);
+        m_virtualCursor++;
     }
     else
     {

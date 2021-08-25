@@ -10,3 +10,4 @@ Applied	Code snippets in the documentation browser are now highlighted with an a
 Applied	The table editor has full flexibilty regarding string and value columns. If the values change, the column will try to convert itself to a more fitting type
 Applied	String columns or tables containing strings in arbitrary locations can now be pasted into the table editor
 Cleaned	"String-only" tables (i.e. tables with string columns) use the frist line always as column headings
+Added	The feature to select only applicable commands from the command history based on the characters already entered by the user

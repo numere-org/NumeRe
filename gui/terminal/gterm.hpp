@@ -67,6 +67,12 @@ class GenericTerminal
             SELECTED=0x8000	// flag to indicate a char is selected
         } MODES;
 
+        enum
+        {
+            RESETTAB=0x1,
+            RESETCURSOR=0x2
+        };
+
     private:
         // terminal info
         int width, height, scroll_top, scroll_bot;
@@ -101,9 +107,10 @@ class GenericTerminal
 
         // autocomp params
         int nTabStartPos;
+        int nCursorUpDownStartPos;
         string sAutoCompWordStart;
         string sAutoCompList;
-        void resetAutoComp();
+        void resetAutoComp(int mode);
         string getProcNameSpace();
 
         // non-printing characters

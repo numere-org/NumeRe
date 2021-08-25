@@ -166,7 +166,7 @@ GenericTerminal::GenericTerminal(int w, int h) : width(w), height(h)
 	termCursor = ViewCursor(0, 0);
 	mode_flags = 0;
 	reset();
-	resetAutoComp();
+	resetAutoComp(RESETCURSOR | RESETTAB);
 }
 
 

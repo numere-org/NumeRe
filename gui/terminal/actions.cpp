@@ -115,11 +115,17 @@ void GenericTerminal::normal_output()
 /// \return void
 ///
 /////////////////////////////////////////////////
-void GenericTerminal::resetAutoComp()
+void GenericTerminal::resetAutoComp(int mode)
 {
-	if (nTabStartPos == -1)
-		return;
+    // Reset the cursor position after using the up down keys
+    if (mode & RESETCURSOR)
+        nCursorUpDownStartPos = -1;
+
+    // Reset the cursor position for the tab key
+    if (!(mode & RESETTAB) || nTabStartPos == -1)
+        return;
 	nTabStartPos = -1;
+
 	sAutoCompList.clear();
 	sAutoCompWordStart.clear();
 }
@@ -233,7 +239,7 @@ void GenericTerminal::tab()
         // Reset the autocompletion, if no completion was found or the word start is too short
 		if (!sAutoCompList.length() || !sAutoCompWordStart.length())
 		{
-			resetAutoComp();
+			resetAutoComp(RESETCURSOR | RESETTAB);
 			return;
 		}
 	}
@@ -454,17 +460,30 @@ bool GenericTerminal::cursor_right()
 /////////////////////////////////////////////////
 bool GenericTerminal::cursor_up()
 {
-	if (!tm.IsEditable(termCursor.y - 1, termCursor.x))
+    // Store the cursor position
+    if (nCursorUpDownStartPos == -1)
+        nCursorUpDownStartPos = tm.toLogicalCursor(termCursor).pos - 4;
+
+    if (!tm.IsEditable(termCursor.y - 1, termCursor.x))
 	{
-	    // Perform a history jump
-		string sHistory = tm.GetInputHistory(true);
-		if (sHistory.length())
+	    // Get the last history entry
+		std::string sHistory = tm.GetInputHistory(true);
+
+        // Get the current user input line
+        std::string currentLine = tm.getCurrentInputLine();
+
+        while (sHistory.length())
 		{
-			erase_usercontent_line();
-			sInput_Data = sHistory;
-			data_len = sHistory.length();
-			normal_input();
-			return true;
+		    wxLogDebug(std::to_string(nCursorUpDownStartPos).c_str());
+            if (sHistory != currentLine && sHistory.substr(0, nCursorUpDownStartPos) == currentLine.substr(0, nCursorUpDownStartPos))
+            {
+                erase_usercontent_line();
+                sInput_Data = sHistory;
+                data_len = sHistory.length();
+                normal_input();
+                return true;
+            }
+            sHistory = tm.GetInputHistory(true);
 		}
 		return false;
 	}
@@ -496,18 +515,41 @@ bool GenericTerminal::cursor_up()
 /////////////////////////////////////////////////
 bool GenericTerminal::cursor_down()
 {
-	if (!tm.IsEditable(termCursor.y + 1, termCursor.x))
+    // Store the cursor position
+    if (nCursorUpDownStartPos == -1)
+        nCursorUpDownStartPos = tm.toLogicalCursor(termCursor).pos - 4;
+
+    if (!tm.IsEditable(termCursor.y + 1, termCursor.x))
 	{
-	    // Perform a history jump
-		string sHistory = tm.GetInputHistory(false);
-		if (sHistory.length())
+	    // Get the last history entry
+		std::string sHistory = tm.GetInputHistory(false);
+
+        // Get the current user input line
+        std::string currentLine = tm.getCurrentInputLine();
+
+        while (sHistory.length())
 		{
-			erase_usercontent_line();
-			sInput_Data = sHistory;
-			data_len = sHistory.length();
-			normal_input();
-			return true;
+            if (sHistory != currentLine && sHistory.substr(0, nCursorUpDownStartPos) == currentLine.substr(0, nCursorUpDownStartPos))
+            {
+                erase_usercontent_line();
+                sInput_Data = sHistory;
+                data_len = sHistory.length();
+                normal_input();
+                return true;
+            }
+            sHistory = tm.GetInputHistory(false);
 		}
+
+		// Reset to original input if no other result was found
+		if (currentLine.length() > nCursorUpDownStartPos)
+        {
+            erase_usercontent_line();
+            sInput_Data = currentLine.substr(0, nCursorUpDownStartPos);
+            data_len = nCursorUpDownStartPos;
+            normal_input();
+            return true;
+        }
+
 		return false;
 	}
 

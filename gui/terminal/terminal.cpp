@@ -1021,7 +1021,7 @@ NumeReTerminal::OnChar(wxKeyEvent& event)
 		std::string buf = " ";
 		buf[0] = (char)keyCode;
 
-		GenericTerminal::resetAutoComp();
+		GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
 
         wxClientDC dc(this);
 
@@ -1061,59 +1061,60 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
                 return true;
             }
         case WXK_BACK:
-            GenericTerminal::resetAutoComp();
+            GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if (GenericTerminal::bs())
                 Refresh();
 
             return true;
         case WXK_TAB:
+            GenericTerminal::resetAutoComp(RESETCURSOR);
             GenericTerminal::tab();
             Refresh();
             return true;
         case WXK_LEFT:
-            GenericTerminal::resetAutoComp();
+            GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if ((ctrlDown && GenericTerminal::ctrl_left()) || GenericTerminal::cursor_left())
             {
                 Refresh();
             }
             return true;
         case WXK_RIGHT:
-            GenericTerminal::resetAutoComp();
+            GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if ((ctrlDown && GenericTerminal::ctrl_right()) || GenericTerminal::cursor_right())
             {
                 Refresh();
             }
             return true;
         case WXK_UP:
-            GenericTerminal::resetAutoComp();
+            GenericTerminal::resetAutoComp(RESETTAB);
             if (GenericTerminal::cursor_up())
             {
                 Refresh();
             }
             return true;
         case WXK_DOWN:
-            GenericTerminal::resetAutoComp();
+            GenericTerminal::resetAutoComp(RESETTAB);
             if (GenericTerminal::cursor_down())
             {
                 Refresh();
             }
             return true;
         case WXK_HOME:
-            GenericTerminal::resetAutoComp();
+            GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if (GenericTerminal::home())
             {
                 Refresh();
             }
             return true;
         case WXK_END:
-            GenericTerminal::resetAutoComp();
+            GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if (GenericTerminal::end())
             {
                 Refresh();
             }
             return true;
         case WXK_DELETE:
-            GenericTerminal::resetAutoComp();
+            GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             if (GenericTerminal::del())
                 Refresh();
 
@@ -1208,6 +1209,11 @@ NumeReTerminal::OnKeyDown(wxKeyEvent& event)
     {
         if (m_isBusy)
             CancelCalculation();
+        else
+        {
+            GenericTerminal::erase_usercontent_line();
+            Refresh();
+        }
     }
 	else
 		event.Skip();
