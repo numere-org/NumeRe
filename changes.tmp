@@ -11,3 +11,5 @@ Applied	The table editor has full flexibilty regarding string and value columns.
 Applied	String columns or tables containing strings in arbitrary locations can now be pasted into the table editor
 Cleaned	"String-only" tables (i.e. tables with string columns) use the frist line always as column headings
 Added	The feature to select only applicable commands from the command history based on the characters already entered by the user
+Applied	The fft algorithm makes now use of the new built-in complex numbers.
+Fixed	The fft algorithm will now adapt the number of input data points to match an even number, if larger than 1000 data points. This should enhance the speed of FFTs with data point counts of prime numbers.

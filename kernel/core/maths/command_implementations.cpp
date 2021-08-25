@@ -2556,6 +2556,9 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     int lines = _mem->getLines();
     int cols = _mem->getCols();
 
+    if (lines % 2 && lines > 1e3)
+        lines--;
+
     dNyquistFrequency = lines / (_mem->readMem(lines - 1, 0).real() - _mem->readMem(0, 0).real()) / 2.0;
     dTimeInterval = (lines - 1) / (_mem->readMem(lines - 1, 0).real());
 
@@ -2591,7 +2594,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     for (size_t i = 0; i < (size_t)lines; i++)
     {
         if (cols == 2)
-            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real(), 0.0);
+            _fftData.a[i] = _mem->readMem(vAxis[i], 1); // Can be complex or not: does not matter
         else if (cols == 3 && bComplex)
             _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real(), _mem->readMem(vAxis[i], 2).real());
         else if (cols == 3 && !bComplex)
@@ -2663,8 +2666,8 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             }
             else
             {
-                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[1], sTargetTable, _fftData.a[i].real());
-                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[2], sTargetTable, _fftData.a[i].imag());
+                // Only complex values
+                _data.writeToTable(_idx.row[vAxis[i]], _idx.col[1], sTargetTable, _fftData.a[i]);
             }
         }
 
@@ -2677,10 +2680,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
             _data.setHeadLineElement(_idx.col[2], sTargetTable, _lang.get("COMMON_PHASE") + " [rad]");
         }
         else
-        {
-            _data.setHeadLineElement(_idx.col[1], sTargetTable, "Re(" + _lang.get("COMMON_AMPLITUDE") + ")");
-            _data.setHeadLineElement(_idx.col[2], sTargetTable, "Im(" + _lang.get("COMMON_AMPLITUDE") + ")");
-        }
+            _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_AMPLITUDE"));
     }
     else
     {
@@ -2693,14 +2693,12 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
                 break;
 
             _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i)*dTimeInterval / (double)(_fftData.GetNx() - 1));
-            _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, _fftData.a[i].real());
-            _data.writeToTable(_idx.row[i], _idx.col[2], sTargetTable, _fftData.a[i].imag());
+            _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, _fftData.a[i]);
         }
 
         // Write headlines
         _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME") + " [s]");
-        _data.setHeadLineElement(_idx.col[1], sTargetTable, "Re(" + _lang.get("COMMON_SIGNAL") + ")");
-        _data.setHeadLineElement(_idx.col[2], sTargetTable, "Im(" + _lang.get("COMMON_SIGNAL") + ")");
+        _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_SIGNAL"));
     }
 
     if (_option.systemPrints())
