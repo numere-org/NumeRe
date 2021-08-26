@@ -666,7 +666,7 @@ namespace NumeRe
             /////////////////////////////////////////////////
             void createStorage()
             {
-                if (nRows > 0 && nCols > 0 && !fileData)
+                if (nCols > 0 && !fileData)
                 {
                     fileData = new TableColumnArray;
                     fileData->resize(nCols);

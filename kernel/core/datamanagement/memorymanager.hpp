@@ -453,6 +453,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return getHeadLineElement(_i, _sTable).substr(0, getHeadLineElement(_i, _sTable).find("\\n"));
         }
 
+#warning TODO (numere#5#08/26/21): Review every occurence of this function and find a better solution
 		long long int getAppendedZeroes(int _i, const std::string& _sTable) const
 		{
 			return vMemory[findTable(_sTable)]->getAppendedZeroes(_i);

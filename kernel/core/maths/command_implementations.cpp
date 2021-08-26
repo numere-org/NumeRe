@@ -3094,13 +3094,15 @@ bool createDatagrid(CommandLineParser& cmdParser)
 
         if (_idx.row.isOpenEnd())
         {
-            _idx.row.setRange(0, _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), szDatatable) - 1);
+            int nRange = _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), szDatatable);
 
             for (size_t j = 1; j < _idx.col.size(); j++)
             {
-                if (_data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable) > _idx.row.back())
-                    _idx.row.setRange(0, _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable) - 1);
+                if (_data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable) > nRange)
+                    nRange = _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable);
             }
+
+            _idx.row.setRange(0, nRange - 1);
         }
 
         // Get the data. Choose the order of reading depending on the "transpose" command line option
@@ -3232,13 +3234,15 @@ static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t
 
         if (_idx.row.isOpenEnd())
         {
-            _idx.row.setRange(0, _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sZDatatable) - 1);
+            int nRange = _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sZDatatable);
 
             for (size_t j = 1; j < _idx.col.size(); j++)
             {
-                if (_data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable) > _idx.row.back())
-                    _idx.row.setRange(0, _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable) - 1);
+                if (_data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable) > nRange)
+                    nRange = _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable);
             }
+
+            _idx.row.setRange(0, nRange - 1);
         }
 
         vSamples.push_back(_idx.row.size());

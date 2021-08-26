@@ -13,3 +13,5 @@ Cleaned	"String-only" tables (i.e. tables with string columns) use the frist lin
 Added	The feature to select only applicable commands from the command history based on the characters already entered by the user
 Applied	The fft algorithm makes now use of the new built-in complex numbers.
 Fixed	The fft algorithm will now adapt the number of input data points to match an even number, if larger than 1000 data points. This should enhance the speed of FFTs with data point counts of prime numbers.
+Fixed	Resolved an issue in cache file loading introduced with the new data model.
+Fixed	Resolved the wrong extraction of table rows in the "datagrid" command.

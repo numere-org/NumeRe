@@ -1503,6 +1503,7 @@ namespace NumeRe
     void CacheFile::readSome()
     {
         reset();
+        size_t pos = tellg();
 
         if (vFileIndex.size() && !fFileStream.eof())
             readFile();

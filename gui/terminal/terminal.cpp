@@ -1051,6 +1051,7 @@ bool NumeReTerminal::filterKeyCodes(int keyCode, bool ctrlDown)
     {
         case WXK_RETURN:
             {
+                GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
                 string sCommand = GetTM()->getCurrentInputLine();
                 GenericTerminal::cr();
                 GenericTerminal::lf();
