@@ -2127,7 +2127,7 @@ void NumeReTerminal::Busy()
 /////////////////////////////////////////////////
 void NumeReTerminal::Ready()
 {
-    m_isBusy = true;
+    m_isBusy = false;
     m_wxParent->Ready();
 }
 
