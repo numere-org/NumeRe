@@ -367,8 +367,16 @@ namespace mu
     typedef value_type* (*facfun_type)(const char_type*, void*);
 
     // Forward declarations
-    bool isnan(const value_type& val);
-    bool isinf(const value_type& val);
+    inline bool isinf(const value_type& v)
+	{
+	    return std::isinf(v.real()) || std::isinf(v.imag());
+	}
+
+	inline bool isnan(const value_type& v)
+	{
+	    return v != v;
+	}
+
     std::vector<double> real(const std::vector<value_type>& vVec);
     std::vector<double> imag(const std::vector<value_type>& vVec);
     value_type rint(value_type v);
@@ -376,4 +384,5 @@ namespace mu
 } // end of namespace
 
 #endif
+
 

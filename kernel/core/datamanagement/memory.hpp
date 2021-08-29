@@ -96,6 +96,7 @@ class Memory : public Sorter
 		bool shrink();
 		void convert();
 		int getLines(bool _bFull = false) const;
+		int getElemsInColumn(size_t col) const;
 		int getCols(bool _bFull = false) const;
         size_t getSize() const;
 

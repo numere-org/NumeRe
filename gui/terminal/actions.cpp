@@ -119,7 +119,10 @@ void GenericTerminal::resetAutoComp(int mode)
 {
     // Reset the cursor position after using the up down keys
     if (mode & RESETCURSOR)
+    {
         nCursorUpDownStartPos = -1;
+        tm.ResetVirtualCursorLine();
+    }
 
     // Reset the cursor position for the tab key
     if (!(mode & RESETTAB) || nTabStartPos == -1)
@@ -541,7 +544,7 @@ bool GenericTerminal::cursor_down()
         }
 
         // Reset to original input if no other result was found
-        if (currentLine.length() > nCursorUpDownStartPos)
+        if ((int)currentLine.length() > nCursorUpDownStartPos)
         {
             erase_usercontent_line();
             sInput_Data = currentLine.substr(0, nCursorUpDownStartPos);

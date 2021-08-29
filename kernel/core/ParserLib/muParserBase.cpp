@@ -88,19 +88,6 @@ namespace mu
         return vImag;
 	}
 
-
-	bool isinf(const value_type& v)
-	{
-	    return std::isinf(std::abs(v));
-	}
-
-
-	bool isnan(const value_type& v)
-	{
-	    return std::isnan(std::abs(v));
-	}
-
-
 	value_type rint(value_type v)
 	{
 	    return value_type(std::rint(v.real()), std::rint(v.imag()));

@@ -1550,12 +1550,12 @@ static void listDeclaredVariables(Parser& _parser, const Settings& _option, cons
 	{
 		if (_data.isValid() && _data.getStringElements())
 		{
-			NumeReKernel::printPreFmt(toString(2 + CacheMap.size()));
+			NumeReKernel::printPreFmt(toString(1 + CacheMap.size()));
 			nDataSetNum = CacheMap.size() + 1;
 		}
 		else if (_data.isValid())
 		{
-			NumeReKernel::printPreFmt(toString(1 + CacheMap.size()));
+			NumeReKernel::printPreFmt(toString(CacheMap.size()));
 			nDataSetNum = CacheMap.size();
 		}
 		else

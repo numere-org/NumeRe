@@ -222,6 +222,24 @@ int Memory::getLines(bool _bFull) const
 
 
 /////////////////////////////////////////////////
+/// \brief Returns the number of elements in the
+/// selected column (but might contain invalid
+/// values).
+///
+/// \param col size_t
+/// \return int
+///
+/////////////////////////////////////////////////
+int Memory::getElemsInColumn(size_t col) const
+{
+    if (memArray.size() > col && memArray[col])
+        return memArray[col]->size();
+
+    return 0;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Returns the overall used number of
 /// bytes for this table.
 ///
@@ -759,7 +777,7 @@ void Memory::writeData(int _nLine, int _nCol, const mu::value_type& _dData)
     convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_VALUE);
     memArray[_nCol]->setValue(_nLine, _dData);
 
-    if ((mu::isnan(_dData) || _nLine >= nCalcLines) && nCalcLines != -1)
+    if (mu::isnan(_dData) || _nLine >= nCalcLines)
         nCalcLines = -1;
 
     // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
@@ -792,7 +810,7 @@ void Memory::writeData(int _nLine, int _nCol, const std::string& sValue)
     convert_if_empty(memArray[_nCol], _nCol, TableColumn::TYPE_STRING);
     memArray[_nCol]->setValue(_nLine, sValue);
 
-    if ((!sValue.length() || _nLine >= nCalcLines) && nCalcLines != -1)
+    if (!sValue.length() || _nLine >= nCalcLines)
         nCalcLines = -1;
 
     // --> Setze den Zeitstempel auf "jetzt", wenn der Memory eben noch gespeichert war <--
@@ -1491,16 +1509,33 @@ mu::value_type Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
-            else if (mu::isnan(readMem(_vLine[i], _vCol[j])))
+
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
                 continue;
-            else
-                dStd += intPower(dAvg - readMem(_vLine[i], _vCol[j]), 2);
+            }
+
+            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+
+            if (!mu::isnan(val))
+                dStd += intPower(dAvg - val, 2);
         }
     }
 
@@ -1548,12 +1583,28 @@ mu::value_type Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
+
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
+                continue;
+            }
 
             mu::value_type val = readMem(_vLine[i], _vCol[j]);
 
@@ -1594,12 +1645,28 @@ mu::value_type Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
+
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
+                continue;
+            }
 
             mu::value_type val = readMem(_vLine[i], _vCol[j]);
 
@@ -1640,17 +1707,33 @@ mu::value_type Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
 
-            if (mu::isnan(readMem(_vLine[i], _vCol[j])))
-                continue;
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
 
-            dPrd *= readMem(_vLine[i], _vCol[j]);
+                continue;
+            }
+
+            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+
+            if (!mu::isnan(val))
+                dPrd *= val;
         }
     }
 
@@ -1680,17 +1763,33 @@ mu::value_type Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
 
-            if (mu::isnan(readMem(_vLine[i], _vCol[j])))
-                continue;
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
 
-            dSum += readMem(_vLine[i], _vCol[j]);
+                continue;
+            }
+
+            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+
+            if (!mu::isnan(val))
+                dSum += val;
         }
     }
 
@@ -1720,13 +1819,19 @@ mu::value_type Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
-                nInvalid++;
-            else if (mu::isnan(readMem(_vLine[i], _vCol[j])))
+            if (_vLine[i] < 0 || _vLine[i] >= elems || mu::isnan(readMem(_vLine[i], _vCol[j])))
                 nInvalid++;
         }
     }
@@ -1757,12 +1862,28 @@ mu::value_type Memory::and_func(const VectorIndex& _vLine, const VectorIndex& _v
 
     double dRetVal = NAN;
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
+
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
+                continue;
+            }
 
             if (isnan(dRetVal))
                 dRetVal = 1.0;
@@ -1799,12 +1920,28 @@ mu::value_type Memory::or_func(const VectorIndex& _vLine, const VectorIndex& _vC
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
+
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
+                continue;
+            }
 
             if (memArray[j] && memArray[j]->asBool(i))
                 return 1.0;
@@ -1837,12 +1974,28 @@ mu::value_type Memory::xor_func(const VectorIndex& _vLine, const VectorIndex& _v
 
     bool isTrue = false;
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
+
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
+                continue;
+            }
 
             if (memArray[j] && memArray[j]->asBool(i))
             {
@@ -1883,11 +2036,19 @@ mu::value_type Memory::cnt(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0 || _vLine[i] >= elems)
                 nInvalid++;
         }
     }
@@ -1918,17 +2079,33 @@ mu::value_type Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
 
-            if (mu::isnan(readMem(_vLine[i], _vCol[j])))
-                continue;
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
 
-            dNorm += intPower(readMem(_vLine[i], _vCol[j]), 2);
+                continue;
+            }
+
+            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+
+            if (mu::isnan(val))
+                dNorm += intPower(val, 2);
         }
     }
 
@@ -1989,32 +2166,50 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
             break;
     }
 
-    for (long long int i = 0; i < _vLine.size(); i++)
+    for (long long int j = 0; j < _vCol.size(); j++)
     {
-        for (long long int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (long long int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols)
+            if (_vLine[i] < 0)
                 continue;
 
-            if (mu::isnan(readMem(_vLine[i], _vCol[j])))
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
+                continue;
+            }
+
+            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+
+            if (mu::isnan(val))
                 continue;
 
-            if (readMem(_vLine[i], _vCol[j]) == dRef)
+            if (val == dRef)
             {
                 if (nType & RETURN_VALUE)
-                    return readMem(_vLine[i], _vCol[j]);
+                    return val;
 
                 if (_vLine[0] == _vLine[_vLine.size() - 1])
                     return _vCol[j] + 1;
 
                 return _vLine[i] + 1;
             }
-            else if (nType & RETURN_GE && readMem(_vLine[i], _vCol[j]).real() > dRef.real())
+            else if (nType & RETURN_GE && val.real() > dRef.real())
             {
                 if (nType & RETURN_FIRST)
                 {
                     if (nType & RETURN_VALUE)
-                        return readMem(_vLine[i], _vCol[j]).real();
+                        return val.real();
 
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
                         return _vCol[j] + 1;
@@ -2022,9 +2217,9 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
                     return _vLine[i] + 1;
                 }
 
-                if (nKeep == -1 || readMem(_vLine[i], _vCol[j]).real() < dKeep)
+                if (nKeep == -1 || val.real() < dKeep)
                 {
-                    dKeep = readMem(_vLine[i], _vCol[j]).real();
+                    dKeep = val.real();
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
                         nKeep = _vCol[j];
                     else
@@ -2033,12 +2228,12 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
                 else
                     continue;
             }
-            else if (nType & RETURN_LE && readMem(_vLine[i], _vCol[j]).real() < dRef.real())
+            else if (nType & RETURN_LE && val.real() < dRef.real())
             {
                 if (nType & RETURN_FIRST)
                 {
                     if (nType & RETURN_VALUE)
-                        return readMem(_vLine[i], _vCol[j]).real();
+                        return val.real();
 
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
                         return _vCol[j] + 1;
@@ -2046,9 +2241,9 @@ mu::value_type Memory::cmp(const VectorIndex& _vLine, const VectorIndex& _vCol, 
                     return _vLine[i] + 1;
                 }
 
-                if (nKeep == -1 || readMem(_vLine[i], _vCol[j]).real() > dKeep)
+                if (nKeep == -1 || val.real() > dKeep)
                 {
-                    dKeep = readMem(_vLine[i], _vCol[j]).real();
+                    dKeep = val.real();
                     if (_vLine[0] == _vLine[_vLine.size() - 1])
                         nKeep = _vCol[j];
                     else
@@ -2093,14 +2288,33 @@ mu::value_type Memory::med(const VectorIndex& _vLine, const VectorIndex& _vCol) 
 
     vData.reserve(_vLine.size()*_vCol.size());
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols || mu::isnan(readMem(_vLine[i], _vCol[j])))
+            if (_vLine[i] < 0)
                 continue;
 
-            vData.push_back(readMem(_vLine[i], _vCol[j]).real());
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
+                continue;
+            }
+
+            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+
+            if (!mu::isnan(val))
+                vData.push_back(val.real());
         }
     }
 
@@ -2144,14 +2358,33 @@ mu::value_type Memory::pct(const VectorIndex& _vLine, const VectorIndex& _vCol, 
     if (dPct.real() >= 1 || dPct.real() <= 0)
         return NAN;
 
-    for (unsigned int i = 0; i < _vLine.size(); i++)
+    for (unsigned int j = 0; j < _vCol.size(); j++)
     {
-        for (unsigned int j = 0; j < _vCol.size(); j++)
+        if (_vCol[j] < 0)
+            continue;
+
+        int elems = getElemsInColumn(_vCol[j]);
+
+        if (!elems)
+            continue;
+
+        for (unsigned int i = 0; i < _vLine.size(); i++)
         {
-            if (_vLine[i] < 0 || _vLine[i] >= lines || _vCol[j] < 0 || _vCol[j] >= cols || mu::isnan(readMem(_vLine[i], _vCol[j])))
+            if (_vLine[i] < 0)
                 continue;
 
-            vData.push_back(readMem(_vLine[i], _vCol[j]).real());
+            if (_vLine[i] >= elems)
+            {
+                if (_vLine.isExpanded() && _vLine.isOrdered())
+                    break;
+
+                continue;
+            }
+
+            mu::value_type val = readMem(_vLine[i], _vCol[j]);
+
+            if (!mu::isnan(val))
+                vData.push_back(val.real());
         }
     }
 
@@ -2228,10 +2461,7 @@ std::vector<mu::value_type> Memory::size(const VectorIndex& _vIndex, int dir) co
             if (_vIndex[j] < nGridOffset || _vIndex[j] >= cols)
                 continue;
 
-            if (!memArray[_vIndex[j]])
-                vSizes.push_back(0.0);
-            else
-                vSizes.push_back(memArray[_vIndex[j]]->size());
+            vSizes.push_back(getElemsInColumn(_vIndex[j]));
         }
 
         if (!vSizes.size())

@@ -57,12 +57,12 @@ class ValueColumn : public TableColumn
 
         virtual ~ValueColumn() {}
 
-        virtual std::string getValueAsString(int elem) const override;
-        virtual std::string getValueAsInternalString(int elem) const override;
-        virtual mu::value_type getValue(int elem) const override;
+        virtual std::string getValueAsString(size_t elem) const override;
+        virtual std::string getValueAsInternalString(size_t elem) const override;
+        virtual mu::value_type getValue(size_t elem) const override;
 
-        virtual void setValue(int elem, const std::string& sValue) override;
-        virtual void setValue(int elem, const mu::value_type& vValue) override;
+        virtual void setValue(size_t elem, const std::string& sValue) override;
+        virtual void setValue(size_t elem, const mu::value_type& vValue) override;
         virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue) override;
         virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) override;
         virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) override;
@@ -142,12 +142,12 @@ class StringColumn : public TableColumn
 
         virtual ~StringColumn() {}
 
-        virtual std::string getValueAsString(int elem) const override;
-        virtual std::string getValueAsInternalString(int elem) const override;
-        virtual mu::value_type getValue(int elem) const override;
+        virtual std::string getValueAsString(size_t elem) const override;
+        virtual std::string getValueAsInternalString(size_t elem) const override;
+        virtual mu::value_type getValue(size_t elem) const override;
 
-        virtual void setValue(int elem, const std::string& sValue) override;
-        virtual void setValue(int elem, const mu::value_type& vValue) override;
+        virtual void setValue(size_t elem, const std::string& sValue) override;
+        virtual void setValue(size_t elem, const mu::value_type& vValue) override;
         virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue) override;
         virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) override;
         virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) override;

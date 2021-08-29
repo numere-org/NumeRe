@@ -50,13 +50,13 @@ void ValueColumn::shrink()
 /// \brief Returns the selected value as a string
 /// or a default value, if it does not exist.
 ///
-/// \param elem int
+/// \param elem size_t
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string ValueColumn::getValueAsString(int elem) const
+std::string ValueColumn::getValueAsString(size_t elem) const
 {
-    if (elem >= 0 && elem < (int)m_data.size())
+    if (elem < m_data.size())
         return toString(m_data[elem], NumeReKernel::getInstance()->getSettings().getPrecision());
 
     return "nan";
@@ -67,11 +67,11 @@ std::string ValueColumn::getValueAsString(int elem) const
 /// \brief Returns the contents as an internal
 /// string (i.e. without quotation marks).
 ///
-/// \param elem int
+/// \param elem size_t
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string ValueColumn::getValueAsInternalString(int elem) const
+std::string ValueColumn::getValueAsInternalString(size_t elem) const
 {
     return getValueAsString(elem);
 }
@@ -82,13 +82,13 @@ std::string ValueColumn::getValueAsInternalString(int elem) const
 /// numerical type or an invalid value, if it
 /// does not exist.
 ///
-/// \param elem int
+/// \param elem size_t
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-mu::value_type ValueColumn::getValue(int elem) const
+mu::value_type ValueColumn::getValue(size_t elem) const
 {
-    if (elem >= 0 && elem < (int)m_data.size())
+    if (elem < m_data.size())
         return m_data[elem];
 
     return NAN;
@@ -101,12 +101,12 @@ mu::value_type ValueColumn::getValue(int elem) const
 /// \throws SyntaxError, because this assignment
 /// is not possible.
 ///
-/// \param elem int
+/// \param elem size_t
 /// \param sValue const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ValueColumn::setValue(int elem, const std::string& sValue)
+void ValueColumn::setValue(size_t elem, const std::string& sValue)
 {
     throw SyntaxError(SyntaxError::STRING_ERROR, sValue, sValue);
 }
@@ -115,17 +115,17 @@ void ValueColumn::setValue(int elem, const std::string& sValue)
 /////////////////////////////////////////////////
 /// \brief Set a single numerical value.
 ///
-/// \param elem int
+/// \param elem size_t
 /// \param vValue const mu::value_type&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ValueColumn::setValue(int elem, const mu::value_type& vValue)
+void ValueColumn::setValue(size_t elem, const mu::value_type& vValue)
 {
-    if (elem >= (int)m_data.size() && mu::isnan(vValue))
+    if (elem >= m_data.size() && mu::isnan(vValue))
         return;
 
-    if (elem >= (int)m_data.size())
+    if (elem >= m_data.size())
         m_data.resize(elem+1, NAN);
 
     m_data[elem] = vValue;
@@ -449,11 +449,11 @@ void StringColumn::shrink()
 /// \brief Returns the selected value or an empty
 /// string, if the value does not exist.
 ///
-/// \param elem int
+/// \param elem size_t
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string StringColumn::getValueAsString(int elem) const
+std::string StringColumn::getValueAsString(size_t elem) const
 {
     return toExternalString(getValueAsInternalString(elem));
 }
@@ -463,13 +463,13 @@ std::string StringColumn::getValueAsString(int elem) const
 /// \brief Returns the contents as an internal
 /// string (i.e. without quotation marks).
 ///
-/// \param elem int
+/// \param elem size_t
 /// \return std::string
 ///
 /////////////////////////////////////////////////
-std::string StringColumn::getValueAsInternalString(int elem) const
+std::string StringColumn::getValueAsInternalString(size_t elem) const
 {
-    if (elem >= 0 && elem < (int)m_data.size())
+    if (elem < m_data.size())
         return m_data[elem];
 
     return "";
@@ -480,11 +480,11 @@ std::string StringColumn::getValueAsInternalString(int elem) const
 /// \brief Returns always NaN, because this
 /// conversion is not possible.
 ///
-/// \param elem int
+/// \param elem size_t
 /// \return mu::value_type
 ///
 /////////////////////////////////////////////////
-mu::value_type StringColumn::getValue(int elem) const
+mu::value_type StringColumn::getValue(size_t elem) const
 {
     return NAN;
 }
@@ -493,17 +493,17 @@ mu::value_type StringColumn::getValue(int elem) const
 /////////////////////////////////////////////////
 /// \brief Set a single string value.
 ///
-/// \param elem int
+/// \param elem size_t
 /// \param sValue const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StringColumn::setValue(int elem, const std::string& sValue)
+void StringColumn::setValue(size_t elem, const std::string& sValue)
 {
-    if (elem >= (int)m_data.size() && !sValue.length())
+    if (elem >= m_data.size() && !sValue.length())
         return;
 
-    if (elem >= (int)m_data.size())
+    if (elem >= m_data.size())
         m_data.resize(elem+1);
 
     m_data[elem] = toInternalString(sValue);
@@ -513,17 +513,17 @@ void StringColumn::setValue(int elem, const std::string& sValue)
 /////////////////////////////////////////////////
 /// \brief Set a single numerical value.
 ///
-/// \param elem int
+/// \param elem size_t
 /// \param vValue const mu::value_type&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void StringColumn::setValue(int elem, const mu::value_type& vValue)
+void StringColumn::setValue(size_t elem, const mu::value_type& vValue)
 {
-    if (elem >= (int)m_data.size() && mu::isnan(vValue))
+    if (elem >= m_data.size() && mu::isnan(vValue))
         return;
 
-    if (elem >= (int)m_data.size())
+    if (elem >= m_data.size())
         m_data.resize(elem+1);
 
     m_data[elem] = toString(vValue, NumeReKernel::getInstance()->getSettings().getPrecision());

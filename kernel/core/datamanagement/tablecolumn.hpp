@@ -50,12 +50,12 @@ struct TableColumn
     std::vector<std::string> getValueAsInternalString(const VectorIndex& idx) const;
     std::vector<mu::value_type> getValue(const VectorIndex& idx) const;
 
-    virtual std::string getValueAsString(int elem) const = 0;
-    virtual std::string getValueAsInternalString(int elem) const = 0;
-    virtual mu::value_type getValue(int elem) const = 0;
+    virtual std::string getValueAsString(size_t elem) const = 0;
+    virtual std::string getValueAsInternalString(size_t elem) const = 0;
+    virtual mu::value_type getValue(size_t elem) const = 0;
 
-    virtual void setValue(int elem, const std::string& sValue) = 0;
-    virtual void setValue(int elem, const mu::value_type& vValue) = 0;
+    virtual void setValue(size_t elem, const std::string& sValue) = 0;
+    virtual void setValue(size_t elem, const mu::value_type& vValue) = 0;
     virtual void setValue(const VectorIndex& idx, const std::vector<std::string>& vValue) = 0;
     virtual void setValue(const VectorIndex& idx, const std::vector<mu::value_type>& vValue) = 0;
     virtual void setValue(const VectorIndex& idx, mu::value_type* _dData, unsigned int _nNum) = 0;

@@ -1213,6 +1213,7 @@ NumeReTerminal::OnKeyDown(wxKeyEvent& event)
         else
         {
             GenericTerminal::erase_usercontent_line();
+            GenericTerminal::resetAutoComp(RESETCURSOR | RESETTAB);
             Refresh();
         }
     }
