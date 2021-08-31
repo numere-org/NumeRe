@@ -781,8 +781,8 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 if (currentArg.find('=') != string::npos)
                     currentArg.erase(currentArg.find('='));
 
-                if (currentArg.find_first_of("({") != string::npos)
-                    currentArg.erase(currentArg.find_first_of("({"));
+                if (currentArg.find_first_of("({;") != string::npos)
+                    currentArg.erase(currentArg.find_first_of("({;"));
 
                 StripSpaces(currentArg);
 
@@ -792,7 +792,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 m_vLocalVariables.push_back(pair<string,int>(currentArg, nStyle));
 
                 // Try to find the variable in the remaining code
-                if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES) && !m_editor->m_search->FindAll(currentArg, nStyle, nNextLineStartPosition, nProcedureEndPosition, false).size())//   m_editor->FindText(nNextLine, nProcedureEnd, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD) == -1)
+                if (m_options->GetAnalyzerOption(Options::UNUSED_VARIABLES) && !m_editor->m_search->FindAll(currentArg, nStyle, nNextLineStartPosition, nProcedureEndPosition, false).size())
                 {
                     // No variable found
                     AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(currentArg, m_editor->FindText(wordstart, nProcedureEndPosition, currentArg, wxSTC_FIND_MATCHCASE | wxSTC_FIND_WHOLEWORD), currentArg.length()), m_sWarn, _guilang.get("GUI_ANALYZER_UNUSEDVARIABLE", currentArg)), ANNOTATION_WARN);

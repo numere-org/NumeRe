@@ -16,3 +16,4 @@ Fixed	The fft algorithm will now adapt the number of input data points to match 
 Fixed	Resolved an issue in cache file loading introduced with the new data model.
 Fixed	Resolved the wrong extraction of table rows in the "datagrid" command.
 New	The command "fft2d" provides a 2D FFT.
+Fixed	The static code analyzer won't append a trailing semicolon to the variable list and warn about an unused variable anymore.
