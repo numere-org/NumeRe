@@ -73,7 +73,7 @@ CommandLineParser::CommandLineParser(const std::string& sCommandLine, const std:
     // Parse the command line, if the command was found
     if (_mMatch.sString.length())
     {
-        m_cmd = sCommand;
+        m_cmd = _mMatch.sString;
         m_returnValueStatement = sCommandLine.substr(0, _mMatch.nPos);
 
         parse(extractCommandString(sCommandLine, _mMatch), signature);

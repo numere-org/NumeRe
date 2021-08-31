@@ -165,7 +165,7 @@ bool performMatrixOperation(string& sCmd, Parser& _parser, MemoryManager& _data,
             _data.deleteBulk(sTargetName, 0, _data.getLines(sTargetName, false) - 1, 0, _data.getCols(sTargetName, false) - 1);
 
         // Prepare the target size
-        _data.resizeTable(_idx.row.front()+_mResult.size(), _idx.col.front()+_mResult[0].size(), sTargetName);
+        _data.resizeTable(_idx.col.front()+_mResult[0].size(), sTargetName);
 
         // Write the contents to the table
         for (unsigned int i = 0; i < _mResult.size(); i++)

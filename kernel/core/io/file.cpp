@@ -1505,6 +1505,9 @@ namespace NumeRe
         reset();
         size_t pos = tellg();
 
+        if (std::find(vFileIndex.begin(), vFileIndex.end(), pos) == vFileIndex.end())
+            throw SyntaxError(SyntaxError::CANNOT_READ_FILE, "numere.cache", "numere.cache");
+
         if (vFileIndex.size() && !fFileStream.eof())
             readFile();
     }

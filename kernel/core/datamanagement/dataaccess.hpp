@@ -73,7 +73,7 @@ mu::value_type getDataFromObject(const std::string& sObject, long long int i, lo
 DataAccessParser getAccessParserForPlotAndFit(StringView sExpression);
 Indices getIndicesForPlotAndFit(const std::string& sExpression, std::string& sDataTable, int& nColumns, bool& openEnd, bool& isCluster);
 
-Indices getIndices(StringView sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option) __attribute__ ((deprecated));
+Indices getIndices(StringView sCmd, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
 void getIndices(StringView sCmd, Indices& _idx, mu::Parser& _parser, MemoryManager& _data, const Settings& _option);
 
 inline bool isValidIndexSet(const Indices& _idx)

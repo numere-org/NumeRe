@@ -182,17 +182,17 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
         void removeData(bool bAutoSave = false);
         void removeTablesFromMemory();
 
-        bool resizeTable(long long int _nLines, long long int _nCols, const std::string& _sTable)
+        bool resizeTable(int _nCols, const std::string& _sTable)
 		{
-			return vMemory[findTable(_sTable)]->resizeMemory(_nLines, _nCols);
+			return vMemory[findTable(_sTable)]->resizeMemory(1, _nCols);
 		}
 
-        void deleteEntry(long long int _nLine, long long int _nCol, const std::string& _sCache)
+        void deleteEntry(int _nLine, int _nCol, const std::string& _sCache)
 		{
 			vMemory[findTable(_sCache)]->deleteEntry(_nLine, _nCol);
 		}
 
-		void deleteBulk(const std::string& _sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0)
+		void deleteBulk(const std::string& _sCache, int i1, int i2, int j1 = 0, int j2 = 0)
 		{
 			vMemory[findTable(_sCache)]->deleteBulk(VectorIndex(i1, i2), VectorIndex(j1, j2));
 		}
@@ -296,7 +296,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sTable)]->extractTable(_sTable, lines, cols);
 		}
 
-		inline NumeRe::Table extractTable(long long int _nLayer, const std::string& _sTable = "", const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
+		inline NumeRe::Table extractTable(int _nLayer, const std::string& _sTable = "", const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
 		{
 			return vMemory[_nLayer]->extractTable(_sTable, lines, cols);
 		}
@@ -306,7 +306,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sTable)]->importTable(_table, lines, cols);
 		}
 
-		inline void importTable(NumeRe::Table _table, long long int _nLayer, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
+		inline void importTable(NumeRe::Table _table, int _nLayer, const VectorIndex& lines = VectorIndex(0, VectorIndex::OPEN_END), const VectorIndex& cols = VectorIndex(0, VectorIndex::OPEN_END))
 		{
 			return vMemory[_nLayer]->importTable(_table, lines, cols);
 		}
@@ -314,7 +314,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 		// TABLE INPLACE MODIFICATION METHODS
 		std::vector<int> sortElements(const std::string& sLine);
-		std::vector<int> sortElements(const std::string& sCache, long long int i1, long long int i2, long long int j1 = 0, long long int j2 = 0, const std::string& sSortingExpression = "");
+		std::vector<int> sortElements(const std::string& sCache, int i1, int i2, int j1 = 0, int j2 = 0, const std::string& sSortingExpression = "");
 
 		inline bool smooth(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, const NumeRe::FilterSettings& _settings, AppDir Direction = ALL)
 		{
@@ -376,9 +376,9 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return 0;
 		}
 
-		inline int getSize(long long int _nLayer) const
+		inline int getSize(int _nLayer) const
 		{
-			if (vMemory.size() && _nLayer < vMemory.size())
+			if (vMemory.size() && _nLayer < (int)vMemory.size())
 				return vMemory[_nLayer]->getSize();
 
 			return 0;
@@ -387,7 +387,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
 
         // READ ACCESS METHODS
-        mu::value_type getElement(long long int _nLine, long long int _nCol, const std::string& _sTable) const
+        mu::value_type getElement(int _nLine, int _nCol, const std::string& _sTable) const
 		{
 		    if (exists(_sTable))
                 return vMemory[findTable(_sTable)]->readMem(_nLine, _nCol);
@@ -453,11 +453,12 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
             return getHeadLineElement(_i, _sTable).substr(0, getHeadLineElement(_i, _sTable).find("\\n"));
         }
 
-#warning TODO (numere#5#08/26/21): Review every occurence of this function and find a better solution
-		long long int getAppendedZeroes(int _i, const std::string& _sTable) const
+		int getAppendedZeroes(int _i, const std::string& _sTable) const
 		{
 			return vMemory[findTable(_sTable)]->getAppendedZeroes(_i);
 		}
+
+		int getColElements(const VectorIndex& cols, const std::string& _sTable) const;
 
 
 

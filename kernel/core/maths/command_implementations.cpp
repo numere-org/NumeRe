@@ -2513,106 +2513,47 @@ static std::vector<size_t> getShiftedAxis(size_t nElements, bool inverseTrafo)
 
 
 /////////////////////////////////////////////////
-/// \brief This function calculates the fast
-/// fourier transform of the passed data set.
-///
-/// \param cmdParser CommandLineParser&
-/// \return bool
-///
-/// The user may switch between complex or phase-
-/// amplitude layout and whether an inverse
-/// transform shall be calculated.
+/// \brief This structure gathers all information
+/// needed for calculating a FFT in one or two
+/// dimensions.
 /////////////////////////////////////////////////
-bool fastFourierTransform(CommandLineParser& cmdParser)
+struct FFTData
 {
-    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
-    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+    int lines;
+    int cols;
+    bool bInverseTrafo;
+    bool bShiftAxis;
+    bool bComplex;
+    double dFrequencyOffset;
+    double dNyquistFrequency[2];
+    double dTimeInterval[2];
+};
 
-    mglDataC _fftData;
-    Indices _idx;
 
-    double dNyquistFrequency = 1.0;
-    double dTimeInterval = 0.0;
-    double dPhaseOffset = 0.0;
-    double dFrequencyOffset = 0.0;
-    bool bInverseTrafo = cmdParser.hasParam("inverse");
-    bool bComplex = cmdParser.hasParam("complex");
-    bool bShiftAxis = cmdParser.hasParam("axisshift");
-    string sTargetTable = "fftdata";
-
-    // search for explicit "target" options and select the target cache
-    sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
-
-    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
-
-    // get the data from the data object
-    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, 2, true));
-
-    if (!_mem)
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
-
-    _mem->shrink();
-
-    int lines = _mem->getLines();
-    int cols = _mem->getCols();
-
-    if (lines % 2 && lines > 1e3)
-        lines--;
-
-    dNyquistFrequency = lines / (_mem->readMem(lines - 1, 0).real() - _mem->readMem(0, 0).real()) / 2.0;
-    dTimeInterval = (lines - 1) / (_mem->readMem(lines - 1, 0).real());
-
-    // Adapt the values for the shifted axis
-    if (bShiftAxis)
-    {
-        dFrequencyOffset = -dNyquistFrequency * (1 + (lines % 2) * 1.0 / lines);
-        dTimeInterval = fabs((lines + (lines % 2)) / (_mem->readMem(0, 0).real())) * 0.5;
-    }
-
-    if (_option.systemPrints())
-    {
-        if (!bInverseTrafo)
-            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(cols), toString(dNyquistFrequency, 6)) + " ", _option, 0));
-        else
-            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(cols), toString(dTimeInterval, 6)) + " ", _option, 0));
-    }
-
-    _fftData.Create(lines);
-
-    std::vector<size_t> vAxis;
-
-    // Prepare the axis (shifted if necessary)
-    if (bShiftAxis && bInverseTrafo)
-        vAxis = getShiftedAxis(lines, bInverseTrafo);
-    else
-    {
-        for (size_t i = 0; i < (size_t)lines; i++)
-            vAxis.push_back(i);
-    }
-
-    // Copy the data
-    for (size_t i = 0; i < (size_t)lines; i++)
-    {
-        if (cols == 2)
-            _fftData.a[i] = _mem->readMem(vAxis[i], 1); // Can be complex or not: does not matter
-        else if (cols == 3 && bComplex)
-            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real(), _mem->readMem(vAxis[i], 2).real());
-        else if (cols == 3 && !bComplex)
-            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real() * cos(_mem->readMem(vAxis[i], 2).real()),
-                                 _mem->readMem(vAxis[i], 1).real() * sin(_mem->readMem(vAxis[i], 2).real()));
-    }
-
-    // Calculate the actual transformation and apply some
-    // normalisation
-    if (!bInverseTrafo)
+/////////////////////////////////////////////////
+/// \brief This static function calculates a 1D
+/// FFT and stores the result in the target table.
+///
+/// \param _data MemoryManager&
+/// \param _idx Indices&
+/// \param sTargetTable const std::string&
+/// \param _fftData mglDataC&
+/// \param vAxis std::vector<size_t>&
+/// \param _fft FFTData&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void calculate1dFFT(MemoryManager& _data, Indices& _idx, const std::string& sTargetTable, mglDataC& _fftData, std::vector<size_t>& vAxis, FFTData& _fft)
+{
+    if (!_fft.bInverseTrafo)
     {
         _fftData.FFT("x");
 
-        double samples = lines/2.0;
+        double samples = _fft.lines/2.0;
 
         _fftData.a[0] /= dual(2*samples, 0.0);
 
-        for (long long int i = 1; i < _fftData.GetNx(); i++)
+        for (int i = 1; i < _fftData.GetNx(); i++)
             _fftData.a[i] /= dual(samples, 0.0);
     }
     else
@@ -2621,7 +2562,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
 
         _fftData.a[0] *= dual(2*samples, 0.0);
 
-        for (long long int i = 1; i < _fftData.GetNx(); i++)
+        for (int i = 1; i < _fftData.GetNx(); i++)
             _fftData.a[i] *= dual(samples, 0.0);
 
         _fftData.FFT("ix");
@@ -2630,26 +2571,27 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
     if (_idx.col.isOpenEnd())
         _idx.col.setRange(0, _idx.col.front() + 3);
 
-    if (bShiftAxis && !bInverseTrafo)
-        vAxis = getShiftedAxis(lines, bInverseTrafo);
+    if (_fft.bShiftAxis && !_fft.bInverseTrafo)
+        vAxis = getShiftedAxis(_fft.lines, _fft.bInverseTrafo);
 
     // Store the results of the transformation in the target
     // table
-    if (!bInverseTrafo)
+    if (!_fft.bInverseTrafo)
     {
-        long long int nElements = _fftData.GetNx();
+        size_t nElements = _fftData.GetNx();
+        double dPhaseOffset = 0.0;
 
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _idx.row.front() + nElements);
 
-        for (long long int i = 0; i < nElements; i++)
+        for (size_t i = 0; i < nElements; i++)
         {
             if (i > _idx.row.size())
                 break;
 
-            _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable, dFrequencyOffset + 2.0 * (double)(i)*dNyquistFrequency / (double)(_fftData.GetNx()));
+            _data.writeToTable(_idx.row[i], _idx.col.front(), sTargetTable, _fft.dFrequencyOffset + 2.0 * (double)(i)*_fft.dNyquistFrequency[0] / (double)(_fftData.GetNx()));
 
-            if (!bComplex)
+            if (!_fft.bComplex)
             {
                 _data.writeToTable(_idx.row[vAxis[i]], _idx.col[1], sTargetTable, std::abs(_fftData.a[i]));
 
@@ -2674,7 +2616,7 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         // Write headlines
         _data.setHeadLineElement(_idx.col.front(), sTargetTable, _lang.get("COMMON_FREQUENCY") + " [Hz]");
 
-        if (!bComplex)
+        if (!_fft.bComplex)
         {
             _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_AMPLITUDE"));
             _data.setHeadLineElement(_idx.col[2], sTargetTable, _lang.get("COMMON_PHASE") + " [rad]");
@@ -2687,12 +2629,12 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         if (_idx.row.isOpenEnd())
             _idx.row.setRange(0, _idx.row.front() + _fftData.GetNx());
 
-        for (long long int i = 0; i < _fftData.GetNx(); i++)
+        for (int i = 0; i < _fftData.GetNx(); i++)
         {
-            if (i > _idx.row.size())
+            if (i > (int)_idx.row.size())
                 break;
 
-            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i)*dTimeInterval / (double)(_fftData.GetNx() - 1));
+            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i)*_fft.dTimeInterval[0] / (double)(_fftData.GetNx() - 1));
             _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, _fftData.a[i]);
         }
 
@@ -2700,6 +2642,282 @@ bool fastFourierTransform(CommandLineParser& cmdParser)
         _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME") + " [s]");
         _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_SIGNAL"));
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This static function calculates a 2D
+/// FFT and stores the result in the target table.
+///
+/// \param _data MemoryManager&
+/// \param _idx Indices&
+/// \param sTargetTable const std::string&
+/// \param _fftData mglDataC&
+/// \param vAxis std::vector<size_t>&
+/// \param _fft FFTData&
+/// \return void
+///
+/////////////////////////////////////////////////
+static void calculate2dFFT(MemoryManager& _data, Indices& _idx, const std::string& sTargetTable, mglDataC& _fftData, std::vector<size_t>& vAxis, FFTData& _fft)
+{
+    if (!_fft.bInverseTrafo)
+    {
+        _fftData.FFT("xy");
+
+        double samples = _fft.lines*(_fft.cols-2)/2.0;
+
+        _fftData.a[0] /= dual(2*samples, 0.0);
+
+        for (long long int i = 1; i < _fftData.GetNN(); i++)
+            _fftData.a[i] /= dual(samples, 0.0);
+    }
+    else
+    {
+        double samples = _fft.lines*(_fft.cols-2)/2.0;
+
+        _fftData.a[0] *= dual(2*samples, 0.0);
+
+        for (long long int i = 1; i < _fftData.GetNN(); i++)
+            _fftData.a[i] *= dual(samples, 0.0);
+
+        _fftData.FFT("iy");
+        _fftData.FFT("ix");
+    }
+
+    if (_idx.col.isOpenEnd())
+        _idx.col.setRange(0, _idx.col.front() + _fft.cols);
+
+    // Store the results of the transformation in the target
+    // table
+    if (!_fft.bInverseTrafo)
+    {
+        int nElemsLines = _fftData.GetNx();
+        int nElemsCols = _fftData.GetNy();
+
+        if (_idx.row.isOpenEnd())
+            _idx.row.setRange(0, _idx.row.front() + std::max(nElemsCols, nElemsLines));
+
+        for (int i = 0; i < nElemsLines; i++)
+        {
+            if (i > _idx.row.size())
+                break;
+
+            // Write x axis
+            if (_fft.bShiftAxis)
+                _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, _fft.dNyquistFrequency[0]*(-1.0 + 2.0 * (double)(i) / nElemsLines));
+            else
+                _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, 2.0 * (double)(i)*_fft.dNyquistFrequency[0] / (double)(nElemsLines));
+
+            for (int j = 0; j < nElemsCols; j++)
+            {
+                // Write the values
+                if (_fft.bShiftAxis)
+                    _data.writeToTable(_idx.row[i + (i > nElemsLines/2 ? -1 : 1)*nElemsLines/2],
+                                       _idx.col[j+2 + (j > nElemsCols/2 ? -1 : 1)*nElemsCols/2],
+                                       sTargetTable,
+                                       _fft.bComplex ? _fftData.a[j+i*nElemsCols] : std::abs(_fftData.a[j+i*nElemsCols]));
+                else
+                    _data.writeToTable(_idx.row[i],
+                                       _idx.col[j+2],
+                                       sTargetTable,
+                                       _fft.bComplex ? _fftData.a[j+i*nElemsCols] : std::abs(_fftData.a[j+i*nElemsCols]));
+            }
+        }
+
+        // Write y axis
+        for (int i = 0; i < nElemsCols; i++)
+        {
+            if (i > (int)_idx.row.size())
+                break;
+
+            if (_fft.bShiftAxis)
+                _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, _fft.dNyquistFrequency[1]*(-1.0 + 2.0 * (double)(i) / nElemsCols));
+            else
+                _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, 2.0 * (double)(i)*_fft.dNyquistFrequency[1] / (double)(nElemsCols));
+        }
+
+        // Write headlines
+        _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_FREQUENCY") + " [Hz]");
+        _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_FREQUENCY") + " [Hz]");
+
+        for (int j = 0; j < nElemsCols; j++)
+        {
+            _data.setHeadLineElement(_idx.col[j+2], sTargetTable, _lang.get("COMMON_AMPLITUDE") + "(:," + toString(j+1) + ")");
+        }
+    }
+    else
+    {
+        int nElemsLines = _fftData.GetNx();
+        int nElemsCols = _fftData.GetNy();
+
+        if (_idx.row.isOpenEnd())
+            _idx.row.setRange(0, _idx.row.front() + std::max(nElemsCols, nElemsLines));
+
+        for (int i = 0; i < nElemsLines; i++)
+        {
+            if (i > _idx.row.size())
+                break;
+
+            // Write x axis
+            _data.writeToTable(_idx.row[i], _idx.col[0], sTargetTable, (double)(i)*_fft.dTimeInterval[0] / (double)(nElemsLines - 1));
+
+            // Write the values
+            for (int j = 0; j < nElemsCols; j++)
+            {
+                _data.writeToTable(_idx.row[i], _idx.col[j+2], sTargetTable, _fftData.a[j+i*nElemsCols]);
+            }
+        }
+
+        // Write y axis
+        for (int i = 0; i < nElemsCols; i++)
+        {
+            if (i > _idx.row.size())
+                break;
+
+            _data.writeToTable(_idx.row[i], _idx.col[1], sTargetTable, (double)(i)*_fft.dTimeInterval[1] / (double)(nElemsCols - 1));
+        }
+
+        // Write headlines
+        _data.setHeadLineElement(_idx.col[0], sTargetTable, _lang.get("COMMON_TIME") + " [s]");
+        _data.setHeadLineElement(_idx.col[1], sTargetTable, _lang.get("COMMON_TIME") + " [s]");
+
+        for (int j = 0; j < nElemsCols; j++)
+        {
+            _data.setHeadLineElement(_idx.col[j+2], sTargetTable, _lang.get("COMMON_SIGNAL") + "(:," + toString(j+1) + ")");
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function calculates the fast
+/// fourier transform of the passed data set.
+///
+/// \param cmdParser CommandLineParser&
+/// \return bool
+///
+/// The user may switch between complex or phase-
+/// amplitude layout and whether an inverse
+/// transform shall be calculated.
+/////////////////////////////////////////////////
+bool fastFourierTransform(CommandLineParser& cmdParser)
+{
+    MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
+    const Settings& _option = NumeReKernel::getInstance()->getSettings();
+
+    mglDataC _fftData;
+    Indices _idx;
+    FFTData _fft;
+
+    _fft.dNyquistFrequency[0] = 1;
+    _fft.dNyquistFrequency[1] = 1;
+    _fft.dTimeInterval[0] = 0;
+    _fft.dTimeInterval[1] = 0;
+    _fft.dFrequencyOffset = 0.0;
+    _fft.bInverseTrafo = cmdParser.hasParam("inverse");
+    _fft.bComplex = cmdParser.hasParam("complex");
+    _fft.bShiftAxis = cmdParser.hasParam("axisshift");
+    bool bIs2DFFT = cmdParser.getCommand() == "fft2d";
+    string sTargetTable = "fftdata";
+
+    // search for explicit "target" options and select the target cache
+    sTargetTable = cmdParser.getTargetTable(_idx, sTargetTable);
+
+    DataAccessParser accessParser = cmdParser.getExprAsDataObject();
+
+    // get the data from the data object
+    std::unique_ptr<Memory> _mem(extractRange(cmdParser.getCommandLine(), accessParser, bIs2DFFT ? -1 : 2, true));
+
+    if (!_mem)
+        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
+
+    _mem->shrink();
+
+    _fft.lines = _mem->getElemsInColumn(0);
+    _fft.cols = _mem->getCols();
+
+    if (_fft.lines % 2 && _fft.lines > 1e3)
+        _fft.lines--;
+
+    _fft.dNyquistFrequency[0] = _fft.lines / (_mem->readMem(_fft.lines - 1, 0).real() - _mem->readMem(0, 0).real()) / 2.0;
+    _fft.dTimeInterval[0] = (_fft.lines - 1) / (_mem->readMem(_fft.lines - 1, 0).real());
+
+    if (bIs2DFFT)
+    {
+        if (_fft.cols % 2 && _fft.cols > 1e3)
+            _fft.cols--;
+
+        int collines = _mem->getElemsInColumn(1);
+
+        _fft.dNyquistFrequency[1] = collines / (_mem->readMem(collines - 1, 1).real() - _mem->readMem(0, 1).real()) / 2.0;
+        _fft.dTimeInterval[1] = (collines - 1) / (_mem->readMem(collines - 1, 1).real());
+
+    }
+
+    // Adapt the values for the shifted axis
+    if (_fft.bShiftAxis)
+    {
+        _fft.dFrequencyOffset = -_fft.dNyquistFrequency[0] * (1 + (_fft.lines % 2) * 1.0 / _fft.lines);
+        _fft.dTimeInterval[0] = fabs((_fft.lines + (_fft.lines % 2)) / (_mem->readMem(0, 0).real())) * 0.5;
+
+        if (bIs2DFFT)
+            _fft.dTimeInterval[1] = fabs((_fft.cols-2 + (_fft.cols % 2)) / (_mem->readMem(0, 1).real())) * 0.5;
+    }
+
+    if (_option.systemPrints())
+    {
+        if (!_fft.bInverseTrafo)
+            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_FOURIERTRANSFORMING", toString(_fft.cols)) + " ", _option, 0));
+        else
+            NumeReKernel::printPreFmt(LineBreak("|-> " + _lang.get("PARSERFUNCS_FFT_INVERSE_FOURIERTRANSFORMING", toString(_fft.cols)) + " ", _option, 0));
+    }
+
+    if (bIs2DFFT)
+        _fftData.Create(_fft.lines, _fft.cols-2);
+    else
+        _fftData.Create(_fft.lines);
+
+    std::vector<size_t> vAxis;
+
+    // Prepare the axis (shifted if necessary)
+    if (_fft.bShiftAxis && _fft.bInverseTrafo)
+        vAxis = getShiftedAxis(_fft.lines, _fft.bInverseTrafo);
+    else
+    {
+        for (size_t i = 0; i < (size_t)_fft.lines; i++)
+            vAxis.push_back(i);
+    }
+
+    // Copy the data
+    for (size_t i = 0; i < (size_t)_fft.lines; i++)
+    {
+        if (_fft.cols == 2)
+            _fftData.a[i] = _mem->readMem(vAxis[i], 1); // Can be complex or not: does not matter
+        else if (_fft.cols == 3 && _fft.bComplex)
+            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real(), _mem->readMem(vAxis[i], 2).real());
+        else if (_fft.cols == 3 && !_fft.bComplex)
+            _fftData.a[i] = dual(_mem->readMem(vAxis[i], 1).real() * cos(_mem->readMem(vAxis[i], 2).real()),
+                                 _mem->readMem(vAxis[i], 1).real() * sin(_mem->readMem(vAxis[i], 2).real()));
+        else if (bIs2DFFT)
+        {
+            for (size_t j = 0; j < (size_t)(_fft.cols-2); j++)
+            {
+                if (_fft.bShiftAxis && _fft.bInverseTrafo)
+                    _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i + (i > _fft.lines/2 ? -1 : 1)*_fft.lines/2,
+                                                             j + 2 + (j > (_fft.cols-2)/2 ? -1 : 1)*(_fft.cols-2)/2);
+                else
+                    _fftData.a[j+i*(_fft.cols-2)] = _mem->readMem(i, j+2);
+            }
+        }
+    }
+
+    // Calculate the actual transformation and apply some
+    // normalisation
+    if (bIs2DFFT)
+        calculate2dFFT(_data, _idx, sTargetTable, _fftData, vAxis, _fft);
+    else
+        calculate1dFFT(_data, _idx, sTargetTable, _fftData, vAxis, _fft);
+
 
     if (_option.systemPrints())
         NumeReKernel::printPreFmt(toSystemCodePage(_lang.get("COMMON_DONE")) + ".\n");
@@ -3093,17 +3311,7 @@ bool createDatagrid(CommandLineParser& cmdParser)
             _idx.col.setRange(0, _data.getCols(szDatatable)-1);
 
         if (_idx.row.isOpenEnd())
-        {
-            int nRange = _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), szDatatable);
-
-            for (size_t j = 1; j < _idx.col.size(); j++)
-            {
-                if (_data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable) > nRange)
-                    nRange = _data.getLines(szDatatable, true) - _data.getAppendedZeroes(_idx.col[j], szDatatable);
-            }
-
-            _idx.row.setRange(0, nRange - 1);
-        }
+            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(1), szDatatable)-1);
 
         // Get the data. Choose the order of reading depending on the "transpose" command line option
         if (!bTranspose)
@@ -3233,17 +3441,7 @@ static vector<size_t> getSamplesForDatagrid(CommandLineParser& cmdParser, size_t
             _idx.col.setRange(0, _data.getCols(sZDatatable)-1);
 
         if (_idx.row.isOpenEnd())
-        {
-            int nRange = _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col.front(), sZDatatable);
-
-            for (size_t j = 1; j < _idx.col.size(); j++)
-            {
-                if (_data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable) > nRange)
-                    nRange = _data.getLines(sZDatatable, true) - _data.getAppendedZeroes(_idx.col[j], sZDatatable);
-            }
-
-            _idx.row.setRange(0, nRange - 1);
-        }
+            _idx.row.setRange(0, _data.getColElements(_idx.col.subidx(1), sZDatatable)-1);
 
         vSamples.push_back(_idx.row.size());
         vSamples.push_back(_idx.col.size());
@@ -3438,8 +3636,7 @@ bool readAudioFile(CommandLineParser& cmdParser)
         size_t nChannels = audiofile.get()->getChannels();
 
         // Try to read the entire file
-        _data.resizeTable(_targetIdx.row.size() < nLen ? _targetIdx.row.max()+1 : _targetIdx.row.min()+nLen,
-                          nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
+        _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
                           sTarget);
 
         for (size_t i = 0; i < nLen; i++)
@@ -3520,8 +3717,7 @@ bool seekInAudioFile(CommandLineParser& cmdParser)
     nLen = std::min(nLen - seekable.get()->getPosition(), (size_t)(std::max(vSeekIndices[1].real(), 0.0)));
 
     // Try to read the desired length from the file
-    _data.resizeTable(_targetIdx.row.size() < nLen ? _targetIdx.row.max()+1 : _targetIdx.row.min()+nLen,
-                      nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
+    _data.resizeTable(nChannels > 1 && _targetIdx.col.size() > 1 ? _targetIdx.col.subidx(0, 2).max()+1 : _targetIdx.col.front()+1,
                       sTarget);
 
     for (size_t i = 0; i < nLen; i++)
@@ -3718,7 +3914,9 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
 
     for (size_t i = 0; i < _idx.row.size(); i++)
     {
-        _real.a[i] = _data.getElement(_idx.row[i], _idx.col[1], _accessParser.getDataObject()).real();
+        mu::value_type val = _data.getElement(_idx.row[i], _idx.col[1], _accessParser.getDataObject());
+        _real.a[i] = val.real();
+        _imag.a[i] = val.imag();
     }
 
     if (!nSamples || nSamples > _real.GetNx())
@@ -3734,13 +3932,13 @@ bool shortTimeFourierAnalysis(CommandLineParser& cmdParser)
 
     // Zielcache befuellen entsprechend der Fourier-Algorithmik
 
-    if (_target.row.isOpenEnd())
-        _target.row.setRange(0, _target.row.front() + _result.GetNx() - 1);
+    //if (_target.row.isOpenEnd())
+    //    _target.row.setRange(0, _target.row.front() + _result.GetNx() - 1);
 
     if (_target.col.isOpenEnd())
         _target.col.setRange(0, _target.col.front() + _result.GetNy()/2 + 1);
 
-    _data.resizeTable(std::max(_target.row.max(), _target.col.max()), _target.col.max(), sTargetCache);
+    _data.resizeTable(_target.col.max(), sTargetCache);
 
     // Write the time axis
     for (int i = 0; i < _result.GetNx(); i++)
@@ -3966,12 +4164,12 @@ bool calculateSplines(CommandLineParser& cmdParser)
     if (!_mem)
         throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, cmdParser.getCommandLine(), accessParser.getDataObject() + "(", accessParser.getDataObject() + "()");
 
-    long long int nLines = _mem->getLines() - _mem->getAppendedZeroes(0);
+    int nLines = _mem->getLines();
 
     if (nLines < 2)
         throw SyntaxError(SyntaxError::TOO_FEW_DATAPOINTS, cmdParser.getCommandLine(), accessParser.getDataObject());
 
-    for (long long int i = 0; i < nLines; i++)
+    for (int i = 0; i < nLines; i++)
     {
         xVect.push_back(_mem->readMem(i, 0).real());
         yVect.push_back(_mem->readMem(i, 1).real());

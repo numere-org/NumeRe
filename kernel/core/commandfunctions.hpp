@@ -2038,7 +2038,7 @@ static void copyDataToTemporaryTable(const string& sCmd, DataAccessParser& _acce
     // Copy the target data to a new table
     _accessParser.evalIndices();
 
-    _cache.resizeTable(_accessParser.getIndices().row.size(), _accessParser.getIndices().col.size(), "table");
+    _cache.resizeTable(_accessParser.getIndices().col.size(), "table");
 
     for (size_t i = 0; i < _accessParser.getIndices().row.size(); i++)
     {
@@ -3373,7 +3373,7 @@ static CommandReturnValues cmd_append(string& sCmd)
 
         double j1 = _data.getCols("data") + 1;
         append_data(cmdParser);
-        cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getLines("data", true) - _data.getAppendedZeroes(j1, "data"), j1, _data.getCols("data")}));
+        cmdParser.setReturnValue(std::vector<mu::value_type>({1, _data.getColElements(VectorIndex(j1, VectorIndex::OPEN_END), "data"), j1, _data.getCols("data")}));
 
         sCmd = cmdParser.getReturnValueStatement();
         return COMMAND_HAS_RETURNVALUE;
@@ -5113,6 +5113,7 @@ static map<string,CommandFunc> getCommandFunctions()
     mCommandFuncMap["fit"] = cmd_fit;
     mCommandFuncMap["fitw"] = cmd_fit;
     mCommandFuncMap["fft"] = cmd_fft;
+    mCommandFuncMap["fft2d"] = cmd_fft;
     mCommandFuncMap["fwt"] = cmd_fwt;
     mCommandFuncMap["grad"] = cmd_plotting;
     mCommandFuncMap["grad3d"] = cmd_plotting;

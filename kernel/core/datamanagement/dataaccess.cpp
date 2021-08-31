@@ -480,7 +480,7 @@ void replaceDataEntities(string& sLine, const string& sEntity, MemoryManager& _d
 			_idx.col.setRange(0, _data.getCols(sEntityName, false)-1);
 
 		if (!isCluster && _idx.row.isOpenEnd())
-			_idx.row.setRange(0, _data.getLines(sEntityName, true) - _data.getAppendedZeroes(_idx.col.front(), sEntityName)-1);
+			_idx.row.setRange(0, _data.getColElements(_idx.col.subidx(0, 1), sEntityName)-1);
 		else if (isCluster && _idx.row.isOpenEnd())
             _idx.row.setRange(0, _data.getCluster(sEntityName).size()-1);
 

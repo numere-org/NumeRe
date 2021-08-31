@@ -257,15 +257,15 @@ vector<int> MemoryManager::sortElements(const string& sLine)
 /// the passed parameter set.
 ///
 /// \param sCache const string&
-/// \param i1 long long int
-/// \param i2 long long int
-/// \param j1 long long int
-/// \param j2 long long int
+/// \param i1 int
+/// \param i2 int
+/// \param j1 int
+/// \param j2 int
 /// \param sSortingExpression const string&
 /// \return vector<int>
 ///
 /////////////////////////////////////////////////
-vector<int> MemoryManager::sortElements(const string& sCache, long long int i1, long long int i2, long long int j1, long long int j2, const string& sSortingExpression)
+vector<int> MemoryManager::sortElements(const string& sCache, int i1, int i2, int j1, int j2, const string& sSortingExpression)
 {
     return vMemory[findTable(sCache)]->sortElements(i1, i2, j1, j2, sSortingExpression);
 }
@@ -600,6 +600,37 @@ bool MemoryManager::loadFromLegacyCacheFile()
         delete[] dCache;
 
     return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the maximal number of elements
+/// in the selected column range.
+///
+/// \param cols const VectorIndex&
+/// \param _sTable const std::string&
+/// \return int
+///
+/////////////////////////////////////////////////
+int MemoryManager::getColElements(const VectorIndex& cols, const std::string& _sTable) const
+{
+    if (!exists(_sTable))
+        return 0;
+
+    Memory* _mem = vMemory[findTable(_sTable)];
+
+    int nElems = 0;
+
+    if (cols.isOpenEnd())
+        cols.setOpenEndIndex(_mem->getCols()-1);
+
+    for (size_t i = 0; i < cols.size(); i++)
+    {
+        if (_mem->getElemsInColumn(i) > nElems)
+            nElems = _mem->getElemsInColumn(i);
+    }
+
+    return nElems;
 }
 
 

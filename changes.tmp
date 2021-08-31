@@ -15,3 +15,4 @@ Applied	The fft algorithm makes now use of the new built-in complex numbers.
 Fixed	The fft algorithm will now adapt the number of input data points to match an even number, if larger than 1000 data points. This should enhance the speed of FFTs with data point counts of prime numbers.
 Fixed	Resolved an issue in cache file loading introduced with the new data model.
 Fixed	Resolved the wrong extraction of table rows in the "datagrid" command.
+New	The command "fft2d" provides a 2D FFT.
