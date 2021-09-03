@@ -307,6 +307,7 @@ static Matrix calcCrossProduct(const MatFuncData& funcData, const MatFuncErrorIn
 
     Matrix _mTemp = createFilledMatrix(funcData.mat1.size(), funcData.mat1[0].size()+1, 0.0);
 
+    #pragma omp parallel for
     for (unsigned int i = 0; i < funcData.mat1.size(); i++)
     {
         for (unsigned int j = 0; j < funcData.mat1[0].size(); j++)
@@ -366,6 +367,7 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
     Eigen::MatrixXcd mMatrix(_mMatrix.size(), _mMatrix.size());
 
     // Copy the passed matrix into an Eigen matrix
+    #pragma omp parallel for
     for (unsigned int i = 0; i < _mMatrix.size(); i++)
     {
         for (unsigned int j = 0; j < _mMatrix.size(); j++)
@@ -440,6 +442,7 @@ __attribute__((force_align_arg_pointer)) static Matrix calcEigenVectsAndValues(c
         {
             Eigen::EigenSolver<Eigen::MatrixXcd>::EigenvectorsType mEigenVects = eSolver.eigenvectors();
 
+            #pragma omp parallel for
             for (unsigned int i = 0; i < _mEigenVects.size(); i++)
             {
                 for (unsigned int j = 0; j < _mEigenVects.size(); j++)
@@ -827,16 +830,24 @@ static Matrix matrixMax(const MatFuncData& funcData, const MatFuncErrorInfo& err
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
+    std::vector<double> vTemp(funcData.mat1.size(), 0.0);
 
+    #pragma omp parallel for
     for (size_t i = 0; i < funcData.mat1.size(); i++)
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
-            if (!i && !j)
-                _mReturn[0][0] = funcData.mat1[i][j].real();
-            else if (funcData.mat1[i][j].real() > _mReturn[0][0].real() || std::isnan(_mReturn[0][0].real()))
-                _mReturn[0][0] = funcData.mat1[i][j].real();
+            if (!j)
+                vTemp[i] = funcData.mat1[i][j].real();
+            else if (funcData.mat1[i][j].real() > vTemp[i] || std::isnan(vTemp[i]))
+                vTemp[i] = funcData.mat1[i][j].real();
         }
+    }
+
+    for (size_t i = 0; i < vTemp.size(); i++)
+    {
+        if (!i || mu::isnan(_mReturn[0][0]) || _mReturn[0][0].real() < vTemp[i])
+            _mReturn[0][0] = vTemp[i];
     }
 
     return _mReturn;
@@ -1061,15 +1072,20 @@ static Matrix matrixSum(const MatFuncData& funcData, const MatFuncErrorInfo& err
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
+    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 0.0);
 
+    #pragma omp parallel for
     for (size_t i = 0; i < funcData.mat1.size(); i++)
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
             if (!isnan(funcData.mat1[i][j]))
-                _mReturn[0][0] += funcData.mat1[i][j];
+                vTemp[i] += funcData.mat1[i][j];
         }
     }
+
+    for (const auto& val : vTemp)
+        _mReturn[0][0] += val;
 
     return _mReturn;
 }
@@ -1090,15 +1106,20 @@ static Matrix matrixNum(const MatFuncData& funcData, const MatFuncErrorInfo& err
         throw SyntaxError(SyntaxError::MATRIX_CANNOT_HAVE_ZERO_SIZE, errorInfo.command, errorInfo.position);
 
     Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
+    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 0.0);
 
+    #pragma omp parallel for
     for (size_t i = 0; i < funcData.mat1.size(); i++)
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
             if (!isnan(funcData.mat1[i][j]))
-                _mReturn[0][0] += 1;
+                vTemp[i] += 1;
         }
     }
+
+    for (const auto& val : vTemp)
+        _mReturn[0][0] += val;
 
     return _mReturn;
 }
@@ -1143,14 +1164,20 @@ static Matrix matrixStd(const MatFuncData& funcData, const MatFuncErrorInfo& err
     Matrix _mAvg = matrixAvg(funcData, errorInfo);
     Matrix _mNum = matrixNum(funcData, errorInfo);
 
+    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 0.0);
+
+    #pragma omp parallel for
     for (size_t i = 0; i < funcData.mat1.size(); i++)
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
             if (!isnan(funcData.mat1[i][j]))
-                _mReturn[0][0] += (funcData.mat1[i][j] - _mAvg[0][0])*conj(funcData.mat1[i][j] - _mAvg[0][0]);
+                vTemp[i] += (funcData.mat1[i][j] - _mAvg[0][0])*conj(funcData.mat1[i][j] - _mAvg[0][0]);
         }
     }
+
+    for (const auto& val : vTemp)
+        _mReturn[0][0] += val;
 
     _mReturn[0][0] = sqrt(_mReturn[0][0])/(_mNum[0][0].real()-1.0);
     return _mReturn;
@@ -1173,14 +1200,20 @@ static Matrix matrixPrd(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
     Matrix _mReturn = createFilledMatrix(1, 1, 1.0);
 
+    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 1.0);
+
+    #pragma omp parallel for
     for (size_t i = 0; i < funcData.mat1.size(); i++)
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
             if (!isnan(funcData.mat1[i][j]))
-                _mReturn[0][0] *= funcData.mat1[i][j];
+                vTemp[i] *= funcData.mat1[i][j];
         }
     }
+
+    for (const auto& val : vTemp)
+        _mReturn[0][0] *= val;
 
     return _mReturn;
 }
@@ -1220,14 +1253,20 @@ static Matrix matrixNorm(const MatFuncData& funcData, const MatFuncErrorInfo& er
 
     Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
 
+    std::vector<mu::value_type> vTemp(funcData.mat1.size(), 0.0);
+
+    #pragma omp parallel for
     for (size_t i = 0; i < funcData.mat1.size(); i++)
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
             if (!isnan(funcData.mat1[i][j]))
-                _mReturn[0][0] += funcData.mat1[i][j]*conj(funcData.mat1[i][j]);
+                vTemp[i] += funcData.mat1[i][j]*conj(funcData.mat1[i][j]);
         }
     }
+
+    for (const auto& val : vTemp)
+        _mReturn[0][0] += val;
 
     _mReturn[0][0] = sqrt(_mReturn[0][0]);
     return _mReturn;
@@ -1250,15 +1289,24 @@ static Matrix matrixMin(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
     Matrix _mReturn = createFilledMatrix(1, 1, 0.0);
 
+    std::vector<double> vTemp(funcData.mat1.size(), 0.0);
+
+    #pragma omp parallel for
     for (size_t i = 0; i < funcData.mat1.size(); i++)
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
         {
-            if (!i && !j)
-                _mReturn[0][0] = funcData.mat1[i][j].real();
-            else if (funcData.mat1[i][j].real() < _mReturn[0][0].real() || std::isnan(_mReturn[0][0].real()))
-                _mReturn[0][0] = funcData.mat1[i][j].real();
+            if (!j)
+                vTemp[i] = funcData.mat1[i][j].real();
+            else if (funcData.mat1[i][j].real() < vTemp[i] || std::isnan(vTemp[i]))
+                vTemp[i] = funcData.mat1[i][j].real();
         }
+    }
+
+    for (size_t i = 0; i < vTemp.size(); i++)
+    {
+        if (!i || mu::isnan(_mReturn[0][0]) || _mReturn[0][0].real() > vTemp[i])
+            _mReturn[0][0] = vTemp[i];
     }
 
     return _mReturn;
@@ -1460,6 +1508,7 @@ static Matrix matrixResize(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
     Matrix _mReturn = createFilledMatrix(nLines, nCols, 0.0);
 
+    #pragma omp parallel for
     for (size_t i = 0; i < min(nLines, funcData.mat1.size()); i++)
     {
         for (size_t j = 0; j < min(nCols, funcData.mat1[0].size()); j++)
@@ -1505,6 +1554,7 @@ static Matrix correlation(const MatFuncData& funcData, const MatFuncErrorInfo& e
 
     // Calculate the elements of the matrix by applying
     // elementwise shifts to the matrices
+    #pragma omp parallel for
     for (int i1 = 0; i1 < (int)mCorrelation.size(); i1++)
     {
         for (int j1 = 0; j1 < (int)mCorrelation[0].size(); j1++)
@@ -1593,6 +1643,7 @@ static Matrix normalize(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
     double dMax = max(fabs(_mMax[0][0]), fabs(_mMin[0][0]));
 
+    #pragma omp parallel for
     for (size_t  i = 0; i < _mReturn.size(); i++)
     {
         for (size_t j = 0; j < _mReturn[i].size(); j++)
@@ -1664,6 +1715,7 @@ static Matrix matrixRepMat(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
     Matrix _mReturn = createFilledMatrix(n * funcData.mat1.size(), m * funcData.mat1[0].size(), 0.0);
 
+    #pragma omp parallel for
     for (size_t i = 0; i < funcData.mat1.size(); i++)
     {
         for (size_t j = 0; j < funcData.mat1[0].size(); j++)
@@ -1859,6 +1911,7 @@ static void solveLGSSymbolic(const Matrix& _mMatrix, const MatFuncErrorInfo& err
     Matrix _mToSolve = createFilledMatrix(_mMatrix[0].size()-1, _mMatrix[0].size(), 0.0);
     Matrix _mCoefficents = createFilledMatrix(_mMatrix[0].size()-1, _mMatrix[0].size(), 0.0);
 
+    #pragma omp parallel for
     for (unsigned int i = 0; i < min(_mMatrix.size(), _mMatrix[0].size()-1); i++)
     {
         for (unsigned int j = 0; j < _mMatrix[0].size(); j++)
@@ -2024,6 +2077,7 @@ static Matrix solveLGS(const MatFuncData& funcData, const MatFuncErrorInfo& erro
                         _mToSolve[i][_j] /= dPivot;
                     }
 
+                    #pragma omp parallel for
                     for (unsigned int _i = i+1; _i < _mToSolve.size(); _i++)
                     {
                         mu::value_type dFactor = _mToSolve[_i][j];
@@ -2181,6 +2235,7 @@ static Matrix cartToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
     Matrix _mReturn = funcData.mat1;
 
+    #pragma omp parallel for
     for (size_t i = 0; i < _mReturn.size(); i++)
     {
         _mReturn[i][0] = parser_Norm(&funcData.mat1[i][0], 2);
@@ -2213,6 +2268,7 @@ static Matrix cartToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& e
 
     Matrix _mReturn = funcData.mat1;
 
+    #pragma omp parallel for
     for (size_t i = 0; i < _mReturn.size(); i++)
     {
         _mReturn[i][0] = parser_Norm(&funcData.mat1[i][0], 3);
@@ -2243,6 +2299,7 @@ static Matrix cylToCart(const MatFuncData& funcData, const MatFuncErrorInfo& err
 
     Matrix _mReturn = funcData.mat1;
 
+    #pragma omp parallel for
     for (size_t i = 0; i < _mReturn.size(); i++)
     {
         _mReturn[i][0] = funcData.mat1[i][0] * cos(funcData.mat1[i][1]);
@@ -2275,6 +2332,7 @@ static Matrix cylToPolar(const MatFuncData& funcData, const MatFuncErrorInfo& er
 
     Matrix _mReturn = funcData.mat1;
 
+    #pragma omp parallel for
     for (size_t i = 0; i < _mReturn.size(); i++)
     {
         _mReturn[i][0] = sqrt(funcData.mat1[i][0] * funcData.mat1[i][0] + funcData.mat1[i][2] * funcData.mat1[i][2]);
@@ -2307,6 +2365,7 @@ static Matrix polarToCart(const MatFuncData& funcData, const MatFuncErrorInfo& e
 
     Matrix _mReturn = funcData.mat1;
 
+    #pragma omp parallel for
     for (size_t i = 0; i < _mReturn.size(); i++)
     {
         _mReturn[i][0] = funcData.mat1[i][0] * cos(funcData.mat1[i][1]) * sin(funcData.mat1[i][2]);
@@ -2337,6 +2396,7 @@ static Matrix polarToCyl(const MatFuncData& funcData, const MatFuncErrorInfo& er
 
     Matrix _mReturn = funcData.mat1;
 
+    #pragma omp parallel for
     for (size_t i = 0; i < _mReturn.size(); i++)
     {
         _mReturn[i][0] = funcData.mat1[i][0] * sin(funcData.mat1[i][2]);
@@ -2404,6 +2464,7 @@ static Matrix coordsToGrid(const MatFuncData& funcData, const MatFuncErrorInfo& 
 
     Matrix gcoords = funcData.mat2;
 
+    #pragma omp parallel for
     for (size_t i = 0; i < gcoords.size(); i++)
     {
         for (size_t j = 0; j < gcoords[i].size(); j++)
@@ -2507,6 +2568,7 @@ static Matrix interpolate(const MatFuncData& funcData, const MatFuncErrorInfo& e
     // Interpolate all values in the matrix mat2. First
     // column contains the row values, all remaining contain
     // the corresponding col values
+    #pragma omp parallel for
     for (size_t i = 0; i < funcData.mat2.size(); i++)
     {
         if (funcData.mat2[i].size() >= 2)
@@ -2557,6 +2619,7 @@ static Matrix selection(const MatFuncData& funcData, const MatFuncErrorInfo& err
     if (isScalar[1])
         col = intCast(funcData.mat3[0][0])-1;
 
+    #pragma omp parallel for firstprivate(row,col)
     for (size_t i = 0; i < selected.size(); i++)
     {
         for (size_t j = 0; j < selected[i].size(); j++)

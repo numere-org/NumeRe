@@ -658,7 +658,7 @@ size_t DocumentationGenerator::findListItem(const std::string& sTextRange, size_
     size_t nItemStart = sTextRange.find_last_not_of("- ", nItemCandidate);
 
     if (nItemStart == std::string::npos || sTextRange[nItemStart] != '\n')
-        return nItemStart;
+        return std::string::npos;
 
     nLength = nItemCandidate - nItemStart + 2;
 

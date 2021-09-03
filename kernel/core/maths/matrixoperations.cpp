@@ -651,10 +651,13 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                     vector<double> vLine;
                     unsigned int nthMatrix = StrToInt(sElement.substr(sElement.find('[')+1, sElement.find(']')-1-sElement.find('[')));
 
+                    _mRight.resize(vIndices[nthMatrix].row.size());
+
                     // Get the matrix elements
+                    #pragma omp parallel for
                     for (unsigned int i = 0; i < vIndices[nthMatrix].row.size(); i++)
                     {
-                        _mRight.push_back(_data.getElement(VectorIndex(vIndices[nthMatrix].row[i]), vIndices[nthMatrix].col, vMatrixNames[nthMatrix]));
+                        _mRight[i] = _data.getElement(VectorIndex(vIndices[nthMatrix].row[i]), vIndices[nthMatrix].col, vMatrixNames[nthMatrix]);
                     }
                 }
                 else
@@ -678,10 +681,13 @@ static Matrix evalMatOp(string& sCmd, Parser& _parser, MemoryManager& _data, Fun
                     vector<double> vLine;
                     unsigned int nthMatrix = StrToInt(sElement.substr(sElement.find('[')+1, sElement.find(']')-1-sElement.find('[')));
 
+                    _mLeft.resize(vIndices[nthMatrix].row.size());
+
                     // Get the matrix elements
+                    #pragma omp parallel for
                     for (unsigned int i = 0; i < vIndices[nthMatrix].row.size(); i++)
                     {
-                        _mLeft.push_back(_data.getElement(VectorIndex(vIndices[nthMatrix].row[i]), vIndices[nthMatrix].col, vMatrixNames[nthMatrix]));
+                        _mLeft[i] = _data.getElement(VectorIndex(vIndices[nthMatrix].row[i]), vIndices[nthMatrix].col, vMatrixNames[nthMatrix]);
                     }
                 }
                 else
@@ -933,51 +939,47 @@ static Matrix multiplyMatrices(const Matrix& _mLeft, const Matrix& _mRight, cons
 
     if (_mRight.size() == 1 && _mRight[0].size() && _mLeft.size() == 1 && _mLeft[0].size() == _mRight[0].size())
     {
-        //cerr << "vectormultiplication" << endl;
         for (unsigned int i = 0; i < _mLeft[0].size(); i++)
         {
             dEntry += _mLeft[0][i]*_mRight[0][i];
         }
-        //cerr << dEntry << endl;
+
         vLine.push_back(dEntry);
         _mResult.push_back(vLine);
-        //cerr << "returning" << endl;
+
         return  _mResult;
     }
 
     if (_mRight[0].size() == 1 && _mRight.size() && _mLeft[0].size() == 1 && _mLeft.size() == _mRight.size())
     {
-        //cerr << "vectormultiplication" << endl;
         for (unsigned int i = 0; i < _mLeft.size(); i++)
         {
             dEntry += _mLeft[i][0]*_mRight[i][0];
         }
-        //cerr << dEntry << endl;
+
         vLine.push_back(dEntry);
         _mResult.push_back(vLine);
-        //cerr << "returning" << endl;
+
         return  _mResult;
     }
-    //cerr << "dimension" << endl;
+
     if (_mRight.size() != _mLeft[0].size())
         throw SyntaxError(SyntaxError::WRONG_MATRIX_DIMENSIONS_FOR_MATOP, sCmd, position, toString(_mLeft.size()) +"x"+ toString(_mLeft[0].size()) +" vs. "+ toString(_mRight.size()) +"x"+ toString(_mRight[0].size()));
 
-    //cerr << "multiplication" << endl;
+    _mResult = createZeroesMatrix(_mLeft.size(), _mRight[0].size());
+
+    #pragma omp parallel for
     for (unsigned int i = 0; i < _mLeft.size(); i++)
     {
         for (unsigned int j = 0; j < _mRight[0].size(); j++)
         {
             for (unsigned int k = 0; k < _mRight.size(); k++)
             {
-                dEntry += _mLeft[i][k]*_mRight[k][j];
+                _mResult[i][j] += _mLeft[i][k]*_mRight[k][j];
             }
-            vLine.push_back(dEntry);
-            dEntry = 0.0;
         }
-        _mResult.push_back(vLine);
-        vLine.clear();
     }
-    //cerr << "returning" << endl;
+
     return _mResult;
 }
 

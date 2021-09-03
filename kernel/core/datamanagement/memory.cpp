@@ -34,6 +34,44 @@
 #define MAX_TABLE_COLS 1e4
 #define DEFAULT_COL_TYPE ValueColumn
 
+
+/////////////////////////////////////////////////
+/// \brief Implements the statistics logic.
+///
+/// \param newVal const mu::value_type&
+/// \return void
+///
+/////////////////////////////////////////////////
+void StatsLogic::operator()(const mu::value_type& newVal)
+{
+    if (mu::isnan(newVal))
+        return;
+
+    switch (m_type)
+    {
+        case OPERATION_ADD:
+            m_val += newVal;
+            return;
+        case OPERATION_MULT:
+            m_val *= newVal;
+            return;
+        case OPERATION_ADDSQ:
+            m_val += newVal * conj(newVal);
+            return;
+        case OPERATION_ADDSQSUB:
+            m_val += intPower(newVal - m_compval, 2);
+            return;
+        case OPERATION_MAX:
+            m_val = newVal.real() > m_val.real() || isnan(m_val.real()) ? newVal.real() : m_val.real();
+            return;
+        case OPERATION_MIN:
+            m_val = newVal.real() < m_val.real() || isnan(m_val.real()) ? newVal.real() : m_val.real();
+            return;
+    }
+}
+
+
+
 using namespace std;
 
 
@@ -371,14 +409,33 @@ std::vector<mu::value_type> Memory::readMem(const VectorIndex& _vLine, const Vec
         vReturn.push_back(NAN);
     else
     {
-        for (size_t i = 0; i < _vLine.size(); i++)
+        vReturn.resize(_vLine.size()*_vCol.size(), NAN);
+
+        //#pragma omp parallel for
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            for (size_t j = 0; j < _vCol.size(); j++)
+            if (_vCol[j] < 0)
+                continue;
+
+            int elems = getElemsInColumn(_vCol[j]);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vLine.size(); i++)
             {
-                if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
-                    vReturn.push_back(NAN);
-                else
-                    vReturn.push_back(memArray[_vCol[j]]->getValue(_vLine[i]));
+                if (_vLine[i] < 0)
+                    continue;
+
+                if (_vLine[i] >= elems)
+                {
+                    if (_vLine.isExpanded() && _vLine.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
             }
         }
     }
@@ -404,14 +461,33 @@ ValueVector Memory::readMixedMem(const VectorIndex& _vLine, const VectorIndex& _
         vReturn.push_back("");
     else
     {
-        for (size_t i = 0; i < _vLine.size(); i++)
+        vReturn.resize(_vLine.size()*_vCol.size(), "");
+
+        //#pragma omp parallel for
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            for (size_t j = 0; j < _vCol.size(); j++)
+            if (_vCol[j] < 0)
+                continue;
+
+            int elems = getElemsInColumn(_vCol[j]);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vLine.size(); i++)
             {
-                if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
-                    vReturn.push_back("");
-                else
-                    vReturn.push_back(memArray[_vCol[j]]->getValueAsString(_vLine[i]));
+                if (_vLine[i] < 0)
+                    continue;
+
+                if (_vLine[i] >= elems)
+                {
+                    if (_vLine.isExpanded() && _vLine.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                vReturn[j + i * _vCol.size()] = memArray[_vCol[j]]->getValueAsString(_vLine[i]);
             }
         }
     }
@@ -466,6 +542,7 @@ Memory* Memory::extractRange(const VectorIndex& _vLine, const VectorIndex& _vCol
 
     _memCopy->Allocate(_vCol.size());
 
+    #pragma omp parallel for
     for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
@@ -499,14 +576,31 @@ void Memory::copyElementsInto(vector<mu::value_type>* vTarget, const VectorIndex
     {
         vTarget->resize(_vLine.size()*_vCol.size(), NAN);
 
-        for (size_t i = 0; i < _vLine.size(); i++)
+        //#pragma omp parallel for
+        for (size_t j = 0; j < _vCol.size(); j++)
         {
-            for (size_t j = 0; j < _vCol.size(); j++)
+            if (_vCol[j] < 0)
+                continue;
+
+            int elems = getElemsInColumn(_vCol[j]);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vLine.size(); i++)
             {
-                if (_vCol[j] < 0 || _vCol[j] >= (int)memArray.size() || !memArray[_vCol[j]])
-                    (*vTarget)[j + i * _vCol.size()] = NAN;
-                else
-                    (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
+                if (_vLine[i] < 0)
+                    continue;
+
+                if (_vLine[i] >= elems)
+                {
+                    if (_vLine.isExpanded() && _vLine.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                (*vTarget)[j + i * _vCol.size()] = memArray[_vCol[j]]->getValue(_vLine[i]);
             }
         }
     }
@@ -596,16 +690,17 @@ bool Memory::shrink()
 /////////////////////////////////////////////////
 void Memory::convert()
 {
-    for (TblColPtr& col : memArray)
+    #pragma omp parallel for
+    for (size_t i = 0; i < memArray.size(); i++)
     {
-        if (col && col->m_type == TableColumn::TYPE_STRING)
+        if (memArray[i] && memArray[i]->m_type == TableColumn::TYPE_STRING)
         {
-            ValueColumn* valCol = static_cast<StringColumn*>(col.get())->convert();
+            ValueColumn* valCol = static_cast<StringColumn*>(memArray[i].get())->convert();
 
             // Only valid conversions return a non-zero
             // pointer
             if (valCol)
-                col.reset(valCol);
+                memArray[i].reset(valCol);
         }
     }
 }
@@ -1087,16 +1182,22 @@ vector<int> Memory::sortElements(int i1, int i2, int j1, int j2, const std::stri
     if (!findParameter(sSortingExpression, "cols", '=') && !findParameter(sSortingExpression, "c", '='))
     {
         // Sort everything independently
+        #pragma omp parallel for
         for (int i = j1; i <= j2; i++)
         {
+            // Change for OpenMP
+            if (i > j1 && bReturnIndex)
+                continue;
+
             // Sort the current column
             if (!qSort(&vIndex[0], i2 - i1 + 1, i, 0, i2 - i1, nSign))
                 throw SyntaxError(SyntaxError::CANNOT_SORT_CACHE, sSortingExpression, SyntaxError::invalid_position);
 
             // Abort after the first column, if
             // an index shall be returned
+            // Continue is a change for OpenMP
             if (bReturnIndex)
-                break;
+                continue;
 
             // Actually reorder the column
             reorderColumn(vIndex, i1, i2, i);
@@ -1296,6 +1397,7 @@ NumeRe::Table Memory::extractTable(const string& _sTable, const VectorIndex& lin
 
     table.setName(_sTable);
 
+    #pragma omp parallel for
     for (size_t j = 0; j < cols.size(); j++)
     {
         if (cols[j] < (int)memArray.size() && memArray[cols[j]])
@@ -1326,10 +1428,11 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
 
     resizeMemory(lines.max()+1, cols.max()+1);
 
+    #pragma omp parallel for
     for (size_t j = 0; j < _table.getCols(); j++)
     {
         if (j >= cols.size())
-            break;
+            continue;
 
         TableColumn* tabCol = _table.getColumn(j);
 
@@ -1466,6 +1569,7 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
     bool bHasFirstLine = _vLine.min() == 0;
 
     // Delete the selected entries
+    #pragma omp parallel for
     for (size_t j = 0; j < _vCol.size(); j++)
     {
         if (_vCol[j] >= 0 && _vCol[j] < (int)memArray.size() && memArray[_vCol[j]])
@@ -1483,6 +1587,86 @@ void Memory::deleteBulk(const VectorIndex& _vLine, const VectorIndex& _vCol)
         shrink();
 
     nCalcLines = -1;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Driver code for simplifying the
+/// calculation of various stats using OpenMP, if
+/// possible.
+///
+/// \param _vLine const VectorIndex&
+/// \param _vCol const VectorIndex&
+/// \param operation std::vector<StatsLogic>&
+/// \return void
+///
+/////////////////////////////////////////////////
+void Memory::calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol, std::vector<StatsLogic>& operation) const
+{
+    const size_t MINTHREADCOUNT = 16;
+    const size_t MINELEMENTPERCOL = 1000;
+
+    // Only apply multiprocessing, if there are really a lot of
+    // elements to process
+    if (operation.size() >= MINTHREADCOUNT && _vLine.size() >= MINELEMENTPERCOL)
+    {
+        #pragma omp parallel for
+        for (size_t j = 0; j < _vCol.size(); j++)
+        {
+            if (_vCol[j] < 0)
+                continue;
+
+            int elems = getElemsInColumn(_vCol[j]);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vLine.size(); i++)
+            {
+                if (_vLine[i] < 0)
+                    continue;
+
+                if (_vLine[i] >= elems)
+                {
+                    if (_vLine.isExpanded() && _vLine.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                operation[j](readMem(_vLine[i], _vCol[j]));
+            }
+        }
+    }
+    else
+    {
+        for (size_t j = 0; j < _vCol.size(); j++)
+        {
+            if (_vCol[j] < 0)
+                continue;
+
+            int elems = getElemsInColumn(_vCol[j]);
+
+            if (!elems)
+                continue;
+
+            for (size_t i = 0; i < _vLine.size(); i++)
+            {
+                if (_vLine[i] < 0)
+                    continue;
+
+                if (_vLine[i] >= elems)
+                {
+                    if (_vLine.isExpanded() && _vLine.isOrdered())
+                        break;
+
+                    continue;
+                }
+
+                operation[j](readMem(_vLine[i], _vCol[j]));
+            }
+        }
+    }
 }
 
 
@@ -1509,35 +1693,11 @@ mu::value_type Memory::std(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
-    {
-        if (_vCol[j] < 0)
-            continue;
+    std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADDSQSUB, 0.0, dAvg));
+    calculateStats(_vLine, _vCol, vLogic);
 
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;
-
-        for (unsigned int i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0)
-                continue;
-
-            if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
-
-                continue;
-            }
-
-            mu::value_type val = readMem(_vLine[i], _vCol[j]);
-
-            if (!mu::isnan(val))
-                dStd += intPower(dAvg - val, 2);
-        }
-    }
+    for (const auto& val : vLogic)
+        dStd += val.m_val;
 
     return sqrt(dStd / (num(_vLine, _vCol) - 1.0));
 }
@@ -1583,40 +1743,13 @@ mu::value_type Memory::max(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_MAX, NAN));
+    calculateStats(_vLine, _vCol, vLogic);
+
+    for (const auto& val : vLogic)
     {
-        if (_vCol[j] < 0)
-            continue;
-
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;
-
-        for (unsigned int i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0)
-                continue;
-
-            if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
-
-                continue;
-            }
-
-            mu::value_type val = readMem(_vLine[i], _vCol[j]);
-
-            if (mu::isnan(val))
-                continue;
-
-            if (isnan(dMax))
-                dMax = val.real();
-
-            if (dMax < val.real())
-                dMax = val.real();
-        }
+        if (isnan(dMax) || dMax < val.m_val.real())
+            dMax = val.m_val.real();
     }
 
     return dMax;
@@ -1645,40 +1778,13 @@ mu::value_type Memory::min(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_MIN, NAN));
+    calculateStats(_vLine, _vCol, vLogic);
+
+    for (const auto& val : vLogic)
     {
-        if (_vCol[j] < 0)
-            continue;
-
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;
-
-        for (unsigned int i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0)
-                continue;
-
-            if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
-
-                continue;
-            }
-
-            mu::value_type val = readMem(_vLine[i], _vCol[j]);
-
-            if (mu::isnan(val))
-                continue;
-
-            if (isnan(dMin))
-                dMin = val.real();
-
-            if (dMin > val.real())
-                dMin = val.real();
-        }
+        if (isnan(dMin) || dMin > val.m_val.real())
+            dMin = val.m_val.real();
     }
 
     return dMin;
@@ -1707,34 +1813,12 @@ mu::value_type Memory::prd(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_MULT, 1.0));
+    calculateStats(_vLine, _vCol, vLogic);
+
+    for (const auto& val : vLogic)
     {
-        if (_vCol[j] < 0)
-            continue;
-
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;
-
-        for (unsigned int i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0)
-                continue;
-
-            if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
-
-                continue;
-            }
-
-            mu::value_type val = readMem(_vLine[i], _vCol[j]);
-
-            if (!mu::isnan(val))
-                dPrd *= val;
-        }
+        dPrd *= val.m_val;
     }
 
     return dPrd;
@@ -1763,34 +1847,12 @@ mu::value_type Memory::sum(const VectorIndex& _vLine, const VectorIndex& _vCol) 
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADD));
+    calculateStats(_vLine, _vCol, vLogic);
+
+    for (const auto& val : vLogic)
     {
-        if (_vCol[j] < 0)
-            continue;
-
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;
-
-        for (unsigned int i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0)
-                continue;
-
-            if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
-
-                continue;
-            }
-
-            mu::value_type val = readMem(_vLine[i], _vCol[j]);
-
-            if (!mu::isnan(val))
-                dSum += val;
-        }
+        dSum += val.m_val;
     }
 
     return dSum;
@@ -1827,7 +1889,10 @@ mu::value_type Memory::num(const VectorIndex& _vLine, const VectorIndex& _vCol) 
         int elems = getElemsInColumn(_vCol[j]);
 
         if (!elems)
+        {
+            nInvalid += _vLine.size();
             continue;
+        }
 
         for (unsigned int i = 0; i < _vLine.size(); i++)
         {
@@ -2079,34 +2144,12 @@ mu::value_type Memory::norm(const VectorIndex& _vLine, const VectorIndex& _vCol)
     _vLine.setOpenEndIndex(lines-1);
     _vCol.setOpenEndIndex(cols-1);
 
-    for (unsigned int j = 0; j < _vCol.size(); j++)
+    std::vector<StatsLogic> vLogic(_vCol.size(), StatsLogic(StatsLogic::OPERATION_ADDSQ));
+    calculateStats(_vLine, _vCol, vLogic);
+
+    for (const auto& val : vLogic)
     {
-        if (_vCol[j] < 0)
-            continue;
-
-        int elems = getElemsInColumn(_vCol[j]);
-
-        if (!elems)
-            continue;
-
-        for (unsigned int i = 0; i < _vLine.size(); i++)
-        {
-            if (_vLine[i] < 0)
-                continue;
-
-            if (_vLine[i] >= elems)
-            {
-                if (_vLine.isExpanded() && _vLine.isOrdered())
-                    break;
-
-                continue;
-            }
-
-            mu::value_type val = readMem(_vLine[i], _vCol[j]);
-
-            if (mu::isnan(val))
-                dNorm += intPower(val, 2);
-        }
+        dNorm += val.m_val;
     }
 
     return sqrt(dNorm);

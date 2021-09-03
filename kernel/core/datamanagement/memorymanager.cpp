@@ -626,8 +626,8 @@ int MemoryManager::getColElements(const VectorIndex& cols, const std::string& _s
 
     for (size_t i = 0; i < cols.size(); i++)
     {
-        if (_mem->getElemsInColumn(i) > nElems)
-            nElems = _mem->getElemsInColumn(i);
+        if (_mem->getElemsInColumn(cols[i]) > nElems)
+            nElems = _mem->getElemsInColumn(cols[i]);
     }
 
     return nElems;

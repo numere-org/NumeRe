@@ -43,6 +43,32 @@ typedef std::vector<std::string> ValueVector;
 
 
 /////////////////////////////////////////////////
+/// \brief Simplify the creation of some
+/// statistics by externalizing the operation
+/// code and unifying the driver code.
+/////////////////////////////////////////////////
+struct StatsLogic
+{
+    enum OperationType
+    {
+        OPERATION_ADD,
+        OPERATION_MULT,
+        OPERATION_ADDSQ,
+        OPERATION_ADDSQSUB,
+        OPERATION_MAX,
+        OPERATION_MIN
+    };
+
+    mu::value_type m_val;
+    mu::value_type m_compval;
+    OperationType m_type;
+
+    StatsLogic(OperationType type, double baseVal = 0.0, mu::value_type compVal = 0.0) : m_val(baseVal), m_compval(compVal), m_type(type) {}
+    void operator()(const mu::value_type& newVal);
+};
+
+
+/////////////////////////////////////////////////
 /// \brief This class represents a single table
 /// in memory, or a - so to say - single memory
 /// page to be handled by the MemoryManager class
@@ -84,6 +110,7 @@ class Memory : public Sorter
         virtual bool isValue(int line, int col) override;
 		void smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter, bool smoothLines);
 		void smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter);
+		void calculateStats(const VectorIndex& _vLine, const VectorIndex& _vCol, std::vector<StatsLogic>& operation) const;
 
     public:
 		Memory();
