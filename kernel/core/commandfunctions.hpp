@@ -3110,8 +3110,6 @@ static CommandReturnValues cmd_delete(string& sCmd)
 
         return COMMAND_PROCESSED;
     }
-    else
-        doc_Help("delete", _option);
 
     return COMMAND_PROCESSED;
 }
@@ -3169,8 +3167,6 @@ static CommandReturnValues cmd_clear(string& sCmd)
 
         return COMMAND_PROCESSED;
     }
-    else
-        throw SyntaxError(SyntaxError::TABLE_DOESNT_EXIST, sCmd, SyntaxError::invalid_position);
 
     return COMMAND_PROCESSED;
 }

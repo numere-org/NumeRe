@@ -19,3 +19,4 @@ New	The command "fft2d" provides a 2D FFT.
 Fixed	The static code analyzer won't append a trailing semicolon to the variable list and warn about an unused variable anymore.
 Applied	Matrix functions now make use of OpenMP wherever reasonable and possible.
 Applied	Tables now make use of OpenMP wherever reasonable and possible.
+Fixed	The commands "clear" and "delete" do not throw an error, if the tables do not exist.
