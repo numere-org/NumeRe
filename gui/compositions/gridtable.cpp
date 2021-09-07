@@ -128,7 +128,7 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
     // Headlines
     if (row == 0 && (sTypeName == wxGRID_VALUE_FLOAT || sTypeName == "complex"))
         return false;
-    else if (row < getNumHeadlines() && sTypeName == wxGRID_VALUE_STRING)
+    else if (row < getNumHeadlines() && (sTypeName == wxGRID_VALUE_STRING || sTypeName == "plain"))
         return true;
 
     // Regular cells
@@ -138,6 +138,9 @@ bool GridNumeReTable::CanGetValueAs(int row, int col, const wxString& sTypeName)
     if (sTypeName == wxGRID_VALUE_FLOAT
         && _table.getColumnType(col) == TableColumn::TYPE_VALUE
         && (_table.getValue(row-getNumHeadlines(), col).imag() == 0 || mu::isnan(_table.getValue(row-getNumHeadlines(), col))))
+        return true;
+
+    if (sTypeName == "plain" && _table.getColumnType(col) == TableColumn::TYPE_STRING)
         return true;
 
     if (sTypeName == wxGRID_VALUE_STRING && _table.getColumnType(col) != TableColumn::TYPE_NONE)
@@ -579,4 +582,20 @@ mu::value_type GridNumeReTable::sum(int r1, int c1, int r2, int c2) const
     return dSum;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Returns the types of the handled table.
+///
+/// \return std::vector<int>
+///
+/////////////////////////////////////////////////
+std::vector<int> GridNumeReTable::getColumnTypes() const
+{
+    std::vector<int> vTypes;
+
+    for (size_t i = 0; i < _table.getCols(); i++)
+        vTypes.push_back(_table.getColumnType(i));
+
+    return vTypes;
+}
 

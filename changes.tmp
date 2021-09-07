@@ -20,3 +20,5 @@ Fixed	The static code analyzer won't append a trailing semicolon to the variable
 Applied	Matrix functions now make use of OpenMP wherever reasonable and possible.
 Applied	Tables now make use of OpenMP wherever reasonable and possible.
 Fixed	The commands "clear" and "delete" do not throw an error, if the tables do not exist.
+Fixed	Selecting multiple rows or columns in the table viewer will now yield the correct statistics.
+Fixed	The long loading time of tables was reduced.

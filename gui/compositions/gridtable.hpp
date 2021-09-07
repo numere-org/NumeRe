@@ -73,6 +73,8 @@ class GridNumeReTable : public wxGridTableBase
         double max(int r1, int c1, int r2, int c2) const;
         mu::value_type avg(int r1, int c1, int r2, int c2) const;
         mu::value_type sum(int r1, int c1, int r2, int c2) const;
+
+        std::vector<int> getColumnTypes() const;
 };
 
 

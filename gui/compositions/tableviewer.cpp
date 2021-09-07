@@ -20,11 +20,13 @@
 #include "gridtable.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/tools.hpp"
+#include "../../kernel/core/datamanagement/tablecolumn.hpp"
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/tokenzr.h>
 
 #define STATUSBAR_PRECISION 5
+#define MAXIMAL_RENDERING_SIZE 5000
 
 extern Language _guilang;
 
@@ -76,6 +78,7 @@ TableViewer::TableViewer(wxWindow* parent, wxWindowID id, wxStatusBar* statusbar
 
     // prepare the status bar
     m_statusBar = statusbar;
+    isGridNumeReTable = false;
 
     if (m_statusBar)
     {
@@ -101,6 +104,14 @@ void TableViewer::layoutGrid()
     // set to read-only mode
     EnableEditing(!readOnly);
 
+    std::vector<int> vTypes;
+
+    if (isGridNumeReTable)
+    {
+        GridNumeReTable* gridtab = static_cast<GridNumeReTable*>(GetTable());
+        std::vector<int> vTypes = gridtab->getColumnTypes();
+    }
+
     // Search the boundaries and color the frame correspondingly
     for (int i = 0; i < GetNumberRows(); i++)
     {
@@ -113,14 +124,19 @@ void TableViewer::layoutGrid()
                 SetCellBackgroundColour(i, j, HeadlineColor);
                 SetCellAlignment(wxALIGN_LEFT, i, j);
             }
-            else if (i == GetNumberRows()-1 || j == GetNumberCols()-1)
+            else if (GetNumberCols() < MAXIMAL_RENDERING_SIZE && GetNumberRows() < MAXIMAL_RENDERING_SIZE
+                     && (i == GetNumberRows()-1 || j == GetNumberCols()-1))
             {
                 // Surrounding frame
                 this->SetCellBackgroundColour(i, j, FrameColor);
             }
-            else if (this->GetCellValue(i, j)[0] == '"')
+            else if (isGridNumeReTable && (int)vTypes.size() > j && vTypes[j] == TableColumn::TYPE_STRING)
             {
-                this->SetCellAlignment(wxALIGN_LEFT, i, j);
+                SetCellAlignment(wxALIGN_LEFT, i, j);
+            }
+            else if (!isGridNumeReTable && GetCellValue(i, j)[0] == '"')
+            {
+                SetCellAlignment(wxALIGN_LEFT, i, j);
             }
         }
     }
@@ -331,7 +347,24 @@ void TableViewer::OnCellSelect(wxGridEvent& event)
 void TableViewer::OnCellRangeSelect(wxGridRangeSelectEvent& event)
 {
     if (event.Selecting())
-        updateStatusBar(event.GetTopLeftCoords(), event.GetBottomRightCoords());
+    {
+        if (selectedCells.size() < 2)
+        {
+            selectedCells.Add(event.GetTopLeftCoords());
+            selectedCells.Add(event.GetBottomRightCoords());
+        }
+        else
+        {
+            selectedCells[0].Set(std::min(selectedCells[0].GetRow(), event.GetTopLeftCoords().GetRow()),
+                                 std::min(selectedCells[0].GetCol(), event.GetTopLeftCoords().GetCol()));
+            selectedCells[1].Set(std::max(selectedCells[1].GetRow(), event.GetBottomRightCoords().GetRow()),
+                                 std::max(selectedCells[1].GetCol(), event.GetBottomRightCoords().GetCol()));
+        }
+
+        updateStatusBar(selectedCells[0], selectedCells[1]);
+    }
+    else
+        selectedCells.Clear();
 }
 
 
@@ -763,6 +796,9 @@ void TableViewer::pasteContents(bool useCursor)
 /////////////////////////////////////////////////
 void TableViewer::highlightCursorPosition(int nRow, int nCol)
 {
+    if (GetRows() > MAXIMAL_RENDERING_SIZE || GetCols() > MAXIMAL_RENDERING_SIZE)
+        return;
+
     BeginBatch();
 
     // Restore the previously coloured lines to their
@@ -971,7 +1007,13 @@ wxGridCellCoords TableViewer::CreateEmptyGridSpace(int rows, int headrows, int c
 /////////////////////////////////////////////////
 mu::value_type TableViewer::CellToCmplx(int row, int col)
 {
-    return *static_cast<mu::value_type*>(GetTable()->GetValueAsCustom(row, col, "complex"));
+    if (isGridNumeReTable)
+        return *static_cast<mu::value_type*>(GetTable()->GetValueAsCustom(row, col, "complex"));
+
+    if (GetCellValue(row, col)[0] != '"' && isNumerical(GetCellValue(row, col).ToStdString()))
+        return StrToCmplx(GetCellValue(row, col).ToStdString());
+
+    return NAN;
 }
 
 
@@ -986,7 +1028,21 @@ mu::value_type TableViewer::CellToCmplx(int row, int col)
 /////////////////////////////////////////////////
 double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    return static_cast<GridNumeReTable*>(GetTable())->min(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+    if (isGridNumeReTable)
+        return static_cast<GridNumeReTable*>(GetTable())->min(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+
+    double dMin = NAN;
+
+    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    {
+        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
+        {
+            if (isnan(dMin) || CellToCmplx(i, j).real() < dMin)
+                dMin = CellToCmplx(i, j).real();
+        }
+    }
+
+    return dMin;
 }
 
 
@@ -1001,7 +1057,21 @@ double TableViewer::calculateMin(const wxGridCellCoords& topLeft, const wxGridCe
 /////////////////////////////////////////////////
 double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    return static_cast<GridNumeReTable*>(GetTable())->max(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+    if (isGridNumeReTable)
+        return static_cast<GridNumeReTable*>(GetTable())->max(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+
+    double dMax = NAN;
+
+    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    {
+        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
+        {
+            if (isnan(dMax) || CellToCmplx(i, j).real() > dMax)
+                dMax = CellToCmplx(i,j).real();
+        }
+    }
+
+    return dMax;
 }
 
 
@@ -1016,7 +1086,21 @@ double TableViewer::calculateMax(const wxGridCellCoords& topLeft, const wxGridCe
 /////////////////////////////////////////////////
 mu::value_type TableViewer::calculateSum(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    return static_cast<GridNumeReTable*>(GetTable())->sum(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+    if (isGridNumeReTable)
+        return static_cast<GridNumeReTable*>(GetTable())->sum(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+
+    mu::value_type dSum = 0;
+
+    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    {
+        for (int j = topLeft.GetCol(); j<= bottomRight.GetCol(); j++)
+        {
+            if (!mu::isnan(CellToCmplx(i, j)))
+                dSum += CellToCmplx(i,j);
+        }
+    }
+
+    return dSum;
 }
 
 
@@ -1031,7 +1115,28 @@ mu::value_type TableViewer::calculateSum(const wxGridCellCoords& topLeft, const 
 /////////////////////////////////////////////////
 mu::value_type TableViewer::calculateAvg(const wxGridCellCoords& topLeft, const wxGridCellCoords& bottomRight)
 {
-    return static_cast<GridNumeReTable*>(GetTable())->avg(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+    if (isGridNumeReTable)
+        return static_cast<GridNumeReTable*>(GetTable())->avg(topLeft.GetRow(), topLeft.GetCol(), bottomRight.GetRow(), bottomRight.GetCol());
+
+    mu::value_type dSum = 0;
+    int nCount = 0;
+
+    for (int i = topLeft.GetRow(); i <= bottomRight.GetRow(); i++)
+    {
+        for (int j = topLeft.GetCol(); j <= bottomRight.GetCol(); j++)
+        {
+            if (!mu::isnan(CellToCmplx(i, j)))
+            {
+                nCount++;
+                dSum += CellToCmplx(i, j);
+            }
+        }
+    }
+
+    if (nCount)
+        return dSum / (double)nCount;
+
+    return 0.0;
 }
 
 
@@ -1167,6 +1272,7 @@ void TableViewer::createZeroElementTable()
 {
     SetTable(new GridNumeReTable(NumeRe::Table(1, 1)), true);
 
+    isGridNumeReTable = true;
     nFirstNumRow = 1;
 
     layoutGrid();
@@ -1298,6 +1404,7 @@ void TableViewer::SetData(NumeRe::Container<string>& _stringTable)
 
     // String tables and clusters do not have a headline
     nFirstNumRow = 0;
+    isGridNumeReTable = false;
 
     for (size_t i = 0; i < _stringTable.getRows()+1; i++)
     {
@@ -1345,6 +1452,7 @@ void TableViewer::SetData(NumeRe::Table& _table)
     // providing object
     nFirstNumRow = _table.getHeadCount();
     SetTable(new GridNumeReTable(std::move(_table)), true);
+    isGridNumeReTable = true;
 
     layoutGrid();
 

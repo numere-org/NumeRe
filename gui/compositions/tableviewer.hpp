@@ -44,11 +44,13 @@ class TableViewer : public wxGrid
         size_t nWidth;
         size_t nFirstNumRow;
         bool readOnly;
+        bool isGridNumeReTable;
         wxColor HeadlineColor;
         wxColor FrameColor;
         wxColor HighlightColor;
         wxColor HighlightHeadlineColor;
         wxGridCellCoords lastCursorPosition;
+        wxGridCellCoordsArray selectedCells;
 
         wxStatusBar* m_statusBar;
 
