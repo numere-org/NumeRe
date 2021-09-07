@@ -1,4 +1,5 @@
 #include "IconManager.h"
+#include "globals.hpp"
 
 #include <string>
 #include <vector>
@@ -12,6 +13,8 @@
 #include "icons/closedfolder16x1632bpp.xpm"
 #include "icons/exe.xpm"
 #include "icons/doc.xpm"
+
+
 
 
 IconManager::IconManager(const wxString& programPath)
@@ -195,6 +198,7 @@ bool IconManager::AddIconToList(wxString iconInfo)
                     if ((res = fileIcon.LoadFile(fullname, wxBITMAP_TYPE_ICO, std::rint(16*scale), std::rint(16*scale))))
                     {
                         m_imageScaleFactor = scale;
+                        g_pixelScale = scale;
                         break;
                     }
                 }

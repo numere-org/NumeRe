@@ -95,12 +95,12 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
 	hSizer->Add(buttonReport, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 	hSizer->Add(buttonOK, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-	m_resultList = new wxListCtrl(m_mainPanel,  wxID_ANY, wxDefaultPosition, wxSize(400, 400), wxLC_REPORT);
+	m_resultList = new wxListCtrl(m_mainPanel,  wxID_ANY, wxDefaultPosition, wxSize(400*g_pixelScale, 400*g_pixelScale), wxLC_REPORT);
 	m_resultList->AppendColumn(_guilang.get("GUI_DUPCODE_MATCH"));
 	m_resultList->AppendColumn(_guilang.get("GUI_DUPCODE_PERCENTAGE"));
 	m_resultList->AppendColumn(_guilang.get("GUI_DUPCODE_LINES"));
 
-	m_progressGauge = new wxGauge(m_mainPanel, wxID_ANY, 100, wxDefaultPosition, wxSize(-1, 24), wxHORIZONTAL);
+	m_progressGauge = new wxGauge(m_mainPanel, wxID_ANY, 100, wxDefaultPosition, wxSize(-1, 24*g_pixelScale), wxHORIZONTAL);
 
 	vSizer->Add(m_resultList, 2, wxEXPAND | wxALL, 5);
 	vSizer->Add(m_progressGauge, 0, wxEXPAND | wxALL, 5);
@@ -112,7 +112,7 @@ DuplicateCodeDialog::DuplicateCodeDialog(wxWindow* _parent, const wxString& titl
 	m_progressGauge->SetValue(0);
 	m_varSemantics->SetValue(true);
 
-	this->SetSize(480, 500);
+	this->SetSize(480*g_pixelScale, 500*g_pixelScale);
 }
 
 

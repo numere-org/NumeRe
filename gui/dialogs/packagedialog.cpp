@@ -18,6 +18,7 @@
 
 #include "packagedialog.hpp"
 #include "../compositions/grouppanel.hpp"
+#include "../globals.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/ui/winlayout.hpp"
 #include "../../kernel/core/utils/tools.hpp"
@@ -57,7 +58,7 @@ END_EVENT_TABLE()
 /// \param icons IconManager*
 ///
 /////////////////////////////////////////////////
-PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : wxDialog(parent, wxID_ANY, _guilang.get("GUI_PKGDLG_HEAD") + " [New Project]", wxDefaultPosition, wxSize(600, 800), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconManager* icons) : wxDialog(parent, wxID_ANY, _guilang.get("GUI_PKGDLG_HEAD") + " [New Project]", wxDefaultPosition, wxSize(600*g_pixelScale, 800*g_pixelScale), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
     m_packageProperties = nullptr;
     m_fileList = nullptr;
@@ -75,7 +76,7 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
 
     // Create a property grid containing the package
     // properties
-    m_packageProperties = new wxPropertyGrid(group->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(-1, 260), wxPG_THEME_BORDER | wxPG_TOOLTIPS | wxPG_SPLITTER_AUTO_CENTER);
+    m_packageProperties = new wxPropertyGrid(group->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxSize(-1, 260*g_pixelScale), wxPG_THEME_BORDER | wxPG_TOOLTIPS | wxPG_SPLITTER_AUTO_CENTER);
     m_packageProperties->Append(new wxPropertyCategory(_guilang.get("GUI_PKGDLG_GENERAL_CATEGORY")));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_PACKAGENAME"), "-name"));
     m_packageProperties->Append(new wxStringProperty(_guilang.get("GUI_PKGDLG_AUTHOR"), "-author"));
@@ -159,7 +160,7 @@ PackageDialog::PackageDialog(wxWindow* parent, NumeReTerminal* terminal, IconMan
 
     // Create a list view for the files and add the image list
     // to display the file icons
-    m_fileList = panel->CreateListView(group->GetStaticBox(), group, wxLC_LIST | wxLC_ALIGN_LEFT, wxSize(-1, 330));
+    m_fileList = panel->CreateListView(group->GetStaticBox(), group, wxLC_LIST | wxLC_ALIGN_LEFT, wxSize(-1, 330*g_pixelScale));
     m_fileList->SetImageList(icons->GetImageList(), wxIMAGE_LIST_SMALL);
 
     // Create a special horizontal sizer for the project buttons

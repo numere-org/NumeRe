@@ -23,6 +23,7 @@
 ////@begin includes
 #include <wx/wx.h>
 #include "wx/notebook.h"
+#include "../globals.hpp"
 ////@end includes
 
 /*!
@@ -48,7 +49,7 @@ class wxBoxSizer;
 #define SYMBOL_ABOUTCHAMELEONDIALOG_STYLE wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU|wxCLOSE_BOX
 #define SYMBOL_ABOUTCHAMELEONDIALOG_TITLE _("About Chameleon")
 #define SYMBOL_ABOUTCHAMELEONDIALOG_IDNAME ID_DIALOG
-#define SYMBOL_ABOUTCHAMELEONDIALOG_SIZE wxSize(410, 470)
+#define SYMBOL_ABOUTCHAMELEONDIALOG_SIZE wxSize(410*g_pixelScale, 470*g_pixelScale)
 #define SYMBOL_ABOUTCHAMELEONDIALOG_POSITION wxDefaultPosition
 ////@end control identifiers
 

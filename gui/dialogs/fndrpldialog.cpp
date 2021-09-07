@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "fndrpldialog.hpp"
+#include "../globals.hpp"
 #include "../../kernel/core/ui/language.hpp"
 extern Language _guilang;
 
@@ -77,7 +78,7 @@ bool FindReplaceDialog::Create(wxWindow *parent,
     parent = GetParentForModalDialog(parent, style);
 
     if ( !wxDialog::Create(parent, wxID_ANY, title,
-                           wxDefaultPosition, wxSize(470,230),
+                           wxDefaultPosition, wxSize(470*g_pixelScale,230*g_pixelScale),
                            wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER
                            | style) )
     {
@@ -91,9 +92,9 @@ bool FindReplaceDialog::Create(wxWindow *parent,
 
     bool isPda = (wxSystemSettings::GetScreenType() <= wxSYS_SCREEN_PDA);
 
-    m_tabs = new ViewerBook(this, wxID_ANY, wxDefaultPosition, wxSize(470,230));
-    ViewerPanel* findpage = new ViewerPanel(m_tabs, wxID_ANY, wxDefaultPosition, wxSize(470,230));
-    ViewerPanel* replacepage = new ViewerPanel(m_tabs, wxID_ANY, wxDefaultPosition, wxSize(470,230));
+    m_tabs = new ViewerBook(this, wxID_ANY, wxDefaultPosition , wxSize(470*g_pixelScale,230*g_pixelScale));
+    ViewerPanel* findpage = new ViewerPanel(m_tabs, wxID_ANY);
+    ViewerPanel* replacepage = new ViewerPanel(m_tabs, wxID_ANY);
 
     wxBoxSizer *leftsizer_find = new wxBoxSizer( wxVERTICAL );
     wxBoxSizer *leftsizer_replace = new wxBoxSizer( wxVERTICAL );

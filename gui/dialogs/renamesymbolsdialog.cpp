@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "renamesymbolsdialog.hpp"
+#include "../globals.hpp"
 #include "../compositions/grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/stringtools.hpp"
@@ -38,7 +39,7 @@ RenameSymbolsDialog::RenameSymbolsDialog(wxWindow* parent, const std::vector<wxS
 
     // Create a GroupPanel and add it to the
     // vertical sizer of the current dialog
-    GroupPanel* panel = new GroupPanel(this, wxID_ANY, wxDefaultPosition, wxSize(350, -1));
+    GroupPanel* panel = new GroupPanel(this, wxID_ANY, wxDefaultPosition, wxSize(350*g_pixelScale, -1));
     vSizer->Add(panel, 0, wxALIGN_CENTER_HORIZONTAL | wxALL, 5);
 
     // Create the text input control

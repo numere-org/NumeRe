@@ -18,6 +18,7 @@
 
 #include "pluginrepodialog.hpp"
 #include "../IconManager.h"
+#include "../globals.hpp"
 #include "../compositions/grouppanel.hpp"
 #include "../../kernel/core/ui/language.hpp"
 #include "../../kernel/core/utils/tools.hpp"
@@ -30,9 +31,9 @@
 #include <algorithm>
 
 
-#define WINDOWWIDTH 1000
-#define CTRLWIDTH WINDOWWIDTH-50
-#define WINDOWHEIGHT 600
+#define WINDOWWIDTH 1000*g_pixelScale
+#define CTRLWIDTH WINDOWWIDTH-50*g_pixelScale
+#define WINDOWHEIGHT 600*g_pixelScale
 
 
 

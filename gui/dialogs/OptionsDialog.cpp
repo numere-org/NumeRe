@@ -141,9 +141,7 @@ bool OptionsDialog::Create(wxWindow* parent, wxWindowID id, const wxString& capt
     CreateControls();
 
     if (GetSizer())
-    {
         GetSizer()->SetSizeHints(this);
-    }
 
     Centre();
     return true;
@@ -159,7 +157,7 @@ void OptionsDialog::CreateControls()
     this->SetSizer(optionVSizer);
 
     // Create the notebook
-    m_optionsNotebook = new wxNotebook(this, ID_NOTEBOOK, wxDefaultPosition, wxSize(450, 520), wxNB_DEFAULT | wxNB_TOP | wxNB_MULTILINE);
+    m_optionsNotebook = new wxNotebook(this, ID_NOTEBOOK, wxDefaultPosition, wxSize(450*g_pixelScale, 520*g_pixelScale), wxNB_DEFAULT | wxNB_TOP | wxNB_MULTILINE);
 
     // Create the single pages in the following
     // private member functions. This approach
