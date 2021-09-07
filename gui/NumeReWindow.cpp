@@ -129,7 +129,7 @@ string prepareStringsForDialog(const string& sString)
 // Create the stack trace object here
 Language _guilang;
 FindReplaceDialog* g_findReplace;
-double g_pixelScale;
+double g_pixelScale = 1.0;
 
 //! global print data, to remember settings during the session
 wxPrintData* g_printData = (wxPrintData*) nullptr;
