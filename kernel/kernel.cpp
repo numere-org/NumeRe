@@ -790,7 +790,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
              *     eine Schleife eingegeben wird, dann nur in den wenigen Spezialfaellen, die zum Nachschlagen
              *     eines Keywords noetig sind ("list", "help", "find", etc.) <--
              */
-            if (!_procedure.getLoop()
+            if ((!_procedure.getLoop() && !FlowCtrl::isFlowCtrlStatement(sCurrentCommand))
                     || sCurrentCommand == "help"
                     || sCurrentCommand == "man"
                     || sCurrentCommand == "quit"

@@ -3269,6 +3269,21 @@ string FlowCtrl::getCurrentCommand() const
 }
 
 
+/////////////////////////////////////////////////
+/// \brief This static member function returns
+/// whether the passed command is a flow control
+/// statement.
+///
+/// \param sCmd const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool FlowCtrl::isFlowCtrlStatement(const std::string& sCmd)
+{
+    return sCmd == "if" || sCmd == "for" || sCmd == "while" || sCmd == "switch";
+}
+
+
 // VIRTUAL FUNCTION IMPLEMENTATIONS
 /////////////////////////////////////////////////
 /// \brief Dummy implementation.

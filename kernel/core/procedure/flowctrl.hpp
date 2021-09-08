@@ -177,6 +177,8 @@ class FlowCtrl
         int getCurrentLineNumber() const;
         string getCurrentCommand() const;
 
+        static bool isFlowCtrlStatement(const std::string& sCmd);
+
 };
 
 

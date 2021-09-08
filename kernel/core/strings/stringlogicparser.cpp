@@ -514,6 +514,8 @@ namespace NumeRe
 
                 // Everything not catched here is a strange mixture
             }
+            else if (!(nQuotes % 2) && isalnum(sExpr[i])) // Unexpected variables or literals
+                throw SyntaxError(SyntaxError::STRING_ERROR, sExpr, i, sExpr);
         }
 
         StripSpaces(sExpr);

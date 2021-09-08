@@ -269,7 +269,7 @@ Returnvalue Procedure::ProcCalc(string sLine, string sCurrentCommand, int& nByte
         || (nCurrentByteCode & ProcedureCommandLine::BYTECODE_COMMAND
             && !(nCurrentByteCode & ProcedureCommandLine::BYTECODE_FLOWCTRLSTATEMENT)))
     {
-        if ((sCurrentCommand != "if" && sCurrentCommand != "for" && sCurrentCommand != "while" && sCurrentCommand != "switch")
+        if (!FlowCtrl::isFlowCtrlStatement(sCurrentCommand)
             || sCurrentCommand == "help"
             || sCurrentCommand == "man"
             || sCurrentCommand == "quit"
