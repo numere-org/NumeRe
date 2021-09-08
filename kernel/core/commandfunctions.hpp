@@ -3413,7 +3413,7 @@ static CommandReturnValues cmd_audioread(string& sCmd)
     CommandLineParser cmdParser(sCmd, "audioread", CommandLineParser::CMD_EXPR_set_PAR);
 
     if (!readAudioFile(cmdParser))
-        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position, cmdParser.getExprAsFileName(".wav"));
     else if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_AUDIOREAD_SUCCESS"));
 
@@ -3435,7 +3435,7 @@ static CommandReturnValues cmd_seek(string& sCmd)
     CommandLineParser cmdParser(sCmd, "seek", CommandLineParser::CMD_EXPR_set_PAR);
 
     if (!seekInAudioFile(cmdParser))
-        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position);
+        throw SyntaxError(SyntaxError::CANNOT_READ_FILE, sCmd, SyntaxError::invalid_position, cmdParser.getExprAsFileName(".wav"));
     else if (NumeReKernel::getInstance()->getSettings().systemPrints())
         NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYWORD_SEEK_SUCCESS"));
 

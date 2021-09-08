@@ -101,6 +101,7 @@ class Procedure : public FlowCtrl, public PackageManager
         ~Procedure();
 
         Returnvalue execute(string sProc, string sVarList, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Settings& _option, Output& _out, PlotData& _pData, Script& _script, unsigned int nth_procedure = 0);
+        static std::string mangleName(std::string sProcedureName);
         virtual int procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure = 0, int nth_command = 0) override;
         bool writeProcedure(string sProcedureLine);
         virtual int isInline(const string& sProc) override;

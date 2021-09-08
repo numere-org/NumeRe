@@ -88,7 +88,7 @@ ProcedureVarFactory::ProcedureVarFactory(Procedure* _procedure, const string& sP
     init();
     _currentProcedure = _procedure;
 
-    sProcName = replaceProcedureName(sProc);
+    sProcName = sProc;
     nth_procedure = currentProc;
     inliningMode = _inliningMode;
 }

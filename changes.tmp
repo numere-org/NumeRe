@@ -24,3 +24,4 @@ Fixed	Selecting multiple rows or columns in the table viewer will now yield the 
 Fixed	The long loading time of tables was reduced.
 Cleaned	The unusable dialogs at higher display scales are now usable again.
 Fixed	Command sequences shouldn't be usable in flow control statement headers.
+Fixed	The name mangling of external procedures should now also work with non-alphanumeric characters in the paths.

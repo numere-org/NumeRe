@@ -1741,7 +1741,7 @@ bool NumeReKernel::evaluateProcedureCalls(string& sLine)
                     sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
                 else
                 {
-                    _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1, "_~PROC~[" + __sName + "~ROOT_" + toString(nProc) + "]");
+                    _procedure.replaceReturnVal(sLine, _parser, _rTemp, nPos - 1, nParPos + 1, "_~PROC~[" + _procedure.mangleName(__sName) + "~ROOT_" + toString(nProc) + "]");
                     nProc++;
                 }
             }

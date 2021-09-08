@@ -652,7 +652,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
     if (_varFactory)
         delete _varFactory;
 
-    _varFactory = new ProcedureVarFactory(this, sProc, nth_procedure);
+    _varFactory = new ProcedureVarFactory(this, mangleName(sProc), nth_procedure);
     ProcElement = NumeReKernel::ProcLibrary.getProcedureContents(sCurrentProcedureName);
 
     // add spaces in front of and at the end of sVarList
@@ -1363,7 +1363,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
                     sLine = sLine.substr(0, nPos - 1) + sLine.substr(nParPos + 1);
                 else
                 {
-                    nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "_~PROC~[" + __sName + "~" + toString(nProc) + "_" + toString((int)nth_procedure) + "_" + toString((int)(nth_command + nth_procedure)) + "]");
+                    nPos += replaceReturnVal(sLine, _parser, tempreturnval, nPos - 1, nParPos + 1, "_~PROC~[" + mangleName(__sName) + "~" + toString(nProc) + "_" + toString((int)nth_procedure) + "_" + toString((int)(nth_command + nth_procedure)) + "]");
                     nProc++;
                 }
 
@@ -2355,6 +2355,26 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
 
 
 /////////////////////////////////////////////////
+/// \brief Mangles a procedure name to be used as
+/// a usual variable.
+///
+/// \param sProcedureName std::string
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string Procedure::mangleName(std::string sProcedureName)
+{
+    for (size_t i = 0; i < sProcedureName.length(); i++)
+    {
+        if (!isalnum(sProcedureName[i]) && sProcedureName[i] != '_' && sProcedureName[i] != '~')
+            sProcedureName[i] = '_';
+    }
+
+    return sProcedureName;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This virtual member function handles
 /// the gathering of all relevant information for
 /// the debugger for the currently found
@@ -2541,21 +2561,10 @@ size_t Procedure::replaceReturnVal(string& sLine, Parser& _parser, const Returnv
         // Numerical value, use the procedure name
         // to derive a vector name and declare the
         // corresponding vector
-        string __sRplcNm = sReplaceName;
+        _parser.SetVectorVar(sReplaceName, _return.vNumVal);
+        sLine = sLine.substr(0, nPos) + sReplaceName +  sLine.substr(nPos2);
 
-        if (sReplaceName.find('\\') != string::npos || sReplaceName.find('/') != string::npos || sReplaceName.find(':') != string::npos)
-        {
-            for (unsigned int i = 0; i < __sRplcNm.length(); i++)
-            {
-                if (__sRplcNm[i] == '\\' || __sRplcNm[i] == '/' || __sRplcNm[i] == ':')
-                    __sRplcNm[i] = '~';
-            }
-        }
-
-        _parser.SetVectorVar(__sRplcNm, _return.vNumVal);
-        sLine = sLine.substr(0, nPos) + __sRplcNm +  sLine.substr(nPos2);
-
-        return __sRplcNm.length();
+        return sReplaceName.length();
     }
 
     sLine = sLine.substr(0, nPos) + "nan" + sLine.substr(nPos2);
