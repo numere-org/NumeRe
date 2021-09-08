@@ -514,7 +514,16 @@ namespace NumeRe
 
                 // Everything not catched here is a strange mixture
             }
-            else if (!(nQuotes % 2) && isalnum(sExpr[i])) // Unexpected variables or literals
+            else if (!(nQuotes % 2) && (isdigit(sExpr[i]) || sExpr.substr(i, 3) == "inf" || sExpr.substr(i, 3) == "nan")) // Numerical literals
+            {
+                size_t nextPos = sExpr.find_first_not_of("0123456789Ee+-infa.", i);
+
+                if (nextPos == std::string::npos)
+                    break;
+
+                i += nextPos;
+            }
+            else if (!(nQuotes % 2) && isalpha(sExpr[i])) // Unexpected variables
                 throw SyntaxError(SyntaxError::STRING_ERROR, sExpr, i, sExpr);
         }
 
