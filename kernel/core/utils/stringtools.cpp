@@ -85,6 +85,9 @@ std::string toString(double dNumber, int nPrecision)
 /////////////////////////////////////////////////
 std::string toString(const std::complex<double>& dNumber, int nPrecision)
 {
+    if (isnan(dNumber.real()) && isnan(dNumber.imag()))
+        return "nan";
+
     ostringstream Temp;
     Temp.precision(std::rint(nPrecision / (dNumber.real() != 0.0 && dNumber.imag() != 0.0 && !isnan(dNumber.imag()) ? 2 : 1)));
 

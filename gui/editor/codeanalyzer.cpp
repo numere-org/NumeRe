@@ -1120,6 +1120,24 @@ AnnotationCount CodeAnalyzer::analyseProcedures()
     while (m_editor->isStyleType(NumeReEditor::STYLE_PROCEDURE, m_nCurPos + 1))
         m_nCurPos++;
 
+    // Validate the procedure name for unwanted characters
+    for (size_t i = 0; i < sSyntaxElement.length(); i++)
+    {
+        if (!isalnum(sSyntaxElement[i])
+            && sSyntaxElement[i] != '$'
+            && sSyntaxElement[i] != '/'
+            && sSyntaxElement[i] != ':'
+            && sSyntaxElement[i] != '_'
+            && sSyntaxElement[i] != '\''
+            && sSyntaxElement[i] != '('
+            && sSyntaxElement[i] != ')'
+            && sSyntaxElement[i] != '~')
+        {
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, nProcStart, m_nCurPos-nProcStart+1), m_sError, _guilang.get("GUI_ANALYZER_PROCEDUREINVALIDCHARS", sSyntaxElement)), ANNOTATION_ERROR);
+            break;
+        }
+    }
+
     // Try to find the correspondung procedure definition
     if (!m_editor->m_search->FindProcedureDefinition().length())
     {

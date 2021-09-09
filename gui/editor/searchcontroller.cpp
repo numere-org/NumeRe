@@ -248,7 +248,10 @@ wxString SearchController::FindMarkedProcedure(int charpos, bool ignoreDefinitio
 		startPosition--;
 
     // Search for the last procedure character
-	while (endPosition < m_editor->GetLastPosition() && m_editor->GetStyleAt(endPosition) == wxSTC_NSCR_PROCEDURES)
+	while (endPosition < m_editor->GetLastPosition()
+        && m_editor->GetStyleAt(endPosition) == wxSTC_NSCR_PROCEDURES
+        && m_editor->GetCharAt(endPosition) != '\r'
+        && m_editor->GetCharAt(endPosition) != '\n')
 		endPosition++;
 
     // Ignore procedure definitions, if the

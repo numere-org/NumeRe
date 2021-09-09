@@ -2883,6 +2883,25 @@ void NumeReWindow::NewFile(FileFilterType _filetype, const wxString& defaultfile
         else
             folder.insert(0,"\\");
 
+        // Clean the file and folder names for procedures -
+        // we only allow alphanumeric characters
+        if (_filetype == FILE_NPRC)
+        {
+            // Clean the folders
+            for (size_t i = 0; i < folder.length(); i++)
+            {
+                if (!isalnum(folder[i]) && folder[i] != '_' && folder[i] != '\\')
+                    folder[i] = '_';
+            }
+
+            // Clean the file
+            for (size_t i = 0; i < filename.length(); i++)
+            {
+                if (!isalnum(filename[i]) && filename[i] != '_')
+                    filename[i] = '_';
+            }
+        }
+
         // Prepare the template file
         wxString template_file, dummy, timestamp;
 

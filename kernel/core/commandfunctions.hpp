@@ -411,24 +411,29 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 	}
 	else if (nType == 3) // Procedure template
 	{
+		replaceAll(sObject, "\\", "/");
+		replaceAll(sObject, "~", "/");
+
+		for (size_t i = 0; i < sObject.length(); i++)
+        {
+            if (!isalnum(sObject[i])
+                && sObject[i] != '_'
+                && sObject[i] != '/'
+                && sObject[i] != '$'
+                && sObject[i] != '<'
+                && sObject[i] != '>')
+                sObject[i] = '_';
+        }
+
 		if (sObject.find('/') != string::npos || sObject.find('\\') != string::npos || sObject.find('~') != string::npos)
 		{
-			string sPath = sObject;
+			string sPath = sObject.substr(0, sObject.find_last_of('/'));
 
-			for (unsigned int i = sPath.length() - 1; i >= 0; i--)
-			{
-				if (sPath[i] == '\\' || sPath[i] == '/' || sPath[i] == '~')
-				{
-					sPath = sPath.substr(0, i);
-					break;
-				}
-			}
-
-			while (sPath.find('~') != string::npos)
-				sPath[sPath.find('~')] = '/';
-
-			while (sPath.find('$') != string::npos)
-				sPath.erase(sPath.find('$'), 1);
+			for (size_t i = 0; i < sPath.length(); i++)
+            {
+                if (!isalnum(sPath[i]) && sPath[i] != '_' && sPath[i] != '/')
+                    sPath[i] = '_';
+            }
 
 			_fSys.setPath(sPath, true, _option.getProcPath());
 		}
@@ -441,17 +446,11 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 		{
 			sProcedure = sProcedure.substr(sProcedure.rfind('$'));
 
-			if (sProcedure.find('~') != string::npos)
-				sProcedure.erase(1, sProcedure.rfind('~'));
+			if (sProcedure.find('/') != string::npos)
+				sProcedure.erase(1, sProcedure.rfind('/'));
 		}
 		else
 		{
-			if (sProcedure.find('~') != string::npos)
-				sProcedure = sProcedure.substr(sProcedure.rfind('~') + 1);
-
-			if (sProcedure.find('\\') != string::npos)
-				sProcedure = sProcedure.substr(sProcedure.rfind('\\') + 1);
-
 			if (sProcedure.find('/') != string::npos)
 				sProcedure = sProcedure.substr(sProcedure.rfind('/') + 1);
 
@@ -462,7 +461,7 @@ static bool newObject(string& sCmd, Parser& _parser, MemoryManager& _data, Setti
 		if (sProcedure.find('.') != string::npos)
 			sProcedure = sProcedure.substr(0, sProcedure.rfind('.'));
 
-		if (sObject.find('\\') == string::npos && sObject.find('/') == string::npos)
+		if (sObject.find('/') == string::npos)
 			sObject = "<procpath>/" + sObject;
 
 		while (sObject.find('~') != string::npos)

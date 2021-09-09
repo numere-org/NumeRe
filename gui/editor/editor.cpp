@@ -5435,6 +5435,22 @@ void NumeReEditor::FindAndOpenProcedure(const wxString& procedurename)
     vector<std::string> vPaths = m_terminal->getPathSettings();
     wxString pathname = procedurename;
 
+    // Validate the procedure name for unwanted characters
+    for (size_t i = 0; i < pathname.length(); i++)
+    {
+        if (!isalnum(pathname[i])
+            && pathname[i] != '$'
+            && pathname[i] != '/'
+            && pathname[i] != ':'
+            && pathname[i] != '_'
+            && pathname[i] != '\''
+            && pathname[i] != '~')
+        {
+            wxMessageBox(_guilang.get("GUI_DLG_PROC_INVALIDCHARS", procedurename.ToStdString()), _guilang.get("GUI_DLG_PROC_INVALIDCHARS_HEADLINE"), wxCENTER | wxICON_ERROR | wxOK, this);
+            return;
+        }
+    }
+
     // Resolve the namespaces
     if (pathname.find("$this~") != string::npos)
     {

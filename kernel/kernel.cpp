@@ -2343,7 +2343,7 @@ NumeReVariables NumeReKernel::getVariableList()
         if ((iter->first).substr(0, 2) == "_~")
             continue;
 
-        if ((*iter->second).imag())
+        if ((*iter->second).imag() && !(isnan((*iter->second).real()) && isnan((*iter->second).imag())))
             sCurrentLine = iter->first + "\t1 x 1\tcomplex\t" + toString(*iter->second, DEFAULT_NUM_PRECISION*2) + "\t" + iter->first;
         else
             sCurrentLine = iter->first + "\t1 x 1\tdouble\t" + toString(*iter->second, DEFAULT_NUM_PRECISION) + "\t" + iter->first;

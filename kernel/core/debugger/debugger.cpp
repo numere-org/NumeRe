@@ -830,7 +830,7 @@ vector<string> NumeReDebugger::getNumVars()
 
     for (auto iter = mLocalVars.begin(); iter != mLocalVars.end(); ++iter)
     {
-        if (iter->second.imag())
+        if (iter->second.imag() && !(isnan(iter->second.real()) && isnan(iter->second.imag())))
             vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tcomplex\t" + toString(iter->second, 2*DEFAULT_NUM_PRECISION) + (iter->first).substr((iter->first).find('\t')));
         else
             vNumVars.push_back((iter->first).substr(0, (iter->first).find('\t')) + "\t1 x 1\tdouble\t" + toString(iter->second, DEFAULT_NUM_PRECISION) + (iter->first).substr((iter->first).find('\t')));
@@ -981,7 +981,7 @@ vector<string> NumeReDebugger::getGlobals()
     {
         if (iter->first.substr(0, 2) != "_~")
         {
-            if ((*iter->second).imag())
+            if ((*iter->second).imag() && !(isnan((*iter->second).real()) && isnan((*iter->second).imag())))
                 mGlobals[iter->first] = "1 x 1\tcomplex\t" + toString(*iter->second, 2*DEFAULT_NUM_PRECISION);
             else
                 mGlobals[iter->first] = "1 x 1\tdouble\t" + toString(*iter->second, DEFAULT_NUM_PRECISION);
