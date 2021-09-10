@@ -241,7 +241,7 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 
         // GLOBAL TABLE ACCESS METHODS
 		Memory* getTable(const std::string& sTable);
-		virtual void melt(Memory* _mem, const std::string& sTable) override;
+		virtual void melt(Memory* _mem, const std::string& sTable, bool overrideTarget = false) override;
 
 		inline void renameTable(const std::string& sCache, const std::string& sNewName, bool bForceRenaming = false)
 		{

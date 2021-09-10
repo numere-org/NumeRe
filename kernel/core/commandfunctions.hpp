@@ -4790,7 +4790,9 @@ static CommandReturnValues cmd_load(string& sCmd)
             if ((cmdParser.hasParam("tocache") || cmdParser.hasParam("totable")) && !cmdParser.hasParam("all"))
             {
                 // Single file directly to cache
-                NumeRe::FileHeaderInfo info = _data.openFile(sFileName, true, nArgument, getTargetTable(cmdParser.getParameterList()));
+                std::string sTargetTable = getTargetTable(cmdParser.getParameterList());
+
+                NumeRe::FileHeaderInfo info = _data.openFile(sFileName, true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument, sTargetTable);
 
                 if (!_data.isEmpty(info.sTableName))
                 {
@@ -4817,7 +4819,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     throw SyntaxError(SyntaxError::FILE_NOT_EXIST, sCmd, sFileName, sFileName);
 
                 for (size_t i = 0; i < vFilelist.size(); i++)
-                    vFilelist[i] = _data.openFile(vFilelist[i], true, nArgument, getTargetTable(cmdParser.getParameterList())).sTableName;
+                    vFilelist[i] = _data.openFile(vFilelist[i], true, cmdParser.hasParam("ignore") || cmdParser.hasParam("i"), nArgument, getTargetTable(cmdParser.getParameterList())).sTableName;
 
                 if (!_data.isEmpty(vFilelist.front()) && _option.systemPrints())
                     NumeReKernel::print(_lang.get("BUILTIN_CHECKKEYOWRD_LOAD_ALL_CACHES_SUCCESS", toString(vFilelist.size()), sFileName));
@@ -4847,7 +4849,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                     for (size_t i = 0; i < vFilelist.size(); i++)
                     {
                         // Melting is done automatically
-                        _data.openFile(vFilelist[i], false, nArgument);
+                        _data.openFile(vFilelist[i], false, false, nArgument);
                     }
 
                     if (!_data.isEmpty("data") && _option.systemPrints())
@@ -4874,7 +4876,7 @@ static CommandReturnValues cmd_load(string& sCmd)
                         nArgument = intCast(vParList.front());
                 }
 
-                info = _data.openFile(sFileName, false, nArgument);
+                info = _data.openFile(sFileName, false, false, nArgument);
 
                 if (!_data.isEmpty("data"))
                 {

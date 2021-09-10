@@ -96,12 +96,13 @@ namespace NumeRe
     ///
     /// \param _sFile std::string
     /// \param loadToCache bool
+    /// \param overrideTarget bool
     /// \param _nHeadline int
     /// \param sTargetTable const std::string&
     /// \return FileHeaderInfo
     ///
     /////////////////////////////////////////////////
-    FileHeaderInfo FileAdapter::openFile(std::string _sFile, bool loadToCache, int _nHeadline, const std::string& sTargetTable)
+    FileHeaderInfo FileAdapter::openFile(std::string _sFile, bool loadToCache, bool overrideTarget, int _nHeadline, const std::string& sTargetTable)
     {
         FileHeaderInfo info;
 
@@ -176,11 +177,11 @@ namespace NumeRe
             {
                 if (sTargetTable.length())
                 {
-                    melt(_mem, sTargetTable);
+                    melt(_mem, sTargetTable, overrideTarget);
                     info.sTableName = sTargetTable;
                 }
                 else
-                    melt(_mem, info.sTableName);
+                    melt(_mem, info.sTableName, overrideTarget);
             }
             else
                 melt(_mem, "data");

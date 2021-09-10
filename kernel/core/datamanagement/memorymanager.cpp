@@ -828,10 +828,11 @@ Memory* MemoryManager::getTable(const string& sTable)
 ///
 /// \param _mem Memory*
 /// \param sTable const string&
+/// \param overrideTarget bool
 /// \return void
 ///
 /////////////////////////////////////////////////
-void MemoryManager::melt(Memory* _mem, const string& sTable)
+void MemoryManager::melt(Memory* _mem, const string& sTable, bool overrideTarget)
 {
     // Ensure that the table exists
     if (!_mem || !_mem->memArray.size())
@@ -843,6 +844,12 @@ void MemoryManager::melt(Memory* _mem, const string& sTable)
         // Append the new table
         mCachesMap[sTable] = std::make_pair(vMemory.size(), vMemory.size());
         vMemory.push_back(_mem);
+    }
+    else if (overrideTarget)
+    {
+        // Shall the original table be overwritten?
+        delete vMemory[mCachesMap[sTable].first];
+        vMemory[mCachesMap[sTable].first] = _mem;
     }
     else
     {

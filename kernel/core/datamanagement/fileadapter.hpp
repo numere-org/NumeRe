@@ -53,7 +53,7 @@ namespace NumeRe
             FileAdapter();
             virtual ~FileAdapter() {}
 
-            FileHeaderInfo openFile(std::string _sFile, bool loadToCache = false, int _nHeadline = 0, const std::string& sTargetTable = "");
+            FileHeaderInfo openFile(std::string _sFile, bool loadToCache = false, bool overrideTarget = false, int _nHeadline = 0, const std::string& sTargetTable = "");
             bool saveFile(const std::string& sTable, std::string _sFileName, unsigned short nPrecision = 7);
             std::string getDataFileName(const std::string& sTable) const;
             std::string getDataFileNameShort() const;
@@ -63,7 +63,7 @@ namespace NumeRe
             void setbLoadEmptyCols(bool _bLoadEmptyCols);
             void setbLoadEmptyColsInNextFile(bool _bLoadEmptyCols);
             std::string generateFileName(const std::string& sExtension = ".ndat");
-            virtual void melt(Memory* _mem, const std::string& sTable) = 0;
+            virtual void melt(Memory* _mem, const std::string& sTable, bool overrideTarget = false) = 0;
     };
 }
 
