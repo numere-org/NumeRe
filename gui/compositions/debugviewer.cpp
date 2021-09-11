@@ -340,6 +340,8 @@ void DebugViewer::OnMenuEvent(wxCommandEvent& event)
                 m_terminal->continueDebug();
 
             GetStatusBar()->SetStatusText(_guilang.get("DBG_CONTINUING"), 1);
+            SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_CONTINUING") + "]");
+            EnableDebugger(false);
 
             break;
         case ID_DEBUG_CANCEL:
@@ -350,6 +352,8 @@ void DebugViewer::OnMenuEvent(wxCommandEvent& event)
             }
 
             GetStatusBar()->SetStatusText(_guilang.get("DBG_ABORTED"), 1);
+            SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_ABORTED") + "]");
+            EnableDebugger(false);
 
             break;
         case ID_DEBUG_STEP:
@@ -357,6 +361,8 @@ void DebugViewer::OnMenuEvent(wxCommandEvent& event)
                 m_terminal->stepDebug();
 
             GetStatusBar()->SetStatusText(_guilang.get("DBG_CONTINUING"), 1);
+            SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_CONTINUING") + "]");
+            EnableDebugger(false);
 
             break;
         case ID_DEBUG_STEPOVER:
@@ -364,6 +370,8 @@ void DebugViewer::OnMenuEvent(wxCommandEvent& event)
                 m_terminal->stepOverDebug();
 
             GetStatusBar()->SetStatusText(_guilang.get("DBG_CONTINUING"), 1);
+            SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_CONTINUING") + "]");
+            EnableDebugger(false);
 
             break;
         case ID_DEBUG_LEAVE:
@@ -371,6 +379,8 @@ void DebugViewer::OnMenuEvent(wxCommandEvent& event)
                 m_terminal->leaveDebug();
 
             GetStatusBar()->SetStatusText(_guilang.get("DBG_CONTINUING"), 1);
+            SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_CONTINUING") + "]");
+            EnableDebugger(false);
 
             break;
     }
@@ -478,6 +488,12 @@ void DebugViewer::setDebugInfo(const wxString& title, const vector<string>& vSta
         getInformationByStackId(vStack.size()-1);
     else
         getInformationByStackId(0);
+
+    if (IsIconized())
+        Restore();
+
+    if (m_options->getSetting(SETTING_B_FLASHTASKBAR).active())
+        RequestUserAttention();
 }
 
 
@@ -516,6 +532,7 @@ void DebugViewer::OnExecutionFinished()
 {
     EnableDebugger(false);
     GetStatusBar()->SetStatusText(_guilang.get("DBG_FINISHED"), 1);
+    SetTitle("NumeRe: Debugger  [" + _guilang.get("DBG_FINISHED") + "]");
 }
 
 

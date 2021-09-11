@@ -109,7 +109,7 @@ void TableViewer::layoutGrid()
     if (isGridNumeReTable)
     {
         GridNumeReTable* gridtab = static_cast<GridNumeReTable*>(GetTable());
-        std::vector<int> vTypes = gridtab->getColumnTypes();
+        vTypes = gridtab->getColumnTypes();
     }
 
     // Search the boundaries and color the frame correspondingly

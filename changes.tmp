@@ -28,3 +28,4 @@ Fixed	The name mangling of external procedures should now also work with non-alp
 Cleaned	Procedure names and namespaces can now only be created with alphanumeric characters (others are replaced on-the-fly).
 Added	The static code analyzer now presents an error, if the user calls a procedure with invalid characters in its name.
 Fixed	The command sequence "load FILE -totable -i" will now correctly clear the target table in advance.
+Cleaned	The debugger is now less subtle when needing the users attention. Furthermore, there's a setting value to enable taskbar flashing.

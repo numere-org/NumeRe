@@ -77,6 +77,7 @@ Settings::Settings() : Documentation()
     m_settings[SETTING_B_MODULESINSTACK] = SettingsValue(true, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_GLOBALVARS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_PROCEDUREARGS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
+    m_settings[SETTING_B_FLASHTASKBAR] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_TOOLBARTEXT] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::HIDDEN);
     m_settings[SETTING_B_PATHSONTABS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);
     m_settings[SETTING_B_PRINTLINENUMBERS] = SettingsValue(false, SettingsValue::SAVE | SettingsValue::IMMUTABLE);

@@ -207,6 +207,7 @@ class OptionsDialog: public wxDialog
         wxCheckBox* m_debuggerShowProcedureArguments;
         wxCheckBox* m_debuggerShowGlobals;
         wxCheckBox* m_debuggerDecodeArguments;
+        wxCheckBox* m_debuggerFlashTaskbar;
 
         wxCheckBox* m_analyzer[Options::ANALYZER_OPTIONS_END];
 

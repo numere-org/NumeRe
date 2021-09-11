@@ -69,6 +69,7 @@
 #define SETTING_B_MODULESINSTACK      "debugger.modulesinstacktrace"
 #define SETTING_B_GLOBALVARS          "debugger.showglobalvars"
 #define SETTING_B_PROCEDUREARGS       "debugger.showarguments"
+#define SETTING_B_FLASHTASKBAR        "debugger.flashtaskbar"
 #define SETTING_B_TOOLBARTEXT         "ui.showtoolbartext"
 #define SETTING_B_PATHSONTABS         "ui.showpathsontabs"
 #define SETTING_B_PRINTINCOLOR        "print.usecolor"

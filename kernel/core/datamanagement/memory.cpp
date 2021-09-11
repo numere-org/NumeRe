@@ -1453,6 +1453,12 @@ void Memory::importTable(NumeRe::Table _table, const VectorIndex& lines, const V
 
     // Try to convert string- to valuecolumns
     convert();
+
+    if (bIsSaved)
+    {
+        bIsSaved = false;
+        nLastSaved = time(0);
+    }
 }
 
 

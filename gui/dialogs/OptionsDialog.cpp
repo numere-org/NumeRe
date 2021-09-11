@@ -466,6 +466,7 @@ void OptionsDialog::CreateDebuggerPage()
     m_debuggerShowGlobals = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_DEBUGGER_SHOW_GLOBALS"));
 
     // Those are not part of any group
+    m_debuggerFlashTaskbar = panel->CreateCheckBox(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_DEBUGGER_FLASH_TASKBAR"));
     m_debuggerFocusLine = panel->CreateSpinControl(panel, panel->getVerticalSizer(), _guilang.get("GUI_OPTIONS_DEBUGGER_FOCUS_LINE"), 1, 30, 10);
 
     // Add the grouped page to the notebook
@@ -703,6 +704,7 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_LINESINSTACK].active() = m_debuggerShowLineNumbers->IsChecked();
     mSettings[SETTING_B_MODULESINSTACK].active() = m_debuggerShowModules->IsChecked();
     mSettings[SETTING_B_PROCEDUREARGS].active() = m_debuggerShowProcedureArguments->IsChecked();
+    mSettings[SETTING_B_FLASHTASKBAR].active() = m_debuggerFlashTaskbar->IsChecked();
     mSettings[SETTING_B_HIGHLIGHTLOCALS].active() = m_highlightLocalVariables->IsChecked();
     mSettings[SETTING_B_USETABS].active() = m_useTabs->IsChecked();
     mSettings[SETTING_B_HOMEENDCANCELS].active() = m_homeEndCancels->IsChecked();
@@ -806,6 +808,7 @@ void OptionsDialog::InitializeDialog()
     m_debuggerShowLineNumbers->SetValue(mSettings[SETTING_B_LINESINSTACK].active());
     m_debuggerShowModules->SetValue(mSettings[SETTING_B_MODULESINSTACK].active());
     m_debuggerShowProcedureArguments->SetValue(mSettings[SETTING_B_PROCEDUREARGS].active());
+    m_debuggerFlashTaskbar->SetValue(mSettings[SETTING_B_FLASHTASKBAR].active());
 
     for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
     {
