@@ -321,7 +321,9 @@ class NumeReWindow : public wxFrame
         void showSelectionDialog(NumeRe::Window& window);
 
         wxArrayString OpenFile(FileFilterType filterType );
-        bool SaveFile(bool saveas, bool askLocalRemote, FileFilterType filterType);
+        bool SaveCurrentFile(bool saveas);
+        bool SaveTab(int tab);
+        bool SaveAll(bool refreshLibrary);
         void CloseFile(int pageNr = -1, bool askforsave = true);
         bool CloseAllFiles();
         void CloseTab();
@@ -420,15 +422,9 @@ class NumeReWindow : public wxFrame
         // dialogs
         OptionsDialog*  m_optionsDialog;
 
-        //wxImageList* m_tempImageList;
         /*! Used to initiate UI updates */
         wxTimer* m_updateTimer;
         wxTimer* m_fileEventTimer;
-
-        //IntIntHashmap m_permNumMap;
-        /*! Maps a file extension to the image list index for that extension's icon */
-        StringIntHashmap m_extensionMappings;
-        //WindowPointerArray m_infoTabTracker;
 
         /*! Used to hold data for the find/replace dialogs */
         wxFindReplaceData m_findData;

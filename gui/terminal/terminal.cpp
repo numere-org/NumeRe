@@ -464,6 +464,13 @@ wxThread::ExitCode NumeReTerminal::Entry()
 			}
 		}
 
+		// Refreshing the library before any command is executed
+		if (updateLibrary)
+		{
+		    // update the internal procedure library if needed
+			NumeReKernel::ProcLibrary.updateLibrary();
+		}
+
 		// A command is available
 		if (bCommandAvailable)
 		{
@@ -499,11 +506,6 @@ wxThread::ExitCode NumeReTerminal::Entry()
 		if (time(0) - _kernel.getLastSavedTime() >= _kernel.getAutosaveInterval())
 			_kernel.Autosave(); // save the cache
 
-		if (updateLibrary)
-		{
-		    // update the internal procedure library if needed
-			NumeReKernel::ProcLibrary.updateLibrary();
-		}
 	}
 
 	// The thread will terminate

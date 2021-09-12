@@ -58,9 +58,9 @@ BEGIN_EVENT_TABLE( OptionsDialog, wxDialog )
     EVT_BUTTON(ID_BTN_LATEXPATH, OptionsDialog::OnButtonClick)
     EVT_BUTTON(ID_RESETCOLOR, OptionsDialog::OnButtonClick)
     EVT_CHECKBOX(ID_DEFAULTBACKGROUND, OptionsDialog::OnButtonClick)
-    EVT_CHECKBOX(ID_BOLD, OptionsDialog::OnStyleButtonClick)
-    EVT_CHECKBOX(ID_ITALICS, OptionsDialog::OnStyleButtonClick)
-    EVT_CHECKBOX(ID_UNDERLINE, OptionsDialog::OnStyleButtonClick)
+    EVT_CHECKBOX(ID_BOLD, OptionsDialog::OnFontCheckClick)
+    EVT_CHECKBOX(ID_ITALICS, OptionsDialog::OnFontCheckClick)
+    EVT_CHECKBOX(ID_UNDERLINE, OptionsDialog::OnFontCheckClick)
     EVT_COMBOBOX(ID_CLRSPIN, OptionsDialog::OnColorTypeChange)
     EVT_COLOURPICKER_CHANGED(ID_CLRPICKR_FORE, OptionsDialog::OnColorPickerChange)
     EVT_COLOURPICKER_CHANGED(ID_CLRPICKR_BACK, OptionsDialog::OnColorPickerChange)
@@ -68,14 +68,21 @@ END_EVENT_TABLE()
 
 std::string replacePathSeparator(const std::string&);
 
-/*!
- * OptionsDialog constructors
- */
 
-OptionsDialog::OptionsDialog()
-{
-}
 
+/////////////////////////////////////////////////
+/// \brief OptionsDialog constructor. Performs
+/// two-step creation.
+///
+/// \param parent wxWindow*
+/// \param options Options*
+/// \param id wxWindowID
+/// \param caption const wxString&
+/// \param pos const wxPoint&
+/// \param size const wxSize&
+/// \param style long
+///
+/////////////////////////////////////////////////
 OptionsDialog::OptionsDialog(wxWindow* parent, Options* options, wxWindowID id,  const wxString& caption, const wxPoint& pos, const wxSize& size, long style)
 {
 	m_parentFrame = static_cast<NumeReWindow*>(parent);
@@ -83,58 +90,22 @@ OptionsDialog::OptionsDialog(wxWindow* parent, Options* options, wxWindowID id, 
     Create(parent, id, caption, pos, size, style);
 }
 
-/*!
- * OptionsDialog creator
- */
 
+/////////////////////////////////////////////////
+/// \brief OptionsDialog creator function.
+/// Initializes all UI elements in the dialog.
+///
+/// \param parent wxWindow*
+/// \param id wxWindowID
+/// \param caption const wxString&
+/// \param pos const wxPoint&
+/// \param size const wxSize&
+/// \param style long
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool OptionsDialog::Create(wxWindow* parent, wxWindowID id, const wxString& caption, const wxPoint& pos, const wxSize& size, long style)
 {
-    m_optionsNotebook = nullptr;
-    m_checkList = nullptr;
-    m_chkShowCompileCommands = nullptr;
-    m_printStyle = nullptr;
-    m_cbPrintLineNumbers = nullptr;
-    m_showToolbarText = nullptr;
-    m_saveSession = nullptr;
-    m_termHistory = nullptr;
-    m_caretBlinkTime = nullptr;
-    m_formatBeforeSaving = nullptr;
-    m_useMaskAsDefault = nullptr;
-
-    m_compactTables = nullptr;
-    m_AutoLoadDefines = nullptr;
-    m_showGreeting = nullptr;
-    m_LoadCompactTables = nullptr;
-    m_ExtendedInfo = nullptr;
-    m_ShowHints = nullptr;
-    m_CustomLanguage = nullptr;
-    m_ESCinScripts = nullptr;
-    m_UseLogfile = nullptr;
-    m_UseExternalViewer = nullptr;
-    m_LoadPath = nullptr;
-    m_SavePath = nullptr;
-    m_ScriptPath = nullptr;
-    m_ProcPath = nullptr;
-    m_PlotPath = nullptr;
-    m_defaultFont = nullptr;
-    m_precision = nullptr;
-    m_autosaveinterval = nullptr;
-    m_useExecuteCommand = nullptr;
-
-    m_debuggerFocusLine = nullptr;
-    m_debuggerShowLineNumbers = nullptr;
-    m_debuggerShowModules = nullptr;
-    m_debuggerShowProcedureArguments = nullptr;
-    m_debuggerShowGlobals = nullptr;
-    m_debuggerDecodeArguments = nullptr;
-
-    m_boldCheck = nullptr;
-    m_italicsCheck = nullptr;
-    m_underlineCheck = nullptr;
-
-    for (int i = 0; i < Options::ANALYZER_OPTIONS_END; i++)
-        m_analyzer[i] = nullptr;
-
     SetExtraStyle(wxWS_EX_BLOCK_EVENTS);
     wxDialog::Create(parent, id, caption, pos, size, style);
 
@@ -147,9 +118,15 @@ bool OptionsDialog::Create(wxWindow* parent, wxWindowID id, const wxString& capt
     return true;
 }
 
-// This member function handles the creation of
-// the complete controls and the order of the
-// pages
+
+/////////////////////////////////////////////////
+/// \brief This member function handles the
+/// creation of the complete controls and the
+/// order of the pages.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::CreateControls()
 {
     // Create the main vertical sizer
@@ -172,6 +149,9 @@ void OptionsDialog::CreateControls()
 
     // Path settings panel
     CreatePathPage();
+
+    // Editor settings panel
+    CreateEditorPage();
 
     // Style panel
     CreateStylePage();
@@ -201,8 +181,14 @@ void OptionsDialog::CreateControls()
     // end content construction
 }
 
-// This private member function creates the
-// "configuration" page
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the "configuration" page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::CreateConfigPage()
 {
     // Create a grouped page
@@ -215,13 +201,8 @@ void OptionsDialog::CreateConfigPage()
     m_ExtendedInfo = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTENDEDINFO"));
     m_CustomLanguage = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CUSTOMLANG"));
     m_ESCinScripts = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_ESCINSCRIPTS"));
-    m_foldDuringLoading = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FOLD_DURING_LOADING"));
     m_UseExternalViewer = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_EXTERNALVIEWER"));
     m_showToolbarText = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_TOOLBARTEXT"));
-    m_FilePathsInTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_FILEPATHS"));
-    m_useTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_USE_TABS"));
-    m_homeEndCancels = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HOME_END_CANCELS"));
-    m_caretBlinkTime = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_INTERNALS"));
@@ -240,8 +221,14 @@ void OptionsDialog::CreateConfigPage()
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_CONFIG"));
 }
 
-// This private member function creates the
-// "paths" page
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the "paths" page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::CreatePathPage()
 {
     // Create a grouped page
@@ -265,8 +252,48 @@ void OptionsDialog::CreatePathPage()
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_PATHS"));
 }
 
-// This private member function creates the
-// "style" page
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the "editor" page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void OptionsDialog::CreateEditorPage()
+{
+    // Create a grouped page
+    GroupPanel* panel = new GroupPanel(m_optionsNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
+
+    // Create a group
+    wxStaticBoxSizer* group = panel->createGroup(_guilang.get("GUI_OPTIONS_USERINTERFACE"));
+
+    m_foldDuringLoading = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FOLD_DURING_LOADING"));
+    m_FilePathsInTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_SHOW_FILEPATHS"));
+    m_useTabs = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_USE_TABS"));
+    m_caretBlinkTime = panel->CreateSpinControl(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_CARET_BLINK_TIME"), 100, 2000, 500);
+
+    group = panel->createGroup(_guilang.get("GUI_OPTIONS_AUTOCOMPLETION"));
+    m_braceAutoComp = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_BRACE_AUTOCOMP"));
+    m_quoteAutoComp = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_QUOTE_AUTOCOMP"));
+    m_blockAutoComp = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_BLOCK_AUTOCOMP"));
+    m_homeEndCancels = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_HOME_END_CANCELS"));
+
+    // Enable scrolling for this page, because it might be very large
+    panel->SetScrollbars(0, 20, 0, 200);
+
+    // Add the grouped page to the notebook
+    m_optionsNotebook->AddPage(panel, "Editor");
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the "style" page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::CreateStylePage()
 {
     // Create a grouped page
@@ -348,8 +375,14 @@ void OptionsDialog::CreateStylePage()
     m_optionsNotebook->AddPage(panel, "Style");
 }
 
-// This private member function creates the
-// "misc" page
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the "misc" page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::CreateMiscPage()
 {
     // Create a grouped page
@@ -376,6 +409,7 @@ void OptionsDialog::CreateMiscPage()
 
     m_formatBeforeSaving = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_FORMAT_BEFORE_SAVING"));
     m_keepBackupFiles = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_KEEP_BACKUP_FILES"));
+    m_saveBeforeExecuting = panel->CreateCheckBox(group->GetStaticBox(), group, _guilang.get("GUI_OPTIONS_AUTOSAVE_BEFORE_EXEC"));
 
     // Create a group
     group = panel->createGroup(_guilang.get("GUI_OPTIONS_STARTING"));
@@ -393,8 +427,14 @@ void OptionsDialog::CreateMiscPage()
     m_optionsNotebook->AddPage(panel, _guilang.get("GUI_OPTIONS_MISC"));
 }
 
-// This private member function creates the
-// "Static analyzer" page
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the "Static analyzer" page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::CreateAnalyzerPage()
 {
     // Create a grouped page
@@ -445,8 +485,14 @@ void OptionsDialog::CreateAnalyzerPage()
 
 }
 
-// This private member function creates the
-// "debugger" page
+
+/////////////////////////////////////////////////
+/// \brief This private member function creates
+/// the "debugger" page.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::CreateDebuggerPage()
 {
     // Create a grouped page
@@ -482,6 +528,15 @@ bool OptionsDialog::ShowToolTips()
   return TRUE;
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Event handler, which gets fired, when
+/// the user clicks the OK button.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::OnButtonOkClick( wxCommandEvent& event )
 {
     event.Skip();
@@ -490,18 +545,14 @@ void OptionsDialog::OnButtonOkClick( wxCommandEvent& event )
 }
 
 
-void OptionsDialog::synchronizeColors()
-{
-    for (size_t i = 0; i < m_colorOptions.GetStyleIdentifier().size(); i++)
-    {
-        m_options->SetSyntaxStyle(i, m_colorOptions.GetSyntaxStyle(i));
-    }
-}
-
-/*!
- * wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_BUTTON_CANCEL
- */
-
+/////////////////////////////////////////////////
+/// \brief Event handler, which gets fired, when
+/// the user clicks the Cancel button.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::OnButtonCancelClick(wxCommandEvent& event)
 {
     event.Skip();
@@ -510,6 +561,29 @@ void OptionsDialog::OnButtonCancelClick(wxCommandEvent& event)
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Copies the selected syntax styles to
+/// the Options class.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void OptionsDialog::synchronizeColors()
+{
+    for (size_t i = 0; i < m_colorOptions.GetStyleIdentifier().size(); i++)
+    {
+        m_options->SetSyntaxStyle(i, m_colorOptions.GetSyntaxStyle(i));
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler for changing the colours.
+///
+/// \param event wxColourPickerEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::OnColorPickerChange(wxColourPickerEvent& event)
 {
     size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
@@ -523,6 +597,15 @@ void OptionsDialog::OnColorPickerChange(wxColourPickerEvent& event)
     m_colorOptions.SetSyntaxStyle(id, style);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Event handler for switching the syntax
+/// elements for selecting the styling.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::OnColorTypeChange(wxCommandEvent& event)
 {
     SyntaxStyles style = m_colorOptions.GetSyntaxStyle(m_colorOptions.GetIdByIdentifier(m_colorType->GetValue()));
@@ -536,6 +619,15 @@ void OptionsDialog::OnColorTypeChange(wxCommandEvent& event)
     m_underlineCheck->SetValue(style.underline);
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Button event handler for all other
+/// buttons.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void OptionsDialog::OnButtonClick(wxCommandEvent& event)
 {
     wxString defaultpath;
@@ -614,7 +706,16 @@ void OptionsDialog::OnButtonClick(wxCommandEvent& event)
     }
 }
 
-void OptionsDialog::OnStyleButtonClick(wxCommandEvent& event)
+
+/////////////////////////////////////////////////
+/// \brief Event handler for the font style check
+/// boxes.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void OptionsDialog::OnFontCheckClick(wxCommandEvent& event)
 {
     size_t id = m_colorOptions.GetIdByIdentifier(m_colorType->GetValue());
     SyntaxStyles style = m_colorOptions.GetSyntaxStyle(id);
@@ -653,6 +754,7 @@ void OptionsDialog::ExitDialog()
     }
 
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public EvaluateOptions
@@ -708,6 +810,10 @@ bool OptionsDialog::EvaluateOptions()
     mSettings[SETTING_B_HIGHLIGHTLOCALS].active() = m_highlightLocalVariables->IsChecked();
     mSettings[SETTING_B_USETABS].active() = m_useTabs->IsChecked();
     mSettings[SETTING_B_HOMEENDCANCELS].active() = m_homeEndCancels->IsChecked();
+    mSettings[SETTING_B_BRACEAUTOCOMP].active() = m_braceAutoComp->IsChecked();
+    mSettings[SETTING_B_BLOCKAUTOCOMP].active() = m_blockAutoComp->IsChecked();
+    mSettings[SETTING_B_QUOTEAUTOCOMP].active() = m_quoteAutoComp->IsChecked();
+    mSettings[SETTING_B_AUTOSAVEEXECUTION].active() = m_saveBeforeExecuting->IsChecked();
 
     wxString selectedPrintStyleString = m_printStyle->GetValue();
 
@@ -727,6 +833,7 @@ bool OptionsDialog::EvaluateOptions()
 
 	return true;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 ///  public InitializeDialog
@@ -801,6 +908,10 @@ void OptionsDialog::InitializeDialog()
     m_highlightLocalVariables->SetValue(mSettings[SETTING_B_HIGHLIGHTLOCALS].active());
     m_useTabs->SetValue(mSettings[SETTING_B_USETABS].active());
     m_homeEndCancels->SetValue(mSettings[SETTING_B_HOMEENDCANCELS].active());
+    m_braceAutoComp->SetValue(mSettings[SETTING_B_BRACEAUTOCOMP].active());
+    m_blockAutoComp->SetValue(mSettings[SETTING_B_BLOCKAUTOCOMP].active());
+    m_quoteAutoComp->SetValue(mSettings[SETTING_B_QUOTEAUTOCOMP].active());
+    m_saveBeforeExecuting->SetValue(mSettings[SETTING_B_AUTOSAVEEXECUTION].active());
 
     m_debuggerFocusLine->SetValue(mSettings[SETTING_V_FOCUSEDLINE].value());
     m_debuggerDecodeArguments->SetValue(mSettings[SETTING_B_DECODEARGUMENTS].active());

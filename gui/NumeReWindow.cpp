@@ -368,8 +368,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 {
     // should be approximately 80x15 for the terminal
     this->SetSize(1024, 768);
-    m_optionsDialog = nullptr;
-    m_options = nullptr;
 
     m_debugViewer = nullptr;
     m_currentEd = nullptr;
@@ -384,8 +382,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     m_UnrecoverableFiles = "";
     m_loadingFilesDuringStartup = false;
     m_appStarting = true;
-    m_updateTimer = nullptr;
-    m_fileEventTimer = nullptr;
 
     m_watcher = new Filewatcher();
     m_watcher->SetOwner(this);
@@ -530,13 +526,12 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     // bind the event after the loading of the files - FIX for Win10 1803
     Connect(wxEVT_FSWATCHER, wxFileSystemWatcherEventHandler(NumeReWindow::OnFileSystemEvent));
 
-
-    m_filterNSCRFiles = _guilang.get("GUI_FILTER_SCRIPTS") + " (*.nscr)|*.nscr";//"NumeRe scripts (*.nscr)|*.nscr";
-    m_filterNPRCFiles = _guilang.get("GUI_FILTER_PROCEDURES") + " (*.nprc)|*.nprc";//"NumeRe procedures (*.nprc)|*.nprc";
+    m_filterNSCRFiles = _guilang.get("GUI_FILTER_SCRIPTS") + " (*.nscr)|*.nscr";
+    m_filterNPRCFiles = _guilang.get("GUI_FILTER_PROCEDURES") + " (*.nprc)|*.nprc";
     m_filterNLYTFiles = _guilang.get("GUI_FILTER_LAYOUTS") + "(*.nlyt)|*.nlyt";
     m_filterExecutableFiles = _guilang.get("GUI_FILTER_EXECUTABLES") + " (*.nscr, *.nprc)|*.nscr;*.nprc";
-    m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc, *.nlyt)|*.ndat;*.nscr;*.nprc;*.nlyt";//"NumeRe files (*.ndat, *.nscr, *.nprc)|*.ndat;*.nscr;*.nprc";
-    m_filterDataFiles = _guilang.get("GUI_FILTER_DATAFILES");// + " (*.dat, *.txt, *.csv, *.jdx, *.dx, *.jcm)|*.dat;*.txt;*.csv;*.jdx;*.dx;*.jcm";
+    m_filterNumeReFiles = _guilang.get("GUI_FILTER_NUMEREFILES") + " (*.ndat, *.nscr, *.nprc, *.nlyt)|*.ndat;*.nscr;*.nprc;*.nlyt";
+    m_filterDataFiles = _guilang.get("GUI_FILTER_DATAFILES");
     m_filterImageFiles = _guilang.get("GUI_FILTER_IMAGEFILES") + " (*.png, *.jpeg, *.eps, *.svg, *.gif, *.tiff)|*.png;*.jpg;*.jpeg;*.eps;*.svg;*.gif;*.tif;*.tiff";
     m_filterTeXSource = _guilang.get("GUI_FILTER_TEXSOURCE") + " (*.tex)|*.tex";
     m_filterNonsource = _guilang.get("GUI_FILTER_NONSOURCE");
@@ -547,17 +542,6 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
     // the remote file dialog only looks in ~, which might need to be changed.
     m_filterAllFiles = _guilang.get("GUI_FILTER_ALLFILES") + " (*.*)|*.*";
 
-    m_extensionMappings["cpj"] = ICON_PROJECT;
-    m_extensionMappings["c"] = ICON_SOURCE_C;
-    m_extensionMappings["cpp"] = ICON_SOURCE_CPP;
-    m_extensionMappings["h"] = ICON_SOURCE_H;
-    m_extensionMappings["hpp"] = ICON_SOURCE_H;
-    m_extensionMappings["lib"] = ICON_LIBRARY;
-    m_extensionMappings["c_disabled"] = ICON_DISABLED_SOURCE_C;
-    m_extensionMappings["cpp_disabled"] = ICON_DISABLED_SOURCE_CPP;
-    m_extensionMappings["h_disabled"] = ICON_DISABLED_SOURCE_H;
-    m_extensionMappings["hpp_disabled"] = ICON_DISABLED_SOURCE_H;
-
     g_findReplace = nullptr;
 
     /// Interesting Bug: obviously it is necessary to declare the paper size first
@@ -566,15 +550,7 @@ NumeReWindow::NumeReWindow(const wxString& title, const wxPoint& pos, const wxSi
 
     m_appStarting = false;
 
-    HINSTANCE hInstance = wxGetInstance();
-    char *pStr, szPath[_MAX_PATH];
-    GetModuleFileNameA(hInstance, szPath, _MAX_PATH);
-    pStr = strrchr(szPath, '\\');
-    if (pStr != NULL)
-        *(++pStr)='\0';
-
-
-    ///Msgbox
+    //Msgbox
     NumeRe::DataBase tipDataBase;
 
     if (m_options->useCustomLangFiles() && fileExists(m_options->ValidFileName("<>/user/docs/hints.ndb", ".ndb")))
@@ -1432,7 +1408,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_MENU_SAVE:
         {
-            SaveFile(false, true, FILE_ALLSOURCETYPES);
+            SaveCurrentFile(false);
             break;
         }
 
@@ -1445,7 +1421,7 @@ void NumeReWindow::OnMenuEvent(wxCommandEvent &event)
 
         case ID_NEW_PROJECT:
         {
-            SaveFile(true, true, FILE_NUMERE);
+            SaveCurrentFile(true);
             break;
         }
 
@@ -3508,13 +3484,17 @@ int NumeReWindow::HandleModifiedFile(int pageNr, ModifiedFileAction fileAction)
             options |= wxCANCEL;
         }*/
 
-        int result = wxMessageBox (saveMessage, _guilang.get("GUI_SAVE_QUESTION"), options);//wxYES_NO | wxCANCEL | wxICON_QUESTION);
+        int result = m_options->getSetting(SETTING_B_AUTOSAVEEXECUTION).active() ? wxYES : wxNO;
+
+        if (fileAction != MODIFIEDFILE_COMPILE || !m_options->getSetting(SETTING_B_AUTOSAVEEXECUTION).active())
+            result = wxMessageBox (saveMessage, _guilang.get("GUI_SAVE_QUESTION"), options);//wxYES_NO | wxCANCEL | wxICON_QUESTION);
+
         if( result == wxYES)
         {
             NumeReEditor* tmpCurrentEd = m_currentEd;
             m_currentEd = edit;
             // only do a Save As if necessary
-            SaveFile(false, true, FILE_ALLSOURCETYPES);
+            SaveCurrentFile(false);
             m_currentEd = tmpCurrentEd;
             m_currentEd->SetFocus();
 
@@ -3904,46 +3884,27 @@ void NumeReWindow::Busy()
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-///  private SaveFile
-///  Saves a text file, abstracting out local / remote issues.
+/////////////////////////////////////////////////
+/// \brief Saves the current opened file.
 ///
-///  @param  saveas         bool            True if this is explicitly a "Save-As" command and a file dialog must be shown
-///  @param  askLocalRemote bool            True if the user should be asked whether to save the file locally or remotely
-///  @param  filterType     FileFilterType  The type of files to show in the dialog
+/// \param saveas True if this is explicitly a
+/// "Save-As" command and a file dialog must be
+/// shown
+/// \return bool
 ///
-///  @return bool           Whether the save operation succeeded or not
-///
-///  @remarks This function is also used for creating new project files, since that's effectively
-///  @remarks just saving a text file as well.
-///
-///  @author Mark Erikson @date 04-22-2004
-//////////////////////////////////////////////////////////////////////////////
-bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType filterType)
+/////////////////////////////////////////////////
+bool NumeReWindow::SaveCurrentFile(bool saveas)
 {
-    wxString filename;
-    wxString fileContents;
-
     m_remoteMode = false;
-    bool doSaveAs = saveas || !m_currentEd->HasBeenSaved() /*|| (m_remoteMode != m_currentEd->LastSavedRemotely())*/;
+    bool doSaveAs = saveas || !m_currentEd->HasBeenSaved();
 
-    bool isSourceFile = !(m_currentEd->getFileType() == FILE_NUMERE);
-
-    wxString filterString = ConstructFilterString(m_currentEd->getFileType());
-
-
-    if (isSourceFile)
-        fileContents = m_currentEd->GetText();
-    // we must be saving a new project
-    else
-        fileContents = "[Headers]\n\n[Sources]\n\n[Libraries]\n\n[Other]";
-
-    if(doSaveAs)
+    if (doSaveAs)
     {
+        wxString filename;
+        wxString filterString = ConstructFilterString(m_currentEd->getFileType());
+
         // the last item in a filter's list will be the default extension if none is given
         // ie, right now, .cpp is the default extension for C++ files
-
-
         wxString title = _guilang.get("GUI_DLG_SAVEAS");
         vector<string> vPaths = m_terminal->getPathSettings();
         int i = 0;
@@ -3956,42 +3917,49 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
             || m_currentEd->getFileType() == FILE_TEXSOURCE
             || m_currentEd->getFileType() == FILE_NONSOURCE)
             i = SAVEPATH;
+
+        // Create the file dialog
         wxFileDialog dlg (this, title, vPaths[i], m_currentEd->GetFileName().GetName(), filterString,
             wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
 
         // Select the correct filter string depending on the
         // file extensions
-        if (m_currentEd->getFileType() == FILE_NSCR && m_currentEd->GetFileName().GetExt() == "nlyt")
+        wxString sExt = m_currentEd->GetFileName().GetExt();
+
+        if (m_currentEd->getFileType() == FILE_NSCR && sExt == "nlyt")
             dlg.SetFilterIndex(1);
         else if (m_currentEd->getFileType() == FILE_DATAFILES)
         {
-            if (m_currentEd->GetFileName().GetExt() == "dat")
+            if (sExt == "dat")
                 dlg.SetFilterIndex(0);
-            else if (m_currentEd->GetFileName().GetExt() == "txt")
+            else if (sExt == "txt")
                 dlg.SetFilterIndex(1);
-            else if (m_currentEd->GetFileName().GetExt() == "csv")
+            else if (sExt == "csv")
                 dlg.SetFilterIndex(2);
-            else if (m_currentEd->GetFileName().GetExt() == "jdx"
-                || m_currentEd->GetFileName().GetExt() == "dx"
-                || m_currentEd->GetFileName().GetExt() == "jcm")
+            else if (sExt == "jdx"
+                || sExt == "dx"
+                || sExt == "jcm")
                 dlg.SetFilterIndex(3);
         }
         else if (m_currentEd->getFileType() == FILE_NONSOURCE)
         {
-            if (m_currentEd->GetFileName().GetExt() == "txt")
+            if (sExt == "txt")
                 dlg.SetFilterIndex(0);
-            else if (m_currentEd->GetFileName().GetExt() == "log")
+            else if (sExt == "log")
                 dlg.SetFilterIndex(1);
         }
+
         // ie, user clicked cancel
-        if(dlg.ShowModal() != wxID_OK)
-        {
+        if (dlg.ShowModal() != wxID_OK)
             return false;
-        }
+
         if (m_currentEd->GetFileName().IsOk())
             m_watcher->Remove(m_currentEd->GetFileName());
+
         filename = dlg.GetPath();
         m_watcher->Add(wxFileName(filename));
+
+        // Append the correct file extension
         if (filename.find('.') == string::npos || filename.find('.', filename.rfind('\\')) == string::npos)
         {
             if (m_currentEd->getFileType() == FILE_NSCR)
@@ -4015,39 +3983,98 @@ bool NumeReWindow::SaveFile(bool saveas, bool askLocalRemote, FileFilterType fil
                     filename += ".txt";
             }
         }
-    }
-    else
-    {
-        filename = m_currentEd->GetFileNameAndPath();
-        string sPath = filename.ToStdString();
-        sPath = replacePathSeparator(sPath);
-        sPath.erase(sPath.rfind('/'));
-        FileSystem _fSys;
-        // Make the folder, if it doesn't exist
-        _fSys.setPath(sPath, true, replacePathSeparator(getProgramFolder().ToStdString()));
-    }
-
-    if (isSourceFile)
-    {
-        m_currentEd->SetFocus();
 
         wxFileName fn(filename);
         m_currentEd->SetFilename(fn, false);
-        m_currentSavedFile = toString((int)time(0)) + "|" +filename;
-        if (!m_currentEd->SaveFile(filename))
+    }
+
+    if (SaveTab(m_book->GetSelection()))
+        UpdateWindowTitle(m_book->GetPageText(m_book->GetSelection()));
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Saves the file in the selected editor
+/// tab.
+///
+/// \param tab int
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReWindow::SaveTab(int tab)
+{
+    NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(tab));
+    wxString filename = edit->GetFileNameAndPath();
+
+    // Make the folder, if it doesn't exist
+    string sPath = filename.ToStdString();
+    sPath = replacePathSeparator(sPath);
+    sPath.erase(sPath.rfind('/'));
+    FileSystem _fSys;
+    _fSys.setPath(sPath, true, getProgramFolder().ToStdString());
+
+    m_currentSavedFile = toString((int)time(0)) + "|" + filename;
+
+    if (!edit->SaveFile(filename))
+    {
+        wxMessageBox(_guilang.get("GUI_DLG_SAVE_ERROR"), _guilang.get("GUI_DLG_SAVE"), wxCENTRE | wxOK | wxICON_ERROR, this);
+        return false;
+    }
+
+    edit->SetSavePoint();
+    edit->UpdateSyntaxHighlighting();
+
+    m_book->SetTabText(tab, filename);
+    m_book->Refresh();
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Saves all currently opened files to
+/// the harddisk.
+///
+/// \param refreshLibrary bool
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReWindow::SaveAll(bool refreshLibrary)
+{
+    int currentTab = m_book->GetSelection();
+
+    for (size_t i = 0; i < m_book->GetPageCount(); i++)
+    {
+        NumeReEditor* edit = static_cast<NumeReEditor*>(m_book->GetPage(i));
+
+        if (edit->Modified())
         {
-            wxMessageBox(_guilang.get("GUI_DLG_SAVE_ERROR"), _guilang.get("GUI_DLG_SAVE"), wxCENTRE | wxOK | wxICON_ERROR, this);
-            return false;
+            if (edit->HasBeenSaved())
+            {
+                if (SaveTab(i) && (int)i == currentTab)
+                    UpdateWindowTitle(m_book->GetPageText(i));
+
+                continue;
+            }
+
+            // Change with event
+            m_book->SetSelection(i);
+            SaveCurrentFile(false);
         }
+    }
 
-        int currentTab = m_book->GetSelection();
+    // Change with event
+    if (currentTab != m_book->GetSelection())
+        m_book->SetSelection(currentTab);
 
-        m_book->SetTabText(currentTab, m_currentEd->GetFileNameAndPath());
-        m_book->Refresh();
-        UpdateWindowTitle(m_book->GetPageText(currentTab));
-        m_currentEd->SetSavePoint();
-        m_currentEd->UpdateSyntaxHighlighting();
-        m_book->Refresh();
+    if (refreshLibrary)
+    {
+        std::vector<std::string> vPaths = m_terminal->getPathSettings();
+        // Refresh lib
+        CreateProcedureTree(vPaths[PROCPATH]);
+        m_terminal->UpdateLibrary();
     }
 
     return true;
@@ -6359,7 +6386,7 @@ void NumeReWindow::OnSaveSourceFile( int id )
     else if(id == ID_MENU_SAVE_SOURCE_REMOTE)
         m_remoteMode = true;
 
-    SaveFile(true, false, FILE_ALLSOURCETYPES);
+    SaveCurrentFile(true);
 }
 
 
@@ -6382,6 +6409,9 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
 
     if (command.rfind(".nprc") != string::npos)
     {
+        if (m_options->getSetting(SETTING_B_AUTOSAVEEXECUTION).active())
+            SaveAll(true);
+
         command.erase(command.rfind(".nprc"));
 
         if (command.substr(0, vPaths[PROCPATH].length()) == vPaths[PROCPATH])
@@ -6401,6 +6431,9 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
     }
     else if (command.rfind(".nscr") != string::npos)
     {
+        if (m_options->getSetting(SETTING_B_AUTOSAVEEXECUTION).active())
+            SaveAll(true);
+
         command.erase(command.rfind(".nscr"));
 
         if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])
@@ -6416,6 +6449,9 @@ void NumeReWindow::OnExecuteFile(const string& sFileName, int id)
     }
     else if (command.rfind(".nlyt") != string::npos)
     {
+        if (m_options->getSetting(SETTING_B_AUTOSAVEEXECUTION).active())
+            SaveAll(true);
+
         command.erase(command.rfind(".nlyt"));
 
         if (command.substr(0, vPaths[SCRIPTPATH].length()) == vPaths[SCRIPTPATH])

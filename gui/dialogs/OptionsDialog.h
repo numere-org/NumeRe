@@ -101,10 +101,10 @@ class wxCheckListBox;
 class wxString;
 class Options;
 
-/*!
- * OptionsDialog class declaration
- */
-
+/////////////////////////////////////////////////
+/// \brief This class represents the settings
+/// dialog in memory.
+/////////////////////////////////////////////////
 class OptionsDialog: public wxDialog
 {
         DECLARE_CLASS( OptionsDialog )
@@ -112,6 +112,7 @@ class OptionsDialog: public wxDialog
 
         void CreateConfigPage();
         void CreatePathPage();
+        void CreateEditorPage();
         void CreateStylePage();
         void CreateMiscPage();
         void CreateAnalyzerPage();
@@ -119,7 +120,6 @@ class OptionsDialog: public wxDialog
 
     public:
         /// Constructors
-        OptionsDialog( );
         OptionsDialog( wxWindow* parent, Options* options, wxWindowID id = -1,  const wxString& caption = _("Options"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU );
 
         /// Creation
@@ -136,7 +136,7 @@ class OptionsDialog: public wxDialog
         void OnColorPickerChange(wxColourPickerEvent& event);
         void OnColorTypeChange(wxCommandEvent& event);
         void OnButtonClick(wxCommandEvent& event);
-        void OnStyleButtonClick(wxCommandEvent& event);
+        void OnFontCheckClick(wxCommandEvent& event);
         void synchronizeColors();
 
         void BrowseForDir(wxTextCtrl* textbox, wxString name);
@@ -195,11 +195,15 @@ class OptionsDialog: public wxDialog
         wxSpinCtrl* m_caretBlinkTime;
         wxCheckBox* m_useExecuteCommand;
         wxCheckBox* m_formatBeforeSaving;
+        wxCheckBox* m_saveBeforeExecuting;
         wxCheckBox* m_useMaskAsDefault;
         wxCheckBox* m_keepBackupFiles;
         wxCheckBox* m_foldDuringLoading;
         wxCheckBox* m_useTabs;
         wxCheckBox* m_homeEndCancels;
+        wxCheckBox* m_braceAutoComp;
+        wxCheckBox* m_blockAutoComp;
+        wxCheckBox* m_quoteAutoComp;
 
         wxSpinCtrl* m_debuggerFocusLine;
         wxCheckBox* m_debuggerShowLineNumbers;

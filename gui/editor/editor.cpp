@@ -677,13 +677,13 @@ void NumeReEditor::OnChar( wxStyledTextEvent& event )
         return;
     }
 
-    if (chr == '"')
+    if (m_options->getSetting(SETTING_B_QUOTEAUTOCOMP).active() && chr == '"')
     {
         if (GetStyleAt(currentPos) != wxSTC_NSCR_STRING && GetStyleAt(currentPos) != wxSTC_NPRC_STRING)
             InsertText(currentPos, "\"");
     }
 
-    if (chr == '(' || chr == '[' || chr == '{')
+    if (m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active() && (chr == '(' || chr == '[' || chr == '{'))
     {
         int nMatchingPos = currentPos;
 
@@ -2104,7 +2104,7 @@ void NumeReEditor::OnAutoCompletion(wxStyledTextEvent& event)
     {
         // Ensure that there's actually a need for a new
         // parenthesis and insert a closed pair
-        if (GetCharAt(GetCurrentPos()) != '(' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION)
+        if (m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active() && (GetCharAt(GetCurrentPos()) != '(' || BraceMatch(GetCurrentPos()) == wxSTC_INVALID_POSITION))
             InsertText(GetCurrentPos(), "()");
 
         // Replace the current text with the function's
@@ -2112,10 +2112,10 @@ void NumeReEditor::OnAutoCompletion(wxStyledTextEvent& event)
         Replace(event.GetPosition(), GetCurrentPos(), event.GetText().substr(0, event.GetText().length()-1));
 
         // Jump into the parenthesis
-        GotoPos(event.GetPosition() + event.GetText().length());
+        GotoPos(event.GetPosition() + event.GetText().length() - !m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active());
         AutoCompCancel();
     }
-    else if (isBlockStart(event.GetText(), true))
+    else if (m_options->getSetting(SETTING_B_BLOCKAUTOCOMP).active() && isBlockStart(event.GetText(), true))
     {
         // Get the autocompletion block and find
         // the pipe position
