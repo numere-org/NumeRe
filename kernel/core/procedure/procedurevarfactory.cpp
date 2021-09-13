@@ -326,8 +326,9 @@ unsigned int ProcedureVarFactory::countVarListElements(const string& sVarList)
 /////////////////////////////////////////////////
 /// \brief This private member function checks,
 /// whether the keywords "var", "str" or "tab"
-/// are used in the current argument and throws
-/// an exception, if this is the case.
+/// are used in the current argument or if the
+/// argument name contains invalid characters and
+/// throws an exception, if this is the case.
 ///
 /// \param sArgument const string&
 /// \param sArgumentList const string&
@@ -335,7 +336,7 @@ unsigned int ProcedureVarFactory::countVarListElements(const string& sVarList)
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ProcedureVarFactory::checkKeywordsInArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex)
+void ProcedureVarFactory::checkArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex)
 {
     string sCommand = findCommand(sArgument).sString;
 
@@ -353,8 +354,77 @@ void ProcedureVarFactory::checkKeywordsInArgument(const string& sArgument, const
         // Gather all information in the debugger and throw
         // the exception
         _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-        _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, sArgumentList, SyntaxError::invalid_position, sCommand));
+        _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, "$" + sProcName + "(" + sArgumentList + ")", SyntaxError::invalid_position, sCommand));
     }
+
+    // Copy the argument to avoid an segmentation violation due to the deletion
+    sCommand = sArgument.substr(0, sArgument.find('='));
+
+    // Check for invalid argument names
+    if (!checkSymbolName(sCommand))
+    {
+        // Free up memory
+        for (unsigned int j = 0; j <= nCurrentIndex; j++)
+            delete[] sArgumentMap[j];
+
+        delete[] sArgumentMap;
+        nArgumentMapSize = 0;
+
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+        // Gather all information in the debugger and throw
+        // the exception
+        _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+        _debugger.throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, "$" + sProcName + "(" + sArgumentList + ")", SyntaxError::invalid_position, sCommand));
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This private member function checks,
+/// whether the keywords "var", "str" or "tab"
+/// are used in the current argument value and
+/// throws an exception, if this is the case.
+///
+/// \param sArgument const string&
+/// \param sArgumentList const string&
+/// \param nCurrentIndex unsigned int
+/// \return void
+///
+/////////////////////////////////////////////////
+void ProcedureVarFactory::checkArgumentValue(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex)
+{
+    string sCommand = findCommand(sArgument).sString;
+
+    // Was a keyword used as a argument?
+    if (sCommand == "var" || sCommand == "tab" || sCommand == "str")
+    {
+        // Free up memory
+        for (unsigned int j = 0; j <= nCurrentIndex; j++)
+            delete[] sArgumentMap[j];
+
+        delete[] sArgumentMap;
+        nArgumentMapSize = 0;
+
+        NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
+        // Gather all information in the debugger and throw
+        // the exception
+        _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+        _debugger.throwException(SyntaxError(SyntaxError::WRONG_ARG_NAME, "$" + sProcName + "(" + sArgumentList + ")", SyntaxError::invalid_position, sCommand));
+    }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Checks for invalid characters or
+/// similar.
+///
+/// \param sSymbolName const std::string&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool ProcedureVarFactory::checkSymbolName(const std::string& sSymbolName) const
+{
+    return sSymbolName.length() && !isdigit(sSymbolName[0]) && toLowerCase(sSymbolName).find_first_not_of(" abcdefghijklmnopqrstuvwxyz1234567890_(){}&") == std::string::npos;
 }
 
 
@@ -597,6 +667,8 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
     nArgumentMapSize = countVarListElements(sArgumentList);
     sArgumentMap = new string*[nArgumentMapSize];
 
+    std::string sArgListBack = sArgumentList;
+
     // Decode the argument list
     for (unsigned int i = 0; i < nArgumentMapSize; i++)
     {
@@ -604,14 +676,14 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
         sArgumentMap[i][0] = getNextArgument(sArgumentList);
         StripSpaces(sArgumentMap[i][0]);
 
-        checkKeywordsInArgument(sArgumentMap[i][0], sArgumentList, i);
+        checkArgument(sArgumentMap[i][0], sArgListBack, i);
 
         // Fill in the value of the argument by either
         // using the default value or the passed value
         sArgumentMap[i][1] = getNextArgument(sArgumentValues);
         StripSpaces(sArgumentMap[i][1]);
 
-        checkKeywordsInArgument(sArgumentMap[i][1], sArgumentList, i);
+        checkArgumentValue(sArgumentMap[i][1], sArgListBack, i);
 
         if (sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') != string::npos)
         {
@@ -972,6 +1044,25 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
         sLocalVars[i] = new string[2];
         sLocalVars[i][0] = getNextArgument(sVarList, true);
 
+        std::string sSymbol = sLocalVars[i][0].substr(0, sLocalVars[i][0].find('='));
+
+        if (!checkSymbolName(sSymbol))
+        {
+            _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+            for (unsigned int j = 0; j <= i; j++)
+            {
+                if (j < i)
+                    _parserRef->RemoveVar(sLocalVars[j][1]);
+
+                delete[] sLocalVars[j];
+            }
+
+            delete[] sLocalVars;
+            nLocalVarMapSize = 0;
+            _debugger.throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sVarList, SyntaxError::invalid_position, sSymbol));
+        }
+
         // Fill in the value of the variable by either
         // using the default or the explicit passed value
         if (sLocalVars[i][0].find('=') != string::npos)
@@ -1113,6 +1204,23 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
         sLocalStrings[i] = new string[3];
         sLocalStrings[i][0] = getNextArgument(sStringList, true);
 
+        std::string sSymbol = sLocalStrings[i][0].substr(0, sLocalStrings[i][0].find('='));
+
+        if (!checkSymbolName(sSymbol))
+        {
+            _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+            for (unsigned int j = 0; j <= i; j++)
+            {
+                if (j < i)
+                    NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
+
+                delete[] sLocalStrings[j];
+            }
+
+            delete[] sLocalStrings;
+            nLocalStrMapSize = 0;
+            _debugger.throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sStringList, SyntaxError::invalid_position, sSymbol));
+        }
         // Fill in the value of the variable by either
         // using the default or the explicit passed value
         if (sLocalStrings[i][0].find('=') != string::npos)
@@ -1265,6 +1373,26 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
         sLocalTables[i] = new string[2];
         sLocalTables[i][0] = getNextArgument(sTableList, true);
 
+        std::string sSymbol = sLocalTables[i][0].substr(0, sLocalTables[i][0].find('='));
+
+        if (!checkSymbolName(sSymbol))
+        {
+            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, i, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+            for (unsigned int j = 0; j <= i; j++)
+            {
+                if (j < i)
+                    _dataRef->deleteTable(sLocalTables[j][1]);
+
+                delete[] sLocalTables[j];
+            }
+
+            delete[] sLocalTables;
+            nLocalTableSize = 0;
+
+            NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sTableList, SyntaxError::invalid_position, sSymbol));
+        }
+
         if (sLocalTables[i][0].find('(') != string::npos)
             sLocalTables[i][0].erase(sLocalTables[i][0].find('('));
 
@@ -1327,6 +1455,25 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
     {
         sLocalClusters[i] = new string[2];
         sLocalClusters[i][0] = getNextArgument(sClusterList, true);
+
+        std::string sSymbol = sLocalClusters[i][0].substr(0, sLocalClusters[i][0].find('='));
+
+        if (!checkSymbolName(sSymbol))
+        {
+            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, i, sArgumentMap, nArgumentMapSize, sClusterList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+
+            for (unsigned int j = 0; j <= i; j++)
+            {
+                if (j < i)
+                    _dataRef->removeCluster(sLocalClusters[j][1]);
+
+                delete[] sLocalClusters[j];
+            }
+
+            delete[] sLocalClusters;
+            nLocalClusterSize = 0;
+            NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sClusterList, SyntaxError::invalid_position, sSymbol));
+        }
 
         if (sLocalClusters[i][0].find('=') != string::npos)
         {

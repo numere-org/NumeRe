@@ -394,7 +394,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
 
         // Get everything after the clearance command
         string sArgs = m_editor->GetTextRange(wordend, m_editor->GetLineEndPosition(m_nCurrentLine)).ToStdString();
-        while (sArgs.back() == '\r' || sArgs.back() == '\n')
+        while (sArgs.back() == '\r' || sArgs.back() == '\n' || sArgs.back() == ';')
             sArgs.pop_back();
 
         // Inform the user that he should append "ignore" as parameter
@@ -789,6 +789,10 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 if (!currentArg.length())
                     continue;
 
+                // Will this argument be overwritten by a declare?
+                if (nStyle == wxSTC_NPRC_IDENTIFIER && m_symdefs.isSymbol(currentArg))
+                    AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", currentArg, m_sError, _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", currentArg)), ANNOTATION_ERROR);
+
                 m_vLocalVariables.push_back(pair<string,int>(currentArg, nStyle));
 
                 // Try to find the variable in the remaining code
@@ -877,7 +881,13 @@ AnnotationCount CodeAnalyzer::analyseCommands()
                 {
                     if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER || m_editor->GetStyleAt(i) == wxSTC_NPRC_CUSTOM_FUNCTION || m_editor->GetStyleAt(i) == wxSTC_NPRC_CLUSTER)
                     {
-                        m_vLocalVariables.push_back(pair<string,int>(m_editor->GetTextRange(m_editor->WordStartPosition(i, true), m_editor->WordEndPosition(i, true)).ToStdString(), m_editor->GetStyleAt(i)));
+                        wxString sArg = m_editor->GetTextRange(m_editor->WordStartPosition(i, true), m_editor->WordEndPosition(i, true));
+
+                        // Will this argument be overwritten by a declare?
+                        if (m_editor->GetStyleAt(i) == wxSTC_NPRC_IDENTIFIER && m_symdefs.isSymbol(sArg.ToStdString()))
+                            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", sArg.ToStdString(), m_sError, _guilang.get("GUI_ANALYZER_DECLAREOVERWRITES", sArg.ToStdString())), ANNOTATION_ERROR);
+
+                        m_vLocalVariables.push_back(pair<string,int>(sArg.ToStdString(), m_editor->GetStyleAt(i)));
                         i = m_editor->WordEndPosition(i, true);
                     }
                 }

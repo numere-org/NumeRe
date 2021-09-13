@@ -80,7 +80,9 @@ class ProcedureVarFactory
         string resolveLocalTables(string sProcedureCommandLine, size_t nMapSize = string::npos);
         string resolveLocalClusters(string sProcedureCommandLine, size_t nMapSize = string::npos);
         unsigned int countVarListElements(const string& sVarList);
-        void checkKeywordsInArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex);
+        void checkArgument(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex);
+        void checkArgumentValue(const string& sArgument, const string& sArgumentList, unsigned int nCurrentIndex);
+        bool checkSymbolName(const std::string& sSymbolName) const;
         void createLocalInlineVars(string sVarList);
         void createLocalInlineStrings(string sVarList);
         void evaluateProcedureArguments(const std::string& sArgumentList);

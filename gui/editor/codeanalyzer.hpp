@@ -25,8 +25,6 @@
 
 #include "../../kernel/core/symdef.hpp"
 
-using namespace std;
-
 /////////////////////////////////////////////////
 /// \brief Stores the number of annotations for
 /// displaying a summary
@@ -64,18 +62,18 @@ class CodeAnalyzer
         Options* m_options;
         SymDefManager m_symdefs;
 
-        string m_sNote;
-        string m_sWarn;
-        string m_sError;
+        std::string m_sNote;
+        std::string m_sWarn;
+        std::string m_sError;
 
-        string m_sCurrentLine;
-        string m_sStyles;
+        std::string m_sCurrentLine;
+        std::string m_sStyles;
 
         int m_nCurPos;
         int m_nCurrentLine;
 
         bool m_hasProcedureDefinition;
-        vector<pair<string,int> > m_vLocalVariables;
+        std::vector<std::pair<std::string,int>> m_vLocalVariables;
 
         const double MINCOMMENTDENSITY = 0.5;
         const double MAXCOMMENTDENSITY = 1.5;
@@ -89,10 +87,10 @@ class CodeAnalyzer
         AnnotationCount analyseIdentifiers();
         AnnotationCount analyseOperators();
         AnnotationCount analyseNumbers();
-        AnnotationCount addToAnnotation(const string& sMessage, int nStyle);
+        AnnotationCount addToAnnotation(const std::string& sMessage, int nStyle);
 
-        string highlightFoundOccurence(const string& sElement, int nPos, int nLength);
-        bool containsAssignment(const string& sCurrentLine);
+        std::string highlightFoundOccurence(const std::string& sElement, int nPos, int nLength);
+        bool containsAssignment(const std::string& sCurrentLine);
         int calculateCyclomaticComplexity(int startline, int endline);
         int calculateLinesOfCode(int startline, int endline);
         int countNumberOfComments(int startline, int endline);
