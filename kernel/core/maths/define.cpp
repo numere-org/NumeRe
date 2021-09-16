@@ -315,7 +315,7 @@ bool FunctionDefinition::decodeDefinition()
         throw SyntaxError(SyntaxError::NO_NUMBER_AT_POS_1, sDefinitionString, SyntaxError::invalid_position, sName);
     }
 
-    string sDelim = "+-*/^!=&| ><()?[]{}$%§~#:.,;";
+    static std::string sDelim = "+-*/^!=&| ><()?[]{}$%#:.,;";
 
     if (sName.find_first_of(sDelim) != string::npos)
     {

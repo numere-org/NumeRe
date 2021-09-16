@@ -30,6 +30,20 @@
 using namespace std;
 
 /////////////////////////////////////////////////
+/// \brief A simple structure to define a syntax
+/// block for folding, etc.
+/////////////////////////////////////////////////
+struct SyntaxBlockDefinition
+{
+    string startWord;
+    string endWord;
+    string middleWord1;
+    string middleWord2;
+};
+
+
+
+/////////////////////////////////////////////////
 /// \brief This class contains all needed
 /// keywords to highlight their occurences
 /// correspondingly. It will pass them to the
@@ -51,6 +65,7 @@ class NumeReSyntax
         vector<string> vSpecialValues;
         vector<string> vOperators;
         vector<string> vDocKeyWords;
+        vector<SyntaxBlockDefinition> vBlockDefs;
         vector<string> vMatlabKeyWords;
         vector<string> vMatlabFunctions;
         vector<string> vCppKeyWords;
@@ -69,6 +84,7 @@ class NumeReSyntax
 
         string constructString(const vector<string>& vVector) const;
         vector<string> splitString(string sString);
+        vector<SyntaxBlockDefinition> splitDefs(string sDefString);
         bool matchItem(const vector<string>& vVector, const string& sString);
     public:
         enum SyntaxColors
@@ -110,6 +126,7 @@ class NumeReSyntax
             {return constructString(vOperators);}
         string getDocKeyWords() const
             {return constructString(vDocKeyWords);}
+        string getBlockDefs() const;
         string getMatlab() const
             {return constructString(vMatlabKeyWords);}
         string getMatlabFunctions() const
@@ -128,6 +145,9 @@ class NumeReSyntax
         string highlightLine(const string& sCommandLine);
         string highlightError(const string& sCommandLine);
         string highlightWarning(const string& sCommandLine);
+
+        vector<SyntaxBlockDefinition> getFullBlockDefs() const
+            {return vBlockDefs;}
 
 };
 #endif // SYNTAX_HPP

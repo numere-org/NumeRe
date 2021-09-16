@@ -175,6 +175,7 @@ NumeReEditor::NumeReEditor(NumeReWindow* mframe, Options* options, wxWindow* par
     m_lastRightClick.x = -1;
     m_lastRightClick.y = -1;
     _syntax = __syntax;
+    vBlockDefs = _syntax->getFullBlockDefs();
     m_terminal = __terminal;
     m_dragging = false;
 
@@ -929,7 +930,7 @@ void NumeReEditor::MakeBlockCheck()
 
     // If the word is a flow control statement
     // find the matching block
-    if (isBlockStart(currentWord, true) || isBlockEnd(currentWord))
+    if (isBlockStart(currentWord, true) != wxNOT_FOUND || isBlockEnd(currentWord) != wxNOT_FOUND)
         getMatchingBlock(GetCurrentPos());
 }
 
@@ -1752,155 +1753,47 @@ void NumeReEditor::OnMouseDwell(wxStyledTextEvent& event)
 
         size_t lastpos = 0;
 
-        if (selection == "if" || selection == "endif" || selection == "else" || selection == "elseif")
+        // Is it a block?
+        int id = getBlockID(selection);
+
+        if (id != wxNOT_FOUND)
         {
             size_t nLength = 0;
             size_t lastpos2 = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_IF_*"), lastpos)) + "\n  [...]\n";
 
-            if (selection != "if")
+            // Get the block definition
+            SyntaxBlockDefinition blockDef = vBlockDefs[id];
+
+            // Construct the tooltip
+            std::string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(blockDef.startWord) + "_*"), lastpos)) + "\n  [...]\n";
+
+            if (selection != blockDef.startWord)
                 nLength = sBlock.length();
 
-            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSEIF_*"), lastpos2)) + "\n  [...]\n";
+            // Include middle words
+            if (blockDef.middleWord1.length())
+            {
+                sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(blockDef.middleWord1) + "_*"), lastpos2)) + "\n  [...]\n";
 
-            if (selection != "if" && selection != "elseif")
-                nLength = sBlock.length() + countUmlauts(sBlock);
+                if (selection != blockDef.startWord && selection != blockDef.middleWord1)
+                    nLength = sBlock.length() + countUmlauts(sBlock);
+            }
 
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ELSE_*")) + "\n  [...]\n";
+            // Include middle words
+            if (blockDef.middleWord2.length())
+            {
+                sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(blockDef.middleWord2) + "_*")) + "\n  [...]\n";
 
-            if (selection != "if" && selection != "elseif" && selection != "else")
-                nLength = sBlock.length() + countUmlauts(sBlock);
+                if (selection != blockDef.startWord && selection != blockDef.middleWord1 && selection != blockDef.middleWord2)
+                    nLength = sBlock.length() + countUmlauts(sBlock);
+            }
 
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDIF_*"));
-            this->AdvCallTipShow(startPosition, sBlock);
+            // Add the last word
+            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_" + toUpperCase(blockDef.endWord) + "_*"), lastpos));
 
-            if (selection == "if")
-                this->CallTipSetHighlight(nLength, lastpos + nLength);
-            else if (selection == "elseif")
-                this->CallTipSetHighlight(nLength, lastpos2 + nLength);
-            else
-                this->CallTipSetHighlight(nLength, 13 + nLength);
-        }
-        else if (selection == "switch" || selection == "endswitch" || selection == "case" || selection == "default")
-        {
-            size_t nLength = 0;
-            size_t lastpos2 = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_SWITCH_*"), lastpos)) + "\n  [...]\n";
-
-            if (selection != "switch")
-                nLength = sBlock.length();
-
-            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_CASE_*"), lastpos2)) + "\n  [...]\n";
-
-            if (selection != "switch" && selection != "case")
-                nLength = sBlock.length() + countUmlauts(sBlock);
-
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_DEFAULT_*")) + "\n  [...]\n";
-
-            if (selection != "switch" && selection != "case" && selection != "default")
-                nLength = sBlock.length() + countUmlauts(sBlock);
-
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDSWITCH_*"));
-            this->AdvCallTipShow(startPosition, sBlock);
-
-            if (selection == "switch")
-                this->CallTipSetHighlight(nLength, lastpos + nLength);
-            else if (selection == "case")
-                this->CallTipSetHighlight(nLength, lastpos2 + nLength);
-            else
-                this->CallTipSetHighlight(nLength, 13 + nLength);
-        }
-        else if (selection == "for" || selection == "endfor")
-        {
-            size_t nLength = 0;
-            size_t lastpos2 = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_FOR_*"), lastpos)) + "\n  [...]\n";
-
-            if (selection != "for")
-                nLength = sBlock.length() + countUmlauts(sBlock);
-
-            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDFOR_*"), lastpos2));
-            this->AdvCallTipShow(startPosition, sBlock);
-
-            if (nLength)
-                this->CallTipSetHighlight(nLength, lastpos2 + nLength);
-            else
-                this->CallTipSetHighlight(nLength, lastpos + nLength);
-        }
-        else if (selection == "while" || selection == "endwhile")
-        {
-            size_t nLength = 0;
-            size_t lastpos2 = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_WHILE_*"), lastpos)) + "\n  [...]\n";
-
-            if (selection != "while")
-                nLength = sBlock.length() + countUmlauts(sBlock);
-
-            sBlock += addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDWHILE_*"), lastpos2));
-            this->AdvCallTipShow(startPosition, sBlock);
-
-            if (nLength)
-                this->CallTipSetHighlight(nLength, lastpos2 + nLength);
-            else
-                this->CallTipSetHighlight(nLength, lastpos + nLength);
-        }
-        else if (selection == "procedure" || selection == "endprocedure")
-        {
-            size_t nLength = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_PROCEDURE_*"), lastpos)) + "\n  [...]\n";
-
-            if (selection != "procedure")
-                nLength = sBlock.length() + countUmlauts(sBlock);
-
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDPROCEDURE_*"));
-            this->AdvCallTipShow(startPosition, sBlock);
-
-            if (nLength)
-                this->CallTipSetHighlight(nLength, 13 + nLength);
-            else
-                this->CallTipSetHighlight(nLength, lastpos + nLength);
-        }
-        else if (selection == "compose" || selection == "endcompose")
-        {
-            size_t nLength = 0;
-            string sBlock = addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_COMPOSE_*")) + "\n  [...]\n";
-
-            if (selection != "compose")
-                nLength = sBlock.length() + countUmlauts(sBlock);
-
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDCOMPOSE_*"));
-            this->AdvCallTipShow(startPosition, sBlock);
-            this->CallTipSetHighlight(nLength, 10 + nLength);
-        }
-        else if (selection == "layout" || selection == "endlayout")
-        {
-            size_t nLength = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_LAYOUT_*"), lastpos)) + "\n  [...]\n";
-
-            if (selection != "layout")
-                nLength = sBlock.length() + countUmlauts(sBlock);
-
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDLAYOUT_*"));
-            this->AdvCallTipShow(startPosition, sBlock);
-            if (nLength)
-                this->CallTipSetHighlight(nLength, 9 + nLength);
-            else
-                this->CallTipSetHighlight(nLength, lastpos + nLength);
-        }
-        else if (selection == "group" || selection == "endgroup")
-        {
-            size_t nLength = 0;
-            string sBlock = addLinebreaks(realignLangString(_guilang.get("PARSERFUNCS_LISTCMD_CMD_GROUP_*"), lastpos)) + "\n  [...]\n";
-
-            if (selection != "group")
-                nLength = sBlock.length() + countUmlauts(sBlock);
-
-            sBlock += addLinebreaks(_guilang.get("PARSERFUNCS_LISTCMD_CMD_ENDGROUP_*"));
-            this->AdvCallTipShow(startPosition, sBlock);
-            if (nLength)
-                this->CallTipSetHighlight(nLength, 8 + nLength);
-            else
-                this->CallTipSetHighlight(nLength, lastpos + nLength);
+            // Display the tooltip and highlight the corresponding positions
+            AdvCallTipShow(startPosition, sBlock);
+            CallTipSetHighlight(nLength, selection.length() + nLength);
         }
         else
         {
@@ -2115,7 +2008,7 @@ void NumeReEditor::OnAutoCompletion(wxStyledTextEvent& event)
         GotoPos(event.GetPosition() + event.GetText().length() - !m_options->getSetting(SETTING_B_BRACEAUTOCOMP).active());
         AutoCompCancel();
     }
-    else if (m_options->getSetting(SETTING_B_BLOCKAUTOCOMP).active() && isBlockStart(event.GetText(), true))
+    else if (m_options->getSetting(SETTING_B_BLOCKAUTOCOMP).active() && isBlockStart(event.GetText(), true) != wxNOT_FOUND)
     {
         // Get the autocompletion block and find
         // the pipe position
@@ -2978,6 +2871,29 @@ vector<int> NumeReEditor::BlockMatch(int nPos)
 
 
 /////////////////////////////////////////////////
+/// \brief Checks, if the selected block is the
+/// only block active.
+///
+/// \param nBlockID int
+/// \param vBlocks std::vector<int>
+/// \return bool
+///
+/////////////////////////////////////////////////
+static bool isOnlyActiveBlock(int nBlockID, std::vector<int> vBlocks)
+{
+    for (size_t i = 0; i < vBlocks.size(); i++)
+    {
+        if (i == nBlockID && vBlocks[i] != 1)
+            return false;
+        else if (i != nBlockID && vBlocks[i])
+            return false;
+    }
+
+    return true;
+}
+
+
+/////////////////////////////////////////////////
 /// \brief Finds all matching flow control statements
 /// for NumeRe command syntax.
 ///
@@ -2988,20 +2904,14 @@ vector<int> NumeReEditor::BlockMatch(int nPos)
 /////////////////////////////////////////////////
 vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
 {
-    int nFor = 0;
-    int nIf = 0;
-    int nWhile = 0;
-    int nCompose = 0;
-    int nProcedure = 0;
-    int nSwitch = 0;
-    int nLayout = 0;
-    int nGroup = 0;
+    vector<int> vBlocks(vBlockDefs.size());
+
     int nStartPos = WordStartPosition(nPos, true);
     vector<int> vPos;
     wxString startblock;
     wxString endblock;
-    bool bSearchForIf = false; //if we search for an if block element. If yes => also mark the "else..." parts.
-    bool bSearchForSwitch = false; //if we search for an switch block element. If yes => also mark the "case..." parts.
+
+    int searchForMiddleWords = wxNOT_FOUND;
     int nSearchDir = 1; //direction in which to search for the matching block partner
 
     if (GetStyleAt(nPos) != wxSTC_NSCR_COMMAND && GetStyleAt(nPos) != wxSTC_NPRC_COMMAND)
@@ -3015,19 +2925,20 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
         }
     }
 
-
     startblock = GetTextRange(WordStartPosition(nPos, true), WordEndPosition(nPos, true));
+
+    int blockMiddle = isBlockMiddle(startblock);
 
     if (startblock.substr(0, 3) == "end")
     {
         endblock = getBlockStart(startblock);
         nSearchDir = -1;
     }
-    else if (startblock == "else" || startblock == "elseif")
+    else if (blockMiddle != wxNOT_FOUND)
     {
         // search for starting "if"
         // adding 1 to nIf, because we're already inside of an "if"
-        nIf++;
+        vBlocks[blockMiddle]++;
 
         for (int i = WordEndPosition(nPos, true); i >= 0; i--)
         {
@@ -3035,40 +2946,17 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
             {
                 wxString currentWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
-                if (currentWord == "for")
-                    nFor--; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
-                else if (currentWord == "endfor")
-                    nFor++;
-                else if (currentWord == "while")
-                    nWhile--;
-                else if (currentWord == "endwhile")
-                    nWhile++;
-                else if (currentWord == "if")
-                    nIf--;
-                else if (currentWord == "endif")
-                    nIf++;
-                else if (currentWord == "compose")
-                    nCompose--;
-                else if (currentWord == "endcompose")
-                    nCompose++;
-                else if (currentWord == "layout")
-                    nLayout--;
-                else if (currentWord == "endlayout")
-                    nLayout++;
-                else if (currentWord == "group")
-                    nGroup--;
-                else if (currentWord == "endgroup")
-                    nGroup++;
-                else if (currentWord == "procedure")
-                    nProcedure--;
-                else if (currentWord == "endprocedure")
-                    nProcedure++;
-                else if (currentWord == "switch")
-                    nSwitch--;
-                else if (currentWord == "endswitch")
-                    nSwitch++;
+                int block = isBlockStart(currentWord, false);
 
-                if (currentWord == "if" && !nFor && !nIf && !nWhile && !nCompose && !nLayout && !nGroup && !nProcedure && !nSwitch)
+                // if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
+                if (block != wxNOT_FOUND)
+                    vBlocks[block]--;
+                else if ((block = isBlockEnd(currentWord)) != wxNOT_FOUND)
+                    vBlocks[block]++;
+
+                if (block == blockMiddle
+                    && !(*std::min_element(vBlocks.begin(), vBlocks.end()))
+                    && !(*std::max_element(vBlocks.begin(), vBlocks.end())))
                 {
                     nStartPos = WordStartPosition(i, true);
                     break;
@@ -3077,7 +2965,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
                 i -= currentWord.length();
             }
 
-            if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0  || nLayout < 0  || nGroup < 0 || nProcedure < 0 || nSwitch < 0)
+            if (*std::min_element(vBlocks.begin(), vBlocks.end()) < 0)
             {
                 // There's no matching partner
                 // set the first to invalid but do not return
@@ -3086,110 +2974,19 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
             }
         }
 
-        if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nLayout > 0 || nGroup > 0 || nProcedure > 0 || nSwitch > 0)
+        if (*std::max_element(vBlocks.begin(), vBlocks.end()) > 0)
         {
             // There's no matching partner
             // set the first to invalid but do not return
             vPos.push_back(wxSTC_INVALID_POSITION);
-            nIf = 1;
+            vBlocks.assign(vBlocks.size(), 0);
+            vBlocks[blockMiddle] = 1;
         }
         else
-            nIf = 0;
+            vBlocks.assign(vBlocks.size(), 0);
 
-        nFor = 0;
-        nWhile = 0;
-        nCompose = 0;
-        nLayout = 0;
-        nGroup = 0;
-        nProcedure = 0;
-        nSwitch = 0;
-
-        bSearchForIf = true;
-        endblock = "endif";
-    }
-    else if (startblock == "case" || startblock == "default")
-    {
-        // search for starting "switch"
-        // adding 1 to nSwitch, because we're already inside of an "switch"
-        nSwitch++;
-
-        for (int i = WordEndPosition(nPos, true); i >= 0; i--)
-        {
-            if (GetStyleAt(i) == wxSTC_NSCR_COMMAND)
-            {
-                wxString currentWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
-
-                if (currentWord == "for")
-                    nFor--; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
-                else if (currentWord == "endfor")
-                    nFor++;
-                else if (currentWord == "while")
-                    nWhile--;
-                else if (currentWord == "endwhile")
-                    nWhile++;
-                else if (currentWord == "if")
-                    nIf--;
-                else if (currentWord == "endif")
-                    nIf++;
-                else if (currentWord == "compose")
-                    nCompose--;
-                else if (currentWord == "endcompose")
-                    nCompose++;
-                else if (currentWord == "layout")
-                    nLayout--;
-                else if (currentWord == "endlayout")
-                    nLayout++;
-                else if (currentWord == "group")
-                    nGroup--;
-                else if (currentWord == "endgroup")
-                    nGroup++;
-                else if (currentWord == "procedure")
-                    nProcedure--;
-                else if (currentWord == "endprocedure")
-                    nProcedure++;
-                else if (currentWord == "switch")
-                    nSwitch--;
-                else if (currentWord == "endswitch")
-                    nSwitch++;
-
-                if (currentWord == "switch" && !nFor && !nIf && !nWhile && !nCompose && !nLayout && !nGroup && !nProcedure && !nSwitch)
-                {
-                    nStartPos = WordStartPosition(i, true);
-                    break;
-                }
-
-                i -= currentWord.length();
-            }
-
-            if (nFor < 0 || nWhile < 0 || nIf < 0 || nCompose < 0 || nLayout < 0 || nGroup < 0 || nProcedure < 0 || nSwitch < 0)
-            {
-                // There's no matching partner
-                // set the first to invalid but do not return
-                vPos.push_back(wxSTC_INVALID_POSITION);
-                break;
-            }
-        }
-
-        if (nFor > 0 || nWhile > 0 || nIf > 0 || nCompose > 0 || nLayout > 0 || nGroup > 0 || nProcedure > 0 || nSwitch > 0)
-        {
-            // There's no matching partner
-            // set the first to invalid but do not return
-            vPos.push_back(wxSTC_INVALID_POSITION);
-            nIf = 1;
-        }
-        else
-            nIf = 0;
-
-        nFor = 0;
-        nWhile = 0;
-        nCompose = 0;
-        nLayout = 0;
-        nGroup = 0;
-        nProcedure = 0;
-        nSwitch = 0;
-
-        bSearchForSwitch = true;
-        endblock = "endswitch";
+        searchForMiddleWords = blockMiddle;
+        endblock = getBlockEnd(startblock);
     }
     else
         endblock = getBlockEnd(startblock);
@@ -3200,10 +2997,8 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
         return vPos;
     }
 
-    if (startblock == "if" || endblock == "if")
-        bSearchForIf = true;
-    else if (startblock == "switch" || endblock == "switch")
-        bSearchForSwitch = true;
+    if (hasBlockMiddle(endblock))
+        searchForMiddleWords = getBlockID(endblock);
 
     vPos.push_back(nStartPos);
 
@@ -3216,48 +3011,23 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
         {
             wxString currentWord = GetTextRange(WordStartPosition(i, true), WordEndPosition(i, true));
 
-            if (currentWord == "for")
-                nFor += nSearchDir; //if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
-            else if (currentWord == "endfor")
-                nFor -= nSearchDir;
-            else if (currentWord == "while")
-                nWhile += nSearchDir;
-            else if (currentWord == "endwhile")
-                nWhile -= nSearchDir;
-            else if (currentWord == "if")
-                nIf += nSearchDir;
-            else if (currentWord == "endif")
-                nIf -= nSearchDir;
-            else if (currentWord == "compose")
-                nCompose += nSearchDir;
-            else if (currentWord == "endcompose")
-                nCompose -= nSearchDir;
-            else if (currentWord == "procedure")
-                nProcedure += nSearchDir;
-            else if (currentWord == "endprocedure")
-                nProcedure -= nSearchDir;
-            else if (currentWord == "switch")
-                nSwitch += nSearchDir;
-            else if (currentWord == "endswitch")
-                nSwitch -= nSearchDir;
-            else if (currentWord == "layout")
-                nLayout += nSearchDir;
-            else if (currentWord == "endlayout")
-                nLayout -= nSearchDir;
-            else if (currentWord == "group")
-                nGroup += nSearchDir;
-            else if (currentWord == "endgroup")
-                nGroup -= nSearchDir;
+            int block = isBlockStart(currentWord, false);
 
-            if (bSearchForIf && nIf == 1 && !nFor && !nWhile && !nProcedure && !nCompose && !nSwitch && !nLayout && !nGroup // only in the current if block
-                    && (currentWord == "else" || currentWord == "elseif"))
+            // if we iterate upwards, the closing blocks shall increment and the opening blocks decrement the counter
+            if (block != wxNOT_FOUND)
+                vBlocks[block] += nSearchDir;
+            else if ((block = isBlockEnd(currentWord)) != wxNOT_FOUND)
+                vBlocks[block] -= nSearchDir;
+
+            // only in the current if block
+            if (searchForMiddleWords != wxNOT_FOUND
+                && isBlockMiddle(currentWord) == searchForMiddleWords
+                && isOnlyActiveBlock(searchForMiddleWords, vBlocks))
                 vPos.push_back(WordStartPosition(i, true));
 
-            if (bSearchForSwitch && nSwitch == 1 && !nFor && !nWhile && !nProcedure && !nCompose && !nIf && !nLayout && !nGroup // only in the current if block
-                    && (currentWord == "case" || currentWord == "default"))
-                vPos.push_back(WordStartPosition(i, true));
-
-            if (currentWord == endblock && !nFor && !nIf && !nWhile && !nProcedure && !nCompose && !nSwitch && !nLayout && !nGroup)
+            if (currentWord == endblock
+                && !(*std::min_element(vBlocks.begin(), vBlocks.end()))
+                && !(*std::max_element(vBlocks.begin(), vBlocks.end())))
             {
                 vPos.push_back(WordStartPosition(i, true));
                 break;
@@ -3266,7 +3036,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
             i += nSearchDir * currentWord.length();
         }
 
-        if (nFor < 0 || nWhile < 0 || nIf < 0 || nProcedure < 0 || nCompose < 0 || nSwitch < 0 || nLayout < 0 || nGroup < 0)
+        if (*std::min_element(vBlocks.begin(), vBlocks.end()) < 0)
         {
             // There's no matching partner
             vPos.push_back(wxSTC_INVALID_POSITION);
@@ -3274,8 +3044,7 @@ vector<int> NumeReEditor::BlockMatchNSCR(int nPos)
         }
     }
 
-    if (!vPos.size()
-            || (nFor > 0 || nWhile > 0 || nIf > 0 || nProcedure > 0 || nCompose > 0 || nSwitch > 0 || nLayout > 0 || nGroup > 0))
+    if (!vPos.size() || (*std::max_element(vBlocks.begin(), vBlocks.end()) > 0))
         vPos.push_back(wxSTC_INVALID_POSITION);
 
     return vPos;
@@ -3738,7 +3507,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
             this->SetKeyWords(1, _syntax->getOptions());
             this->SetKeyWords(2, _syntax->getFunctions());
             this->SetKeyWords(3, _syntax->getMethods());
-            this->SetKeyWords(4, "x y z t");
+            this->SetKeyWords(4, _syntax->getBlockDefs());
             this->SetKeyWords(5, _syntax->getConstants());
             this->SetKeyWords(6, _syntax->getSpecial());
             this->SetKeyWords(7, _syntax->getOperators());
@@ -3841,7 +3610,7 @@ void NumeReEditor::UpdateSyntaxHighlighting(bool forceUpdate)
             this->SetKeyWords(1, _syntax->getOptions());
             this->SetKeyWords(2, _syntax->getFunctions());
             this->SetKeyWords(3, _syntax->getMethods());
-            this->SetKeyWords(4, "x y z t");
+            this->SetKeyWords(4, _syntax->getBlockDefs());
             this->SetKeyWords(5, _syntax->getConstants());
             this->SetKeyWords(6, _syntax->getSpecial());
             this->SetKeyWords(7, _syntax->getOperators());
@@ -6843,6 +6612,15 @@ void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, i
 }
 
 
+static bool isEqualIgnoreWhitespace(wxString word1, wxString word2)
+{
+    word1.Trim();
+    word2.Trim();
+
+    return word2.Trim(false) == word1.Trim(false);
+}
+
+
 /////////////////////////////////////////////////
 /// \brief This function returns true, if a
 /// passed word corresponds to a control flow
@@ -6850,21 +6628,22 @@ void NumeReEditor::IndicateDuplicatedLine(int nStart1, int nEnd1, int nStart2, i
 ///
 /// \param sWord const wxString&
 /// \param allowIntermediate bool
-/// \return bool
+/// \return int
 ///
 /////////////////////////////////////////////////
-bool NumeReEditor::isBlockStart(const wxString& sWord, bool allowIntermediate)
+int NumeReEditor::isBlockStart(const wxString& sWord, bool allowIntermediate)
 {
     if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-        return sWord == "if"
-            || sWord == "for"
-            || sWord == "while"
-            || sWord == "compose"
-            || sWord == "procedure"
-            || sWord == "layout"
-            || sWord == "group"
-            || sWord == "switch"
-            || (allowIntermediate && (sWord == "elseif" || sWord == "else" || sWord == "case" || sWord == "default"));
+    {
+        int id = getBlockID(sWord);
+
+        if (id != wxNOT_FOUND)
+        {
+            if (isEqualIgnoreWhitespace(vBlockDefs[id].startWord, sWord)
+                || (allowIntermediate && (isEqualIgnoreWhitespace(sWord, vBlockDefs[id].middleWord1) || isEqualIgnoreWhitespace(sWord, vBlockDefs[id].middleWord2))))
+                return id;
+        }
+    }
     else if (m_fileType == FILE_MATLAB)
         return sWord == "if"
             || sWord == "for"
@@ -6877,7 +6656,7 @@ bool NumeReEditor::isBlockStart(const wxString& sWord, bool allowIntermediate)
             || sWord == "switch"
             || (allowIntermediate && (sWord == "elseif" || sWord == "else" || sWord == "case" || sWord == "otherwise" || sWord == "catch"));
 
-    return false;
+    return wxNOT_FOUND;
 }
 
 
@@ -6887,24 +6666,126 @@ bool NumeReEditor::isBlockStart(const wxString& sWord, bool allowIntermediate)
 /// statement block end.
 ///
 /// \param sWord const wxString&
-/// \return bool
+/// \return int
 ///
 /////////////////////////////////////////////////
-bool NumeReEditor::isBlockEnd(const wxString& sWord)
+int NumeReEditor::isBlockEnd(const wxString& sWord)
 {
     if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
-        return sWord == "endif"
-            || sWord == "endfor"
-            || sWord == "endwhile"
-            || sWord == "endcompose"
-            || sWord == "endprocedure"
-            || sWord == "endlayout"
-            || sWord == "endgroup"
-            || sWord == "endswitch";
+    {
+        int id = getBlockID(sWord);
+
+        if (id != wxNOT_FOUND)
+        {
+            if (isEqualIgnoreWhitespace(vBlockDefs[id].endWord, sWord))
+                return id;
+        }
+    }
     else if (m_fileType == FILE_MATLAB)
         return sWord == "end";
 
+    return wxNOT_FOUND;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns, whether a word
+/// matches to a block middle statement (e.g.
+/// elseif).
+///
+/// \param sWord const wxString&
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReEditor::isBlockMiddle(const wxString& sWord)
+{
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    {
+        int id = getBlockID(sWord);
+
+        if (id != wxNOT_FOUND
+            && (isEqualIgnoreWhitespace(vBlockDefs[id].middleWord1, sWord) || isEqualIgnoreWhitespace(vBlockDefs[id].middleWord2, sWord)))
+            return id;
+    }
+    else if (m_fileType == FILE_MATLAB)
+        return sWord == "elseif" || sWord == "else" || sWord == "case" || sWord == "otherwise" || sWord == "catch";
+
+    return wxNOT_FOUND;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns, whether a block
+/// has block middle statements.
+///
+/// \param sWord const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool NumeReEditor::hasBlockMiddle(const wxString& sWord)
+{
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    {
+        int id = getBlockID(sWord);
+
+        if (id != wxNOT_FOUND && vBlockDefs[id].middleWord1.length())
+            return true;
+    }
+    else if (m_fileType == FILE_MATLAB)
+        return sWord == "if"
+            || sWord == "try"
+            || sWord == "switch"
+            || sWord == "elseif"
+            || sWord == "else"
+            || sWord == "case"
+            || sWord == "otherwise"
+            || sWord == "catch";
+
     return false;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief This function returns the block ID.
+///
+/// \param word const wxString&
+/// \return int
+///
+/////////////////////////////////////////////////
+int NumeReEditor::getBlockID(const wxString& word)
+{
+    if (m_fileType == FILE_NSCR || m_fileType == FILE_NPRC)
+    {
+        if (!word.length())
+            return wxNOT_FOUND;
+
+        for (size_t i = 0; i < vBlockDefs.size(); i++)
+        {
+            if (isEqualIgnoreWhitespace(vBlockDefs[i].startWord, word)
+                || isEqualIgnoreWhitespace(vBlockDefs[i].middleWord1, word)
+                || isEqualIgnoreWhitespace(vBlockDefs[i].middleWord2, word)
+                || isEqualIgnoreWhitespace(vBlockDefs[i].endWord, word))
+                return i;
+        }
+    }
+    else if (m_fileType == FILE_MATLAB)
+        return word == "if"
+            || word == "for"
+            || word == "while"
+            || word == "classdef"
+            || word == "properties"
+            || word == "function"
+            || word == "methods"
+            || word == "try"
+            || word == "switch"
+            || word == "end"
+            || word == "elseif"
+            || word == "else"
+            || word == "case"
+            || word == "otherwise"
+            || word == "catch";
+
+    return wxNOT_FOUND;
 }
 
 
@@ -6963,22 +6844,10 @@ wxString NumeReEditor::getBlockEnd(const wxString& sWord)
     if (m_fileType == FILE_MATLAB)
         return "end";
 
-    if (sWord == "if" || sWord == "elseif" || sWord == "else")
-        return "endif";
-    else if (sWord == "for")
-        return "endfor";
-    else if (sWord == "while")
-        return "endwhile";
-    else if (sWord == "compose")
-        return "endcompose";
-    else if (sWord == "procedure")
-        return "endprocedure";
-    else if (sWord == "layout")
-        return "endlayout";
-    else if (sWord == "group")
-        return "endgroup";
-    else if (sWord == "switch" || sWord == "case" || sWord == "default")
-        return "endswitch";
+    int id = isBlockStart(sWord, true);
+
+    if (id != wxNOT_FOUND)
+        return vBlockDefs[id].endWord;
 
     return "";
 }
@@ -6998,22 +6867,10 @@ wxString NumeReEditor::getBlockStart(const wxString& sWord)
     if (m_fileType == FILE_MATLAB)
         return "";
 
-    if (sWord == "endif" || sWord == "elseif" || sWord == "else")
-        return "if";
-    else if (sWord == "endfor")
-        return "for";
-    else if (sWord == "endwhile")
-        return "while";
-    else if (sWord == "endcompose")
-        return "compose";
-    else if (sWord == "endprocedure")
-        return "procedure";
-    else if (sWord == "endlayout")
-        return "layout";
-    else if (sWord == "endgroup")
-        return "group";
-    else if (sWord == "endswitch" || sWord == "case" || sWord == "default")
-        return "switch";
+    int id = getBlockID(sWord);
+
+    if (id != wxNOT_FOUND && !isEqualIgnoreWhitespace(sWord, vBlockDefs[id].startWord))
+        return vBlockDefs[id].startWord;
 
     return "";
 }

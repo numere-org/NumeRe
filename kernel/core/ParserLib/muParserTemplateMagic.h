@@ -91,7 +91,7 @@ namespace mu
     static T Tan(T v)   { return tan(v);  }
     static T ASin(T v)  { return asin(v); }
     static T ACos(T v)  { return acos(v); }
-    static T ATan(T v)  { return atan(v); }
+    static T ATan(T v)  { return isnan(v.real()) || isnan(v.imag()) ? NAN : atan(v); }
     static T ATan2(T v1, T v2) { return atan2(v1, v2); }
     static T Sinh(T v)  { return sinh(v); }
     static T Cosh(T v)  { return cosh(v); }

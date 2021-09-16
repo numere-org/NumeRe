@@ -116,6 +116,8 @@ void NumeReSyntax::loadSyntax(const string& _sPath)
             vOperators = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 11) == "DOCKEYWORDS")
             vDocKeyWords = splitString(sLine.substr(sLine.find('=')+1));
+        else if (sLine.substr(0, 9) == "BLOCKDEFS")
+            vBlockDefs = splitDefs(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 14) == "MATLABKEYWORDS")
             vMatlabKeyWords = splitString(sLine.substr(sLine.find('=')+1));
         else if (sLine.substr(0, 15) == "MATLABFUNCTIONS")
@@ -175,6 +177,28 @@ void NumeReSyntax::setProcedureTree(const vector<string>& vTree)
         if (vProcedureTree[i].find(".nprc") != string::npos)
             vProcedureTree[i].erase(vProcedureTree[i].rfind(".nprc"));
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns all block definitions as a
+/// folding string for the lexers.
+///
+/// \return string
+///
+/////////////////////////////////////////////////
+string NumeReSyntax::getBlockDefs() const
+{
+    string sReturn;
+    string endWords;
+
+    for (const SyntaxBlockDefinition& def : vBlockDefs)
+    {
+        sReturn += def.startWord + " ";
+        endWords += def.endWord + " ";
+    }
+
+    return sReturn + ";" + endWords;
 }
 
 
@@ -242,6 +266,45 @@ vector<string> NumeReSyntax::splitString(string sString)
     }
 
     return vReturn;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Converts a block def string into
+/// actual syntax block definitions.
+///
+/// \param sDefString string
+/// \return vector<SyntaxBlockDefinition>
+///
+/////////////////////////////////////////////////
+vector<SyntaxBlockDefinition> NumeReSyntax::splitDefs(string sDefString)
+{
+    vector<SyntaxBlockDefinition> vDefs;
+
+    EndlessVector<string> defs = getAllSemiColonSeparatedTokens(sDefString);
+
+    for (size_t i = 0; i < defs.size(); i++)
+    {
+        vector<string> words = splitString(defs[i]);
+
+        // Block is at least two words
+        if (words.size() < 2)
+            continue;
+
+        SyntaxBlockDefinition definition;
+        definition.startWord = words.front();
+        definition.endWord = words.back();
+
+        if (words.size() > 2)
+            definition.middleWord1 = words[1];
+
+        if (words.size() > 3)
+            definition.middleWord2 = words[2];
+
+        vDefs.push_back(definition);
+    }
+
+    return vDefs;
 }
 
 

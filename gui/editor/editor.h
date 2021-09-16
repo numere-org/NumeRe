@@ -110,8 +110,11 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		void OnAutoCompletion(wxStyledTextEvent& event);
 		void OnIdle(wxIdleEvent& event);
 
-		bool isBlockStart(const wxString& sWord, bool allowIntermediate = false);
-		bool isBlockEnd(const wxString& sWord);
+		int isBlockStart(const wxString& sWord, bool allowIntermediate = false);
+		int isBlockEnd(const wxString& sWord);
+		int isBlockMiddle(const wxString& sWord);
+		bool hasBlockMiddle(const wxString& sWord);
+		int getBlockID(const wxString& word);
 		wxString getBlockAutoCompletion(const wxString& sWord);
 		wxString getBlockEnd(const wxString& sWord);
 		wxString getBlockStart(const wxString& sWord);
@@ -412,6 +415,7 @@ class NumeReEditor : public wxStyledTextCtrl, public wxThreadHelper
 		vector<string> vDuplicateCodeResults;
 		vector<string> vParsedSemanticCode;
 		vector<wxString> vRenameSymbolsChangeLog;
+		vector<SyntaxBlockDefinition> vBlockDefs;
 		int m_nProcessValue;
 		int m_nDuplicateCodeFlag;
 		int m_nDuplicateCodeLines;

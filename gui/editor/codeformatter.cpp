@@ -168,11 +168,11 @@ int CodeFormatter::determineIndentationLevelNSCR(int nLine, int& singleLineInden
 		{
 			wxString word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 1, true));
 
-			if (word == "endif" || word == "endfor" || word == "endwhile" || word == "endcompose" || word == "endlayout" || word == "endgroup" || word == "endprocedure" || word == "endswitch")
+			if (m_editor->isBlockEnd(word) != wxNOT_FOUND)
 				nIndentCount--;
-			else if (word == "if" || word == "for" || word == "while" || word == "compose" || word == "layout" || word == "group" || word == "procedure" || word == "switch")
+			else if (m_editor->isBlockStart(word, false) != wxNOT_FOUND)
 				nIndentCount++;
-			else if (word == "else" || word == "elseif" || word == "case" || word == "default")
+			else if (m_editor->isBlockMiddle(word) != wxNOT_FOUND)
 				singleLineIndent = -1;
 
 			i += word.length();
@@ -187,32 +187,9 @@ int CodeFormatter::determineIndentationLevelNSCR(int nLine, int& singleLineInden
 			{
 				word = m_editor->GetTextRange(i, m_editor->WordEndPosition(i + 2, true) + 1);
 
-				if (word == "<install>"
-						|| word == "<info>"
-						|| word == "<helpindex>"
-						|| word == "<helpfile>"
-						|| word == "<keywords>"
-						|| word == "<keyword>"
-						|| word == "<list>"
-						|| word == "<codeblock>"
-						|| word == "<exprblock>"
-						|| word == "<article "
-						|| word == "<item "
-						|| word == "<list "
-						|| word == "<example ")
+				if (m_editor->isBlockStart(word, false) != wxNOT_FOUND)
 					nIndentCount++;
-				else if (word == "<endinstall>"
-						 || word == "<endinfo>"
-						 || word == "</helpindex>"
-						 || word == "</helpfile>"
-						 || word == "</article>"
-						 || word == "</keywords>"
-						 || word == "</keyword>"
-						 || word == "</codeblock>"
-						 || word == "</exprblock>"
-						 || word == "</example>"
-						 || word == "</item>"
-						 || word == "</list>")
+				else if (m_editor->isBlockEnd(word) != wxNOT_FOUND)
 					nIndentCount--;
 			}
 
@@ -543,6 +520,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nF
 				}
 			}
 
+			// Line break after block statement
 			if (command == "if"
 					|| command == "elseif"
 					|| command == "for"
@@ -582,18 +560,8 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nF
 					nLastPosition += insertTextAndMove(nColon + 1, "\r\n");
 			}
 
-			if (command == "if"
-					|| command == "for"
-					|| command == "else"
-					|| command == "elseif"
-					|| command == "switch"
-					|| command == "case"
-					|| command == "default"
-					|| command == "while"
-					|| command == "endif"
-					|| command == "endswitch"
-					|| command == "endfor"
-					|| command == "endwhile")
+			// Line break in front of block statement
+			if (m_editor->getBlockID(command) != wxNOT_FOUND)
 			{
 				if (m_editor->GetTextRange(nCurrentLineStart, nPos1).find_first_not_of(" \t") != string::npos)
 				{
@@ -602,7 +570,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nF
 				}
 			}
 
-			if (command == "if" || command == "for" || command == "while" || command == "compose" || command == "procedure" || command == "switch" || command == "layout" || command == "group")
+			if (m_editor->isBlockStart(command, false) != wxNOT_FOUND)
 			{
 				if (nIndentationLevel <= 0)
 				{
@@ -626,7 +594,7 @@ void CodeFormatter::ApplyAutoFormatNSCR(int nFirstLine, int nLastLine) // int nF
 				nIndentationLevel++;
 			}
 
-			if (command == "endif" || command == "endfor" || command == "endwhile" || command == "endcompose" || command == "endprocedure" || command == "endswitch" || command == "endlayout" || command == "endgroup")
+			if (m_editor->isBlockEnd(command) != wxNOT_FOUND)
 			{
 				nIndentationLevel--;
 

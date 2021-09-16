@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 #include <cmath>
+#include <queue>
 #include "../io/file.hpp"
 #include "../utils/tools.hpp"
 #include "../ParserLib/muParserDef.h"
@@ -82,6 +83,7 @@ namespace NumeRe
             FilterSettings::FilterType m_type;
             std::pair<size_t, size_t> m_windowSize;
             bool m_isConvolution;
+            std::queue<mu::value_type> m_queue;
 
         public:
             /////////////////////////////////////////////////
@@ -168,6 +170,19 @@ namespace NumeRe
             std::pair<size_t,size_t> getWindowSize() const
             {
                 return m_windowSize;
+            }
+
+            /////////////////////////////////////////////////
+            /// \brief This method returns the internal
+            /// filtering buffer queue to store already
+            /// smoothed points avoiding leakage effects.
+            ///
+            /// \return std::queue<mu::value_type>&
+            ///
+            /////////////////////////////////////////////////
+            std::queue<mu::value_type>& getBuffer()
+            {
+                return m_queue;
             }
     };
 

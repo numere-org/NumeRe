@@ -33,3 +33,6 @@ Added	A setting for the brace autocompletion was added - it's now possible to tu
 Added	A setting for autosaving all files before execution was added.
 Fixed	More meaningful errors are thrown, if the user uses invalid characters for their procedure arguments or variables or if they've been overwritten by a "declare" statement.
 Added	The static code analyzer will throw an error, if a "declare" statement will overwrite a procedure argument or variable.
+Cleaned	The editor will now highlight complex numbers as actual numbers.
+Applied	The lexer and the block hightlighter of the editor are now using the NumeReSyntax object to determine the blocks and the code folding points.
+Fixed	(Partly) The smoothing filters are now using a buffer in 1D case to avoid erronous overwrites of data still needed for further smoothing windows.

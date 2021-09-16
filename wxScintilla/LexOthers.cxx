@@ -1692,16 +1692,19 @@ struct OptionSetNSCR : public OptionSet<OptionsNSCR> {
 
 class LexerNSCR : public ILexer {
 	bool caseSensitive;
-	WordList keywords;
-	WordList keywords2;
-	WordList keywords3;
-	WordList keywords4;
-	WordList keywords5;
-	WordList keywords6;
-	WordList keywords7;
-	WordList keywords8;
-	WordList keywords9;
-	WordList keywords10;
+	WordList commandWords;
+	WordList optionWords;
+	WordList functionWords;
+	WordList methodWords;
+	WordList defVarWords;
+	WordList constantWords;
+	WordList preDefWords;
+	WordList operatorWords;
+	WordList docKeyWords;
+	WordList procedureCommandWords;
+	WordList blockStartWords;
+	WordList blockEndWords;
+
 	/*
 	"Commands",
 	"Options",
@@ -1717,6 +1720,7 @@ class LexerNSCR : public ILexer {
 public:
 	LexerNSCR(bool caseSensitive_) :
 		caseSensitive(caseSensitive_) {
+        defVarWords.Set("x y z t");
 	}
 	virtual ~LexerNSCR() {
 	}
@@ -1766,34 +1770,43 @@ int SCI_METHOD LexerNSCR::WordListSet(int n, const char *wl) {
 	WordList *wordListN = 0;
 	switch (n) {
 	case 0:
-		wordListN = &keywords;
+		wordListN = &commandWords;
 		break;
 	case 1:
-		wordListN = &keywords2;
+		wordListN = &optionWords;
 		break;
 	case 2:
-		wordListN = &keywords3;
+		wordListN = &functionWords;
 		break;
 	case 3:
-		wordListN = &keywords4;
+		wordListN = &methodWords;
 		break;
 	case 4:
-		wordListN = &keywords5;
-		break;
+	    {
+	        std::string words = wl;
+
+	        if (words.find(';') != std::string::npos)
+            {
+                blockStartWords.Set(words.substr(0, words.find(';')).c_str());
+                blockEndWords.Set(words.substr(words.find(';')+1).c_str());
+            }
+
+	    }
+		return 0;
 	case 5:
-		wordListN = &keywords6;
+		wordListN = &constantWords;
 		break;
 	case 6:
-		wordListN = &keywords7;
+		wordListN = &preDefWords;
 		break;
 	case 7:
-		wordListN = &keywords8;
+		wordListN = &operatorWords;
 		break;
 	case 8:
-		wordListN = &keywords9;
+		wordListN = &docKeyWords;
 		break;
 	case 9:
-		wordListN = &keywords10;
+		wordListN = &procedureCommandWords;
 		break;
 	}
 	int firstModification = -1;
@@ -1812,23 +1825,23 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 {
 	LexAccessor styler(pAccess);
 	int nInstallStart = -1;
-	
+
 	if (startPos > 0 && (styler.StyleAt(startPos) == SCE_NSCR_INSTALL || styler.StyleAt(startPos-1) == SCE_NSCR_INSTALL || styler.StyleAt(startPos) == SCE_NSCR_PROCEDURE_COMMANDS || styler.StyleAt(startPos-1) == SCE_NSCR_PROCEDURE_COMMANDS))
 	{
 		startPos--;
 		length++;
-		
+
 		while (startPos > 0 && (styler.StyleAt(startPos) == SCE_NSCR_INSTALL || styler.StyleAt(startPos) == SCE_NSCR_PROCEDURE_COMMANDS))
 		{
 			startPos--;
 			length++;
 		}
-		
+
 		while (startPos+length < styler.Length() && (styler.StyleAt(startPos+length) == SCE_NSCR_INSTALL || styler.StyleAt(startPos+length) == SCE_NSCR_PROCEDURE_COMMANDS))
 			length++;
-		
+
 		initStyle = styler.StyleAt(startPos);
-		
+
 		//if (initStyle == SCE_NSCR_INSTALL)
 		//	initStyle = SCE_NSCR_DEFAULT;
 	}
@@ -1885,6 +1898,11 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					// Parse exponent sign in float literals: 2e+10 0x2e+10
 					continue;
 				}
+				else if (sc.ch == 'i' && !isdigit(sc.chNext))
+                {
+                    // Parse complex numbers
+                    continue;
+                }
 				else
 				{
 					sc.SetState(SCE_NSCR_DEFAULT);
@@ -1920,35 +1938,35 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					"Operator keywords",
 					0,
 					*/
-					if (keywords.InList(s) && nInstallStart == -1)
+					if (commandWords.InList(s) && nInstallStart == -1)
 					{
 						sc.ChangeState(SCE_NSCR_COMMAND);
 					}
-					else if (keywords3.InList(s) && sc.ch == '(')
+					else if (functionWords.InList(s) && sc.ch == '(')
 					{
 						sc.ChangeState(SCE_NSCR_FUNCTION);
 					}
-					else if (keywords4.InList(s) && possibleMethod)
+					else if (methodWords.InList(s) && possibleMethod)
 					{
 						sc.ChangeState(SCE_NSCR_METHOD);
 					}
-					else if (keywords5.InList(s))
+					else if (defVarWords.InList(s))
 					{
 						sc.ChangeState(SCE_NSCR_DEFAULT_VARS);
 					}
-					else if (keywords6.InList(s))
+					else if (constantWords.InList(s))
 					{
 						sc.ChangeState(SCE_NSCR_CONSTANTS);
 					}
-					else if (keywords7.InList(s))
+					else if (preDefWords.InList(s))
 					{
 						sc.ChangeState(SCE_NSCR_PREDEFS);
 					}
-					else if (keywords8.InList(s))
+					else if (operatorWords.InList(s))
 					{
 						sc.ChangeState(SCE_NSCR_OPERATOR_KEYWORDS);
 					}
-					else if (keywords10.InList(s))
+					else if (procedureCommandWords.InList(s))
 					{
 						sc.ChangeState(SCE_NSCR_PROCEDURE_COMMANDS);
 					}
@@ -1960,7 +1978,7 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NSCR_CLUSTER);
 					}
-					else if (keywords2.InList(s))
+					else if (optionWords.InList(s))
 					{
 						sc.ChangeState(SCE_NSCR_OPTION);
 					}
@@ -2003,25 +2021,25 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 				}
 				break;
 		}
-		
+
 		// Forward search for documentation keywords
 		if ((sc.state == SCE_NSCR_DOCCOMMENT_LINE || sc.state == SCE_NSCR_DOCCOMMENT_BLOCK) && sc.Match('\\'))
 		{
 			int nCurrentState = sc.state;
 			sc.SetState(SCE_NSCR_DEFAULT);
 			sc.Forward();
-			
+
 			while (sc.More() && IsWord(sc.ch))
 				sc.Forward();
-			
+
 			char s[1000];
 			sc.GetCurrent(s, sizeof(s));
 
-			if (keywords9.InList(s))
+			if (docKeyWords.InList(s))
 				sc.ChangeState(SCE_NSCR_DOCKEYWORD);
 			else
 				sc.ChangeState(nCurrentState);
-			
+
 			sc.SetState(nCurrentState);
 		}
 
@@ -2091,20 +2109,20 @@ void SCI_METHOD LexerNSCR::Lex(unsigned int startPos, int length, int initStyle,
 					styler.Flush();
 					styler.StartAt(nInstallStart);
 					styler.StartSegment(nInstallStart);
-					
+
 					for (int i = nInstallStart; i <= sc.currentPos; i++)
 					{
 						if (styler.StyleAt(i) == SCE_NSCR_PROCEDURE_COMMANDS)
 						{
 							styler.ColourTo(i-1, SCE_NSCR_INSTALL);
-							
+
 							while (styler.StyleAt(i+1) == SCE_NSCR_PROCEDURE_COMMANDS)
 								i++;
-							
+
 							styler.ColourTo(i, SCE_NSCR_PROCEDURE_COMMANDS);
 						}
 					}
-					
+
 					styler.ColourTo(sc.currentPos+11, SCE_NSCR_INSTALL);
 					sc.Forward(11);
 					//sc.SetState(SCE_NSCR_DEFAULT);
@@ -2198,52 +2216,26 @@ void SCI_METHOD LexerNSCR::Fold(unsigned int startPos, int length, int initStyle
 		if (options.foldSyntaxBased && (style == SCE_NSCR_IDENTIFIER || style == SCE_NSCR_COMMAND || style == SCE_NSCR_INSTALL || style == SCE_NSCR_PROCEDURE_COMMANDS))
 		{
 			bool isCommand = style == SCE_NSCR_COMMAND || style == SCE_NSCR_PROCEDURE_COMMANDS;
-			
-			if (isCommand && (styler.Match(i, "endif")
-				|| styler.Match(i, "endfor")
-				|| styler.Match(i, "endwhile")
-				|| styler.Match(i, "endprocedure")
-				|| styler.Match(i, "endcompose")
-				|| styler.Match(i, "endlayout")
-				|| styler.Match(i, "endgroup")
-				|| styler.Match(i, "endswitch"))
-				|| styler.Match(i, "<endinstall>")
-				|| styler.Match(i, "<endinfo>")
-				|| styler.Match(i, "</helpindex>")
-				|| styler.Match(i, "</helpfile>")
-				|| styler.Match(i, "</article>")
-				|| styler.Match(i, "</keywords>")
-				|| styler.Match(i, "</keyword>")
-				|| styler.Match(i, "</codeblock>")
-				|| styler.Match(i, "</exprblock>")
-				|| styler.Match(i, "</example>")
-				|| styler.Match(i, "</item>")
-				|| styler.Match(i, "</list>"))
+			std::string current;
+			size_t n = i;
+
+			// Get the current snippet until another style or the next
+			// non-visible character
+			while (styler.StyleAt(n) == style && isgraph(styler.SafeGetCharAt(n)))
+            {
+                current += styler.SafeGetCharAt(n);
+                n++;
+            }
+
+            if (blockEndWords.InList(current.c_str()) && isCommand == (current.front() != '<'))
 			{
 				levelNext--;
 				foundElse = false;
 			}
 			else if (styler.SafeGetCharAt(i-1) != 'd'
-				&& styler.SafeGetCharAt(i-1) != 'e'
-				&& (isCommand && (styler.Match(i, "if ") || styler.Match(i, "if(")
-					|| styler.Match(i, "for ") || styler.Match(i, "for(")
-					|| styler.Match(i, "while ") || styler.Match(i, "while(")
-					|| styler.Match(i, "switch ") || styler.Match(i, "switch(")
-					|| styler.Match(i, "procedure ") || styler.Match(i, "compose")
-					|| styler.Match(i, "layout") || styler.Match(i, "group"))
-					|| styler.Match(i, "<install>")
-					|| styler.Match(i, "<info>")
-					|| styler.Match(i, "<helpindex>")
-					|| styler.Match(i, "<helpfile>")
-					|| styler.Match(i, "<article")
-					|| styler.Match(i, "<keywords>")
-					|| styler.Match(i, "<keyword>")
-					|| styler.Match(i, "<codeblock>")
-					|| styler.Match(i, "<exprblock>")
-					|| styler.Match(i, "<example")
-					|| styler.Match(i, "<item")
-					|| styler.Match(i, "<list")
-				))
+                && styler.SafeGetCharAt(i-1) != 'e'
+                && blockStartWords.InList(current.c_str())
+                && isCommand == (current.front() != '<'))
 			{
 				// Measure the minimum before a '{' to allow
 				// folding on "} else {"
@@ -2376,15 +2368,17 @@ struct OptionSetNPRC : public OptionSet<OptionsNPRC> {
 
 class LexerNPRC : public ILexer {
 	bool caseSensitive;
-	WordList keywords;
-	WordList keywords2;
-	WordList keywords3;
-	WordList keywords4;
-	WordList keywords5;
-	WordList keywords6;
-	WordList keywords7;
-	WordList keywords8;
-	WordList keywords9;
+	WordList commandWords;
+	WordList optionWords;
+	WordList functionWords;
+	WordList methodWords;
+	WordList defVarWords;
+	WordList constantWords;
+	WordList preDefWords;
+	WordList operatorWords;
+	WordList docKeyWords;
+	WordList blockStartWords;
+	WordList blockEndWords;
 	/*
 	"Commands",
 	"Options",
@@ -2400,6 +2394,7 @@ class LexerNPRC : public ILexer {
 public:
 	LexerNPRC(bool caseSensitive_) :
 		caseSensitive(caseSensitive_) {
+        defVarWords.Set("x y z t");
 	}
 	virtual ~LexerNPRC() {
 	}
@@ -2449,31 +2444,40 @@ int SCI_METHOD LexerNPRC::WordListSet(int n, const char *wl) {
 	WordList *wordListN = 0;
 	switch (n) {
 	case 0:
-		wordListN = &keywords;
+		wordListN = &commandWords;
 		break;
 	case 1:
-		wordListN = &keywords2;
+		wordListN = &optionWords;
 		break;
 	case 2:
-		wordListN = &keywords3;
+		wordListN = &functionWords;
 		break;
 	case 3:
-		wordListN = &keywords4;
+		wordListN = &methodWords;
 		break;
 	case 4:
-		wordListN = &keywords5;
-		break;
+	    {
+	        std::string words = wl;
+
+	        if (words.find(';') != std::string::npos)
+            {
+                blockStartWords.Set(words.substr(0, words.find(';')).c_str());
+                blockEndWords.Set(words.substr(words.find(';')+1).c_str());
+            }
+
+	    }
+		return 0;
 	case 5:
-		wordListN = &keywords6;
+		wordListN = &constantWords;
 		break;
 	case 6:
-		wordListN = &keywords7;
+		wordListN = &preDefWords;
 		break;
 	case 7:
-		wordListN = &keywords8;
+		wordListN = &operatorWords;
 		break;
 	case 8:
-		wordListN = &keywords9;
+		wordListN = &docKeyWords;
 		break;
 	}
 	int firstModification = -1;
@@ -2544,6 +2548,11 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 					// Parse exponent sign in float literals: 2e+10 0x2e+10
 					continue;
 				}
+				else if (sc.ch == 'i' && !isdigit(sc.chNext))
+                {
+                    // Parse complex numbers
+                    continue;
+                }
 				else
 				{
 					sc.SetState(SCE_NPRC_DEFAULT);
@@ -2578,31 +2587,31 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 					"Operator keywords",
 					0,
 					*/
-					if (keywords.InList(s))
+					if (commandWords.InList(s))
 					{
 						sc.ChangeState(SCE_NPRC_COMMAND);
 					}
-					else if (keywords3.InList(s) && sc.ch == '(')
+					else if (functionWords.InList(s) && sc.ch == '(')
 					{
 						sc.ChangeState(SCE_NPRC_FUNCTION);
 					}
-					else if (keywords4.InList(s) && possibleMethod)
+					else if (methodWords.InList(s) && possibleMethod)
 					{
 						sc.ChangeState(SCE_NPRC_METHOD);
 					}
-					else if (keywords5.InList(s))
+					else if (defVarWords.InList(s))
 					{
 						sc.ChangeState(SCE_NPRC_DEFAULT_VARS);
 					}
-					else if (keywords6.InList(s))
+					else if (constantWords.InList(s))
 					{
 						sc.ChangeState(SCE_NPRC_CONSTANTS);
 					}
-					else if (keywords7.InList(s))
+					else if (preDefWords.InList(s))
 					{
 						sc.ChangeState(SCE_NPRC_PREDEFS);
 					}
-					else if (keywords8.InList(s))
+					else if (operatorWords.InList(s))
 					{
 						sc.ChangeState(SCE_NPRC_OPERATOR_KEYWORDS);
 					}
@@ -2614,7 +2623,7 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 					{
 						sc.ChangeState(SCE_NPRC_CLUSTER);
 					}
-					else if (keywords2.InList(s))
+					else if (optionWords.InList(s))
 					{
 						sc.ChangeState(SCE_NPRC_OPTION);
 					}
@@ -2658,25 +2667,25 @@ void SCI_METHOD LexerNPRC::Lex(unsigned int startPos, int length, int initStyle,
 				}
 				break;
 		}
-		
+
 		// Forward search for documentation keywords
 		if ((sc.state == SCE_NPRC_DOCCOMMENT_LINE || sc.state == SCE_NPRC_DOCCOMMENT_BLOCK) && sc.Match('\\'))
 		{
 			int nCurrentState = sc.state;
 			sc.SetState(SCE_NPRC_DEFAULT);
 			sc.Forward();
-			
+
 			while (sc.More() && IsWord(sc.ch))
 				sc.Forward();
-			
+
 			char s[1000];
 			sc.GetCurrent(s, sizeof(s));
 
-			if (keywords9.InList(s))
+			if (docKeyWords.InList(s))
 				sc.ChangeState(SCE_NPRC_DOCKEYWORD);
 			else
 				sc.ChangeState(nCurrentState);
-			
+
 			sc.SetState(nCurrentState);
 		}
 
@@ -2828,26 +2837,25 @@ void SCI_METHOD LexerNPRC::Fold(unsigned int startPos, int length, int initStyle
  		}
 		if (options.foldSyntaxBased && (style == SCE_NPRC_IDENTIFIER || style == SCE_NPRC_COMMAND))
 		{
-			if (styler.Match(i, "endif")
-				|| styler.Match(i, "endfor")
-				|| styler.Match(i, "endwhile")
-				|| styler.Match(i, "endprocedure")
-				|| styler.Match(i, "endswitch")
-				|| styler.Match(i, "endlayout")
-				|| styler.Match(i, "endgroup")
-				|| styler.Match(i, "endcompose"))
+			std::string current;
+			size_t n = i;
+
+			// Get the current snippet until another style or the next
+			// non-visible character
+			while (styler.StyleAt(n) == style && isgraph(styler.SafeGetCharAt(n)))
+            {
+                current += styler.SafeGetCharAt(n);
+                n++;
+            }
+
+            if (blockEndWords.InList(current.c_str()))
 			{
 				levelNext--;
 				foundElse = false;
 			}
 			else if (styler.SafeGetCharAt(i-1) != 'd'
-				&& styler.SafeGetCharAt(i-1) != 'e'
-				&& (styler.Match(i, "if ") || styler.Match(i, "if(")
-					|| styler.Match(i, "for ") || styler.Match(i, "for(")
-					|| styler.Match(i, "while ") || styler.Match(i, "while(")
-					|| styler.Match(i, "switch ") || styler.Match(i, "switch(")
-					|| styler.Match(i, "procedure ") || styler.Match(i, "compose") 
-					|| styler.Match(i, "layout") || styler.Match(i, "group")))
+                && styler.SafeGetCharAt(i-1) != 'e'
+                && blockStartWords.InList(current.c_str()))
 			{
 				// Measure the minimum before a '{' to allow
 				// folding on "} else {"

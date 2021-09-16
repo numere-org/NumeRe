@@ -410,15 +410,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
             && sSyntaxElement != "continue"
             && sSyntaxElement != "break"
             && sSyntaxElement != "else"
-            && sSyntaxElement != "end"
-            && sSyntaxElement != "endif"
-            && sSyntaxElement != "endfor"
-            && sSyntaxElement != "endwhile"
-            && sSyntaxElement != "endswitch"
-            && sSyntaxElement != "endprocedure"
-            && sSyntaxElement != "endcompose"
-            && sSyntaxElement != "endlayout"
-            && sSyntaxElement != "endgroup"
+            && m_editor->isBlockEnd(sSyntaxElement) == wxNOT_FOUND
             && sSyntaxElement != "about"
             && sSyntaxElement != "abort"
             && sSyntaxElement != "compose"
@@ -979,26 +971,7 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     }
 
     // Handle blocks with their corresponding end
-    if (sSyntaxElement == "if"
-            || sSyntaxElement == "end"
-            || sSyntaxElement == "elseif"
-            || sSyntaxElement == "else"
-            || sSyntaxElement == "endif"
-            || sSyntaxElement == "for"
-            || sSyntaxElement == "endfor"
-            || sSyntaxElement == "while"
-            || sSyntaxElement == "endwhile"
-            || sSyntaxElement == "switch"
-            || sSyntaxElement == "endswitch"
-            || sSyntaxElement == "compose"
-            || sSyntaxElement == "endcompose"
-            || sSyntaxElement == "layout"
-            || sSyntaxElement == "endlayout"
-            || sSyntaxElement == "group"
-            || sSyntaxElement == "endgroup"
-            || sSyntaxElement == "function"
-            || sSyntaxElement == "procedure"
-            || sSyntaxElement == "endprocedure")
+    if (m_editor->isBlockStart(sSyntaxElement, true) != wxNOT_FOUND || m_editor->isBlockEnd(sSyntaxElement) != wxNOT_FOUND)
     {
         // Try to find the matching block parts
         vector<int> vMatch = m_editor->BlockMatch(m_nCurPos);

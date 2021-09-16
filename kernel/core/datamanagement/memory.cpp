@@ -3013,6 +3013,7 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
     auto sizes = _filter->getWindowSize();
 
     mu::value_type sum = 0.0;
+    std::queue<mu::value_type>& filterBuffer = _filter->getBuffer();
 
     // Apply the filter to the data
     for (size_t n = 0; n < sizes.first; n++)
@@ -3025,7 +3026,36 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
 
     // If the filter is a convolution, store the new value here
     if (_filter->isConvolution())
-        writeData(_vLine[i + sizes.first/2*(!smoothLines)], _vCol[j + sizes.first/2*smoothLines], sum);
+        filterBuffer.push(sum);
+
+    // If enough elements are stored in the buffer
+    // remove the first one
+    if (filterBuffer.size() > sizes.first/2)
+    {
+        writeData(_vLine[i], _vCol[j], filterBuffer.front());
+        filterBuffer.pop();
+    }
+
+    // Is this the last point? Then extract all remaining points from the
+    // buffer
+    if (smoothLines && _vCol.size()-sizes.first-2 == j)
+    {
+        while (!_filter->getBuffer().empty())
+        {
+            j++;
+            writeData(_vLine[i], _vCol[j], filterBuffer.front());
+            filterBuffer.pop();
+        }
+    }
+    else if (!smoothLines && _vLine.size()-sizes.first-2 == i)
+    {
+        while (!_filter->getBuffer().empty())
+        {
+            i++;
+            writeData(_vLine[i], _vCol[j], filterBuffer.front());
+            filterBuffer.pop();
+        }
+    }
 }
 
 
@@ -3044,6 +3074,7 @@ void Memory::smoothingWindow1D(const VectorIndex& _vLine, const VectorIndex& _vC
 /////////////////////////////////////////////////
 void Memory::smoothingWindow2D(const VectorIndex& _vLine, const VectorIndex& _vCol, size_t i, size_t j, NumeRe::Filter* _filter)
 {
+#warning TODO (numere#3#09/16/21): This code section misses a buffer as well
     auto sizes = _filter->getWindowSize();
 
     mu::value_type sum = 0.0;
@@ -3163,7 +3194,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 
         // Update the sizes, because they might be
         // altered by the filter constructor
-        auto sizes = _filterPtr.get()->getWindowSize();
+        auto sizes = _filterPtr->getWindowSize();
         _settings.row = sizes.first;
 
         // Pad the beginning and the of the vector with multiple copies
@@ -3186,7 +3217,7 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 
         // Update the sizes, because they might be
         // altered by the filter constructor
-        auto sizes = _filterPtr.get()->getWindowSize();
+        auto sizes = _filterPtr->getWindowSize();
         _settings.row = sizes.first;
 
         // Pad the beginning and end of the vector with multiple copies
