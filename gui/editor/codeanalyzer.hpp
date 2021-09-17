@@ -62,12 +62,19 @@ class CodeAnalyzer
         Options* m_options;
         SymDefManager m_symdefs;
 
+        std::vector<std::string> m_MATOP_FUNCS;
+        std::vector<std::string> m_DRAW_FUNCS;
+        std::vector<std::string> m_STRING_FUNCS;
+        std::vector<std::string> m_STRING_METHODS;
+
         std::string m_sNote;
         std::string m_sWarn;
         std::string m_sError;
 
         std::string m_sCurrentLine;
         std::string m_sStyles;
+
+        std::string m_currentMode;
 
         int m_nCurPos;
         int m_nCurrentLine;

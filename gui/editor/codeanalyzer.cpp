@@ -30,6 +30,11 @@
 
 extern Language _guilang;
 
+static void replaceDocStrings(std::string& sStr)
+{
+    sStr.replace(sStr.find_first_of(" ("), std::string::npos, "()");
+}
+
 /////////////////////////////////////////////////
 /// Constructor
 /// \param parent NumeReEditor*
@@ -38,6 +43,16 @@ extern Language _guilang;
 /////////////////////////////////////////////////
 CodeAnalyzer::CodeAnalyzer(NumeReEditor* parent, Options* opts) : m_editor(parent), m_options(opts), m_nCurPos(0), m_nCurrentLine(0), m_hasProcedureDefinition(false)
 {
+    m_STRING_FUNCS = _guilang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[STRING]");
+    m_STRING_METHODS = _guilang.getList("PARSERFUNCS_LISTFUNC_METHOD_*_[STRING]");
+    m_MATOP_FUNCS = _guilang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[MAT]");
+    m_DRAW_FUNCS = _guilang.getList("PARSERFUNCS_LISTFUNC_FUNC_*_[DRAW]");
+
+    std::for_each(m_STRING_FUNCS.begin(), m_STRING_FUNCS.end(), replaceDocStrings);
+    std::for_each(m_STRING_METHODS.begin(), m_STRING_METHODS.end(), replaceDocStrings);
+    std::for_each(m_MATOP_FUNCS.begin(), m_MATOP_FUNCS.end(), replaceDocStrings);
+    std::for_each(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), replaceDocStrings);
+
 	m_sNote = _guilang.get("GUI_ANALYZER_NOTE");
 	m_sWarn = _guilang.get("GUI_ANALYZER_WARN");
 	m_sError = _guilang.get("GUI_ANALYZER_ERROR");
@@ -82,8 +97,9 @@ void CodeAnalyzer::run()
 	bool isAlreadyMeasured = false;
 	bool isSuppressed = false;
 
-	m_sCurrentLine = "";
-	m_sStyles = "";
+	m_currentMode.clear();
+	m_sCurrentLine.clear();
+	m_sStyles.clear();
 	string sFirstLine = "";
 	string sFirstStyles = "";
 	int nFirstLine = -1;
@@ -116,6 +132,7 @@ void CodeAnalyzer::run()
 			{
 				isContinuedLine = false;
 				m_hasProcedureDefinition = false;
+				m_currentMode.clear();
 			}
 
             // Find the summary line for the current file and push the
@@ -384,6 +401,12 @@ AnnotationCount CodeAnalyzer::analyseCommands()
     {
         AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, sSyntaxElement.length()), m_sError, _guilang.get("GUI_ANALYZER_NOTALLOWED")), ANNOTATION_ERROR);
     }
+
+    // Store mode-specific commands
+    if (sSyntaxElement == "matop" || sSyntaxElement == "mtrxop")
+        m_currentMode = "matop";
+    else if (sSyntaxElement == "draw" || sSyntaxElement == "draw3d")
+        m_currentMode = "draw";
 
     // Handle the memory clearance commands
     if (sSyntaxElement == "clear" || sSyntaxElement == "delete" || sSyntaxElement == "remove")
@@ -1020,10 +1043,15 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
     // Handle method (modifier) calls, also appends a pair of parentheses if needed
     if ((m_editor->m_fileType == FILE_NSCR || m_editor->m_fileType == FILE_NPRC) && m_editor->GetStyleAt(m_nCurPos) == wxSTC_NSCR_METHOD)
     {
+        if (std::find(m_STRING_METHODS.begin(), m_STRING_METHODS.end(), sSyntaxElement + "()") != m_STRING_METHODS.end() && m_currentMode == "matop")
+            AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement + "()", wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_STRINGFUNCTION", sSyntaxElement + "()")), ANNOTATION_ERROR);
+
         // ignore modifiers, i.e. method without parentheses
-        string sModifier = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,";
-        if (sModifier.find("," + sSyntaxElement + ",") == string::npos)
+        static string sMODIFIER = ",len,cols,lines,grid,avg,std,min,max,med,sum,prd,cnt,num,norm,and,or,xor,name,size,minpos,maxpos,";
+
+        if (sMODIFIER.find("," + sSyntaxElement + ",") == string::npos)
             sSyntaxElement += "()";
+
         sSyntaxElement.insert(0, "VAR.");
     }
     else
@@ -1074,6 +1102,19 @@ AnnotationCount CodeAnalyzer::analyseFunctions(bool isContinuedLine)
             AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordend, 2), m_sError, _guilang.get("GUI_ANALYZER_MISSINGARGUMENT")), ANNOTATION_ERROR);
         }
     }
+
+
+    // Examine mode-specific functions
+    if (std::find(m_MATOP_FUNCS.begin(), m_MATOP_FUNCS.end(), sSyntaxElement) != m_MATOP_FUNCS.end() && m_currentMode != "matop")
+        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_MATOPFUNCTION", sSyntaxElement)), ANNOTATION_ERROR);
+
+    if (std::find(m_STRING_FUNCS.begin(), m_STRING_FUNCS.end(), sSyntaxElement) != m_STRING_FUNCS.end() && m_currentMode == "matop")
+        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_STRINGFUNCTION", sSyntaxElement)), ANNOTATION_ERROR);
+
+    if (std::find(m_DRAW_FUNCS.begin(), m_DRAW_FUNCS.end(), sSyntaxElement) != m_DRAW_FUNCS.end() && m_currentMode != "draw")
+        AnnotCount += addToAnnotation(_guilang.get("GUI_ANALYZER_TEMPLATE", highlightFoundOccurence(sSyntaxElement, wordstart, wordend-wordstart), m_sError, _guilang.get("GUI_ANALYZER_DRAWFUNCTION", sSyntaxElement)), ANNOTATION_ERROR);
+
+
     m_nCurPos = wordend;
 
     // return the counted number of gathered annotations

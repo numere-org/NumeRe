@@ -36,3 +36,4 @@ Added	The static code analyzer will throw an error, if a "declare" statement wil
 Cleaned	The editor will now highlight complex numbers as actual numbers.
 Applied	The lexer and the block hightlighter of the editor are now using the NumeReSyntax object to determine the blocks and the code folding points.
 Fixed	(Partly) The smoothing filters are now using a buffer in 1D case to avoid erronous overwrites of data still needed for further smoothing windows.
+Added	The static code analyzer will now mark functions, which do not work in a specific context (e.g. "matop") as errors.
