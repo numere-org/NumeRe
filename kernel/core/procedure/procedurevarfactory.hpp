@@ -72,7 +72,9 @@ class ProcedureVarFactory
 
         void init();
 
-        string replaceProcedureName(string sProcedureName);
+        string replaceProcedureName(string sProcedureName) const;
+        std::string createMangledArgName(const std::string& sDefinedName) const;
+        std::string createMangledVarName(const std::string& sDefinedName) const;
 
         string resolveArguments(string sProcedureCommandLine, size_t nMapSize = string::npos);
         string resolveLocalVars(string sProcedureCommandLine, size_t nMapSize = string::npos);
@@ -85,22 +87,14 @@ class ProcedureVarFactory
         bool checkSymbolName(const std::string& sSymbolName) const;
         void createLocalInlineVars(string sVarList);
         void createLocalInlineStrings(string sVarList);
-        void evaluateProcedureArguments(const std::string& sArgumentList);
+        void evaluateProcedureArguments(std::string& currentArg, std::string& currentValue, const std::string& sArgumentList);
 
     public:
-        string** sArgumentMap;
-        string** sLocalVars;
-        string** sLocalStrings;
-        string** sLocalTables;
-        string** sLocalClusters;
-
-        mu::value_type* dLocalVars;
-
-        size_t nArgumentMapSize;
-        size_t nLocalVarMapSize;
-        size_t nLocalStrMapSize;
-        size_t nLocalTableSize;
-        size_t nLocalClusterSize;
+        std::map<std::string, std::string> mArguments;
+        std::map<std::string, std::pair<std::string, mu::value_type*>> mLocalVars;
+        std::map<std::string, std::pair<std::string, std::string>> mLocalStrings;
+        std::map<std::string, std::string> mLocalTables;
+        std::map<std::string, std::string> mLocalClusters;
 
         string sInlineVarDef;
         string sInlineStringDef;
@@ -116,6 +110,7 @@ class ProcedureVarFactory
         void createLocalStrings(string sStringList);
         void createLocalTables(string sTableList);
         void createLocalClusters(string sClusterList);
+        std::string createTestStatsCluster();
 
         string resolveVariables(const string& sProcedureCommandLine)
             {

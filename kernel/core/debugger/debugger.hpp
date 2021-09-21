@@ -123,10 +123,22 @@ class NumeReDebugger
         void pushStackItem(const string& sStackItem, Procedure* _currentProcedure);
         void popStackItem();
 
-        void gatherInformations(ProcedureVarFactory* _varFactory, const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
-        void gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, mu::value_type* dLocalVars, string** sLocalStrings, size_t nLocalStrMapSize, string** sLocalTables, size_t nLocalTableMapSize,
-                                string** sLocalClusters, size_t nLocalClusterMapSize, string** sArgumentMap, size_t nArgumentMapSize, const string& _sErraticCommand, const string& _sErraticModule,
-                                unsigned int _nLineNumber);
+        void gatherInformations(ProcedureVarFactory* _varFactory,
+                                const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
+
+        void gatherInformations(const std::map<std::string, std::pair<std::string, mu::value_type*>>& _mLocalVars,
+                                const std::map<std::string, std::pair<std::string, std::string>>& _mLocalStrings,
+                                const std::map<std::string, std::string>& _mLocalTables,
+                                const std::map<std::string, std::string>& _mLocalClusters,
+                                const std::map<std::string, std::string>& _mArguments,
+                                const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
+
+        void gatherInformations(string** sLocalVars, size_t nLocalVarMapSize, mu::value_type* dLocalVars,
+                                string** sLocalStrings, size_t nLocalStrMapSize,
+                                string** sLocalTables, size_t nLocalTableMapSize,
+                                string** sLocalClusters, size_t nLocalClusterMapSize,
+                                string** sArgumentMap, size_t nArgumentMapSize,
+                                const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber);
 
         void gatherLoopBasedInformations(const string& _sErraticCommand, unsigned int _nLineNumber, map<string,string>& mVarMap, mu::value_type** vVarArray, string* sVarArray, int nVarArray);
 

@@ -456,6 +456,54 @@ class SyntaxError
 struct StringResult;
 
 /////////////////////////////////////////////////
+/// \brief This structure accumulates the
+/// statistics for the assertion handler.
+/////////////////////////////////////////////////
+struct AssertionStats
+{
+    size_t nCheckedAssertions;
+    size_t nFailedAssertions;
+
+    AssertionStats() : nCheckedAssertions(0), nFailedAssertions(0) {}
+
+    /////////////////////////////////////////////////
+    /// \brief Reset the statistics.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void reset()
+    {
+        nCheckedAssertions = 0;
+        nFailedAssertions = 0;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Assertion was successful.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void succeeded()
+    {
+        nCheckedAssertions++;
+    }
+
+    /////////////////////////////////////////////////
+    /// \brief Assertion failed.
+    ///
+    /// \return void
+    ///
+    /////////////////////////////////////////////////
+    void failed()
+    {
+        nCheckedAssertions++;
+        nFailedAssertions++;
+    }
+};
+
+
+/////////////////////////////////////////////////
 /// \brief This class handles assertions and
 /// throws the corresponding exception, if the
 /// assertion fails. It is currently used as
@@ -468,14 +516,17 @@ class Assertion
         std::string sAssertedExpression;
         bool assertionMode;
         void assertionFail();
+        AssertionStats stats;
 
     public:
         Assertion() : sAssertedExpression(), assertionMode(false) {}
         void reset();
+        void resetStats();
         void enable(const std::string& sExpr);
         void checkAssertion(mu::value_type* v, int nNum);
         void checkAssertion(const std::vector<std::vector<mu::value_type>>& _mMatrix);
         void checkAssertion(const StringResult& strRes);
+        AssertionStats getStats() const;
 };
 
 

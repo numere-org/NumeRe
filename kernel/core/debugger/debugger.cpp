@@ -549,9 +549,144 @@ void NumeReDebugger::gatherInformations(ProcedureVarFactory* _varFactory, const 
         return;
     }
 
-    gatherInformations(_varFactory->sLocalVars, _varFactory->nLocalVarMapSize, _varFactory->dLocalVars, _varFactory->sLocalStrings, _varFactory->nLocalStrMapSize, _varFactory->sLocalTables,
-                       _varFactory->nLocalTableSize, _varFactory->sLocalClusters, _varFactory->nLocalClusterSize, _varFactory->sArgumentMap, _varFactory->nArgumentMapSize, _sErraticCommand, _sErraticModule,
-                       _nLineNumber);
+    gatherInformations(_varFactory->mLocalVars, _varFactory->mLocalStrings, _varFactory->mLocalTables, _varFactory->mLocalClusters, _varFactory->mArguments,
+                       _sErraticCommand, _sErraticModule, _nLineNumber);
+}
+
+
+void NumeReDebugger:: gatherInformations(const std::map<std::string, std::pair<std::string, mu::value_type*>>& _mLocalVars,
+                                         const std::map<std::string, std::pair<std::string, std::string>>& _mLocalStrings,
+                                         const std::map<std::string, std::string>& _mLocalTables,
+                                         const std::map<std::string, std::string>& _mLocalClusters,
+                                         const std::map<std::string, std::string>& _mArguments,
+                                         const string& _sErraticCommand, const string& _sErraticModule, unsigned int _nLineNumber)
+{
+    if (!bDebuggerActive)
+        return;
+
+    if (bAlreadyThrown)
+        return;
+
+    // Get the instance of the kernel
+    NumeReKernel* instance = NumeReKernel::getInstance();
+
+    // If the instance is zero, something really bad happened
+    if (!instance)
+        return;
+
+    // Store the command line containing the error
+    if (!sErraticCommand.length())
+        sErraticCommand = _sErraticCommand;
+
+    // Removes the leading and trailing whitespaces
+    StripSpaces(sErraticCommand);
+
+    sErraticModule = _sErraticModule;
+
+    if (nLineNumber == string::npos)
+        nLineNumber = _nLineNumber;
+
+    bAlreadyThrown = true;
+
+    // Store the local numerical variables and replace their
+    // occurence with their definition in the command lines
+    for (const auto& iter : _mLocalVars)
+    {
+        // Replace the occurences
+        if (iter.first != iter.second.first)
+            replaceAll(sErraticCommand, iter.second.first.c_str(), iter.first.c_str());
+
+        mLocalVars[iter.first + "\t" + iter.second.first] = *iter.second.second;
+    }
+
+    // Store the local string variables and replace their
+    // occurence with their definition in the command lines
+    for (const auto& iter : _mLocalStrings)
+    {
+        // Replace the occurences
+        if (iter.first != iter.second.first)
+            replaceAll(sErraticCommand, iter.second.first.c_str(), iter.first.c_str());
+
+        mLocalStrings[iter.first + "\t" + iter.second.first] = replaceControlCharacters(instance->getStringParser().getStringVars().at(iter.second.first));
+    }
+
+    // Store the local tables and replace their
+    // occurence with their definition in the command lines
+    for (const auto& iter : _mLocalTables)
+    {
+        // Replace the occurences
+        if (iter.first != iter.second)
+            replaceAll(sErraticCommand, (iter.second + (iter.second.back() == '(' ? "" : "(")).c_str(), (iter.first + (iter.first.back() == '(' ? "" : "(")).c_str());
+
+        string sTableData;
+
+        // Extract the minimal and maximal values of the tables
+        // to display them in the variable viewer panel
+        if (iter.second == "string")
+        {
+            sTableData = toString(instance->getMemoryManager().getStringElements()) + " x " + toString(instance->getMemoryManager().getStringCols());
+            sTableData += "\tstring\t{\"" + replaceControlCharacters(instance->getMemoryManager().minString()) + "\", ..., \"" + replaceControlCharacters(instance->getMemoryManager().maxString()) + "\"}\tstring()";
+        }
+        else
+        {
+            sTableData = toString(instance->getMemoryManager().getLines(iter.second, false)) + " x " + toString(instance->getMemoryManager().getCols(iter.second, false));
+            sTableData += "\ttable\t{" + toString(instance->getMemoryManager().min(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + ", ..., " + toString(instance->getMemoryManager().max(iter.second, "")[0], DEFAULT_MINMAX_PRECISION) + "}\t" + iter.second + "()";
+        }
+
+        mLocalTables[iter.first + "()"] = sTableData;
+    }
+
+    // Store the local clusters and replace their
+    // occurence with their definition in the command lines
+    for (const auto& iter : _mLocalClusters)
+    {
+        // Replace the occurences
+        if (iter.first != iter.second)
+            replaceAll(sErraticCommand, (iter.second + (iter.second.back() == '{' ? "" : "{")).c_str(), (iter.first + (iter.first.back() == '{' ? "" : "{")).c_str());
+
+        string sTableData;
+
+        // Extract the minimal and maximal values of the tables
+        // to display them in the variable viewer panel
+        sTableData = toString(instance->getMemoryManager().getCluster(iter.second).size()) + " x 1";
+        sTableData += "\tcluster\t" + instance->getMemoryManager().getCluster(iter.second).getShortVectorRepresentation() + "\t" + iter.second + "{}";
+
+        mLocalClusters[iter.first + "{}"] = sTableData;
+    }
+
+    // Is this procedure a macro?
+    bool isMacro = nCurrentStackElement < vStackTrace.size() ? vStackTrace[nCurrentStackElement].second->getProcedureFlags() & ProcedureCommandLine::FLAG_MACRO : false;
+
+    // Store the arguments
+    for (const auto& iter : _mArguments)
+    {
+        if (iter.first.back() == '(')
+        {
+            // Replace the occurences
+            if (!isMacro && iter.first != iter.second)
+                replaceAll(sErraticCommand, (iter.second + "(").c_str(), iter.first.c_str());
+
+            mArguments[iter.first + ")\t" + iter.second] = iter.second;
+        }
+        else if (iter.first.back() == '{')
+        {
+            // Replace the occurences
+            if (!isMacro && iter.first != iter.second)
+                replaceAll(sErraticCommand, (iter.second + "{").c_str(), iter.first.c_str());
+
+            mArguments[iter.first + "}\t" + iter.second] = iter.second;
+        }
+        else
+        {
+            // Replace the occurences
+            if (!isMacro && iter.first != iter.second)
+                replaceAll(sErraticCommand, iter.second.c_str(), iter.first.c_str());
+
+            mArguments[iter.first + "\t" + iter.second] = iter.second;
+        }
+    }
+
+
 }
 
 

@@ -946,12 +946,12 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
         }
 
         // Call the procedure interface function
-        int nReturn = procedureInterface(sHeadExpression, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop + nWhile + nIf, nth_Cmd);
+        ProcedureInterfaceRetVal nReturn = procedureInterface(sHeadExpression, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop + nWhile + nIf, nth_Cmd);
 
         // Handle the return value
-        if (nReturn == -1)
+        if (nReturn == INTERFACE_ERROR)
             throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sHeadExpression, SyntaxError::invalid_position);
-        else if (nReturn == -2)
+        else if (nReturn == INTERFACE_EMPTY)
             sHeadExpression = "false";
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
@@ -960,7 +960,7 @@ value_type* FlowCtrl::evalHeader(int& nNum, string& sHeadExpression, bool bIsFor
             _parserRef->LockPause(false);
         }
 
-        if (nReturn == -2 || nReturn == 2)
+        if (nReturn == INTERFACE_EMPTY || nReturn == INTERFACE_VALUE)
             nJumpTable[nth_Cmd][PROCEDURE_INTERFACE] = 1;
         else
             nJumpTable[nth_Cmd][PROCEDURE_INTERFACE] = 0;
@@ -1919,6 +1919,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
     bool bWriteToCache = false;
     bool bWriteToCluster = false;
     _assertionHandler.reset();
+    updateTestStats();
 
     // Get the current bytecode for this command
     int nCurrentCalcType = nCalcType[nthCmd];
@@ -2322,7 +2323,7 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             _parserRef->LockPause();
         }
 
-        int nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop + nWhile + nIf, nthCmd);
+        ProcedureInterfaceRetVal nReturn = procedureInterface(sLine, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nLoop + nWhile + nIf, nthCmd);
 
         if (!bLockedPauseMode && bUseLoopParsingMode)
         {
@@ -2330,14 +2331,14 @@ int FlowCtrl::calc(string sLine, int nthCmd)
             _parserRef->LockPause(false);
         }
 
-        if (nReturn == -2 || nReturn == 2)
+        if (nReturn == INTERFACE_EMPTY || nReturn == INTERFACE_VALUE)
             nJumpTable[nthCmd][PROCEDURE_INTERFACE] = 1;
         else
             nJumpTable[nthCmd][PROCEDURE_INTERFACE] = 0;
 
-        if (nReturn == -1)
+        if (nReturn == INTERFACE_ERROR)
             return FLOWCTRL_ERROR;
-        else if (nReturn == -2)
+        else if (nReturn == INTERFACE_EMPTY)
             return FLOWCTRL_OK;
     }
 
@@ -3236,6 +3237,27 @@ void FlowCtrl::prepareLocalVarsAndReplace(string& sVars)
 
 
 /////////////////////////////////////////////////
+/// \brief Updates the test statistics with the
+/// total test statistics.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void FlowCtrl::updateTestStats()
+{
+    if (sTestClusterName.length())
+    {
+        NumeRe::Cluster& testcluster = NumeReKernel::getInstance()->getMemoryManager().getCluster(sTestClusterName);
+        AssertionStats total = _assertionHandler.getStats();
+
+        testcluster.setDouble(1, double(total.nCheckedAssertions - baseline.nCheckedAssertions));
+        testcluster.setDouble(3, double(total.nCheckedAssertions - baseline.nCheckedAssertions - (total.nFailedAssertions - baseline.nFailedAssertions)));
+        testcluster.setDouble(5, double(total.nFailedAssertions - baseline.nFailedAssertions));
+    }
+}
+
+
+/////////////////////////////////////////////////
 /// \brief This member function returns the
 /// current line number as enumerated during
 /// passing the commands via "setCommand()".
@@ -3298,12 +3320,12 @@ bool FlowCtrl::isFlowCtrlStatement(const std::string& sCmd)
 /// \param _option Settings&
 /// \param nth_loop unsigned int
 /// \param nth_command int
-/// \return int
+/// \return ProcedureInterfaceRetVal
 ///
 /////////////////////////////////////////////////
-int FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
+FlowCtrl::ProcedureInterfaceRetVal FlowCtrl::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command)
 {
-    return 1;
+    return FlowCtrl::INTERFACE_NONE;
 }
 
 

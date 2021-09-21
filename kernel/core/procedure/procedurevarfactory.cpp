@@ -126,20 +126,6 @@ void ProcedureVarFactory::init()
     sProcName = "";
     nth_procedure = 0;
 
-    sArgumentMap = nullptr;
-    sLocalVars = nullptr;
-    sLocalStrings = nullptr;
-    sLocalTables = nullptr;
-    sLocalClusters = nullptr;
-
-    dLocalVars = nullptr;
-
-    nArgumentMapSize = 0;
-    nLocalVarMapSize = 0;
-    nLocalStrMapSize = 0;
-    nLocalTableSize = 0;
-    nLocalClusterSize = 0;
-
     inliningMode = false;
     sInlineVarDef.clear();
     sInlineStringDef.clear();
@@ -159,16 +145,6 @@ void ProcedureVarFactory::init()
 /////////////////////////////////////////////////
 void ProcedureVarFactory::reset()
 {
-    if (nArgumentMapSize)
-    {
-        for (size_t i = 0; i < nArgumentMapSize; i++)
-            delete[] sArgumentMap[i];
-
-        delete[] sArgumentMap;
-        sArgumentMap = nullptr;
-        nArgumentMapSize = 0;
-    }
-
     // Clear the local copies of the arguments
     if (mLocalArgs.size())
     {
@@ -185,71 +161,48 @@ void ProcedureVarFactory::reset()
         mLocalArgs.clear();
     }
 
-    if (nLocalVarMapSize)
+    if (mLocalVars.size())
     {
-        for (size_t i = 0; i < nLocalVarMapSize; i++)
+        for (auto iter : mLocalVars)
         {
             if (_parserRef)
-                _parserRef->RemoveVar(sLocalVars[i][1]);
+                _parserRef->RemoveVar(iter.second.first);
 
-            delete[] sLocalVars[i];
+            // Deleting a nullptr is harmless
+            delete iter.second.second;
         }
 
-        delete[] sLocalVars;
-
-        if (dLocalVars)
-            delete[] dLocalVars;
-
-        sLocalVars = nullptr;
-        dLocalVars = nullptr;
-        nLocalVarMapSize = 0;
+        mLocalVars.clear();
     }
 
-    if (nLocalStrMapSize)
+    if (mLocalStrings.size())
     {
-        for (size_t i = 0; i < nLocalStrMapSize; i++)
-        {
-            NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[i][1]);
-            delete[] sLocalStrings[i];
-        }
+        for (auto iter : mLocalStrings)
+            NumeReKernel::getInstance()->getStringParser().removeStringVar(iter.second.first);
 
-        delete[] sLocalStrings;
-        sLocalStrings = nullptr;
-        nLocalStrMapSize = 0;
+        mLocalStrings.clear();
     }
 
-    if (nLocalTableSize)
+    if (mLocalTables.size())
     {
-        for (size_t i = 0; i < nLocalTableSize; i++)
-        {
-            if (_dataRef)
-                _dataRef->deleteTable(sLocalTables[i][1]);
+        for (auto iter : mLocalTables)
+            _dataRef->deleteTable(iter.second);
 
-            delete[] sLocalTables[i];
-        }
-
-        delete[] sLocalTables;
-        sLocalTables = nullptr;
-        nLocalTableSize = 0;
+        mLocalTables.clear();
     }
 
-    if (nLocalClusterSize)
+    if (mLocalClusters.size())
     {
-        for (size_t i = 0; i < nLocalClusterSize; i++)
-        {
-            if (_dataRef)
-                _dataRef->removeCluster(sLocalClusters[i][1]);
+        for (auto iter : mLocalClusters)
+            _dataRef->removeCluster(iter.second);
 
-            delete[] sLocalClusters[i];
-        }
-
-        delete[] sLocalClusters;
-        sLocalClusters = nullptr;
-        nLocalClusterSize = 0;
+        mLocalClusters.clear();
     }
 
     sInlineVarDef.clear();
     sInlineStringDef.clear();
+
+    mArguments.clear();
 }
 
 
@@ -277,7 +230,7 @@ bool ProcedureVarFactory::isReference(const std::string& sArgName) const
 /// \return string
 ///
 /////////////////////////////////////////////////
-string ProcedureVarFactory::replaceProcedureName(string sProcedureName)
+string ProcedureVarFactory::replaceProcedureName(string sProcedureName) const
 {
     for (size_t i = 0; i < sProcedureName.length(); i++)
     {
@@ -286,6 +239,32 @@ string ProcedureVarFactory::replaceProcedureName(string sProcedureName)
     }
 
     return sProcedureName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Creates a mangled name for an argument.
+///
+/// \param sDefinedName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ProcedureVarFactory::createMangledArgName(const std::string& sDefinedName) const
+{
+    return "_~"+sProcName+"_~A_"+toString((int)nth_procedure)+"_"+sDefinedName;
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Creates a mangled name for a variable.
+///
+/// \param sDefinedName const std::string&
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ProcedureVarFactory::createMangledVarName(const std::string& sDefinedName) const
+{
+    return "_~"+sProcName+"_"+toString((int)nth_procedure)+"_"+sDefinedName;
 }
 
 
@@ -344,11 +323,7 @@ void ProcedureVarFactory::checkArgument(const string& sArgument, const string& s
     if (sCommand == "var" || sCommand == "tab" || sCommand == "str")
     {
         // Free up memory
-        for (unsigned int j = 0; j <= nCurrentIndex; j++)
-            delete[] sArgumentMap[j];
-
-        delete[] sArgumentMap;
-        nArgumentMapSize = 0;
+        mArguments.clear();
 
         NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
         // Gather all information in the debugger and throw
@@ -364,11 +339,7 @@ void ProcedureVarFactory::checkArgument(const string& sArgument, const string& s
     if (!checkSymbolName(sCommand))
     {
         // Free up memory
-        for (unsigned int j = 0; j <= nCurrentIndex; j++)
-            delete[] sArgumentMap[j];
-
-        delete[] sArgumentMap;
-        nArgumentMapSize = 0;
+        mArguments.clear();
 
         NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
         // Gather all information in the debugger and throw
@@ -399,11 +370,7 @@ void ProcedureVarFactory::checkArgumentValue(const string& sArgument, const stri
     if (sCommand == "var" || sCommand == "tab" || sCommand == "str")
     {
         // Free up memory
-        for (unsigned int j = 0; j <= nCurrentIndex; j++)
-            delete[] sArgumentMap[j];
-
-        delete[] sArgumentMap;
-        nArgumentMapSize = 0;
+        mArguments.clear();
 
         NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
         // Gather all information in the debugger and throw
@@ -443,7 +410,7 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // Get the number of declared variables
-    nLocalVarMapSize = countVarListElements(sVarList);
+    size_t nLocalVarMapSize = countVarListElements(sVarList);
 
     // Create a new temporary cluster
     string sTempCluster = _dataRef->createTemporaryCluster();
@@ -454,33 +421,21 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
     // Get a reference to the temporary cluster
     NumeRe::Cluster& tempCluster = _dataRef->getCluster(sTempCluster);
 
-    sLocalVars = new string*[nLocalVarMapSize];
-
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalVarMapSize; i++)
     {
-        sLocalVars[i] = new string[2];
-        sLocalVars[i][0] = getNextArgument(sVarList, true);
+        std::string currentDef = getNextArgument(sVarList, true);
 
         // Fill in the value of the variable by either
         // using the default or the explicit passed value
-        if (sLocalVars[i][0].find('=') != string::npos)
+        if (currentDef.find('=') != string::npos)
         {
-            string sVarValue = sLocalVars[i][0].substr(sLocalVars[i][0].find('=')+1);
+            string sVarValue = currentDef.substr(currentDef.find('=')+1);
             sInlineVarDef += sVarValue + ",";
 
             if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
             {
-                _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-                for (unsigned int j = 0; j <= i; j++)
-                {
-                    delete[] sLocalVars[j];
-                }
-
-                delete[] sLocalVars;
-                nLocalVarMapSize = 0;
-
+                _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                 _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sVarList, SyntaxError::invalid_position));
             }
 
@@ -500,21 +455,12 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
                 sVarValue = resolveLocalVars(sVarValue, i);
 
                 _parserRef->SetExpr(sVarValue);
-                sLocalVars[i][0] = sLocalVars[i][0].substr(0, sLocalVars[i][0].find('='));
+                currentDef.erase(currentDef.find('='));
                 tempCluster.setDouble(i, _parserRef->Eval());
             }
             catch (...)
             {
-                _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-                for (unsigned int j = 0; j <= i; j++)
-                {
-                    delete[] sLocalVars[j];
-                }
-
-                delete[] sLocalVars;
-                nLocalVarMapSize = 0;
-
+                _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                 _debugger.showError(current_exception());
                 throw;
             }
@@ -525,8 +471,10 @@ void ProcedureVarFactory::createLocalInlineVars(string sVarList)
             sInlineVarDef += "0,";
         }
 
-        StripSpaces(sLocalVars[i][0]);
-        sLocalVars[i][1] = sTempCluster + "{" + toString(i+1) + "}";
+        StripSpaces(currentDef);
+        std::string currentVar = sTempCluster + "{" + toString(i+1) + "}";
+
+        mLocalVars[currentDef] = std::make_pair(currentVar, nullptr);
     }
 
     sInlineVarDef.back() = '}';
@@ -549,7 +497,7 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // Get the number of declared variables
-    nLocalStrMapSize = countVarListElements(sStringList);
+    size_t nLocalStrMapSize = countVarListElements(sStringList);
 
     // Create a new temporary cluster
     string sTempCluster = _dataRef->createTemporaryCluster();
@@ -559,31 +507,24 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
     // Get a reference to the temporary cluster
     NumeRe::Cluster& tempCluster = _dataRef->getCluster(sTempCluster);
 
-    sLocalStrings = new string*[nLocalStrMapSize];
-
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalStrMapSize; i++)
     {
-        sLocalStrings[i] = new string[3];
-        sLocalStrings[i][0] = getNextArgument(sStringList, true);
+        std::string currentDef = getNextArgument(sStringList, true);
+        std::string sVarValue;
 
         // Fill in the value of the variable by either
         // using the default or the explicit passed value
-        if (sLocalStrings[i][0].find('=') != string::npos)
+        if (currentDef.find('=') != string::npos)
         {
-            string sVarValue = sLocalStrings[i][0].substr(sLocalStrings[i][0].find('=')+1);
+            sVarValue = currentDef.substr(currentDef.find('=')+1);
             sInlineStringDef += sVarValue + ",";
 
             if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
             {
-                _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
 
-                for (unsigned int j = 0; j <= i; j++)
-                {
-                    delete[] sLocalStrings[j];
-                }
-
-                delete[] sLocalStrings;
+                mLocalStrings.clear();
                 nLocalStrMapSize = 0;
 
                 _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sStringList, SyntaxError::invalid_position));
@@ -599,20 +540,14 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
                     NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarValue, sTemp, true);
                 }
 
-                sLocalStrings[i][0] = sLocalStrings[i][0].substr(0, sLocalStrings[i][0].find('='));
-                sLocalStrings[i][2] = sVarValue;
+                currentDef.erase(currentDef.find('='));
                 tempCluster.setString(i, sVarValue);
             }
             catch (...)
             {
-                _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
 
-                for (unsigned int j = 0; j <= i; j++)
-                {
-                    delete[] sLocalStrings[j];
-                }
-
-                delete[] sLocalVars;
+                mLocalStrings.clear();
                 nLocalStrMapSize = 0;
 
                 _debugger.showError(current_exception());
@@ -625,8 +560,8 @@ void ProcedureVarFactory::createLocalInlineStrings(string sStringList)
             sInlineStringDef += "\"\",";
         }
 
-        StripSpaces(sLocalStrings[i][0]);
-        sLocalStrings[i][1] = sTempCluster + "{" + toString(i+1) + "}";
+        StripSpaces(currentDef);
+        mLocalStrings[currentDef] = std::make_pair(sTempCluster + "{" + toString(i+1) + "}", sVarValue);
     }
 
     sInlineStringDef.back() = '}';
@@ -664,68 +599,58 @@ map<string,string> ProcedureVarFactory::createProcedureArguments(string sArgumen
     }
 
     // Get the number of argument of this procedure
-    nArgumentMapSize = countVarListElements(sArgumentList);
-    sArgumentMap = new string*[nArgumentMapSize];
+    size_t nArgumentMapSize = countVarListElements(sArgumentList);
 
     std::string sArgListBack = sArgumentList;
 
     // Decode the argument list
     for (unsigned int i = 0; i < nArgumentMapSize; i++)
     {
-        sArgumentMap[i] = new string[2];
-        sArgumentMap[i][0] = getNextArgument(sArgumentList);
-        StripSpaces(sArgumentMap[i][0]);
+        std::string currentArg = getNextArgument(sArgumentList);
+        StripSpaces(currentArg);
 
-        checkArgument(sArgumentMap[i][0], sArgListBack, i);
+        checkArgument(currentArg, sArgListBack, i);
 
         // Fill in the value of the argument by either
         // using the default value or the passed value
-        sArgumentMap[i][1] = getNextArgument(sArgumentValues);
-        StripSpaces(sArgumentMap[i][1]);
+        std::string currentValue = getNextArgument(sArgumentValues);
+        StripSpaces(currentValue);
 
-        checkArgumentValue(sArgumentMap[i][1], sArgListBack, i);
+        checkArgumentValue(currentValue, sArgListBack, i);
 
-        if (sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') != string::npos)
+        if (currentValue.length() && currentArg.find('=') != string::npos)
         {
-            sArgumentMap[i][0].erase(sArgumentMap[i][0].find('='));
-            StripSpaces(sArgumentMap[i][0]);
+            currentArg.erase(currentArg.find('='));
+            StripSpaces(currentArg);
         }
-        else if (!sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') != string::npos)
+        else if (!currentValue.length() && currentArg.find('=') != string::npos)
         {
-            sArgumentMap[i][1] = sArgumentMap[i][0].substr(sArgumentMap[i][0].find('=')+1);
-            sArgumentMap[i][0].erase(sArgumentMap[i][0].find('='));
-            StripSpaces(sArgumentMap[i][0]);
-            StripSpaces(sArgumentMap[i][1]);
+            currentValue = currentArg.substr(currentArg.find('=')+1);
+            currentArg.erase(currentArg.find('='));
+            StripSpaces(currentArg);
+            StripSpaces(currentValue);
         }
-        else if (!sArgumentMap[i][1].length() && sArgumentMap[i][0].find('=') == string::npos)
+        else if (!currentValue.length() && currentArg.find('=') == string::npos)
         {
-            string sErrorToken = sArgumentMap[i][0];
-
-            for (unsigned int j = 0; j <= i; j++)
-                delete[] sArgumentMap[j];
-
-            delete[] sArgumentMap;
+            string sErrorToken = currentArg;
             nArgumentMapSize = 0;
 
             if (_optionRef->useDebugger())
                 _debugger.popStackItem();
 
-            throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgumentList, sErrorToken, sErrorToken);
+            throw SyntaxError(SyntaxError::MISSING_DEFAULT_VALUE, sArgListBack, sErrorToken, sErrorToken);
         }
 
-        if (containsFreeOperators(sArgumentMap[i][1]))
-            sArgumentMap[i][1] = "(" + sArgumentMap[i][1] + ")";
+        if (containsFreeOperators(currentValue))
+            currentValue = "(" + currentValue + ")";
+
+        // Evaluate procedure calls and the parentheses of the
+        // passed tables and clusters
+        evaluateProcedureArguments(currentArg, currentValue, sArgListBack);
     }
 
-    // Evaluate procedure calls and the parentheses of the
-    // passed tables and clusters
-    evaluateProcedureArguments(sArgumentList);
 
-    for (unsigned int i = 0; i < nArgumentMapSize; i++)
-    {
-        mVarMap[sArgumentMap[i][0]] = sArgumentMap[i][1];
-    }
-
+    mVarMap.insert(mArguments.begin(), mArguments.end());
     return mVarMap;
 }
 
@@ -753,256 +678,264 @@ static bool isCompleteCluster(StringView sArgumentValue, MemoryManager* _dataRef
 /// passed procedure arguments and convert them
 /// to local variables if necessary.
 ///
+/// \param currentArg std::string&
+/// \param currentValue std::string&
 /// \param sArgumentList const std::string&
 /// \return void
 ///
 /////////////////////////////////////////////////
-void ProcedureVarFactory::evaluateProcedureArguments(const std::string& sArgumentList)
+void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, std::string& currentValue, const std::string& sArgumentList)
 {
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
     NumeRe::StringParser& _stringParser = NumeReKernel::getInstance()->getStringParser();
     bool isTemplate = _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_TEMPLATE;
     bool isMacro = _currentProcedure->getProcedureFlags() & ProcedureCommandLine::FLAG_MACRO || inliningMode;
 
-    for (unsigned int i = 0; i < nArgumentMapSize; i++)
+    // Evaluate procedure calls first
+    if (currentValue.find('$') != string::npos && currentValue.find('(') != string::npos)
     {
-        // Evaluate procedure calls first
-        if (sArgumentMap[i][1].find('$') != string::npos && sArgumentMap[i][1].find('(') != string::npos)
+        if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
         {
-            if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
-            {
-                _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sArgumentList, SyntaxError::invalid_position));
-            }
-
-            int nReturn = _currentProcedure->procedureInterface(sArgumentMap[i][1], *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
-
-            if (nReturn == -1)
-            {
-                _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                _debugger.throwException(SyntaxError(SyntaxError::PROCEDURE_ERROR, sArgumentList, SyntaxError::invalid_position));
-            }
-            else if (nReturn == -2)
-                sArgumentMap[i][1] = "false";
+            _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+            _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sArgumentList, SyntaxError::invalid_position));
         }
 
-        bool isRef = sArgumentMap[i][0].front() == '&' || sArgumentMap[i][0].back() == '&';
+        FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(currentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
 
-        // Determine, if this is a reference (and
-        // remove the ampersand in this case)
-        if (isRef)
+        if (nReturn == FlowCtrl::INTERFACE_ERROR)
         {
-            sArgumentMap[i][0].erase(sArgumentMap[i][0].find('&'), 1);
-            StripSpaces(sArgumentMap[i][0]);
+            _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+            _debugger.throwException(SyntaxError(SyntaxError::PROCEDURE_ERROR, sArgumentList, SyntaxError::invalid_position));
         }
+        else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
+            currentValue = "false";
+    }
 
-        if (sArgumentMap[i][0].length() > 2 && sArgumentMap[i][0].substr(sArgumentMap[i][0].length()-2) == "()")
+    bool isRef = currentArg.front() == '&' || currentArg.back() == '&';
+
+    // Determine, if this is a reference (and
+    // remove the ampersand in this case)
+    if (isRef)
+    {
+        currentArg.erase(currentArg.find('&'), 1);
+        StripSpaces(currentArg);
+    }
+
+    if (currentArg.length() > 2 && currentArg.substr(currentArg.length()-2) == "()")
+    {
+        currentArg.pop_back();
+
+        if (currentValue.find('(') != string::npos)
+            currentValue.erase(currentValue.find('('));
+    }
+    else if (currentArg.length() > 2 && currentArg.substr(currentArg.length()-2) == "{}")
+    {
+        currentArg.pop_back();
+
+        if (isRef && !isCompleteCluster(currentValue, _dataRef))
         {
-            sArgumentMap[i][0].pop_back();
-
-            if (sArgumentMap[i][1].find('(') != string::npos)
-                sArgumentMap[i][1].erase(sArgumentMap[i][1].find('('));
+            _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+            _debugger.throwException(SyntaxError(SyntaxError::CANNOT_PASS_LITERAL_PER_REFERENCE, currentValue, "", currentArg));
         }
-        else if (sArgumentMap[i][0].length() > 2 && sArgumentMap[i][0].substr(sArgumentMap[i][0].length()-2) == "{}")
+        else if (!isRef && !isMacro) // Macros do the old copy-paste logic
         {
-            sArgumentMap[i][0].pop_back();
+            // Create a local variable
+            std::string sNewArgName = "_~"+sProcName+"_~A_"+toString((int)nth_procedure)+"_"+currentArg.substr(0, currentArg.length()-1);
+            NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
 
-            if (isRef && !isCompleteCluster(sArgumentMap[i][1], _dataRef))
+            // Copy, if it is already a (complete!) cluster
+            if (isCompleteCluster(currentValue, _dataRef))
+                newCluster = _dataRef->getCluster(currentValue.substr(0, currentValue.find('{')));
+            else
             {
-                _debugger.gatherInformations(this, sArgumentMap[i][1], _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                _debugger.throwException(SyntaxError(SyntaxError::CANNOT_PASS_LITERAL_PER_REFERENCE, sArgumentMap[i][1], "", sArgumentMap[i][0]));
-            }
-            else if (!isRef && !isMacro) // Macros do the old copy-paste logic
-            {
-                // Create a local variable
-                std::string sNewArgName = "_~"+sProcName+"_~A_"+toString((int)nth_procedure)+"_"+sArgumentMap[i][0].substr(0, sArgumentMap[i][0].length()-1);
-                NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
-
-                // Copy, if it is already a (complete!) cluster
-                if (isCompleteCluster(sArgumentMap[i][1], _dataRef))
-                    newCluster = _dataRef->getCluster(sArgumentMap[i][1].substr(0, sArgumentMap[i][1].find('{')));
-                else
-                {
-                    // Evaluate the expression and create a new
-                    // cluster
-                    try
-                    {
-                        std::string sCurrentValue = sArgumentMap[i][1];
-
-                        if (_dataRef->containsTablesOrClusters(sCurrentValue))
-                            getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
-
-                        if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
-                        {
-                            string sCluster = sNewArgName + "{}";
-                            NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sCluster, true);
-                        }
-                        else
-                        {
-                            value_type* v = nullptr;
-                            int nResults;
-                            _parserRef->SetExpr(sCurrentValue);
-                            v = _parserRef->Eval(nResults);
-                            newCluster.setDoubleArray(nResults, v);
-                        }
-                    }
-                    catch (...)
-                    {
-                        _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                        _debugger.showError(current_exception());
-                        throw;
-                    }
-                }
-
-                // Clusters have to be stored as names without
-                // their braces
-                sArgumentMap[i][1] = sNewArgName;
-                mLocalArgs[sNewArgName] = CLUSTERTYPE;
-            }
-
-            sArgumentMap[i][1] = sArgumentMap[i][1].substr(0, sArgumentMap[i][1].find('{'));
-        }
-        else
-        {
-            if (isRef)
-            {
-                const auto& varMap = _parserRef->GetVar();
-                const auto& stringMap = _stringParser.getStringVars();
-
-                // Reference
-                if (varMap.find(sArgumentMap[i][1]) == varMap.end()
-                    && stringMap.find(sArgumentMap[i][1]) == stringMap.end()
-                    && !(isTemplate && _dataRef->isCluster(sArgumentMap[i][1]))
-                    && !(isTemplate && sArgumentMap[i][1].substr(0, 7) == "string(")
-                    && !(isTemplate && _dataRef->isTable(sArgumentMap[i][1])))
-                {
-                    _debugger.gatherInformations(this, sArgumentMap[i][1], _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    _debugger.throwException(SyntaxError(SyntaxError::CANNOT_PASS_LITERAL_PER_REFERENCE, sArgumentMap[i][1], "", sArgumentMap[i][0]));
-                }
-            }
-            else if (!isMacro) // macros do the old copy-paste logic
-            {
-                // Create a local variable
-                std::string sNewArgName = "_~"+sProcName+"_~A_"+toString((int)nth_procedure)+"_"+sArgumentMap[i][0];
-
-                if (!_functionRef->call(sArgumentMap[i][1]))
-                {
-                    _debugger.gatherInformations(this, sArgumentMap[i][1], _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    _debugger.throwException(SyntaxError(SyntaxError::FUNCTION_ERROR, sArgumentMap[i][0], SyntaxError::invalid_position));
-                }
-
+                // Evaluate the expression and create a new
+                // cluster
                 try
                 {
-                    // Templates allow also other types
-                    if (isTemplate)
+                    std::string sCurrentValue = currentValue;
+
+                    if (_dataRef->containsTablesOrClusters(sCurrentValue))
+                        getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
+
+                    if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
                     {
-                        StripSpaces(sArgumentMap[i][1]);
-
-                        if (sArgumentMap[i][1].find("()") != std::string::npos && _dataRef->isTable(sArgumentMap[i][1]))
-                            continue; // Tables are always references
-                        else if (sArgumentMap[i][1].find("{}") != std::string::npos && _dataRef->isCluster(sArgumentMap[i][1]))
-                        {
-                            // Copy clusters
-                            NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
-                            newCluster = _dataRef->getCluster(sArgumentMap[i][1].substr(0, sArgumentMap[i][1].find('{')));
-
-                            sArgumentMap[i][1] = sNewArgName + "{}";
-                            mLocalArgs[sNewArgName + "{}"] = CLUSTERTYPE;
-                            continue;
-                        }
-
-                        // Get data, if necessary
-                        if (_dataRef->containsTablesOrClusters(sArgumentMap[i][1]))
-                            getDataElements(sArgumentMap[i][1], *_parserRef, *_dataRef, *_optionRef);
-
-                        // Evaluate strings
-                        if (_stringParser.isStringExpression(sArgumentMap[i][1]))
-                        {
-                            NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
-                            std::string sCluster = sNewArgName + "{}";
-                            NumeRe::StringParser::StringParserRetVal ret =  _stringParser.evalAndFormat(sArgumentMap[i][1], sCluster, true);
-
-                            if (ret == NumeRe::StringParser::STRING_SUCCESS)
-                            {
-                                if (newCluster.size() == 1)
-                                {
-                                    _stringParser.setStringValue(sNewArgName, newCluster.getString(0));
-                                    _dataRef->removeCluster(sNewArgName);
-                                    sArgumentMap[i][1] = sNewArgName;
-                                    mLocalArgs[sNewArgName] = STRINGTYPE;
-                                }
-                                else
-                                {
-                                    sArgumentMap[i][1] = sNewArgName + "{}";
-                                    mLocalArgs[sNewArgName + "{}"] = CLUSTERTYPE;
-                                }
-
-                                continue;
-                            }
-                        }
-
-                        // Evaluate numerical expressions
-                        _parserRef->SetExpr(sArgumentMap[i][1]);
-                        int nRes = 0;
-                        mu::value_type* v = _parserRef->Eval(nRes);
-
-                        if (nRes > 1)
-                        {
-                            NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
-                            newCluster.setDoubleArray(nRes, v);
-                            sArgumentMap[i][1] = sNewArgName + "{}";
-                            mLocalArgs[sNewArgName + "{}"] = CLUSTERTYPE;
-                        }
-                        else
-                        {
-                            mu::value_type* newVar = new mu::value_type;
-                            *newVar = v[0];
-                            _parserRef->m_lDataStorage.push_back(newVar);
-                            _parserRef->DefineVar(sNewArgName, newVar);
-                            sArgumentMap[i][1] = sNewArgName;
-                            mLocalArgs[sNewArgName] = NUMTYPE;
-                        }
-
-                        continue;
+                        string sCluster = sNewArgName + "{}";
+                        NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sCluster, true);
                     }
                     else
                     {
-                        // Get data, if necessary
-                        if (_dataRef->containsTablesOrClusters(sArgumentMap[i][1]))
-                            getDataElements(sArgumentMap[i][1], *_parserRef, *_dataRef, *_optionRef);
-
-                        // Evaluate strings
-                        if (_stringParser.isStringExpression(sArgumentMap[i][1]))
-                        {
-                            std::string dummy;
-                            NumeRe::StringParser::StringParserRetVal ret =  _stringParser.evalAndFormat(sArgumentMap[i][1], dummy, true);
-
-                            if (ret == NumeRe::StringParser::STRING_SUCCESS)
-                            {
-                                _stringParser.setStringValue(sNewArgName, getNextArgument(sArgumentMap[i][1]));
-                                sArgumentMap[i][1] = sNewArgName;
-                                mLocalArgs[sNewArgName] = STRINGTYPE;
-                                continue;
-                            }
-                        }
-
-                        // Evaluate numerical expressions
-                        _parserRef->SetExpr(sNewArgName + " = " + sArgumentMap[i][1]);
-                        _parserRef->Eval();
+                        value_type* v = nullptr;
+                        int nResults;
+                        _parserRef->SetExpr(sCurrentValue);
+                        v = _parserRef->Eval(nResults);
+                        newCluster.setDoubleArray(nResults, v);
                     }
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(this, sArgumentMap[i][1], _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                    _debugger.gatherInformations(this, sArgumentList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.showError(current_exception());
                     throw;
                 }
+            }
 
-                sArgumentMap[i][1] = sNewArgName;
-                mLocalArgs[sNewArgName] = NUMTYPE;
+            // Clusters have to be stored as names without
+            // their braces
+            currentValue = sNewArgName;
+            mLocalArgs[sNewArgName] = CLUSTERTYPE;
+        }
+
+        currentValue = currentValue.substr(0, currentValue.find('{'));
+    }
+    else
+    {
+        if (isRef)
+        {
+            const auto& varMap = _parserRef->GetVar();
+            const auto& stringMap = _stringParser.getStringVars();
+
+            // Reference
+            if (varMap.find(currentValue) == varMap.end()
+                && stringMap.find(currentValue) == stringMap.end()
+                && !(isTemplate && _dataRef->isCluster(currentValue))
+                && !(isTemplate && currentValue.substr(0, 7) == "string(")
+                && !(isTemplate && _dataRef->isTable(currentValue)))
+            {
+                _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.throwException(SyntaxError(SyntaxError::CANNOT_PASS_LITERAL_PER_REFERENCE, currentValue, "", currentArg));
             }
         }
+        else if (!isMacro) // macros do the old copy-paste logic
+        {
+            // Create a local variable
+            std::string sNewArgName = createMangledArgName(currentArg);
+
+            if (!_functionRef->call(currentValue))
+            {
+                _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.throwException(SyntaxError(SyntaxError::FUNCTION_ERROR, currentArg, SyntaxError::invalid_position));
+            }
+
+            try
+            {
+                // Templates allow also other types
+                if (isTemplate)
+                {
+                    StripSpaces(currentValue);
+
+                    if (currentValue.find("()") != std::string::npos && _dataRef->isTable(currentValue))
+                    {
+                        mArguments[currentArg] = currentValue; // Tables are always references
+                        return;
+                    }
+                    else if (currentValue.find("{}") != std::string::npos && _dataRef->isCluster(currentValue))
+                    {
+                        // Copy clusters
+                        NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
+                        newCluster = _dataRef->getCluster(currentValue.substr(0, currentValue.find('{')));
+
+                        currentValue = sNewArgName + "{}";
+                        mLocalArgs[sNewArgName + "{}"] = CLUSTERTYPE;
+                        mArguments[currentArg] = currentValue;
+                        return;
+                    }
+
+                    // Get data, if necessary
+                    if (_dataRef->containsTablesOrClusters(currentValue))
+                        getDataElements(currentValue, *_parserRef, *_dataRef, *_optionRef);
+
+                    // Evaluate strings
+                    if (_stringParser.isStringExpression(currentValue))
+                    {
+                        NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
+                        std::string sCluster = sNewArgName + "{}";
+                        NumeRe::StringParser::StringParserRetVal ret =  _stringParser.evalAndFormat(currentValue, sCluster, true);
+
+                        if (ret == NumeRe::StringParser::STRING_SUCCESS)
+                        {
+                            if (newCluster.size() == 1)
+                            {
+                                _stringParser.setStringValue(sNewArgName, newCluster.getString(0));
+                                _dataRef->removeCluster(sNewArgName);
+                                currentValue = sNewArgName;
+                                mLocalArgs[sNewArgName] = STRINGTYPE;
+                            }
+                            else
+                            {
+                                currentValue = sNewArgName + "{}";
+                                mLocalArgs[sNewArgName + "{}"] = CLUSTERTYPE;
+                            }
+
+                            mArguments[currentArg] = currentValue;
+                            return;
+                        }
+                    }
+
+                    // Evaluate numerical expressions
+                    _parserRef->SetExpr(currentValue);
+                    int nRes = 0;
+                    mu::value_type* v = _parserRef->Eval(nRes);
+
+                    if (nRes > 1)
+                    {
+                        NumeRe::Cluster& newCluster = _dataRef->newCluster(sNewArgName);
+                        newCluster.setDoubleArray(nRes, v);
+                        currentValue = sNewArgName + "{}";
+                        mLocalArgs[sNewArgName + "{}"] = CLUSTERTYPE;
+                    }
+                    else
+                    {
+                        mu::value_type* newVar = new mu::value_type;
+                        *newVar = v[0];
+                        _parserRef->m_lDataStorage.push_back(newVar);
+                        _parserRef->DefineVar(sNewArgName, newVar);
+                        currentValue = sNewArgName;
+                        mLocalArgs[sNewArgName] = NUMTYPE;
+                    }
+
+                    mArguments[currentArg] = currentValue;
+                    return;
+                }
+                else
+                {
+                    // Get data, if necessary
+                    if (_dataRef->containsTablesOrClusters(currentValue))
+                        getDataElements(currentValue, *_parserRef, *_dataRef, *_optionRef);
+
+                    // Evaluate strings
+                    if (_stringParser.isStringExpression(currentValue))
+                    {
+                        std::string dummy;
+                        NumeRe::StringParser::StringParserRetVal ret =  _stringParser.evalAndFormat(currentValue, dummy, true);
+
+                        if (ret == NumeRe::StringParser::STRING_SUCCESS)
+                        {
+                            _stringParser.setStringValue(sNewArgName, getNextArgument(currentValue));
+                            currentValue = sNewArgName;
+                            mLocalArgs[sNewArgName] = STRINGTYPE;
+                            mArguments[currentArg] = currentValue;
+                            return;
+                        }
+                    }
+
+                    // Evaluate numerical expressions
+                    _parserRef->SetExpr(sNewArgName + " = " + currentValue);
+                    _parserRef->Eval();
+                }
+            }
+            catch (...)
+            {
+                _debugger.gatherInformations(this, currentValue, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
+                _debugger.showError(current_exception());
+                throw;
+            }
+
+            currentValue = sNewArgName;
+            mLocalArgs[sNewArgName] = NUMTYPE;
+        }
     }
+
+    mArguments[currentArg] = currentValue;
 }
 
 
@@ -1017,10 +950,6 @@ void ProcedureVarFactory::evaluateProcedureArguments(const std::string& sArgumen
 /////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalVars(string sVarList)
 {
-    // already declared the local vars?
-    if (nLocalVarMapSize)
-        return;
-
     if (!_currentProcedure)
         return;
 
@@ -1033,87 +962,48 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // Get the number of declared variables
-    nLocalVarMapSize = countVarListElements(sVarList);
-
-    sLocalVars = new string*[nLocalVarMapSize];
-    dLocalVars = new mu::value_type[nLocalVarMapSize];
+    size_t nLocalVarMapSize = countVarListElements(sVarList);
 
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalVarMapSize; i++)
     {
-        sLocalVars[i] = new string[2];
-        sLocalVars[i][0] = getNextArgument(sVarList, true);
+        std::string currentDef = getNextArgument(sVarList, true);
+        mu::value_type currentVal = 0;
 
-        std::string sSymbol = sLocalVars[i][0].substr(0, sLocalVars[i][0].find('='));
+        std::string sSymbol = currentDef.substr(0, currentDef.find('='));
 
         if (!checkSymbolName(sSymbol))
         {
-            _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-            for (unsigned int j = 0; j <= i; j++)
-            {
-                if (j < i)
-                    _parserRef->RemoveVar(sLocalVars[j][1]);
-
-                delete[] sLocalVars[j];
-            }
-
-            delete[] sLocalVars;
-            nLocalVarMapSize = 0;
+            _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             _debugger.throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sVarList, SyntaxError::invalid_position, sSymbol));
         }
 
         // Fill in the value of the variable by either
         // using the default or the explicit passed value
-        if (sLocalVars[i][0].find('=') != string::npos)
+        if (currentDef.find('=') != string::npos)
         {
-            string sVarValue = sLocalVars[i][0].substr(sLocalVars[i][0].find('=')+1);
+            std::string sVarValue = currentDef.substr(currentDef.find('=')+1);
 
             if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
             {
                 if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
                 {
-                    _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-                    for (unsigned int j = 0; j <= i; j++)
-                    {
-                        if (j < i)
-                            _parserRef->RemoveVar(sLocalVars[j][1]);
-
-                        delete[] sLocalVars[j];
-                    }
-
-                    delete[] sLocalVars;
-                    nLocalVarMapSize = 0;
-
+                    _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sVarList, SyntaxError::invalid_position));
                 }
 
                 try
                 {
-                    int nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
 
-                    if (nReturn == -1)
-                    {
+                    if (nReturn == FlowCtrl::INTERFACE_ERROR)
                         throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sVarList, SyntaxError::invalid_position);
-                    }
-                    else if (nReturn == -2)
+                    else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
                         sVarValue = "false";
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    for (unsigned int j = 0; j <= i; j++)
-                    {
-                        if (j < i)
-                            _parserRef->RemoveVar(sLocalVars[j][1]);
-
-                        delete[] sLocalVars[j];
-                    }
-
-                    delete[] sLocalVars;
-                    nLocalVarMapSize = 0;
-
+                    _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.showError(current_exception());
                     throw;
                 }
@@ -1135,35 +1025,24 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
                 }
 
                 _parserRef->SetExpr(sVarValue);
-                sLocalVars[i][0] = sLocalVars[i][0].substr(0,sLocalVars[i][0].find('='));
-                dLocalVars[i] = _parserRef->Eval();
+                currentDef.erase(currentDef.find('='));
+                currentVal = _parserRef->Eval();
             }
             catch (...)
             {
-                _debugger.gatherInformations(sLocalVars, i, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-                for (unsigned int j = 0; j <= i; j++)
-                {
-                    if (j < i)
-                        _parserRef->RemoveVar(sLocalVars[j][1]);
-
-                    delete[] sLocalVars[j];
-                }
-
-                delete[] sLocalVars;
-                nLocalVarMapSize = 0;
-
+                _debugger.gatherInformations(this, sVarList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                 _debugger.showError(current_exception());
                 throw;
             }
         }
-        else
-            dLocalVars[i] = 0.0;
 
-        StripSpaces(sLocalVars[i][0]);
-        sLocalVars[i][1] = "_~"+sProcName+"_"+toString((int)nth_procedure)+"_"+sLocalVars[i][0];
+        StripSpaces(currentDef);
+        std::string currentVar = createMangledVarName(currentDef);
 
-        _parserRef->DefineVar(sLocalVars[i][1], &dLocalVars[i]);
+        mLocalVars[currentDef] = std::make_pair(currentVar, new mu::value_type);
+        *mLocalVars[currentDef].second = currentVal;
+
+        _parserRef->DefineVar(currentVar, mLocalVars[currentDef].second);
     }
 }
 
@@ -1179,10 +1058,6 @@ void ProcedureVarFactory::createLocalVars(string sVarList)
 /////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalStrings(string sStringList)
 {
-    // already declared the local vars?
-    if (nLocalStrMapSize)
-        return;
-
     if (!_currentProcedure)
         return;
 
@@ -1195,150 +1070,81 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
     NumeReDebugger& _debugger = NumeReKernel::getInstance()->getDebugger();
 
     // Get the number of declared variables
-    nLocalStrMapSize = countVarListElements(sStringList);
-    sLocalStrings = new string*[nLocalStrMapSize];
+    size_t nLocalStrMapSize = countVarListElements(sStringList);
 
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalStrMapSize; i++)
     {
-        sLocalStrings[i] = new string[3];
-        sLocalStrings[i][0] = getNextArgument(sStringList, true);
+        std::string currentDef = getNextArgument(sStringList, true);
+        std::string sVarValue;
 
-        std::string sSymbol = sLocalStrings[i][0].substr(0, sLocalStrings[i][0].find('='));
+        std::string sSymbol = currentDef.substr(0, currentDef.find('='));
 
         if (!checkSymbolName(sSymbol))
         {
-            _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-            for (unsigned int j = 0; j <= i; j++)
-            {
-                if (j < i)
-                    NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
-
-                delete[] sLocalStrings[j];
-            }
-
-            delete[] sLocalStrings;
-            nLocalStrMapSize = 0;
+            _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             _debugger.throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sStringList, SyntaxError::invalid_position, sSymbol));
         }
         // Fill in the value of the variable by either
         // using the default or the explicit passed value
-        if (sLocalStrings[i][0].find('=') != string::npos)
+        if (currentDef.find('=') != string::npos)
         {
-            string sVarValue = sLocalStrings[i][0].substr(sLocalStrings[i][0].find('=')+1);
+            sVarValue = currentDef.substr(currentDef.find('=')+1);
 
             if (sVarValue.find('$') != string::npos && sVarValue.find('(') != string::npos)
             {
                 if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
                 {
-
-                    _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-                    for (unsigned int j = 0; j <= i; j++)
-                    {
-                        if (j < i)
-                            NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
-
-                        delete[] sLocalStrings[j];
-                    }
-
-                    delete[] sLocalStrings;
-                    nLocalStrMapSize = 0;
-
+                    _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.throwException(SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sStringList, SyntaxError::invalid_position));
                 }
 
                 try
                 {
-                    int nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sVarValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
 
-                    if (nReturn == -1)
-                    {
+                    if (nReturn == FlowCtrl::INTERFACE_ERROR)
                         throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sStringList, SyntaxError::invalid_position);
-                    }
-                    else if (nReturn == -2)
+                    else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
                         sVarValue = "false";
                 }
                 catch (...)
                 {
-                    _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-                    for (unsigned int j = 0; j <= i; j++)
-                    {
-                        if (j < i)
-                            NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
-
-                        delete[] sLocalStrings[j];
-                    }
-
-                    delete[] sLocalStrings;
-                    nLocalStrMapSize = 0;
-
+                    _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
                     _debugger.showError(current_exception());
                     throw;
                 }
             }
 
-            try
+            sVarValue = resolveLocalStrings(sVarValue, i);
+
+            if (_dataRef->containsTablesOrClusters(sVarValue))
+                getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
+
+            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
             {
-                sVarValue = resolveLocalStrings(sVarValue, i);
-
-                if (_dataRef->containsTablesOrClusters(sVarValue))
-                {
-                    getDataElements(sVarValue, *_parserRef, *_dataRef, *_optionRef);
-                }
-
-                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sVarValue))
-                {
-                    string sTemp;
-                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarValue, sTemp, true);
-                }
-
-                sLocalStrings[i][0] = sLocalStrings[i][0].substr(0,sLocalStrings[i][0].find('='));
-                sLocalStrings[i][2] = sVarValue;
+                string sTemp;
+                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sVarValue, sTemp, true);
             }
-            catch (...)
-            {
-                for (unsigned int j = 0; j <= i; j++)
-                {
-                    if (j < i)
-                        NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
 
-                    delete[] sLocalStrings[j];
-                }
-
-                delete[] sLocalStrings;
-                nLocalStrMapSize = 0;
-                throw;
-            }
+            currentDef.erase(currentDef.find('='));
         }
-        else
-            sLocalStrings[i][2] = "";
 
-        StripSpaces(sLocalStrings[i][0]);
-        sLocalStrings[i][1] = "_~"+sProcName+"_"+toString((int)nth_procedure)+"_"+sLocalStrings[i][0];
+        StripSpaces(currentDef);
+        std::string currentVar = createMangledVarName(currentDef);
 
         try
         {
-            NumeReKernel::getInstance()->getStringParser().setStringValue(sLocalStrings[i][1], sLocalStrings[i][2]);
+            NumeReKernel::getInstance()->getStringParser().setStringValue(currentVar, sVarValue);
         }
         catch (...)
         {
-            _debugger.gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, i, sLocalTables, nLocalTableSize, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-            for (unsigned int j = 0; j <= i; j++)
-            {
-                if (j < i)
-                    NumeReKernel::getInstance()->getStringParser().removeStringVar(sLocalStrings[j][1]);
-
-                delete[] sLocalStrings[j];
-            }
-
-            delete[] sLocalStrings;
-            nLocalStrMapSize = 0;
-
+            _debugger.gatherInformations(this, sStringList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             _debugger.showError(current_exception());
             throw;
         }
+
+        mLocalStrings[currentDef] = std::make_pair(currentVar, sVarValue);
     }
 }
 
@@ -1353,10 +1159,6 @@ void ProcedureVarFactory::createLocalStrings(string sStringList)
 /////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalTables(string sTableList)
 {
-    // already declared the local vars?
-    if (nLocalTableSize)
-        return;
-
     if (!_currentProcedure)
         return;
 
@@ -1364,63 +1166,39 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
         return;
 
     // Get the number of declared variables
-    nLocalTableSize = countVarListElements(sTableList);
-    sLocalTables = new string*[nLocalTableSize];
+    size_t nLocalTableSize = countVarListElements(sTableList);
 
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalTableSize; i++)
     {
-        sLocalTables[i] = new string[2];
-        sLocalTables[i][0] = getNextArgument(sTableList, true);
+        std::string currentDef = getNextArgument(sTableList, true);
 
-        std::string sSymbol = sLocalTables[i][0].substr(0, sLocalTables[i][0].find('='));
+        std::string sSymbol = currentDef.substr(0, currentDef.find('='));
 
         if (!checkSymbolName(sSymbol))
         {
-            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, i, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-            for (unsigned int j = 0; j <= i; j++)
-            {
-                if (j < i)
-                    _dataRef->deleteTable(sLocalTables[j][1]);
-
-                delete[] sLocalTables[j];
-            }
-
-            delete[] sLocalTables;
-            nLocalTableSize = 0;
-
+            NumeReKernel::getInstance()->getDebugger().gatherInformations(this, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sTableList, SyntaxError::invalid_position, sSymbol));
         }
 
-        if (sLocalTables[i][0].find('(') != string::npos)
-            sLocalTables[i][0].erase(sLocalTables[i][0].find('('));
+        if (currentDef.find('(') != string::npos)
+            currentDef.erase(currentDef.find('('));
 
-        StripSpaces(sLocalTables[i][0]);
-        sLocalTables[i][1] = "_~"+sProcName+"_"+toString((int)nth_procedure)+"_"+sLocalTables[i][0];
+        StripSpaces(currentDef);
+        std::string currentVar = createMangledVarName(currentDef);
 
         try
         {
-            _dataRef->addTable(sLocalTables[i][1], *_optionRef);
+            _dataRef->addTable(currentVar, *_optionRef);
         }
         catch (...)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, i, sLocalClusters, nLocalClusterSize, sArgumentMap, nArgumentMapSize, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-            for (unsigned int j = 0; j <= i; j++)
-            {
-                if (j < i)
-                    _dataRef->deleteTable(sLocalTables[j][1]);
-
-                delete[] sLocalTables[j];
-            }
-
-            delete[] sLocalTables;
-            nLocalTableSize = 0;
-
+            NumeReKernel::getInstance()->getDebugger().gatherInformations(this, sTableList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
             throw;
         }
+
+        mLocalTables[currentDef] = currentVar;
     }
 }
 
@@ -1435,10 +1213,6 @@ void ProcedureVarFactory::createLocalTables(string sTableList)
 /////////////////////////////////////////////////
 void ProcedureVarFactory::createLocalClusters(string sClusterList)
 {
-    // already declared the local vars?
-    if (nLocalClusterSize)
-        return;
-
     if (!_currentProcedure)
         return;
 
@@ -1446,110 +1220,107 @@ void ProcedureVarFactory::createLocalClusters(string sClusterList)
         return;
 
     // Get the number of declared variables
-    nLocalClusterSize = countVarListElements(sClusterList);
-    sLocalClusters = new string*[nLocalClusterSize];
-    string sCurrentValue;
+    size_t nLocalClusterSize = countVarListElements(sClusterList);
+    std::string sCurrentValue;
 
     // Decode the variable list
     for (unsigned int i = 0; i < nLocalClusterSize; i++)
     {
-        sLocalClusters[i] = new string[2];
-        sLocalClusters[i][0] = getNextArgument(sClusterList, true);
+        std::string currentDef = getNextArgument(sClusterList, true);
 
-        std::string sSymbol = sLocalClusters[i][0].substr(0, sLocalClusters[i][0].find('='));
+        std::string sSymbol = currentDef.substr(0, currentDef.find('='));
 
         if (!checkSymbolName(sSymbol))
         {
-            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, i, sArgumentMap, nArgumentMapSize, sClusterList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-            for (unsigned int j = 0; j <= i; j++)
-            {
-                if (j < i)
-                    _dataRef->removeCluster(sLocalClusters[j][1]);
-
-                delete[] sLocalClusters[j];
-            }
-
-            delete[] sLocalClusters;
-            nLocalClusterSize = 0;
+            NumeReKernel::getInstance()->getDebugger().gatherInformations(this, sClusterList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             NumeReKernel::getInstance()->getDebugger().throwException(SyntaxError(SyntaxError::INVALID_SYM_NAME, sClusterList, SyntaxError::invalid_position, sSymbol));
         }
 
-        if (sLocalClusters[i][0].find('=') != string::npos)
-        {
-            sCurrentValue = sLocalClusters[i][0].substr(sLocalClusters[i][0].find('=')+1);
-        }
+        if (currentDef.find('=') != string::npos)
+            sCurrentValue = currentDef.substr(currentDef.find('=')+1);
 
-        if (sLocalClusters[i][0].find('{') != string::npos)
-            sLocalClusters[i][0].erase(sLocalClusters[i][0].find('{'));
+        if (currentDef.find('{') != string::npos)
+            currentDef.erase(currentDef.find('{'));
 
-        StripSpaces(sLocalClusters[i][0]);
-        sLocalClusters[i][1] = "_~"+sProcName+"_"+toString((int)nth_procedure)+"_"+sLocalClusters[i][0];
-
-        //sLocalClusters[i][0] += "{";
+        StripSpaces(currentDef);
+        std::string currentVar = createMangledVarName(currentDef);
 
         try
         {
-            NumeRe::Cluster& cluster = _dataRef->newCluster(sLocalClusters[i][1]);
+            NumeRe::Cluster& cluster = _dataRef->newCluster(currentVar);
 
-            if (!sCurrentValue.length())
-                continue;
-
-            sCurrentValue = resolveLocalClusters(sCurrentValue, i);
-
-            if (sCurrentValue.find('$') != string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
+            if (sCurrentValue.length())
             {
-                if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+                sCurrentValue = resolveLocalClusters(sCurrentValue, i);
+
+                if (sCurrentValue.find('$') != string::npos && sCurrentValue.find('(', sCurrentValue.find('$')+1))
                 {
-                    throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sClusterList, SyntaxError::invalid_position);
+                    if (_currentProcedure->getProcedureFlags() & FLAG_INLINE)
+                    {
+                        throw SyntaxError(SyntaxError::INLINE_PROCEDURE_IS_NOT_INLINE, sClusterList, SyntaxError::invalid_position);
+                    }
+
+                    FlowCtrl::ProcedureInterfaceRetVal nReturn = _currentProcedure->procedureInterface(sCurrentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+
+                    if (nReturn == FlowCtrl::INTERFACE_ERROR)
+                        throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sClusterList, SyntaxError::invalid_position);
+                    else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
+                        sCurrentValue = "false";
                 }
 
-                int nReturn = _currentProcedure->procedureInterface(sCurrentValue, *_parserRef, *_functionRef, *_dataRef, *_outRef, *_pDataRef, *_scriptRef, *_optionRef, nth_procedure);
+                if (_dataRef->containsTablesOrClusters(sCurrentValue))
+                    getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
 
-                if (nReturn == -1)
+                if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
                 {
-                    throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sClusterList, SyntaxError::invalid_position);
+                    string sCluster = currentVar + "{}";
+                    NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sCluster, true);
                 }
-                else if (nReturn == -2)
-                    sCurrentValue = "false";
-            }
-
-            if (_dataRef->containsTablesOrClusters(sCurrentValue))
-                getDataElements(sCurrentValue, *_parserRef, *_dataRef, *_optionRef, false);
-
-            if (NumeReKernel::getInstance()->getStringParser().isStringExpression(sCurrentValue))
-            {
-                string sCluster = sLocalClusters[i][1] + "{}";
-                NumeReKernel::getInstance()->getStringParser().evalAndFormat(sCurrentValue, sCluster, true);
-            }
-            else
-            {
-                value_type* v = nullptr;
-                int nResults;
-                _parserRef->SetExpr(sCurrentValue);
-                v = _parserRef->Eval(nResults);
-                cluster.setDoubleArray(nResults, v);
+                else
+                {
+                    value_type* v = nullptr;
+                    int nResults;
+                    _parserRef->SetExpr(sCurrentValue);
+                    v = _parserRef->Eval(nResults);
+                    cluster.setDoubleArray(nResults, v);
+                }
             }
         }
         catch (...)
         {
-            NumeReKernel::getInstance()->getDebugger().gatherInformations(sLocalVars, nLocalVarMapSize, dLocalVars, sLocalStrings, nLocalStrMapSize, sLocalTables, nLocalTableSize, sLocalClusters, i, sArgumentMap, nArgumentMapSize, sClusterList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
-
-            for (unsigned int j = 0; j <= i; j++)
-            {
-                if (j < i)
-                    _dataRef->removeCluster(sLocalClusters[j][1]);
-
-                delete[] sLocalClusters[j];
-            }
-
-            delete[] sLocalClusters;
-            nLocalClusterSize = 0;
-
+            NumeReKernel::getInstance()->getDebugger().gatherInformations(this, sClusterList, _currentProcedure->getCurrentProcedureName(), _currentProcedure->GetCurrentLine());
             NumeReKernel::getInstance()->getDebugger().showError(current_exception());
             throw;
         }
+
+        mLocalClusters[currentDef] = currentVar;
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Creates a special cluster containing
+/// the test statistics.
+///
+/// \return std::string
+///
+/////////////////////////////////////////////////
+std::string ProcedureVarFactory::createTestStatsCluster()
+{
+    const std::string currentDef = "TESTINFO";
+    std::string currentVar = createMangledVarName(currentDef);
+    NumeRe::Cluster& testCluster = _dataRef->newCluster(currentVar);
+
+    testCluster.setString(0, "tests");
+    testCluster.setDouble(1, 0);
+    testCluster.setString(2, "successes");
+    testCluster.setDouble(3, 0);
+    testCluster.setString(4, "fails");
+    testCluster.setDouble(5, 0);
+
+    mLocalClusters[currentDef] = currentVar;
+
+    return currentVar;
 }
 
 
@@ -1568,24 +1339,21 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
     if (!nMapSize)
         return sProcedureCommandLine;
 
-    if (nMapSize == string::npos)
-        nMapSize = nArgumentMapSize;
-
-    for (unsigned int i = 0; i < nMapSize; i++)
+    for (const auto& iter : mArguments)
     {
         unsigned int nPos = 0;
-        size_t nArgumentBaseLength = sArgumentMap[i][0].length();
+        size_t nArgumentBaseLength = iter.first.length();
 
-        if (sArgumentMap[i][0].back() == '(' || sArgumentMap[i][0].back() == '{')
+        if (iter.first.back() == '(' || iter.first.back() == '{')
             nArgumentBaseLength--;
 
-        while ((nPos = sProcedureCommandLine.find(sArgumentMap[i][0].substr(0, nArgumentBaseLength), nPos)) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(iter.first.substr(0, nArgumentBaseLength), nPos)) != string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~',nPos-1)] != '#')
-                || (sArgumentMap[i][0].back() != '(' && sProcedureCommandLine[nPos+nArgumentBaseLength] == '(')
-                || (sArgumentMap[i][0].back() != '{' && sProcedureCommandLine[nPos+nArgumentBaseLength] == '{'))
+                || (iter.first.back() != '(' && sProcedureCommandLine[nPos+nArgumentBaseLength] == '(')
+                || (iter.first.back() != '{' && sProcedureCommandLine[nPos+nArgumentBaseLength] == '{'))
             {
-                nPos += sArgumentMap[i][0].length();
+                nPos += iter.first.length();
                 continue;
             }
 
@@ -1593,12 +1361,12 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
                 && (!isInQuotes(sProcedureCommandLine, nPos, true)
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
-                if (sArgumentMap[i][1].front() == '{' && sArgumentMap[i][0].back() == '{')
-                    sProcedureCommandLine.replace(nPos, getMatchingParenthesis(sProcedureCommandLine.substr(nPos))+1, sArgumentMap[i][1]);
+                if (iter.second.front() == '{' && iter.first.back() == '{')
+                    sProcedureCommandLine.replace(nPos, getMatchingParenthesis(sProcedureCommandLine.substr(nPos))+1, iter.second);
                 else
-                    sProcedureCommandLine.replace(nPos, nArgumentBaseLength, sArgumentMap[i][1]);
+                    sProcedureCommandLine.replace(nPos, nArgumentBaseLength, iter.second);
 
-                nPos += sArgumentMap[i][1].length();
+                nPos += iter.second.length();
             }
             else
                 nPos += nArgumentBaseLength;
@@ -1624,20 +1392,17 @@ string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine, size_
     if (!nMapSize)
         return sProcedureCommandLine;
 
-    if (nMapSize == string::npos)
-        nMapSize = nLocalVarMapSize;
-
-    for (size_t i = 0; i < nMapSize; i++)
+    for (const auto& iter : mLocalVars)
     {
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while ((nPos = sProcedureCommandLine.find(sLocalVars[i][0], nPos)) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(iter.first, nPos)) != string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
-                || sProcedureCommandLine[nPos+sLocalVars[i][0].length()] == '(')
+                || sProcedureCommandLine[nPos+iter.first.length()] == '(')
             {
-                nPos += sLocalVars[i][0].length();
+                nPos += iter.first.length();
                 continue;
             }
 
@@ -1646,15 +1411,15 @@ string ProcedureVarFactory::resolveLocalVars(string sProcedureCommandLine, size_
             if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
                 nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalVars[i][0].length() + 1 + nPos - nDelimCheck))
+            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, iter.first.length() + 1 + nPos - nDelimCheck))
                 && (!isInQuotes(sProcedureCommandLine, nPos, true)
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
-                sProcedureCommandLine.replace(nPos, sLocalVars[i][0].length(), sLocalVars[i][1]);
-                nPos += sLocalVars[i][1].length();
+                sProcedureCommandLine.replace(nPos, iter.first.length(), iter.second.first);
+                nPos += iter.second.first.length();
             }
             else
-                nPos += sLocalVars[i][0].length();
+                nPos += iter.first.length();
         }
     }
 
@@ -1677,20 +1442,17 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, si
     if (!nMapSize)
         return sProcedureCommandLine;
 
-    if (nMapSize == string::npos)
-        nMapSize = nLocalStrMapSize;
-
-    for (size_t i = 0; i < nMapSize; i++)
+    for (const auto& iter : mLocalStrings)
     {
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while ((nPos = sProcedureCommandLine.find(sLocalStrings[i][0], nPos)) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(iter.first, nPos)) != string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
-                || sProcedureCommandLine[nPos+sLocalStrings[i][0].length()] == '(')
+                || sProcedureCommandLine[nPos+iter.first.length()] == '(')
             {
-                nPos += sLocalStrings[i][0].length();
+                nPos += iter.first.length();
                 continue;
             }
 
@@ -1699,18 +1461,18 @@ string ProcedureVarFactory::resolveLocalStrings(string sProcedureCommandLine, si
             if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
                 nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalStrings[i][0].length() + 1 + nPos - nDelimCheck), true)
+            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, iter.first.length() + 1 + nPos - nDelimCheck), true)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
                 if (inliningMode)
-                    replaceStringMethod(sProcedureCommandLine, nPos, sLocalStrings[i][0].length(), sLocalStrings[i][1]);
+                    replaceStringMethod(sProcedureCommandLine, nPos, iter.first.length(), iter.second.first);
                 else
-                    sProcedureCommandLine.replace(nPos, sLocalStrings[i][0].length(), sLocalStrings[i][1]);
+                    sProcedureCommandLine.replace(nPos, iter.first.length(), iter.second.first);
 
-                nPos += sLocalStrings[i][1].length();
+                nPos += iter.second.first.length();
             }
             else
-                nPos += sLocalStrings[i][0].length();
+                nPos += iter.first.length();
         }
     }
 
@@ -1733,20 +1495,17 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, siz
     if (!nMapSize)
         return sProcedureCommandLine;
 
-    if (nMapSize == string::npos)
-        nMapSize = nLocalTableSize;
-
-    for (size_t i = 0; i < nMapSize; i++)
+    for (const auto& iter : mLocalTables)
     {
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while ((nPos = sProcedureCommandLine.find(sLocalTables[i][0] + "(", nPos)) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(iter.first + "(", nPos)) != string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#')
                 || sProcedureCommandLine[nPos-1] == '$')
             {
-                nPos += sLocalTables[i][0].length();
+                nPos += iter.first.length();
                 continue;
             }
 
@@ -1755,14 +1514,14 @@ string ProcedureVarFactory::resolveLocalTables(string sProcedureCommandLine, siz
             if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
                 nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalTables[i][0].length() + 1 + nPos - nDelimCheck), true)
+            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, iter.first.length() + 1 + nPos - nDelimCheck), true)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
-                sProcedureCommandLine.replace(nPos, sLocalTables[i][0].length(), sLocalTables[i][1]);
-                nPos += sLocalTables[i][1].length();
+                sProcedureCommandLine.replace(nPos, iter.first.length(), iter.second);
+                nPos += iter.second.length();
             }
             else
-                nPos += sLocalTables[i][0].length();
+                nPos += iter.first.length();
         }
     }
 
@@ -1785,19 +1544,16 @@ string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, s
     if (!nMapSize)
         return sProcedureCommandLine;
 
-    if (nMapSize == string::npos)
-        nMapSize = nLocalClusterSize;
-
-    for (size_t i = 0; i < nMapSize; i++)
+    for (const auto& iter : mLocalClusters)
     {
         size_t nPos = 0;
         size_t nDelimCheck = 0;
 
-        while ((nPos = sProcedureCommandLine.find(sLocalClusters[i][0] + "{", nPos)) != string::npos)
+        while ((nPos = sProcedureCommandLine.find(iter.first + "{", nPos)) != string::npos)
         {
             if ((sProcedureCommandLine[nPos-1] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nPos-1)] != '#'))
             {
-                nPos += sLocalClusters[i][0].length();
+                nPos += iter.first.length();
                 continue;
             }
 
@@ -1806,14 +1562,14 @@ string ProcedureVarFactory::resolveLocalClusters(string sProcedureCommandLine, s
             if ((sProcedureCommandLine[nDelimCheck] == '~' && sProcedureCommandLine[sProcedureCommandLine.find_last_not_of('~', nDelimCheck)] == '#'))
                 nDelimCheck = sProcedureCommandLine.find_last_not_of('~', nDelimCheck);
 
-            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, sLocalClusters[i][0].length() + 1 + nPos - nDelimCheck), true)
+            if (checkDelimiter(sProcedureCommandLine.substr(nDelimCheck, iter.first.length() + 1 + nPos - nDelimCheck), true)
                 && (!isInQuotes(sProcedureCommandLine, nPos, true) || isToCmd(sProcedureCommandLine, nPos)))
             {
-                sProcedureCommandLine.replace(nPos, sLocalClusters[i][0].length(), sLocalClusters[i][1]);
-                nPos += sLocalClusters[i][1].length();
+                sProcedureCommandLine.replace(nPos, iter.first.length(), iter.second);
+                nPos += iter.second.length();
             }
             else
-                nPos += sLocalClusters[i][0].length();
+                nPos += iter.first.length();
         }
     }
 

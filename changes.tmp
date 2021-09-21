@@ -37,3 +37,5 @@ Cleaned	The editor will now highlight complex numbers as actual numbers.
 Applied	The lexer and the block hightlighter of the editor are now using the NumeReSyntax object to determine the blocks and the code folding points.
 Fixed	(Partly) The smoothing filters are now using a buffer in 1D case to avoid erronous overwrites of data still needed for further smoothing windows.
 Added	The static code analyzer will now mark functions, which do not work in a specific context (e.g. "matop") as errors.
+Added	Procedures flagged as "test" will automatically create a local cluster named "TESTINFO{}" containing the test statistics.
+Removed	The restriction to use each local variable declaration command ("var", "str", ...) exactly once has been removed.

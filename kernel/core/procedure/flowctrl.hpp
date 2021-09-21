@@ -89,6 +89,15 @@ class FlowCtrl
             CALCTYPE_SUPPRESSANSWER = 0x20000,
             CALCTYPE_ASSERT = 0x40000
         };
+
+        enum ProcedureInterfaceRetVal
+        {
+            INTERFACE_EMPTY = -2,
+            INTERFACE_ERROR = -1,
+            INTERFACE_NONE = 1,
+            INTERFACE_VALUE = 2
+        };
+
         vector<FlowCtrlCommand> vCmdArray;
         value_type** vVarArray;
         string* sVarArray;
@@ -120,6 +129,8 @@ class FlowCtrl
         bool bEvaluatingFlowControlStatements;
         int nLoopSavety;
         int nDebuggerCode;
+        AssertionStats baseline;
+        std::string sTestClusterName;
 
         int for_loop(int nth_Cmd = 0, int nth_Loop = 0);
         int while_loop(int nth_Cmd = 0, int nth_Loop = 0);
@@ -137,10 +148,11 @@ class FlowCtrl
         void prepareSwitchExpression(int nSwitchStart);
         void checkParsingModeAndExpandDefinitions();
         void prepareLocalVarsAndReplace(string& sVars);
+        void updateTestStats();
 
 
         virtual int procedureCmdInterface(string& sLine);
-        virtual int procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command);
+        virtual ProcedureInterfaceRetVal procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_loop, int nth_command);
         virtual int isInline(const string& sProc);
         virtual int evalDebuggerBreakPoint(Parser& _parser, Settings& _option);
         virtual int getErrorInformationForDebugger();

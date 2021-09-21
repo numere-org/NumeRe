@@ -782,7 +782,11 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 
     _parser.mVarMapPntr = &mVarMap;
 
-
+    if (nFlags & ProcedureCommandLine::FLAG_TEST)
+    {
+        sTestClusterName = _varFactory->createTestStatsCluster();
+        baseline = _assertionHandler.getStats();
+    }
 
     // As long as we didn't find the last line,
     // read the next line from the procedure and execute
@@ -793,6 +797,7 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
         ProcElement->setByteCode(nCurrentByteCode | nByteCode, currentLine.first);
         bProcSupressAnswer = false;
         _assertionHandler.reset();
+        updateTestStats();
 
         // Get the next line from one of the current active
         // command line sources
@@ -1086,17 +1091,17 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
             // virtual procedure interface function
             try
             {
-                int nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure, 0);
+                FlowCtrl::ProcedureInterfaceRetVal nRetVal = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure, 0);
 
                 // Only those two return values indicate that this line
                 // does contain a procedure or a plugin
-                if ((nRetVal == -2 || nRetVal == 2)
+                if ((nRetVal == FlowCtrl::INTERFACE_EMPTY || nRetVal == FlowCtrl::INTERFACE_VALUE)
                     && nCurrentByteCode == ProcedureCommandLine::BYTECODE_NOT_PARSED)
                 {
                     nByteCode |= ProcedureCommandLine::BYTECODE_PROCEDUREINTERFACE;
                 }
 
-                if (nRetVal < 0)
+                if (nRetVal == FlowCtrl::INTERFACE_ERROR || nRetVal == FlowCtrl::INTERFACE_EMPTY)
                     continue;
             }
             catch (...)
@@ -1282,14 +1287,14 @@ Returnvalue Procedure::execute(string sProc, string sVarList, Parser& _parser, F
 /// \param _option Settings&
 /// \param nth_procedure unsigned int
 /// \param nth_command int
-/// \return int
+/// \return FlowCtrl::ProcedureInterfaceRetVal
 ///
 /////////////////////////////////////////////////
-int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure, int nth_command)
+FlowCtrl::ProcedureInterfaceRetVal Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefinitionManager& _functions, MemoryManager& _data, Output& _out, PlotData& _pData, Script& _script, Settings& _option, unsigned int nth_procedure, int nth_command)
 {
     // Create a new procedure object on the heap
     std::unique_ptr<Procedure> _procedure(new Procedure(*this));
-    int nReturn = 1;
+    FlowCtrl::ProcedureInterfaceRetVal nReturn = FlowCtrl::INTERFACE_NONE;
 
     // Handle procedure calls first
     if (sLine.find('$') != string::npos && sLine.find('(', sLine.find('$')) != string::npos)
@@ -1373,7 +1378,8 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
                 nPos += __sName.length() + 1;
         }
 
-        nReturn = 2;
+        nReturn = FlowCtrl::INTERFACE_VALUE;
+        updateTestStats();
         StripSpaces(sLine);
         _parser.mVarMapPntr = &mVarMap;
 
@@ -1381,7 +1387,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
             _option.enableSystemPrints(false);
 
         if (!sLine.length())
-            return -2;
+            return FlowCtrl::INTERFACE_EMPTY;
     }
     else if (sLine.find('$') != string::npos)
     {
@@ -1396,10 +1402,11 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
             if (sLine[i] == '$' && !(nQuotes % 2))
             {
                 sLine.clear();
-                return -1;
+                return FlowCtrl::INTERFACE_ERROR;
             }
         }
-        return 1;
+
+        return nReturn;
     }
 
     // Handle plugin calls
@@ -1425,6 +1432,7 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
             }
 
             _parser.mVarMapPntr = &mVarMap;
+            updateTestStats();
 
             // Handle the plugin return values
             if (sLine.length())
@@ -1449,12 +1457,10 @@ int Procedure::procedureInterface(string& sLine, Parser& _parser, FunctionDefini
                 }
             }
             else
-                return -2;
+                return FlowCtrl::INTERFACE_EMPTY;
         }
         else
-        {
-            return -1;
-        }
+            return FlowCtrl::INTERFACE_ERROR;
     }
 
     return nReturn;
@@ -2597,6 +2603,7 @@ void Procedure::resetProcedure(Parser& _parser, bool bSupressAnswer)
     _localDef.reset();
     nDebuggerCode = 0;
     nFlags = 0;
+    sTestClusterName.clear();
 
     // Delete the variable factory for the current procedure
     if (_varFactory)
@@ -2886,13 +2893,11 @@ void Procedure::readFromInclude(ifstream& fInclude, int nIncludeType, Parser& _p
 
             try
             {
-                int nReturn = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
+                FlowCtrl::ProcedureInterfaceRetVal nReturn = procedureInterface(sProcCommandLine, _parser, _functions, _data, _out, _pData, _script, _option, nth_procedure);
 
-                if (nReturn == -1)
-                {
+                if (nReturn == FlowCtrl::INTERFACE_ERROR)
                     throw SyntaxError(SyntaxError::PROCEDURE_ERROR, sProcCommandLine, SyntaxError::invalid_position);
-                }
-                else if (nReturn == -2)
+                else if (nReturn == FlowCtrl::INTERFACE_EMPTY)
                 {
                     sProcCommandLine = "";
                     bProcSupressAnswer = false;

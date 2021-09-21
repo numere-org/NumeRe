@@ -37,6 +37,7 @@ Assertion _assertionHandler;
 /////////////////////////////////////////////////
 void Assertion::assertionFail()
 {
+    stats.failed();
     throw SyntaxError(SyntaxError::ASSERTION_ERROR, sAssertedExpression, findCommand(sAssertedExpression, "assert").nPos+7);
 }
 
@@ -51,6 +52,20 @@ void Assertion::reset()
 {
     assertionMode = false;
     sAssertedExpression.clear();
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Resets the internal statistic
+/// variables for accumulating the total number
+/// of executed and the number of failed tests.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
+void Assertion::resetStats()
+{
+    stats.reset();
 }
 
 
@@ -92,6 +107,7 @@ void Assertion::checkAssertion(mu::value_type* v, int nNum)
                 assertionFail();
         }
 
+        stats.succeeded();
     }
 }
 
@@ -121,6 +137,8 @@ void Assertion::checkAssertion(const std::vector<std::vector<mu::value_type>>& _
                     assertionFail();
             }
         }
+
+        stats.succeeded();
     }
 }
 
@@ -151,7 +169,21 @@ void Assertion::checkAssertion(const StringResult& strRes)
                     assertionFail();
             }
         }
+
+        stats.succeeded();
     }
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Returns the current tests stats.
+///
+/// \return AssertionStats
+///
+/////////////////////////////////////////////////
+AssertionStats Assertion::getStats() const
+{
+    return stats;
 }
 
 

@@ -655,6 +655,7 @@ NumeReKernel::KernelStatus NumeReKernel::MainLoop(const string& sCommand)
     sLine = sCommandLine;
     sCommandLine.clear();
     _parser.ClearVectorVars();
+    _assertionHandler.resetStats();
     bSupressAnswer = false;
 
     // set the procedure main path to the desired one. --> check, whether this is necessary here
