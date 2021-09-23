@@ -96,8 +96,9 @@ class ProcedureVarFactory
         std::map<std::string, std::string> mLocalTables;
         std::map<std::string, std::string> mLocalClusters;
 
-        string sInlineVarDef;
-        string sInlineStringDef;
+        std::string sInlineVarDef;
+        std::string sInlineStringDef;
+        std::vector<std::string> vInlineArgDef;
 
         ProcedureVarFactory();
         ProcedureVarFactory(Procedure* _procedure, const string& sProc, unsigned int currentProc, bool _inliningMode = false);

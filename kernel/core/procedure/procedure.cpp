@@ -2264,6 +2264,11 @@ vector<string> Procedure::getInlined(const string& sProc, const string& sArgumen
     // Create the filled argument list in the variable factory
     varFactory.createProcedureArguments(currentline.second.getArgumentList(), sArgumentList);
 
+    // If there are some argument copies needed, we'll
+    // insert them now
+    if (varFactory.vInlineArgDef.size())
+        vProcCommandLines.insert(vProcCommandLines.end(), varFactory.vInlineArgDef.begin(), varFactory.vInlineArgDef.end());
+
     // Read each line, replace the arguments with their
     // values and push the result in the vector
     while (!element->isLastLine(currentline.first))

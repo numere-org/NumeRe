@@ -39,3 +39,4 @@ Fixed	(Partly) The smoothing filters are now using a buffer in 1D case to avoid 
 Added	The static code analyzer will now mark functions, which do not work in a specific context (e.g. "matop") as errors.
 Added	Procedures flagged as "test" will automatically create a local cluster named "TESTINFO{}" containing the test statistics.
 Removed	The restriction to use each local variable declaration command ("var", "str", ...) exactly once has been removed.
+Fixed	Table columns and expressions can now be used for clusters in inlined procedures.

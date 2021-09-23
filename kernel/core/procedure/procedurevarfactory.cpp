@@ -201,6 +201,7 @@ void ProcedureVarFactory::reset()
 
     sInlineVarDef.clear();
     sInlineStringDef.clear();
+    vInlineArgDef.clear();
 
     mArguments.clear();
 }
@@ -784,8 +785,15 @@ void ProcedureVarFactory::evaluateProcedureArguments(std::string& currentArg, st
             currentValue = sNewArgName;
             mLocalArgs[sNewArgName] = CLUSTERTYPE;
         }
+        else if (inliningMode && (currentValue.length() < 3 || currentValue.substr(currentValue.length()-2) != "{}"))
+        {
+            std::string sTempCluster = _dataRef->createTemporaryCluster();
+            vInlineArgDef.push_back(sTempCluster + " = " + currentValue + ";");
+            currentValue = sTempCluster;
+        }
 
-        currentValue = currentValue.substr(0, currentValue.find('{'));
+        if (currentValue.find('{') != string::npos)
+            currentValue.erase(currentValue.find('{'));
     }
     else
     {
@@ -1361,7 +1369,7 @@ string ProcedureVarFactory::resolveArguments(string sProcedureCommandLine, size_
                 && (!isInQuotes(sProcedureCommandLine, nPos, true)
                     || isToCmd(sProcedureCommandLine, nPos)))
             {
-                if (iter.second.front() == '{' && iter.first.back() == '{')
+                if ((iter.second.front() == '{' || iter.second.back() == ')') && iter.first.back() == '{')
                     sProcedureCommandLine.replace(nPos, getMatchingParenthesis(sProcedureCommandLine.substr(nPos))+1, iter.second);
                 else
                     sProcedureCommandLine.replace(nPos, nArgumentBaseLength, iter.second);
