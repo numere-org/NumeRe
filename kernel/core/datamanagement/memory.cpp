@@ -3289,23 +3289,31 @@ bool Memory::smooth(VectorIndex _vLine, VectorIndex _vCol, NumeRe::FilterSetting
 ///
 /// \param _vLine VectorIndex
 /// \param _vCol VectorIndex
-/// \param nSamples unsigned int
+/// \param samples std::pair<size_t,size_t>
 /// \param Direction AppDir
+/// \param sFilter std::string sFilter
 /// \return bool
 ///
 /////////////////////////////////////////////////
-bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSamples, AppDir Direction)
+bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, std::pair<size_t,size_t> samples, AppDir Direction, std::string sFilter)
 {
     bool bUseAppendedZeroes = false;
 
     int nLinesToInsert = 0;
     int nColsToInsert = 0;
 
+    static std::vector<std::string> vFilters({"box", "tent", "bell", "bspline", "mitchell", "lanczos3", "blackman",
+                                             "lanczos4", "lanczos6", "lanczos12", "kaiser", "gaussian", "catmullrom",
+                                             "quadratic_interp", "quadratic_approx", "quadratic_mix"});
+
+    if (std::find(vFilters.begin(), vFilters.end(), sFilter) == vFilters.end())
+        sFilter = "lanczos3";
+
     // Avoid border cases
     if (!memArray.size())
         throw SyntaxError(SyntaxError::NO_CACHED_DATA, "resample", SyntaxError::invalid_position);
 
-    if (!nSamples)
+    if (!samples.first || !samples.second)
         throw SyntaxError(SyntaxError::CANNOT_RESAMPLE_CACHE, "resample", SyntaxError::invalid_position);
 
     if (!_vLine.isValid() || !_vCol.isValid())
@@ -3350,13 +3358,13 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
             // These contain the axis values
             if (bUseAppendedZeroes)
             {
-                resample(_vLine, VectorIndex(_vCol[0]), nSamples, COLS);
-                resample(_vLine, VectorIndex(_vCol[1]), nSamples, COLS);
+                resample(_vLine, VectorIndex(_vCol[0]), samples, COLS);
+                resample(_vLine, VectorIndex(_vCol[1]), samples, COLS);
             }
             else
             {
                 // Achsenwerte getrennt resamplen
-                resample(_vLine, _vCol.subidx(0, 2), nSamples, COLS);
+                resample(_vLine, _vCol.subidx(0, 2), samples, COLS);
             }
 
             // Increment the first column
@@ -3364,21 +3372,21 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
             _vCol.linearize();
 
             // Determine the size of the buffer
-            if (nSamples > _vLine.size())
-                nLinesToInsert = nSamples - _vLine.size();
+            if (samples.first > _vLine.size())
+                nLinesToInsert = samples.first - _vLine.size();
 
-            if (nSamples > _vCol.size())
-                nColsToInsert = nSamples - _vCol.size();
+            if (samples.second > _vCol.size())
+                nColsToInsert = samples.second - _vCol.size();
         }
 
         // Create the resample object and prepare the needed memory
         _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
-                                       nSamples, nSamples,
-                                       Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6"));
+                                       samples.first, samples.second,
+                                       Resampler::BOUNDARY_CLAMP, 1.0, 0.0, sFilter.c_str()));
 
         // Determine final size (only upscale)
-        if (nSamples > _vLine.size() || nSamples > _vCol.size())
-            resizeMemory(1, getCols() + nSamples - _vCol.size());
+        if (samples.first > _vLine.size() || samples.second > _vCol.size())
+            resizeMemory(1, getCols() + samples.second - _vCol.size());
     }
     else if (Direction == COLS) // cols
     {
@@ -3386,23 +3394,23 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
         // Create the resample object and prepare the needed memory
         _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
-                                       _vCol.size(), nSamples,
-                                       Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6"));
+                                       _vCol.size(), samples.first,
+                                       Resampler::BOUNDARY_CLAMP, 1.0, 0.0, sFilter.c_str()));
 
         // Determine final size (only upscale)
-        if (nSamples > _vLine.size())
-            nLinesToInsert = nSamples - _vLine.size();
+        if (samples.first > _vLine.size())
+            nLinesToInsert = samples.first - _vLine.size();
     }
     else if (Direction == LINES)// lines
     {
         // Create the resample object and prepare the needed memory
         _resampler.reset(new Resampler(_vCol.size(), _vLine.size(),
-                                       nSamples, _vLine.size(),
-                                       Resampler::BOUNDARY_CLAMP, 1.0, 0.0, "lanczos6"));
+                                       samples.second, _vLine.size(),
+                                       Resampler::BOUNDARY_CLAMP, 1.0, 0.0, sFilter.c_str()));
 
         // Determine final size (only upscale)
-        if (nSamples > _vCol.size())
-            nColsToInsert = nSamples - _vCol.size();
+        if (samples.second > _vCol.size())
+            nColsToInsert = samples.second - _vCol.size();
     }
 
     // Ensure that the resampler was created
@@ -3434,7 +3442,7 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
     // Determine the number of final columns. These will stay constant only in
     // the column application direction
     if (Direction == ALL || Direction == GRID || Direction == LINES)
-        _final_cols = nSamples;
+        _final_cols = samples.second;
     else
         _final_cols = _vCol.size();
 
@@ -3499,6 +3507,14 @@ bool Memory::resample(VectorIndex _vLine, VectorIndex _vCol, unsigned int nSampl
 
         _ret_line++;
     }
+
+    // Delete empty lines
+    if (Direction != LINES && samples.first < _vLine.size())
+        deleteBulk(VectorIndex(_vLine.front() + samples.first+1, _vLine.last()), _vCol);
+
+    // Delete empty cols
+    if (Direction != COLS && samples.second < _vCol.size())
+        deleteBulk(_vLine, VectorIndex(_vCol.front() + samples.second+1, _vCol.last()));
 
     // Reset the calculated lines and columns
     nCalcLines = -1;

@@ -326,9 +326,9 @@ class MemoryManager : public NumeRe::FileAdapter, public StringMemory, public Nu
 			return vMemory[findTable(_sCache)]->retouch(_vLine, _vCol, (Memory::AppDir)Direction);
 		}
 
-		inline bool resample(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, unsigned int nSamples = 0, AppDir Direction = ALL)
+		inline bool resample(const std::string& _sCache, const VectorIndex& _vLine, const VectorIndex& _vCol, std::pair<size_t,size_t> samples, AppDir Direction = ALL, std::string sFilter = "lanczos3")
 		{
-			return vMemory[findTable(_sCache)]->resample(_vLine, _vCol, nSamples, (Memory::AppDir)Direction);
+			return vMemory[findTable(_sCache)]->resample(_vLine, _vCol, samples, (Memory::AppDir)Direction, sFilter);
 		}
 
 

@@ -4021,6 +4021,9 @@ static CommandReturnValues cmd_smooth(string& sCmd)
     // Find the smoothing filter type
     std::string sFilterType = cmdParser.getParameterValue("type");
 
+    if (!sFilterType.length())
+        sFilterType = cmdParser.getParameterValue("method");
+
     if (sFilterType.length())
     {
         if (sFilterType == "weightedlinear")
@@ -4282,8 +4285,6 @@ static CommandReturnValues cmd_resample(string& sCmd)
     MemoryManager& _data = NumeReKernel::getInstance()->getMemoryManager();
     Settings& _option = NumeReKernel::getInstance()->getSettings();
 
-    int nSamples;
-
     if (!cmdParser.exprContainsDataObjects())
         return COMMAND_PROCESSED;
 
@@ -4293,10 +4294,23 @@ static CommandReturnValues cmd_resample(string& sCmd)
     {
         auto vParVal = cmdParser.getParameterValueAsNumericalValue("samples");
 
-        if (vParVal.size())
-            nSamples = intCast(vParVal.front());
+        std::pair<size_t, size_t> samples;
+
+        if (vParVal.size() > 1)
+        {
+            samples.first = intCast(vParVal[0]);
+            samples.second = intCast(vParVal[1]);
+        }
+        else if (vParVal.size() == 1)
+        {
+            samples.first = intCast(vParVal.front());
+            samples.second = intCast(vParVal.front());
+        }
         else
-            nSamples = _data.getLines(_access.getDataObject(), false);
+        {
+            samples.first = _data.getLines(_access.getDataObject(), false);
+            samples.second = _data.getCols(_access.getDataObject(), false);
+        }
 
         if (!isValidIndexSet(_access.getIndices()))
             throw SyntaxError(SyntaxError::INVALID_INDEX, sCmd, _access.getDataObject(), _access.getIndexString());
@@ -4312,7 +4326,12 @@ static CommandReturnValues cmd_resample(string& sCmd)
         else if (cmdParser.hasParam("lines"))
             dir = MemoryManager::LINES;
 
-        if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, nSamples, dir))
+        std::string sFilter = "lanczos6";
+
+        if (cmdParser.hasParam("method"))
+            sFilter = cmdParser.getParameterValue("method");
+
+        if (_data.resample(_access.getDataObject(), _access.getIndices().row, _access.getIndices().col, samples, dir, sFilter))
         {
             if (_option.systemPrints())
                 NumeReKernel::print(LineBreak( _lang.get("BUILTIN_CHECKKEYWORD_RESAMPLE", _lang.get("COMMON_LINES")), _option) );

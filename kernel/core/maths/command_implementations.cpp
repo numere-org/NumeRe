@@ -2958,6 +2958,11 @@ bool fastWaveletTransform(CommandLineParser& cmdParser)
     if (sParVal.length())
         sType = sParVal;
 
+    sParVal = cmdParser.getParameterValue("method");
+
+    if (!sType.length() && sParVal.length())
+        sType = sParVal;
+
     std::vector<mu::value_type> vParVal = cmdParser.getParameterValueAsNumericalValue("k");
 
     if (vParVal.size())

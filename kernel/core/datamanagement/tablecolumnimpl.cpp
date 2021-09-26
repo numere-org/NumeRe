@@ -275,6 +275,13 @@ void ValueColumn::deleteElements(const VectorIndex& idx)
 {
     idx.setOpenEndIndex(size()-1);
 
+    // Shortcut, if everything shall be deleted
+    if (idx.isExpanded() && idx.front() == 0 && idx.last() >= (int)m_data.size()-1)
+    {
+        m_data.clear();
+        return;
+    }
+
     for (size_t i = 0; i < idx.size(); i++)
     {
         if (idx[i] >= 0 && idx[i] < (int)m_data.size())
@@ -681,6 +688,13 @@ void StringColumn::insert(const VectorIndex& idx, const TableColumn* column)
 void StringColumn::deleteElements(const VectorIndex& idx)
 {
     idx.setOpenEndIndex(size()-1);
+
+    // Shortcut, if everything shall be deleted
+    if (idx.isExpanded() && idx.front() == 0 && idx.last() >= (int)m_data.size()-1)
+    {
+        m_data.clear();
+        return;
+    }
 
     for (size_t i = 0; i < idx.size(); i++)
     {
