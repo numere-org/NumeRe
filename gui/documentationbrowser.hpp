@@ -21,18 +21,25 @@
 
 #include <wx/treectrl.h>
 #include <wx/splitter.h>
+#include <wx/notebook.h>
 #include "compositions/viewerframe.hpp"
-#include "compositions/helpviewer.hpp"
 #include "IconManager.h"
 
 class NumeReWindow;
 
+/////////////////////////////////////////////////
+/// \brief This represents the main frame of the
+/// documentation browser, which contains the
+/// tabbed layout, the index tree and the
+/// documentation viewers themselves.
+/////////////////////////////////////////////////
 class DocumentationBrowser : public ViewerFrame
 {
     private:
-        HelpViewer* m_viewer;
         wxTreeCtrl* m_doctree;
         IconManager* m_manager;
+        wxNotebook* m_docTabs;
+        wxString m_titleTemplate;
 
         void prepareToolbar();
         void fillDocTree(NumeReWindow* mainwindow);
@@ -44,6 +51,10 @@ class DocumentationBrowser : public ViewerFrame
         bool SetStartPage(const wxString& docId);
         void OnTreeClick(wxTreeEvent& event);
         void OnToolbarEvent(wxCommandEvent& event);
+
+        bool createNewPage(const wxString& docId);
+        void setCurrentTabText(const wxString& text);
+        void onPageChange(wxBookCtrlEvent& event);
 
         DECLARE_EVENT_TABLE();
 };

@@ -1852,20 +1852,20 @@ void NumeReWindow::openPDF(wxFileName filename)
 /////////////////////////////////////////////////
 void NumeReWindow::openHTML(wxString HTMLcontent)
 {
-    wxString programPath = getProgramFolder();
-    if (!HTMLcontent.length())
-        return;
-
-    ViewerFrame* frame = new ViewerFrame(this, "NumeRe-Hilfe:");
-    frame->CreateStatusBar();
-    HelpViewer* html = new HelpViewer(frame, this);
-    html->SetRelatedFrame(frame, _guilang.get("DOC_HELP_HEADLINE", "%s"));
-    html->SetRelatedStatusBar(0);
-    html->SetPage(HTMLcontent);
-    frame->SetSize(1000,600);
-    frame->SetIcon(getStandardIcon());
-    frame->Show();
-    frame->SetFocus();
+    //wxString programPath = getProgramFolder();
+    //if (!HTMLcontent.length())
+    //    return;
+    //
+    //ViewerFrame* frame = new ViewerFrame(this, "NumeRe-Hilfe:");
+    //frame->CreateStatusBar();
+    //HelpViewer* html = new HelpViewer(frame, this);
+    //html->SetRelatedFrame(frame, _guilang.get("DOC_HELP_HEADLINE", "%s"));
+    //html->SetRelatedStatusBar(0);
+    //html->SetPage(HTMLcontent);
+    //frame->SetSize(1000,600);
+    //frame->SetIcon(getStandardIcon());
+    //frame->Show();
+    //frame->SetFocus();
 }
 
 

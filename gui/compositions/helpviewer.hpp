@@ -23,14 +23,19 @@
 #include <wx/wx.h>
 #include <vector>
 
-using namespace std;
-
 class NumeReWindow;
+class DocumentationBrowser;
 
+/////////////////////////////////////////////////
+/// \brief This class renders the contents of a
+/// single page on the DocumentationBrowser. It
+/// also governs the browsing history of the
+/// current tab.
+/////////////////////////////////////////////////
 class HelpViewer : public wxHtmlWindow
 {
     public:
-        HelpViewer(wxWindow* parent, NumeReWindow* m_main) : wxHtmlWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxHW_SCROLLBAR_AUTO), m_mainFrame(m_main), m_nHistoryPointer(0) {SetFonts(wxEmptyString, "Consolas");};
+        HelpViewer(wxWindow* parent, NumeReWindow* m_main, DocumentationBrowser* _browser) : wxHtmlWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME | wxHW_SCROLLBAR_AUTO), m_mainFrame(m_main), m_browser(_browser), m_nHistoryPointer(0) {SetFonts(wxEmptyString, "Consolas");};
         virtual bool SetPage(const wxString& source);
         bool ShowPageOnItem(wxString docID);
 
@@ -46,7 +51,8 @@ class HelpViewer : public wxHtmlWindow
         void OnLinkClick(wxHtmlLinkEvent& event);
 
         NumeReWindow* m_mainFrame;
-        vector<wxString> vHistory;
+        DocumentationBrowser* m_browser;
+        std::vector<wxString> vHistory;
         size_t m_nHistoryPointer;
 
         DECLARE_EVENT_TABLE();

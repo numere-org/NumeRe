@@ -17,6 +17,7 @@
 ******************************************************************************/
 
 #include "documentationbrowser.hpp"
+#include "compositions/helpviewer.hpp"
 #include "NumeReWindow.h"
 #include "../common/datastructures.h"
 #include "controls/treesearchctrl.hpp"
@@ -33,9 +34,18 @@ using namespace std;
 BEGIN_EVENT_TABLE(DocumentationBrowser, ViewerFrame)
     EVT_TREE_SEL_CHANGED(-1, DocumentationBrowser::OnTreeClick)
     EVT_MENU_RANGE(EVENTID_HELP_START, EVENTID_HELP_END-1, DocumentationBrowser::OnToolbarEvent)
+    EVT_BOOKCTRL_PAGE_CHANGED(-1, DocumentationBrowser::onPageChange)
 END_EVENT_TABLE()
 
-// Documentation browser constructor
+
+/////////////////////////////////////////////////
+/// \brief Documentation browser constructor.
+///
+/// \param parent wxWindow*
+/// \param titletemplate const wxString&
+/// \param mainwindow NumeReWindow*
+///
+/////////////////////////////////////////////////
 DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& titletemplate, NumeReWindow* mainwindow) : ViewerFrame(parent, titletemplate)
 {
     // Obtain the program root directory and create a new
@@ -56,16 +66,15 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
     TreeSearchCtrl* treeSearchCtrl = new TreeSearchCtrl(treePanel, wxID_ANY, _guilang.get("GUI_SEARCH_DOCUMENTATION"), _guilang.get("GUI_SEARCH_CALLTIP_TREE"), m_doctree);
     treePanel->AddWindows(treeSearchCtrl, m_doctree);
 
-    m_viewer = new HelpViewer(splitter, mainwindow);
-    m_viewer->SetRelatedFrame(this, titletemplate);
-    m_viewer->SetRelatedStatusBar(0);
+    m_docTabs = new wxNotebook(splitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_STATIC);
+    m_titleTemplate = titletemplate;
 
     // Set a reasonable window size and the window icon
     this->SetSize(1050, 800);
     this->SetIcon(mainwindow->getStandardIcon());
 
     // Split the view using the tree and the viewer
-    splitter->SplitVertically(treePanel, m_viewer, 150);
+    splitter->SplitVertically(treePanel, m_docTabs, 150);
 
     // Fill the index into the tree
     fillDocTree(mainwindow);
@@ -74,19 +83,37 @@ DocumentationBrowser::DocumentationBrowser(wxWindow* parent, const wxString& tit
     this->SetFocus();
 }
 
-// Destructor, removes the created IconManager object
+
+/////////////////////////////////////////////////
+/// \brief Documentation browser destructor.
+/// Removes the created IconManager object.
+/////////////////////////////////////////////////
 DocumentationBrowser::~DocumentationBrowser()
 {
     delete m_manager;
 }
 
-// Public interface to set the start page
+
+/////////////////////////////////////////////////
+/// \brief Public interface to set the start page.
+///
+/// \param docId const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool DocumentationBrowser::SetStartPage(const wxString& docId)
 {
-    return m_viewer->ShowPageOnItem(docId);
+    return createNewPage(docId);
 }
 
-// Private member function to prepare the toolbar of the window
+
+/////////////////////////////////////////////////
+/// \brief Private member function to prepare the
+/// toolbar of the main frame.
+///
+/// \return void
+///
+/////////////////////////////////////////////////
 void DocumentationBrowser::prepareToolbar()
 {
     // Create a new tool bar
@@ -106,7 +133,15 @@ void DocumentationBrowser::prepareToolbar()
     tb->Realize();
 }
 
-// This private member function prepares the index tree of the documentation browser
+
+/////////////////////////////////////////////////
+/// \brief This private member function prepares
+/// the index tree of the documentation browser.
+///
+/// \param mainwindow NumeReWindow*
+/// \return void
+///
+/////////////////////////////////////////////////
 void DocumentationBrowser::fillDocTree(NumeReWindow* mainwindow)
 {
     // Get the documentation index from the kernel
@@ -124,34 +159,113 @@ void DocumentationBrowser::fillDocTree(NumeReWindow* mainwindow)
     m_doctree->Expand(root);
 }
 
-// Event handler function to load the documentation article describing
-// the clicked item
+
+/////////////////////////////////////////////////
+/// \brief Event handler function to load the
+/// documentation article describing the clicked
+/// item.
+///
+/// \param event wxTreeEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DocumentationBrowser::OnTreeClick(wxTreeEvent& event)
 {
-    m_viewer->ShowPageOnItem(m_doctree->GetItemText(event.GetItem()));
+    HelpViewer* viewer = static_cast<HelpViewer*>(m_docTabs->GetCurrentPage());
+
+    if (viewer)
+    {
+        viewer->ShowPageOnItem(m_doctree->GetItemText(event.GetItem()));
+        setCurrentTabText(viewer->GetOpenedPageTitle());
+    }
 }
 
-// Event handler function for clicks on the toolbar of the current window.
-// Redirects all clicks to the HelpViewer class
+
+/////////////////////////////////////////////////
+/// \brief Event handler function for clicks on
+/// the toolbar of the current window. Redirects
+/// all clicks to the HelpViewer class of the
+/// currently opened page.
+///
+/// \param event wxCommandEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void DocumentationBrowser::OnToolbarEvent(wxCommandEvent& event)
 {
+    HelpViewer* viewer = static_cast<HelpViewer*>(m_docTabs->GetCurrentPage());
+
+    if (!viewer)
+        return;
+
     switch (event.GetId())
     {
         case ID_HELP_HOME:
-            m_viewer->GoHome();
+            viewer->GoHome();
             break;
         case ID_HELP_INDEX:
-            m_viewer->GoIndex();
+            viewer->GoIndex();
             break;
         case ID_HELP_GO_BACK:
-            m_viewer->HistoryGoBack();
+            viewer->HistoryGoBack();
             break;
         case ID_HELP_GO_FORWARD:
-            m_viewer->HistoryGoForward();
+            viewer->HistoryGoForward();
             break;
         case ID_HELP_PRINT:
-            m_viewer->Print();
+            viewer->Print();
             break;
     }
+
+    setCurrentTabText(viewer->GetOpenedPageTitle());
 }
+
+
+/////////////////////////////////////////////////
+/// \brief Create a new viewer in a new page.
+///
+/// \param docId const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
+bool DocumentationBrowser::createNewPage(const wxString& docId)
+{
+    HelpViewer* viewer = new HelpViewer(m_docTabs, static_cast<NumeReWindow*>(m_parent), this);
+    viewer->SetRelatedFrame(this, m_titleTemplate);
+    viewer->SetRelatedStatusBar(0);
+
+    m_docTabs->AddPage(viewer, docId, true);
+    return viewer->ShowPageOnItem(docId);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Change the text displayed on the
+/// current tab.
+///
+/// \param text const wxString&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DocumentationBrowser::setCurrentTabText(const wxString& text)
+{
+    if (m_docTabs->GetPageCount())
+        m_docTabs->SetPageText(m_docTabs->GetSelection(), text);
+}
+
+
+/////////////////////////////////////////////////
+/// \brief Event handler function called, when
+/// the user switches the tabs.
+///
+/// \param event wxBookCtrlEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
+void DocumentationBrowser::onPageChange(wxBookCtrlEvent& event)
+{
+    SetTitle(wxString::Format(m_titleTemplate, m_docTabs->GetPageText(event.GetSelection())));
+}
+
+
 

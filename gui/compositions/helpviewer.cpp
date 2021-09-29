@@ -19,6 +19,7 @@
 
 
 #include "helpviewer.hpp"
+#include "../documentationbrowser.hpp"
 #include "../NumeReWindow.h"
 #include <wx/html/htmprint.h>
 
@@ -32,17 +33,37 @@ BEGIN_EVENT_TABLE(HelpViewer, wxHtmlWindow)
     EVT_HTML_LINK_CLICKED(-1, HelpViewer::OnLinkClick)
 END_EVENT_TABLE()
 
+
+/////////////////////////////////////////////////
+/// \brief Set the contents to be displayed in
+/// this window.
+///
+/// \param source const wxString&
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool HelpViewer::SetPage(const wxString& source)
 {
     if (!vHistory.size())
         vHistory.push_back(source);
 
-    return this->wxHtmlWindow::SetPage(source);
+    bool res = wxHtmlWindow::SetPage(source);
+    m_browser->setCurrentTabText(GetOpenedPageTitle());
+
+    return res;
 }
 
-// Public member function to display a content in the viewer
-// window. The type of the content is determined in this function
-// and handled correspondingly
+
+/////////////////////////////////////////////////
+/// \brief Public member function to display a
+/// content in the viewer window. The type of the
+/// content is determined in this function and
+/// handled correspondingly.
+///
+/// \param docID wxString
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool HelpViewer::ShowPageOnItem(wxString docID)
 {
     wxString pageContent;
@@ -91,7 +112,7 @@ bool HelpViewer::ShowPageOnItem(wxString docID)
         // If the target is not the current window, redirect the the
         // link to the main window, which will create a new window
         if (!openself)
-            return m_mainFrame->ShowHelp(docID);
+            return m_browser->createNewPage(docID);
 
         // Get the page content from the kernel
         pageContent = m_mainFrame->GetDocContent(docID);
@@ -145,7 +166,14 @@ bool HelpViewer::ShowPageOnItem(wxString docID)
     return true;
 }
 
-// Public member function to go one step back in the history
+
+/////////////////////////////////////////////////
+/// \brief Public member function to go one step
+/// back in the history.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool HelpViewer::HistoryGoBack()
 {
     if (m_nHistoryPointer)
@@ -169,7 +197,14 @@ bool HelpViewer::HistoryGoBack()
     return false;
 }
 
-// Public member function to go one step forward in the history
+
+/////////////////////////////////////////////////
+/// \brief Public member function to go one step
+/// forward in the history.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool HelpViewer::HistoryGoForward()
 {
     if (m_nHistoryPointer+1 < vHistory.size())
@@ -193,19 +228,40 @@ bool HelpViewer::HistoryGoForward()
     return false;
 }
 
-// Public member function to return to the home page
+
+/////////////////////////////////////////////////
+/// \brief Public member function to return to
+/// the home page.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool HelpViewer::GoHome()
 {
     return ShowPageOnItem("numere");
 }
 
-// Public member function to display the index page
+
+/////////////////////////////////////////////////
+/// \brief Public member function to display the
+/// index page.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool HelpViewer::GoIndex()
 {
     return ShowPageOnItem("idx");
 }
 
-// Public member function to open the print preview page
+
+/////////////////////////////////////////////////
+/// \brief Public member function to open the
+/// print preview page.
+///
+/// \return bool
+///
+/////////////////////////////////////////////////
 bool HelpViewer::Print()
 {
     // If the printing setup was not filled correctly,
@@ -259,19 +315,45 @@ bool HelpViewer::Print()
 }
 
 
+/////////////////////////////////////////////////
+/// \brief Event handler, which gets fired when
+/// the user presses a key.
+///
+/// \param event wxKeyEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void HelpViewer::OnKeyDown(wxKeyEvent& event)
 {
     // connecting the ESC Key with closing the image
     if (event.GetKeyCode() == WXK_ESCAPE)
-        m_parent->Close();
+        m_browser->Close();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Event handler to automatically focus
+/// the window below the mouse pointer.
+///
+/// \param event wxMouseEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void HelpViewer::OnEnter(wxMouseEvent& event)
 {
     this->SetFocus();
     event.Skip();
 }
 
+
+/////////////////////////////////////////////////
+/// \brief Event handler for the case that the
+/// user clicks on a link in the document.
+///
+/// \param event wxHtmlLinkEvent&
+/// \return void
+///
+/////////////////////////////////////////////////
 void HelpViewer::OnLinkClick(wxHtmlLinkEvent& event)
 {
     wxString linkadress = event.GetLinkInfo().GetHref();
